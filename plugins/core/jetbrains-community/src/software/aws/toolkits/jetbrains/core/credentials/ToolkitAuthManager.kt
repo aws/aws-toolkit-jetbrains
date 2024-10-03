@@ -89,6 +89,10 @@ interface ToolkitStartupAuthFactory {
 }
 
 interface ToolkitConnectionManager : Disposable {
+    @Deprecated(
+        "Fragile API. Probably leads to unexpected behavior. Use only for toolkit explorer dropdown state.",
+        ReplaceWith("activeConnectionForFeature(feature)")
+    )
     fun activeConnection(): ToolkitConnection?
 
     fun activeConnectionForFeature(feature: FeatureWithPinnedConnection): ToolkitConnection?
@@ -129,6 +133,7 @@ fun loginSso(
                     project = project,
                     connection = transientConnection,
                     onPendingToken = onPendingToken,
+                    isReAuth = false,
                     source = metadata?.sourceId,
                 )
             }
@@ -149,7 +154,7 @@ fun loginSso(
 
     val manager = ToolkitAuthManager.getInstance()
     val allScopes = requestedScopes.toMutableSet()
-    return manager.getConnection(connectionId)?.let { connection ->
+    val connection = manager.getConnection(connectionId)?.let { connection ->
         val logger = getLogger<ToolkitAuthManager>()
 
         if (connection !is AwsBearerTokenConnection) {
@@ -167,32 +172,32 @@ fun loginSso(
                 """.trimIndent()
             }
             // can't reuse since requested scopes are not in current connection. forcing reauth
-            return createAndAuthNewConnection(
-                ManagedSsoProfile(
-                    region,
-                    startUrl,
-                    allScopes.toList()
-                )
-            )
+            return@let null
         }
 
         // For the case when the existing connection is in invalid state, we need to re-auth
         reauthConnectionIfNeeded(
             project = project,
             connection = connection,
-            isReAuth = true
+            onPendingToken = onPendingToken,
+            isReAuth = true,
+            source = metadata?.sourceId,
         )
-        return connection
-    } ?: run {
-        // No existing connection, start from scratch
-        createAndAuthNewConnection(
-            ManagedSsoProfile(
-                region,
-                startUrl,
-                allScopes.toList()
-            )
-        )
+        return@let connection
     }
+
+    if (connection != null) {
+        return connection
+    }
+
+    // No existing connection, start from scratch
+    return createAndAuthNewConnection(
+        ManagedSsoProfile(
+            region,
+            startUrl,
+            allScopes.toList()
+        )
+    )
 }
 
 @Suppress("UnusedParameter")
@@ -242,7 +247,9 @@ fun reauthConnectionIfNeeded(
     }
 
     val startUrl = (connection as AwsBearerTokenConnection).startUrl
+    var didReauth = false
     maybeReauthProviderIfNeeded(project, tokenProvider) {
+        didReauth = true
         runUnderProgressIfNeeded(project, AwsCoreBundle.message("credentials.pending.title"), true) {
             try {
                 tokenProvider.reauthenticate()
@@ -282,6 +289,11 @@ fun reauthConnectionIfNeeded(
                 throw e
             }
         }
+    }
+
+    if (!didReauth) {
+        // webview is stuck if reauth was not needed (i.e. token on disk is valid)
+        project?.let { ToolkitConnectionManager.getInstance(it).switchConnection(connection) }
     }
     return tokenProvider
 }

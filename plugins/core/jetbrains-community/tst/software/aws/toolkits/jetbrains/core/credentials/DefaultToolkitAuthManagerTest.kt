@@ -18,6 +18,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.Mockito.mockConstruction
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
@@ -25,7 +26,6 @@ import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
-import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
@@ -36,8 +36,6 @@ import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileSsoSessi
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
-import software.aws.toolkits.jetbrains.core.region.MockRegionProviderExtension
-import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.AwsSettings
@@ -50,9 +48,6 @@ class DefaultToolkitAuthManagerTest {
         publisher: TelemetryPublisher = NoOpPublisher(),
         batcher: TelemetryBatcher
     ) : TelemetryService(publisher, batcher)
-
-    @ExtendWith(MockRegionProviderExtension::class)
-    val regionProvider = MockRegionProviderRule()
 
     @JvmField
     @RegisterExtension
@@ -67,9 +62,13 @@ class DefaultToolkitAuthManagerTest {
     @BeforeEach
     fun setUp(@TestDisposable disposable: Disposable) {
         mockClientManager.create<SsoOidcClient>()
+
         sut = DefaultToolkitAuthManager()
         ApplicationManager.getApplication().replaceService(ToolkitAuthManager::class.java, sut, disposable)
-        connectionManager = DefaultToolkitConnectionManager()
+
+        connectionManager = DefaultToolkitConnectionManager(projectRule.project)
+        projectRule.project.replaceService(ToolkitConnectionManager::class.java, connectionManager, disposable)
+
         batcher = mock()
         telemetryService = spy(TestTelemetryService(batcher = batcher))
         ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryService, disposable)
@@ -222,12 +221,7 @@ class DefaultToolkitAuthManagerTest {
     }
 
     @Test
-    fun `loginSso with an working existing connection`(@TestDisposable disposable: Disposable) {
-        val connectionManager: ToolkitConnectionManager = mock()
-        regionProvider.addRegion(Region.US_EAST_1)
-        projectRule.project.replaceService(ToolkitConnectionManager::class.java, connectionManager, disposable)
-        ApplicationManager.getApplication().replaceService(ToolkitAuthManager::class.java, sut, disposable)
-
+    fun `loginSso with an working existing connection`() {
         mockConstruction(InteractiveBearerTokenProvider::class.java) { context, _ ->
             whenever(context.state()).thenReturn(BearerTokenAuthState.AUTHORIZED)
         }.use {
@@ -248,12 +242,7 @@ class DefaultToolkitAuthManagerTest {
     }
 
     @Test
-    fun `loginSso with an existing connection but expired and refresh token is valid, should refreshToken`(@TestDisposable disposable: Disposable) {
-        val connectionManager = ToolkitConnectionManager.getInstance(projectRule.project)
-        regionProvider.addRegion(Region.US_EAST_1)
-        projectRule.project.replaceService(ToolkitConnectionManager::class.java, connectionManager, disposable)
-        ApplicationManager.getApplication().replaceService(ToolkitAuthManager::class.java, sut, disposable)
-
+    fun `loginSso with an existing connection but expired and refresh token is valid, should refreshToken`() {
         mockConstruction(InteractiveBearerTokenProvider::class.java) { context, _ ->
             whenever(context.id).thenReturn("id")
             whenever(context.state()).thenReturn(BearerTokenAuthState.NEEDS_REFRESH)
@@ -276,13 +265,7 @@ class DefaultToolkitAuthManagerTest {
     }
 
     @Test
-    fun `loginSso with an existing connection that token is invalid and there's no refresh token, should re-authenticate`(
-        @TestDisposable disposable: Disposable
-    ) {
-        val connectionManager = ToolkitConnectionManager.getInstance(projectRule.project)
-        regionProvider.addRegion(Region.US_EAST_1)
-        ApplicationManager.getApplication().replaceService(ToolkitAuthManager::class.java, sut, disposable)
-
+    fun `loginSso with an existing connection that token is invalid and there's no refresh token, should re-authenticate`() {
         mockConstruction(InteractiveBearerTokenProvider::class.java) { context, _ ->
             whenever(context.state()).thenReturn(BearerTokenAuthState.NOT_AUTHENTICATED)
         }.use {
@@ -305,13 +288,12 @@ class DefaultToolkitAuthManagerTest {
 
     @Test
     fun `loginSso reuses connection if requested scopes are subset of existing`(@TestDisposable disposable: Disposable) {
-        val connectionManager = ToolkitConnectionManager.getInstance(projectRule.project)
-        regionProvider.addRegion(Region.US_EAST_1)
-        ApplicationManager.getApplication().replaceService(ToolkitAuthManager::class.java, sut, disposable)
-
         mockConstruction(InteractiveBearerTokenProvider::class.java) { context, _ ->
             whenever(context.state()).thenReturn(BearerTokenAuthState.AUTHORIZED)
         }.use {
+            val connectionManager = spy(connectionManager)
+            projectRule.project.replaceService(ToolkitConnectionManager::class.java, connectionManager, disposable)
+
             val existingConnection = sut.createConnection(
                 ManagedSsoProfile(
                     "us-east-1",
@@ -328,16 +310,12 @@ class DefaultToolkitAuthManagerTest {
             verify(tokenProvider).state()
             verifyNoMoreInteractions(tokenProvider)
             assertThat(connectionManager.activeConnection()).isEqualTo(existingConnection)
+            verify(connectionManager, atLeastOnce()).switchConnection(existingConnection)
         }
     }
 
     @Test
-    fun `loginSso forces reauth if requested scopes are not complete subset`(@TestDisposable disposable: Disposable) {
-        regionProvider.addRegion(Region.US_EAST_1)
-
-        projectRule.project.replaceService(ToolkitConnectionManager::class.java, connectionManager, disposable)
-        ApplicationManager.getApplication().replaceService(ToolkitAuthManager::class.java, sut, disposable)
-
+    fun `loginSso forces reauth if requested scopes are not complete subset`() {
         mockConstruction(InteractiveBearerTokenProvider::class.java) { context, _ ->
             whenever(context.state()).thenReturn(BearerTokenAuthState.AUTHORIZED)
         }.use {
@@ -364,14 +342,12 @@ class DefaultToolkitAuthManagerTest {
 
     @Test
     fun `loginSso with a new connection`(@TestDisposable disposable: Disposable) {
-        val connectionManager: ToolkitConnectionManager = mock()
-        ApplicationManager.getApplication().replaceService(ToolkitAuthManager::class.java, sut, disposable)
-        projectRule.project.replaceService(ToolkitConnectionManager::class.java, connectionManager, disposable)
-
         mockConstruction(InteractiveBearerTokenProvider::class.java) { context, _ ->
             doNothing().whenever(context).reauthenticate()
             whenever(context.state()).thenReturn(BearerTokenAuthState.NOT_AUTHENTICATED)
         }.use {
+            val connectionManager = spy(connectionManager)
+            projectRule.project.replaceService(ToolkitConnectionManager::class.java, connectionManager, disposable)
             // before
             assertThat(sut.listConnections()).hasSize(0)
 
@@ -399,17 +375,14 @@ class DefaultToolkitAuthManagerTest {
 
     @Test
     fun `logoutFromConnection should invalidate the token provider and the connection and invoke callback`(@TestDisposable disposable: Disposable) {
-        regionProvider.addRegion(Region.US_EAST_1)
-        projectRule.project.replaceService(ToolkitConnectionManager::class.java, connectionManager, disposable)
-
         val profile = ManagedSsoProfile("us-east-1", "startUrl000", listOf("scopes"))
-        val connection = ToolkitAuthManager.getInstance().createConnection(profile) as ManagedBearerSsoConnection
+        val connection = sut.createConnection(profile) as ManagedBearerSsoConnection
         connectionManager.switchConnection(connection)
 
         var providerInvalidatedMessageReceived = 0
         var connectionSwitchedMessageReceived = 0
         var callbackInvoked = 0
-        ApplicationManager.getApplication().messageBus.connect().subscribe(
+        ApplicationManager.getApplication().messageBus.connect(disposable).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
                 override fun invalidate(providerId: String) {
@@ -419,7 +392,7 @@ class DefaultToolkitAuthManagerTest {
                 }
             }
         )
-        ApplicationManager.getApplication().messageBus.connect().subscribe(
+        ApplicationManager.getApplication().messageBus.connect(disposable).subscribe(
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {

@@ -19,6 +19,16 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 // TODO: unify with AwsConnectionManager
 @State(name = "connectionManager", storages = [Storage("aws.xml")])
 class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStateComponent<ToolkitConnectionManagerState> {
+    private val project: Project?
+
+    constructor(project: Project) {
+        this.project = project
+    }
+
+    constructor() {
+        this.project = null
+    }
+
     init {
         ApplicationManager.getApplication().messageBus.connect(this).subscribe(
             BearerTokenProviderListener.TOPIC,
@@ -33,19 +43,10 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
         )
     }
 
-    private val project: Project?
-
-    constructor(project: Project) {
-        this.project = project
-    }
-
-    constructor() {
-        this.project = null
-    }
-
     private var connection: ToolkitConnection? = null
 
-    private val pinningManager: ConnectionPinningManager = ConnectionPinningManager.getInstance()
+    private val pinningManager
+        get() = ConnectionPinningManager.getInstance()
 
     private val defaultConnection: ToolkitConnection?
         get() {
@@ -60,6 +61,10 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
             return null
         }
 
+    @Deprecated(
+        "Fragile API. Probably leads to unexpected behavior. Use only for toolkit explorer dropdown state.",
+        replaceWith = ReplaceWith("activeConnectionForFeature(feature)")
+    )
     @Synchronized
     override fun activeConnection() = connection ?: defaultConnection
 
@@ -71,11 +76,11 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
         }
 
         return connection?.let {
-            if (feature.supportsConnectionType(it)) {
-                return it
+            return@let if (feature.supportsConnectionType(it)) {
+                it
+            } else {
+                null
             }
-
-            null
         } ?: defaultConnection?.let {
             if (ApplicationInfo.getInstance().build.productCode == "GW") return null
             if (feature.supportsConnectionType(it)) {
