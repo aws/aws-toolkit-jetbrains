@@ -10,7 +10,7 @@ import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.actionSystem.toolbarLayout.ToolbarLayoutStrategy
+import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.components.PersistentStateComponent
@@ -19,6 +19,7 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
+import com.intellij.openapi.util.BuildNumber
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.util.ui.components.BorderLayoutPanel
@@ -68,7 +69,31 @@ class AwsToolkitExplorerToolWindow(
             toolbar = BorderLayoutPanel().apply {
                 addToCenter(
                     ActionManager.getInstance().createActionToolbar(ActionPlaces.TOOLBAR, group, true).apply {
-                        layoutStrategy = ToolbarLayoutStrategy.NOWRAP_STRATEGY
+
+                        val currentVersion = ApplicationInfo.getInstance().build
+                        val version2024_1 = BuildNumber.fromString("241.0")
+
+                        if (currentVersion.compareTo(version2024_1) < 0) {
+                            // For versions 2023.3 and below
+                            layoutPolicy = ActionToolbar.NOWRAP_LAYOUT_POLICY
+                        } else {
+                            // For versions 2024.1 and up
+                            try {
+                                val toolbarLayoutStrategyClass: Class<*>? = try {
+                                    Class.forName("com.intellij.openapi.actionSystem.toolbarLayout.ToolbarLayoutStrategy")
+                                } catch (e: ClassNotFoundException) {
+                                    null
+                                }
+                                val nowrapStrategyField = toolbarLayoutStrategyClass?.getDeclaredField("NOWRAP_STRATEGY")
+                                val nowrapStrategy = nowrapStrategyField?.get(null)
+
+                                val setLayoutStrategyMethod = this.javaClass.getMethod("setLayoutStrategy", toolbarLayoutStrategyClass)
+                                setLayoutStrategyMethod.invoke(this, nowrapStrategy)
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
+
                         setTargetComponent(this@AwsToolkitExplorerToolWindow)
                     }.component
                 )
