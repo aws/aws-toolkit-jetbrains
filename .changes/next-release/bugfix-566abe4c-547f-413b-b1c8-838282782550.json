@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fix issue where a user may get stuck while attempting to login to Builder ID"
-}

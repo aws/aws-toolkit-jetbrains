@@ -1,3 +1,9 @@
+# _3.31_ (2024-10-03)
+- **(Feature)** Amazon Q Developer: Updated legal disclaimer text
+- **(Feature)** Amazon Q Code Transformation: allow users to skip tests
+- **(Bug Fix)** Fix issue where multiple SSO login attempts in a short time result in 404
+- **(Bug Fix)** Fix issue where a user may get stuck while attempting to login to Builder ID
+
 # _3.30_ (2024-09-27)
 - **(Bug Fix)** Amazon Q Code Transformation: notify users when no JDK is set in Project Structure settings
 - **(Bug Fix)** Automatically terminate orphaned process for `@workspace` helper
