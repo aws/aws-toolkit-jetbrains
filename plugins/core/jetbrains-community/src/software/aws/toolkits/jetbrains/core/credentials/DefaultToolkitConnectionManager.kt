@@ -19,6 +19,16 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 // TODO: unify with AwsConnectionManager
 @State(name = "connectionManager", storages = [Storage("aws.xml")])
 class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStateComponent<ToolkitConnectionManagerState> {
+    private val project: Project?
+
+    constructor(project: Project) {
+        this.project = project
+    }
+
+    constructor() {
+        this.project = null
+    }
+
     init {
         ApplicationManager.getApplication().messageBus.connect(this).subscribe(
             BearerTokenProviderListener.TOPIC,
@@ -33,19 +43,10 @@ class DefaultToolkitConnectionManager : ToolkitConnectionManager, PersistentStat
         )
     }
 
-    private val project: Project?
-
-    constructor(project: Project) {
-        this.project = project
-    }
-
-    constructor() {
-        this.project = null
-    }
-
     private var connection: ToolkitConnection? = null
 
-    private val pinningManager: ConnectionPinningManager = ConnectionPinningManager.getInstance()
+    private val pinningManager
+        get() = ConnectionPinningManager.getInstance()
 
     private val defaultConnection: ToolkitConnection?
         get() {
