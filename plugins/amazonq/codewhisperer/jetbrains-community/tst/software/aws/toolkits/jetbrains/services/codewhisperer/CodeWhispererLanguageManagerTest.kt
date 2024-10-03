@@ -105,7 +105,7 @@ class CodeWhispererLanguageManagerTest {
     private fun <T : CodeWhispererProgrammingLanguage> testGetProgrammingLanguageUtil(
         fileTypeNames: List<String>,
         fileExtensions: List<String?>?,
-        expectedLanguage: Class<T>
+        expectedLanguage: Class<T>,
     ) {
         fileExtensions?.forEach { fileExtension ->
             fileTypeNames.forEach { fileTypeName ->

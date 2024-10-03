@@ -16,7 +16,7 @@ class CodeInsightsSettingsFacade : SimpleModificationTracker(), Disposable {
     private inner class ChangeAndRevert<T : Any>(
         val p: KMutableProperty<T>,
         val value: T,
-        parentDisposable: Disposable
+        parentDisposable: Disposable,
     ) {
         val origin: T = p.getter.call()
         var isComplete: Boolean = false

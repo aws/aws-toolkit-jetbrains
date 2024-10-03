@@ -123,7 +123,7 @@ class PushToRepositoryAction : EcrDockerAction() {
 internal class PushToEcrDialog(
     private val project: Project,
     selectedRepository: Repository,
-    private val dockerRuntime: Deferred<DockerRuntimeFacade>
+    private val dockerRuntime: Deferred<DockerRuntimeFacade>,
 ) : DialogWrapper(project, null, false, IdeModalityType.IDE) {
     private val coroutineScope = projectCoroutineScope(project)
     private val defaultTag = "latest"

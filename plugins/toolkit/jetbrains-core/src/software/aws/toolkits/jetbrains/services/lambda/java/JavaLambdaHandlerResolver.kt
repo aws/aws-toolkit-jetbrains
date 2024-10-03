@@ -25,7 +25,7 @@ class JavaLambdaHandlerResolver : LambdaHandlerResolver {
     override fun findPsiElements(
         project: Project,
         handler: String,
-        searchScope: GlobalSearchScope
+        searchScope: GlobalSearchScope,
     ): Array<NavigatablePsiElement> {
         val split = handler.split("::")
         val className = split[0]

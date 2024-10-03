@@ -57,14 +57,14 @@ sealed interface AuthProfile
 data class ManagedSsoProfile(
     var ssoRegion: String = "",
     var startUrl: String = "",
-    var scopes: List<String> = emptyList()
+    var scopes: List<String> = emptyList(),
 ) : AuthProfile
 
 data class UserConfigSsoSessionProfile(
     var configSessionName: String = "",
     var ssoRegion: String = "",
     var startUrl: String = "",
-    var scopes: List<String> = emptyList()
+    var scopes: List<String> = emptyList(),
 ) : AuthProfile {
     val id
         get() = "$SSO_SESSION_SECTION_NAME:$configSessionName"
@@ -74,7 +74,7 @@ data class DetectedDiskSsoSessionProfile(
     var profileName: String = "",
     var startUrl: String = "",
     var ssoRegion: String = "",
-    var scopes: List<String> = emptyList()
+    var scopes: List<String> = emptyList(),
 ) : AuthProfile
 
 /**
@@ -123,7 +123,7 @@ fun loginSso(
     onPendingToken: (InteractiveBearerTokenProvider) -> Unit = {},
     onError: (Exception) -> Unit = {},
     onSuccess: () -> Unit = {},
-    metadata: ConnectionMetadata? = null
+    metadata: ConnectionMetadata? = null,
 ): AwsBearerTokenConnection? {
     fun createAndAuthNewConnection(profile: AuthProfile): AwsBearerTokenConnection? {
         val authManager = ToolkitAuthManager.getInstance()
@@ -302,7 +302,7 @@ fun reauthConnectionIfNeeded(
 fun maybeReauthProviderIfNeeded(
     project: Project?,
     tokenProvider: BearerTokenProvider,
-    onReauthRequired: (SsoOidcException?) -> Any
+    onReauthRequired: (SsoOidcException?) -> Any,
 ): Boolean {
     val state = tokenProvider.state()
     when (state) {
@@ -351,7 +351,7 @@ private fun recordLoginWithBrowser(
     reason: String? = null,
     isReAuth: Boolean,
     result: Result,
-    source: String? = null
+    source: String? = null,
 ) {
     TelemetryService.getInstance().record(null as Project?) {
         datum("aws_loginWithBrowser") {
@@ -375,7 +375,7 @@ private fun recordAddConnection(
     reason: String? = null,
     isReAuth: Boolean,
     result: Result,
-    source: String? = null
+    source: String? = null,
 ) {
     TelemetryService.getInstance().record(null as Project?) {
         datum("auth_addConnection") {
@@ -393,5 +393,5 @@ private fun recordAddConnection(
 }
 
 data class ConnectionMetadata(
-    val sourceId: String? = null
+    val sourceId: String? = null,
 )

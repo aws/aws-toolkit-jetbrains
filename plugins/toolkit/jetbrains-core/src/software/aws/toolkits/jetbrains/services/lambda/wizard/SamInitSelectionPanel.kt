@@ -37,7 +37,7 @@ class SamInitSelectionPanel(
     wizardFragmentList: List<WizardFragment>,
     private val projectLocation: TextFieldWithBrowseButton? = null, /* Only available in PyCharm! */
     private val runtimeFilter: (LambdaRuntime) -> Boolean = { true },
-    private val wizardUpdateCallback: () -> Unit = {} /* Used in Rider to refresh the validation */
+    private val wizardUpdateCallback: () -> Unit = {}, /* Used in Rider to refresh the validation */
 ) {
     lateinit var mainPanel: JPanel
 

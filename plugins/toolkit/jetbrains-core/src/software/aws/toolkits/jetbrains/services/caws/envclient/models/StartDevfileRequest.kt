@@ -5,5 +5,5 @@ package software.aws.toolkits.jetbrains.services.caws.envclient.models
 
 data class StartDevfileRequest(
     val location: String? = null,
-    val recreateHomeVolumes: Boolean? = null
+    val recreateHomeVolumes: Boolean? = null,
 )

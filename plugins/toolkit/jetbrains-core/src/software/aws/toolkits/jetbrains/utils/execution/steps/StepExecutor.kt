@@ -19,7 +19,7 @@ import java.io.OutputStream
 class StepExecutor(
     project: Project?,
     private val workflow: StepWorkflow,
-    private val messageEmitter: WorkflowEmitter
+    private val messageEmitter: WorkflowEmitter,
 ) {
     var onSuccess: ((Context) -> Unit)? = null
     var onError: ((Throwable) -> Unit)? = null

@@ -38,7 +38,7 @@ private const val REMOTE_SERVER_CMD = "$IDE_BACKEND_DIR/bin/remote-dev-server.sh
 class IdeBackendActions(
     private val remoteScriptPath: String,
     projectName: String?,
-    private val remoteCommandExecutor: AbstractSsmCommandExecutor
+    private val remoteCommandExecutor: AbstractSsmCommandExecutor,
 ) {
     // use projectPath if it exists, otherwise fallback to the default root
     private val projectPath by lazy {

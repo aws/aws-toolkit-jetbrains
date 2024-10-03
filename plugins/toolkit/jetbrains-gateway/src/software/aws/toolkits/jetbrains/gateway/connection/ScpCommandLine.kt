@@ -13,7 +13,7 @@ open class ScpCommandLine(
     remoteHost: String,
     remotePath: String,
     recursive: Boolean = false,
-    port: Int? = null
+    port: Int? = null,
 ) {
     private val sshOptions = ParamsGroup(SSH_OPTIONS)
     private val localPaths = ParamsGroup(LOCAL_PATHS)

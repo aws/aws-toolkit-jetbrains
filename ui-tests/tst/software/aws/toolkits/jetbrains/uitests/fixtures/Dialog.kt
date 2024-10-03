@@ -15,7 +15,7 @@ import java.time.Duration
 fun ContainerFixture.dialog(
     title: String,
     timeout: Duration = Duration.ofSeconds(20),
-    function: DialogFixture.() -> Unit = {}
+    function: DialogFixture.() -> Unit = {},
 ) {
     step("Search for dialog with title $title") {
         val dialog = find<DialogFixture>(DialogFixture.byTitle(title), timeout)
@@ -33,7 +33,7 @@ fun ContainerFixture.dialog(
 @FixtureName("Dialog")
 open class DialogFixture(
     remoteRobot: RemoteRobot,
-    remoteComponent: RemoteComponent
+    remoteComponent: RemoteComponent,
 ) : CommonContainerFixture(remoteRobot, remoteComponent) {
     companion object {
         fun byTitle(title: String) = byXpath("title $title", "//div[@title='$title' and @class='MyDialog']")

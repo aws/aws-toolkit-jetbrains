@@ -61,7 +61,7 @@ fun notifyStickyInfo(
     content: String = "",
     project: Project? = null,
     notificationActions: Collection<AnAction> = listOf(),
-    stripHtml: Boolean = true
+    stripHtml: Boolean = true,
 ) = notifySticky(NotificationType.INFORMATION, title, getCleanedContent(content, stripHtml), project, notificationActions)
 
 fun notifyStickyWarn(
@@ -69,7 +69,7 @@ fun notifyStickyWarn(
     content: String = "",
     project: Project? = null,
     notificationActions: Collection<AnAction> = listOf(),
-    stripHtml: Boolean = true
+    stripHtml: Boolean = true,
 ) = notifySticky(NotificationType.WARNING, title, getCleanedContent(content, stripHtml), project, notificationActions)
 
 fun notifyStickyError(
@@ -77,7 +77,7 @@ fun notifyStickyError(
     content: String = "",
     project: Project? = null,
     notificationActions: Collection<AnAction> = listOf(),
-    stripHtml: Boolean = true
+    stripHtml: Boolean = true,
 ) = notifySticky(NotificationType.ERROR, title, getCleanedContent(content, stripHtml), project, notificationActions)
 
 fun notifyInfo(title: String, content: String = "", project: Project? = null, listener: NotificationListener? = null, stripHtml: Boolean = true) =
@@ -103,7 +103,7 @@ fun notifyError(
     content: String = "",
     project: Project? = null,
     listener: NotificationListener? = null,
-    stripHtml: Boolean = true
+    stripHtml: Boolean = true,
 ) = notify(Notification(GROUP_DISPLAY_ID, title, getCleanedContent(content, stripHtml), NotificationType.ERROR, listener), project)
 
 fun <T> tryNotify(message: String, block: () -> T): T? = try {

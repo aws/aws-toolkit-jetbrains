@@ -46,7 +46,7 @@ import software.aws.toolkits.jetbrains.utils.satisfiesKt
 class DefaultToolkitAuthManagerTest {
     private class TestTelemetryService(
         publisher: TelemetryPublisher = NoOpPublisher(),
-        batcher: TelemetryBatcher
+        batcher: TelemetryBatcher,
     ) : TelemetryService(publisher, batcher)
 
     @JvmField

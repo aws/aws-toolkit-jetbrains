@@ -53,13 +53,13 @@ data class AcceptedSuggestionEntry(
     val codewhispererLanguage: CodeWhispererProgrammingLanguage,
     val codewhispererRuntime: CodewhispererRuntime?,
     val codewhispererRuntimeSource: String?,
-    val connection: ToolkitConnection?
+    val connection: ToolkitConnection?,
 ) : UserModificationTrackingEntry
 
 data class CodeInsertionDiff(
     val original: String,
     val modified: String,
-    val diff: Double
+    val diff: Double,
 )
 
 fun CodeInsertionDiff?.percentage(): Double = when {
