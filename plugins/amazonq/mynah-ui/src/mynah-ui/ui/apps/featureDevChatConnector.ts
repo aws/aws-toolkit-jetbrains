@@ -260,6 +260,7 @@ export class Connector {
         this.sendMessageToExtension({
             tabID: tabID,
             command: 'stop-response',
+            tabType: 'featuredev',
         })
     }
 

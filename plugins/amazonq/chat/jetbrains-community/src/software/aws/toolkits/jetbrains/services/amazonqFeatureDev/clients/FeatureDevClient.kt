@@ -36,6 +36,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTo
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import java.time.Instant
+import java.util.UUID
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatTriggerType as SyncChatTriggerType
 
 @Service(Service.Level.PROJECT)
@@ -87,9 +88,10 @@ class FeatureDevClient(private val project: Project) {
         CreateTaskAssistConversationRequest.builder().build()
     )
 
-    fun createTaskAssistUploadUrl(conversationId: String, contentChecksumSha256: String, contentLength: Long): CreateUploadUrlResponse =
+    fun createTaskAssistUploadUrl(conversationId: String, contentChecksumSha256: String, contentLength: Long, uploadId: String): CreateUploadUrlResponse =
         bearerClient().createUploadUrl {
             it.contentChecksumType(ContentChecksumType.SHA_256)
+                .uploadId(uploadId)
                 .contentChecksum(contentChecksumSha256)
                 .contentLength(contentLength)
                 .artifactType(ArtifactType.SOURCE_CODE)
@@ -105,7 +107,7 @@ class FeatureDevClient(private val project: Project) {
                 )
         }
 
-    fun startTaskAssistCodeGeneration(conversationId: String, uploadId: String, userMessage: String): StartTaskAssistCodeGenerationResponse = bearerClient()
+    fun startTaskAssistCodeGeneration(conversationId: String, uploadId: String, userMessage: String, codeGenerationId: UUID, currentCodeGenerationId: UUID?): StartTaskAssistCodeGenerationResponse = bearerClient()
         .startTaskAssistCodeGeneration {
                 request ->
             request
@@ -119,7 +121,7 @@ class FeatureDevClient(private val project: Project) {
                     it
                         .programmingLanguage { pl -> pl.languageName("javascript") } // This parameter is omitted by featureDev but required in the request
                         .uploadId(uploadId)
-                }
+                }.codeGenerationId(codeGenerationId.toString()).currentCodeGenerationId(currentCodeGenerationId.toString())
         }
 
     fun getTaskAssistCodeGeneration(conversationId: String, codeGenerationId: String): GetTaskAssistCodeGenerationResponse = bearerClient()

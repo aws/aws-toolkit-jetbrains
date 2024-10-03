@@ -17,6 +17,7 @@ import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.ge
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.Result
+import java.util.UUID
 
 private val logger = getLogger<CodeGenerationState>()
 
@@ -29,7 +30,8 @@ class CodeGenerationState(
     val repositorySize: Double,
     val messenger: MessagePublisher,
     var codeGenerationRemainingIterationCount: Int? = null,
-    var codeGenerationTotalIterationCount: Int? = null
+    var codeGenerationTotalIterationCount: Int? = null,
+    var currentCodeGenerationId:  UUID? = null
 ) : SessionState {
     override val phase = SessionStatePhase.CODEGEN
 
@@ -41,10 +43,13 @@ class CodeGenerationState(
         var numberOfReferencesGenerated: Int? = null
         var numberOfFilesGenerated: Int? = null
         try {
+            val codeGenerationId = UUID.randomUUID()
             val response = config.featureDevService.startTaskAssistCodeGeneration(
                 conversationId = config.conversationId,
                 uploadId = uploadId,
-                message = action.msg
+                message = action.msg,
+                codeGenerationId = codeGenerationId,
+                currentCodeGenerationId = currentCodeGenerationId
             )
 
             messenger.sendAnswerPart(
