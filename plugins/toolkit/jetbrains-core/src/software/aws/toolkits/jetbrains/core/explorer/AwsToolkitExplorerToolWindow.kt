@@ -10,6 +10,7 @@ import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.actionSystem.toolbarLayout.ToolbarLayoutStrategy
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.components.PersistentStateComponent
@@ -67,7 +68,7 @@ class AwsToolkitExplorerToolWindow(
             toolbar = BorderLayoutPanel().apply {
                 addToCenter(
                     ActionManager.getInstance().createActionToolbar(ActionPlaces.TOOLBAR, group, true).apply {
-                        layoutPolicy = ActionToolbar.AUTO_LAYOUT_POLICY
+                        layoutStrategy = ToolbarLayoutStrategy.NOWRAP_STRATEGY
                         setTargetComponent(this@AwsToolkitExplorerToolWindow)
                     }.component
                 )
