@@ -87,7 +87,7 @@ class AuthController {
             AuthFollowUpType.Unsupported,
             AuthFollowUpType.FullAuth -> runInEdt {
                 UiTelemetry.click(project, "amazonq_chatAuthenticate")
-                requestCredentialsForQ(project, connectionInitiatedFromQChatPanel = true)
+                requestCredentialsForQ(project, connectionInitiatedFromQChatPanel = true, isReauth = false)
             }
 
             AuthFollowUpType.ReAuth,

@@ -287,7 +287,8 @@ class SetupAuthenticationDialog(
                         isAggregated = false,
                         attempts = ++attempts,
                         result = Result.Failed,
-                        reason = "ConnectionUnsuccessful"
+                        reason = "ConnectionUnsuccessful",
+                        isReAuth = false
                     )
                 } ?: return
 
@@ -339,7 +340,8 @@ class SetupAuthenticationDialog(
                         isAggregated = false,
                         attempts = ++attempts,
                         result = Result.Failed,
-                        reason = "DuplicateProfileName"
+                        reason = "DuplicateProfileName",
+                        isReAuth = false
                     )
                     return
                 }
@@ -365,7 +367,8 @@ class SetupAuthenticationDialog(
                         isAggregated = false,
                         attempts = ++attempts,
                         result = Result.Failed,
-                        reason = "InvalidCredentials"
+                        reason = "InvalidCredentials",
+                        isReAuth = false
                     )
                     return
                 }
@@ -438,7 +441,8 @@ class SetupAuthenticationDialog(
             isAggregated = false,
             attempts = ++attempts,
             result = Result.Failed,
-            reason = errorType
+            reason = errorType,
+            isReAuth = false
         )
 
         LOG.error(e) { errorMessage }

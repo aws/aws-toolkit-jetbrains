@@ -89,7 +89,8 @@ fun requestCredentialsForCodeCatalyst(
             credentialSourceId = authenticationDialog.authType,
             isAggregated = true,
             attempts = authenticationDialog.attempts + 1,
-            result = Result.Succeeded
+            result = Result.Succeeded,
+            isReAuth = false
         )
         AuthTelemetry.addedConnections(
             project,
@@ -110,6 +111,7 @@ fun requestCredentialsForCodeCatalyst(
             isAggregated = false,
             attempts = authenticationDialog.attempts + 1,
             result = Result.Cancelled,
+            isReAuth = false
         )
     }
     return isAuthenticationSuccessful
@@ -157,7 +159,8 @@ fun requestCredentialsForExplorer(
             credentialSourceId = authenticationDialog.authType,
             isAggregated = true,
             attempts = authenticationDialog.attempts + 1,
-            result = Result.Succeeded
+            result = Result.Succeeded,
+            isReAuth = false
         )
         AuthTelemetry.addedConnections(
             project,
@@ -178,6 +181,7 @@ fun requestCredentialsForExplorer(
             isAggregated = false,
             attempts = authenticationDialog.attempts + 1,
             result = Result.Cancelled,
+            isReAuth = false
         )
     }
     return isAuthSuccessful
