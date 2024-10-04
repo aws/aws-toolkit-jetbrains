@@ -101,6 +101,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
     val ongoingRequestsContext = mutableMapOf<Int, RequestContext>()
     private var jobId = 0
     private var sessionContext: SessionContext? = null
+    var isBetaExpired: Boolean = false
 
     init {
         Disposer.register(this, codeInsightSettingsFacade)
@@ -153,6 +154,11 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             if (shouldReauth) {
                 return
             }
+        }
+
+        if (isBetaExpired && triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
+            showCodeWhispererInfoHint(editor, "Current beta period ended, please switch to the marketplace version")
+            return
         }
 
         latencyContext.credentialFetchingEnd = System.nanoTime()
@@ -226,6 +232,10 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
 
         val workerContexts = mutableListOf<WorkerContext>()
 
+        // When session is disposed we will cancel this coroutine. The only places session can get disposed should be
+        // from CodeWhispererService.disposeDisplaySession().
+        // It's possible and ok that coroutine will keep running until the next time we check it's state.
+        // As long as we don't show to the user extra info we are good.
         var lastRecommendationIndex = -1
 
         val job = cs.launch {
@@ -325,6 +335,9 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                                     cs,
                                     currentJobId
                                 )
+                                if (!ongoingRequests.contains(currentJobId)) {
+                                    cs.coroutineContext.cancel()
+                                }
                             }
                         }
                     }
@@ -808,6 +821,10 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             "CodeWhisperer code completion service invoked",
             CodeWhispererCodeCompletionServiceListener::class.java
         )
+        val CODEWHISPERER_INTELLISENSE_POPUP_ON_HOVER: Topic<CodeWhispererIntelliSenseOnHoverListener> = Topic.create(
+            "CodeWhisperer intelliSense popup on hover",
+            CodeWhispererIntelliSenseOnHoverListener::class.java
+        )
         val KEY_SESSION_CONTEXT = Key.create<SessionContext>("codewhisperer.session")
 
         fun getInstance(): CodeWhispererService = service()
@@ -893,4 +910,8 @@ data class ResponseContext(
 
 interface CodeWhispererCodeCompletionServiceListener {
     fun onSuccess(fileContextInfo: FileContextInfo) {}
+}
+
+interface CodeWhispererIntelliSenseOnHoverListener {
+    fun onEnter() {}
 }

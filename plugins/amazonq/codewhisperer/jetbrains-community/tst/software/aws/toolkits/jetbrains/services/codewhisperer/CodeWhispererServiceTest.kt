@@ -12,6 +12,7 @@ import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
@@ -93,6 +94,11 @@ class CodeWhispererServiceTest {
         projectRule.project.replaceService(AwsConnectionManager::class.java, mock(), disposableRule.disposable)
     }
 
+    @After
+    fun tearDown() {
+        sut.disposeDisplaySession(false)
+    }
+
     @Test
     fun `getRequestContext should have supplementalContext and customizatioArn if they're present`() {
         whenever(customizationConfig.activeCustomization(projectRule.project)).thenReturn(
@@ -124,8 +130,7 @@ class CodeWhispererServiceTest {
             TriggerTypeInfo(CodewhispererTriggerType.OnDemand, CodeWhispererAutomatedTriggerType.Unknown()),
             projectRule.fixture.editor,
             projectRule.project,
-            file,
-            LatencyContext()
+            file
         )
 
         runTest {
@@ -149,8 +154,7 @@ class CodeWhispererServiceTest {
             TriggerTypeInfo(CodewhispererTriggerType.OnDemand, CodeWhispererAutomatedTriggerType.Unknown()),
             projectRule.fixture.editor,
             projectRule.project,
-            file,
-            LatencyContext()
+            file
         )
 
         assertThat(actual.supplementalContext).isNotNull
@@ -182,12 +186,11 @@ class CodeWhispererServiceTest {
                 fileContextInfo = mockFileContext,
                 supplementalContextDeferred = async { mockSupContext },
                 connection = ToolkitConnectionManager.getInstance(projectRule.project).activeConnection(),
-                latencyContext = LatencyContext(),
                 customizationArn = "fake-arn"
             )
         )
 
-        sut.invokeCodeWhispererInBackground(mockRequestContext).join()
+        sut.invokeCodeWhispererInBackground(mockRequestContext, 0, LatencyContext())?.join()
 
         verify(mockRequestContext, times(1)).awaitSupplementalContext()
         verify(clientFacade).generateCompletionsPaginator(any())

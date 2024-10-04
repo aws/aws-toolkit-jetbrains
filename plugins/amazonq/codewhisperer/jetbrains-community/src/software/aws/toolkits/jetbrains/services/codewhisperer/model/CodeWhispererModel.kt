@@ -17,12 +17,16 @@ import software.amazon.awssdk.services.codewhispererruntime.model.GenerateComple
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererIntelliSenseOnHoverListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.setIntelliSensePopupAlpha
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.SupplementalContextStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.UtgStrategy
@@ -130,6 +134,16 @@ data class SessionContext(
     var hasAccepted: Boolean = false
 ) : Disposable {
     private var isDisposed = false
+    init {
+        project.messageBus.connect().subscribe(
+            CodeWhispererService.CODEWHISPERER_INTELLISENSE_POPUP_ON_HOVER,
+            object : CodeWhispererIntelliSenseOnHoverListener {
+                override fun onEnter() {
+                    CodeWhispererPopupManager.getInstance().bringSuggestionInlayToFront(editor, popup, opposite = true)
+                }
+            }
+        )
+    }
 
     @RequiresEdt
     override fun dispose() {
@@ -138,6 +152,7 @@ data class SessionContext(
             hasAccepted,
             CodeWhispererInvocationStatus.getInstance().popupStartTimestamp?.let { Duration.between(it, Instant.now()) }
         )
+        setIntelliSensePopupAlpha(editor, 0f)
         CodeWhispererInvocationStatus.getInstance().setDisplaySessionActive(false)
 
         if (hasAccepted) {
