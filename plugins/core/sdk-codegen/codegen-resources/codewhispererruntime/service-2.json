@@ -1881,20 +1881,9 @@
             "max":128,
             "min":1
         },
-<<<<<<< HEAD
         "UploadIntent": {
             "type": "string",
             "enum": ["TRANSFORMATION", "TASK_ASSIST_PLANNING", "AUTOMATIC_FILE_SECURITY_SCAN", "FULL_PROJECT_SECURITY_SCAN"]
-=======
-        "UploadIntent":{
-            "type":"string",
-            "enum":[
-                "TRANSFORMATION",
-                "TASK_ASSIST_PLANNING",
-                "AUTOMATIC_FILE_SECURITY_SCAN",
-                "FULL_PROJECT_SECURITY_SCAN"
-            ]
->>>>>>> c6220dbbb (Revert "fix(amazonqFeatureDev): include stop generation")
         },
         "UserContext":{
             "type":"structure",
@@ -1948,12 +1937,8 @@
                 "SHOW_EXAMPLES",
                 "CITE_SOURCES",
                 "EXPLAIN_LINE_BY_LINE",
-<<<<<<< HEAD
                 "EXPLAIN_CODE_SELECTION",
                 "GENERATE_UNIT_TESTS"
-=======
-                "EXPLAIN_CODE_SELECTION"
->>>>>>> c6220dbbb (Revert "fix(amazonqFeatureDev): include stop generation")
             ]
         },
         "UserModificationEvent":{
