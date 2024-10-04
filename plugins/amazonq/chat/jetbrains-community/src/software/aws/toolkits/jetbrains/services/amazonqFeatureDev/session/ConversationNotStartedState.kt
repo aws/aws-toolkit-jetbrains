@@ -3,10 +3,13 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
+import org.gradle.tooling.CancellationTokenSource
+
 class ConversationNotStartedState(
     override var approach: String,
     override val tabID: String,
-) : SessionState {
+    override val token: CancellationTokenSource?,
+    ) : SessionState {
     override val phase = SessionStatePhase.INIT
 
     override suspend fun interact(action: SessionStateAction): SessionStateInteraction {

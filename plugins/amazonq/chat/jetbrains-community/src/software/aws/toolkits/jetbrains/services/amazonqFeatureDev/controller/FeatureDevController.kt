@@ -92,6 +92,10 @@ class FeatureDevController(
         )
     }
 
+    override suspend fun processStopMessage(message: IncomingFeatureDevMessage.StopResponse) {
+        handleStopMessage(message)
+    }
+
     override suspend fun processNewTabCreatedMessage(message: IncomingFeatureDevMessage.NewTabCreated) {
         newTabOpened(message.tabId)
     }
@@ -284,6 +288,21 @@ class FeatureDevController(
         }
     }
 
+    private suspend fun handleStopMessage(message: IncomingFeatureDevMessage.StopResponse) {
+        var session: Session? = null
+        messenger.sendAnswer( tabId = message.tabId, "Stopping code generation ...", messageType = FeatureDevMessageType.Answer, canBeVoted = false)
+        messenger.sendUpdatePlaceholder(
+            tabId = message.tabId,
+            newPlaceholder = "Stopping code generation ..."
+        )
+        messenger.sendChatInputEnabledMessage(tabId = message.tabId, enabled = false)
+        session = getSessionInfo(message.tabId)
+
+        if (session.sessionState.token?.token() !== null) {
+            session.sessionState?.token?.cancel()
+        }
+
+    }
     private suspend fun insertCode(tabId: String) {
         var session: Session? = null
         try {

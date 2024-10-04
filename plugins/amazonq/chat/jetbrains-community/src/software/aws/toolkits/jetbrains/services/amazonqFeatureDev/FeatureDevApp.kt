@@ -41,7 +41,8 @@ class FeatureDevApp : AmazonQApp {
             "response-body-link-click" to IncomingFeatureDevMessage.ClickedLink::class,
             "insert_code_at_cursor_position" to IncomingFeatureDevMessage.InsertCodeAtCursorPosition::class,
             "open-diff" to IncomingFeatureDevMessage.OpenDiff::class,
-            "file-click" to IncomingFeatureDevMessage.FileClicked::class
+            "file-click" to IncomingFeatureDevMessage.FileClicked::class,
+            "stop-response" to IncomingFeatureDevMessage.StopResponse::class
         )
 
         scope.launch {
@@ -82,6 +83,7 @@ class FeatureDevApp : AmazonQApp {
             is IncomingFeatureDevMessage.InsertCodeAtCursorPosition -> inboundAppMessagesHandler.processInsertCodeAtCursorPosition(message)
             is IncomingFeatureDevMessage.OpenDiff -> inboundAppMessagesHandler.processOpenDiff(message)
             is IncomingFeatureDevMessage.FileClicked -> inboundAppMessagesHandler.processFileClicked(message)
+            is IncomingFeatureDevMessage.StopResponse -> inboundAppMessagesHandler.processStopMessage(message)
         }
     }
 

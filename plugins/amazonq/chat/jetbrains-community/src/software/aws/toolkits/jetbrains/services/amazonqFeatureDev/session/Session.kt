@@ -41,7 +41,7 @@ class Session(val tabID: String, val project: Project) {
         context = FeatureDevSessionContext(project, MAX_PROJECT_SIZE_BYTES)
         proxyClient = FeatureDevClient.getInstance(project)
         featureDevService = FeatureDevService(proxyClient, project)
-        _state = ConversationNotStartedState("", tabID)
+        _state = ConversationNotStartedState("", tabID, null)
         isAuthenticating = false
         codegenRetries = CODE_GENERATION_RETRY_LIMIT
     }
@@ -81,6 +81,7 @@ class Session(val tabID: String, val project: Project) {
             currentIteration = 0, // first code gen iteration
             uploadId = "", // There is no code gen uploadId so far
             messenger = messenger,
+            token = null
         )
     }
 

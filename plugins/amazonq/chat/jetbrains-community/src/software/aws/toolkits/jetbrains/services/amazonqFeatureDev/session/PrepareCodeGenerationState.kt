@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
+import org.gradle.tooling.CancellationTokenSource
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
@@ -22,6 +23,7 @@ private val logger = getLogger<PrepareCodeGenerationState>()
 
 class PrepareCodeGenerationState(
     override var tabID: String,
+    override val token: CancellationTokenSource?,
     override var approach: String,
     private var config: SessionStateConfig,
     val filePaths: List<NewFileZipInfo>,
@@ -71,7 +73,8 @@ class PrepareCodeGenerationState(
                 uploadId = this.uploadId,
                 currentIteration = this.currentIteration,
                 repositorySize = zipFileLength.toDouble(),
-                messenger = messenger
+                messenger = messenger,
+                token = this.token
             )
         } catch (e: Exception) {
             result = Result.Failed
