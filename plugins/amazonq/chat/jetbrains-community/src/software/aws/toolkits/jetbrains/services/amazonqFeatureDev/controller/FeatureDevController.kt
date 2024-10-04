@@ -36,6 +36,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevExce
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ModifySourceFolderErrorReason
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.createUserFacingErrorMessage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.denyListedErrors
@@ -364,6 +365,7 @@ class FeatureDevController(
 
         messenger.sendAnswer(tabId = tabId, messageType = FeatureDevMessageType.Answer, message = message("amazonqFeatureDev.chat_message.ask_for_new_task"))
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.new_plan"))
+        messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = true)
     }
 
     private suspend fun closeSession(tabId: String) {
@@ -431,6 +433,15 @@ class FeatureDevController(
                         )
                     ),
                 )
+            }
+            is NoChangeRequiredException -> {
+                messenger.sendAnswer(
+                    tabId = tabId,
+                    message = message("amazonqFeatureDev.exception.no_change_required_exception"),
+                    messageType = FeatureDevMessageType.Answer,
+                    canBeVoted = true
+                )
+                return this.newTask(message)
             }
             is ZipFileError -> {
                 messenger.sendError(

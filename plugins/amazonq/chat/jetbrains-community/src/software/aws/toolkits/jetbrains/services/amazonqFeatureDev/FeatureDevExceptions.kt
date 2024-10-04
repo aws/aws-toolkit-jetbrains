@@ -12,6 +12,8 @@ class ContentLengthError(override val message: String, override val cause: Throw
 
 class ZipFileError(override val message: String, override val cause: Throwable?) : RuntimeException()
 
+class NoChangeRequiredException(override val message: String, override val cause: Throwable?) : RuntimeException()
+
 class CodeIterationLimitError(override val message: String, override val cause: Throwable?) : RuntimeException()
 
 class MonthlyConversationLimitError(override val message: String, override val cause: Throwable?) : RuntimeException()
@@ -21,6 +23,9 @@ internal fun featureDevServiceError(message: String?): Nothing =
 
 internal fun codeGenerationFailedError(): Nothing =
     throw FeatureDevException(message("amazonqFeatureDev.code_generation.failed_generation"))
+
+internal fun noChangeRequiredException(): Nothing =
+    throw FeatureDevException(message("amazonqFeatureDev.exception.no_change_required_exception"))
 
 internal fun uploadCodeError(): Nothing =
     throw FeatureDevException(message("amazonqFeatureDev.exception.upload_code"))

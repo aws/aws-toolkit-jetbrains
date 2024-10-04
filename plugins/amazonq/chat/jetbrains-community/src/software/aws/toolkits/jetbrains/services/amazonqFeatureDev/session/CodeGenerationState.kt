@@ -9,10 +9,12 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.codeGenerationFailedError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.featureDevServiceError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendUpdatePlaceholder
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.noChangeRequiredException
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
@@ -159,7 +161,12 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String, m
                     ) -> featureDevServiceError(message("amazonqFeatureDev.exception.prompt_refusal"))
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "EmptyPatch"
-                    ) -> featureDevServiceError(message("amazonqFeatureDev.exception.guardrails"))
+                    ) -> {
+                        if (codeGenerationResultState.codeGenerationStatusDetail()?.contains("NO_CHANGE_REQUIRED")!!) {
+                            noChangeRequiredException()
+                        }
+                        featureDevServiceError(message("amazonqFeatureDev.exception.guardrails"))
+                    }
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "Throttling"
                     ) -> featureDevServiceError(message("amazonqFeatureDev.exception.throttling"))
