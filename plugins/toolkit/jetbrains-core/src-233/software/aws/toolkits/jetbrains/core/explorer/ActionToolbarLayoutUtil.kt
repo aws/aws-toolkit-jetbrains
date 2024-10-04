@@ -1,0 +1,11 @@
+// Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+package software.aws.toolkits.jetbrains.core.explorer
+
+import com.intellij.openapi.actionSystem.ActionToolbar
+
+object ActionToolbarLayoutUtil {
+    fun setToolbarLayoutPolicy(toolbar: ActionToolbar) {
+        toolbar.layoutPolicy = ActionToolbar.NOWRAP_LAYOUT_POLICY
+    }
+}
