@@ -76,7 +76,7 @@ export class QuickActionHandler {
         // Add new tab
         let affectedTabId: string | undefined = tabID
         if (this.tabsStorage.getTab(affectedTabId)?.type !== 'unknown') {
-            affectedTabId = this.mynahUI.updateStore('', {cancelButtonWhenLoading: false})
+            affectedTabId = this.mynahUI.updateStore('', {})
         }
         if (affectedTabId === undefined) {
             this.mynahUI.notify({
@@ -94,7 +94,6 @@ export class QuickActionHandler {
                 promptInputDisabledState: true,
                 promptInputPlaceholder: 'Open a new tab to chat with Q.',
                 loadingChat: true,
-                cancelButtonWhenLoading: false,
             })
 
             this.connector.onTabAdd(affectedTabId)

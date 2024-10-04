@@ -35,7 +35,6 @@ export class TextMessageHandler {
 
         this.mynahUI.updateStore(tabID, {
             loadingChat: true,
-            cancelButtonWhenLoading: false,
             promptInputDisabledState: true,
         })
 
