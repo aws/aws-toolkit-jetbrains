@@ -351,7 +351,7 @@ class FeatureDevController(
         }
     }
 
-    private suspend fun newTask(tabId: String) {
+    private suspend fun newTask(tabId: String, isException: Boolean? = false) {
         val session = getSessionInfo(tabId)
         val sessionLatency = System.currentTimeMillis() - session.sessionStartTime
         AmazonqTelemetry.endChat(
@@ -362,7 +362,7 @@ class FeatureDevController(
         chatSessionStorage.deleteSession(tabId)
 
         newTabOpened(tabId)
-
+        if (isException !== null && isException == true) messenger.sendAnswer(tabId = tabId, messageType = FeatureDevMessageType.Answer, message = message("amazonqFeatureDev.chat_message.ask_for_new_task"))
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.new_plan"))
         messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = true)
     }
@@ -440,7 +440,7 @@ class FeatureDevController(
                     messageType = FeatureDevMessageType.Answer,
                     canBeVoted = true
                 )
-                return this.newTask(message)
+                return this.newTask(message, true)
             }
             is ZipFileError -> {
                 messenger.sendError(
