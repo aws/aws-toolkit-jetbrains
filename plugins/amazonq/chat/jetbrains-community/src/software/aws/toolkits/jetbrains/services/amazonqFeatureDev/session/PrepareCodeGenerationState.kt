@@ -17,6 +17,7 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.AmazonqUploadIntent
 import software.aws.toolkits.telemetry.Result
+import java.util.UUID
 
 private val logger = getLogger<PrepareCodeGenerationState>()
 
@@ -51,16 +52,18 @@ class PrepareCodeGenerationState(
             zipFileLength = repoZipResult.contentLength
             val fileToUpload = repoZipResult.payload
 
+            val uploadId = UUID.randomUUID();
             val uploadUrlResponse = config.featureDevService.createUploadUrl(
                 config.conversationId,
                 zipFileChecksum,
-                zipFileLength
+                zipFileLength,
+                uploadId
             )
 
             uploadArtifactToS3(uploadUrlResponse.uploadUrl(), fileToUpload, zipFileChecksum, zipFileLength, uploadUrlResponse.kmsKeyArn())
             deleteUploadArtifact(fileToUpload)
 
-            this.uploadId = uploadUrlResponse.uploadId()
+            this.uploadId = uploadId.toString()
             messenger.sendAnswerPart(tabId = this.tabID, message = message("amazonqFeatureDev.placeholder.context_gathering_complete"))
             messenger.sendUpdatePlaceholder(tabId = this.tabID, newPlaceholder = message("amazonqFeatureDev.placeholder.context_gathering_complete"))
             nextState = CodeGenerationState(

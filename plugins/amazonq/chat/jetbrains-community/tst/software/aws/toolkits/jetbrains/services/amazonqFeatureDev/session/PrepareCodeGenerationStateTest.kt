@@ -66,7 +66,7 @@ class PrepareCodeGenerationStateTest : FeatureDevTestBase() {
         every { deleteUploadArtifact(any()) } just runs
 
         every { featureDevService.getTaskAssistCodeGeneration(any(), any()) } returns exampleCompleteGetTaskAssistCodeGenerationResponse
-        every { featureDevService.startTaskAssistCodeGeneration(any(), any(), any()) } returns exampleStartTaskAssistConversationResponse
+        every { featureDevService.startTaskAssistCodeGeneration(any(), any(), any(), any(), any()) } returns exampleStartTaskAssistConversationResponse
         coEvery { featureDevService.exportTaskAssistArchiveResult(any()) } returns exampleExportTaskAssistResultArchiveResponse
 
         mockkStatic(MessagePublisher::sendAnswerPart)
@@ -85,7 +85,7 @@ class PrepareCodeGenerationStateTest : FeatureDevTestBase() {
         val action = SessionStateAction("test-task", userMessage)
 
         whenever(repoContext.getProjectZip()).thenReturn(repoZipResult)
-        every { featureDevService.createUploadUrl(any(), any(), any()) } returns exampleCreateUploadUrlResponse
+        every { featureDevService.createUploadUrl(any(), any(), any(), any()) } returns exampleCreateUploadUrlResponse
 
         runTest {
             val actual = prepareCodeGenerationState.interact(action)
@@ -94,6 +94,6 @@ class PrepareCodeGenerationStateTest : FeatureDevTestBase() {
         }
         assertThat(prepareCodeGenerationState.phase).isEqualTo(SessionStatePhase.CODEGEN)
         verify(repoContext, times(1)).getProjectZip()
-        io.mockk.verify(exactly = 1) { featureDevService.createUploadUrl(testConversationId, testChecksumSha, testContentLength) }
+        io.mockk.verify(exactly = 1) { featureDevService.createUploadUrl(testConversationId, testChecksumSha, testContentLength, uploadId) }
     }
 }

@@ -42,6 +42,7 @@ import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRul
 import software.aws.toolkits.jetbrains.utils.rules.addModule
 import java.io.File
 import java.time.Instant
+import java.util.UUID
 
 open class FeatureDevTestBase(
     @Rule @JvmField
@@ -59,6 +60,8 @@ open class FeatureDevTestBase(
     internal val testRequestId = "test_aws_request_id"
     internal val testConversationId = "1234"
     internal val userMessage = "test-user-message"
+    internal val codeGenerationId = UUID.randomUUID()
+    internal val currentCodeGenerationId = UUID.randomUUID()
     internal val testUploadId = "5678"
     internal val testRepositorySize = 20.0 // Picked a random size
     internal val testCodeGenerationId = "1234"
@@ -69,6 +72,7 @@ open class FeatureDevTestBase(
     internal val testReferences = listOf(CodeReferenceGenerated())
     internal val testChecksumSha = "test-sha"
     internal val testContentLength: Long = 40
+    internal val uploadId = UUID.randomUUID()
 
     internal val exampleSendTelemetryEventResponse = SendTelemetryEventResponse.builder()
         .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
