@@ -117,7 +117,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
             AllIcons.General.BalloonWarning
         } else if (!isQConnected(project)) {
             AllIcons.RunConfigurations.TestState.Run
-        } else if (CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
+        } else if (CodeWhispererInvocationStatus.getInstance().hasExistingServiceInvocation()) {
             // AnimatedIcon can't serialize over remote host
             if (!AppMode.isRemoteDevHost()) {
                 AnimatedIcon.Default()
