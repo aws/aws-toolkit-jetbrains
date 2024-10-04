@@ -67,7 +67,7 @@ class AwsToolkitExplorerToolWindow(
                 val actionToolbar = ActionManager.getInstance().createActionToolbar(ActionPlaces.TOOLBAR, group, true).apply {
                     setTargetComponent(this@AwsToolkitExplorerToolWindow)
                 }
-                setToolbarLayoutPolicy(actionToolbar)
+                setToolbarLayout(actionToolbar)
                 addToCenter(actionToolbar.component)
 
                 val actionManager = ActionManager.getInstance()
