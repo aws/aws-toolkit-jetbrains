@@ -25,7 +25,7 @@ internal fun codeGenerationFailedError(): Nothing =
     throw FeatureDevException(message("amazonqFeatureDev.code_generation.failed_generation"))
 
 internal fun noChangeRequiredException(): Nothing =
-    throw FeatureDevException(message("amazonqFeatureDev.exception.no_change_required_exception"))
+    throw NoChangeRequiredException(message("amazonqFeatureDev.exception.no_change_required_exception"), cause = null)
 
 internal fun uploadCodeError(): Nothing =
     throw FeatureDevException(message("amazonqFeatureDev.exception.upload_code"))

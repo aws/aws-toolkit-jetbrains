@@ -437,7 +437,7 @@ class FeatureDevController(
             is NoChangeRequiredException -> {
                 messenger.sendAnswer(
                     tabId = tabId,
-                    message = message("amazonqFeatureDev.exception.no_change_required_exception"),
+                    message = err.message,
                     messageType = FeatureDevMessageType.Answer,
                     canBeVoted = true
                 )
