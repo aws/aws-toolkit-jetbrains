@@ -62,10 +62,14 @@ class AwsToolkitExplorerToolWindow(
             val content = BorderLayoutPanel()
             setContent(content)
             val group = CredsComboBoxActionGroup(project)
-            val toolWindow = this
 
             toolbar = BorderLayoutPanel().apply {
-                addToCenter(ConnectionActionToolbarBuilder.createToolbar(toolWindow, group))
+                val actionToolbar = ActionManager.getInstance().createActionToolbar(ActionPlaces.TOOLBAR, group, true).apply {
+                    setTargetComponent(this@AwsToolkitExplorerToolWindow)
+                }
+                ActionToolbarLayoutUtil.setToolbarLayoutPolicy(actionToolbar)
+                addToCenter(actionToolbar.component)
+
                 val actionManager = ActionManager.getInstance()
                 val rightActionGroup = DefaultActionGroup(
                     actionManager.getAction("aws.toolkit.toolwindow.credentials.rightGroup.more"),
