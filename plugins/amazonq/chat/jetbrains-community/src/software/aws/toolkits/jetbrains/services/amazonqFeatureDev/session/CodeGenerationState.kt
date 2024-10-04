@@ -9,7 +9,6 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.codeGenerationFailedError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.featureDevServiceError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
@@ -31,7 +30,7 @@ class CodeGenerationState(
     val repositorySize: Double,
     val messenger: MessagePublisher,
     var codeGenerationRemainingIterationCount: Int? = null,
-    var codeGenerationTotalIterationCount: Int? = null
+    var codeGenerationTotalIterationCount: Int? = null,
 ) : SessionState {
     override val phase = SessionStatePhase.CODEGEN
 
@@ -158,7 +157,8 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String, m
                     -> featureDevServiceError(message("amazonqFeatureDev.exception.prompt_refusal"))
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "EmptyPatch"
-                    ) -> {
+                    ),
+                    -> {
                         if (codeGenerationResultState.codeGenerationStatusDetail()?.contains("NO_CHANGE_REQUIRED")!!) {
                             noChangeRequiredException()
                         }
