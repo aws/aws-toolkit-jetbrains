@@ -79,7 +79,7 @@ class DatagripUtilsTest {
 
     private fun buildConnection(
         credentials: String? = null,
-        region: String? = null
+        region: String? = null,
     ): DatabaseConnectionInterceptor.ProtoConnection = mock {
         on { connectionPoint } doAnswer {
             mock {

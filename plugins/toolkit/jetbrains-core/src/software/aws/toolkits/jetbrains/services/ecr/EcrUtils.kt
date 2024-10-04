@@ -31,7 +31,7 @@ typealias DockerRunConfiguration = DeployToServerRunConfiguration<DockerCloudCon
 
 data class EcrLogin(
     val username: String,
-    val password: String
+    val password: String,
 ) {
     override fun toString() = "EcrLogin@${hashCode()}"
 }
@@ -41,13 +41,13 @@ data class ImageEcrPushRequest(
     val dockerRuntimeFacade: DockerRuntimeFacade,
     val localImageId: String,
     val remoteRepo: Repository,
-    val remoteTag: String
+    val remoteTag: String,
 ) : EcrPushRequest()
 
 data class DockerfileEcrPushRequest(
     val dockerBuildConfiguration: DockerRunConfiguration,
     val remoteRepo: Repository,
-    val remoteTag: String
+    val remoteTag: String,
 ) : EcrPushRequest()
 
 object EcrUtils {
@@ -84,7 +84,7 @@ object EcrUtils {
     private suspend fun buildAndPushDockerfile(
         project: Project,
         ecrLogin: EcrLogin,
-        pushRequest: DockerfileEcrPushRequest
+        pushRequest: DockerfileEcrPushRequest,
     ): CompletableFuture<Unit> {
         val (runConfiguration, remoteRepo, remoteTag) = pushRequest
         // use connection specified in run configuration

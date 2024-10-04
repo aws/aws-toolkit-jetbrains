@@ -33,7 +33,7 @@ fun AwsCredentials.mergeWithExistingEnvironmentVariables(
     existingKeys: Collection<String>,
     removeKey: (String) -> Unit,
     putValues: (Map<String, String>) -> Unit,
-    replace: Boolean = false
+    replace: Boolean = false,
 ) {
     val envVars = toEnvironmentVariables()
     if (replace || existingKeys.none { it in CREDENTIAL_ENVIRONMENT_VARIABLES }) {

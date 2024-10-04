@@ -25,7 +25,7 @@ abstract class ParallelStep : Step() {
     final override fun execute(
         context: Context,
         messageEmitter: StepEmitter,
-        ignoreCancellation: Boolean
+        ignoreCancellation: Boolean,
     ) {
         buildChildSteps(context).forEach {
             val stepFuture = CompletableFuture<Unit>()

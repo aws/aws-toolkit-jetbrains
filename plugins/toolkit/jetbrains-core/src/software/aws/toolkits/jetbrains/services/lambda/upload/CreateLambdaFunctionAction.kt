@@ -21,7 +21,7 @@ import software.aws.toolkits.resources.message
 class CreateLambdaFunctionAction(
     private val handlerName: String?,
     private val elementPointer: SmartPsiElementPointer<PsiElement>?,
-    private val lambdaHandlerResolver: LambdaHandlerResolver?
+    private val lambdaHandlerResolver: LambdaHandlerResolver?,
 ) : AnAction(message("lambda.create_new"), null, AwsIcons.Actions.LAMBDA_FUNCTION_NEW), UpdateInBackground {
 
     @Suppress("unused") // Used by ActionManager in plugin.xml

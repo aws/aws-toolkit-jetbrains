@@ -54,7 +54,7 @@ class SamProjectGenerator :
 
     override fun createStep(
         projectGenerator: DirectoryProjectGenerator<SamNewProjectSettings>?,
-        callback: AbstractNewProjectStep.AbstractCallback<SamNewProjectSettings>?
+        callback: AbstractNewProjectStep.AbstractCallback<SamNewProjectSettings>?,
     ): AbstractActionWithPanel = SamProjectRuntimeSelectionStep(this)
 
     // entry point for the Wizard, both light and heavy IDEs eventually hit this spot through our shims
@@ -62,7 +62,7 @@ class SamProjectGenerator :
         project: Project,
         baseDir: VirtualFile,
         settings: SamNewProjectSettings,
-        module: Module
+        module: Module,
     ) {
         val rootModel = ModuleRootManager.getInstance(module).modifiableModel
         builder.contentEntryPath = baseDir.path

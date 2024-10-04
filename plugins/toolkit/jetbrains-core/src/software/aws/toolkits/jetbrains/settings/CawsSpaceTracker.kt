@@ -30,7 +30,7 @@ class CawsSpaceTracker : PersistentStateComponent<CawsSpaceState> {
 }
 
 data class CawsSpaceState(
-    var lastSpaceName: String? = null
+    var lastSpaceName: String? = null,
 )
 
 interface CawsSpaceSelectionChange {

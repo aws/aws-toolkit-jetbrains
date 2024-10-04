@@ -29,12 +29,12 @@ data class Chunk(
     val content: String,
     val path: String,
     val nextChunk: String = "",
-    val score: Double = 0.0
+    val score: Double = 0.0,
 )
 
 data class ListUtgCandidateResult(
     val vfile: VirtualFile?,
-    val strategy: UtgStrategy
+    val strategy: UtgStrategy,
 )
 
 data class CaretContext(val leftFileContext: String, val rightFileContext: String, val leftContextOnCurrentLine: String = "")
@@ -84,7 +84,7 @@ data class RecommendationContext(
     val details: List<DetailContext>,
     val userInputOriginal: String,
     val userInputSinceInvocation: String,
-    val position: VisualPosition
+    val position: VisualPosition,
 )
 
 data class DetailContext(
@@ -104,13 +104,13 @@ data class SessionContext(
     val seen: MutableSet<Int> = mutableSetOf(),
     val isFirstTimeShowingPopup: Boolean = true,
     var toBeRemovedHighlighter: RangeHighlighter? = null,
-    var insertEndOffset: Int = -1
+    var insertEndOffset: Int = -1,
 )
 
 data class RecommendationChunk(
     val text: String,
     val offset: Int,
-    val inlayOffset: Int
+    val inlayOffset: Int,
 )
 
 data class CaretPosition(val offset: Int, val line: Int)
@@ -124,7 +124,7 @@ data class InvocationContext(
     val requestContext: RequestContext,
     val responseContext: ResponseContext,
     val recommendationContext: RecommendationContext,
-    val popup: JBPopup
+    val popup: JBPopup,
 ) : Disposable {
     override fun dispose() {}
 }
@@ -133,7 +133,7 @@ data class WorkerContext(
     val requestContext: RequestContext,
     val responseContext: ResponseContext,
     val response: GenerateCompletionsResponse,
-    val popup: JBPopup
+    val popup: JBPopup,
 )
 
 data class CodeScanTelemetryEvent(
@@ -142,12 +142,12 @@ data class CodeScanTelemetryEvent(
     val result: Result,
     val totalProjectSizeInBytes: Double?,
     val connection: ToolkitConnection?,
-    val codeAnalysisScope: CodeWhispererConstants.CodeAnalysisScope
+    val codeAnalysisScope: CodeWhispererConstants.CodeAnalysisScope,
 )
 
 data class CodeScanServiceInvocationContext(
     val artifactsUploadDuration: Long,
-    val serviceInvocationDuration: Long
+    val serviceInvocationDuration: Long,
 )
 
 data class CodeScanResponseContext(
@@ -156,7 +156,7 @@ data class CodeScanResponseContext(
     val codeScanJobId: String? = null,
     val codeScanTotalIssues: Int = 0,
     val codeScanIssuesWithFixes: Int = 0,
-    val reason: String? = null
+    val reason: String? = null,
 )
 
 data class LatencyContext(
@@ -177,7 +177,7 @@ data class LatencyContext(
     var paginationAllCompletionsStart: Long = 0L,
     var paginationAllCompletionsEnd: Long = 0L,
 
-    var firstRequestId: String = ""
+    var firstRequestId: String = "",
 ) {
     fun getCodeWhispererEndToEndLatency() = TimeUnit.NANOSECONDS.toMillis(
         codewhispererEndToEndEnd - codewhispererEndToEndStart
@@ -202,5 +202,5 @@ data class LatencyContext(
 
 data class TryExampleRowContext(
     val description: String,
-    val filename: String?
+    val filename: String?,
 )

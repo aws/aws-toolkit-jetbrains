@@ -65,7 +65,7 @@ private fun notifyCustomizationIsSelected(project: Project, customizationUiItem:
  */
 class CodeWhispererCustomizationDialog(
     private val project: Project,
-    private val myCustomizations: List<CustomizationUiItem>? = null
+    private val myCustomizations: List<CustomizationUiItem>? = null,
 ) : DialogWrapper(project), Disposable {
     private data class Modal(
         var selectedOption: RadioButtonOption,
@@ -74,7 +74,7 @@ class CodeWhispererCustomizationDialog(
 
     enum class RadioButtonOption {
         Default,
-        Customization
+        Customization,
     }
 
     private var modal: Modal
@@ -248,7 +248,7 @@ private object CustomizationRenderer : ColoredListCellRenderer<CustomizationUiIt
         value: CustomizationUiItem?,
         index: Int,
         selected: Boolean,
-        hasFocus: Boolean
+        hasFocus: Boolean,
     ) {
         value?.let {
             append(it.customization.name, SimpleTextAttributes.REGULAR_ATTRIBUTES)

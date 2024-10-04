@@ -62,14 +62,14 @@ data class SyncServerlessApplicationSettings(
     val parameters: Map<String, String>,
     val tags: Map<String, String>,
     val useContainer: Boolean,
-    val capabilities: List<CreateCapabilities>
+    val capabilities: List<CreateCapabilities>,
 )
 
 class SyncServerlessApplicationDialog(
     private val project: Project,
     private val templateFile: VirtualFile,
     private val activeStacks: List<StackSummary>,
-    private val loadResourcesOnCreate: Boolean = true
+    private val loadResourcesOnCreate: Boolean = true,
 ) : DialogWrapper(project) {
     var useContainer: Boolean = false
     var newStackName: String = ""
@@ -383,7 +383,7 @@ class SyncServerlessApplicationDialog(
         bucket: String? = null,
         forceEcrRepo: Boolean = false,
         ecrRepo: String? = null,
-        useContainer: Boolean? = null
+        useContainer: Boolean? = null,
     ) {
         if (stacks != null) {
             stackSelector.model = MutableCollectionComboBoxModel(stacks)
@@ -450,6 +450,6 @@ class SyncServerlessApplicationDialog(
 
     enum class SyncType {
         CREATE,
-        UPDATE
+        UPDATE,
     }
 }

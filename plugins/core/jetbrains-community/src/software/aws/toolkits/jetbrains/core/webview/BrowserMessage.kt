@@ -42,13 +42,13 @@ sealed interface BrowserMessage {
     data class LoginIdC(
         val url: String,
         val region: String,
-        val feature: String
+        val feature: String,
     ) : BrowserMessage
 
     data class LoginIAM(
         val profileName: String,
         val accessKey: String,
-        val secretKey: String
+        val secretKey: String,
     ) : BrowserMessage
 
     object CancelLogin : BrowserMessage

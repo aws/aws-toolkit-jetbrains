@@ -30,7 +30,7 @@ import javax.swing.JComponent
 open class CawsLoginOverlay(
     private val project: Project?,
     private val disposable: Disposable,
-    private val drawPostLoginContent: (CawsLoginOverlay.(ClientConnectionSettings<*>) -> JComponent)
+    private val drawPostLoginContent: (CawsLoginOverlay.(ClientConnectionSettings<*>) -> JComponent),
 ) :
     NonOpaquePanel(VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, true)) {
 

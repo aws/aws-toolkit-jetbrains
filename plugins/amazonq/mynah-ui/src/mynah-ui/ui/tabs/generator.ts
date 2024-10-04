@@ -72,7 +72,7 @@ I can help you upgrade your Java 8 and 11 codebases to Java 17.
         return {
             tabTitle: taskName ?? this.tabTitle.get(tabType),
             promptInputInfo:
-                'Use of Amazon Q is subject to the [AWS Responsible AI Policy](https://aws.amazon.com/machine-learning/responsible-ai/policy/).',
+                'Amazon Q Developer uses generative AI. You may need to verify responses. See the [AWS Responsible AI Policy](https://aws.amazon.com/machine-learning/responsible-ai/policy/).',
             quickActionCommands: this.quickActionsGenerator.generateForTab(tabType),
             promptInputPlaceholder: this.tabInputPlaceholder.get(tabType),
             contextCommands: [

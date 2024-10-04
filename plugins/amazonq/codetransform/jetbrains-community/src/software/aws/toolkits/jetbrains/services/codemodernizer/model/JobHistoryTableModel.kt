@@ -7,7 +7,7 @@ import javax.swing.table.AbstractTableModel
 
 class JobHistoryTableModel(
     private val data: Array<JobHistoryItem>,
-    private val columnNames: Array<String>
+    private val columnNames: Array<String>,
 ) : AbstractTableModel() {
     override fun getRowCount(): Int = data.size
 

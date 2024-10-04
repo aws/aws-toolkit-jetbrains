@@ -58,6 +58,6 @@ class DynamicTableView<T>(private vararg val fields: Field<T>) : View {
     data class Field<T>(
         val readableName: String,
         val renderer: TableCellRenderer? = null,
-        val getData: (T) -> Any?
+        val getData: (T) -> Any?,
     )
 }

@@ -291,7 +291,7 @@ open class S3TreeContinuationNode<T>(
     bucket: S3VirtualBucket,
     private val parentNode: S3LazyLoadParentNode<T>,
     key: String,
-    private val continuationMarker: T
+    private val continuationMarker: T,
 ) : S3TreeNode(bucket, parentNode, key) {
     init {
         icon = AllIcons.Nodes.EmptyNode
@@ -310,7 +310,7 @@ class S3TreeErrorContinuationNode<T>(
     bucket: S3VirtualBucket,
     parentNode: S3LazyLoadParentNode<T>,
     key: String,
-    continuationMarker: T
+    continuationMarker: T,
 ) : S3TreeContinuationNode<T>(bucket, parentNode, key, continuationMarker) {
     init {
         icon = AllIcons.General.Error
@@ -321,7 +321,7 @@ class S3TreeErrorContinuationNode<T>(
 
 class S3TreeErrorNode(
     bucket: S3VirtualBucket,
-    parentNode: S3LazyLoadParentNode<*>
+    parentNode: S3LazyLoadParentNode<*>,
 ) : S3TreeNode(bucket, parentNode, "${parentNode.key}error") {
     init {
         icon = AllIcons.General.Error
@@ -332,7 +332,7 @@ class S3TreeErrorNode(
 
 class S3TreeEmptyNode(
     bucket: S3VirtualBucket,
-    parentNode: S3LazyLoadParentNode<*>
+    parentNode: S3LazyLoadParentNode<*>,
 ) : S3TreeNode(bucket, parentNode, "${parentNode.key}empty") {
     override fun displayName(): String = message("explorer.empty_node")
     override fun update(presentation: PresentationData) {

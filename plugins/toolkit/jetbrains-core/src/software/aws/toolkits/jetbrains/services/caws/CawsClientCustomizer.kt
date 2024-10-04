@@ -27,7 +27,7 @@ class CawsClientCustomizer : ToolkitClientCustomizer {
         tokenProvider: SdkTokenProvider?,
         regionId: String,
         builder: AwsClientBuilder<*, *>,
-        clientOverrideConfiguration: ClientOverrideConfiguration.Builder
+        clientOverrideConfiguration: ClientOverrideConfiguration.Builder,
     ) {
         if (builder is CodeCatalystClientBuilder) {
             val endpointOverride = Registry.get("aws.codecatalyst.endpoint").asString().nullize(true)

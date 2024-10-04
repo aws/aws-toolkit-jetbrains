@@ -78,7 +78,7 @@ import java.util.UUID
 class FeatureDevController(
     private val context: AmazonQAppInitContext,
     private val chatSessionStorage: ChatSessionStorage,
-    private val authController: AuthController = AuthController()
+    private val authController: AuthController = AuthController(),
 ) : InboundAppMessagesHandler {
 
     val messenger = context.messagesFromAppToUi

@@ -58,6 +58,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
         UserIntent.CITE_SOURCES -> CwsprChatUserIntent.CiteSources
         UserIntent.EXPLAIN_LINE_BY_LINE -> CwsprChatUserIntent.ExplainLineByLine
         UserIntent.EXPLAIN_CODE_SELECTION -> CwsprChatUserIntent.ExplainCodeSelection
+        UserIntent.GENERATE_UNIT_TESTS -> CwsprChatUserIntent.GenerateUnitTests
         UserIntent.UNKNOWN_TO_SDK_VERSION -> CwsprChatUserIntent.Unknown
     }
 
@@ -419,7 +420,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
             isSuccess: Boolean,
             memoryUsage: Int? = 0,
             cpuUsage: Int? = 0,
-            startUrl: String? = null
+            startUrl: String? = null,
         ) {
             AmazonqTelemetry.indexWorkspace(
                 project = null,

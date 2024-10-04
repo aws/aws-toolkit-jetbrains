@@ -41,5 +41,5 @@ class FunctionOptions {
 
 data class PersistedPathMapping(
     var local: String? = null,
-    var remote: String? = null
+    var remote: String? = null,
 )

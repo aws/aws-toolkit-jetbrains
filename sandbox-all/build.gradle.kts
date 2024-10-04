@@ -7,7 +7,7 @@ import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
 plugins {
     id("toolkit-intellij-plugin")
-    id("org.jetbrains.intellij.platform")
+    id("toolkit-publish-root-conventions")
 }
 
 toolkitIntelliJ.apply {
@@ -31,12 +31,6 @@ intellijPlatform {
 
 dependencies {
     intellijPlatform {
-        val type = toolkitIntelliJ.ideFlavor.map { IntelliJPlatformType.fromCode(it.toString()) }
-        val version = toolkitIntelliJ.version()
-
-        create(type, version, useInstaller = false)
-        jetbrainsRuntime()
-
         localPlugin(project(":plugin-core"))
         localPlugin(project(":plugin-amazonq"))
         localPlugin(project(":plugin-toolkit:intellij-standalone"))

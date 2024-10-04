@@ -19,7 +19,7 @@ object ExecutableCommon {
         path: String,
         executableName: String,
         executableType: ExecutableType<*>? = null,
-        clientMetadata: ClientMetadata = ClientMetadata.getDefault()
+        clientMetadata: ClientMetadata = ClientMetadata.getDefault(),
     ): GeneralCommandLine {
         val sanitizedPath = path.nullize(true)
             ?: throw RuntimeException(message("executableCommon.cli_not_configured", executableName))
@@ -78,7 +78,7 @@ object ExecutableCommon {
     fun checkSemVerVersionForParallelValidVersions(
         version: SemVer,
         versionRange: List<ExecutableVersionRange>,
-        executableName: String
+        executableName: String,
     ) {
         versionRange.forEach {
             if (it.max > version && version >= it.min) {

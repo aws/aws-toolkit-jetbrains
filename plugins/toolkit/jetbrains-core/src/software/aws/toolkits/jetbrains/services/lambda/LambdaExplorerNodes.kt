@@ -25,7 +25,7 @@ class LambdaServiceNode(project: Project, service: AwsExplorerServiceNode) :
 
 open class LambdaFunctionNode(
     project: Project,
-    function: LambdaFunction
+    function: LambdaFunction,
 ) : AwsExplorerResourceNode<LambdaFunction>(
     project,
     LambdaClient.SERVICE_NAME,
