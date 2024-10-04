@@ -70,14 +70,9 @@ class CodeWhispererPopupComponents {
             POPUP_DIM_HEX,
             run {
                 // TODO: Doesn't reflect dynamically if users change but didn't restart IDE
-                val shortcut = ActionManager.getInstance().getAction("codewhisperer.inline.navigate.next")
-                    .shortcutSet.shortcuts.first()
-                val keyStroke = (shortcut as KeyboardShortcut).firstKeyStroke
-                if (SystemInfo.isMac) {
-                    MacKeymapUtil.getKeyStrokeText(keyStroke, " ", true)
-                } else {
-                    KeymapUtil.getKeystrokeText(keyStroke)
-                }
+                KeymapUtil.getFirstKeyboardShortcutText(
+                    ActionManager.getInstance().getAction("codewhisperer.inline.navigate.next")
+                )
             }
         )
     ).apply {

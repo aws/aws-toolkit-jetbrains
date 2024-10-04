@@ -95,6 +95,7 @@ class CodeWhispererConfigurable(private val project: Project) :
 
             row {
                 link("Configure inline suggestion keybindings") { e ->
+                    // TODO: user needs feedback if these are null
                     val settings = DataManager.getInstance().getDataContext(e.source as ActionLink).getData(Settings.KEY) ?: return@link
                     val configurable: Configurable = settings.find("preferences.keymap") ?: return@link
 
@@ -138,7 +139,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                             }
                         )
                         enabled(invoke)
-                    }.comment(message("aws.settings.codewhisperer.project_context_index_thread.tooltip"), maxLineLength = 47)
+                    }.comment(message("aws.settings.codewhisperer.project_context_index_thread.tooltip"))
             }
 
             row(message("aws.settings.codewhisperer.project_context_index_max_size")) {
