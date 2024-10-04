@@ -14,12 +14,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 
 class CodeWhispererTypedHandler : TypedHandlerDelegate() {
-    private var triggerOnIdle: Job? = null
     override fun charTyped(c: Char, project: Project, editor: Editor, psiFiles: PsiFile): Result {
-        triggerOnIdle?.cancel()
-
-        if (shouldSkipInvokingBasedOnRightContext(editor)
-        ) {
+        if (shouldSkipInvokingBasedOnRightContext(editor)) {
             return Result.CONTINUE
         }
 

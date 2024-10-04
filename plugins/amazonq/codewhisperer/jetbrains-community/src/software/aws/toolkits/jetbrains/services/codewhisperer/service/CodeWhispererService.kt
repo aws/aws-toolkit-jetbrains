@@ -325,6 +325,9 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                                     cs,
                                     currentJobId
                                 )
+                                if (!ongoingRequests.contains(currentJobId)) {
+                                    cs.coroutineContext.cancel()
+                                }
                             }
                         }
                     }
