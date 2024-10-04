@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.core.explorer
 import com.intellij.openapi.actionSystem.ActionToolbar
 
 
-fun setToolbarLayout(toolbar: ActionToolbar) {
+fun setToolbarLayoutPolicy(toolbar: ActionToolbar) {
     toolbar.layoutPolicy = ActionToolbar.NOWRAP_LAYOUT_POLICY
 }
 
