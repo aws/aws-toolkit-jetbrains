@@ -38,14 +38,16 @@ import software.aws.toolkits.telemetry.ToolkitTelemetry
 class PluginUpdateManager : Disposable {
     private val alarm = Alarm(Alarm.ThreadToUse.SWING_THREAD, this)
 
+    fun isBeta() = AwsToolkit.PLUGINS_INFO[AwsPlugin.Q]?.descriptor?.version?.contains("beta") ?: false
+
     fun scheduleAutoUpdate() {
         if (alarm.isDisposed) return
         scheduleUpdateTask()
 
         val enabled = AwsSettings.getInstance().isAutoUpdateEnabled
-        LOG.debug { "AWS plugins checking for new updates. Auto update enabled: $enabled" }
+        LOG.debug { "AWS plugins checking for new updates. Auto update enabled: $enabled, isBeta: ${isBeta()}" }
 
-        if (!enabled) return
+        if (!enabled && !isBeta()) return
 
         runInEdt {
             ProgressManager.getInstance().run(object : Task.Backgroundable(

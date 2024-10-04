@@ -139,7 +139,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                             }
                         )
                         enabled(invoke)
-                    }.comment(message("aws.settings.codewhisperer.project_context_index_thread.tooltip"))
+                    }.comment(message("aws.settings.codewhisperer.project_context_index_thread.tooltip"), maxLineLength = 47)
             }
 
             row(message("aws.settings.codewhisperer.project_context_index_max_size")) {

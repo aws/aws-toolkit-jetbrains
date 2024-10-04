@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.service
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -26,6 +25,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmi
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.INVOCATION_DELAY
 import software.aws.toolkits.telemetry.CodewhispererAutomatedTriggerType
 import software.aws.toolkits.telemetry.CodewhispererPreviousSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
@@ -42,6 +42,8 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
 
     private var lastInvocationTime: Instant? = null
     private var lastInvocationLineNum: Int? = null
+    private var lastCharTypedTime: Instant? = null
+    private var lastTrigger: Job? = null
 
     init {
         scheduleReset()
@@ -55,9 +57,6 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
     fun tryInvokeAutoTrigger(editor: Editor, triggerType: CodeWhispererAutomatedTriggerType): Job? {
         // only needed for Classifier group, thus calculate it lazily
         val classifierResult: ClassifierResult by lazy { shouldTriggerClassifier(editor, triggerType.telemetryType) }
-        val language = runReadAction {
-            FileDocumentManager.getInstance().getFile(editor.document)?.programmingLanguage()
-        } ?: CodeWhispererUnknownLanguage.INSTANCE
 
         // we need classifier result for any type of triggering for classifier group for supported languages
         triggerType.calculationResult = classifierResult.calculatedResult
@@ -84,8 +83,12 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
         if (!CodeWhispererService.getInstance().canDoInvocation(editor, CodewhispererTriggerType.AutoTrigger)) {
             return null
         }
+        if (hasEnoughDelaySinceLastTrigger()) {
+            lastTrigger?.cancel()
+        }
 
         lastInvocationTime = Instant.now()
+        lastCharTypedTime = Instant.now()
         lastInvocationLineNum = runReadAction { editor.caretModel.visualPosition.line }
 
         val latencyContext = LatencyContext().apply {
@@ -95,31 +98,22 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
 
         val coroutineScope = applicationCoroutineScope()
 
-        return when (triggerType) {
-            is CodeWhispererAutomatedTriggerType.IdleTime -> run {
-                coroutineScope.launch {
-                    // TODO: potential race condition between hasExistingInvocation and entering edt
-                    // but in that case we will just return in performAutomatedTriggerAction
-                    while (!CodeWhispererInvocationStatus.getInstance().hasEnoughDelayToInvokeCodeWhisperer() ||
-                        CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()
-                    ) {
-                        if (!isActive) return@launch
-                        delay(CodeWhispererConstants.IDLE_TIME_CHECK_INTERVAL)
-                    }
-                    runInEdt {
-                        if (CodeWhispererInvocationStatus.getInstance().isPopupActive()) return@runInEdt
-                        performAutomatedTriggerAction(editor, CodeWhispererAutomatedTriggerType.IdleTime(), latencyContext)
-                    }
+        return run {
+            coroutineScope.launch(EDT) {
+                while (!hasEnoughDelaySinceLastTrigger()) {
+                    if (!isActive) return@launch
+                    delay(CodeWhispererConstants.IDLE_TIME_CHECK_INTERVAL)
                 }
-            }
 
-            else -> run {
-                coroutineScope.launch(EDT) {
-                    performAutomatedTriggerAction(editor, triggerType, latencyContext)
-                }
+                performAutomatedTriggerAction(editor, triggerType, latencyContext)
+            }.also {
+                lastTrigger = it
             }
         }
     }
+
+    private fun hasEnoughDelaySinceLastTrigger(): Boolean =
+        lastCharTypedTime == null || lastCharTypedTime?.plusMillis(INVOCATION_DELAY)?.isBefore(Instant.now()) == true
 
     private fun scheduleReset() {
         if (!alarm.isDisposed) {

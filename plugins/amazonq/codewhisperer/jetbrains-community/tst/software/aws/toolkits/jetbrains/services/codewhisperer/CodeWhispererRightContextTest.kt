@@ -21,8 +21,8 @@ class CodeWhispererRightContextTest : CodeWhispererTestBase() {
     fun `test recommendation equal to right context should not show recommendation`() {
         val rightContext = pythonResponse.completions()[0].content()
         setFileContext(pythonFileName, pythonTestLeftContext, rightContext)
-        withCodeWhispererServiceInvokedAndWait { states ->
-            val firstRecommendation = states.recommendationContext.details[0]
+        withCodeWhispererServiceInvokedAndWait {
+            val firstRecommendation = codewhispererService.getAllSuggestionsPreviewInfo()[0].detail
             assertThat(firstRecommendation.isDiscarded).isEqualTo(true)
         }
     }
@@ -31,12 +31,12 @@ class CodeWhispererRightContextTest : CodeWhispererTestBase() {
     fun `test right context resolution will remove reference span if reference is the same as right context`() {
         val rightContext = pythonResponse.completions()[0].content()
         setFileContext(pythonFileName, pythonTestLeftContext, rightContext)
-        withCodeWhispererServiceInvokedAndWait { states ->
-            val firstRecommendation = states.recommendationContext.details[0]
+        withCodeWhispererServiceInvokedAndWait { _ ->
+            val firstRecommendation = codewhispererService.getAllSuggestionsPreviewInfo()[0].detail
             assertThat(firstRecommendation.isDiscarded).isEqualTo(true)
-            val details = states.recommendationContext.details
-            details.forEach {
-                assertThat(it.reformatted.references().isEmpty())
+            val details = codewhispererService.getAllSuggestionsPreviewInfo().map { it.detail }
+            details.forEach { detail ->
+                assertThat(detail.reformatted.references().isEmpty())
             }
         }
     }
@@ -47,10 +47,9 @@ class CodeWhispererRightContextTest : CodeWhispererTestBase() {
         val lastNewLineIndex = firstRecommendationContent.lastIndexOf('\n')
         val rightContext = firstRecommendationContent.substring(lastNewLineIndex)
         setFileContext(pythonFileName, pythonTestLeftContext, rightContext)
-        withCodeWhispererServiceInvokedAndWait { states ->
-            val firstRecommendation = states.recommendationContext.details[0]
-            assertThat(firstRecommendation.isDiscarded).isEqualTo(false)
-            val firstDetail = states.recommendationContext.details[0]
+        withCodeWhispererServiceInvokedAndWait {
+            val firstDetail = codewhispererService.getAllSuggestionsPreviewInfo()[0].detail
+            assertThat(firstDetail.isDiscarded).isEqualTo(false)
             val span = firstDetail.reformatted.references()[0].recommendationContentSpan()
             assertThat(span.start()).isEqualTo(0)
             assertThat(span.end()).isEqualTo(lastNewLineIndex)
@@ -84,9 +83,8 @@ class CodeWhispererRightContextTest : CodeWhispererTestBase() {
         }
 
         withCodeWhispererServiceInvokedAndWait { states ->
-            val firstRecommendation = states.recommendationContext.details[0]
-            assertThat(firstRecommendation.isDiscarded).isEqualTo(false)
-            val firstDetail = states.recommendationContext.details[0]
+            val firstDetail = codewhispererService.getAllSuggestionsPreviewInfo()[0].detail
+            assertThat(firstDetail.isDiscarded).isEqualTo(false)
             val span = firstDetail.reformatted.references()[0].recommendationContentSpan()
             assertThat(span.start()).isEqualTo(0)
             assertThat(span.end()).isEqualTo(lastNewLineIndex)
@@ -101,10 +99,10 @@ class CodeWhispererRightContextTest : CodeWhispererTestBase() {
         val remaining = firstRecommendation.substring(0, remainingLength)
         val rightContext = pythonResponse.completions()[0].content().substring(remainingLength)
         setFileContext(pythonFileName, pythonTestLeftContext, rightContext)
-        withCodeWhispererServiceInvokedAndWait { states ->
-            assertThat(states.recommendationContext.details[0].reformatted.content()).isEqualTo(remaining)
+        withCodeWhispererServiceInvokedAndWait { session ->
+            assertThat(codewhispererService.getAllSuggestionsPreviewInfo()[0].detail.reformatted.content()).isEqualTo(remaining)
             popupManagerSpy.popupComponents.acceptButton.doClick()
-            assertThat(states.requestContext.editor.document.text).isEqualTo(pythonTestLeftContext + remaining + rightContext)
+            assertThat(session.editor.document.text).isEqualTo(pythonTestLeftContext + remaining + rightContext)
         }
     }
 
@@ -115,8 +113,8 @@ class CodeWhispererRightContextTest : CodeWhispererTestBase() {
         val remainingLength = Random.nextInt(newLineIndex, firstRecommendation.length)
         val rightContext = pythonResponse.completions()[0].content().substring(remainingLength)
         setFileContext(pythonFileName, pythonTestLeftContext, rightContext)
-        withCodeWhispererServiceInvokedAndWait { states ->
-            assertThat(states.recommendationContext.details[0].recommendation.content()).isEqualTo(firstRecommendation)
+        withCodeWhispererServiceInvokedAndWait {
+            assertThat(codewhispererService.getAllSuggestionsPreviewInfo()[0].detail.recommendation.content()).isEqualTo(firstRecommendation)
         }
     }
 
@@ -128,10 +126,10 @@ class CodeWhispererRightContextTest : CodeWhispererTestBase() {
         val remaining = firstRecommendation.substring(0, remainingLength)
         val rightContext = pythonResponse.completions()[0].content().substring(remainingLength) + "test"
         setFileContext(pythonFileName, pythonTestLeftContext, rightContext)
-        withCodeWhispererServiceInvokedAndWait { states ->
-            assertThat(states.recommendationContext.details[0].reformatted.content()).isEqualTo(remaining)
+        withCodeWhispererServiceInvokedAndWait { session ->
+            assertThat(codewhispererService.getAllSuggestionsPreviewInfo()[0].detail.reformatted.content()).isEqualTo(remaining)
             popupManagerSpy.popupComponents.acceptButton.doClick()
-            assertThat(states.requestContext.editor.document.text).isEqualTo(pythonTestLeftContext + remaining + rightContext)
+            assertThat(session.editor.document.text).isEqualTo(pythonTestLeftContext + remaining + rightContext)
         }
     }
 
@@ -142,8 +140,8 @@ class CodeWhispererRightContextTest : CodeWhispererTestBase() {
         val remainingLength = Random.nextInt(newLineIndex, firstRecommendation.length)
         val rightContext = pythonResponse.completions()[0].content().substring(remainingLength) + "test"
         setFileContext(pythonFileName, pythonTestLeftContext, rightContext)
-        withCodeWhispererServiceInvokedAndWait { states ->
-            assertThat(states.recommendationContext.details[0].recommendation.content()).isEqualTo(firstRecommendation)
+        withCodeWhispererServiceInvokedAndWait {
+            assertThat(codewhispererService.getAllSuggestionsPreviewInfo()[0].detail.recommendation.content()).isEqualTo(firstRecommendation)
         }
     }
 }

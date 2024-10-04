@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.VisualPosition
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.async
@@ -69,6 +70,9 @@ object CodeWhispererTestUtil {
     const val codeWhispererCodeScanActionId = "codewhisperer.toolbar.security.scan"
     const val testValidAccessToken = "test_valid_access_token"
     const val testNextToken = "test_next_token"
+    const val ACTION_KEY_ACCEPT = "codewhisperer.inline.accept"
+    const val ACTION_KEY_NAV_PREV = "codewhisperer.inline.navigate.previous"
+    const val ACTION_KEY_NAV_NEXT = "codewhisperer.inline.navigate.next"
     private val testReferenceInfoPair = listOf(
         Pair("MIT", "testRepo1"),
         Pair("Apache-2.0", "testRepo2"),
@@ -211,6 +215,12 @@ object CodeWhispererTestUtil {
             .build()
 }
 
+fun aSessionContext(
+    project: Project = mock(),
+    editor: Editor = mock(),
+    latencyContext: LatencyContext = LatencyContext()
+) = SessionContext(project, editor, latencyContext = latencyContext)
+
 fun aRequestContext(
     project: Project,
     myFileContextInfo: FileContextInfo? = null,
@@ -242,20 +252,6 @@ fun aRequestContext(
         fileContextInfo = myFileContextInfo ?: aFileContextInfo(),
         supplementalContextDeferred = supplementalContextDeferred,
         null,
-        LatencyContext(
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextDouble(),
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextLong(),
-            aString()
-        ),
         customizationArn = null
     )
 }
@@ -306,14 +302,15 @@ fun aRecommendationContext(): RecommendationContext {
         details,
         aString(),
         aString(),
-        VisualPosition(Random.nextInt(1, 100), Random.nextInt(1, 100))
+        VisualPosition(Random.nextInt(1, 100), Random.nextInt(1, 100)),
+        0
     )
 }
 
 /**
  * util to generate a RecommendationContext and a SessionContext given expected decisions
  */
-fun aRecommendationContextAndSessionContext(decisions: List<CodewhispererSuggestionState>): Pair<RecommendationContext, SessionContext> {
+fun aRecommendationContext(decisions: List<CodewhispererSuggestionState>): RecommendationContext {
     val table = CodewhispererSuggestionState.values().associateWith { 0 }.toMutableMap()
     decisions.forEach {
         table[it]?.let { curCount -> table[it] = 1 + curCount }
@@ -331,6 +328,8 @@ fun aRecommendationContextAndSessionContext(decisions: List<CodewhispererSuggest
             val completion = aCompletion()
             DetailContext(aString(), completion, completion, false, Random.nextBoolean(), aString(), CodewhispererCompletionType.Line)
         }
+        toAdd.hasSeen = decision != CodewhispererSuggestionState.Unseen
+        toAdd.isAccepted = decision == CodewhispererSuggestionState.Accept
 
         details.add(toAdd)
     }
@@ -339,29 +338,11 @@ fun aRecommendationContextAndSessionContext(decisions: List<CodewhispererSuggest
         details,
         aString(),
         aString(),
-        VisualPosition(Random.nextInt(1, 100), Random.nextInt(1, 100))
+        VisualPosition(Random.nextInt(1, 100), Random.nextInt(1, 100)),
+        0,
     )
 
-    val selectedIndex = decisions.indexOfFirst { it == CodewhispererSuggestionState.Accept }.let {
-        if (it != -1) {
-            it
-        } else {
-            0
-        }
-    }
-
-    val seen = mutableSetOf<Int>()
-    decisions.forEachIndexed { index, decision ->
-        if (decision != CodewhispererSuggestionState.Unseen) {
-            seen.add(index)
-        }
-    }
-
-    val sessionContext = SessionContext(
-        selectedIndex = selectedIndex,
-        seen = seen
-    )
-    return recommendationContext to sessionContext
+    return recommendationContext
 }
 
 fun aCompletion(content: String? = null, isEmpty: Boolean = false, referenceCount: Int? = null, importCount: Int? = null): Completion {

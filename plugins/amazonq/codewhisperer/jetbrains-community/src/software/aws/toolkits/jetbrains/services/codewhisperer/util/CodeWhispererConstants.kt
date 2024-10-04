@@ -27,7 +27,7 @@ object CodeWhispererConstants {
     const val LEFT_CONTEXT_ON_CURRENT_LINE = 50
     const val POPUP_INFO_TEXT_SIZE = 11f
     const val POPUP_BUTTON_TEXT_SIZE = 12f
-    const val POPUP_DELAY: Long = 250
+    const val POPUP_DELAY: Long = 50
     const val POPUP_DELAY_CHECK_INTERVAL: Long = 25
     const val IDLE_TIME_CHECK_INTERVAL: Long = 25
     const val SUPPLEMENTAL_CONTEXT_TIMEOUT = 50L
@@ -36,9 +36,9 @@ object CodeWhispererConstants {
     val AWSTemplateKeyWordsRegex = Regex("(AWSTemplateFormatVersion|Resources|AWS::|Description)")
     val AWSTemplateCaseInsensitiveKeyWordsRegex = Regex("(cloudformation|cfn|template|description)")
 
-    // TODO: this is currently set to 2050 to account for the server side 0.5 TPS and and extra 50 ms buffer to
-    // avoid ThrottlingException as much as possible.
-    const val INVOCATION_INTERVAL: Long = 2050
+    // TODO: this is currently set to 0 to trigger with 0ms delay and rely on ML trigger to determine which characters to trigger at
+    // We will monitor service side resource utilization and throttling.
+    const val INVOCATION_DELAY: Long = 0
 
     const val Q_CUSTOM_LEARN_MORE_URI = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/customizations.html"
     const val Q_SUPPORTED_LANG_URI = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/q-language-ide-support.html"

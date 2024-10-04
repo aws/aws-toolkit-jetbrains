@@ -27,6 +27,8 @@
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator"
                             serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.customization.DefaultCodeWhispererModelConfigurator"/>
+        <applicationService overrides="true" serviceInterface="com.intellij.ide.plugins.PluginManagementPolicy"
+                 serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.plugin.QBetaPluginManagementPolicy"/>
 
         <projectService serviceInterface="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor"
                         serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptorImpl"
