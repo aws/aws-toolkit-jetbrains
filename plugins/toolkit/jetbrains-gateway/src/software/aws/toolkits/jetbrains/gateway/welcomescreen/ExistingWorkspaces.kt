@@ -31,7 +31,7 @@ import javax.swing.JComponent
 
 class ExistingWorkspaces(
     private val setContentCallback: (Component) -> Unit,
-    lifetime: Lifetime
+    lifetime: Lifetime,
 ) : CawsLoadingPanel(lifetime, setContentCallback), DataProvider {
     private val disposable = lifetime.createNestedDisposable()
     override val title = message("code.aws.workspaces.short")

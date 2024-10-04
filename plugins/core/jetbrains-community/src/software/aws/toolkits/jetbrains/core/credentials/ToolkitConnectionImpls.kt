@@ -58,7 +58,7 @@ sealed class ManagedBearerSsoConnection(
     override val scopes: List<String>,
     cache: DiskCache = diskCache,
     override val id: String,
-    override val label: String
+    override val label: String,
 ) : AwsBearerTokenConnection, Disposable {
 
     private val provider =
@@ -85,7 +85,7 @@ class DetectedDiskSsoSessionConnection(
     override val startUrl: String,
     override val region: String,
     override val scopes: List<String>,
-    displayNameOverride: String? = null
+    displayNameOverride: String? = null,
 ) : AwsBearerTokenConnection, Disposable {
     override val id = ToolkitBearerTokenProvider.diskSessionIdentifier(sessionName)
     override val label = displayNameOverride ?: ToolkitBearerTokenProvider.diskSessionDisplayName(sessionName)

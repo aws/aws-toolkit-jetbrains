@@ -31,7 +31,7 @@ import java.util.Base64
 
 class RemoteLambdaState(
     private val environment: ExecutionEnvironment,
-    val settings: RemoteLambdaRunSettings
+    val settings: RemoteLambdaRunSettings,
 ) : RunProfileState {
     private val consoleBuilder: TextConsoleBuilder
 

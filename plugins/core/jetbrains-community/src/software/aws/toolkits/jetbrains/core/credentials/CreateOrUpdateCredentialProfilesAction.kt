@@ -25,7 +25,7 @@ import software.aws.toolkits.telemetry.AwsTelemetry
 import java.nio.file.Path
 
 class CreateOrUpdateCredentialProfilesAction @TestOnly constructor(
-    private val writer: ConfigFilesFacade
+    private val writer: ConfigFilesFacade,
 ) : AnAction(
     AwsCoreBundle.message("configure.toolkit.upsert_credentials.action"),
     null,

@@ -47,7 +47,7 @@ class AmazonQStreamingClient(private val project: Project) {
          *
          * @param startTime exception thrown by the streaming client.
          */
-        onStreamingFinished: (startTime: Instant) -> Unit
+        onStreamingFinished: (startTime: Instant) -> Unit,
     ): MutableList<ByteArray> {
         val startTime = Instant.now()
         val byteBufferList = mutableListOf<ByteArray>()

@@ -25,7 +25,7 @@ class SchemasServiceNode(project: Project, service: AwsExplorerServiceNode) :
 
 open class SchemaRegistryNode(
     project: Project,
-    val registry: RegistrySummary
+    val registry: RegistrySummary,
 ) : AwsExplorerResourceNode<RegistrySummary>(
     project,
     SchemasClient.SERVICE_NAME,
@@ -63,7 +63,7 @@ open class SchemaRegistryNode(
 
 open class SchemaNode(
     project: Project,
-    val schema: Schema
+    val schema: Schema,
 ) : AwsExplorerResourceNode<Schema>(
     project,
     SchemasClient.SERVICE_NAME,

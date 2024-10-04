@@ -49,7 +49,7 @@ import java.util.TimeZone
  */
 class DiskCache(
     private val cacheDir: Path = Paths.get(System.getProperty("user.home"), ".aws", "sso", "cache"),
-    private val clock: Clock = Clock.systemUTC()
+    private val clock: Clock = Clock.systemUTC(),
 ) : SsoCache {
     private val objectMapper = jacksonObjectMapper().also {
         it.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -77,7 +77,7 @@ class DiskCache(
                 override fun withDelegate(
                     converter: Converter<Any, *>?,
                     delegateType: JavaType?,
-                    delegateSerializer: JsonSerializer<*>?
+                    delegateSerializer: JsonSerializer<*>?,
                 ): StdDelegatingSerializer =
                     StdDelegatingSerializer(converter, delegateType, delegateSerializer)
 

@@ -476,13 +476,13 @@ sealed class CodeScanResponse {
 
     data class Success(
         val issues: List<CodeWhispererCodeScanIssue>,
-        override val responseContext: CodeScanResponseContext
+        override val responseContext: CodeScanResponseContext,
     ) : CodeScanResponse()
 
     data class Failure(
         // this needs some cleanup as it solely exists for tracking the job ID
         override val responseContext: CodeScanResponseContext,
-        val failureReason: Throwable
+        val failureReason: Throwable,
     ) : CodeScanResponse()
 }
 
@@ -499,7 +499,7 @@ internal data class CodeScanRecommendation(
     val relatedVulnerabilities: List<String>,
     val severity: String,
     val remediation: Remediation,
-    val codeSnippet: List<CodeLine>
+    val codeSnippet: List<CodeLine>,
 )
 
 data class Description(val text: String, val markdown: String)
@@ -515,7 +515,7 @@ data class CodeLine(val number: Int, val content: String)
 data class CodeScanSessionContext(
     val project: Project,
     val sessionConfig: CodeScanSessionConfig,
-    val codeAnalysisScope: CodeWhispererConstants.CodeAnalysisScope
+    val codeAnalysisScope: CodeWhispererConstants.CodeAnalysisScope,
 )
 
 internal fun defaultPayloadContext() = PayloadContext(CodewhispererLanguage.Unknown, 0, 0, 0, listOf(), 0, 0)

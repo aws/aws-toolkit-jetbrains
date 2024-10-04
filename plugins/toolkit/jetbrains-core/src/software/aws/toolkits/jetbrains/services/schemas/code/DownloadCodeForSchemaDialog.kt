@@ -47,7 +47,7 @@ class DownloadCodeForSchemaDialog(
     private val registryName: String = "",
     version: String? = null,
     language: SchemaCodeLangs? = null,
-    private val onClose: (() -> Unit)? = null
+    private val onClose: (() -> Unit)? = null,
 ) : DialogWrapper(project) {
 
     constructor(project: Project, schema: Schema) :
@@ -179,7 +179,7 @@ class DownloadCodeForSchemaDialog(
 
     private fun showDownloadCompletionNotification(
         schemaName: String,
-        project: Project
+        project: Project,
     ) {
         val message = message("schemas.schema.download_code_bindings.notification.finished", schemaName)
         notifyInfo(title = NOTIFICATION_TITLE, content = message, project = project)
@@ -188,7 +188,7 @@ class DownloadCodeForSchemaDialog(
 
     private fun showDownloadCompletionErrorNotification(
         error: Throwable?,
-        project: Project
+        project: Project,
     ) {
         when (val rootError = ExceptionUtils.getRootCause(error)) {
             is SchemaCodeDownloadFileCollisionException -> notifyError(title = NOTIFICATION_TITLE, content = rootError.message ?: "", project = project)
@@ -199,7 +199,7 @@ class DownloadCodeForSchemaDialog(
 
     private fun openSchemaCoreCodeFileInEditor(
         schemaCoreCodeFile: Path?,
-        project: Project
+        project: Project,
     ): CompletionStage<Void> {
         val future = CompletableFuture<Void>()
         ApplicationManager.getApplication().invokeLater {

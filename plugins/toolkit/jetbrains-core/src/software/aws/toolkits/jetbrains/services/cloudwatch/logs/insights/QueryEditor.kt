@@ -26,7 +26,7 @@ import javax.swing.JTextField
 
 class QueryEditor internal constructor(
     private val project: Project,
-    private val initialQueryDetails: QueryDetails
+    private val initialQueryDetails: QueryDetails,
 ) {
     lateinit var absoluteTimeRadioButton: JRadioButton
         private set

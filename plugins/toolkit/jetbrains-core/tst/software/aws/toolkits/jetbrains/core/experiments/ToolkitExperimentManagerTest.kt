@@ -371,5 +371,5 @@ class DummyExperiment(
     id: String = aString(),
     hidden: Boolean = false,
     default: Boolean = false,
-    suggestionSnooze: Duration = Duration.ofMillis(1)
+    suggestionSnooze: Duration = Duration.ofMillis(1),
 ) : ToolkitExperiment(id, { "Dummy ($id)" }, { "Dummy Description" }, hidden, default, suggestionSnooze)

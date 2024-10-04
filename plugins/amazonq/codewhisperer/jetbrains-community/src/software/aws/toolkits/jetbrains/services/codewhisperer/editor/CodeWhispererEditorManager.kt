@@ -101,7 +101,7 @@ class CodeWhispererEditorManager {
         editor: Editor,
         recommendation: String,
         isTruncatedOnRight: Boolean,
-        sessionContext: SessionContext
+        sessionContext: SessionContext,
     ): List<Pair<Int, Int>> {
         val result = mutableListOf<Pair<Int, Int>>()
         val bracketsStack = Stack<Char>()
@@ -201,7 +201,7 @@ class CodeWhispererEditorManager {
         editor: Editor,
         recommendationLines: List<String>,
         isTruncatedOnRight: Boolean,
-        sessionContext: SessionContext
+        sessionContext: SessionContext,
     ): Int {
         val caretOffset = editor.caretModel.offset
         if (isTruncatedOnRight) {

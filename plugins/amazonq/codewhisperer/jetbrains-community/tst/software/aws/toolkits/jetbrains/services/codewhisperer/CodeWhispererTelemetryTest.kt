@@ -84,7 +84,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
     private class TestTelemetryService(
         publisher: TelemetryPublisher = NoOpPublisher(),
-        batcher: TelemetryBatcher
+        batcher: TelemetryBatcher,
     ) : TelemetryService(publisher, batcher)
 
     private lateinit var telemetryService: TelemetryService
@@ -514,7 +514,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             "codewhispererAcceptedTokens" to acceptedTokensSize.toString(),
             "codewhispererTotalTokens" to totalTokensSize.toString(),
             "codewhispererSuggestedTokens" to rawAcceptedTokenSize.toString(),
-            "codewhispererPercentage" to CodeWhispererCodeCoverageTracker.calculatePercentage(acceptedTokensSize, totalTokensSize).toString(),
+            "codewhispererPercentage" to CodeWhispererCodeCoverageTracker.calculatePercentage(rawAcceptedTokenSize, totalTokensSize).toString(),
         )
     }
 
@@ -816,7 +816,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             name: String,
             count: Int,
             vararg keyValues: Pair<String, Any?>,
-            atLeast: Boolean = false
+            atLeast: Boolean = false,
         ) {
             assertThat(events).filteredOn { event ->
                 event.data.any {

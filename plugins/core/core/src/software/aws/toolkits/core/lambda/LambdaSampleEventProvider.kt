@@ -57,12 +57,12 @@ open class LambdaSampleEvent(val name: String, private val contentProvider: () -
 data class LambdaSampleEventManifest(
     @JsonProperty(value = "request")
     @JacksonXmlElementWrapper(useWrapping = false)
-    val requests: List<LambdaSampleEventRequest>
+    val requests: List<LambdaSampleEventRequest>,
 )
 
 data class LambdaSampleEventRequest(
     val filename: String,
-    val name: String
+    val name: String,
 )
 
 internal val LambdaSampleEventManifestResource = LambdaSampleEventResource("manifest.xml")

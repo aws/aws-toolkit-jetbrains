@@ -1,3 +1,7 @@
+# _3.30_ (2024-09-27)
+- **(Bug Fix)** Amazon Q Code Transformation: notify users when no JDK is set in Project Structure settings
+- **(Bug Fix)** Automatically terminate orphaned process for `@workspace` helper
+
 # _3.29_ (2024-09-19)
 - **(Feature)** Support `@workspace` queries for specific files like "`@workspace` what does test.ts do?".
 - **(Bug Fix)** Amazon Q Feature Dev: fix iteration count messaging during code insertion

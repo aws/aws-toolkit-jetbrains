@@ -80,7 +80,7 @@ class DevEnvStatusWatcher : StartupActivity {
     fun checkHeartbeat(
         secondsSinceLastControllerActivity: Long,
         inactivityTimeoutInSeconds: Int,
-        project: Project
+        project: Project,
     ): Pair<Boolean, Long> {
         val lastActivityTime = getJbRecordedActivity()
 

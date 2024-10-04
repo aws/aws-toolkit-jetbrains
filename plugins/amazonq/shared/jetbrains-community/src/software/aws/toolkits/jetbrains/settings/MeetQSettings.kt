@@ -31,5 +31,5 @@ class MeetQSettings : PersistentStateComponent<MeetQSettingsConfiguration> {
     }
 }
 data class MeetQSettingsConfiguration(
-    var shouldDisplayPage: Boolean = true
+    var shouldDisplayPage: Boolean = true,
 )

@@ -22,30 +22,30 @@ fun loadParameterDescriptions(): ParameterDescriptions = descriptions
 
 data class ParameterDescriptions(
     @JsonProperty("environment")
-    val environmentParameters: EnvironmentParameters
+    val environmentParameters: EnvironmentParameters,
 )
 
 data class EnvironmentParameters(
     @JsonProperty("instanceType")
     val instanceTypes: Map<InstanceType, InstanceInfo>,
-    val persistentStorageSize: List<Int>
+    val persistentStorageSize: List<Int>,
 )
 
 data class InstanceInfo(
     @JsonProperty("vcpus")
     val vCpus: Int,
     val ram: Ram,
-    val arch: String
+    val arch: String,
 )
 
 data class Ram(
     val value: Int,
-    val unit: String
+    val unit: String,
 )
 
 fun isSubscriptionFreeTier(
     client: CodeCatalystClient,
-    space: String?
+    space: String?,
 ): Boolean {
     val subscriptionTier = if (space != null) {
         client.getSubscription {

@@ -8,7 +8,7 @@ import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerTy
 enum class EditorContextCommand(
     val verb: String,
     val actionId: String,
-    var triggerType: TriggerType = TriggerType.ContextMenu
+    var triggerType: TriggerType = TriggerType.ContextMenu,
 ) {
     Explain(
         verb = "Explain",
@@ -26,6 +26,10 @@ enum class EditorContextCommand(
         verb = "Optimize",
         actionId = "aws.amazonq.optimizeCode",
     ),
+    GenerateUnitTests(
+        verb = "Generate unit tests for",
+        actionId = "aws.amazonq.generateUnitTests",
+    ),
     SendToPrompt(
         verb = "SendToPrompt",
         actionId = "aws.amazonq.sendToPrompt",
@@ -33,5 +37,5 @@ enum class EditorContextCommand(
     ExplainCodeScanIssue(
         verb = "ExplainIssue",
         actionId = "aws.amazonq.explainCodeScanIssue",
-    )
+    ),
 }
