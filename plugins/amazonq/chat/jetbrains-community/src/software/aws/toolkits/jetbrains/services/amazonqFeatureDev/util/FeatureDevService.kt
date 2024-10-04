@@ -31,7 +31,6 @@ import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.ge
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.Result
-import java.util.UUID
 
 private val logger = getLogger<FeatureDevClient>()
 
@@ -77,18 +76,17 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
         }
     }
 
-    fun createUploadUrl(conversationId: String, contentChecksumSha256: String, contentLength: Long, uploadId: UUID):
+    fun createUploadUrl(conversationId: String, contentChecksumSha256: String, contentLength: Long):
         CreateUploadUrlResponse {
         try {
             logger.debug { "Executing createUploadUrl with conversationId $conversationId" }
             val uploadUrlResponse = proxyClient.createTaskAssistUploadUrl(
                 conversationId,
                 contentChecksumSha256,
-                contentLength,
-                uploadId.toString()
+                contentLength
             )
             logger.debug {
-                "$FEATURE_NAME: Created upload url: {uploadId: ${uploadId.toString()}, requestId: ${uploadUrlResponse.responseMetadata().requestId()}}"
+                "$FEATURE_NAME: Created upload url: {uploadId: ${uploadUrlResponse.uploadId()}, requestId: ${uploadUrlResponse.responseMetadata().requestId()}}"
             }
             return uploadUrlResponse
         } catch (e: Exception) {
@@ -107,16 +105,14 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
         }
     }
 
-    fun startTaskAssistCodeGeneration(conversationId: String, uploadId: String, message: String, codeGenerationId: UUID, currentCodeGenerationId: UUID?):
+    fun startTaskAssistCodeGeneration(conversationId: String, uploadId: String, message: String):
         StartTaskAssistCodeGenerationResponse {
         try {
             logger.debug { "Executing startTaskAssistCodeGeneration with conversationId: $conversationId , uploadId: $uploadId" }
             val startCodeGenerationResponse = proxyClient.startTaskAssistCodeGeneration(
                 conversationId,
                 uploadId,
-                message,
-                codeGenerationId,
-                currentCodeGenerationId
+                message
             )
 
             logger.debug { "$FEATURE_NAME: Started code generation with requestId: ${startCodeGenerationResponse.responseMetadata().requestId()}" }

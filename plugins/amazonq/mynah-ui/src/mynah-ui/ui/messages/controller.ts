@@ -74,7 +74,6 @@ export class MessageController {
 
             this.mynahUI.updateStore(selectedTab.id, {
                 loadingChat: true,
-                cancelButtonWhenLoading: false,
                 promptInputDisabledState: true,
             })
             this.mynahUI.addChatItem(selectedTab.id, message)
@@ -105,7 +104,6 @@ export class MessageController {
 
             this.mynahUI.updateStore(newTabID, {
                 loadingChat: true,
-                cancelButtonWhenLoading: false,
                 promptInputDisabledState: true,
             })
 
