@@ -159,7 +159,7 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String, m
                         "EmptyPatch"
                     ),
                     -> {
-                        if (codeGenerationResultState.codeGenerationStatusDetail()?.contains("NO_CHANGE_REQUIRED")!!) {
+                        if (codeGenerationResultState.codeGenerationStatusDetail().contains("NO_CHANGE_REQUIRED")) {
                             noChangeRequiredException()
                         }
                         featureDevServiceError(message("amazonqFeatureDev.exception.guardrails"))
