@@ -362,7 +362,7 @@ class FeatureDevController(
         chatSessionStorage.deleteSession(tabId)
 
         newTabOpened(tabId)
-        if (isException !== null && isException == true) {
+        if (isException !== null && isException != true) {
             messenger.sendAnswer(
                 tabId = tabId,
                 messageType = FeatureDevMessageType.Answer,
