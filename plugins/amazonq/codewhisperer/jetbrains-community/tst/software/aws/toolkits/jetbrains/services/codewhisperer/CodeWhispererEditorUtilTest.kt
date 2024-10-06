@@ -87,7 +87,8 @@ class CodeWhispererEditorUtilTest {
 
     @ParameterizedTest
     @ValueSource(
-        strings = ["app.json",
+        strings = [
+            "app.json",
             "appsettings.json",
             "bower.json",
             "composer.json",
@@ -107,7 +108,7 @@ class CodeWhispererEditorUtilTest {
 
     @Test
     fun `isConfigFileIfJsonFile should retrun false due to no match`() {
-        var result = CodeWhispererEditorUtil.isConfigFileIfJsonFile("foo.json", "",CodeWhispererJson.INSTANCE)
+        var result = CodeWhispererEditorUtil.isConfigFileIfJsonFile("foo.json", "", CodeWhispererJson.INSTANCE)
         assertThat(result).isEqualTo(false)
 
         result = CodeWhispererEditorUtil.isConfigFileIfJsonFile("package.json", "", CodeWhispererYaml.INSTANCE)
