@@ -27,7 +27,7 @@ class SsoCredentialProvider(
     private val ssoAccount: String,
     private val ssoRole: String,
     private val ssoClient: SsoClient,
-    private val ssoAccessTokenProvider: SdkTokenProvider
+    private val ssoAccessTokenProvider: SdkTokenProvider,
 ) : AwsCredentialsProvider, SdkAutoCloseable {
     private val sessionCache: CachedSupplier<SsoCredentialsHolder> = CachedSupplier.builder(this::refreshCredentials).build()
 

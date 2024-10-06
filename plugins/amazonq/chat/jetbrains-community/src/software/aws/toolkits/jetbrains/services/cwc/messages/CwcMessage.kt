@@ -71,7 +71,7 @@ sealed interface IncomingCwcMessage : CwcMessage {
         val insertionTargetType: String?,
         val eventId: String?,
         val codeBlockIndex: Int?,
-        val totalCodeBlocks: Int?
+        val totalCodeBlocks: Int?,
     ) : IncomingCwcMessage
 
     data class InsertCodeAtCursorPosition(
@@ -83,7 +83,7 @@ sealed interface IncomingCwcMessage : CwcMessage {
         val codeReference: List<CodeReference>?,
         val eventId: String?,
         val codeBlockIndex: Int?,
-        val totalCodeBlocks: Int?
+        val totalCodeBlocks: Int?,
     ) : IncomingCwcMessage
 
     data class TriggerTabIdReceived(
@@ -258,7 +258,7 @@ data class QuickActionMessage(
 data class OnboardingPageInteractionMessage(
     val message: String,
     val interactionType: OnboardingPageInteractionType,
-    @JsonProperty("triggerID") val triggerId: String
+    @JsonProperty("triggerID") val triggerId: String,
 ) : UiMessage(
     tabId = null,
     type = "editorContextCommandMessage",

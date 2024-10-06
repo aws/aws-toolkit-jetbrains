@@ -27,7 +27,7 @@ class ConnectionSettingsMenuBuilder private constructor() {
     private sealed interface IdentitySelectionSettings
     private data class SelectableIdentitySelectionSettings(
         val currentSelection: AwsBearerTokenConnection?,
-        val onChange: (AwsBearerTokenConnection) -> Unit
+        val onChange: (AwsBearerTokenConnection) -> Unit,
     ) : IdentitySelectionSettings
     private data class ActionsIdentitySelectionSettings(val project: Project?) : IdentitySelectionSettings
 
@@ -200,7 +200,7 @@ class ConnectionSettingsMenuBuilder private constructor() {
         title: String,
         val value: T,
         private val selected: Boolean,
-        private val onSelect: (T) -> Unit
+        private val onSelect: (T) -> Unit,
     ) : ToggleAction(title), DumbAware {
         override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
@@ -216,13 +216,13 @@ class ConnectionSettingsMenuBuilder private constructor() {
     inner class SwitchRegionAction(
         value: AwsRegion,
         selected: Boolean,
-        onSelect: (AwsRegion) -> Unit
+        onSelect: (AwsRegion) -> Unit,
     ) : DumbAwareToggleAction<AwsRegion>(value.displayName, value, selected, onSelect)
 
     inner class SwitchCredentialsAction(
         value: CredentialIdentifier,
         selected: Boolean,
-        onSelect: (CredentialIdentifier) -> Unit
+        onSelect: (CredentialIdentifier) -> Unit,
     ) : DumbAwareToggleAction<CredentialIdentifier>(value.displayName, value, selected, onSelect)
 
     inner class IndividualIdentityActionGroup(private val value: AwsBearerTokenConnection) :

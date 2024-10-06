@@ -52,7 +52,7 @@ import kotlin.random.Random
 class CodeWhispererTelemetryServiceTest {
     private class NoOpToolkitTelemetryService(
         publisher: TelemetryPublisher = NoOpPublisher(),
-        batcher: TelemetryBatcher
+        batcher: TelemetryBatcher,
     ) : TelemetryService(publisher, batcher)
 
     @Rule
@@ -342,7 +342,7 @@ class CodeWhispererTelemetryServiceTest {
         fun helper(
             decisions: List<CodewhispererSuggestionState>,
             expectedState: CodewhispererSuggestionState,
-            expectedPreviousSuggestionState: CodewhispererPreviousSuggestionState?
+            expectedPreviousSuggestionState: CodewhispererPreviousSuggestionState?,
         ) {
             val supplementalContextInfo = aSupplementalContextInfo()
             val requestContext = aRequestContext(projectRule.project, mySupplementalContextInfo = supplementalContextInfo).also {

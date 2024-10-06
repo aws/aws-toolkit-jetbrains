@@ -100,7 +100,7 @@ class GumbyClient(private val project: Project) {
     fun startCodeModernization(
         uploadId: String,
         sourceLanguage: TransformationLanguage,
-        targetLanguage: TransformationLanguage
+        targetLanguage: TransformationLanguage,
     ): StartTransformationResponse {
         val request = StartTransformationRequest.builder()
             .workspaceState { state ->
@@ -118,7 +118,7 @@ class GumbyClient(private val project: Project) {
 
     fun resumeCodeTransformation(
         jobId: JobId,
-        userActionStatus: TransformationUserActionStatus
+        userActionStatus: TransformationUserActionStatus,
     ): ResumeTransformationResponse {
         val request = ResumeTransformationRequest.builder()
             .transformationJobId(jobId.id)
@@ -154,7 +154,7 @@ class GumbyClient(private val project: Project) {
     suspend fun downloadExportResultArchive(
         jobId: JobId,
         hilDownloadArtifactId: String? = null,
-        downloadArtifactType: TransformationDownloadArtifactType? = TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS
+        downloadArtifactType: TransformationDownloadArtifactType? = TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS,
     ): MutableList<ByteArray> = amazonQStreamingClient.exportResultArchive(
         jobId.id,
         ExportIntent.TRANSFORMATION,

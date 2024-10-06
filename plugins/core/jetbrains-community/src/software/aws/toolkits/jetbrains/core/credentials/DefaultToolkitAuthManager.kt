@@ -297,11 +297,11 @@ class DefaultToolkitAuthManager : ToolkitAuthManager, PersistentStateComponent<T
 data class ToolkitAuthManagerState(
     // TODO: can't figure out how to make deserializer work with polymorphic types
     var ssoProfiles: List<ManagedSsoProfile> = emptyList(),
-    var lastLoginIdcInfo: LastLoginIdcInfo = LastLoginIdcInfo()
+    var lastLoginIdcInfo: LastLoginIdcInfo = LastLoginIdcInfo(),
 )
 
 data class LastLoginIdcInfo(
     var profileName: String = "",
     var startUrl: String = "",
-    var region: String = ""
+    var region: String = "",
 )

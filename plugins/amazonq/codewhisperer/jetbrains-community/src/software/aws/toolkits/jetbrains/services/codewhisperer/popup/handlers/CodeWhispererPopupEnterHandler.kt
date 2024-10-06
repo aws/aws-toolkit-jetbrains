@@ -14,7 +14,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispere
 
 class CodeWhispererPopupEnterHandler(
     private val defaultHandler: EditorActionHandler,
-    states: InvocationContext
+    states: InvocationContext,
 ) : CodeWhispererEditorActionHandler(states) {
     override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
         val popupManager = CodeWhispererPopupManager.getInstance()

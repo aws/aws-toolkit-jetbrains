@@ -20,7 +20,7 @@ abstract class AwsExplorerTreeStructureProvider : TreeStructureProvider {
     final override fun modify(
         parent: AbstractTreeNode<*>,
         children: MutableCollection<AbstractTreeNode<*>>,
-        settings: ViewSettings?
+        settings: ViewSettings?,
     ): MutableCollection<AbstractTreeNode<*>> = modify(parent, children)
 
     /**

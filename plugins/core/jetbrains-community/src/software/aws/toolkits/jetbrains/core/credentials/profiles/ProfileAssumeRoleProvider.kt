@@ -57,7 +57,7 @@ class ProfileAssumeRoleProvider(@get:TestOnly internal val parentProvider: AwsCr
         roleArn: String,
         roleSessionName: String?,
         externalId: String?,
-        durationSeconds: Int
+        durationSeconds: Int,
     ): AssumeRoleRequest {
         val requestBuilder = AssumeRoleRequest.builder()
             .roleArn(roleArn)

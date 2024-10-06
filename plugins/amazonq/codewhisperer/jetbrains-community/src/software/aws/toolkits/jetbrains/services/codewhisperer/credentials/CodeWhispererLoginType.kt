@@ -8,5 +8,5 @@ enum class CodeWhispererLoginType(val displayName: String) {
     Sono("Builder ID"),
     Accountless("Access Code"),
     Logout("Logout"),
-    Expired("Expired")
+    Expired("Expired"),
 }

@@ -139,7 +139,7 @@ class SsoAccessTokenProvider(
     private val client: SsoOidcClient,
     private val isAlwaysShowDeviceCode: Boolean = false,
     override val scopes: List<String> = emptyList(),
-    private val clock: Clock = Clock.systemUTC()
+    private val clock: Clock = Clock.systemUTC(),
 ) : SsoAccessTokenCacheAccessor(), SdkTokenProvider {
     init {
         check(scopes.isNotEmpty()) { "Scopes should not be empty" }
@@ -342,7 +342,7 @@ class SsoAccessTokenProvider(
         reason: String?,
         reasonDesc: String?,
         requestId: String? = null,
-        result: Result
+        result: Result,
     ) {
         val tokenCreationTime = currentToken.createdAt
         val sessionDuration = Duration.between(tokenCreationTime, Instant.now(clock))
@@ -439,7 +439,7 @@ class SsoAccessTokenProvider(
     private enum class RefreshCredentialStage {
         CREATE_TOKEN,
         GET_TOKEN_DETAILS,
-        SAVE_TOKEN
+        SAVE_TOKEN,
     }
 
     private fun loadDagClientRegistration(): ClientRegistration? =

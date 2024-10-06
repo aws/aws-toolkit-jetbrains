@@ -139,7 +139,7 @@ class ScpCommandLineTest {
                 op: ScpTransferEventListener.FileOperation?,
                 file: Path?,
                 length: Long,
-                perms: MutableSet<PosixFilePermission>?
+                perms: MutableSet<PosixFilePermission>?,
             ) {
                 pathsCollector.add(file)
             }

@@ -15,7 +15,7 @@ class BuildProgressTimelineStepDetailsList<BuildProgressTimelineStepDetailItem> 
 
 fun getTransformationProgressStepsByTransformationStepId(
     stepId: Int,
-    transformationPlan: TransformationPlan?
+    transformationPlan: TransformationPlan?,
 ): BuildProgressTimelineStepDetailsList<BuildProgressTimelineStepDetailItem> {
     val stepList = BuildProgressTimelineStepDetailsList<BuildProgressTimelineStepDetailItem>()
     // skip step 0 (contains supplemental info)

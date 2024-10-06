@@ -55,7 +55,7 @@ data class CodeModernizerSessionContext(
     val configurationFile: VirtualFile,
     val sourceJavaVersion: JavaSdkVersion,
     val targetJavaVersion: JavaSdkVersion,
-    var customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS // run unit tests by default
+    var customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS, // run unit tests by default
 ) {
     private val mapper = jacksonObjectMapper()
     private val ignoredDependencyFileExtensions = setOf(INVALID_SUFFIX_SHA, INVALID_SUFFIX_REPOSITORIES)
@@ -117,7 +117,7 @@ data class CodeModernizerSessionContext(
     }
     private fun executeDependencyVersionReportUsingMaven(
         sourceFolder: File,
-        buildLogBuilder: StringBuilder
+        buildLogBuilder: StringBuilder,
     ) = runDependencyReportCommands(sourceFolder, buildLogBuilder, LOG, project)
 
     fun createZipForHilUpload(hilTempPath: Path, manifest: CodeTransformHilDownloadManifest?, targetVersion: String): ZipCreationResult =

@@ -39,7 +39,7 @@ class Updater(
     private val listener: UpdateListener,
     private val client: CloudFormationClient,
     private val setPagesAvailable: (Set<Page>) -> Unit,
-    private val stackId: String
+    private val stackId: String,
 ) : Disposable {
 
     @Volatile
@@ -152,7 +152,7 @@ class Updater(
         stackStatus: StackStatus,
         resources: Collection<StackResource>,
         newEvents: List<StackEvent>,
-        pageChanged: Boolean
+        pageChanged: Boolean,
     ) {
         assert(SwingUtilities.isEventDispatchThread())
         treeView.setStackStatus(stackStatus)

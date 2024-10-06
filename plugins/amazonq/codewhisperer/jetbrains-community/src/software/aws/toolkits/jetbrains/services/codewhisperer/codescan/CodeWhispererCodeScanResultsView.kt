@@ -120,7 +120,7 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project) : 
     fun updateAndDisplayScanResults(
         scanTreeModel: CodeWhispererCodeScanTreeModel,
         scannedFiles: List<VirtualFile>,
-        scope: CodeWhispererConstants.CodeAnalysisScope
+        scope: CodeWhispererConstants.CodeAnalysisScope,
     ) {
         codeScanTree.apply {
             model = scanTreeModel
@@ -272,7 +272,7 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project) : 
             expanded: Boolean,
             leaf: Boolean,
             row: Int,
-            hasFocus: Boolean
+            hasFocus: Boolean,
         ): Component {
             value as DefaultMutableTreeNode
             val cell = JLabel()

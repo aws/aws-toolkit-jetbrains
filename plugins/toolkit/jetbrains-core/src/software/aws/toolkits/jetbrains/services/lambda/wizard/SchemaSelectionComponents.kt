@@ -45,7 +45,7 @@ class SchemaSelectionListCellRenderer : ColoredListCellRenderer<SchemaSelectionI
         value: SchemaSelectionItem?,
         index: Int,
         selected: Boolean,
-        hasFocus: Boolean
+        hasFocus: Boolean,
     ): Component = when (value) {
         is SchemaSelectionItem.SchemaItem -> {
             super.getListCellRendererComponent(list, value, index, selected, hasFocus)
@@ -60,7 +60,7 @@ class SchemaSelectionListCellRenderer : ColoredListCellRenderer<SchemaSelectionI
         value: SchemaSelectionItem?,
         index: Int,
         selected: Boolean,
-        hasFocus: Boolean
+        hasFocus: Boolean,
     ) {
         if (value == null) return
 

@@ -14,7 +14,7 @@ import javax.swing.JPanel
 import javax.swing.JTextArea
 
 class SelectSavedQuery(
-    private val connectionSettings: ConnectionSettings
+    private val connectionSettings: ConnectionSettings,
 ) {
     lateinit var resourceSelector: ResourceSelector<QueryDefinition>
         private set

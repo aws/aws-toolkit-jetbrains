@@ -36,7 +36,7 @@ fun createTemplateRunConfiguration(
     inputIsFile: Boolean = false,
     credentialsProviderId: String? = null,
     region: AwsRegion? = getDefaultRegion(),
-    samOptions: SamOptions = SamOptions()
+    samOptions: SamOptions = SamOptions(),
 ): LocalLambdaRunConfiguration {
     val runConfiguration = samRunConfiguration(project)
     runConfiguration.useTemplate(templateFile, logicalId)
@@ -65,7 +65,7 @@ fun createHandlerBasedRunConfiguration(
     credentialsProviderId: String? = null,
     region: AwsRegion? = getDefaultRegion(),
     environmentVariables: MutableMap<String, String> = mutableMapOf(),
-    samOptions: SamOptions = SamOptions()
+    samOptions: SamOptions = SamOptions(),
 ): LocalLambdaRunConfiguration {
     val runConfiguration = samRunConfiguration(project)
     runConfiguration.useHandler(runtime, handler)
@@ -90,7 +90,7 @@ private fun createBaseRunConfiguration(
     credentialsProviderId: String?,
     inputIsFile: Boolean,
     input: String?,
-    samOptions: SamOptions
+    samOptions: SamOptions,
 ) {
     runConfiguration.regionId(region?.id)
     runConfiguration.credentialProviderId(credentialsProviderId)

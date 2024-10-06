@@ -33,7 +33,7 @@ class CredentialIdentifierSelector(identifiers: List<CredentialIdentifier> = Cre
                 value: CredentialIdentifier?,
                 index: Int,
                 selected: Boolean,
-                hasFocus: Boolean
+                hasFocus: Boolean,
             ) {
                 if (value is InvalidCredentialIdentifier) {
                     append(value.displayName, SimpleTextAttributes.ERROR_ATTRIBUTES)

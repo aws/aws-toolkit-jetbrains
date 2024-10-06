@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.services.caws
 data class CawsCodeRepository(
     val space: String,
     val project: String,
-    val name: String
+    val name: String,
 ) {
     val presentableString by lazy { "$space/$project/$name" }
 }

@@ -26,7 +26,7 @@ class NodeJsLambdaHandlerResolver : LambdaHandlerResolver {
     override fun findPsiElements(
         project: Project,
         handler: String,
-        searchScope: GlobalSearchScope
+        searchScope: GlobalSearchScope,
     ): Array<NavigatablePsiElement> {
         val lastDotIndex = handler.lastIndexOf(".")
         if (lastDotIndex < 0) {

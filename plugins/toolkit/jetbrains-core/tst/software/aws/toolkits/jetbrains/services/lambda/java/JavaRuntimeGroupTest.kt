@@ -22,7 +22,7 @@ import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRul
 class JavaRuntimeGroupTest(
     @Suppress("unused") private val name: String,
     private val sdk: () -> Sdk,
-    private val expectedRuntime: LambdaRuntime?
+    private val expectedRuntime: LambdaRuntime?,
 ) {
     @Rule
     @JvmField
