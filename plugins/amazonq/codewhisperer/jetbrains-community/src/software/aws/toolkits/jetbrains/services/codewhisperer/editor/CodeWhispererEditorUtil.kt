@@ -114,7 +114,7 @@ object CodeWhispererEditorUtil {
     fun isSupportedJsonFormat(fileName: String, leftContext: String, language: CodeWhispererProgrammingLanguage): Boolean =
         (language is CodeWhispererJson) &&
             (
-                JsonConfigFileNamingConvention.contains(fileName) ||
+                JsonConfigFileNamingConvention.contains(fileName.lowercase()) ||
                     AWSTemplateKeyWordsRegex.containsMatchIn(leftContext) ||
                     AWSTemplateCaseInsensitiveKeyWordsRegex.containsMatchIn(leftContext.lowercase(Locale.getDefault()))
                 )
