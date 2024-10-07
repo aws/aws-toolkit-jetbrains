@@ -135,7 +135,7 @@ data class SessionContext(
 ) : Disposable {
     private var isDisposed = false
     init {
-        project.messageBus.connect().subscribe(
+        project.messageBus.connect(this).subscribe(
             CodeWhispererService.CODEWHISPERER_INTELLISENSE_POPUP_ON_HOVER,
             object : CodeWhispererIntelliSenseOnHoverListener {
                 override fun onEnter() {
