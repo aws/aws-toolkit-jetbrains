@@ -111,7 +111,7 @@ object CodeWhispererEditorUtil {
     /**
      * Checks if the language is json and checks if left context contains keywords
      */
-    fun isConfigFileIfJsonFile(fileName: String, leftContext: String, language: CodeWhispererProgrammingLanguage): Boolean =
+    fun isSupportedJsonFormat(fileName: String, leftContext: String, language: CodeWhispererProgrammingLanguage): Boolean =
         (language is CodeWhispererJson) &&
             (
                 JsonConfigFileNamingConvention.contains(fileName) ||

@@ -80,8 +80,8 @@ class CodeWhispererEditorUtilTest {
     }
 
     @Test
-    fun `test for keyword check for json and yaml`() {
-        val result = CodeWhispererEditorUtil.isConfigFileIfJsonFile("foo.json", leftContext_success_Iac, CodeWhispererJson.INSTANCE)
+    fun `test for keyword check for json`() {
+        val result = CodeWhispererEditorUtil.isSupportedJsonFormat("foo.json", leftContext_success_Iac, CodeWhispererJson.INSTANCE)
         assertThat(result).isEqualTo(true)
     }
 
@@ -101,17 +101,17 @@ class CodeWhispererEditorUtilTest {
             "vcpkg.json"
         ]
     )
-    fun `isConfigFileIfJsonFile should return true by file name`(fileName: String) {
-        val result = CodeWhispererEditorUtil.isConfigFileIfJsonFile(fileName, "", CodeWhispererJson.INSTANCE)
+    fun `isSupportedJsonFormat should return true by file name`(fileName: String) {
+        val result = CodeWhispererEditorUtil.isSupportedJsonFormat(fileName, "", CodeWhispererJson.INSTANCE)
         assertThat(result).isEqualTo(true)
     }
 
     @Test
-    fun `isConfigFileIfJsonFile should retrun false due to no match`() {
-        var result = CodeWhispererEditorUtil.isConfigFileIfJsonFile("foo.json", "", CodeWhispererJson.INSTANCE)
+    fun `isSupportedJsonFormat should return false due to no match`() {
+        var result = CodeWhispererEditorUtil.isSupportedJsonFormat("foo.json", "", CodeWhispererJson.INSTANCE)
         assertThat(result).isEqualTo(false)
 
-        result = CodeWhispererEditorUtil.isConfigFileIfJsonFile("package.json", "", CodeWhispererYaml.INSTANCE)
+        result = CodeWhispererEditorUtil.isSupportedJsonFormat("package.json", "", CodeWhispererYaml.INSTANCE)
         assertThat(result).isEqualTo(false)
     }
 }
