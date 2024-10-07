@@ -14,6 +14,7 @@ import org.junit.Test
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.codewhispererruntime.model.OptOutPreference
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
+import software.aws.toolkits.core.utils.test.aStringWithLineCount
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
@@ -119,83 +120,45 @@ class CodeWhispererUtilTest {
 
     @Test
     fun `toCodeChunk case_2`() {
-        val psiFile = fixture.configureByText("Sample.java", codeSample33Lines)
+        val fakeCodeWith210Lines = aStringWithLineCount(210)
+        val psiFile = fixture.configureByText("Sample.java", fakeCodeWith210Lines)
 
         val result = runBlocking {
             psiFile.virtualFile.toCodeChunk("fake/path")
         }.toList()
 
-        assertThat(result).hasSize(5)
+        // 210 / 50 + 2
+        assertThat(result).hasSize(6)
 
         // 0th
-        assertThat(result[0].content).isEqualTo(
-            """public int runBinarySearchRecursively(int[] sortedArray, int key, int low, int high) {
-                |    int middle = low  + ((high - low) / 2);
-            """.trimMargin()
-        )
+        assertThat(result[0].content).isEqualTo(aStringWithLineCount(3))
         assertThat(result[0].path).isEqualTo("fake/path")
-        assertThat(result[0].nextChunk).isEqualTo(result[1].content)
+        assertThat(result[0].nextChunk).isEqualTo(aStringWithLineCount(50, start = 0))
 
         // 1st
-        assertThat(result[1].content).isEqualTo(
-            """|public int runBinarySearchRecursively(int[] sortedArray, int key, int low, int high) {
-                    |    int middle = low  + ((high - low) / 2);
-                    |    
-                    |    if (high < low) {
-                    |        return -1;
-                    |    }
-                    |
-                    |    if (key == sortedArray[middle]) {
-                    |        return middle;
-                    |    } else if (key < sortedArray[middle]) {
-            """.trimMargin()
-        )
+        assertThat(result[1].content).isEqualTo(aStringWithLineCount(50, start = 0))
         assertThat(result[1].path).isEqualTo("fake/path")
-        assertThat(result[1].nextChunk).isEqualTo(result[2].content)
+        assertThat(result[1].nextChunk).isEqualTo(aStringWithLineCount(50, start = 50))
 
         // 2nd
-        assertThat(result[2].content).isEqualTo(
-            """|        return runBinarySearchRecursively(sortedArray, key, low, middle - 1);
-               |    } else {
-               |        return runBinarySearchRecursively(sortedArray, key, middle + 1, high);
-               |    }
-               |}
-               |
-               |public int runBinarySearchIteratively(int[] sortedArray, int key, int low, int high) {
-               |    int index = Integer.MAX_VALUE;
-               |    
-               |    while (low <= high) {
-            """.trimMargin()
-        )
+        assertThat(result[2].content).isEqualTo(aStringWithLineCount(50, start = 50))
         assertThat(result[2].path).isEqualTo("fake/path")
-        assertThat(result[2].nextChunk).isEqualTo(result[3].content)
+        assertThat(result[2].nextChunk).isEqualTo(aStringWithLineCount(50, start = 100))
 
         // 3rd
-        assertThat(result[3].content).isEqualTo(
-            """|        int mid = low  + ((high - low) / 2);
-       |        if (sortedArray[mid] < key) {
-       |            low = mid + 1;
-       |        } else if (sortedArray[mid] > key) {
-       |            high = mid - 1;
-       |        } else if (sortedArray[mid] == key) {
-       |            index = mid;
-       |            break;
-       |        }
-       |     }
-            """.trimMargin()
-        )
+        assertThat(result[3].content).isEqualTo(aStringWithLineCount(50, start = 100))
         assertThat(result[3].path).isEqualTo("fake/path")
-        assertThat(result[3].nextChunk).isEqualTo(result[4].content)
+        assertThat(result[3].nextChunk).isEqualTo(aStringWithLineCount(50, start = 150))
 
         // 4th
-        assertThat(result[4].content).isEqualTo(
-            """|    
-               |    return index;
-               |}
-            """.trimMargin()
-        )
+        assertThat(result[4].content).isEqualTo(aStringWithLineCount(50, start = 150))
         assertThat(result[4].path).isEqualTo("fake/path")
-        assertThat(result[4].nextChunk).isEqualTo(result[4].content)
+        assertThat(result[4].nextChunk).isEqualTo(aStringWithLineCount(10, start = 200))
+
+        // 5th
+        assertThat(result[5].content).isEqualTo(aStringWithLineCount(10, start = 200))
+        assertThat(result[5].path).isEqualTo("fake/path")
+        assertThat(result[5].nextChunk).isEqualTo(aStringWithLineCount(10, start = 200))
     }
 
     @Test
@@ -231,7 +194,7 @@ class CodeWhispererUtilTest {
     }
 }
 
-private val codeSample33Lines =
+private val codeSample110Lines =
     """public int runBinarySearchRecursively(int[] sortedArray, int key, int low, int high) {
        |    int middle = low  + ((high - low) / 2);
        |    
@@ -266,4 +229,80 @@ private val codeSample33Lines =
        |    return index;
        |}
        |
+       |public int runBinarySearchIteratively(int[] sortedArray, int key, int low, int high) {
+       |    int index = Integer.MAX_VALUE;
+       |
+       |    while (low <= high) {
+       |        int mid = low  + ((high - low) / 2);
+       |        if (sortedArray[mid] < key) {
+       |            low = mid + 1;
+       |        } else if (sortedArray[mid] > key) {
+       |            high = mid - 1;
+       |        } else if (sortedArray[mid] == key) {
+       |            index = mid;
+       |            break;
+       |        }
+       |     }
+       |
+       |    return index;
+       |}
+       |
+       |public void mergeSort(int[] array) {
+       |    if (array.length > 1) {
+       |        int[] left = Arrays.copyOfRange(array, 0, array.length / 2);
+       |        int[] right = Arrays.copyOfRange(array, array.length / 2, array.length);
+       |
+       |        mergeSort(left);
+       |        mergeSort(right);
+       |
+       |        int i = 0;
+       |        int j = 0;
+       |        int k = 0;
+       |
+       |        while (i < left.length && j < right.length) {
+       |            if (left[i] < right[j]) {
+       |                array[k++] = left[i++];
+       |            } else {
+       |                array[k++] = right[j++];
+       |            }
+       |        }
+       |
+       |        while (i < left.length) {
+       |            array[k++] = left[i++];
+       |        }
+       |
+       |        while (j < right.length) {
+       |            array[k++] = right[j++];
+       |        }
+       |    }
+       |}
+       |
+       |public void bubbleSort(int[] array) {
+       |    boolean isSorted = false;
+       |    int lastUnsorted = array.length - 1;
+       |    while (!isSorted) {
+       |        isSorted = true;
+       |        for (int i = 0; i < lastUnsorted; i++) {
+       |            if (array[i] > array[i + 1]) {
+       |                int temp = array[i];
+       |                array[i] = array[i + 1];
+       |                array[i + 1] = temp;
+       |                isSorted = false;
+       |            }
+       |        }
+       |        lastUnsorted--;
+       |    }
+       |}
+       |
+       |public void insertionSort(int[] array) {
+       |    for (int i = 1; i < array.length; i++) {
+       |        int current = array[i];
+       |        int j = i - 1;
+       |        while (j >= 0 && array[j] > current) {
+       |            array[j + 1] = array[j];
+       |            j--;
+       |        }
+       |        array[j + 1] = current;
+       |    }
+       |}
     """.trimMargin()
