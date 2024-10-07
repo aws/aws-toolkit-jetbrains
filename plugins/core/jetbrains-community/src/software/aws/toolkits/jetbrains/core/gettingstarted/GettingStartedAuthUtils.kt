@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.core.gettingstarted
 
 import com.intellij.openapi.project.Project
+import migration.software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.amazon.awssdk.services.toolkittelemetry.model.Unit
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
@@ -27,6 +29,7 @@ import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.Result
+import java.time.Instant
 
 fun requestCredentialsForCodeWhisperer(
     project: Project,
@@ -231,7 +234,6 @@ fun reauthenticateWithQ(project: Project) {
 
 fun emitUserState(project: Project) {
 
-    // for each connection, add scopes to a list
     val scopes = ToolkitAuthManager.getInstance().listConnections().flatMap { connection ->
         when (connection) {
             is ProfileSsoManagedBearerSsoConnection -> connection.scopes
@@ -240,16 +242,17 @@ fun emitUserState(project: Project) {
         }
     }.toSet()
 
-    AuthTelemetry.userState(
-        project,
-        source = getStartupState().toString(),
-        authEnabledConnections = getEnabledConnections(project),
-        authStatus = getAuthStatus(project),
-        passive = true,
-        metadata = mapOf(
-            "authScopes" to scopes.joinToString(",")
-        )
-    )
+    TelemetryService.getInstance().record(project) {
+        datum("auth_userState"){
+            createTime(Instant.now())
+            unit(Unit.NONE)
+            passive(true)
+            metadata("source", getStartupState().toString())
+            metadata("authStatus", getAuthStatus(project).toString())
+            metadata("authEnabledConnections", getEnabledConnections(project))
+            metadata("authScopes", scopes.joinToString(", "))
+        }
+    }
 }
 
 const val CODEWHISPERER_AUTH_LEARN_MORE_LINK = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/codewhisperer-auth.html"
