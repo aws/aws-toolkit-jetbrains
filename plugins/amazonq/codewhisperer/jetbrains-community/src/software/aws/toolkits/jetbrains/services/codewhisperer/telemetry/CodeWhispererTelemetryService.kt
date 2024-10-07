@@ -421,7 +421,7 @@ class CodeWhispererTelemetryService {
                         Completion.builder().content("").references(emptyList()).build()
                     }
                 val referenceCount = if (hasUserAccepted && recommendation.hasReferences()) 1 else 0
-                val acceptedContent = if (hasUserAccepted) recommendation.content() else ""
+                val acceptedContent = recommendation.content()
                 val generatedLineCount = if (acceptedContent.isEmpty()) 0 else acceptedContent.split("\n").size
                 val acceptedCharCount = acceptedContent.length
                 sendUserTriggerDecisionEvent(
