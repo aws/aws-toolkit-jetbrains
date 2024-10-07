@@ -11,6 +11,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.leftContext_success_Iac
@@ -108,10 +109,14 @@ class CodeWhispererEditorUtilTest {
 
     @Test
     fun `isSupportedJsonFormat should return false due to no match`() {
-        var result = CodeWhispererEditorUtil.isSupportedJsonFormat("foo.json", "", CodeWhispererJson.INSTANCE)
+        val result = CodeWhispererEditorUtil.isSupportedJsonFormat("foo.json", "", CodeWhispererJson.INSTANCE)
         assertThat(result).isEqualTo(false)
+    }
 
-        result = CodeWhispererEditorUtil.isSupportedJsonFormat("package.json", "", CodeWhispererYaml.INSTANCE)
-        assertThat(result).isEqualTo(false)
+    @Test
+    fun `isSupportedJsonFormat should throw assertion error if language is not JSON`() {
+        assertThrows<AssertionError> {
+            CodeWhispererEditorUtil.isSupportedJsonFormat("foo.json", "", CodeWhispererYaml.INSTANCE)
+        }
     }
 }
