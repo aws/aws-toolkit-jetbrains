@@ -251,7 +251,7 @@ fun emitUserState(project: Project) {
             metadata("source", getStartupState().toString())
             metadata("authStatus", getAuthStatus(project).toString())
             metadata("authEnabledConnections", getEnabledConnections(project))
-            metadata("authScopes", scopes.joinToString(", "))
+            metadata("authScopes", scopes.joinToString(","))
         }
     }
 }
