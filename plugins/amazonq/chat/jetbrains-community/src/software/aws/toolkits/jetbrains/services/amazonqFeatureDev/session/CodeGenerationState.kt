@@ -31,7 +31,6 @@ private val logger = getLogger<CodeGenerationState>()
 class CodeGenerationState(
     override val tabID: String,
     override var approach: String,
-    override val token: CancellationTokenSource?,
     val config: SessionStateConfig,
     val uploadId: String,
     val currentIteration: Int,
@@ -39,8 +38,9 @@ class CodeGenerationState(
     val messenger: MessagePublisher,
     var codeGenerationRemainingIterationCount: Int? = null,
     var codeGenerationTotalIterationCount: Int? = null,
-    var currentCodeGenerationId:  UUID? = null
-) : SessionState {
+    var currentCodeGenerationId:  UUID? = null,
+    override var token: CancellationTokenSource?
+    ) : SessionState {
     override val phase = SessionStatePhase.CODEGEN
 
     override suspend fun interact(action: SessionStateAction): SessionStateInteraction {
@@ -69,8 +69,7 @@ class CodeGenerationState(
                 tabId = tabID,
                 newPlaceholder = message("amazonqFeatureDev.code_generation.generating_code")
             )
-
-            val codeGenerationResult = generateCode(codeGenerationId = response.codeGenerationId(), messenger = messenger)
+            val codeGenerationResult = generateCode(codeGenerationId = response.codeGenerationId(), messenger = messenger, token = action.token)
             numberOfReferencesGenerated = codeGenerationResult.references.size
             numberOfFilesGenerated = codeGenerationResult.newFiles.size
             codeGenerationRemainingIterationCount = codeGenerationResult.codeGenerationRemainingIterationCount
@@ -127,11 +126,16 @@ class CodeGenerationState(
     }
 }
 
-private suspend fun CodeGenerationState.generateCode(codeGenerationId: String, messenger: MessagePublisher): CodeGenerationResult {
+private suspend fun CodeGenerationState.generateCode(codeGenerationId: String, messenger: MessagePublisher, token: CancellationTokenSource?): CodeGenerationResult {
     val pollCount = 180
     val requestDelay = 10000L
 
+
     repeat(pollCount) {
+
+        if (token?.token()?.isCancellationRequested == true) {
+            return CodeGenerationResult(emptyList(), emptyList(), emptyList());
+        }
         val codeGenerationResultState = config.featureDevService.getTaskAssistCodeGeneration(
             conversationId = config.conversationId,
             codeGenerationId = codeGenerationId,

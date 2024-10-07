@@ -8,7 +8,7 @@ import org.gradle.tooling.CancellationTokenSource
 interface SessionState {
     val tabID: String
     val phase: SessionStatePhase?
-    val token: CancellationTokenSource?
+    var token: CancellationTokenSource?
     var approach: String
     suspend fun interact(action: SessionStateAction): SessionStateInteraction
 }

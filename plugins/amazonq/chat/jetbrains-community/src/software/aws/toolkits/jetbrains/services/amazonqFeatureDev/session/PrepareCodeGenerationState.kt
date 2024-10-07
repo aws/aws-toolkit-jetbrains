@@ -23,7 +23,7 @@ private val logger = getLogger<PrepareCodeGenerationState>()
 
 class PrepareCodeGenerationState(
     override var tabID: String,
-    override val token: CancellationTokenSource?,
+    override var token: CancellationTokenSource?,
     override var approach: String,
     private var config: SessionStateConfig,
     val filePaths: List<NewFileZipInfo>,

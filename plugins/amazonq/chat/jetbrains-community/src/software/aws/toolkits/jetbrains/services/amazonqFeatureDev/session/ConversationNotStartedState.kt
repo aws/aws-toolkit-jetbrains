@@ -8,7 +8,7 @@ import org.gradle.tooling.CancellationTokenSource
 class ConversationNotStartedState(
     override var approach: String,
     override val tabID: String,
-    override val token: CancellationTokenSource?,
+    override var token: CancellationTokenSource?,
     ) : SessionState {
     override val phase = SessionStatePhase.INIT
 

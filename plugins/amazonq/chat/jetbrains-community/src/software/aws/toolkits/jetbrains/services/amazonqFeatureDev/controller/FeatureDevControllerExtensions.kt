@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.controller
 
 import com.intellij.notification.NotificationAction
+import org.gradle.tooling.GradleConnector
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATION_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUp
@@ -68,6 +69,21 @@ suspend fun FeatureDevController.onCodeGeneration(session: Session, message: Str
             }
         }
 
+        if (state.token?.token()?.isCancellationRequested == true) {
+            messenger.sendAnswer(
+                tabId = tabId,
+                messageType = FeatureDevMessageType.Answer,
+                message = message("amazonqFeatureDev.code_generation.stopped_code_generation")
+            )
+            messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = true)
+
+            messenger.sendUpdatePlaceholder(
+                tabId = tabId,
+                newPlaceholder = message("amazonqFeatureDev.placeholder.new_plan")
+            )
+            return
+        }
+
         // Atm this is the only possible path as codegen is mocked to return empty.
         if (filePaths.size or deletedFiles.size == 0) {
             messenger.sendAnswer(
@@ -115,9 +131,13 @@ suspend fun FeatureDevController.onCodeGeneration(session: Session, message: Str
 
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
     } finally {
-        messenger.sendAsyncEventProgress(tabId = tabId, inProgress = false) // Finish processing the event
-        messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = false) // Lock chat input until a follow-up is clicked.
 
+        if (session.sessionState.token?.token()?.isCancellationRequested == true) {
+            session.sessionState.token = GradleConnector.newCancellationTokenSource()
+        } else {
+            messenger.sendAsyncEventProgress(tabId = tabId, inProgress = false) // Finish processing the event
+            messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = false) // Lock chat input until a follow-up is clicked.
+        }
         if (toolWindow != null && !toolWindow.isVisible) {
             notifyInfo(
                 title = message("amazonqFeatureDev.code_generation.notification_title"),

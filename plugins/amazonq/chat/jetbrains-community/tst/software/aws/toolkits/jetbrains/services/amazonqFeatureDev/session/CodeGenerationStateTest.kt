@@ -55,7 +55,8 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
             testUploadId,
             0,
             testRepositorySize,
-            messenger
+            messenger,
+            token = null
         )
 
         mockkStatic(MessagePublisher::sendAnswerPart)

@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
 import com.fasterxml.jackson.annotation.JsonValue
+import org.gradle.tooling.CancellationTokenSource
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
 import software.aws.toolkits.jetbrains.services.cwc.messages.RecommendationContentSpan
@@ -11,6 +12,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.RecommendationConte
 data class SessionStateAction(
     val task: String,
     val msg: String,
+    val token: CancellationTokenSource? = null
 )
 
 data class Interaction(
