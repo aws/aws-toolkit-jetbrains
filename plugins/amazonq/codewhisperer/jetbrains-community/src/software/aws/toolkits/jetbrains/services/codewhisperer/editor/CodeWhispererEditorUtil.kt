@@ -111,13 +111,12 @@ object CodeWhispererEditorUtil {
     /**
      * Checks if the language is json and checks if left context contains keywords
      */
-    fun isSupportedJsonFormat(fileName: String, leftContext: String, language: CodeWhispererProgrammingLanguage): Boolean =
-        (language is CodeWhispererJson) &&
-            (
-                JsonConfigFileNamingConvention.contains(fileName.lowercase()) ||
-                    AWSTemplateKeyWordsRegex.containsMatchIn(leftContext) ||
-                    AWSTemplateCaseInsensitiveKeyWordsRegex.containsMatchIn(leftContext.lowercase(Locale.getDefault()))
-                )
+    fun isSupportedJsonFormat(fileName: String, leftContext: String, language: CodeWhispererProgrammingLanguage): Boolean {
+        assert(language is CodeWhispererJson)
+        return JsonConfigFileNamingConvention.contains(fileName.lowercase()) ||
+            AWSTemplateKeyWordsRegex.containsMatchIn(leftContext) ||
+            AWSTemplateCaseInsensitiveKeyWordsRegex.containsMatchIn(leftContext.lowercase(Locale.getDefault()))
+    }
 
     /**
      * Checks if the [otherRange] overlaps this TextRange. Note that the comparison is `<` because the endOffset of TextRange is exclusive.

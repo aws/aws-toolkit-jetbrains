@@ -59,6 +59,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhisper
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.isSupportedJsonFormat
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJson
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
@@ -171,7 +172,12 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
 
         val language = requestContext.fileContextInfo.programmingLanguage
         val leftContext = requestContext.fileContextInfo.caretContext.leftFileContext
-        if (!language.isCodeCompletionSupported() || !isSupportedJsonFormat(requestContext.fileContextInfo.filename, leftContext, language)) {
+        if (!language.isCodeCompletionSupported() || (language is CodeWhispererJson && !isSupportedJsonFormat(
+                requestContext.fileContextInfo.filename,
+                leftContext,
+                language
+            ))
+        ) {
             LOG.debug { "Programming language $language is not supported by CodeWhisperer" }
             if (triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
                 showCodeWhispererInfoHint(
