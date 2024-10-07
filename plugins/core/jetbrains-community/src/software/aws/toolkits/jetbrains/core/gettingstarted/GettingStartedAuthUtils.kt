@@ -246,6 +246,7 @@ fun emitUserState(project: Project) {
         datum("auth_userState"){
             createTime(Instant.now())
             unit(Unit.NONE)
+            value(1.0)
             passive(true)
             metadata("source", getStartupState().toString())
             metadata("authStatus", getAuthStatus(project).toString())
