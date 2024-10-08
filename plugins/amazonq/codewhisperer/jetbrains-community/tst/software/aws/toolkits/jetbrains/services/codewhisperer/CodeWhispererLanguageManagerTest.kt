@@ -276,7 +276,8 @@ class CodeWhispererProgrammingLanguageTest {
                 is CodeWhispererR,
                 is CodeWhispererSwift,
                 is CodeWhispererSystemVerilog,
-                is CodeWhispererVue -> true
+                is CodeWhispererVue,
+                -> true
 
                 // not supported
                 is CodeWhispererPlainText, is CodeWhispererUnknownLanguage -> false
@@ -297,7 +298,8 @@ class CodeWhispererProgrammingLanguageTest {
                 is CodeWhispererJsx,
                 is CodeWhispererPython,
                 is CodeWhispererTsx,
-                is CodeWhispererTypeScript -> true
+                is CodeWhispererTypeScript,
+                -> true
 
                 else -> false
             }
@@ -311,7 +313,8 @@ class CodeWhispererProgrammingLanguageTest {
         suts.forEach { sut ->
             val expected = when (sut) {
                 is CodeWhispererJava,
-                is CodeWhispererPython, -> true
+                is CodeWhispererPython,
+                -> true
 
                 else -> false
             }
