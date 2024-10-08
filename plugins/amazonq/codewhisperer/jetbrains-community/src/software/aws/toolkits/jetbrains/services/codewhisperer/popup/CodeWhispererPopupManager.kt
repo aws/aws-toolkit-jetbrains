@@ -507,9 +507,7 @@ class CodeWhispererPopupManager {
                 if (e.inlay != null) {
                     showPopup(sessionContext, force = true)
                 } else {
-                    sessionContext.project.messageBus.syncPublisher(
-                        CodeWhispererService.CODEWHISPERER_INTELLISENSE_POPUP_ON_HOVER,
-                    ).onEnter()
+                    bringSuggestionInlayToFront(sessionContext.editor, sessionContext.popup, opposite = true)
                 }
                 super.mouseMoved(e)
             }
