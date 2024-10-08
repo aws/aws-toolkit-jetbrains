@@ -31,11 +31,11 @@ class SchemaCodeDownloader(
     private val generator: CodeGenerator,
     private val poller: CodeGenerationStatusPoller,
     private val downloader: CodeDownloader,
-    private val extractor: CodeExtractor
+    private val extractor: CodeExtractor,
 ) {
     fun downloadCode(
         schemaDownloadRequest: SchemaCodeDownloadRequestDetails,
-        indicator: ProgressIndicator
+        indicator: ProgressIndicator,
     ): CompletionStage<Path?> {
         val schemaName = schemaDownloadRequest.schema.name
         indicator.updateProgress(message("schemas.schema.download_code_bindings.notification.start", schemaName))
@@ -115,7 +115,7 @@ class CodeGenerator(private val schemasClient: SchemasClient) {
 class CodeGenerationStatusPoller(private val schemasClient: SchemasClient) {
     fun pollForCompletion(
         schemaDownload: SchemaCodeDownloadRequestDetails,
-        initialCodeGenerationStatus: CodeGenerationStatus = CodeGenerationStatus.CREATE_IN_PROGRESS
+        initialCodeGenerationStatus: CodeGenerationStatus = CodeGenerationStatus.CREATE_IN_PROGRESS,
     ): CompletionStage<String> {
         val future = CompletableFuture<String>()
         pluginAwareExecuteOnPooledThread {
@@ -138,7 +138,7 @@ class CodeGenerationStatusPoller(private val schemasClient: SchemasClient) {
     }
 
     fun getCurrentStatus(
-        schemaDownload: SchemaCodeDownloadRequestDetails
+        schemaDownload: SchemaCodeDownloadRequestDetails,
     ): CompletionStage<CodeGenerationStatus> {
         val future = CompletableFuture<CodeGenerationStatus>()
         pluginAwareExecuteOnPooledThread {
@@ -165,7 +165,7 @@ class CodeGenerationStatusPoller(private val schemasClient: SchemasClient) {
 
 class CodeDownloader(private val schemasClient: SchemasClient) {
     fun download(
-        schemaDownload: SchemaCodeDownloadRequestDetails
+        schemaDownload: SchemaCodeDownloadRequestDetails,
     ): CompletionStage<DownloadedSchemaCode> {
         val future = CompletableFuture<DownloadedSchemaCode>()
         pluginAwareExecuteOnPooledThread {
@@ -194,7 +194,7 @@ class CodeDownloader(private val schemasClient: SchemasClient) {
 class CodeExtractor {
     fun extractAndPlace(
         request: SchemaCodeDownloadRequestDetails,
-        downloadedSchemaCode: DownloadedSchemaCode
+        downloadedSchemaCode: DownloadedSchemaCode,
     ): CompletionStage<Path?> {
         val zipContents = downloadedSchemaCode.zipContents
         val zipFileName = "${request.schema.registryName}.${request.schema.name}.${request.version}.${request.language.apiValue}.zip"

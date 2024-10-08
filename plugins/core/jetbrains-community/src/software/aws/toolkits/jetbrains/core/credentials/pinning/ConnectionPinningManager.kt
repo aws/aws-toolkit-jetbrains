@@ -132,5 +132,5 @@ class DefaultConnectionPinningManager :
 }
 
 data class ConnectionPinningManagerState(
-    var pinnedConnections: Map<String, String> = emptyMap()
+    var pinnedConnections: Map<String, String> = emptyMap(),
 )

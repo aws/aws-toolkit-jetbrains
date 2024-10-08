@@ -45,7 +45,7 @@ class WorkspaceGroupsPanel(
     private val cawsClient: CodeCatalystClient,
     private val ssoSettings: SsoSettings?,
     private val setContentCallback: (Component) -> Unit,
-    private val lifetime: Lifetime
+    private val lifetime: Lifetime,
 ) : NonOpaquePanel(GridBagLayout()) {
     private val disposable = lifetime.createNestedDisposable()
     private data class WorkspaceGroup(val repoName: String?, val subtitle: String?, val workspaces: List<Workspace>)

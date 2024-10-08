@@ -12,7 +12,7 @@ data class SchemaCodeDownloadRequestDetails(
     val schema: SchemaSummary,
     val version: String,
     val language: SchemaCodeLangs,
-    val destinationDirectory: File
+    val destinationDirectory: File,
 ) {
     // TODO: This is far from reliable, and won't work if the schema has special characters,
     //  and should either be generated using SchemaCodeGenUtils or provided from the server via metadata in DescribeCodeBindings
@@ -20,5 +20,5 @@ data class SchemaCodeDownloadRequestDetails(
 }
 
 data class DownloadedSchemaCode(
-    val zipContents: ByteBuffer
+    val zipContents: ByteBuffer,
 )

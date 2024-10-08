@@ -15,7 +15,7 @@ abstract class ToolkitRegionProvider {
     protected data class PartitionData(
         val description: String,
         val services: Map<String, Service>,
-        val regions: Map<String, AwsRegion>
+        val regions: Map<String, AwsRegion>,
     )
 
     protected abstract fun partitionData(): Map<String, PartitionData>

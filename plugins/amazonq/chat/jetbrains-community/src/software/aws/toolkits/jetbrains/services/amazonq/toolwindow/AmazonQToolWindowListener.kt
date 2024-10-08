@@ -19,7 +19,7 @@ class AmazonQToolWindowListener : ToolWindowManagerListener {
     override fun stateChanged(
         toolWindowManager: ToolWindowManager,
         toolWindow: ToolWindow,
-        changeType: ToolWindowManagerListener.ToolWindowManagerEventType
+        changeType: ToolWindowManagerListener.ToolWindowManagerEventType,
     ) {
         if (toolWindow.id != AmazonQToolWindowFactory.WINDOW_ID) {
             return

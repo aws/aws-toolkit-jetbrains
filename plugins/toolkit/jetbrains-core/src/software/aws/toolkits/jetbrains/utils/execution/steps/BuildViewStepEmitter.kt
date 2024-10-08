@@ -23,7 +23,7 @@ import software.aws.toolkits.resources.message
 class BuildViewWorkflowEmitter private constructor(
     private val buildListener: BuildProgressListener,
     private val workflowTitle: String,
-    private val workflowId: String
+    private val workflowId: String,
 ) : WorkflowEmitter {
     override fun createStepEmitter(): StepEmitter = BuildViewStepEmitter.createRoot(buildListener, workflowId)
 
@@ -88,7 +88,7 @@ class BuildViewStepEmitter private constructor(
     private val parentId: String,
     private val stepName: String,
     private val hidden: Boolean,
-    private val parent: StepEmitter?
+    private val parent: StepEmitter?,
 ) : StepEmitter {
     override fun createChildEmitter(stepName: String, hidden: Boolean): StepEmitter {
         val (childParent, childStepName) = if (hidden) {

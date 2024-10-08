@@ -41,7 +41,7 @@ class CodeWhispererEndpointCustomizer : ToolkitClientCustomizer {
         tokenProvider: SdkTokenProvider?,
         regionId: String,
         builder: AwsClientBuilder<*, *>,
-        clientOverrideConfiguration: ClientOverrideConfiguration.Builder
+        clientOverrideConfiguration: ClientOverrideConfiguration.Builder,
     ) {
         if (builder is CodeWhispererRuntimeClientBuilder || builder is CodeWhispererStreamingAsyncClientBuilder) {
             val endpoint = URI.create(CodeWhispererConstants.Config.CODEWHISPERER_ENDPOINT)

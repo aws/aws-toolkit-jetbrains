@@ -8,7 +8,8 @@ interface SupplementalContextStrategy
 enum class UtgStrategy : SupplementalContextStrategy {
     ByName,
     ByContent,
-    Empty;
+    Empty,
+    ;
 
     override fun toString() = when (this) {
         ByName -> "ByName"
@@ -19,7 +20,8 @@ enum class UtgStrategy : SupplementalContextStrategy {
 
 enum class CrossFileStrategy : SupplementalContextStrategy {
     OpenTabsBM25,
-    Empty;
+    Empty,
+    ;
 
     override fun toString() = when (this) {
         OpenTabsBM25 -> "OpenTabs_BM25"

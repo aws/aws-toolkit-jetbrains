@@ -179,7 +179,7 @@ object SamTemplateUtils {
         handler: String,
         timeout: Int = LambdaLimits.DEFAULT_TIMEOUT,
         memorySize: Int = LambdaLimits.DEFAULT_MEMORY_SIZE,
-        envVars: Map<String, String> = emptyMap()
+        envVars: Map<String, String> = emptyMap(),
     ) {
         templateCommon(
             tempFile = tempFile,
@@ -204,7 +204,7 @@ object SamTemplateUtils {
         dockerfile: Path,
         timeout: Int = LambdaLimits.DEFAULT_TIMEOUT,
         memorySize: Int = LambdaLimits.DEFAULT_MEMORY_SIZE,
-        envVars: Map<String, String> = emptyMap()
+        envVars: Map<String, String> = emptyMap(),
     ) {
         templateCommon(
             tempFile = tempFile,
@@ -229,7 +229,7 @@ object SamTemplateUtils {
         memorySize: Int = LambdaLimits.DEFAULT_MEMORY_SIZE,
         envVars: Map<String, String> = emptyMap(),
         properties: YamlWriter.() -> Unit,
-        metadata: (YamlWriter.() -> Unit)? = null
+        metadata: (YamlWriter.() -> Unit)? = null,
     ) {
         if (!tempFile.exists()) {
             Files.createDirectories(tempFile.parent)

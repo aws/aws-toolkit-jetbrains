@@ -84,7 +84,7 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
         name: String,
         settings: SamNewProjectSettings,
         schemaParameters: SchemaTemplateParameters?,
-        outputDir: VirtualFile
+        outputDir: VirtualFile,
     ) {
         var success = true
         try {
@@ -114,7 +114,7 @@ class SamProjectBuilder(private val generator: SamProjectGenerator) : ModuleBuil
         model: ModifiableRootModel,
         indicator: ProgressIndicator,
         settings: SamNewProjectSettings,
-        outputDir: VirtualFile
+        outputDir: VirtualFile,
     ) {
         generator.wizardFragments.forEach { it.postProjectGeneration(model, settings.template, settings.runtime, indicator) }
 

@@ -14,7 +14,7 @@ import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
 
 class QGettingStartedPanel(
-    val project: Project
+    val project: Project,
 ) : Disposable {
     private val webviewContainer = Wrapper()
     var browser: QGettingStartedContent? = null

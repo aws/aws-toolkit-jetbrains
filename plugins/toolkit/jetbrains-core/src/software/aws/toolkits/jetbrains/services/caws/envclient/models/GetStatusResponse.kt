@@ -16,7 +16,7 @@ data class GetStatusResponse(
     val actionId: String? = null,
     val status: Status? = null,
     val message: String? = null,
-    val location: String? = null
+    val location: String? = null,
 ) {
     /**
      * Values: PENDING,STABLE,CHANGED,IMAGES-UPDATE-AVAILABLE
@@ -28,6 +28,6 @@ data class GetStatusResponse(
         IMAGES_UPDATE_AVAILABLE("IMAGES-UPDATE-AVAILABLE"),
 
         @JsonEnumDefaultValue
-        UNKNOWN("UNKNOWN")
+        UNKNOWN("UNKNOWN"),
     }
 }

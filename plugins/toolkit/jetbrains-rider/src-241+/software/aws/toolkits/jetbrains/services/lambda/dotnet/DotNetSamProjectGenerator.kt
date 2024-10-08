@@ -23,7 +23,7 @@ import java.io.File
 class DotNetSamProjectGenerator(
     lifetime: Lifetime,
     private val context: NewProjectDialogContext,
-    sharedModel: ProjectTemplatesSharedModel
+    sharedModel: ProjectTemplatesSharedModel,
 ) : DotNetSamProjectGeneratorRoot(lifetime, context, sharedModel) {
     override suspend fun expandTemplate(): suspend () -> Unit = {
         val samPanel = getSamPanel()

@@ -254,7 +254,7 @@ class CredentialManagerTest {
 
         fun addCredentialProvider(
             credentialId: String,
-            awsCredentialsProvider: AwsCredentialsProvider? = null
+            awsCredentialsProvider: AwsCredentialsProvider? = null,
         ) {
             val identifier = TestCredentialProviderIdentifier(credentialId, id, getDefaultRegion().id, awsCredentialsProvider)
             if (!::callback.isInitialized) {
@@ -305,7 +305,7 @@ class CredentialManagerTest {
         override val id: String,
         override val factoryId: String,
         override val defaultRegionId: String,
-        val provider: AwsCredentialsProvider?
+        val provider: AwsCredentialsProvider?,
     ) : CredentialIdentifierBase(null) {
         override val displayName: String = "$factoryId:$id"
     }
