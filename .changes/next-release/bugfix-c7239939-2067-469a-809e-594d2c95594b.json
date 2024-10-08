@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix 'Slow operations are prohibited on EDT.' when Amazon Q is determining if a file supports inline suggestions (#4823)"
+}

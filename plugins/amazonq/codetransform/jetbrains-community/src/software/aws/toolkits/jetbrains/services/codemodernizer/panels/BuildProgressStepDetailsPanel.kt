@@ -64,7 +64,7 @@ class BuildProgressStepDetailsPanel : JPanel(BorderLayout()) {
             value: Any?,
             index: Int,
             isSelected: Boolean,
-            cellHasFocus: Boolean
+            cellHasFocus: Boolean,
         ): Component {
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
             val it = value as BuildProgressTimelineStepDetailItem

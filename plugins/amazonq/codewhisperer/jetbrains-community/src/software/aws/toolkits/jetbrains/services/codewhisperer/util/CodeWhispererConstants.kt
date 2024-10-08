@@ -101,7 +101,7 @@ object CodeWhispererConstants {
 
     enum class CodeAnalysisScope(val value: String) {
         FILE("FILE"),
-        PROJECT("PROJECT")
+        PROJECT("PROJECT"),
     }
 
     object Config {

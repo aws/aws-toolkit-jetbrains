@@ -16,7 +16,7 @@ import kotlin.io.path.Path
  * Represents a CodeModernizer artifact. Essentially a wrapper around the manifest file in the downloaded artifact zip.
  */
 open class CodeTransformFailureBuildLog(
-    val logFile: File
+    val logFile: File,
 ) : CodeTransformDownloadArtifact {
     companion object : CodeTransformDownloadArtifact {
         private val tempDir = createTempDirectory("codeTransformBuildLog", null)

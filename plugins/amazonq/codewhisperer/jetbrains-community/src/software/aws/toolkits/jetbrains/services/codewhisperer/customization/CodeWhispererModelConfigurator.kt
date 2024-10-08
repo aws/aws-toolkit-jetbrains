@@ -278,5 +278,5 @@ class CodeWhispererCustomizationState : BaseState() {
 data class CustomizationUiItem(
     val customization: CodeWhispererCustomization,
     val isNew: Boolean,
-    val shouldPrefixAccountId: Boolean
+    val shouldPrefixAccountId: Boolean,
 )

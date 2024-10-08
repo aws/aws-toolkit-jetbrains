@@ -9,7 +9,7 @@ import org.junit.Rule
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 
 open class PanelTestBase(
-    @Rule @JvmField val projectRule: CodeInsightTestFixtureRule = CodeInsightTestFixtureRule()
+    @Rule @JvmField val projectRule: CodeInsightTestFixtureRule = CodeInsightTestFixtureRule(),
 ) {
     internal lateinit var project: Project
 

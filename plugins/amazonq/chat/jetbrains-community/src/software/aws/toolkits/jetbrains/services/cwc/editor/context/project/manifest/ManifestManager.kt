@@ -29,7 +29,7 @@ class ManifestManager {
         @JsonProperty("hashes")
         val hashes: List<String>? = emptyList(),
         @JsonProperty("bytes")
-        val bytes: Number? = null
+        val bytes: Number? = null,
     )
 
     data class VersionTarget(
@@ -39,7 +39,7 @@ class ManifestManager {
         @JsonProperty("arch")
         val arch: String? = null,
         @JsonProperty("contents")
-        val contents: List<TargetContent>? = emptyList()
+        val contents: List<TargetContent>? = emptyList(),
     )
     data class Version(
         @JsonIgnoreProperties(ignoreUnknown = true)
@@ -48,7 +48,7 @@ class ManifestManager {
         @JsonProperty("isDelisted")
         val isDelisted: Boolean? = null,
         @JsonProperty("targets")
-        val targets: List<VersionTarget>? = emptyList()
+        val targets: List<VersionTarget>? = emptyList(),
     )
 
     data class Manifest(
@@ -62,7 +62,7 @@ class ManifestManager {
         @JsonProperty("isManifestDeprecated")
         val isManifestDeprecated: Boolean? = null,
         @JsonProperty("versions")
-        val versions: List<Version>? = emptyList()
+        val versions: List<Version>? = emptyList(),
     )
 
     fun getManifest(): Manifest? = fetchFromRemoteAndSave()

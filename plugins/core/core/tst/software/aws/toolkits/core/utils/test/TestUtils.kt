@@ -15,7 +15,7 @@ fun retryableAssert(
     timeout: Duration? = null,
     maxAttempts: Int? = null,
     interval: Duration = Duration.ofMillis(100),
-    assertion: () -> Unit
+    assertion: () -> Unit,
 ) {
     val calculatedTimeout = timeout ?: maxAttempts?.let { Duration.ofMillis(it * (interval.toMillis() * 2)) } ?: Duration.ofSeconds(1)
     val expiry = Instant.now().plus(calculatedTimeout)

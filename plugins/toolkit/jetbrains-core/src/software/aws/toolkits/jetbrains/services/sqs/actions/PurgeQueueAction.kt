@@ -30,7 +30,7 @@ import software.aws.toolkits.telemetry.SqsTelemetry
 class PurgeQueueAction(
     private val project: Project,
     private val client: SqsClient,
-    private val queue: Queue
+    private val queue: Queue,
 ) : DumbAwareAction(message("sqs.purge_queue.action")) {
     private val edtContext = getCoroutineUiContext()
 

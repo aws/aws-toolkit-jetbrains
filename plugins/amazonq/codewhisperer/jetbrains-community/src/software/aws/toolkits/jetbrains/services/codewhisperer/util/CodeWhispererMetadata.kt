@@ -4,5 +4,5 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
 data class CodeWhispererMetadata(
-    var insertEnd: Int = -1
+    var insertEnd: Int = -1,
 )

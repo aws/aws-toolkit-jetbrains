@@ -196,7 +196,7 @@ enum class StdOutResult {
     TIMEOUT,
     SUCCESS,
     FAILED,
-    UNKNOWN
+    UNKNOWN,
 }
 
 fun SsmCommandExecutorOutput.resultFromStdOut(): StdOutResult {

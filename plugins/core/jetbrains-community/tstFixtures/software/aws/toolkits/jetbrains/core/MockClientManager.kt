@@ -30,7 +30,7 @@ class MockClientManager : AwsClientManager() {
     private data class Key(
         val clazz: KClass<out SdkClient>,
         val regionId: String? = null,
-        val credProviderId: AwsCredentialsProvider? = null
+        val credProviderId: AwsCredentialsProvider? = null,
     )
 
     private val mockClients = mutableMapOf<Key, SdkClient>()
@@ -42,7 +42,7 @@ class MockClientManager : AwsClientManager() {
         tokenProvider: SdkTokenProvider?,
         region: Region,
         endpointOverride: String?,
-        clientCustomizer: ToolkitClientCustomizer?
+        clientCustomizer: ToolkitClientCustomizer?,
     ): T = mockClients[Key(sdkClass, region.id(), credProvider)] as? T
         ?: mockClients[Key(sdkClass)] as? T
         ?: throw IllegalStateException("No mock registered for $sdkClass")

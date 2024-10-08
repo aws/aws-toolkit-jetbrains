@@ -17,7 +17,7 @@ import javax.swing.JButton
 
 fun RemoteRobot.newProjectWizard(
     timeout: Duration = Duration.ofSeconds(20),
-    function: NewProjectWizardDialog.() -> Unit
+    function: NewProjectWizardDialog.() -> Unit,
 ) {
     step("Search for new project wizard dialog") {
         val dialog = find<NewProjectWizardDialog>(DialogFixture.byTitle("New Project"), timeout)
@@ -33,7 +33,7 @@ fun RemoteRobot.newProjectWizard(
 @FixtureName("New Project Wizard")
 open class NewProjectWizardDialog(
     remoteRobot: RemoteRobot,
-    remoteComponent: RemoteComponent
+    remoteComponent: RemoteComponent,
 ) : DialogFixture(remoteRobot, remoteComponent) {
     fun selectProjectCategory(type: String) {
         findText(type).click()

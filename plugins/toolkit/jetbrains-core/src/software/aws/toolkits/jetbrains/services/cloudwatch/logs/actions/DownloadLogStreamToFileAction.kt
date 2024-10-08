@@ -17,7 +17,7 @@ class DownloadLogStreamToFileAction(
     private val project: Project,
     private val client: CloudWatchLogsClient,
     private val logGroup: String,
-    private val logStream: String?
+    private val logStream: String?,
 ) : AnAction(message("cloudwatch.logs.save_action"), null, AllIcons.Actions.MenuSaveall), DumbAware {
     override fun actionPerformed(e: AnActionEvent) {
         logStream ?: return

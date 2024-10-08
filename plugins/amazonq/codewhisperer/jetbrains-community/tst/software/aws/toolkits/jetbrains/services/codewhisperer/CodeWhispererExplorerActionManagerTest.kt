@@ -180,7 +180,7 @@ class CodeWhispererExplorerActionManagerTest {
         expectedState: BearerTokenAuthState,
         expectedLoginType: CodeWhispererLoginType,
         expectedIsCwEnabled: Boolean,
-        expectedIsCwExpired: Boolean
+        expectedIsCwExpired: Boolean,
     ) {
         testDiskCache.saveAccessToken(
             DeviceGrantAccessTokenCacheKey(

@@ -240,7 +240,7 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
     private fun isHighlighterRangeMatchCodeContent(
         editor: Editor,
         highlighter: RangeHighlighterEx,
-        codeContent: String
+        codeContent: String,
     ): Boolean =
         highlighter.isValid && highlighter.endOffset <= editor.document.textLength &&
             editor.document.getText(TextRange.create(highlighter.startOffset, highlighter.endOffset)) == codeContent
@@ -255,10 +255,10 @@ data class CodeReferenceHighLightContext(
     val editor: Editor,
     val highlighter: RangeHighlighterEx,
     val codeContent: String,
-    val referenceContent: String
+    val referenceContent: String,
 )
 
 data class CodeReferenceHighLightPopupContext(
     val context: CodeReferenceHighLightContext,
-    val popup: JBPopup
+    val popup: JBPopup,
 )

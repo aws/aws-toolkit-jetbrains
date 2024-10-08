@@ -7,5 +7,5 @@ data class Index(
     val displayName: String,
     val indexName: String?,
     val partitionKey: String,
-    val sortKey: String?
+    val sortKey: String?,
 )

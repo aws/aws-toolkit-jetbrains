@@ -211,7 +211,7 @@ class DownloadCodeForSchemaDialogTest {
 
     private fun selectDialogDefaults(
         dialog: DownloadCodeForSchemaDialog,
-        path: String
+        path: String,
     ) {
         dialog.view.location.text = path
         dialog.view.version.selectedItem = VERSION
