@@ -8,6 +8,11 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.openapi.vfs.newvfs.BulkFileListener
+import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent
+import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
+import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.getLogger
@@ -24,22 +29,49 @@ class ProjectContextController(private val project: Project, private val cs: Cor
                 encoderServer.downloadArtifactsAndStartServer()
             }
         }
+
+        project.messageBus.connect(this).subscribe(VirtualFileManager.VFS_CHANGES, object : BulkFileListener {
+            override fun after(events: MutableList<out VFileEvent>) {
+                events.forEach {
+                    if (it is VFileCreateEvent) {
+                        println("create")
+                    } else if (it is VFileDeleteEvent) {
+                        println("delete")
+                    }
+                }
+            }
+        })
+    }
+
+    enum class IndexUpdateMode(val value: String) {
+        UPDATE("update"),
+        REMOVE("remove"),
+        ADD("add")
     }
 
     fun getProjectContextIndexComplete() = projectContextProvider.isIndexComplete.get()
 
     fun query(prompt: String): List<RelevantDocument> {
         try {
-            return projectContextProvider.query(prompt)
+            return projectContextProvider.queryChat(prompt)
         } catch (e: Exception) {
             logger.warn { "error while querying for project context $e.message" }
             return emptyList()
         }
     }
 
-    fun updateIndex(filePath: String) {
+    fun queryBM25(prompt: String, filePath: String): Any {
         try {
-            return projectContextProvider.updateIndex(filePath)
+            return projectContextProvider.queryInline(prompt, filePath)
+        } catch (e: Exception) {
+            logger.warn { "error while querying for project context $e.message" }
+            return emptyList<Any>()
+        }
+    }
+
+    fun updateIndex(filePaths: List<String>, mode: String) {
+        try {
+            return projectContextProvider.updateIndex(filePaths, mode)
         } catch (e: Exception) {
             logger.warn { "error while updating index for project context $e.message" }
         }

@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.models
 
-data class QCustomization(
+data class CodeWhispererCustomization(
     @JvmField
     var arn: String = "",
 

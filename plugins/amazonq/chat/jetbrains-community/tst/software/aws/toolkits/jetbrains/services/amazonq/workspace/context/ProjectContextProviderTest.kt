@@ -51,7 +51,7 @@ class ProjectContextProviderTest {
     fun `test query payload is encrypted`() = runTest {
         whenever(encoderServer.port).thenReturn(3000)
         try {
-            sut.query("what does this project do")
+            sut.queryChat("what does this project do")
         } catch (e: ConnectException) {
             // no-op
         }

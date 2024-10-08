@@ -20,12 +20,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
 import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
-import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
@@ -53,10 +54,12 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
             }
         }
     }
-    data class IndexRequestPayload(
+
+    data class IndexRequestV2(
         val filePaths: List<String>,
         val projectRoot: String,
-        val refresh: Boolean,
+        val config: String,
+        val language: String = ""
     )
 
     data class FileCollectionResult(
@@ -68,8 +71,14 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val query: String,
     )
 
-    data class UpdateIndexRequestPayload(
+    data class QueryRequestV2(
+        val query: String,
         val filePath: String,
+    )
+
+    data class UpdateIndexRequestV2(
+        val filePaths: List<String>,
+        val updateMode: String,
     )
 
     data class Usage(
@@ -118,6 +127,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
                         return@launch
                     }
                 } catch (e: Exception) {
+                    logger.error { "project context index error: message=${e.message} stack=${e.stackTraceToString()}"}
                     if (e.stackTraceToString().contains("Connection refused")) {
                         retryCount.incrementAndGet()
                         delay(10000)
@@ -129,6 +139,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
+    // TODO: why this doesn't close connection, is it a bug or intention
     private fun initEncryption(): Boolean {
         logger.info { "project context: init key for ${project.guessProjectDir()} on port ${encoderServer.port}" }
         val url = URL("http://localhost:${encoderServer.port}/initialize")
@@ -140,16 +151,17 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         return connection.responseCode == 200
     }
 
+    // TODO: why this doesn't close connection, is it a bug or intention
     fun index(): Boolean {
         logger.info { "project context: indexing ${project.name} on port ${encoderServer.port}" }
         val indexStartTime = System.currentTimeMillis()
-        val url = URL("http://localhost:${encoderServer.port}/indexFiles")
+        val url = URL("http://localhost:${encoderServer.port}/buildIndex")
         val filesResult = collectFiles()
         var duration = (System.currentTimeMillis() - indexStartTime).toDouble()
         logger.debug { "project context file collection time: ${duration}ms" }
         logger.debug { "list of files collected: ${filesResult.files.joinToString("\n")}" }
         val projectRoot = project.guessProjectDir()?.path ?: return false
-        val payload = IndexRequestPayload(filesResult.files, projectRoot, false)
+        val payload = IndexRequestV2(filesResult.files, projectRoot, "all", "")
         val payloadJson = mapper.writeValueAsString(payload)
         val encrypted = encoderServer.encrypt(payloadJson)
 
@@ -171,32 +183,45 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
-    fun query(prompt: String): List<RelevantDocument> {
-        logger.info { "project context: querying ${project.name} on port ${encoderServer.port}" }
-        val url = URL("http://localhost:${encoderServer.port}/query")
+    fun updateIndex(filePaths: List<String>, mode: String) {
+        // TODO: do we need this?
+        //  it might result in dirty stale data? also we have eventQueue in the LSP so it should be fine?
+        if (!isIndexComplete.get()) return
+
+        val payload = UpdateIndexRequestV2(filePaths, mode)
+        val encrypted = encoderServer.encrypt(mapper.writeValueAsString(payload))
+
+        sendMsgToLsp("updateIndexV2", encrypted)
+    }
+
+    fun queryChat(prompt: String): List<RelevantDocument> {
         val payload = QueryRequestPayload(prompt)
         val payloadJson = mapper.writeValueAsString(payload)
         val encrypted = encoderServer.encrypt(payloadJson)
 
-        val connection = url.openConnection() as HttpURLConnection
-        setConnectionProperties(connection)
-        setConnectionTimeout(connection)
-        setConnectionRequest(connection, encrypted)
+        val response = sendMsgToLsp("query", encrypted)
 
-        val responseCode = connection.responseCode
-        logger.info { "project context query response code: $responseCode for $prompt" }
-        val responseBody = if (responseCode == 200) {
-            connection.inputStream.bufferedReader().use { reader -> reader.readText() }
-        } else {
-            ""
-        }
-        connection.disconnect()
-        try {
-            val parsedResponse = mapper.readValue<List<Chunk>>(responseBody)
-            return queryResultToRelevantDocuments(parsedResponse)
+        return try {
+            val parsedResponse = mapper.readValue<List<Chunk>>(response)
+            queryResultToRelevantDocuments(parsedResponse)
         } catch (e: Exception) {
             logger.warn { "error parsing query response ${e.message}" }
-            return emptyList()
+            emptyList()
+        }
+    }
+
+    fun queryInline(prompt: String, filePath: String): List<BM25Chunk> {
+        val payload = QueryRequestV2(prompt, filePath)
+        val payloadJson = mapper.writeValueAsString(payload)
+        val encrypted = encoderServer.encrypt(payloadJson)
+
+        val response = sendMsgToLsp("queryInlineProjectContext", encrypted)
+
+        return try {
+            mapper.readValue<List<BM25Chunk>>(response)
+        } catch (e: Exception) {
+            logger.warn { "error parsing query response ${e.message}" }
+            throw e
         }
     }
 
@@ -222,42 +247,36 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     private fun getUsage(): Usage? {
-        logger.info { "project context: getting usage for ${project.name} on port ${encoderServer.port}" }
-        val url = URL("http://localhost:${encoderServer.port}/getUsage")
-        val connection = url.openConnection() as HttpURLConnection
-        setConnectionProperties(connection)
-        val responseCode = connection.responseCode
-
-        logger.info { "project context getUsage response code: $responseCode for ${project.name} " }
-        val responseBody = if (responseCode == 200) {
-            connection.inputStream.bufferedReader().use { reader -> reader.readText() }
-        } else {
-            ""
-        }
-        connection.disconnect()
-        try {
-            val parsedResponse = mapper.readValue<Usage>(responseBody)
-            return parsedResponse
+        val responseBody = sendMsgToLsp("getUsage", null)
+        return try {
+            mapper.readValue<Usage>(responseBody)
         } catch (e: Exception) {
             logger.warn { "error parsing query response ${e.message}" }
             return null
         }
     }
 
-    fun updateIndex(filePath: String) {
-        if (!isIndexComplete.get()) return
-        logger.info { "project context: updating index for $filePath on port ${encoderServer.port}" }
-        val url = URL("http://localhost:${encoderServer.port}/updateIndex")
-        val payload = UpdateIndexRequestPayload(filePath)
-        val payloadJson = mapper.writeValueAsString(payload)
-        val encrypted = encoderServer.encrypt(payloadJson)
-        with(url.openConnection() as HttpURLConnection) {
+    // TODO: make messageType sealed object
+    private fun sendMsgToLsp(msgType: String, request: String?): String {
+        logger.info { "sending message: ${msgType} to lsp on port ${encoderServer.port}" }
+        val url = URL("http://localhost:${encoderServer.port}/$msgType")
+
+        return with(url.openConnection() as HttpURLConnection) {
             setConnectionProperties(this)
             setConnectionTimeout(this)
-            setConnectionRequest(this, encrypted)
-            val responseCode = responseCode
-            logger.debug { "project context update index response code: $responseCode for $filePath" }
-            return
+            request?.let { r ->
+                setConnectionRequest(this, r)
+            }
+            val responseCode = this.responseCode
+            logger.info { "receiving response for $msgType with responseCode $responseCode" }
+
+            val responseBody = if (responseCode == 200) {
+                this.inputStream.bufferedReader().use { reader -> reader.readText() }
+            } else {
+                ""
+            }
+
+            responseBody
         }
     }
 

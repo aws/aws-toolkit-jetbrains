@@ -1,18 +1,18 @@
-// Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.codewhisperer.service
+package software.aws.toolkits.jetbrains.services.amazonq
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
+import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.FeatureValue
+import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsRequest
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.calculateIfBIDConnection
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.calculateIfIamIdentityCenterConnection
+import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.utils.isQExpired
 
 @Service
@@ -25,7 +25,9 @@ class CodeWhispererFeatureConfigService {
 
         LOG.debug { "Fetching feature configs" }
         try {
-            val response = CodeWhispererClientAdaptor.getInstance(project).listFeatureEvaluations()
+            val response = project.awsClient<CodeWhispererRuntimeClient>().listFeatureEvaluations {
+                it.userContext(codeWhispererUserContext)
+            }
 
             // Simply force overwrite feature configs from server response, no needed to check existing values.
             response.featureEvaluations().forEach {
@@ -41,7 +43,20 @@ class CodeWhispererFeatureConfigService {
                 val availableCustomizations =
                     calculateIfIamIdentityCenterConnection(project) {
                         try {
-                            CodeWhispererClientAdaptor.getInstance(project).listAvailableCustomizations().map { c -> c.arn }
+                            project.awsClient<CodeWhispererRuntimeClient>()
+                                .listAvailableCustomizationsPaginator(ListAvailableCustomizationsRequest.builder().build())
+                                .stream()
+                                .toList()
+                                .flatMap { resp ->
+                                    LOG.debug {
+                                        "listAvailableCustomizations: requestId: ${resp.responseMetadata().requestId()}, customizations: ${
+                                            resp.customizations().map { it.name() }
+                                        }"
+                                    }
+                                    resp.customizations().map {
+                                        it.arn()
+                                    }
+                                }
                         } catch (e: Exception) {
                             LOG.debug(e) { "Failed to list available customizations" }
                             null
@@ -63,9 +78,11 @@ class CodeWhispererFeatureConfigService {
     }
 
     fun getFeatureConfigsTelemetry(): String =
-        "{${featureConfigs.entries.joinToString(", ") { (name, context) ->
-            "$name: ${context.variation}"
-        }}}"
+        "{${
+            featureConfigs.entries.joinToString(", ") { (name, context) ->
+                "$name: ${context.variation}"
+            }
+        }}"
 
     // TODO: for all feature variations, define a contract that can be enforced upon the implementation of
     // the business logic.
@@ -98,7 +115,7 @@ class CodeWhispererFeatureConfigService {
         private val LOG = getLogger<CodeWhispererFeatureConfigService>()
 
         // TODO: add real feature later
-        internal val FEATURE_DEFINITIONS = mapOf(
+        val FEATURE_DEFINITIONS = mapOf(
             TEST_FEATURE_NAME to FeatureContext(
                 TEST_FEATURE_NAME,
                 "CONTROL",

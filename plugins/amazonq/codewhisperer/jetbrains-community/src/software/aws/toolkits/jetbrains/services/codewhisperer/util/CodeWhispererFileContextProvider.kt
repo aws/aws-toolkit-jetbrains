@@ -22,6 +22,7 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
@@ -214,6 +215,8 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
         // takeLast(11) will extract 10 lines (exclusing current line) of left context as the query parameter
         val query = targetContext.caretContext.leftFileContext.split("\n").takeLast(11).joinToString("\n")
+        val bm25 = ProjectContextController.getInstance(project).queryBM25(query, targetContext.filename)
+        println("---------------------------------${bm25} --------------------------------------------")
 
         // step 1: prepare data
         val first60Chunks: List<Chunk> = try {

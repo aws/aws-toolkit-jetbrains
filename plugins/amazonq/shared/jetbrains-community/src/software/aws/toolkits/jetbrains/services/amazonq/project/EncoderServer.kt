@@ -26,8 +26,8 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.tryDirOp
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import java.io.FileOutputStream
 import java.io.IOException
 import java.nio.file.Files

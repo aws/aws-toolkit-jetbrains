@@ -172,7 +172,7 @@ object CodeWhispererTestUtil {
     const val leftContext_success_Iac = "# Create an S3 Bucket named CodeWhisperer in CloudFormation"
     const val leftContext_failure_Iac = "Create an S3 Bucket named CodeWhisperer"
 
-    internal fun pythonResponseWithToken(token: String): GenerateCompletionsResponse =
+    fun pythonResponseWithToken(token: String): GenerateCompletionsResponse =
         pythonResponse.toBuilder().nextToken(token).build()
 
     internal fun generateMockCompletionDetail(content: String): Completion {

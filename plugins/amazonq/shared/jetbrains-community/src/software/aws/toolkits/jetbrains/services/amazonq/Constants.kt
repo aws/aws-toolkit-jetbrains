@@ -3,6 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq
 
+import com.intellij.openapi.util.SystemInfo
+import software.amazon.awssdk.services.codewhispererruntime.model.IdeCategory
+import software.amazon.awssdk.services.codewhispererruntime.model.OperatingSystem
+import software.amazon.awssdk.services.codewhispererruntime.model.UserContext
+import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
+
 const val APPLICATION_ZIP = "application/zip"
 const val SERVER_SIDE_ENCRYPTION = "x-amz-server-side-encryption"
 const val AWS_KMS = "aws:kms"
@@ -35,3 +41,23 @@ const val CODE_TRANSFORM_TROUBLESHOOT_DOC_DOWNLOAD_ERROR_OVERVIEW =
 
 const val CODE_TRANSFORM_PREREQUISITES =
     "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/code-transformation.html#prerequisites"
+
+val codeWhispererUserContext = ClientMetadata.getDefault().let {
+    val osForCodeWhisperer: OperatingSystem =
+        when {
+            SystemInfo.isWindows -> OperatingSystem.WINDOWS
+            SystemInfo.isMac -> OperatingSystem.MAC
+            // For now, categorize everything else as "Linux" (Linux/FreeBSD/Solaris/etc)
+            else -> OperatingSystem.LINUX
+        }
+
+    UserContext.builder()
+        .ideCategory(IdeCategory.JETBRAINS)
+        .operatingSystem(osForCodeWhisperer)
+        .product(FEATURE_EVALUATION_PRODUCT_NAME)
+        .clientId(it.clientId)
+        .ideVersion(it.awsVersion)
+        .build()
+}
+
+const val FEATURE_EVALUATION_PRODUCT_NAME = "CodeWhisperer"
