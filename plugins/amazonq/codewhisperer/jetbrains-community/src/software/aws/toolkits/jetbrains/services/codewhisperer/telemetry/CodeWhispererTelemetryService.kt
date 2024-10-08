@@ -396,14 +396,13 @@ class CodeWhispererTelemetryService {
     ) {
         CodeWhispererService.getInstance().getAllPaginationSessions().forEach { (jobId, state) ->
             if (state == null) return@forEach
-            val decisions = mutableListOf<CodewhispererSuggestionState>()
             val details = state.recommendationContext.details
 
-            details.forEachIndexed { index, detail ->
+            val decisions = details.mapIndexed { index, detail ->
                 val suggestionState = recordSuggestionState(detail, hasUserAccepted)
                 sendUserDecisionEvent(state.requestContext, state.responseContext, detail, index, suggestionState, details.size)
 
-                decisions.add(suggestionState)
+                suggestionState
             }
             LOG.debug { "jobId: $jobId, userDecisions: [${decisions.joinToString(", ")}]" }
 
