@@ -11,16 +11,13 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.leftContext_success_Iac
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonFileName
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonTestLeftContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJson
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPython
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererYaml
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 
 class CodeWhispererEditorUtilTest {
@@ -82,7 +79,7 @@ class CodeWhispererEditorUtilTest {
 
     @Test
     fun `test for keyword check for json`() {
-        val result = CodeWhispererEditorUtil.isSupportedJsonFormat("foo.json", leftContext_success_Iac, CodeWhispererJson.INSTANCE)
+        val result = CodeWhispererEditorUtil.isSupportedJsonFormat("foo.json", leftContext_success_Iac)
         assertThat(result).isEqualTo(true)
     }
 
@@ -103,20 +100,13 @@ class CodeWhispererEditorUtilTest {
         ]
     )
     fun `isSupportedJsonFormat should return true by file name`(fileName: String) {
-        val result = CodeWhispererEditorUtil.isSupportedJsonFormat(fileName, "", CodeWhispererJson.INSTANCE)
+        val result = CodeWhispererEditorUtil.isSupportedJsonFormat(fileName, "")
         assertThat(result).isEqualTo(true)
     }
 
     @Test
     fun `isSupportedJsonFormat should return false due to no match`() {
-        val result = CodeWhispererEditorUtil.isSupportedJsonFormat("foo.json", "", CodeWhispererJson.INSTANCE)
+        val result = CodeWhispererEditorUtil.isSupportedJsonFormat("foo.json", "")
         assertThat(result).isEqualTo(false)
-    }
-
-    @Test
-    fun `isSupportedJsonFormat should throw assertion error if language is not JSON`() {
-        assertThrows<AssertionError> {
-            CodeWhispererEditorUtil.isSupportedJsonFormat("foo.json", "", CodeWhispererYaml.INSTANCE)
-        }
     }
 }

@@ -175,8 +175,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         if (!language.isCodeCompletionSupported() || (
                 language is CodeWhispererJson && !isSupportedJsonFormat(
                     requestContext.fileContextInfo.filename,
-                    leftContext,
-                    language
+                    leftContext
                 )
                 )
         ) {

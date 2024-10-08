@@ -12,8 +12,6 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.psi.PsiFile
 import com.intellij.ui.popup.AbstractPopup
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJson
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
@@ -109,14 +107,12 @@ object CodeWhispererEditorUtil {
     }
 
     /**
-     * Checks if the language is json and checks if left context contains keywords
+     * Check if left context contains keywords or file name follow config json file naming pattern
      */
-    fun isSupportedJsonFormat(fileName: String, leftContext: String, language: CodeWhispererProgrammingLanguage): Boolean {
-        assert(language is CodeWhispererJson)
-        return JsonConfigFileNamingConvention.contains(fileName.lowercase()) ||
+    fun isSupportedJsonFormat(fileName: String, leftContext: String): Boolean =
+        JsonConfigFileNamingConvention.contains(fileName.lowercase()) ||
             AWSTemplateKeyWordsRegex.containsMatchIn(leftContext) ||
             AWSTemplateCaseInsensitiveKeyWordsRegex.containsMatchIn(leftContext.lowercase(Locale.getDefault()))
-    }
 
     /**
      * Checks if the [otherRange] overlaps this TextRange. Note that the comparison is `<` because the endOffset of TextRange is exclusive.
