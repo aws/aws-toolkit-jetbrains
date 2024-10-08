@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.core.gettingstarted
 
 import com.intellij.openapi.project.Project
-import migration.software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.amazon.awssdk.services.toolkittelemetry.model.Unit
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
