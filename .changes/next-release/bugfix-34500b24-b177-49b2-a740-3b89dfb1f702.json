@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "fix UI hints when users trigger inline suggestion within a file where Q doesn't support is rendered within background thread"
+}
