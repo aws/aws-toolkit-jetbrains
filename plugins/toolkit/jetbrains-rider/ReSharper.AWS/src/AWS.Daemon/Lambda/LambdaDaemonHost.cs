@@ -5,7 +5,11 @@ using JetBrains.ReSharper.Feature.Services.Protocol;
 
 namespace AWS.Daemon.Lambda
 {
+    #if (PROFILE_2023_3 || PROFILE_2024_1 || PROFILE_2024_2)
+    [SolutionComponent]
+    #else
     [SolutionComponent(InstantiationEx.UnspecifiedDefault)]
+    #endif
     public class LambdaDaemonHost
     {
         private readonly LambdaDaemonModel _model;

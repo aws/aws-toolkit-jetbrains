@@ -53,7 +53,13 @@ dependencies {
         localPlugin(project(":plugin-core"))
         testFramework(TestFrameworkType.Bundled)
 
-        bundledModule("intellij.rider")
+        // https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1774
+        when (providers.gradleProperty("ideProfileName").get()) {
+            "2023.3", "2024.1", "2024.2" -> {}
+            else -> {
+                bundledModule("intellij.rider")
+            }
+        }
     }
 
     implementation(project(":plugin-toolkit:jetbrains-core"))

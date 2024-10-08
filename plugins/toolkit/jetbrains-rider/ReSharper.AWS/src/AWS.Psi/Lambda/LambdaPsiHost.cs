@@ -20,7 +20,11 @@ using JetBrains.Rider.Backend.Platform.Icons;
 
 namespace AWS.Psi.Lambda
 {
+    #if (PROFILE_2023_3 || PROFILE_2024_1 || PROFILE_2024_2)
+    [SolutionComponent]
+    #else
     [SolutionComponent(InstantiationEx.UnspecifiedDefault)]
+    #endif
     public class LambdaPsiHost
     {
         private readonly ISymbolCache _symbolCache;

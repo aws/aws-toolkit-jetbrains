@@ -9,12 +9,13 @@ import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.application.ex.ApplicationManagerEx
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.progress.EmptyProgressIndicator
+import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 
 class PluginCoreEnforcementActivity : ApplicationInitializedListener {
 
     @Suppress("LazyLog")
-    override suspend fun execute() {
+    override suspend fun execute(asyncScope: CoroutineScope) {
         // can't reference anything in core
         val log = LoggerFactory.getLogger(this::class.java)
 

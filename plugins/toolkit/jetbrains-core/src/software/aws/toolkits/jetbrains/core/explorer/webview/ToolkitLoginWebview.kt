@@ -16,9 +16,8 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.panels.Wrapper
+import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.dsl.gridLayout.HorizontalAlign
-import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefBrowserBuilder
@@ -36,6 +35,7 @@ import software.aws.toolkits.core.credentials.validatedSsoIdentifierFromUrl
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
@@ -72,8 +72,7 @@ class ToolkitWebviewPanel(val project: Project, private val scope: CoroutineScop
     val component = panel {
         row {
             cell(webviewContainer)
-                .horizontalAlign(HorizontalAlign.FILL)
-                .verticalAlign(VerticalAlign.FILL)
+                .align(Align.FILL)
         }.resizableRow()
 
         if (isDeveloperMode()) {
@@ -87,8 +86,7 @@ class ToolkitWebviewPanel(val project: Project, private val scope: CoroutineScop
                         )
                     },
                 )
-                    .horizontalAlign(HorizontalAlign.CENTER)
-                    .verticalAlign(VerticalAlign.BOTTOM)
+                    .align(Align.FILL)
             }
         }
     }
@@ -240,7 +238,7 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
             is BrowserMessage.SendUiClickTelemetry -> {
                 val signInOption = message.signInOptionClicked
                 if (signInOption.isNullOrEmpty()) {
-                    LOG.warn("Unknown sign in option")
+                    LOG.warn { "Unknown sign in option" }
                 } else {
                     UiTelemetry.click(project, signInOption)
                 }

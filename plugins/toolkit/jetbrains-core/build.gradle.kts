@@ -34,8 +34,14 @@ intellijToolkit {
 dependencies {
     intellijPlatform {
         localPlugin(project(":plugin-core"))
-        bundledModule("intellij.platform.vcs.dvcs.impl")
-        bundledModule("intellij.libraries.microba")
+
+        when (providers.gradleProperty("ideProfileName").get()) {
+            "2023.3", "2024.1", "2024.2" -> {}
+            else -> {
+                bundledModule("intellij.platform.vcs.dvcs.impl")
+                bundledModule("intellij.libraries.microba")
+            }
+        }
     }
 }
 
