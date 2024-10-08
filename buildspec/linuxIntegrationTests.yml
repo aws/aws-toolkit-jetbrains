@@ -10,6 +10,8 @@ env:
     CI: true
     LOCAL_ENV_RUN: true
     AWS_STS_REGIONAL_ENDPOINTS: regional
+    AWS_CONFIG_FILE: /tmp/aws_conf
+    AWS_SDK_LOAD_CONFIG: 1
 
 phases:
   install:
@@ -19,6 +21,8 @@ phases:
       - export DOCKER_USERNAME=`echo $DOCKER_HUB_TOKEN | jq -r '.username'`
       - export DOCKER_PASSWORD=`echo $DOCKER_HUB_TOKEN | jq -r '.password'`
       - docker login --username $DOCKER_USERNAME --password $DOCKER_PASSWORD || true
+      - mkdir /tmp/testArtifacts
+      - export AWS_CODEARTIFACT_NUGET_LOGFILE=/tmp/testArtifacts/codeArtifactNuGet.log
       # should probably be managed as an extension/rule in any tests that need a screen available
       - /usr/bin/Xvfb :22 -screen 0 1920x1080x24 &
 
@@ -31,15 +35,23 @@ phases:
           CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token --domain $CODEARTIFACT_DOMAIN_NAME --query authorizationToken --output text --duration-seconds 3600)
         fi
 
-      - AWS_CONFIG_FILE=`mktemp`
+      - touch $AWS_CONFIG_FILE
+      - # AWS_CONFIG_FILE=`mktemp`
       - |
         >$AWS_CONFIG_FILE echo "[default]
-        role_arn=$ASSUME_ROLE_ARN
-        credential_source=EcsContainer"
+        role_arn = $ASSUME_ROLE_ARN
+        credential_source = EcsContainer
+        
+        [profile nuget]
+        credential_source = EcsContainer"
       - ls -alh $AWS_CONFIG_FILE
       - cat $AWS_CONFIG_FILE
+      - dotnet codeartifact-creds configure set profile nuget
+      - aws --profile default sts get-caller-identity
+      - aws --profile nuget sts get-caller-identity
+      - aws codeartifact login --tool dotnet --domain $CODEARTIFACT_DOMAIN_NAME --repository $CODEARTIFACT_REPO_NAME --profile nuget
       - chmod +x gradlew
-      - DISPLAY=:22 ./gradlew -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME integrationTest coverageReport --info --console plain
+      - DISPLAY=:22 ./gradlew -PideProfileName=$ALTERNATIVE_IDE_PROFILE_NAME :plugin-toolkit:jetbrains-rider:buildReSharperPlugin coverageReport --info --console plain
       - |
         if [ $(docker ps -q | wc -l) -gt 0 ]; then
             echo 'Docker containers were not completely cleaned up!';
