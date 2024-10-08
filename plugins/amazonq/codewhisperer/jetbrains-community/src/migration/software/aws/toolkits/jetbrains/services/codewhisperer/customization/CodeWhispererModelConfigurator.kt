@@ -5,7 +5,7 @@ package migration.software.aws.toolkits.jetbrains.services.codewhisperer.customi
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
+import software.aws.toolkits.jetbrains.services.amazonq.models.QCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CustomizationUiItem
 
 // A component responsible managing client's codewhisperer model configuration (currently customization feature only support enterprise tier users)
@@ -14,9 +14,9 @@ interface CodeWhispererModelConfigurator {
 
     fun listCustomizations(project: Project, passive: Boolean = false): List<CustomizationUiItem>?
 
-    fun activeCustomization(project: Project): CodeWhispererCustomization?
+    fun activeCustomization(project: Project): QCustomization?
 
-    fun switchCustomization(project: Project, newCustomization: CodeWhispererCustomization?)
+    fun switchCustomization(project: Project, newCustomization: QCustomization?)
 
     /**
      * This method is only used for invalidate a stale customization which was previously active but was removed, it will remove all usage of this customization

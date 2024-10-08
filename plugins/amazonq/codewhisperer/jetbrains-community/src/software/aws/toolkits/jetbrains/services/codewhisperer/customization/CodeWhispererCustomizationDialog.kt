@@ -26,6 +26,7 @@ import software.amazon.awssdk.arns.Arn
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.jetbrains.services.amazonq.models.QCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.Q_CUSTOM_LEARN_MORE_URI
 import software.aws.toolkits.jetbrains.ui.AsyncComboBox
 import software.aws.toolkits.jetbrains.utils.notifyInfo
@@ -34,7 +35,7 @@ import javax.swing.JComponent
 import javax.swing.JList
 
 private val NoDataToDisplay = CustomizationUiItem(
-    CodeWhispererCustomization("", message("codewhisperer.custom.dialog.option.no_data"), ""),
+    QCustomization("", message("codewhisperer.custom.dialog.option.no_data"), ""),
     false,
     false
 )
@@ -227,7 +228,7 @@ class CodeWhispererCustomizationDialog(
     }
 }
 
-private fun List<CustomizationUiItem>.putPickedUpFront(picked: Set<CodeWhispererCustomization>) = sortedWith { o1, o2 ->
+private fun List<CustomizationUiItem>.putPickedUpFront(picked: Set<QCustomization>) = sortedWith { o1, o2 ->
     val has1 = picked.contains(o1.customization)
     val has2 = picked.contains(o2.customization)
 

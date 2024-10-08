@@ -13,8 +13,8 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
+import software.aws.toolkits.jetbrains.services.amazonq.models.QCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
-import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
@@ -45,7 +45,7 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
     private val responseStreamTimeForChunks: MutableMap<String, MutableList<Instant>> = mutableMapOf()
     private val responseHasProjectContext: MutableMap<String, Boolean> = mutableMapOf()
 
-    private val customization: CodeWhispererCustomization?
+    private val customization: QCustomization?
         get() = CodeWhispererModelConfigurator.getInstance().activeCustomization(context.project)
 
     fun getConversationId(tabId: String): String? = sessionStorage.getSession(tabId)?.session?.conversationId

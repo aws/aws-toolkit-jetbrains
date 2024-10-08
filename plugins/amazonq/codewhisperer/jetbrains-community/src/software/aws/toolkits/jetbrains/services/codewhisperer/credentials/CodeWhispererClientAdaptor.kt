@@ -43,7 +43,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
-import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
+import software.aws.toolkits.jetbrains.services.amazonq.models.QCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
@@ -89,7 +89,7 @@ interface CodeWhispererClientAdaptor : Disposable {
         isSigv4: Boolean = shouldUseSigv4Client(project),
     ): ListCodeScanFindingsResponse
 
-    fun listAvailableCustomizations(): List<CodeWhispererCustomization>
+    fun listAvailableCustomizations(): List<QCustomization>
 
     fun sendUserTriggerDecisionTelemetry(
         requestContext: RequestContext,
@@ -152,7 +152,7 @@ interface CodeWhispererClientAdaptor : Disposable {
         responseLength: Int?,
         numberOfCodeBlocks: Int?,
         hasProjectLevelContext: Boolean?,
-        customization: CodeWhispererCustomization?,
+        customization: QCustomization?,
     ): SendTelemetryEventResponse
 
     fun sendChatInteractWithMessageTelemetry(
@@ -173,7 +173,7 @@ interface CodeWhispererClientAdaptor : Disposable {
         language: CodeWhispererProgrammingLanguage,
         modificationPercentage: Double,
         hasProjectLevelContext: Boolean?,
-        customization: CodeWhispererCustomization?,
+        customization: QCustomization?,
     ): SendTelemetryEventResponse
 
     companion object {
@@ -273,7 +273,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         }
 
     // DO NOT directly use this method to fetch customizations, use wrapper [CodeWhispererModelConfigurator.listCustomization()] instead
-    override fun listAvailableCustomizations(): List<CodeWhispererCustomization> =
+    override fun listAvailableCustomizations(): List<QCustomization> =
         bearerClient().listAvailableCustomizationsPaginator(ListAvailableCustomizationsRequest.builder().build())
             .stream()
             .toList()
@@ -284,7 +284,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     }"
                 }
                 resp.customizations().map {
-                    CodeWhispererCustomization(
+                    QCustomization(
                         arn = it.arn(),
                         name = it.name(),
                         description = it.description()
@@ -459,7 +459,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         responseLength: Int?,
         numberOfCodeBlocks: Int?,
         hasProjectLevelContext: Boolean?,
-        customization: CodeWhispererCustomization?,
+        customization: QCustomization?,
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.chatAddMessageEvent {
@@ -520,7 +520,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         language: CodeWhispererProgrammingLanguage,
         modificationPercentage: Double,
         hasProjectLevelContext: Boolean?,
-        customization: CodeWhispererCustomization?,
+        customization: QCustomization?,
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.chatUserModificationEvent {

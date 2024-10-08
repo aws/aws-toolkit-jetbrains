@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.services.cwc.clients.chat.model
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
-import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
+import software.aws.toolkits.jetbrains.services.amazonq.models.QCustomization
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContext
 import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
 
@@ -22,7 +22,7 @@ data class ChatRequestData(
     val activeFileContext: ActiveFileContext,
     val userIntent: UserIntent?,
     val triggerType: TriggerType,
-    val customization: CodeWhispererCustomization?,
+    val customization: QCustomization?,
     val relevantTextDocuments: List<RelevantDocument>,
     val useRelevantDocuments: Boolean,
 )

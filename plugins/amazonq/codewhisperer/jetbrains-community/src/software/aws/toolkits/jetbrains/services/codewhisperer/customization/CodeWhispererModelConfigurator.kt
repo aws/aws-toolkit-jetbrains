@@ -20,6 +20,7 @@ import com.intellij.util.xmlb.annotations.Property
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.amazonq.models.QCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
@@ -65,7 +66,7 @@ private fun notifyNewCustomization(project: Project) {
 class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, PersistentStateComponent<CodeWhispererCustomizationState>, Disposable {
     // TODO: refactor and clean these states, probably not need all the follwing and it's hard to maintain
     // Map to store connectionId to its active customization
-    private val connectionIdToActiveCustomizationArn = Collections.synchronizedMap<String, CodeWhispererCustomization>(mutableMapOf())
+    private val connectionIdToActiveCustomizationArn = Collections.synchronizedMap<String, QCustomization>(mutableMapOf())
 
     // Map to store connectionId to its listAvailableCustomizations result last time
     private val connectionToCustomizationsShownLastTime = mutableMapOf<String, MutableList<String>>()
@@ -157,20 +158,20 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
             return@calculateIfIamIdentityCenterConnection customizationUiItems
         }
 
-    override fun activeCustomization(project: Project): CodeWhispererCustomization? {
+    override fun activeCustomization(project: Project): QCustomization? {
         val result = calculateIfIamIdentityCenterConnection(project) { connectionIdToActiveCustomizationArn[it.id] }
 
         // A/B case
         val customizationArnFromAB = CodeWhispererFeatureConfigService.getInstance().getCustomizationArnOverride()
         if (customizationArnFromAB.isEmpty()) return result
-        return CodeWhispererCustomization(
+        return QCustomization(
             arn = customizationArnFromAB,
             name = result?.name.orEmpty(),
             description = result?.description
         )
     }
 
-    override fun switchCustomization(project: Project, newCustomization: CodeWhispererCustomization?) {
+    override fun switchCustomization(project: Project, newCustomization: QCustomization?) {
         calculateIfIamIdentityCenterConnection(project) {
             val oldCus = connectionIdToActiveCustomizationArn[it.id]
             if (oldCus != newCustomization) {
@@ -268,7 +269,7 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
 class CodeWhispererCustomizationState : BaseState() {
     @get:Property
     @get:MapAnnotation
-    val connectionIdToActiveCustomizationArn by map<String, CodeWhispererCustomization>()
+    val connectionIdToActiveCustomizationArn by map<String, QCustomization>()
 
     @get:Property
     @get:MapAnnotation
@@ -276,7 +277,7 @@ class CodeWhispererCustomizationState : BaseState() {
 }
 
 data class CustomizationUiItem(
-    val customization: CodeWhispererCustomization,
+    val customization: QCustomization,
     val isNew: Boolean,
     val shouldPrefixAccountId: Boolean,
 )
