@@ -107,7 +107,7 @@ class FeatureDevClient(private val project: Project) {
                 )
         }
 
-    fun startTaskAssistCodeGeneration(conversationId: String, uploadId: String, userMessage: String, codeGenerationId: UUID, currentCodeGenerationId: UUID?): StartTaskAssistCodeGenerationResponse = bearerClient()
+    fun startTaskAssistCodeGeneration(conversationId: String, uploadId: String, userMessage: String, codeGenerationId: UUID, currentCodeGenerationId: String?): StartTaskAssistCodeGenerationResponse = bearerClient()
         .startTaskAssistCodeGeneration {
                 request ->
             request
@@ -121,7 +121,7 @@ class FeatureDevClient(private val project: Project) {
                     it
                         .programmingLanguage { pl -> pl.languageName("javascript") } // This parameter is omitted by featureDev but required in the request
                         .uploadId(uploadId)
-                }.codeGenerationId(codeGenerationId.toString()).currentCodeGenerationId(currentCodeGenerationId.toString())
+                }.codeGenerationId(codeGenerationId.toString()).currentCodeGenerationId(currentCodeGenerationId)
         }
 
     fun getTaskAssistCodeGeneration(conversationId: String, codeGenerationId: String): GetTaskAssistCodeGenerationResponse = bearerClient()

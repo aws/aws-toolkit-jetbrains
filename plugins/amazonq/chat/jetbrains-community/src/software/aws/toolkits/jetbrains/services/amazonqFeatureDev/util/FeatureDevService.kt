@@ -122,7 +122,7 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
                 uploadId,
                 message,
                 codeGenerationId,
-                currentCodeGenerationId
+                currentCodeGenerationId?.toString() ?: "EMPTY_CURRENT_CODE_GENERATION_ID"
             )
 
             logger.debug { "$FEATURE_NAME: Started code generation with requestId: ${startCodeGenerationResponse.responseMetadata().requestId()}" }
