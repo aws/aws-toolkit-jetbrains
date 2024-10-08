@@ -1,7 +1,7 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.codewhisperer.settings
+package software.aws.toolkits.jetbrains.settings
 
 import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.components.PersistentStateComponent
@@ -11,7 +11,6 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.util.xmlb.annotations.Property
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 
 @Service
 @State(name = "codewhispererSettings", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
@@ -53,14 +52,14 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
 
     private fun getIsProjectContextEnabled(): Boolean {
         val value = state.value.getOrDefault(CodeWhispererConfigurationType.IsProjectContextEnabled, false)
-        val isDataCollectionGroup = CodeWhispererFeatureConfigService.getInstance().getIsDataCollectionEnabled()
-        if (!value) {
-            if (isDataCollectionGroup && !hasEnabledProjectContextOnce()) {
-                toggleProjectContextEnabled(true)
-                toggleEnabledProjectContextOnce(true)
-                return true
-            }
-        }
+//        val isDataCollectionGroup = CodeWhispererFeatureConfigService.getInstance().getIsDataCollectionEnabled()
+//        if (!value) {
+//            if (isDataCollectionGroup && !hasEnabledProjectContextOnce()) {
+//                toggleProjectContextEnabled(true)
+//                toggleEnabledProjectContextOnce(true)
+//                return true
+//            }
+//        }
         return value
     }
 
