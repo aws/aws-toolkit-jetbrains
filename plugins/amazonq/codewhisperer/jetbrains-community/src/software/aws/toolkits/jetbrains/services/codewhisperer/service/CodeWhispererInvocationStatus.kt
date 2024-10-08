@@ -27,6 +27,7 @@ class CodeWhispererInvocationStatus {
 
     fun startInvocation() {
         isInvokingService.set(true)
+        ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_INVOCATION_STATE_CHANGED).invocationStateChanged(true)
         LOG.debug { "Starting CodeWhisperer invocation" }
     }
 

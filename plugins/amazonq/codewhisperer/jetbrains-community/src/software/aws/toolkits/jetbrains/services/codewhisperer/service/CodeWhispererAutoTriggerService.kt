@@ -25,7 +25,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.telemetry.CodewhispererAutomatedTriggerType
 import software.aws.toolkits.telemetry.CodewhispererPreviousSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
@@ -55,9 +54,6 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
     fun tryInvokeAutoTrigger(editor: Editor, triggerType: CodeWhispererAutomatedTriggerType): Job? {
         // only needed for Classifier group, thus calculate it lazily
         val classifierResult: ClassifierResult by lazy { shouldTriggerClassifier(editor, triggerType.telemetryType) }
-        val language = runReadAction {
-            FileDocumentManager.getInstance().getFile(editor.document)?.programmingLanguage()
-        } ?: CodeWhispererUnknownLanguage.INSTANCE
 
         // we need classifier result for any type of triggering for classifier group for supported languages
         triggerType.calculationResult = classifierResult.calculatedResult
@@ -95,28 +91,8 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
 
         val coroutineScope = applicationCoroutineScope()
 
-        return when (triggerType) {
-            is CodeWhispererAutomatedTriggerType.IdleTime -> run {
-                coroutineScope.launch {
-                    // TODO: potential race condition between hasExistingInvocation and entering edt
-                    // but in that case we will just return in performAutomatedTriggerAction
-                    while (!CodeWhispererInvocationStatus.getInstance().hasEnoughDelayToInvokeCodeWhisperer() ||
-                        CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()
-                    ) {
-                        if (!isActive) return@launch
-                        delay(CodeWhispererConstants.IDLE_TIME_CHECK_INTERVAL)
-                    }
-                    runInEdt {
-                        if (CodeWhispererInvocationStatus.getInstance().isPopupActive()) return@runInEdt
-                        performAutomatedTriggerAction(editor, CodeWhispererAutomatedTriggerType.IdleTime(), latencyContext)
-                    }
-                }
-            }
-
-            else -> run {
-                coroutineScope.launch(EDT) {
-                    performAutomatedTriggerAction(editor, triggerType, latencyContext)
-                }
+        return coroutineScope.launch(EDT) {
+                performAutomatedTriggerAction(editor, triggerType, latencyContext)
             }
         }
     }
