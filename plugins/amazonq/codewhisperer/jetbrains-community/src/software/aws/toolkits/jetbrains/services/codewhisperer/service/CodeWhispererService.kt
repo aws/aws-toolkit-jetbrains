@@ -409,10 +409,8 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     if (requestContext.triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
                         // We should only show error hint when CodeWhisperer popup is not visible,
                         // and make it silent if CodeWhisperer popup is showing.
-                        runInEdt {
-                            if (!CodeWhispererInvocationStatus.getInstance().isPopupActive()) {
-                                showCodeWhispererErrorHint(requestContext.editor, displayMessage)
-                            }
+                        if (!CodeWhispererInvocationStatus.getInstance().isPopupActive()) {
+                            showCodeWhispererErrorHint(requestContext.editor, displayMessage)
                         }
                     }
                 }
@@ -754,12 +752,16 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         return true
     }
 
-    fun showCodeWhispererInfoHint(editor: Editor, message: String) {
-        HintManager.getInstance().showInformationHint(editor, message, HintManager.UNDER)
+    private fun showCodeWhispererInfoHint(editor: Editor, message: String) {
+        runInEdt {
+            HintManager.getInstance().showInformationHint(editor, message, HintManager.UNDER)
+        }
     }
 
-    fun showCodeWhispererErrorHint(editor: Editor, message: String) {
-        HintManager.getInstance().showErrorHint(editor, message, HintManager.UNDER)
+    private fun showCodeWhispererErrorHint(editor: Editor, message: String) {
+        runInEdt {
+            HintManager.getInstance().showErrorHint(editor, message, HintManager.UNDER)
+        }
     }
 
     override fun dispose() {}
