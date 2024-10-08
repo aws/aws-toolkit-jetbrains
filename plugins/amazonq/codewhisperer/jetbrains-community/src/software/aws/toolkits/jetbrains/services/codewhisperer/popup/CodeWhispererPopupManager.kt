@@ -29,12 +29,15 @@ import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
+import com.intellij.openapi.editor.event.EditorMouseEvent
+import com.intellij.openapi.editor.event.EditorMouseMotionListener
 import com.intellij.openapi.editor.event.SelectionEvent
 import com.intellij.openapi.editor.event.SelectionListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.wm.WindowManager
 import com.intellij.ui.ComponentUtil
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.popup.AbstractPopup
@@ -305,6 +308,20 @@ class CodeWhispererPopupManager {
                 popup.showInBestPositionFor(editor)
             }
         }
+
+        bringSuggestionInlayToFront(editor, popup, !force)
+    }
+
+    fun bringSuggestionInlayToFront(editor: Editor, popup: JBPopup?, opposite: Boolean = false) {
+        val qInlinePopupAlpha = if (opposite) 1f else 0.1f
+        val intelliSensePopupAlpha = if (opposite) 0f else 0.8f
+
+        (popup as AbstractPopup?)?.popupWindow?.let {
+            WindowManager.getInstance().setAlphaModeRatio(it, qInlinePopupAlpha)
+        }
+        ComponentUtil.getWindow(LookupManager.getActiveLookup(editor)?.component)?.let {
+            WindowManager.getInstance().setAlphaModeRatio(it, intelliSensePopupAlpha)
+        }
     }
 
     fun initPopup(): JBPopup = JBPopupFactory.getInstance()
@@ -483,6 +500,18 @@ class CodeWhispererPopupManager {
             window?.addComponentListener(windowListener)
             Disposer.register(sessionContext) { window?.removeComponentListener(windowListener) }
         }
+
+        val suggestionHoverEnterListener: EditorMouseMotionListener = object : EditorMouseMotionListener {
+            override fun mouseMoved(e: EditorMouseEvent) {
+                if (e.inlay != null) {
+                    showPopup(sessionContext, force = true)
+                } else {
+                    bringSuggestionInlayToFront(sessionContext.editor, sessionContext.popup, opposite = true)
+                }
+                super.mouseMoved(e)
+            }
+        }
+        editor.addEditorMouseMotionListener(suggestionHoverEnterListener, sessionContext)
     }
 
     private fun updateSelectedRecommendationLabelText(validSelectedIndex: Int, validCount: Int) {
@@ -558,10 +587,6 @@ class CodeWhispererPopupManager {
             it.font = it.font.deriveFont(POPUP_INFO_TEXT_SIZE)
         }
     }
-
-    fun hasConflictingPopups(editor: Editor): Boolean =
-        ParameterInfoController.existsWithVisibleHintForEditor(editor, true) ||
-            LookupManager.getActiveLookup(editor) != null
 
     fun findNewSelectedIndex(isReverse: Boolean, selectedIndex: Int): Int {
         val start = if (selectedIndex == -1) 0 else selectedIndex
