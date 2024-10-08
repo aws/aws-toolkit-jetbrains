@@ -15,7 +15,7 @@ class CodeWhispererSystemVerilog private constructor() : CodeWhispererProgrammin
 
     companion object {
         // TODO: confirm with service team language id
-        const val ID = "systemVerilog"
+        const val ID = "systemverilog"
 
         val INSTANCE = CodeWhispererSystemVerilog()
     }
