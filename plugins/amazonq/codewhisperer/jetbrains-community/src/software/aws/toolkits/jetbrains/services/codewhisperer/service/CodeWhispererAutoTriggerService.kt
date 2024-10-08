@@ -91,8 +91,7 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
 
         val coroutineScope = applicationCoroutineScope()
 
-        return run {
-            coroutineScope.launch(EDT) {
+        return coroutineScope.launch(EDT) {
                 performAutomatedTriggerAction(editor, triggerType, latencyContext)
             }
         }
