@@ -1,0 +1,17 @@
+{
+  "date" : "2024-10-03",
+  "version" : "3.31",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Amazon Q Developer: Updated legal disclaimer text"
+  }, {
+    "type" : "feature",
+    "description" : "Amazon Q Code Transformation: allow users to skip tests"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix issue where multiple SSO login attempts in a short time result in 404"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix issue where a user may get stuck while attempting to login to Builder ID"
+  } ]
+}

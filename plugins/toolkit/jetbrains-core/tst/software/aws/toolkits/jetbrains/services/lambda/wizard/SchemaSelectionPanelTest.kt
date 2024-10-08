@@ -176,7 +176,7 @@ class SchemaSelectionPanelTest {
         schemaName: String,
         schemaRootEventName: String,
         schemaPackageHierarchy: String,
-        schemaTemplateParameters: SchemaTemplateParameters?
+        schemaTemplateParameters: SchemaTemplateParameters?,
     ) {
         assertThat(schemaTemplateParameters).isNotNull
         assertThat(schemaTemplateParameters?.schema?.registryName).isEqualTo(REGISTRY_NAME)

@@ -101,7 +101,7 @@ object CodeWhispererConstants {
 
     enum class CodeAnalysisScope(val value: String) {
         FILE("FILE"),
-        PROJECT("PROJECT")
+        PROJECT("PROJECT"),
     }
 
     object Config {
@@ -133,7 +133,7 @@ object CodeWhispererConstants {
     }
     object CrossFile {
         const val CHUNK_SIZE = 60
-        const val NUMBER_OF_LINE_IN_CHUNK = 10
+        const val NUMBER_OF_LINE_IN_CHUNK = 50
         const val NUMBER_OF_CHUNK_TO_FETCH = 3
     }
 

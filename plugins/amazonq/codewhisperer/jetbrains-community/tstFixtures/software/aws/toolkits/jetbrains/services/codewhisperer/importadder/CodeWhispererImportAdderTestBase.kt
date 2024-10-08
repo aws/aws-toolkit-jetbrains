@@ -18,13 +18,13 @@ import kotlin.test.fail
 open class CodeWhispererImportAdderTestBase(
     val importAdder: CodeWhispererImportAdder,
     @Rule @JvmField val projectRule: CodeInsightTestFixtureRule,
-    internal val fileExtension: String
+    internal val fileExtension: String,
 ) {
 
     fun <T> testCreateNewImportPsiElementReturnValueForStatements(
         returnNull: Boolean,
         statements: List<String>,
-        classType: Class<T>
+        classType: Class<T>,
     ) {
         val psiFile = projectRule.fixture.configureByText("test.$fileExtension", "")
         for (statement in statements) {

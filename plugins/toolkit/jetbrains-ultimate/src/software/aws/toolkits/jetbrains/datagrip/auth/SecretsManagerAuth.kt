@@ -34,7 +34,7 @@ import java.util.concurrent.CompletionStage
 
 data class SecretsManagerConfiguration(
     val connectionSettings: ConnectionSettings,
-    val secretId: String
+    val secretId: String,
 )
 
 class SecretsManagerAuth : DatabaseAuthProviderCompatabilityAdapter {
@@ -50,7 +50,7 @@ class SecretsManagerAuth : DatabaseAuthProviderCompatabilityAdapter {
 
     override fun intercept(
         connection: ProtoConnection,
-        silent: Boolean
+        silent: Boolean,
     ): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
         val project = connection.project()

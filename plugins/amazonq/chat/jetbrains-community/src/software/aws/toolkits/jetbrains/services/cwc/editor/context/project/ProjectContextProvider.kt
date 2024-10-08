@@ -56,20 +56,20 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     data class IndexRequestPayload(
         val filePaths: List<String>,
         val projectRoot: String,
-        val refresh: Boolean
+        val refresh: Boolean,
     )
 
     data class FileCollectionResult(
         val files: List<String>,
-        val fileSize: Int
+        val fileSize: Int,
     )
 
     data class QueryRequestPayload(
-        val query: String
+        val query: String,
     )
 
     data class UpdateIndexRequestPayload(
-        val filePath: String
+        val filePath: String,
     )
 
     data class Usage(
@@ -77,7 +77,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         @JsonProperty("memoryUsage")
         val memoryUsage: Int? = null,
         @JsonProperty("cpuUsage")
-        val cpuUsage: Int? = null
+        val cpuUsage: Int? = null,
     )
 
     data class Chunk(

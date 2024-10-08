@@ -25,13 +25,13 @@ enum class ActiveConnectionType {
     BUILDER_ID,
     IAM_IDC,
     IAM,
-    UNKNOWN
+    UNKNOWN,
 }
 
 enum class BearerTokenFeatureSet {
     CODEWHISPERER,
     CODECATALYST,
-    Q
+    Q,
 }
 
 fun controlPanelVisibility(currentPanel: Panel, newPanel: Panel) {
@@ -47,25 +47,25 @@ sealed interface ActiveConnection {
     data class ExpiredBearer(
         override val activeConnectionBearer: AwsBearerTokenConnection?,
         override val connectionType: ActiveConnectionType?,
-        override val activeConnectionIam: CredentialIdentifier? = null
+        override val activeConnectionIam: CredentialIdentifier? = null,
     ) : ActiveConnection
 
     data class ExpiredIam(
         override val activeConnectionBearer: AwsBearerTokenConnection? = null,
         override val connectionType: ActiveConnectionType?,
-        override val activeConnectionIam: CredentialIdentifier?
+        override val activeConnectionIam: CredentialIdentifier?,
     ) : ActiveConnection
 
     data class ValidBearer(
         override val activeConnectionBearer: AwsBearerTokenConnection?,
         override val connectionType: ActiveConnectionType?,
-        override val activeConnectionIam: CredentialIdentifier? = null
+        override val activeConnectionIam: CredentialIdentifier? = null,
     ) : ActiveConnection
 
     data class ValidIam(
         override val activeConnectionBearer: AwsBearerTokenConnection? = null,
         override val connectionType: ActiveConnectionType?,
-        override val activeConnectionIam: CredentialIdentifier?
+        override val activeConnectionIam: CredentialIdentifier?,
     ) : ActiveConnection
 
     object NotConnected : ActiveConnection {
@@ -160,7 +160,7 @@ fun getSourceOfEntry(
     sourceOfEntry: SourceOfEntry,
     isStartup: Boolean = false,
     connectionInitiatedFromExplorer: Boolean = false,
-    connectionInitiatedFromQChatPanel: Boolean = false
+    connectionInitiatedFromQChatPanel: Boolean = false,
 ): String {
     val src = if (connectionInitiatedFromExplorer) {
         SourceOfEntry.EXPLORER.toString()
@@ -182,7 +182,8 @@ enum class SourceOfEntry {
     Q,
     AMAZONQ_CHAT_PANEL,
     LOGIN_BROWSER,
-    UNKNOWN;
+    UNKNOWN,
+    ;
     override fun toString(): String {
         val value = this.name.lowercase()
         // If the string in lowercase contains an _ eg RESOURCE_EXPLORER, this function returns camelCase of the string i.e resourceExplorer

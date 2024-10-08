@@ -22,5 +22,5 @@ interface CodeWhispererClassResolver {
 
 enum class ClassResolverKey {
     ClassName,
-    MethodName
+    MethodName,
 }

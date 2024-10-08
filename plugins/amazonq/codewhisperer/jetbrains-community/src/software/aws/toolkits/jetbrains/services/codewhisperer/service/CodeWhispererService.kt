@@ -103,7 +103,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
     fun showRecommendationsInPopup(
         editor: Editor,
         triggerTypeInfo: TriggerTypeInfo,
-        latencyContext: LatencyContext
+        latencyContext: LatencyContext,
     ): Job? {
         if (job == null || job?.isCompleted == true) {
             job = cs.launch(getCoroutineBgContext()) {
@@ -118,7 +118,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
     private suspend fun doShowRecommendationsInPopup(
         editor: Editor,
         triggerTypeInfo: TriggerTypeInfo,
-        latencyContext: LatencyContext
+        latencyContext: LatencyContext,
     ) {
         val project = editor.project ?: return
         if (!isCodeWhispererEnabled(project)) return
@@ -409,10 +409,8 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     if (requestContext.triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
                         // We should only show error hint when CodeWhisperer popup is not visible,
                         // and make it silent if CodeWhisperer popup is showing.
-                        runInEdt {
-                            if (!CodeWhispererInvocationStatus.getInstance().isPopupActive()) {
-                                showCodeWhispererErrorHint(requestContext.editor, displayMessage)
-                            }
+                        if (!CodeWhispererInvocationStatus.getInstance().isPopupActive()) {
+                            showCodeWhispererErrorHint(requestContext.editor, displayMessage)
                         }
                     }
                 }
@@ -524,7 +522,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         responseContext: ResponseContext,
         response: GenerateCompletionsResponse,
         caretMovement: CaretMovement,
-        popup: JBPopup
+        popup: JBPopup,
     ): InvocationContext? {
         val requestId = response.responseMetadata().requestId()
         val recommendations = response.completions()
@@ -569,7 +567,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
 
     private fun updateStates(
         states: InvocationContext,
-        response: GenerateCompletionsResponse
+        response: GenerateCompletionsResponse,
     ): InvocationContext {
         val recommendationContext = states.recommendationContext
         val details = recommendationContext.details
@@ -611,7 +609,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
     private fun sendDiscardedUserDecisionEventForAll(
         requestContext: RequestContext,
         responseContext: ResponseContext,
-        recommendations: List<Completion>
+        recommendations: List<Completion>,
     ) {
         val detailContexts = recommendations.map {
             DetailContext("", it, it, true, false, "", getCompletionType(it))
@@ -632,7 +630,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         editor: Editor,
         project: Project,
         psiFile: PsiFile,
-        latencyContext: LatencyContext
+        latencyContext: LatencyContext,
     ): RequestContext {
         // 1. file context
         val fileContext: FileContextInfo = runReadAction { FileContextProvider.getInstance(project).extractFileContext(editor, psiFile) }
@@ -683,7 +681,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         requestContext: RequestContext,
         responseContext: ResponseContext,
         recommendationContext: RecommendationContext,
-        popup: JBPopup
+        popup: JBPopup,
     ): InvocationContext {
         addPopupChildDisposables(popup)
         // Creating a disposable for managing all listeners lifecycle attached to the popup.
@@ -711,7 +709,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         responseContext: ResponseContext,
         recommendations: List<Completion>,
         latency: Double?,
-        exceptionType: String?
+        exceptionType: String?,
     ) {
         val recommendationLogs = recommendations.map { it.content().trimEnd() }
             .reduceIndexedOrNull { index, acc, recommendation -> "$acc\n[${index + 1}]\n$recommendation" }
@@ -754,12 +752,16 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         return true
     }
 
-    fun showCodeWhispererInfoHint(editor: Editor, message: String) {
-        HintManager.getInstance().showInformationHint(editor, message, HintManager.UNDER)
+    private fun showCodeWhispererInfoHint(editor: Editor, message: String) {
+        runInEdt {
+            HintManager.getInstance().showInformationHint(editor, message, HintManager.UNDER)
+        }
     }
 
-    fun showCodeWhispererErrorHint(editor: Editor, message: String) {
-        HintManager.getInstance().showErrorHint(editor, message, HintManager.UNDER)
+    private fun showCodeWhispererErrorHint(editor: Editor, message: String) {
+        runInEdt {
+            HintManager.getInstance().showErrorHint(editor, message, HintManager.UNDER)
+        }
     }
 
     override fun dispose() {}
@@ -786,7 +788,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         fun buildCodeWhispererRequest(
             fileContextInfo: FileContextInfo,
             supplementalContext: SupplementalContextInfo?,
-            customizationArn: String?
+            customizationArn: String?,
         ): GenerateCompletionsRequest {
             val programmingLanguage = ProgrammingLanguage.builder()
                 .languageName(fileContextInfo.programmingLanguage.toCodeWhispererRuntimeLanguage().languageId)
@@ -829,7 +831,7 @@ data class RequestContext(
     private val supplementalContextDeferred: Deferred<SupplementalContextInfo?>,
     val connection: ToolkitConnection?,
     val latencyContext: LatencyContext,
-    val customizationArn: String?
+    val customizationArn: String?,
 ) {
     // TODO: should make the entire getRequestContext() suspend function instead of making supplemental context only
     var supplementalContext: SupplementalContextInfo? = null

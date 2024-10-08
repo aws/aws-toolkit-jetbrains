@@ -17,7 +17,7 @@ import javax.swing.JComponent
 class RetrieveSavedQueryDialog(
     private val parentEditor: QueryEditor,
     private val project: Project,
-    connectionSettings: ConnectionSettings
+    connectionSettings: ConnectionSettings,
 ) : DialogWrapper(project) {
     private val view = SelectSavedQuery(connectionSettings)
 

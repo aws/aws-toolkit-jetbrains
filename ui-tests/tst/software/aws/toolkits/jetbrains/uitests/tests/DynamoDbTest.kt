@@ -214,7 +214,7 @@ class DynamoDbTest {
         val numberMapProperty: Map<String, Long> = randomRange().associate { aString() to Random.nextLong() },
         val mapOfMapProperty: Map<String, Map<String, String>> = randomRange().associate { aString() to randomRange().associate { aString() to aString() } },
         val stringList: List<String> = randomRange().map { aString() },
-        val numberList: List<Long> = randomRange().map { Random.nextLong() }
+        val numberList: List<Long> = randomRange().map { Random.nextLong() },
     )
 }
 

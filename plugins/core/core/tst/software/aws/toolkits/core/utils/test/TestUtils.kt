@@ -11,11 +11,17 @@ import kotlin.random.Random
 
 fun aString(length: Int = Random.nextInt(5, 30)): String = UUID.randomUUID().toString().substring(length)
 
+fun aStringWithLineCount(lineCount: Int, start: Int = 0): String = buildString {
+    for (i in start until start + lineCount) {
+        append("line$i\n")
+    }
+}.trimEnd()
+
 fun retryableAssert(
     timeout: Duration? = null,
     maxAttempts: Int? = null,
     interval: Duration = Duration.ofMillis(100),
-    assertion: () -> Unit
+    assertion: () -> Unit,
 ) {
     val calculatedTimeout = timeout ?: maxAttempts?.let { Duration.ofMillis(it * (interval.toMillis() * 2)) } ?: Duration.ofSeconds(1)
     val expiry = Instant.now().plus(calculatedTimeout)
