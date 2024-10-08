@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "fix UI hints when users trigger inline suggestion within a file where Q doesn't support is rendered within background thread"
+  "description" : "Fix error occuring when Amazon Q attempts to show UI hints on manually triggerred inline suggestion (#4929)"
 }
