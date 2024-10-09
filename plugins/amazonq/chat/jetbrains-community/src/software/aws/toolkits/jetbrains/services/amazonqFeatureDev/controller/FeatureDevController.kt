@@ -37,6 +37,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.InboundAppMess
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ModifySourceFolderErrorReason
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.UploadURLExpired
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.createUserFacingErrorMessage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.denyListedErrors
@@ -460,6 +461,12 @@ class FeatureDevController(
                 messenger.sendMonthlyLimitError(tabId = tabId)
                 messenger.sendChatInputEnabledMessage(tabId, enabled = false)
             }
+            is UploadURLExpired -> messenger.sendAnswer(
+                tabId = tabId,
+                message = err.message,
+                messageType = FeatureDevMessageType.Answer,
+                canBeVoted = true
+            )
             is FeatureDevException -> {
                 messenger.sendError(
                     tabId = tabId,
@@ -487,7 +494,6 @@ class FeatureDevController(
                     ),
                 )
             }
-
             else -> {
                 var msg = createUserFacingErrorMessage("$FEATURE_NAME request failed: ${err.message ?: err.cause?.message}")
                 val isDenyListedError = denyListedErrors.any { msg?.contains(it) ?: false }

@@ -213,6 +213,7 @@ data class ChatMessage(
     val followUpsHeader: String? = null,
     val relatedSuggestions: List<Suggestion>? = null,
     val codeReference: List<CodeReference>? = null,
+    val userIntent: UserIntent? = null,
 ) : UiMessage(
     tabId = tabId,
     type = "chatMessage",
