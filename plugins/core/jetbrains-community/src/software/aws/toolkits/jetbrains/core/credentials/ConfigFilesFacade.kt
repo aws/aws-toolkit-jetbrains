@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.profiles.ProfileFile
 import software.amazon.awssdk.profiles.ProfileFileLocation
@@ -17,8 +15,6 @@ import software.aws.toolkits.core.utils.touch
 import software.aws.toolkits.core.utils.tryDirOp
 import software.aws.toolkits.core.utils.tryFileOp
 import software.aws.toolkits.core.utils.writeText
-import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileWatcher
-import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ssoSessions
 import java.nio.file.Path
 
@@ -39,7 +35,6 @@ interface ConfigFilesFacade {
     fun appendProfileToCredentials(profile: Profile)
     fun appendSectionToConfig(sectionName: String, profile: Profile)
     fun updateSectionInConfig(sectionName: String, profile: Profile)
-
 }
 
 class DefaultConfigFilesFacade(
