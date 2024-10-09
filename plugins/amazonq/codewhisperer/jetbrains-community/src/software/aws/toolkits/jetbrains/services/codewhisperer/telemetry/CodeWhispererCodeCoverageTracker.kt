@@ -51,22 +51,22 @@ abstract class CodeWhispererCodeCoverageTracker(
     private val myServiceInvocationCount: AtomicInteger,
 ) : Disposable {
     val percentage: Long?
-        get() = if (totalTokensSize != 0L) calculatePercentage(rawAcceptedTokenSize, totalTokensSize) else null
-    val acceptedTokensSize: Long
+        get() = if (totalCharsCount != 0L) calculatePercentage(acceptedCharsCount, totalCharsCount) else null
+    val unmodifiedAcceptedCharsCount: Long
         get() = fileToTokens.map {
-            it.value.acceptedTokens.get()
+            it.value.unmodifiedAcceptedChars.get()
         }.fold(0) { acc, next ->
             acc + next
         }
-    val totalTokensSize: Long
+    val totalCharsCount: Long
         get() = fileToTokens.map {
-            it.value.totalTokens.get()
+            it.value.totalChars.get()
         }.fold(0) { acc, next ->
             acc + next
         }
-    private val rawAcceptedTokenSize: Long
+    private val acceptedCharsCount: Long
         get() = fileToTokens.map {
-            it.value.rawAcceptedTokens.get()
+            it.value.acceptedChars.get()
         }.fold(0) { acc, next ->
             acc + next
         }
@@ -95,10 +95,10 @@ abstract class CodeWhispererCodeCoverageTracker(
                     rangeMarker.putUserData(KEY_REMAINING_RECOMMENDATION, originalRecommendation)
                     runReadAction {
                         // also increment total tokens because accepted tokens are part of it
-                        incrementTotalTokens(rangeMarker.document, originalRecommendation.length)
+                        incrementTotalCharsCount(rangeMarker.document, originalRecommendation.length)
                         // avoid counting CodeWhisperer inserted suggestion twice in total tokens
                         if (rangeMarker.textRange.length in 2..49 && originalRecommendation.trim().isNotEmpty()) {
-                            incrementTotalTokens(rangeMarker.document, -rangeMarker.textRange.length)
+                            incrementTotalCharsCount(rangeMarker.document, -rangeMarker.textRange.length)
                         }
                     }
                 }
@@ -135,12 +135,12 @@ abstract class CodeWhispererCodeCoverageTracker(
         // when event is auto closing [{(', there will be 2 separated events, both count as 1 char increase in total chars
         val text = event.newFragment.toString()
         if ((event.newLength == 1 && event.oldLength == 0) || (text.startsWith('\n') && text.trim().isEmpty())) {
-            incrementTotalTokens(event.document, 1)
+            incrementTotalCharsCount(event.document, 1)
             return
         } else if (event.newLength < 50 && text.trim().isNotEmpty()) {
             // count doc changes from <50 multi character input as total user written code
             // ignore all white space changes, this usually comes from IntelliJ formatting
-            incrementTotalTokens(event.document, event.newLength)
+            incrementTotalCharsCount(event.document, event.newLength)
         }
     }
 
@@ -165,19 +165,19 @@ abstract class CodeWhispererCodeCoverageTracker(
 
     private fun incrementUnmodifiedAcceptedCharsCount(document: Document, delta: Int) {
         val tokens = fileToTokens.getOrPut(document) { CodeCoverageTokens() }
-        tokens.acceptedTokens.addAndGet(delta)
+        tokens.unmodifiedAcceptedChars.addAndGet(delta)
     }
 
     private fun incrementAcceptedCharsCount(document: Document, delta: Int) {
         val tokens = fileToTokens.getOrPut(document) { CodeCoverageTokens() }
-        tokens.rawAcceptedTokens.addAndGet(delta)
+        tokens.acceptedChars.addAndGet(delta)
     }
 
-    private fun incrementTotalTokens(document: Document, delta: Int) {
+    private fun incrementTotalCharsCount(document: Document, delta: Int) {
         val tokens = fileToTokens.getOrPut(document) { CodeCoverageTokens() }
         tokens.apply {
-            totalTokens.addAndGet(delta)
-            if (totalTokens.get() < 0) totalTokens.set(0)
+            totalChars.addAndGet(delta)
+            if (totalChars.get() < 0) totalChars.set(0)
         }
     }
 
@@ -220,9 +220,9 @@ abstract class CodeWhispererCodeCoverageTracker(
                 val response = CodeWhispererClientAdaptor.getInstance(project).sendCodePercentageTelemetry(
                     language,
                     customizationArn,
-                    rawAcceptedTokenSize,
-                    totalTokensSize,
-                    acceptedTokensSize
+                    acceptedCharsCount,
+                    totalCharsCount,
+                    unmodifiedAcceptedCharsCount
                 )
                 LOG.debug { "Successfully sent code percentage telemetry. RequestId: ${response.responseMetadata().requestId()}" }
             } catch (e: Exception) {
@@ -237,11 +237,11 @@ abstract class CodeWhispererCodeCoverageTracker(
         percentage?.let { percentage ->
             CodewhispererTelemetry.codePercentage(
                 project = null,
-                codewhispererAcceptedTokens = acceptedTokensSize,
-                codewhispererSuggestedTokens = rawAcceptedTokenSize,
+                codewhispererAcceptedTokens = unmodifiedAcceptedCharsCount,
+                codewhispererSuggestedTokens = acceptedCharsCount,
                 codewhispererLanguage = language.toTelemetryType(),
                 codewhispererPercentage = percentage,
-                codewhispererTotalTokens = totalTokensSize,
+                codewhispererTotalTokens = totalCharsCount,
                 successCount = myServiceInvocationCount.get().toLong(),
                 codewhispererCustomizationArn = customizationArn,
                 credentialStartUrl = getCodeWhispererStartUrl(project)
@@ -300,14 +300,8 @@ class DefaultCodeWhispererCodeCoverageTracker(project: Project, language: CodeWh
     AtomicInteger(0)
 )
 
-class CodeCoverageTokens(totalTokens: Int = 0, acceptedTokens: Int = 0, rawAcceptedTokens: Int = 0) {
-    val totalTokens: AtomicInteger
-    val acceptedTokens: AtomicInteger
-    val rawAcceptedTokens: AtomicInteger
-
-    init {
-        this.totalTokens = AtomicInteger(totalTokens)
-        this.acceptedTokens = AtomicInteger(acceptedTokens)
-        this.rawAcceptedTokens = AtomicInteger(rawAcceptedTokens)
-    }
+class CodeCoverageTokens(totalChars: Int = 0, unmodifiedAcceptedChars: Int = 0, acceptedChars: Int = 0) {
+    val totalChars = AtomicInteger(totalChars)
+    val unmodifiedAcceptedChars = AtomicInteger(unmodifiedAcceptedChars)
+    val acceptedChars = AtomicInteger(acceptedChars)
 }

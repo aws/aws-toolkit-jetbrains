@@ -33,7 +33,7 @@ class CodeWhispererFeatureConfigService {
             }
 
             // Only apply new auto-trigger UX to BID users
-            val isNewAutoTriggerUX = getIsNewAutoTriggerUX()
+            val isNewAutoTriggerUX = getNewAutoTriggerUX()
             if (isNewAutoTriggerUX) {
                 calculateIfIamIdentityCenterConnection(project) {
                     featureConfigs.remove(NEW_AUTO_TRIGGER_UX)
@@ -92,7 +92,7 @@ class CodeWhispererFeatureConfigService {
 
     fun getCustomizationArnOverride(): String = getFeatureValueForKey(CUSTOMIZATION_ARN_OVERRIDE_NAME).stringValue()
 
-    fun getIsNewAutoTriggerUX(): Boolean = getFeatureValueForKey(NEW_AUTO_TRIGGER_UX).boolValue()
+    fun getNewAutoTriggerUX(): Boolean = getFeatureValueForKey(NEW_AUTO_TRIGGER_UX).boolValue()
 
     // Get the feature value for the given key.
     // In case of a misconfiguration, it will return a default feature value of Boolean false.
