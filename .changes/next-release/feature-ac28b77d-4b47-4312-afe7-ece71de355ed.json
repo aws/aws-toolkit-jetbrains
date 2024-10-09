@@ -1,4 +1,4 @@
 {
-  "type" : "feature",
+  "type" : "bugfix",
   "description" : "Automatically pause and resume @workspace indexing when OS CPU load is high"
 }
