@@ -95,13 +95,13 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
 
                 // Send the Answer message to indicate the end of the response stream
                 val response = ChatMessage(
-                        tabId = tabId,
-                        triggerId = triggerId,
-                        messageId = requestId,
-                        messageType = ChatMessageType.Answer,
-                        followUps = followUps,
-                        userIntent = data.userIntent,
-                    )
+                    tabId = tabId,
+                    triggerId = triggerId,
+                    messageId = requestId,
+                    messageType = ChatMessageType.Answer,
+                    followUps = followUps,
+                    userIntent = data.userIntent,
+                )
 
                 telemetryHelper.setResponseStreamTotalTime(tabId)
                 telemetryHelper.setResponseHasProjectContext(
@@ -133,12 +133,23 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                 }
             }
             .collect { responseEvent ->
-                processChatEvent(tabId, triggerId, data,
-                    responseEvent, shouldAddIndexInProgressMessage)?.let { emit(it) }
+                processChatEvent(
+                    tabId,
+                    triggerId,
+                    data,
+                    responseEvent,
+                    shouldAddIndexInProgressMessage
+                )?.let { emit(it) }
             }
     }
 
-    private fun processChatEvent(tabId: String, triggerId: String, data: ChatRequestData, event: ChatResponseEvent, shouldAddIndexInProgressMessage: Boolean): ChatMessage? {
+    private fun processChatEvent(
+        tabId: String,
+        triggerId: String,
+        data: ChatRequestData,
+        event: ChatResponseEvent,
+        shouldAddIndexInProgressMessage: Boolean,
+    ): ChatMessage? {
         requestId = event.requestId
         statusCode = event.statusCode
 
