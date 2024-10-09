@@ -42,6 +42,7 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
 
     private var lastInvocationTime: Instant? = null
     private var lastInvocationLineNum: Int? = null
+    var timeAtLastCharTyped: Instant = Instant.now()
 
     init {
         scheduleReset()
@@ -54,6 +55,7 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
     // a util wrapper
     fun tryInvokeAutoTrigger(editor: Editor, triggerType: CodeWhispererAutomatedTriggerType): Job? {
         // only needed for Classifier group, thus calculate it lazily
+        timeAtLastCharTyped = Instant.now()
         val classifierResult: ClassifierResult by lazy { shouldTriggerClassifier(editor, triggerType.telemetryType) }
         val language = runReadAction {
             FileDocumentManager.getInstance().getFile(editor.document)?.programmingLanguage()

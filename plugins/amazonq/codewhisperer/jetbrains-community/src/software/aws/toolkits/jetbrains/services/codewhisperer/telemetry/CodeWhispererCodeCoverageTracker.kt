@@ -31,6 +31,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_SECONDS_IN_MINUTE
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCodeWhispererStartUrl
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getUnmodifiedAcceptedCharsCount
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.telemetry.CodewhispererTelemetry
 import java.time.Duration
@@ -40,6 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.roundToLong
 
 // TODO: reset code coverage calculator on logging out connection?
+// TODO: rename "Tokens" to "Characters", and many more renames in this file
 abstract class CodeWhispererCodeCoverageTracker(
     private val project: Project,
     private val timeWindowInSec: Long,
@@ -146,19 +148,6 @@ abstract class CodeWhispererCodeCoverageTracker(
         rangeMarker.range?.let { myRange -> rangeMarker.document.getText(myRange) }
     }
 
-    // With edit distance, complicate usermodification can be considered as simple edit(add, delete, replace),
-    // and thus the unmodified part of recommendation length can be deducted/approximated
-    // ex. (modified > original): originalRecom: foo -> modifiedRecom: fobarbarbaro, distance = 9, delta = 12 - 9 = 3
-    // ex. (modified == original): originalRecom: helloworld -> modifiedRecom: HelloWorld, distance = 2, delta = 10 - 2 = 8
-    // ex. (modified < original): originalRecom: CodeWhisperer -> modifiedRecom: CODE, distance = 12, delta = 13 - 12 = 1
-    internal fun getAcceptedTokensDelta(originalRecommendation: String, modifiedRecommendation: String): Int {
-        val editDistance = getEditDistance(modifiedRecommendation, originalRecommendation).toInt()
-        return maxOf(originalRecommendation.length, modifiedRecommendation.length) - editDistance
-    }
-
-    protected open fun getEditDistance(modifiedString: String, originalString: String): Double =
-        levenshteinChecker.distance(modifiedString, originalString)
-
     private fun flush() {
         try {
             if (isTelemetryEnabled()) emitCodeWhispererCodeContribution()
@@ -174,12 +163,12 @@ abstract class CodeWhispererCodeCoverageTracker(
         }
     }
 
-    private fun incrementAcceptedTokens(document: Document, delta: Int) {
+    private fun incrementUnmodifiedAcceptedCharsCount(document: Document, delta: Int) {
         val tokens = fileToTokens.getOrPut(document) { CodeCoverageTokens() }
         tokens.acceptedTokens.addAndGet(delta)
     }
 
-    private fun incrementRawAcceptedTokens(document: Document, delta: Int) {
+    private fun incrementAcceptedCharsCount(document: Document, delta: Int) {
         val tokens = fileToTokens.getOrPut(document) { CodeCoverageTokens() }
         tokens.rawAcceptedTokens.addAndGet(delta)
     }
@@ -217,10 +206,10 @@ abstract class CodeWhispererCodeCoverageTracker(
                 }
                 return@forEach
             }
-            val delta = getAcceptedTokensDelta(originalRecommendation, modifiedRecommendation)
+            val unmodifiedRecommendationLength = getUnmodifiedAcceptedCharsCount(originalRecommendation, modifiedRecommendation)
             runReadAction {
-                incrementRawAcceptedTokens(rangeMarker.document, originalRecommendation.length)
-                incrementAcceptedTokens(rangeMarker.document, delta)
+                incrementAcceptedCharsCount(rangeMarker.document, originalRecommendation.length)
+                incrementUnmodifiedAcceptedCharsCount(rangeMarker.document, unmodifiedRecommendationLength)
             }
         }
         val customizationArn: String? = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn
@@ -277,7 +266,7 @@ abstract class CodeWhispererCodeCoverageTracker(
 
     companion object {
         @JvmStatic
-        protected val levenshteinChecker = Levenshtein()
+        val levenshteinChecker = Levenshtein()
         private const val REMAINING_RECOMMENDATION = "remainingRecommendation"
         private val KEY_REMAINING_RECOMMENDATION = Key<String>(REMAINING_RECOMMENDATION)
         private val LOG = getLogger<CodeWhispererCodeCoverageTracker>()

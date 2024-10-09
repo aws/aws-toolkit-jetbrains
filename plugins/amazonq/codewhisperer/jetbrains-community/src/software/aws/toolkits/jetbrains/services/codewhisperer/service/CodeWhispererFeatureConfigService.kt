@@ -32,6 +32,14 @@ class CodeWhispererFeatureConfigService {
                 featureConfigs[it.feature()] = FeatureContext(it.feature(), it.variation(), it.value())
             }
 
+            // Only apply new auto-trigger UX to BID users
+            val isNewAutoTriggerUX = getIsNewAutoTriggerUX()
+            if (isNewAutoTriggerUX) {
+                calculateIfIamIdentityCenterConnection(project) {
+                    featureConfigs.remove(NEW_AUTO_TRIGGER_UX)
+                }
+            }
+
             val customizationArnOverride = featureConfigs[CUSTOMIZATION_ARN_OVERRIDE_NAME]?.value?.stringValue()
             if (customizationArnOverride != null) {
                 // Double check if server-side wrongly returns a customizationArn to BID users
@@ -84,20 +92,24 @@ class CodeWhispererFeatureConfigService {
 
     fun getCustomizationArnOverride(): String = getFeatureValueForKey(CUSTOMIZATION_ARN_OVERRIDE_NAME).stringValue()
 
+    fun getIsNewAutoTriggerUX(): Boolean = getFeatureValueForKey(NEW_AUTO_TRIGGER_UX).boolValue()
+
     // Get the feature value for the given key.
-    // In case of a misconfiguration, it will return a default feature value of Boolean true.
+    // In case of a misconfiguration, it will return a default feature value of Boolean false.
     private fun getFeatureValueForKey(name: String): FeatureValue =
         featureConfigs[name]?.value ?: FEATURE_DEFINITIONS[name]?.value
-            ?: FeatureValue.builder().boolValue(true).build()
+            ?: FeatureValue.builder().boolValue(false).build()
 
     companion object {
         fun getInstance(): CodeWhispererFeatureConfigService = service()
         private const val TEST_FEATURE_NAME = "testFeature"
         private const val DATA_COLLECTION_FEATURE = "IDEProjectContextDataCollection"
         const val CUSTOMIZATION_ARN_OVERRIDE_NAME = "customizationArnOverride"
+        private const val NEW_AUTO_TRIGGER_UX = "newAutoTriggerUX"
         private val LOG = getLogger<CodeWhispererFeatureConfigService>()
 
         // TODO: add real feature later
+        // Also serve as default values in case server-side config isn't there yet
         internal val FEATURE_DEFINITIONS = mapOf(
             TEST_FEATURE_NAME to FeatureContext(
                 TEST_FEATURE_NAME,
@@ -109,7 +121,12 @@ class CodeWhispererFeatureConfigService {
                 CUSTOMIZATION_ARN_OVERRIDE_NAME,
                 "customizationARN",
                 FeatureValue.builder().stringValue("").build()
-            )
+            ),
+            NEW_AUTO_TRIGGER_UX to FeatureContext(
+                NEW_AUTO_TRIGGER_UX,
+                "CONTROL",
+                FeatureValue.builder().boolValue(false).build()
+            ),
         )
     }
 }
