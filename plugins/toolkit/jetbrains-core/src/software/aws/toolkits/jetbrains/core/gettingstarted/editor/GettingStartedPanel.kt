@@ -717,16 +717,6 @@ class GettingStartedPanel(
                                 link(message("toolkit.login.aws_builder_id.already_connected.reconnect")) {
                                     val activeConnection = checkIamConnectionValidity(project)
                                     val connection = activeConnection.activeConnectionIam
-                                    if (connection != null) {
-                                        val confirmDeletion = MessageDialogBuilder.okCancel(
-                                            message("gettingstarted.auth.idc.sign.out.confirmation.title"),
-                                            message("gettingstarted.auth.idc.sign.out.confirmation")
-                                        ).yesText(message("general.confirm")).ask(project)
-                                        if (confirmDeletion) {
-                                            deleteSsoConnection(connection)
-                                            controlPanelVisibility(panelConnected, panelNotConnected)
-                                        }
-                                    }
                                 }
                             }.visible(checkIamConnectionValidity(project).connectionType == ActiveConnectionType.IAM_IDC)
 
