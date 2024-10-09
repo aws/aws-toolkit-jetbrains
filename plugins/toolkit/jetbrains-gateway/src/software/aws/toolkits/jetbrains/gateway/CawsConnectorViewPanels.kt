@@ -489,7 +489,8 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                                 panel {
                                     row(message("caws.workspace.details.backend_toolkit_location")) {
                                         textFieldWithBrowseButton(
-                                            FileChooserDescriptorFactory.createSingleFileDescriptor()
+                                            browseDialogTitle = message("caws.workspace.details.toolkit_location"),
+                                            fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
                                         ).bindText(context::toolkitLocation)
                                     }
 
