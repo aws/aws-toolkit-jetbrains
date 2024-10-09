@@ -16,7 +16,7 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolution() {
     override val persistCaches: Boolean get() = false
     override val restoreNuGetPackages: Boolean get() = false
 
-    override abstract fun getSolutionDirectoryName(): String
+    abstract override fun getSolutionDirectoryName(): String
 
     // 15 is a magic number (it's the return statement since they are all the same), but the only
     // example of it used that I could find it is used that way:
