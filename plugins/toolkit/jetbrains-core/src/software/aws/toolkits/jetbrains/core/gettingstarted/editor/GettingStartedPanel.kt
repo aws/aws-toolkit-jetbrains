@@ -44,7 +44,6 @@ import software.aws.toolkits.jetbrains.core.credentials.ProfileSsoManagedBearerS
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
-import software.aws.toolkits.jetbrains.core.credentials.deleteSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManagerListener
@@ -527,17 +526,6 @@ class GettingStartedPanel(
             val validConnection = activeConnection()
 
             val connection = validConnection.activeConnectionBearer
-            if (connection is ProfileSsoManagedBearerSsoConnection) {
-                if (validConnection.connectionType == ActiveConnectionType.IAM_IDC) {
-                    val confirmDeletion = MessageDialogBuilder.okCancel(
-                        message("gettingstarted.auth.idc.sign.out.confirmation.title"),
-                        message("gettingstarted.auth.idc.sign.out.confirmation")
-                    ).yesText(message("general.confirm")).ask(project)
-                    if (confirmDeletion) {
-                        deleteSsoConnection(connection)
-                    }
-                }
-            }
             if (connection != null) {
                 logoutFromSsoConnection(project, connection) {
                     controlPanelVisibility(panelConnected, panelNotConnected)
@@ -671,16 +659,6 @@ class GettingStartedPanel(
                                 link(message("toolkit.login.aws_builder_id.already_connected.reconnect")) {
                                     val activeConnection = checkIamConnectionValidity(project)
                                     val connection = activeConnection.activeConnectionIam
-                                    if (connection != null) {
-                                        val confirmDeletion = MessageDialogBuilder.okCancel(
-                                            message("gettingstarted.auth.idc.sign.out.confirmation.title"),
-                                            message("gettingstarted.auth.idc.sign.out.confirmation")
-                                        ).yesText(message("general.confirm")).ask(project)
-                                        if (confirmDeletion) {
-                                            deleteSsoConnection(connection)
-                                            controlPanelVisibility(panelConnected, panelNotConnected)
-                                        }
-                                    }
                                 }
                             }.visible(checkIamConnectionValidity(project).connectionType == ActiveConnectionType.IAM_IDC)
                             row {
@@ -739,16 +717,6 @@ class GettingStartedPanel(
                                 link(message("toolkit.login.aws_builder_id.already_connected.reconnect")) {
                                     val activeConnection = checkIamConnectionValidity(project)
                                     val connection = activeConnection.activeConnectionIam
-                                    if (connection != null) {
-                                        val confirmDeletion = MessageDialogBuilder.okCancel(
-                                            message("gettingstarted.auth.idc.sign.out.confirmation.title"),
-                                            message("gettingstarted.auth.idc.sign.out.confirmation")
-                                        ).yesText(message("general.confirm")).ask(project)
-                                        if (confirmDeletion) {
-                                            deleteSsoConnection(connection)
-                                            controlPanelVisibility(panelConnected, panelNotConnected)
-                                        }
-                                    }
                                 }
                             }.visible(checkIamConnectionValidity(project).connectionType == ActiveConnectionType.IAM_IDC)
 
@@ -891,17 +859,7 @@ class GettingStartedPanel(
                                     val validConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER)
 
                                     val connection = validConnection.activeConnectionBearer
-                                    if (connection is ProfileSsoManagedBearerSsoConnection) {
-                                        if (validConnection.connectionType == ActiveConnectionType.IAM_IDC) {
-                                            val confirmDeletion = MessageDialogBuilder.okCancel(
-                                                message("gettingstarted.auth.idc.sign.out.confirmation.title"),
-                                                message("gettingstarted.auth.idc.sign.out.confirmation")
-                                            ).yesText(message("general.confirm")).ask(project)
-                                            if (confirmDeletion) {
-                                                deleteSsoConnection(connection)
-                                            }
-                                        }
-                                    }
+
                                     if (connection != null) {
                                         logoutFromSsoConnection(project, connection) {
                                             controlPanelVisibility(panelConnected, panelNotConnected)
@@ -982,15 +940,6 @@ class GettingStartedPanel(
                                     val validConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER)
                                     val connection = validConnection.activeConnectionBearer
                                     if (connection is ProfileSsoManagedBearerSsoConnection) {
-                                        if (validConnection.connectionType == ActiveConnectionType.IAM_IDC) {
-                                            val confirmDeletion = MessageDialogBuilder.okCancel(
-                                                message("gettingstarted.auth.idc.sign.out.confirmation.title"),
-                                                message("gettingstarted.auth.idc.sign.out.confirmation")
-                                            ).yesText(message("general.confirm")).ask(project)
-                                            if (confirmDeletion) {
-                                                deleteSsoConnection(connection)
-                                            }
-                                        }
                                         logoutFromSsoConnection(project, connection) {
                                             controlPanelVisibility(panelConnected, panelNotConnected)
                                         }

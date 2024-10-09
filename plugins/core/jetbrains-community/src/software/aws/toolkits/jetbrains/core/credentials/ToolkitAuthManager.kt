@@ -13,13 +13,11 @@ import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.TokenConnectionSettings
-import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
-import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifierSso
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants.SSO_SESSION_SECTION_NAME
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
@@ -204,9 +202,6 @@ fun loginSso(
 fun logoutFromSsoConnection(project: Project?, connection: AwsBearerTokenConnection, callback: () -> Unit = {}) {
     try {
         ToolkitAuthManager.getInstance().deleteConnection(connection.id)
-        if (connection is ProfileSsoManagedBearerSsoConnection) {
-            deleteSsoConnection(connection)
-        }
     } finally {
         callback()
     }
@@ -330,19 +325,6 @@ fun maybeReauthProviderIfNeeded(
             return false
         }
     }
-}
-
-fun deleteSsoConnection(connection: ProfileSsoManagedBearerSsoConnection) =
-    deleteSsoConnection(connection.configSessionName)
-
-fun deleteSsoConnection(connection: CredentialIdentifier) =
-    deleteSsoConnection(getSsoSessionProfileNameFromCredentials(connection))
-
-fun deleteSsoConnection(sessionName: String) = DefaultConfigFilesFacade().deleteSsoConnectionFromConfig(sessionName)
-
-private fun getSsoSessionProfileNameFromCredentials(connection: CredentialIdentifier): String {
-    connection as ProfileCredentialsIdentifierSso
-    return connection.ssoSessionName
 }
 
 private fun recordLoginWithBrowser(

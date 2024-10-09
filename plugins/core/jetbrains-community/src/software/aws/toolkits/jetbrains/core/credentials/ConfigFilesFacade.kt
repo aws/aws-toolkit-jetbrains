@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import software.amazon.awssdk.profiles.Profile
 import software.amazon.awssdk.profiles.ProfileFile
 import software.amazon.awssdk.profiles.ProfileFileLocation
@@ -17,8 +15,6 @@ import software.aws.toolkits.core.utils.touch
 import software.aws.toolkits.core.utils.tryDirOp
 import software.aws.toolkits.core.utils.tryFileOp
 import software.aws.toolkits.core.utils.writeText
-import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileWatcher
-import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ssoSessions
 import java.nio.file.Path
 
@@ -39,8 +35,6 @@ interface ConfigFilesFacade {
     fun appendProfileToCredentials(profile: Profile)
     fun appendSectionToConfig(sectionName: String, profile: Profile)
     fun updateSectionInConfig(sectionName: String, profile: Profile)
-
-    fun deleteSsoConnectionFromConfig(sessionName: String)
 }
 
 class DefaultConfigFilesFacade(
@@ -176,24 +170,6 @@ class DefaultConfigFilesFacade(
                 }
                 writeText((lines.subList(0, profileHeaderLine) + profileLines + lines.subList(endIndex, lines.size)).joinToString("\n"))
             }
-        }
-    }
-
-    override fun deleteSsoConnectionFromConfig(sessionName: String) {
-        val filePath = configPath
-        val lines = filePath.inputStreamIfExists()?.reader()?.readLines().orEmpty()
-        val ssoHeaderLine = lines.indexOfFirst { it.startsWith("[${SsoSessionConstants.SSO_SESSION_SECTION_NAME} $sessionName]") }
-        if (ssoHeaderLine == -1) return
-        val nextHeaderLine = lines.subList(ssoHeaderLine + 1, lines.size).indexOfFirst { it.startsWith("[") }
-        val endIndex = if (nextHeaderLine == -1) lines.size else ssoHeaderLine + nextHeaderLine + 1
-        val updatedArray = lines.subList(0, ssoHeaderLine) + lines.subList(endIndex, lines.size)
-        val profileHeaderLine = getCorrespondingSsoSessionProfilePosition(updatedArray, sessionName)
-        filePath.writeText(profileHeaderLine.joinToString("\n"))
-
-        val applicationManager = ApplicationManager.getApplication()
-        if (applicationManager != null && !applicationManager.isUnitTestMode) {
-            FileDocumentManager.getInstance().saveAllDocuments()
-            ProfileWatcher.getInstance().forceRefresh()
         }
     }
 
