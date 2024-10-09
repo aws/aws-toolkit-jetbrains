@@ -36,6 +36,7 @@ fun requestCredentialsForCodeWhisperer(
     ),
     isFirstInstance: Boolean = false,
     connectionInitiatedFromExplorer: Boolean = false,
+    isReauth: Boolean = false,
 ): Boolean {
     val authenticationDialog = SetupAuthenticationDialog(
         project,
@@ -87,7 +88,8 @@ fun requestCredentialsForCodeWhisperer(
             credentialSourceId = authenticationDialog.authType,
             isAggregated = true,
             attempts = authenticationDialog.attempts + 1,
-            result = Result.Succeeded
+            result = Result.Succeeded,
+            isReAuth = isReauth
         )
         AuthTelemetry.addedConnections(
             project,
@@ -108,6 +110,7 @@ fun requestCredentialsForCodeWhisperer(
             isAggregated = false,
             attempts = authenticationDialog.attempts + 1,
             result = Result.Cancelled,
+            isReAuth = isReauth
         )
     }
     return isAuthenticationSuccessful
@@ -123,6 +126,7 @@ fun requestCredentialsForQ(
     isFirstInstance: Boolean = false,
     connectionInitiatedFromExplorer: Boolean = false,
     connectionInitiatedFromQChatPanel: Boolean = false,
+    isReauth: Boolean,
 ): Boolean {
     // try to scope upgrade if we have a codewhisperer connection
     val codeWhispererConnection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
@@ -194,7 +198,8 @@ fun requestCredentialsForQ(
             credentialSourceId = authenticationDialog.authType,
             isAggregated = true,
             attempts = authenticationDialog.attempts + 1,
-            result = Result.Succeeded
+            result = Result.Succeeded,
+            isReAuth = isReauth
         )
         AuthTelemetry.addedConnections(
             project,
@@ -215,6 +220,7 @@ fun requestCredentialsForQ(
             isAggregated = false,
             attempts = authenticationDialog.attempts + 1,
             result = Result.Cancelled,
+            isReAuth = isReauth
         )
     }
     return isAuthenticationSuccessful

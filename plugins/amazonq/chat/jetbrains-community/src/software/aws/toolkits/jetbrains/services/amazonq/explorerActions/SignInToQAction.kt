@@ -24,7 +24,7 @@ class SignInToQAction : SignInToQActionBase(message("q.sign.in")) {
         UiTelemetry.click(project, "auth_start_Q")
 
         if (!isQWebviewsAvailable()) {
-            requestCredentialsForQ(project)
+            requestCredentialsForQ(project, isReauth = false)
         } else {
             ToolWindowManager.getInstance(project).getToolWindow(AmazonQToolWindowFactory.WINDOW_ID)?.show()
         }
@@ -42,7 +42,7 @@ abstract class SignInToQActionBase(actionName: String) : DumbAwareAction(actionN
             reauthConnectionIfNeeded(project, it, isReAuth = true)
         } ?: run {
             runInEdt {
-                if (requestCredentialsForQ(project)) {
+                if (requestCredentialsForQ(project, isReauth = false)) {
                     if (!openMeetQPage(project)) {
                         return@runInEdt
                     }
