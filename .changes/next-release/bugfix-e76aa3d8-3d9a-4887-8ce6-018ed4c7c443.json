@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Raise max @workspace indexing size to 4GB"
+  "description" : "Raise max `@workspace` indexing size to 4GB"
 }
