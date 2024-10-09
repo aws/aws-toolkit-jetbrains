@@ -16,6 +16,13 @@ class CodeIterationLimitError(override val message: String, override val cause: 
 
 class MonthlyConversationLimitError(override val message: String, override val cause: Throwable?) : RuntimeException()
 
+class UploadURLExpired(
+    override val message: String = message(
+        "amazonqFeatureDev.exception.upload_url_expiry"
+    ),
+    override val cause: Throwable? = null,
+) : FeatureDevException(message, cause)
+
 internal fun featureDevServiceError(message: String?): Nothing =
     throw FeatureDevException(message)
 
