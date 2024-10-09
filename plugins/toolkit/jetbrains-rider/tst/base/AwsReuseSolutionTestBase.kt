@@ -16,7 +16,7 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolution() {
     override val persistCaches: Boolean get() = false
     override val restoreNuGetPackages: Boolean get() = false
 
-    protected abstract fun getSolutionDirectoryName(): String
+    override abstract fun getSolutionDirectoryName(): String
 
     // 15 is a magic number (it's the return statement since they are all the same), but the only
     // example of it used that I could find it is used that way:
@@ -27,6 +27,5 @@ abstract class AwsReuseSolutionTestBase : BaseTestWithSolution() {
         XDebuggerTestHelper.toggleBreakpoint(project, getVirtualFileFromPath("src/HelloWorld/Function.cs", project.solutionDirectory), line - 1)
     }
 
-    override val testSolution = getSolutionDirectoryName()
     override val backendLoadedTimeout = backendStartTimeout
 }

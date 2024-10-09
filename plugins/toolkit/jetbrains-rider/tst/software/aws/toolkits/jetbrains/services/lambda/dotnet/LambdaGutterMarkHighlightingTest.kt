@@ -19,7 +19,8 @@ class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
     }
 
     override val backendLoadedTimeout: Duration = backendStartTimeout
-    override val testSolution = "SamHelloWorldApp"
+
+    override fun getSolutionDirectoryName() = "SamHelloWorldApp"
 
     @Test
     fun testClass_FunctionClass_Detected() = verifyLambdaGutterMark()
