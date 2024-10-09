@@ -204,9 +204,6 @@ fun loginSso(
 fun logoutFromSsoConnection(project: Project?, connection: AwsBearerTokenConnection, callback: () -> Unit = {}) {
     try {
         ToolkitAuthManager.getInstance().deleteConnection(connection.id)
-        if (connection is ProfileSsoManagedBearerSsoConnection) {
-            deleteSsoConnection(connection)
-        }
     } finally {
         callback()
     }
@@ -330,19 +327,6 @@ fun maybeReauthProviderIfNeeded(
             return false
         }
     }
-}
-
-fun deleteSsoConnection(connection: ProfileSsoManagedBearerSsoConnection) =
-    deleteSsoConnection(connection.configSessionName)
-
-fun deleteSsoConnection(connection: CredentialIdentifier) =
-    deleteSsoConnection(getSsoSessionProfileNameFromCredentials(connection))
-
-fun deleteSsoConnection(sessionName: String) = DefaultConfigFilesFacade().deleteSsoConnectionFromConfig(sessionName)
-
-private fun getSsoSessionProfileNameFromCredentials(connection: CredentialIdentifier): String {
-    connection as ProfileCredentialsIdentifierSso
-    return connection.ssoSessionName
 }
 
 private fun recordLoginWithBrowser(
