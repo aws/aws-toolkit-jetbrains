@@ -441,7 +441,7 @@ class FeatureDevController(
                 )
             }
             is NoChangeRequiredException -> {
-                val isException = true;
+                val isException = true
                 messenger.sendAnswer(
                     tabId = tabId,
                     message = err.message,
