@@ -36,6 +36,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevExce
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ModifySourceFolderErrorReason
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.UploadURLExpired
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileCorruptedException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.createUserFacingErrorMessage
@@ -351,7 +352,7 @@ class FeatureDevController(
         }
     }
 
-    private suspend fun newTask(tabId: String) {
+    private suspend fun newTask(tabId: String, isException: Boolean? = false) {
         val session = getSessionInfo(tabId)
         val sessionLatency = System.currentTimeMillis() - session.sessionStartTime
         AmazonqTelemetry.endChat(
@@ -362,9 +363,15 @@ class FeatureDevController(
         chatSessionStorage.deleteSession(tabId)
 
         newTabOpened(tabId)
-
-        messenger.sendAnswer(tabId = tabId, messageType = FeatureDevMessageType.Answer, message = message("amazonqFeatureDev.chat_message.ask_for_new_task"))
+        if (isException != null && !isException) {
+            messenger.sendAnswer(
+                tabId = tabId,
+                messageType = FeatureDevMessageType.Answer,
+                message = message("amazonqFeatureDev.chat_message.ask_for_new_task")
+            )
+        }
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.new_plan"))
+        messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = true)
     }
 
     private suspend fun closeSession(tabId: String) {
@@ -432,6 +439,16 @@ class FeatureDevController(
                         )
                     ),
                 )
+            }
+            is NoChangeRequiredException -> {
+                val isException = true
+                messenger.sendAnswer(
+                    tabId = tabId,
+                    message = err.message,
+                    messageType = FeatureDevMessageType.Answer,
+                    canBeVoted = true
+                )
+                return this.newTask(message, isException)
             }
             is ZipFileCorruptedException -> {
                 messenger.sendError(

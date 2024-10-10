@@ -448,17 +448,7 @@
         },
         "ChatMessageInteractionType": {
             "type": "string",
-            "enum": [
-                "INSERT_AT_CURSOR",
-                "COPY_SNIPPET",
-                "COPY",
-                "CLICK_LINK",
-                "CLICK_BODY_LINK",
-                "CLICK_FOLLOW_UP",
-                "HOVER_REFERENCE",
-                "UPVOTE",
-                "DOWNVOTE"
-            ]
+            "enum": ["INSERT_AT_CURSOR", "COPY_SNIPPET", "COPY", "CLICK_LINK", "CLICK_BODY_LINK", "CLICK_FOLLOW_UP", "HOVER_REFERENCE", "UPVOTE", "DOWNVOTE"]
         },
         "FeatureDevEvent": {
             "type": "structure",
@@ -1891,14 +1881,9 @@
             "max":128,
             "min":1
         },
-        "UploadIntent":{
-            "type":"string",
-            "enum":[
-                "TRANSFORMATION",
-                "TASK_ASSIST_PLANNING",
-                "AUTOMATIC_FILE_SECURITY_SCAN",
-                "FULL_PROJECT_SECURITY_SCAN"
-            ]
+        "UploadIntent": {
+            "type": "string",
+            "enum": ["TRANSFORMATION", "TASK_ASSIST_PLANNING", "AUTOMATIC_FILE_SECURITY_SCAN", "FULL_PROJECT_SECURITY_SCAN"]
         },
         "UserContext":{
             "type":"structure",
