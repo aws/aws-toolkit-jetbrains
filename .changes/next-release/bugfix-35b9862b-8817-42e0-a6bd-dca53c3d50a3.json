@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Q dev handle no change required"
+  "description" : "Amazon Q (/dev): provide error messaging when no code changes are required for the prompt"
 }
