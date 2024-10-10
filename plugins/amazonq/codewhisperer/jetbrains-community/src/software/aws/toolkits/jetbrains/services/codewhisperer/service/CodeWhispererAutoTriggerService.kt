@@ -43,6 +43,7 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
     private var lastInvocationTime: Instant? = null
     private var lastInvocationLineNum: Int? = null
     var timeAtLastCharTyped: Instant = Instant.now()
+        private set
 
     init {
         scheduleReset()
