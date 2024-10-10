@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {QuickActionCommand, QuickActionCommandGroup} from '@aws/mynah-ui-chat/dist/static'
+import { QuickActionCommand, QuickActionCommandGroup } from '@aws/mynah-ui-chat/dist/static'
 import { TabType } from '../storages/tabsStorage'
 
 export interface QuickActionGeneratorProps {
@@ -26,21 +26,20 @@ export class QuickActionGenerator {
                 commands: [
                     ...(this.isFeatureDevEnabled
                         ? [
-                            {
-                                command: '/dev',
-                                placeholder: 'Describe your task or issue in as much detail as possible',
-                                description:
-                                    'Plan and implement new functionality across multiple files in your workspace.',
-                            },
-                        ]
+                              {
+                                  command: '/dev',
+                                  placeholder: 'Describe your task or issue in as much detail as possible',
+                                  description: 'Generate code to make a change in your project',
+                              },
+                          ]
                         : []),
                     ...(this.isCodeTransformEnabled
                         ? [
-                            {
-                                command: '/transform',
-                                description: 'Transform your Java 8 or 11 Maven project to Java 17',
-                            },
-                        ]
+                              {
+                                  command: '/transform',
+                                  description: 'Transform your Java 8 or 11 Maven project to Java 17',
+                              },
+                          ]
                         : []),
                 ],
             },

@@ -402,7 +402,7 @@ class CodeWhispererClientAdaptorTest {
     @Test
     fun `sendTelemetryEvent for userModification respects telemetry optin status`() {
         sendTelemetryEventOptOutCheckHelper {
-            sut.sendUserModificationTelemetry(aString(), aString(), aProgrammingLanguage(), aString(), 0.0)
+            sut.sendUserModificationTelemetry(aString(), aString(), aProgrammingLanguage(), aString(), 0, 0)
         }
     }
 
