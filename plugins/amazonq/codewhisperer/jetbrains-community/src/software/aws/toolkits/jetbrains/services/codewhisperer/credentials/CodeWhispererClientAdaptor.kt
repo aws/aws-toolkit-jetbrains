@@ -58,6 +58,7 @@ import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import java.time.Instant
+import java.util.concurrent.TimeUnit
 import kotlin.reflect.KProperty0
 import kotlin.reflect.jvm.isAccessible
 
