@@ -25,3 +25,16 @@ enum class ModifySourceFolderErrorReason(
 
     override fun toString(): String = reasonText
 }
+
+enum class FeatureDevOperation(private val operationName: String) {
+    StartTaskAssistCodeGeneration("StartTaskAssistCodeGenerator"),
+    CreateConversation("CreateConversation"),
+    CreateUploadUrl("CreateUploadUrl"),
+    GenerateCode("GenerateCode"),
+    GetTaskAssistCodeGeneration("GetTaskAssistCodeGenerator"),
+    ExportTaskAssistArchiveResult("ExportTaskAssistArchiveResult"),
+    UploadToS3("UploadToS3"),
+    ;
+
+    override fun toString(): String = operationName
+}
