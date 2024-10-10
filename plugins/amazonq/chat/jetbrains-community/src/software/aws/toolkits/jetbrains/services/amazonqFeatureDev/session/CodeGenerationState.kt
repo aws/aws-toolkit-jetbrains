@@ -171,7 +171,7 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String, m
                     ),
                     -> {
                         if (codeGenerationResultState.codeGenerationStatusDetail().contains("NO_CHANGE_REQUIRED")) {
-                           throw NoChangeRequiredException(operation = FeatureDevOperation.GenerateCode.toString(), desc = "No change required")
+                            throw NoChangeRequiredException(operation = FeatureDevOperation.GenerateCode.toString(), desc = "No change required")
                         }
                         throw EmptyPatchException(operation = FeatureDevOperation.GenerateCode.toString(), desc = "Empty patch")
                     }
