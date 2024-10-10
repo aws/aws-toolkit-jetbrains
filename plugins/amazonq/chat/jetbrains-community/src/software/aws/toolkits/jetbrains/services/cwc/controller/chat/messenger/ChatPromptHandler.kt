@@ -228,7 +228,7 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
             } else {
                 responseText.toString()
             }
-            if (codeBlockLanguage === "plaintext") {
+            if (codeBlockLanguage == "plaintext") {
                 // To get the language of generated code in Q chat.
                 codeBlockLanguage = extractCodeBlockLanguage(message)
             }
