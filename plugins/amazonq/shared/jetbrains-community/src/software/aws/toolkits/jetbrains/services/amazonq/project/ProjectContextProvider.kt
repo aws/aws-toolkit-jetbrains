@@ -78,7 +78,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
 
     data class UpdateIndexRequestV2(
         val filePaths: List<String>,
-        val updateMode: String,
+        val mode: String,
     )
 
     data class Usage(
@@ -191,7 +191,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val payload = UpdateIndexRequestV2(filePaths, mode)
         val encrypted = encoderServer.encrypt(mapper.writeValueAsString(payload))
 
-        sendMsgToLsp("updateIndexV2", encrypted)
+        sendMsgToLsp(LspApi.UpdateIndex, encrypted)
     }
 
     fun queryChat(prompt: String): List<RelevantDocument> {
@@ -199,7 +199,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val payloadJson = mapper.writeValueAsString(payload)
         val encrypted = encoderServer.encrypt(payloadJson)
 
-        val response = sendMsgToLsp("query", encrypted)
+        val response = sendMsgToLsp(LspApi.QueryChat, encrypted)
 
         return try {
             val parsedResponse = mapper.readValue<List<Chunk>>(response)
@@ -215,7 +215,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val payloadJson = mapper.writeValueAsString(payload)
         val encrypted = encoderServer.encrypt(payloadJson)
 
-        val response = sendMsgToLsp("queryInlineProjectContext", encrypted)
+        val response = sendMsgToLsp(LspApi.QueryInline, encrypted)
 
         return try {
             mapper.readValue<List<BM25Chunk>>(response)
@@ -247,7 +247,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     private fun getUsage(): Usage? {
-        val responseBody = sendMsgToLsp("getUsage", null)
+        val responseBody = sendMsgToLsp(LspApi.GetUsageMetrics, null)
         return try {
             mapper.readValue<Usage>(responseBody)
         } catch (e: Exception) {
@@ -257,9 +257,9 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     // TODO: make messageType sealed object
-    private fun sendMsgToLsp(msgType: String, request: String?): String {
-        logger.info { "sending message: ${msgType} to lsp on port ${encoderServer.port}" }
-        val url = URL("http://localhost:${encoderServer.port}/$msgType")
+    private fun sendMsgToLsp(msgType: LspApi, request: String?): String {
+        logger.info { "sending message: ${msgType.command} to lsp on port ${encoderServer.port}" }
+        val url = URL("http://localhost:${encoderServer.port}/${msgType.command}")
 
         return with(url.openConnection() as HttpURLConnection) {
             setConnectionProperties(this)

@@ -215,7 +215,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
         // takeLast(11) will extract 10 lines (exclusing current line) of left context as the query parameter
         val query = targetContext.caretContext.leftFileContext.split("\n").takeLast(11).joinToString("\n")
-        val bm25 = ProjectContextController.getInstance(project).queryBM25(query, targetContext.filename)
+        val bm25 = ProjectContextController.getInstance(project).queryInline(query, psiFile.virtualFile.path)
         println("---------------------------------${bm25} --------------------------------------------")
 
         // step 1: prepare data

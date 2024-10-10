@@ -11,6 +11,6 @@ class ProjectContextEditorListener : FileEditorManagerListener {
         val oldFile = event.oldFile ?: return
 
         // TODO: should run under BGT
-        ProjectContextController.getInstance(project).updateIndex(listOf(oldFile.path), "update")
+        ProjectContextController.getInstance(project).updateIndex(listOf(oldFile.path), ProjectContextController.IndexUpdateMode.UPDATE)
     }
 }

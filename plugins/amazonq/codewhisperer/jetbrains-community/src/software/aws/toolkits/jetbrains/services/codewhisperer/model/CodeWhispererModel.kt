@@ -43,6 +43,7 @@ data class FileContextInfo(
     val caretContext: CaretContext,
     val filename: String,
     val programmingLanguage: CodeWhispererProgrammingLanguage,
+    val filePath: String,
     val fileRelativePath: String?,
 )
 

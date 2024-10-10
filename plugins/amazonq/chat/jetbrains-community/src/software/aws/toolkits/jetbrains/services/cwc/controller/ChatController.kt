@@ -137,7 +137,7 @@ class ChatController private constructor(
                 shouldUseWorkspaceContext = true
                 prompt = prompt.replace("@workspace", "")
                 val projectContextController = ProjectContextController.getInstance(context.project)
-                queryResult = projectContextController.query(prompt)
+                queryResult = projectContextController.queryChat(prompt)
                 if (!projectContextController.getProjectContextIndexComplete()) shouldAddIndexInProgressMessage = true
                 logger.info { "project context relevant document count: ${queryResult.size}" }
             } else {
@@ -145,7 +145,7 @@ class ChatController private constructor(
             }
         } else if (CodeWhispererSettings.getInstance().isProjectContextEnabled() && isDataCollectionGroup) {
             val projectContextController = ProjectContextController.getInstance(context.project)
-            queryResult = projectContextController.query(prompt)
+            queryResult = projectContextController.queryChat(prompt)
         }
 
         handleChat(

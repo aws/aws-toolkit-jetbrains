@@ -32,13 +32,11 @@ class ProjectContextController(private val project: Project, private val cs: Cor
 
         project.messageBus.connect(this).subscribe(VirtualFileManager.VFS_CHANGES, object : BulkFileListener {
             override fun after(events: MutableList<out VFileEvent>) {
-                events.forEach {
-                    if (it is VFileCreateEvent) {
-                        println("create")
-                    } else if (it is VFileDeleteEvent) {
-                        println("delete")
-                    }
-                }
+                val createdFiles = events.filterIsInstance<VFileCreateEvent>().mapNotNull { it.file?.path }
+                val deletedFiles = events.filterIsInstance<VFileDeleteEvent>().map { it.file.path }
+
+                updateIndex(createdFiles, IndexUpdateMode.ADD)
+                updateIndex(deletedFiles, IndexUpdateMode.REMOVE)
             }
         })
     }
@@ -51,7 +49,7 @@ class ProjectContextController(private val project: Project, private val cs: Cor
 
     fun getProjectContextIndexComplete() = projectContextProvider.isIndexComplete.get()
 
-    fun query(prompt: String): List<RelevantDocument> {
+    fun queryChat(prompt: String): List<RelevantDocument> {
         try {
             return projectContextProvider.queryChat(prompt)
         } catch (e: Exception) {
@@ -60,7 +58,7 @@ class ProjectContextController(private val project: Project, private val cs: Cor
         }
     }
 
-    fun queryBM25(prompt: String, filePath: String): Any {
+    fun queryInline(prompt: String, filePath: String): Any {
         try {
             return projectContextProvider.queryInline(prompt, filePath)
         } catch (e: Exception) {
@@ -69,9 +67,9 @@ class ProjectContextController(private val project: Project, private val cs: Cor
         }
     }
 
-    fun updateIndex(filePaths: List<String>, mode: String) {
+    fun updateIndex(filePaths: List<String>, mode: IndexUpdateMode) {
         try {
-            return projectContextProvider.updateIndex(filePaths, mode)
+            return projectContextProvider.updateIndex(filePaths, mode.value)
         } catch (e: Exception) {
             logger.warn { "error while updating index for project context $e.message" }
         }
