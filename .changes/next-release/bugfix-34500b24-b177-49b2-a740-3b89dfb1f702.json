@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fix error occuring when Amazon Q attempts to show UI hints on manually triggerred inline suggestion (#4929)"
-}

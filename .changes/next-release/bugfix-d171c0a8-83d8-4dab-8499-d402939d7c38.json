@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fix toolkit connection dropdown getting hidden when panel width is small."
-}
