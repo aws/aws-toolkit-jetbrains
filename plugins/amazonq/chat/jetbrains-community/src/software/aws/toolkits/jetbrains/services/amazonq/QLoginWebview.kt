@@ -202,7 +202,7 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
             is BrowserMessage.SendUiClickTelemetry -> {
                 val signInOption = message.signInOptionClicked
                 if (signInOption.isNullOrEmpty()) {
-                    LOG.warn { "Unknown sign in option" }
+                    LOG.warn("Unknown sign in option")
                 } else {
                     UiTelemetry.click(project, signInOption)
                 }
