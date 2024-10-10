@@ -14,6 +14,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevOperation
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.GuardrailsException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PromptRefusalException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ThrottlingException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
@@ -171,7 +172,7 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String, m
                     ),
                     -> {
                         if (codeGenerationResultState.codeGenerationStatusDetail().contains("NO_CHANGE_REQUIRED")) {
-                            noChangeRequiredException(operation = FeatureDevOperation.GenerateCode.toString(), desc = "No change required")
+                           throw NoChangeRequiredException(operation = FeatureDevOperation.GenerateCode.toString(), desc = "No change required")
                         }
                         throw EmptyPatchException(operation = FeatureDevOperation.GenerateCode.toString(), desc = "Empty patch")
                     }
