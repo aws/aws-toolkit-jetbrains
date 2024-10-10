@@ -29,7 +29,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.RepoSizeError
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitError
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.DEFAULT_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
@@ -37,7 +37,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.InboundAppMess
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ModifySourceFolderErrorReason
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.UploadURLExpired
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileError
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileCorruptedException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.createUserFacingErrorMessage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.denyListedErrors
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
@@ -433,7 +433,7 @@ class FeatureDevController(
                     ),
                 )
             }
-            is ZipFileError -> {
+            is ZipFileCorruptedException -> {
                 messenger.sendError(
                     tabId = tabId,
                     errMessage = err.message,
@@ -451,15 +451,7 @@ class FeatureDevController(
                 messageType = FeatureDevMessageType.Answer,
                 canBeVoted = true
             )
-            is FeatureDevException -> {
-                messenger.sendError(
-                    tabId = tabId,
-                    errMessage = err.message,
-                    retries = retriesRemaining(session),
-                    conversationId = session?.conversationIdUnsafe
-                )
-            }
-            is CodeIterationLimitError -> {
+            is CodeIterationLimitException -> {
                 messenger.sendError(
                     tabId = tabId,
                     errMessage = err.message,
@@ -479,24 +471,36 @@ class FeatureDevController(
                 )
             }
             else -> {
-                var msg = createUserFacingErrorMessage("$FEATURE_NAME request failed: ${err.message ?: err.cause?.message}")
-                val isDenyListedError = denyListedErrors.any { msg?.contains(it) ?: false }
-                val defaultMessage: String = when (session?.sessionState?.phase) {
-                    SessionStatePhase.CODEGEN -> {
-                        if (isDenyListedError || retriesRemaining(session) > 0) {
-                            message("amazonqFeatureDev.code_generation.error_message")
-                        } else {
-                            message("amazonqFeatureDev.code_generation.no_retries.error_message")
-                        }
+                when (err) {
+                    is FeatureDevException -> {
+                        messenger.sendError(
+                            tabId = tabId,
+                            errMessage = err.message,
+                            retries = retriesRemaining(session),
+                            conversationId = session?.conversationIdUnsafe
+                        )
                     }
-                    else -> message("amazonqFeatureDev.error_text")
+                    else -> {
+                        val msg = createUserFacingErrorMessage("$FEATURE_NAME request failed: ${err.message ?: err.cause?.message}")
+                        val isDenyListedError = denyListedErrors.any { msg?.contains(it) ?: false }
+                        val defaultMessage: String = when (session?.sessionState?.phase) {
+                            SessionStatePhase.CODEGEN -> {
+                                if (isDenyListedError || retriesRemaining(session) > 0) {
+                                    message("amazonqFeatureDev.code_generation.error_message")
+                                } else {
+                                    message("amazonqFeatureDev.code_generation.no_retries.error_message")
+                                }
+                            }
+                            else -> message("amazonqFeatureDev.error_text")
+                        }
+                        messenger.sendError(
+                            tabId = tabId,
+                            errMessage = defaultMessage,
+                            retries = retriesRemaining(session),
+                            conversationId = session?.conversationIdUnsafe
+                        )
+                    }
                 }
-                messenger.sendError(
-                    tabId = tabId,
-                    errMessage = defaultMessage,
-                    retries = retriesRemaining(session),
-                    conversationId = session?.conversationIdUnsafe
-                )
             }
         }
     }
