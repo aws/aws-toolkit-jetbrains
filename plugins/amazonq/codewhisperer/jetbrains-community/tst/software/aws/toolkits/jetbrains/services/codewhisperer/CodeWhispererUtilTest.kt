@@ -237,5 +237,4 @@ class CodeWhispererUtilTest {
         unmodifiedCharsCount = getUnmodifiedAcceptedCharsCount(originalRecommendation, modifiedRecommendation)
         assertThat(unmodifiedCharsCount).isEqualTo(originalRecommendation.length)
     }
-
 }
