@@ -56,7 +56,6 @@ import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import java.time.Instant
-import java.util.concurrent.TimeUnit
 import kotlin.reflect.KProperty0
 import kotlin.reflect.jvm.isAccessible
 
@@ -114,7 +113,8 @@ interface CodeWhispererClientAdaptor : Disposable {
         requestId: String,
         language: CodeWhispererProgrammingLanguage,
         customizationArn: String,
-        modificationPercentage: Double,
+        acceptedCharacterCount: Int,
+        unmodifiedAcceptedTokenCount: Int,
     ): SendTelemetryEventResponse
 
     fun sendCodeScanTelemetry(
@@ -305,13 +305,14 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         val programmingLanguage = fileContext.programmingLanguage
         var e2eLatency = requestContext.latencyContext.getCodeWhispererEndToEndLatency()
 
-        // When we send a userTriggerDecision of Empty or Discard, we set the time users see the first
-        // suggestion to be now.
-        if (e2eLatency < 0) {
-            e2eLatency = TimeUnit.NANOSECONDS.toMillis(
-                System.nanoTime() - requestContext.latencyContext.codewhispererEndToEndStart
-            ).toDouble()
+        // When we send a userTriggerDecision for neither Accept nor Reject, service side should not use this value
+        // and client side will set this value to 0.0.
+        if (suggestionState != CodewhispererSuggestionState.Accept &&
+            suggestionState != CodewhispererSuggestionState.Reject
+        ) {
+            e2eLatency = 0.0
         }
+
         return bearerClient().sendTelemetryEvent { requestBuilder ->
             requestBuilder.telemetryEvent { telemetryEventBuilder ->
                 telemetryEventBuilder.userTriggerDecisionEvent {
@@ -321,6 +322,9 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     it.sessionId(responseContext.sessionId)
                     it.recommendationLatencyMilliseconds(e2eLatency)
                     it.triggerToResponseLatencyMilliseconds(requestContext.latencyContext.paginationFirstCompletionTime)
+                    it.perceivedLatencyMilliseconds(
+                        requestContext.latencyContext.getPerceivedLatency(requestContext.triggerTypeInfo.triggerType)
+                    )
                     it.suggestionState(suggestionState.toCodeWhispererSdkType())
                     it.timestamp(Instant.now())
                     it.suggestionReferenceCount(suggestionReferenceCount)
@@ -360,7 +364,8 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         requestId: String,
         language: CodeWhispererProgrammingLanguage,
         customizationArn: String,
-        modificationPercentage: Double,
+        acceptedCharacterCount: Int,
+        unmodifiedAcceptedTokenCount: Int,
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.userModificationEvent {
@@ -370,8 +375,11 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     languageBuilder.languageName(language.toCodeWhispererRuntimeLanguage().languageId)
                 }
                 it.customizationArn(customizationArn)
-                it.modificationPercentage(modificationPercentage)
+                // deprecated field, service side should not use this % anymore
+                it.modificationPercentage(0.0)
                 it.timestamp(Instant.now())
+                it.acceptedCharacterCount(acceptedCharacterCount)
+                it.unmodifiedAcceptedCharacterCount(unmodifiedAcceptedTokenCount)
             }
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())

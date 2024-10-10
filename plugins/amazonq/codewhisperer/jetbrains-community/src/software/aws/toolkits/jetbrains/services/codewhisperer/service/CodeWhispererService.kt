@@ -244,7 +244,8 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     val sessionId = response.sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
                     if (requestCount == 1) {
                         requestContext.latencyContext.codewhispererPostprocessingStart = System.nanoTime()
-                        requestContext.latencyContext.paginationFirstCompletionTime = latency
+                        requestContext.latencyContext.paginationFirstCompletionTime =
+                            (endTime - requestContext.latencyContext.codewhispererEndToEndStart).toDouble()
                         requestContext.latencyContext.firstRequestId = requestId
                         CodeWhispererInvocationStatus.getInstance().setInvocationSessionId(sessionId)
                     }

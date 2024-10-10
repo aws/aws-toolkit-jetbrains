@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.GenerateComple
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
@@ -198,6 +199,18 @@ data class LatencyContext(
     fun getCodeWhispererPreprocessingLatency() = TimeUnit.NANOSECONDS.toMillis(
         codewhispererPreprocessingEnd - codewhispererPreprocessingStart
     ).toDouble()
+
+    // For auto-trigger it's from the time when last char typed
+    // for manual-trigger it's from the time when last trigger action happened(alt + c)
+    fun getPerceivedLatency(triggerType: CodewhispererTriggerType) =
+        if (triggerType == CodewhispererTriggerType.OnDemand) {
+            getCodeWhispererEndToEndLatency()
+        } else {
+            (
+                TimeUnit.NANOSECONDS.toMillis(codewhispererEndToEndEnd) -
+                    CodeWhispererAutoTriggerService.getInstance().timeAtLastCharTyped.toEpochMilli()
+                ).toDouble()
+        }
 }
 
 data class TryExampleRowContext(

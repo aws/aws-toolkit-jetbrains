@@ -1948,7 +1948,9 @@
                 "requestId",
                 "programmingLanguage",
                 "modificationPercentage",
-                "timestamp"
+                "timestamp",
+                "acceptedCharacterCount",
+                "unmodifiedAcceptedCharacterCount"
             ],
             "members":{
                 "sessionId":{"shape":"UUID"},
@@ -1956,7 +1958,9 @@
                 "programmingLanguage":{"shape":"ProgrammingLanguage"},
                 "modificationPercentage":{"shape":"Double"},
                 "customizationArn":{"shape":"CustomizationArn"},
-                "timestamp":{"shape":"Timestamp"}
+                "timestamp":{"shape":"Timestamp"},
+                "acceptedCharacterCount":{"shape":"PrimitiveInteger"},
+                "unmodifiedAcceptedCharacterCount":{"shape":"PrimitiveInteger"}
             }
         },
         "UserTriggerDecisionEvent":{
@@ -1982,7 +1986,9 @@
                 "triggerToResponseLatencyMilliseconds":{"shape":"Double"},
                 "suggestionReferenceCount":{"shape":"PrimitiveInteger"},
                 "generatedLine":{"shape":"PrimitiveInteger"},
-                "numberOfRecommendations":{"shape":"PrimitiveInteger"}
+                "numberOfRecommendations":{"shape":"PrimitiveInteger"},
+                "perceivedLatencyMilliseconds":{"shape":"Double"},
+                "acceptedCharacterCount":{"shape":"PrimitiveInteger"}
             }
         },
         "ValidationException":{
