@@ -181,6 +181,7 @@ enum class SourceOfEntry {
     FIRST_STARTUP,
     Q,
     AMAZONQ_CHAT_PANEL,
+    LOGIN_BROWSER,
     UNKNOWN,
     ;
     override fun toString(): String {

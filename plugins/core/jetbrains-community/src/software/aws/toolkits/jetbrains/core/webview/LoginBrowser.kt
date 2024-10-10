@@ -39,6 +39,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.ssoErrorMessageFromException
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.SourceOfEntry
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.utils.pollFor
 import software.aws.toolkits.resources.AwsCoreBundle
@@ -87,7 +88,7 @@ abstract class LoginBrowser(
 
     private var browserOpenTimer: Timer? = null
 
-    private fun startBrowserOpenTimer(startUrl: String, ssoRegion: String) {
+    private fun startBrowserOpenTimer(startUrl: String, ssoRegion: String, scopes: List<String>) {
         browserOpenTimer = Timer()
         browserOpenTimer?.schedule(
             object : TimerTask() {
@@ -103,7 +104,11 @@ abstract class LoginBrowser(
                     AuthTelemetry.addConnection(
                         result = Result.Failed,
                         reason = "Browser authentication idle for more than 15min",
-                        credentialSourceId = if (startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter
+                        credentialSourceId = if (startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter,
+                        isAggregated = false,
+                        source = SourceOfEntry.LOGIN_BROWSER.toString(),
+                        featureId = getFeatureId(scopes),
+                        isReAuth = isReAuth(scopes, startUrl)
                     )
                     stopAndClearBrowserOpenTimer()
                 }
@@ -121,7 +126,7 @@ abstract class LoginBrowser(
     }
 
     protected val onPendingToken: (InteractiveBearerTokenProvider) -> Unit = { provider ->
-        startBrowserOpenTimer(provider.startUrl, provider.region)
+        startBrowserOpenTimer(provider.startUrl, provider.region, provider.scopes)
         projectCoroutineScope(project).launch {
             val authorization = pollForAuthorization(provider)
             if (authorization != null) {
@@ -180,6 +185,7 @@ abstract class LoginBrowser(
 
     open fun loginBuilderId(scopes: List<String>) {
         val isReauth = isReAuth(scopes, SONO_URL)
+        val featureId = getFeatureId(scopes)
         val onError: (Exception) -> Unit = { e ->
             stopAndClearBrowserOpenTimer()
             isUserCancellation(e)
@@ -196,7 +202,10 @@ abstract class LoginBrowser(
                 result = Result.Failed,
                 credentialSourceId = CredentialSourceId.AwsId,
                 reason = e.message,
-                isReAuth = isReauth
+                isReAuth = isReauth,
+                featureId = featureId,
+                isAggregated = false,
+                source = SourceOfEntry.LOGIN_BROWSER.toString()
             )
         }
         val onSuccess: () -> Unit = {
@@ -212,7 +221,10 @@ abstract class LoginBrowser(
             AuthTelemetry.addConnection(
                 result = Result.Succeeded,
                 credentialSourceId = CredentialSourceId.AwsId,
-                isReAuth = isReauth
+                isReAuth = isReauth,
+                featureId = featureId,
+                isAggregated = true,
+                source = SourceOfEntry.LOGIN_BROWSER.toString()
             )
         }
 
@@ -239,7 +251,7 @@ abstract class LoginBrowser(
         region: AwsRegion,
     ): Pair<(Exception) -> Unit, () -> Unit> {
         val isReAuth = isReAuth(scopes, url)
-
+        val featureId = getFeatureId(scopes)
         val onError: (Exception) -> Unit = { e ->
             stopAndClearBrowserOpenTimer()
             val message = ssoErrorMessageFromException(e)
@@ -269,6 +281,9 @@ abstract class LoginBrowser(
                 credentialSourceId = CredentialSourceId.IamIdentityCenter,
                 reason = message,
                 isReAuth = isReAuth,
+                featureId = featureId,
+                isAggregated = false,
+                source = SourceOfEntry.LOGIN_BROWSER.toString()
             )
         }
         val onSuccess: () -> Unit = {
@@ -286,7 +301,10 @@ abstract class LoginBrowser(
                 project = null,
                 result = Result.Succeeded,
                 isReAuth = isReAuth,
-                credentialSourceId = CredentialSourceId.IamIdentityCenter
+                credentialSourceId = CredentialSourceId.IamIdentityCenter,
+                featureId = featureId,
+                isAggregated = true,
+                source = SourceOfEntry.LOGIN_BROWSER.toString()
             )
         }
         return Pair(onError, onSuccess)
