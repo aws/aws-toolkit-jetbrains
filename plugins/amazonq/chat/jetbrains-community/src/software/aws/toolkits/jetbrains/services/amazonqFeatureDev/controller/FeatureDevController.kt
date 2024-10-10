@@ -441,13 +441,14 @@ class FeatureDevController(
                 )
             }
             is NoChangeRequiredException -> {
+                val isException = true;
                 messenger.sendAnswer(
                     tabId = tabId,
                     message = err.message,
                     messageType = FeatureDevMessageType.Answer,
                     canBeVoted = true
                 )
-                return this.newTask(message, true)
+                return this.newTask(message, isException)
             }
             is ZipFileError -> {
                 messenger.sendError(
