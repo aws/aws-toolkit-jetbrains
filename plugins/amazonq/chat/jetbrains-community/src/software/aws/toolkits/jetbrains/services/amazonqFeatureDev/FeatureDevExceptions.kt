@@ -46,9 +46,6 @@ class UploadURLExpired(operation: String, desc: String?, cause: Throwable? = nul
 class CodeIterationLimitException(operation: String, desc: String?, cause: Throwable? = null) :
     FeatureDevException(message("amazonqFeatureDev.code_generation.iteration_limit.error_text"), operation, desc, cause)
 
-internal fun noChangeRequiredException(operation: String, desc: String?): Nothing =
-    throw NoChangeRequiredException(operation, desc, cause = null)
-    
 class MonthlyConversationLimitError(message: String, operation: String, desc: String?, cause: Throwable? = null) :
     FeatureDevException(message, operation, desc, cause)
 
@@ -76,3 +73,6 @@ class ConversationIdNotFoundException(operation: String, desc: String?, cause: T
 val denyListedErrors = arrayOf("Deserialization error", "Inaccessible host", "UnknownHost")
 fun createUserFacingErrorMessage(message: String?): String? =
     if (message != null && denyListedErrors.any { message.contains(it) }) "$FEATURE_NAME API request failed" else message
+
+fun noChangeRequiredException(operation: String, desc: String?): Nothing =
+    throw NoChangeRequiredException(operation, desc, cause = null)
