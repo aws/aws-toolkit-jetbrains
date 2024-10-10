@@ -73,6 +73,3 @@ class ConversationIdNotFoundException(operation: String, desc: String?, cause: T
 val denyListedErrors = arrayOf("Deserialization error", "Inaccessible host", "UnknownHost")
 fun createUserFacingErrorMessage(message: String?): String? =
     if (message != null && denyListedErrors.any { message.contains(it) }) "$FEATURE_NAME API request failed" else message
-
-fun noChangeRequiredException(operation: String, desc: String?): Nothing =
-    throw NoChangeRequiredException(operation, desc, cause = null)
