@@ -33,6 +33,7 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
     private val codeReferences = mutableListOf<CodeReference>()
     private var requestId: String = ""
     private var statusCode: Int = 0
+    private var codeBlockLanguage: String = "plaintext"
 
     companion object {
         private val CODE_BLOCK_PATTERN = Regex("<pre>\\s*<code")
@@ -143,6 +144,24 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
             }
     }
 
+    private fun extractCodeBlockLanguage(message: String): String {
+        // This fulfills both the cases of unit test generation(java, python) and general use case(Non java and Non python) languages.
+        val codeBlockStart = message.indexOf("```")
+        if (codeBlockStart == -1) {
+            return "plaintext"
+        }
+
+        val languageStart = codeBlockStart + 3
+        val languageEnd = message.indexOf('\n', languageStart)
+
+        if (languageEnd == -1) {
+            return "plaintext"
+        }
+
+        val language = message.substring(languageStart, languageEnd).trim()
+        return if (language.isNotEmpty()) language else "plaintext"
+    }
+
     private fun processChatEvent(
         tabId: String,
         triggerId: String,
@@ -209,6 +228,10 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
             } else {
                 responseText.toString()
             }
+            if (codeBlockLanguage === "plaintext") {
+                // To get the language of generated code in Q chat.
+                codeBlockLanguage = extractCodeBlockLanguage(message)
+            }
             ChatMessage(
                 tabId = tabId,
                 triggerId = triggerId,
@@ -217,6 +240,7 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                 message = message,
                 codeReference = codeReferences,
                 userIntent = data.userIntent,
+                codeBlockLanguage = codeBlockLanguage,
             )
         } else {
             null
