@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fix inability to sign out in reauth view in Q chat panel"
-}
