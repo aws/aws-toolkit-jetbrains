@@ -26,10 +26,6 @@ open class FeatureDevException(override val message: String?, val operation: Str
 class NoChangeRequiredException(operation: String, desc: String?, cause: Throwable? = null) :
     FeatureDevException(message("amazonqFeatureDev.exception.no_change_required_exception"), operation, desc, cause)
 
-class NoChangeRequiredException(override val message: String, override val cause: Throwable?) : RuntimeException()
-
-class CodeIterationLimitError(override val message: String, override val cause: Throwable?) : RuntimeException()
-
 class EmptyPatchException(operation: String, desc: String?, cause: Throwable? = null) :
     FeatureDevException(message("amazonqFeatureDev.exception.guardrails"), operation, desc, cause)
 
@@ -50,11 +46,8 @@ class UploadURLExpired(operation: String, desc: String?, cause: Throwable? = nul
 class CodeIterationLimitException(operation: String, desc: String?, cause: Throwable? = null) :
     FeatureDevException(message("amazonqFeatureDev.code_generation.iteration_limit.error_text"), operation, desc, cause)
 
-internal fun noChangeRequiredException(): Nothing =
-    throw NoChangeRequiredException(message("amazonqFeatureDev.exception.no_change_required_exception"), cause = null)
-
-internal fun uploadCodeError(): Nothing =
-    throw FeatureDevException(message("amazonqFeatureDev.exception.upload_code"))
+internal fun noChangeRequiredException(operation: String, desc: String?): Nothing =
+    throw NoChangeRequiredException(operation, desc, cause = null)
     
 class MonthlyConversationLimitError(message: String, operation: String, desc: String?, cause: Throwable? = null) :
     FeatureDevException(message, operation, desc, cause)
