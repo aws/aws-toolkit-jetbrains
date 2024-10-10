@@ -46,7 +46,9 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererCon
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FEATURE_EVALUATION_PRODUCT_NAME
@@ -92,6 +94,17 @@ interface CodeWhispererClientAdaptor : Disposable {
 
     fun sendUserTriggerDecisionTelemetry(
         requestContext: RequestContext,
+        responseContext: ResponseContext,
+        completionType: CodewhispererCompletionType,
+        suggestionState: CodewhispererSuggestionState,
+        suggestionReferenceCount: Int,
+        lineCount: Int,
+        numberOfRecommendations: Int,
+    ): SendTelemetryEventResponse
+
+    fun sendUserTriggerDecisionTelemetry(
+        sessionContext: SessionContextNew,
+        requestContext: RequestContextNew,
         responseContext: ResponseContext,
         completionType: CodewhispererCompletionType,
         suggestionState: CodewhispererSuggestionState,
@@ -325,6 +338,49 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     it.perceivedLatencyMilliseconds(
                         requestContext.latencyContext.getPerceivedLatency(requestContext.triggerTypeInfo.triggerType)
                     )
+                    it.suggestionState(suggestionState.toCodeWhispererSdkType())
+                    it.timestamp(Instant.now())
+                    it.suggestionReferenceCount(suggestionReferenceCount)
+                    it.generatedLine(lineCount)
+                    it.customizationArn(requestContext.customizationArn)
+                    it.numberOfRecommendations(numberOfRecommendations)
+                }
+            }
+            requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+            requestBuilder.userContext(codeWhispererUserContext)
+        }
+    }
+
+    override fun sendUserTriggerDecisionTelemetry(
+        sessionContext: SessionContextNew,
+        requestContext: RequestContextNew,
+        responseContext: ResponseContext,
+        completionType: CodewhispererCompletionType,
+        suggestionState: CodewhispererSuggestionState,
+        suggestionReferenceCount: Int,
+        lineCount: Int,
+        numberOfRecommendations: Int,
+    ): SendTelemetryEventResponse {
+        val fileContext = requestContext.fileContextInfo
+        val programmingLanguage = fileContext.programmingLanguage
+        var e2eLatency = sessionContext.latencyContext.getCodeWhispererEndToEndLatency()
+
+        // When we send a userTriggerDecision of Empty or Discard, we set the time users see the first
+        // suggestion to be now.
+        if (e2eLatency < 0) {
+            e2eLatency = TimeUnit.NANOSECONDS.toMillis(
+                System.nanoTime() - sessionContext.latencyContext.codewhispererEndToEndStart
+            ).toDouble()
+        }
+        return bearerClient().sendTelemetryEvent { requestBuilder ->
+            requestBuilder.telemetryEvent { telemetryEventBuilder ->
+                telemetryEventBuilder.userTriggerDecisionEvent {
+                    it.requestId(sessionContext.latencyContext.firstRequestId)
+                    it.completionType(completionType.toCodeWhispererSdkType())
+                    it.programmingLanguage { builder -> builder.languageName(programmingLanguage.toCodeWhispererRuntimeLanguage().languageId) }
+                    it.sessionId(responseContext.sessionId)
+                    it.recommendationLatencyMilliseconds(e2eLatency)
+                    it.triggerToResponseLatencyMilliseconds(sessionContext.latencyContext.paginationFirstCompletionTime)
                     it.suggestionState(suggestionState.toCodeWhispererSdkType())
                     it.timestamp(Instant.now())
                     it.suggestionReferenceCount(suggestionReferenceCount)

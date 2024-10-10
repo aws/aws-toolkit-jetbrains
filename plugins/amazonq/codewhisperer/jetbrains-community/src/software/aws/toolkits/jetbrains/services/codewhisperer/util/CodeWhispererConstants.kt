@@ -10,6 +10,7 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
 import java.awt.Font
 import java.text.SimpleDateFormat
@@ -27,7 +28,12 @@ object CodeWhispererConstants {
     const val LEFT_CONTEXT_ON_CURRENT_LINE = 50
     const val POPUP_INFO_TEXT_SIZE = 11f
     const val POPUP_BUTTON_TEXT_SIZE = 12f
-    const val POPUP_DELAY: Long = 250
+    val POPUP_DELAY: Long =
+        if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
+            50
+        } else {
+            250
+        }
     const val POPUP_DELAY_CHECK_INTERVAL: Long = 25
     const val IDLE_TIME_CHECK_INTERVAL: Long = 25
     const val SUPPLEMENTAL_CONTEXT_TIMEOUT = 50L
