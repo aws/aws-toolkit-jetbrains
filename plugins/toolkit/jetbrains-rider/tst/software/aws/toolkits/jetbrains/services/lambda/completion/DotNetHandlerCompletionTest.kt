@@ -13,11 +13,10 @@ import com.jetbrains.rider.test.annotations.TestEnvironment
 import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.BeforeSuite
 import org.testng.annotations.Test
-import software.aws.toolkits.jetbrains.utils.OPEN_SOLUTION_DIR_NAME
 import java.time.Duration
 
 class DotNetHandlerCompletionTest : BaseTestWithSolution() {
-    override fun solutionDirectoryName() = OPEN_SOLUTION_DIR_NAME
+    override fun solutionDirectoryName() = "testData/solutions"
 
     override val backendLoadedTimeout: Duration = backendStartTimeout
 
