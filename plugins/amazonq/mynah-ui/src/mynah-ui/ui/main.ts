@@ -24,7 +24,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
     let mynahUI: MynahUI
     // eslint-disable-next-line prefer-const
     let connector: Connector
-    const messageUserIntentMap = new Map<string, string[]>()
+    const responseMetadata = new Map<string, string[]>()
 
     const tabsStorage = new TabsStorage({
         onTabTimeout: tabID => {
@@ -255,7 +255,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
                         : {}),
                 })
                 if (item.messageId !== undefined && item.userIntent !== undefined && item.codeBlockLanguage !== undefined) {
-                    messageUserIntentMap.set(item.messageId, [item.userIntent, item.codeBlockLanguage])
+                    responseMetadata.set(item.messageId, [item.userIntent, item.codeBlockLanguage])
                 }
                 return
             }
@@ -466,8 +466,8 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
                         eventId,
                         codeBlockIndex,
                         totalCodeBlocks,
-                        messageUserIntentMap.get(messageId)?.[0] ?? undefined,
-                        messageUserIntentMap.get(messageId)?.[1] ?? undefined
+                        responseMetadata.get(messageId)?.[0] ?? undefined,
+                        responseMetadata.get(messageId)?.[1] ?? undefined
                     )
                     break
                 case 'copy':
@@ -480,8 +480,8 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
                         eventId,
                         codeBlockIndex,
                         totalCodeBlocks,
-                        messageUserIntentMap.get(messageId)?.[0] ?? undefined,
-                        messageUserIntentMap.get(messageId)?.[1] ?? undefined
+                        responseMetadata.get(messageId)?.[0] ?? undefined,
+                        responseMetadata.get(messageId)?.[1] ?? undefined
                     )
                     mynahUI.notify({
                         type: NotificationType.SUCCESS,
