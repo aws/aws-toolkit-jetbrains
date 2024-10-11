@@ -6,9 +6,9 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.service
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.util.messages.Topic
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus.Companion.CODEWHISPERER_INVOCATION_STATE_CHANGED
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import java.time.Duration
 import java.time.Instant
@@ -78,9 +78,5 @@ class CodeWhispererInvocationStatusNew {
     companion object {
         private val LOG = getLogger<CodeWhispererInvocationStatusNew>()
         fun getInstance(): CodeWhispererInvocationStatusNew = service()
-        val CODEWHISPERER_INVOCATION_STATE_CHANGED: Topic<CodeWhispererInvocationStateChangeListener> = Topic.create(
-            "CodeWhisperer popup state changed",
-            CodeWhispererInvocationStateChangeListener::class.java
-        )
     }
 }

@@ -37,7 +37,6 @@ import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.popup.AbstractPopup
 import com.intellij.ui.popup.PopupFactoryImpl
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import com.intellij.util.messages.Topic
 import com.intellij.util.ui.UIUtil
 import software.amazon.awssdk.services.codewhispererruntime.model.Import
 import software.amazon.awssdk.services.codewhispererruntime.model.Reference
@@ -51,6 +50,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContex
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.PreviewContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager.Companion.CODEWHISPERER_POPUP_STATE_CHANGED
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager.Companion.CODEWHISPERER_USER_ACTION_PERFORMED
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererEditorActionHandlerNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupBackspaceHandlerNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupEnterHandlerNew
@@ -134,8 +135,8 @@ class CodeWhispererPopupManagerNew {
         typeaheadChange: String,
         typeaheadAdded: Boolean,
     ) {
-        updateTypeahead(typeaheadChange, typeaheadAdded)
-        updateSessionSelectedIndex(sessionContext)
+        if (!updateTypeahead(typeaheadChange, typeaheadAdded)) return
+        if (!updateSessionSelectedIndex(sessionContext)) return
         sessionContext.isFirstTimeShowingPopup = false
 
         ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_POPUP_STATE_CHANGED).stateChanged(
@@ -152,7 +153,7 @@ class CodeWhispererPopupManagerNew {
             return
         }
 
-        updateSessionSelectedIndex(sessionContext)
+        if (!updateSessionSelectedIndex(sessionContext)) return
         if (sessionContext.popupOffset == -1) {
             sessionContext.popupOffset = sessionContext.editor.caretModel.offset
         }
@@ -162,7 +163,7 @@ class CodeWhispererPopupManagerNew {
         )
     }
 
-    private fun updateTypeahead(typeaheadChange: String, typeaheadAdded: Boolean) {
+    private fun updateTypeahead(typeaheadChange: String, typeaheadAdded: Boolean): Boolean {
         val recommendations = CodeWhispererServiceNew.getInstance().getAllPaginationSessions().values.filterNotNull()
         recommendations.forEach {
             val newTypeahead =
@@ -172,7 +173,7 @@ class CodeWhispererPopupManagerNew {
                     if (typeaheadChange.length > it.recommendationContext.typeahead.length) {
                         LOG.debug { "Typeahead change is longer than the current typeahead, exiting the session" }
                         CodeWhispererServiceNew.getInstance().disposeDisplaySession(false)
-                        return
+                        return false
                     }
                     it.recommendationContext.typeahead.substring(
                         0,
@@ -181,17 +182,19 @@ class CodeWhispererPopupManagerNew {
                 }
             it.recommendationContext.typeahead = newTypeahead
         }
+        return true
     }
 
-    private fun updateSessionSelectedIndex(sessionContext: SessionContextNew) {
+    private fun updateSessionSelectedIndex(sessionContext: SessionContextNew): Boolean {
         val selectedIndex = findNewSelectedIndex(false, sessionContext.selectedIndex)
         if (selectedIndex == -1) {
             LOG.debug { "None of the recommendation is valid at this point, cancelling the popup" }
             CodeWhispererServiceNew.getInstance().disposeDisplaySession(false)
-            return
+            return false
         }
 
         sessionContext.selectedIndex = selectedIndex
+        return true
     }
 
     fun updatePopupPanel(sessionContext: SessionContextNew?) {
@@ -621,13 +624,5 @@ class CodeWhispererPopupManagerNew {
     companion object {
         private val LOG = getLogger<CodeWhispererPopupManagerNew>()
         fun getInstance(): CodeWhispererPopupManagerNew = service()
-        val CODEWHISPERER_POPUP_STATE_CHANGED: Topic<CodeWhispererPopupStateChangeListener> = Topic.create(
-            "CodeWhisperer popup state changed",
-            CodeWhispererPopupStateChangeListener::class.java
-        )
-        val CODEWHISPERER_USER_ACTION_PERFORMED: Topic<CodeWhispererUserActionListener> = Topic.create(
-            "CodeWhisperer user action performed",
-            CodeWhispererUserActionListener::class.java
-        )
     }
 }
