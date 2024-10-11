@@ -30,3 +30,8 @@ sealed interface LspApi {
         override val command: String = "getUsage"
     }
 }
+
+data class LspResponse(
+    val responseCode: Int,
+    val responseBody: String
+)

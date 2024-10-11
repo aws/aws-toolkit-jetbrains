@@ -139,40 +139,33 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
-    // TODO: why this doesn't close connection, is it a bug or intention
     private fun initEncryption(): Boolean {
         logger.info { "project context: init key for ${project.guessProjectDir()} on port ${encoderServer.port}" }
-        val url = URL("http://localhost:${encoderServer.port}/initialize")
-        val payload = encoderServer.getEncryptionRequest()
-        val connection = url.openConnection() as HttpURLConnection
-        setConnectionProperties(connection)
-        setConnectionRequest(connection, payload)
-        logger.info { "project context initialize response code: ${connection.responseCode} for ${project.name}" }
-        return connection.responseCode == 200
+        val request = encoderServer.getEncryptionRequest()
+        val response = sendMsgToLsp(LspApi.Initialize, request)
+        return response.responseCode == 200
     }
 
-    // TODO: why this doesn't close connection, is it a bug or intention
     fun index(): Boolean {
         logger.info { "project context: indexing ${project.name} on port ${encoderServer.port}" }
         val indexStartTime = System.currentTimeMillis()
-        val url = URL("http://localhost:${encoderServer.port}/buildIndex")
         val filesResult = collectFiles()
         var duration = (System.currentTimeMillis() - indexStartTime).toDouble()
         logger.debug { "project context file collection time: ${duration}ms" }
-        logger.debug { "list of files collected: ${filesResult.files.joinToString("\n")}" }
+        logger.debug { "collected ${filesResult.files.size} files" }
         val projectRoot = project.guessProjectDir()?.path ?: return false
+
         val payload = IndexRequestV2(filesResult.files, projectRoot, "all", "")
         val payloadJson = mapper.writeValueAsString(payload)
         val encrypted = encoderServer.encrypt(payloadJson)
 
-        val connection = url.openConnection() as HttpURLConnection
-        setConnectionProperties(connection)
-        setConnectionRequest(connection, encrypted)
-        logger.info { "project context index response code: ${connection.responseCode} for ${project.name}" }
+        val response = sendMsgToLsp(LspApi.BuildIndex, encrypted)
+
         duration = (System.currentTimeMillis() - indexStartTime).toDouble()
         val startUrl = getStartUrl(project)
         logger.debug { "project context index time: ${duration}ms" }
-        if (connection.responseCode == 200) {
+
+        if (response.responseCode == 200) {
             val usage = getUsage()
             recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, true, usage?.memoryUsage, usage?.cpuUsage, startUrl)
             logger.debug { "project context index finished for ${project.name}" }
@@ -202,7 +195,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val response = sendMsgToLsp(LspApi.QueryChat, encrypted)
 
         return try {
-            val parsedResponse = mapper.readValue<List<Chunk>>(response)
+            val parsedResponse = mapper.readValue<List<Chunk>>(response.responseBody)
             queryResultToRelevantDocuments(parsedResponse)
         } catch (e: Exception) {
             logger.warn { "error parsing query response ${e.message}" }
@@ -218,7 +211,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val response = sendMsgToLsp(LspApi.QueryInline, encrypted)
 
         return try {
-            mapper.readValue<List<BM25Chunk>>(response)
+            mapper.readValue<List<BM25Chunk>>(response.responseBody)
         } catch (e: Exception) {
             logger.warn { "error parsing query response ${e.message}" }
             throw e
@@ -247,9 +240,9 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     private fun getUsage(): Usage? {
-        val responseBody = sendMsgToLsp(LspApi.GetUsageMetrics, null)
+        val response = sendMsgToLsp(LspApi.GetUsageMetrics, null)
         return try {
-            mapper.readValue<Usage>(responseBody)
+            mapper.readValue<Usage>(response.responseBody)
         } catch (e: Exception) {
             logger.warn { "error parsing query response ${e.message}" }
             return null
@@ -257,7 +250,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     // TODO: make messageType sealed object
-    private fun sendMsgToLsp(msgType: LspApi, request: String?): String {
+    private fun sendMsgToLsp(msgType: LspApi, request: String?): LspResponse {
         logger.info { "sending message: ${msgType.command} to lsp on port ${encoderServer.port}" }
         val url = URL("http://localhost:${encoderServer.port}/${msgType.command}")
 
@@ -276,7 +269,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
                 ""
             }
 
-            responseBody
+            LspResponse(responseCode, responseBody)
         }
     }
 
