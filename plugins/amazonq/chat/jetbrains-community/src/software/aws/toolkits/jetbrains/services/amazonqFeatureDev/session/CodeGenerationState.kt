@@ -8,9 +8,15 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CodeGeneration
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeGenerationException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.EmptyPatchException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.codeGenerationFailedError
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.featureDevServiceError
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevOperation
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.GuardrailsException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PromptRefusalException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ThrottlingException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendUpdatePlaceholder
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
@@ -37,6 +43,7 @@ class CodeGenerationState(
         val startTime = System.currentTimeMillis()
         var result: Result = Result.Succeeded
         var failureReason: String? = null
+        var failureReasonDesc: String? = null
         var codeGenerationWorkflowStatus: CodeGenerationWorkflowStatus = CodeGenerationWorkflowStatus.COMPLETE
         var numberOfReferencesGenerated: Int? = null
         var numberOfFilesGenerated: Int? = null
@@ -86,6 +93,10 @@ class CodeGenerationState(
             logger.warn(e) { "$FEATURE_NAME: Code generation failed: ${e.message}" }
             result = Result.Failed
             failureReason = e.javaClass.simpleName
+            if (e is FeatureDevException) {
+                failureReason = e.reason()
+                failureReasonDesc = e.reasonDesc()
+            }
             codeGenerationWorkflowStatus = CodeGenerationWorkflowStatus.FAILED
 
             throw e
@@ -100,6 +111,7 @@ class CodeGenerationState(
                 amazonqRepositorySize = repositorySize,
                 result = result,
                 reason = failureReason,
+                reasonDesc = failureReasonDesc,
                 duration = (System.currentTimeMillis() - startTime).toDouble(),
                 credentialStartUrl = getStartUrl(config.featureDevService.project)
             )
@@ -149,20 +161,25 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String, m
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "Guardrails"
                     ),
-                    -> featureDevServiceError(message("amazonqFeatureDev.exception.guardrails"))
+                    -> throw GuardrailsException(operation = FeatureDevOperation.GenerateCode.toString(), desc = "Failed guardrails")
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "PromptRefusal"
                     ),
-                    -> featureDevServiceError(message("amazonqFeatureDev.exception.prompt_refusal"))
+                    -> throw PromptRefusalException(operation = FeatureDevOperation.GenerateCode.toString(), desc = "Prompt refusal")
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "EmptyPatch"
                     ),
-                    -> featureDevServiceError(message("amazonqFeatureDev.exception.guardrails"))
+                    -> {
+                        if (codeGenerationResultState.codeGenerationStatusDetail().contains("NO_CHANGE_REQUIRED")) {
+                            throw NoChangeRequiredException(operation = FeatureDevOperation.GenerateCode.toString(), desc = "No change required")
+                        }
+                        throw EmptyPatchException(operation = FeatureDevOperation.GenerateCode.toString(), desc = "Empty patch")
+                    }
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "Throttling"
                     ),
-                    -> featureDevServiceError(message("amazonqFeatureDev.exception.throttling"))
-                    else -> codeGenerationFailedError()
+                    -> throw ThrottlingException(operation = FeatureDevOperation.GenerateCode.toString(), desc = "Request throttled")
+                    else -> throw CodeGenerationException(operation = FeatureDevOperation.GenerateCode.toString(), desc = null)
                 }
             }
             else -> error("Unknown status: ${codeGenerationResultState.codeGenerationStatus().status()}")

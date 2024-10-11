@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.amazonq
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -175,13 +176,15 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                     ToolkitConnectionManager.getInstance(project)
                         .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
                     )?.let { connection ->
-                    SsoLogoutAction(connection).actionPerformed(
-                        AnActionEvent.createFromDataContext(
-                            "qBrowser",
-                            null,
-                            DataContext.EMPTY_CONTEXT
+                    runInEdt {
+                        SsoLogoutAction(connection).actionPerformed(
+                            AnActionEvent.createFromDataContext(
+                                "qBrowser",
+                                null,
+                                DataContext.EMPTY_CONTEXT
+                            )
                         )
-                    )
+                    }
                 }
             }
 

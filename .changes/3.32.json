@@ -1,0 +1,32 @@
+{
+  "date" : "2024-10-10",
+  "version" : "3.32",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Loosen inline completion support limitations for YAML/JSON"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix error occuring when Amazon Q attempts to show UI hints on manually triggerred inline suggestion (#4929)"
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q (/dev): provide error messaging when no code changes are required for the prompt"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix 'Slow operations are prohibited on EDT.' when Amazon Q is determining if a file supports inline suggestions (#4823)"
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q Feature Dev: Add error messages when the upload URL expires"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix toolkit connection dropdown getting hidden when panel width is small."
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix inability to sign out in reauth view in Q chat panel"
+  }, {
+    "type" : "bugfix",
+    "description" : "Raise max `@workspace` indexing size to 4GB"
+  }, {
+    "type" : "bugfix",
+    "description" : "Automatically pause and resume `@workspace` indexing when OS CPU load is high"
+  } ]
+}

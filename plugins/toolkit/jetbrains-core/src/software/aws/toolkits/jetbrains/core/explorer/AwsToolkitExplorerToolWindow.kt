@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.core.explorer
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
-import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
@@ -65,12 +64,11 @@ class AwsToolkitExplorerToolWindow(
             val group = CredsComboBoxActionGroup(project)
 
             toolbar = BorderLayoutPanel().apply {
-                addToCenter(
-                    ActionManager.getInstance().createActionToolbar(ActionPlaces.TOOLBAR, group, true).apply {
-                        layoutPolicy = ActionToolbar.AUTO_LAYOUT_POLICY
-                        setTargetComponent(this@AwsToolkitExplorerToolWindow)
-                    }.component
-                )
+                val actionToolbar = ActionManager.getInstance().createActionToolbar(ActionPlaces.TOOLBAR, group, true).apply {
+                    setTargetComponent(this@AwsToolkitExplorerToolWindow)
+                }
+                setToolbarLayout(actionToolbar)
+                addToCenter(actionToolbar.component)
 
                 val actionManager = ActionManager.getInstance()
                 val rightActionGroup = DefaultActionGroup(

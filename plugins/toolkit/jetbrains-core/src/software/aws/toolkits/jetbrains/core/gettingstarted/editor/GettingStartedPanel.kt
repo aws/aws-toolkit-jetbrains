@@ -957,7 +957,8 @@ class GettingStartedPanel(
                                             oldConnectionCount,
                                             initialEnabledConnection,
                                             isFirstInstance,
-                                            connectionInitiatedFromExplorer
+                                            connectionInitiatedFromExplorer,
+                                            isReauth = true
                                         ),
                                         panelReauthenticationRequired
                                     )
