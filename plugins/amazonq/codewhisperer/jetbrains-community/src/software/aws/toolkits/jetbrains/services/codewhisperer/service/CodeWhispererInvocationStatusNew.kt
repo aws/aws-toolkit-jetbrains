@@ -56,7 +56,7 @@ class CodeWhispererInvocationStatusNew {
     }
 
     fun hasEnoughDelayToShowCodeWhisperer(): Boolean {
-        val timeCanShowCodeWhisperer = timeAtLastDocumentChanged.plusMillis(CodeWhispererConstants.POPUP_DELAY)
+        val timeCanShowCodeWhisperer = timeAtLastDocumentChanged.plusMillis(50)
         return timeCanShowCodeWhisperer.isBefore(Instant.now())
     }
 
