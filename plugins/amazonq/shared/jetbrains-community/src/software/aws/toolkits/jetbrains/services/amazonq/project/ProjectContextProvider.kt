@@ -59,7 +59,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val filePaths: List<String>,
         val projectRoot: String,
         val config: String,
-        val language: String = ""
+        val language: String = "",
     )
 
     data class FileCollectionResult(
@@ -127,7 +127,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
                         return@launch
                     }
                 } catch (e: Exception) {
-                    logger.error { "project context index error: message=${e.message} stack=${e.stackTraceToString()}"}
+                    logger.error { "project context index error: message=${e.message} stack=${e.stackTraceToString()}" }
                     if (e.stackTraceToString().contains("Connection refused")) {
                         retryCount.incrementAndGet()
                         delay(10000)

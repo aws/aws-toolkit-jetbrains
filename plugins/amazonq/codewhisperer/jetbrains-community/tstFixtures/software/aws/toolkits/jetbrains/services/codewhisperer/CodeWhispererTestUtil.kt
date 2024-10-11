@@ -399,7 +399,7 @@ fun aFileContextInfo(language: CodeWhispererProgrammingLanguage? = null): FileCo
         CodeWhispererJava.INSTANCE
     ).random()
 
-    return FileContextInfo(caretContextInfo, fileName, programmingLanguage, filePath ,fileRelativePath)
+    return FileContextInfo(caretContextInfo, fileName, programmingLanguage, filePath, fileRelativePath)
 }
 
 fun aTriggerType(): CodewhispererTriggerType =

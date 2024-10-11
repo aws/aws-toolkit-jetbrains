@@ -10,7 +10,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
-import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
@@ -31,23 +30,24 @@ class ProjectContextController(private val project: Project, private val cs: Cor
             }
         }
 
-        project.messageBus.connect(this).subscribe(VirtualFileManager.VFS_CHANGES, object : BulkFileListener {
-            override fun after(events: MutableList<out VFileEvent>) {
-                val createdFiles = events.filterIsInstance<VFileCreateEvent>().mapNotNull { it.file?.path }
-                val deletedFiles = events.filterIsInstance<VFileDeleteEvent>().map { it.file.path }
-                val updateFiles = events.filterIsInstance<VFileContentChangeEvent>().map { it.path }
+        project.messageBus.connect(this).subscribe(
+            VirtualFileManager.VFS_CHANGES,
+            object : BulkFileListener {
+                override fun after(events: MutableList<out VFileEvent>) {
+                    val createdFiles = events.filterIsInstance<VFileCreateEvent>().mapNotNull { it.file?.path }
+                    val deletedFiles = events.filterIsInstance<VFileDeleteEvent>().map { it.file.path }
 
-                updateIndex(createdFiles, IndexUpdateMode.ADD)
-                updateIndex(deletedFiles, IndexUpdateMode.REMOVE)
-                updateIndex(updateFiles, IndexUpdateMode.UPDATE)
+                    updateIndex(createdFiles, IndexUpdateMode.ADD)
+                    updateIndex(deletedFiles, IndexUpdateMode.REMOVE)
+                }
             }
-        })
+        )
     }
 
     enum class IndexUpdateMode(val value: String) {
         UPDATE("update"),
         REMOVE("remove"),
-        ADD("add")
+        ADD("add"),
     }
 
     fun getProjectContextIndexComplete() = projectContextProvider.isIndexComplete.get()

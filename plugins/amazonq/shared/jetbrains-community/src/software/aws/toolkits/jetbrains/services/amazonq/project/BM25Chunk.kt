@@ -6,5 +6,5 @@ package software.aws.toolkits.jetbrains.services.amazonq.project
 data class BM25Chunk(
     val content: String,
     val filePath: String,
-    val score: Double
+    val score: Double,
 )
