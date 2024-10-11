@@ -142,26 +142,26 @@ object IdeVersions {
             name = "2024.3",
             gateway = ProductProfile(
                 sdkFlavor = IdeFlavor.GW,
-                sdkVersion = "243.18137-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "243.19420-EAP-CANDIDATE-SNAPSHOT",
                 bundledPlugins = listOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
                 sdkFlavor = IdeFlavor.IC,
-                sdkVersion = "243.18137-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "243.19420-EAP-CANDIDATE-SNAPSHOT",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
                 ),
                 marketplacePlugins = listOf(
-                    "org.toml.lang:243.18137.23",
-                    "PythonCore:243.18137.10",
-                    "Docker:243.18137.10"
+                    "org.toml.lang:243.19420.27",
+                    "PythonCore:243.19420.21",
+                    "Docker:243.19420.27"
                 )
             ),
             ultimate = ProductProfile(
                 sdkFlavor = IdeFlavor.IU,
-                sdkVersion = "243.18137-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "243.19420-EAP-CANDIDATE-SNAPSHOT",
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
                     "JavaScriptDebugger",
@@ -170,8 +170,8 @@ object IdeVersions {
                 ),
                 marketplacePlugins = listOf(
                     "org.toml.lang:243.18137.23",
-                    "Pythonid:243.18137.10",
-                    "org.jetbrains.plugins.go:243.18137.10",
+                    "Pythonid:243.19420.21",
+                    "org.jetbrains.plugins.go:243.19420.21",
                 )
             ),
             rider = RiderProfile(
