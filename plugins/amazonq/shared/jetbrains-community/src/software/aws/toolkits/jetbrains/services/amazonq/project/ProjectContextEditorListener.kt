@@ -5,12 +5,12 @@ package software.aws.toolkits.jetbrains.services.amazonq.project
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 
+// TODO: not work well, need deep dive
 class ProjectContextEditorListener : FileEditorManagerListener {
     override fun selectionChanged(event: FileEditorManagerEvent) {
         val project = event.manager.project
         val oldFile = event.oldFile ?: return
 
-        // TODO: should run under BGT
-        ProjectContextController.getInstance(project).updateIndex(listOf(oldFile.path), ProjectContextController.IndexUpdateMode.UPDATE)
+//        ProjectContextController.getInstance(project).updateIndex(listOf(oldFile.path), ProjectContextController.IndexUpdateMode.UPDATE)
     }
 }

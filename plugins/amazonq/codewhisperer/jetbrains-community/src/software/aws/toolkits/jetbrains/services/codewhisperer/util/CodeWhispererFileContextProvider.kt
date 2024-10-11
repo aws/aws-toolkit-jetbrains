@@ -22,6 +22,7 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
@@ -215,8 +216,24 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
         // takeLast(11) will extract 10 lines (exclusing current line) of left context as the query parameter
         val query = targetContext.caretContext.leftFileContext.split("\n").takeLast(11).joinToString("\n")
-        val bm25 = ProjectContextController.getInstance(project).queryInline(query, psiFile.virtualFile.path)
-        println("---------------------------------${bm25} --------------------------------------------")
+        if (isDeveloperMode()) {
+            val response = ProjectContextController.getInstance(project).queryInline(query, psiFile.virtualFile.path)
+            LOG.info { response.toString() }
+
+            return SupplementalContextInfo(
+                isUtg = false,
+                contents = response.map {
+                    Chunk(
+                        content = it.content,
+                        path = it.filePath,
+                        nextChunk = it.content,
+                        score = it.score
+                    )
+                },
+                targetFileName = targetContext.filename,
+                strategy = CrossFileStrategy.ProjectContext
+            )
+        }
 
         // step 1: prepare data
         val first60Chunks: List<Chunk> = try {

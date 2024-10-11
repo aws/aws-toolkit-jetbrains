@@ -10,6 +10,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
+import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
@@ -34,9 +35,11 @@ class ProjectContextController(private val project: Project, private val cs: Cor
             override fun after(events: MutableList<out VFileEvent>) {
                 val createdFiles = events.filterIsInstance<VFileCreateEvent>().mapNotNull { it.file?.path }
                 val deletedFiles = events.filterIsInstance<VFileDeleteEvent>().map { it.file.path }
+                val updateFiles = events.filterIsInstance<VFileContentChangeEvent>().map { it.path }
 
                 updateIndex(createdFiles, IndexUpdateMode.ADD)
                 updateIndex(deletedFiles, IndexUpdateMode.REMOVE)
+                updateIndex(updateFiles, IndexUpdateMode.UPDATE)
             }
         })
     }
@@ -58,12 +61,13 @@ class ProjectContextController(private val project: Project, private val cs: Cor
         }
     }
 
-    fun queryInline(prompt: String, filePath: String): Any {
+    // TODO: should we make it suspend and how?
+    fun queryInline(prompt: String, filePath: String): List<BM25Chunk> {
         try {
             return projectContextProvider.queryInline(prompt, filePath)
         } catch (e: Exception) {
             logger.warn { "error while querying for project context $e.message" }
-            return emptyList<Any>()
+            return emptyList()
         }
     }
 
