@@ -20,8 +20,22 @@ abstract class ToolkitIntelliJExtension(private val providers: ProviderFactory) 
 
     fun productProfile(): Provider<out ProductProfile> = ideFlavor.flatMap { flavor ->
         when (flavor) {
-            IdeFlavor.IC -> ideProfile().map { it.community }
-            IdeFlavor.IU -> ideProfile().map { it.ultimate }
+            IdeFlavor.AI,
+            IdeFlavor.IC,
+            IdeFlavor.PC,
+                -> ideProfile().map { it.community }
+
+            IdeFlavor.DB,
+            IdeFlavor.CL,
+            IdeFlavor.GO,
+            IdeFlavor.IU,
+            IdeFlavor.PS,
+            IdeFlavor.PY,
+            IdeFlavor.RM,
+            IdeFlavor.RR,
+            IdeFlavor.WS,
+                -> ideProfile().map { it.ultimate }
+
             IdeFlavor.RD -> ideProfile().map { it.rider }
             IdeFlavor.GW -> ideProfile().map { it.gateway!! }
         }
