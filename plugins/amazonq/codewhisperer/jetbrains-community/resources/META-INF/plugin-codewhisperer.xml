@@ -106,7 +106,9 @@
         <action id="codewhisperer.inline.force.accept"
                 class="software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererForceAcceptAction"
                 text="Force Accept the Current Inline Suggestion" description="Force accept the current inline suggestion">
-            <keyboard-shortcut keymap="$default" first-keystroke="shift TAB"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt TAB"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt TAB"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="alt ENTER"/>
         </action>
 
         <group id="aws.toolkit.codewhisperer.toolbar.security">
