@@ -27,7 +27,7 @@ object CodeWhispererConstants {
     const val LEFT_CONTEXT_ON_CURRENT_LINE = 50
     const val POPUP_INFO_TEXT_SIZE = 11f
     const val POPUP_BUTTON_TEXT_SIZE = 12f
-    val POPUP_DELAY: Long = 250
+    const val POPUP_DELAY: Long = 250
     const val POPUP_DELAY_CHECK_INTERVAL: Long = 25
     const val IDLE_TIME_CHECK_INTERVAL: Long = 25
     const val SUPPLEMENTAL_CONTEXT_TIMEOUT = 50L

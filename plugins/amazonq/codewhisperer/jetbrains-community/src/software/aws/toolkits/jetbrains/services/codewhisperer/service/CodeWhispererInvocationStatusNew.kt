@@ -9,7 +9,6 @@ import com.intellij.openapi.components.service
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus.Companion.CODEWHISPERER_INVOCATION_STATE_CHANGED
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
