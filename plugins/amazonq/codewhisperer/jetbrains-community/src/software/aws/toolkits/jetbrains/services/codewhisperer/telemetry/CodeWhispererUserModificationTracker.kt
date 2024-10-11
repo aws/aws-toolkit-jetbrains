@@ -243,7 +243,7 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
                 }
                 val modifiedSuggestion = document?.getText(
                     TextRange(suggestion.range.startOffset, suggestion.range.endOffset)
-                ) ?: ""
+                ).orEmpty()
                 val response = CodeWhispererClientAdaptor.getInstance(project)
                     .sendUserModificationTelemetry(
                         suggestion.sessionId,
