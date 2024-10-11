@@ -32,6 +32,8 @@ object AwsIcons {
 
         @JvmField val AWS_Q = load("/icons/logos/AWS_Q.svg") // 13x13
 
+        @JvmField val AWS_Q_GREY = load("/icons/logos/Amazon_Q_grey.svg")
+
         @JvmField val AWS_Q_GRADIENT = load("/icons/logos/Amazon-Q-Icon_Gradient_Large.svg") // 54x54
 
         @JvmField val AWS_Q_GRADIENT_SMALL = load("/icons/logos/Amazon-Q-Icon_Gradient_Medium.svg") // 54x54
@@ -57,6 +59,8 @@ object AwsIcons {
         @JvmField val CSHARP = load("/icons/misc/csharp.svg") // 16x16
 
         @JvmField val NEW = load("/icons/misc/new.svg") // 16x16
+
+        @JvmField val AWS_Q_INLINECHAT_SHORTCUT = load("/icons/misc/Q_inlineChat_shortcut.svg")
     }
 
     object Resources {

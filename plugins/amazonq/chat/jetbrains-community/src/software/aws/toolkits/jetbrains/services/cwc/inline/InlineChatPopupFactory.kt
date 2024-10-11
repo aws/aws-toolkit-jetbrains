@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.inline
 
-import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Editor
@@ -69,81 +68,79 @@ class InlineChatPopupFactory(
                 setColor(POPUP_BUTTON_BORDER)
             }
 
-            setSubmitClickListener {
+            val submitListener: () -> Unit = {
                 submitButton.isEnabled = false
                 textField.isEnabled = false
-                val requestStartTime = System.currentTimeMillis()
                 val prompt = textField.text
-                setLabel("Waiting for Amazon Q...")
-                revalidate()
-                DaemonCodeAnalyzer.getInstance(editor.project).restart()
+                if (prompt.isNotBlank()) {
+                    setLabel("AmazonQ generating...")
+                    revalidate()
 
-                scope.launch {
-                    val selectedCode = getSelectedText(editor)
-                    val selectedLineStart = getSelectionStartLine(editor)
-                    val numOfLinesSelected = selectedCode.split("\n").size
-                    var errorMessage = ""
-                    runBlocking {
-                        errorMessage = submitHandler(prompt, selectedCode, selectedLineStart)
-                    }
-                    val requestEndLatency = (System.currentTimeMillis() - requestStartTime).toDouble()
-//                    withContext(EDT) {
-//                        if (!isVisible) {
-//                            cancelHandler.invoke()
-//                            return@launch
-//                        }
+                    scope.launch {
+                        val selectedCode = getSelectedText(editor)
+                        val selectedLineStart = getSelectionStartLine(editor)
+                        var errorMessage = ""
+                        runBlocking {
+                            errorMessage = submitHandler(prompt, selectedCode, selectedLineStart)
+                        }
                         if (errorMessage.isNotEmpty()) {
                             setLabel(errorMessage)
                             revalidate()
                         } else {
-
-                        val acceptAction = {
-                            acceptHandler.invoke()
-//                            telemetryHelper.recordInlineChatTelemetry(prompt.length, numOfLinesSelected, true,
-//                                InlineChatUserDecision.ACCEPT, 0.0, requestEndLatency)
+                            val acceptAction = {
+                                acceptHandler.invoke()
+                            }
+                            val rejectAction = {
+                                rejectHandler.invoke()
+                            }
+                            addCodeActionsPanel(acceptAction , rejectAction)
                         }
-                        val rejectAction = {
-                            rejectHandler.invoke()
-//                            telemetryHelper.recordInlineChatTelemetry(prompt.length, numOfLinesSelected, true,
-//                                InlineChatUserDecision.REJECT, 0.0, requestEndLatency)
-                        }
-                        addCodeActionsPanel(acceptAction , rejectAction)
-//                        DaemonCodeAnalyzer.getInstance(editor.project).restart()
-//                        }
                     }
+                } else {
+                    // TODO: show some message here
                 }
             }
+            setSubmitClickListener(submitListener)
         }
         val popup = initPopup(popupPanel)
-//        popup.addListener(popupListener)
-//        addPopupListeners(popup)
         val popupPoint = editor.visualPositionToXY(editor.caretModel.currentCaret.visualPosition)
         popup.setLocation(popupPoint)
         popup.showInBestPositionFor(editor)
         popupPanel.textField.requestFocusInWindow()
+        popupPanel.textField.addActionListener { e ->
+            val inputText = popupPanel.textField.text.trim()
+            if (inputText.isNotEmpty()) {
+                popupPanel.submitButton.doClick()
+            }
+        }
         return popup
     }
 
     private fun initPopup(panel: ChatInputPopupPanel): JBPopup {
-        val titlePanel = JPanel(BorderLayout()).apply {
-            background = JBColor.background()
-            val titleLabel = JBLabel("Send to AmazonQ").apply {
-                font = font.deriveFont(font.style or java.awt.Font.BOLD)
-            }
-            add(titleLabel, BorderLayout.CENTER)
-            val editorColorsScheme = EditorColorsManager.getInstance().globalScheme
-            border = IdeBorderFactory.createRoundedBorder().apply {
-                setColor(POPUP_BUTTON_BORDER)
-            }
-            font = Font(editorColorsScheme.editorFontName, Font.PLAIN, editorColorsScheme.editorFontSize)
-        }
-        val cancelButton = IconButton("Cancel", AllIcons.Actions.Cancel).apply {}
+//        val titlePanel = JPanel(BorderLayout()).apply {
+//            background = JBColor.background()
+//            val titleLabel = JBLabel("Send to AmazonQ").apply {
+//                font = font.deriveFont(font.style or java.awt.Font.BOLD)
+//            }
+//            add(titleLabel, BorderLayout.CENTER)
+//            val editorColorsScheme = EditorColorsManager.getInstance().globalScheme
+//            border = IdeBorderFactory.createRoundedBorder().apply {
+//                setColor(POPUP_BUTTON_BORDER)
+//            }
+//            font = Font(editorColorsScheme.editorFontName, Font.PLAIN, editorColorsScheme.editorFontSize)
+//        }
+        val cancelButton = IconButton("Cancel", AllIcons.Actions.Cancel)
+//        cancelButton.
         val popup = JBPopupFactory.getInstance()
             .createComponentPopupBuilder(panel, panel.textField)
             .setMovable(true)
             .setResizable(true)
             .setTitle("Enter Instructions for Q")
             .setCancelButton(cancelButton)
+            .setCancelCallback {
+                cancelHandler.invoke()
+                true
+            }
             .setShowBorder(true)
             .setCancelOnWindowDeactivation(false)
             .setAlpha(0.2F)
@@ -164,7 +161,6 @@ class InlineChatPopupFactory(
                 setColor(POPUP_BUTTON_BORDER)
             }
             font = Font(editorColorsScheme.editorFontName, Font.PLAIN, editorColorsScheme.editorFontSize)
-
         }
         val submitButton = JButton("Send").apply {
             border = IdeBorderFactory.createRoundedBorder().apply {
