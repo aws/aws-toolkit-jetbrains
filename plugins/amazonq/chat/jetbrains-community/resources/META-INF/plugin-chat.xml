@@ -20,7 +20,12 @@
                     factoryClass="software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory" icon="AwsIcons.Logos.AWS_Q" />
 
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.amazonq.startup.AmazonQStartupActivity"/>
-        <codeInsight.codeVisionProvider implementation="software.aws.toolkits.jetbrains.services.cwc.inline.InlineChatCodeVisionProvider"/>
+<!--        <codeInsight.codeVisionProvider implementation="software.aws.toolkits.jetbrains.services.cwc.inline.InlineChatCodeVisionProvider"/>-->
+<!--        <editorFloatingToolbarProvider-->
+<!--            id="amazonq.InlineChatToolbarProvider"-->
+<!--            order="after DefaultFloatingToolbarProvider"-->
+<!--            implementation="software.aws.toolkits.jetbrains.services.cwc.inline.InlineChatToolbarProvider"-->
+<!--        />-->
     </extensions>
 
     <extensions defaultExtensionNs="amazon.q">

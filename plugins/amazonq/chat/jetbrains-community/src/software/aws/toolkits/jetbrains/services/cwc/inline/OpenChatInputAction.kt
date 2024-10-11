@@ -5,10 +5,37 @@ package software.aws.toolkits.jetbrains.services.cwc.inline
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.event.CaretEvent
+import com.intellij.openapi.editor.event.CaretListener
 import org.jetbrains.plugins.terminal.exp.TerminalDataContextUtils.editor
 
 class OpenChatInputAction  : AnAction() {
+    private var inlineChatController: InlineChatController? = null
+    private var caretListener: CaretListener? = null
     override fun actionPerformed(e: AnActionEvent) {
-        e.editor?.project?.let { InlineChatController(e.editor!!, it).initPopup() }
+        e.editor?.let { editor ->
+            e.editor?.project?.let { project ->
+                inlineChatController = InlineChatController(editor, project)
+                inlineChatController?.initPopup()
+
+                caretListener = createCaretListener(editor)
+                editor.caretModel.addCaretListener(caretListener!!)
+            }
+        }
+    }
+
+    private fun createCaretListener(editor: Editor): CaretListener {
+        return object : CaretListener {
+            override fun caretPositionChanged(event: CaretEvent) {
+                // Remove the popup when the caret moves
+                inlineChatController?.disposePopup()
+
+                // Remove the listener after closing the popup
+                editor.caretModel.removeCaretListener(this)
+                caretListener = null
+                inlineChatController = null
+            }
+        }
     }
 }

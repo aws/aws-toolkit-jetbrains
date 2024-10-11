@@ -3,9 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.inline
 import com.intellij.icons.AllIcons
+import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
 import com.intellij.openapi.editor.markup.GutterIconRenderer
@@ -15,28 +17,36 @@ import com.intellij.openapi.editor.markup.MarkupModel
 import com.intellij.openapi.editor.markup.RangeHighlighter
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import icons.AwsIcons
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
+import java.awt.Component
+import java.awt.event.MouseEvent
 import javax.swing.Icon
+import javax.swing.SwingUtilities
 
 class ChatCaretListener(private val project: Project, private val context: AmazonQAppInitContext) : CaretListener {
     private var currentHighlighter: RangeHighlighter? = null
-//    private var currentPopup: InlineChatPopup? = null
     init {
         val editor = FileEditorManager.getInstance(project).selectedTextEditor
         editor?.caretModel?.addCaretListener(this)
     }
 
     override fun caretPositionChanged(event: CaretEvent) {
-//        InlineChatCodeVisionProvider()
         val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return
         val lineNumber = event.newPosition.line
         val startOffset = editor.document.getLineStartOffset(lineNumber)
         val endOffset = editor.document.getLineEndOffset(lineNumber)
         val markupModel: MarkupModel = editor.markupModel
-        val gutterIconRenderer = ChatGutterIconRenderer(AllIcons.Actions.Lightning).apply {
+        val gutterIconRenderer = ChatGutterIconRenderer(AwsIcons.Logos.AWS_Q_GREY).apply {
             setClickAction {
-//                currentPopup?.hidePopup()
-                InlineChatController(editor, context.project).initPopup()
+                val action = OpenChatInputAction()
+                val dataContext = DataManager.getInstance().getDataContext(editor.component)
+                val e = AnActionEvent.createFromDataContext(
+                    "GutterIconClick",
+                    Presentation(),
+                    dataContext
+                )
+                action.actionPerformed(e)
             }
         }
 

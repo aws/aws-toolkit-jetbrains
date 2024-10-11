@@ -33,8 +33,10 @@ class InlineChatFileListener(private val context: AmazonQAppInitContext) : FileE
 
     private fun setupListenersForCurrentEditor() {
         currentEditor?.let { editor ->
-            caretListener = ChatCaretListener(context.project, context).also { listener ->
-                editor.caretModel.addCaretListener(listener)
+            caretListener = editor.project?.let {
+                ChatCaretListener(it, context).also { listener ->
+                    editor.caretModel.addCaretListener(listener)
+                }
             }
 
             selectionListener = InlineChatSelectionListener().also { listener ->
