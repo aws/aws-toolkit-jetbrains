@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.cwc.inline
 import com.intellij.openapi.editor.event.SelectionEvent
 import com.intellij.openapi.editor.event.SelectionListener
 import java.awt.Point
-import javax.swing.SwingUtilities
 
 class InlineChatSelectionListener : SelectionListener {
     private var inlineChatEditorHint: InlineChatEditorHint? = null
@@ -17,23 +16,22 @@ class InlineChatSelectionListener : SelectionListener {
         if (selectionModel.hasSelection()) {
             val selectionEnd = selectionModel.selectionEnd
             val selectionLineEnd = editor.document.getLineEndOffset(editor.document.getLineNumber(selectionEnd))
-            val logicalPosition = editor.offsetToLogicalPosition(selectionLineEnd)
-            val visualPosition = editor.logicalToVisualPosition(logicalPosition)
-            val position = editor.visualPositionToXY(visualPosition)
+
+            val xyPosition = editor.offsetToXY(selectionLineEnd)
+            val editorLocation = editor.component.locationOnScreen
+            val editorContentLocation = editor.contentComponent.locationOnScreen
+            val position = Point(
+                editorContentLocation.x + xyPosition.x,
+                editorLocation.y + xyPosition.y - editor.scrollingModel.verticalScrollOffset - 50)
 
             val visibleArea = editor.scrollingModel.visibleArea
 
-            val adjustedX = (position.x + 200).coerceAtMost(visibleArea.x + visibleArea.width - 50)
-            val adjustedY = (position.y + 20).coerceAtMost(visibleArea.y + visibleArea.height - 50)
+            val adjustedX = (position.x ).coerceAtMost(visibleArea.x + visibleArea.width - 50)
+            val adjustedY = (position.y ).coerceAtMost(visibleArea.y + visibleArea.height - 50)
             val adjustedPosition = Point(adjustedX, adjustedY)
-            val pos = SwingUtilities.convertPoint(
-                editor.component,
-                adjustedPosition,
-                editor.component.rootPane.layeredPane
-            )
 
             inlineChatEditorHint = editor.let { editor.project?.let { project -> InlineChatEditorHint(project, it) } }
-            inlineChatEditorHint?.show(pos)
+            inlineChatEditorHint?.show(adjustedPosition)
         } else {
             inlineChatEditorHint?.hide()
         }

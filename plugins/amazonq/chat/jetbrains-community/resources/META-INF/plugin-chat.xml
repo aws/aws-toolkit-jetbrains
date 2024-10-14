@@ -39,12 +39,6 @@
             <keyboard-shortcut first-keystroke="meta I" keymap="$default"/>
             <keyboard-shortcut first-keystroke="control I" keymap="$default"/>
         </action>
-        <action id="aws.toolkit.jetbrains.core.services.cwc.inline.accept" class="software.aws.toolkits.jetbrains.services.cwc.inline.actions.InlineChatAcceptAction">
-            <keyboard-shortcut first-keystroke="TAB" keymap="$default"/>
-        </action>
-        <action id="aws.toolkit.jetbrains.core.services.cwc.inline.reject" class="software.aws.toolkits.jetbrains.services.cwc.inline.actions.InlineChatRejectAction">
-            <keyboard-shortcut first-keystroke="ESCAPE" keymap="$default"/>
-        </action>
         <group id="aws.q.toolwindow.titleBar" popup="false" compact="true">
             <reference id="aws.toolkit.open.q.window"/>
         </group>

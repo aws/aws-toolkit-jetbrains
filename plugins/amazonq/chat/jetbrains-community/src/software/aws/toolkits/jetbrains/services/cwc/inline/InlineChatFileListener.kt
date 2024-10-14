@@ -8,10 +8,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.fileEditor.TextEditor
-import com.intellij.openapi.vfs.VirtualFile
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
-import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextController
 
 class InlineChatFileListener(private val context: AmazonQAppInitContext) : FileEditorManagerListener {
     private var currentEditor: Editor? = context.project.let { FileEditorManager.getInstance(it).selectedTextEditor }

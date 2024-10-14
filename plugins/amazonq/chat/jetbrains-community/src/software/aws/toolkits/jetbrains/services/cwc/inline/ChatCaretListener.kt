@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.cwc.inline
-import com.intellij.icons.AllIcons
 import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.AnAction
@@ -19,10 +18,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import icons.AwsIcons
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
-import java.awt.Component
-import java.awt.event.MouseEvent
 import javax.swing.Icon
-import javax.swing.SwingUtilities
 
 class ChatCaretListener(private val project: Project, private val context: AmazonQAppInitContext) : CaretListener {
     private var currentHighlighter: RangeHighlighter? = null

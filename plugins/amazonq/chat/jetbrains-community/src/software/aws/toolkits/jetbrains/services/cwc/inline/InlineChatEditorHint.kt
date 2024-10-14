@@ -50,7 +50,7 @@ class InlineChatEditorHint(private val project: Project, private val editor: Edi
 
         HintManagerImpl.getInstanceImpl().showEditorHint(
             hint!!, editor, location,
-            HintManager.HIDE_BY_TEXT_CHANGE,
+            HintManager.HIDE_BY_TEXT_CHANGE or HintManager.HIDE_BY_SCROLLING,
             0, false,
             HintManagerImpl.createHintHint(editor, location, hint!!, HintManager.RIGHT_UNDER).setContentActive(false)
         )

@@ -243,7 +243,7 @@ class InlineChatController(
         return if (newlineIndex != -1) {
             input.substring(newlineIndex + 1)
         } else {
-            input
+            ""
         }
     }
 
@@ -371,6 +371,7 @@ class InlineChatController(
                     }
                 }
             }
+
             isInProgress.set(false)
             shouldShowActions.set(true)
             metrics?.numSuggestionAddChars = addedCharsCount
