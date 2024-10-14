@@ -61,7 +61,7 @@ class CodeTransformTelemetryManager(private val project: Project) {
             codeTransformBuildSystem = validationResult.buildSystem,
             codeTransformSessionId = sessionId,
             result = if (validationResult.valid) Result.Succeeded else Result.Failed,
-            reason = if (validationResult.valid) null else validationResult.invalidTelemetryReason.additonalInfo,
+            reason = if (validationResult.valid) null else validationResult.invalidTelemetryReason.additionalInfo,
         )
     }
 

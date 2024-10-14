@@ -17,4 +17,8 @@ data class ZipManifest(
     val hilCapabilities: List<String> = listOf(HIL_1P_UPGRADE_CAPABILITY),
     val transformCapabilities: List<String> = listOf(EXPLAINABILITY_V1),
     val customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS,
+    val sourceVendor: String? = null,
+    val targetVendor: String? = null,
+    val sourceServerName: String? = null,
+    val schema: String? = null,
 )

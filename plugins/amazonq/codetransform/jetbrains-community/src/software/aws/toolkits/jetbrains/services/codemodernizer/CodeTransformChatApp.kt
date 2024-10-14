@@ -32,7 +32,10 @@ private enum class CodeTransformMessageTypes(val type: String) {
     TabCreated("new-tab-was-created"),
     TabRemoved("tab-was-removed"),
     Transform("transform"),
+    ChatPrompt("chat-prompt"), // for getting the transformation objective
     CodeTransformStart("codetransform-start"),
+    CodeTransformSelectSQLMetadata("codetransform-select-sql-metadata"),
+    CodeTransformSelectSQLModuleSchema("codetransform-select-sql-module-schema"),
     CodeTransformStop("codetransform-stop"),
     CodeTransformCancel("codetransform-cancel"),
     CodeTransformConfirmSkipTests("codetransform-confirm-skip-tests"),
@@ -63,8 +66,11 @@ class CodeTransformChatApp : AmazonQApp {
             CodeTransformMessageTypes.TabRemoved.type to IncomingCodeTransformMessage.TabRemoved::class,
             CodeTransformMessageTypes.Transform.type to IncomingCodeTransformMessage.Transform::class,
             CodeTransformMessageTypes.CodeTransformStart.type to IncomingCodeTransformMessage.CodeTransformStart::class,
+            CodeTransformMessageTypes.CodeTransformSelectSQLMetadata.type to IncomingCodeTransformMessage.CodeTransformSelectSQLMetadata::class,
+            CodeTransformMessageTypes.CodeTransformSelectSQLModuleSchema.type to IncomingCodeTransformMessage.CodeTransformSelectSQLModuleSchema::class,
             CodeTransformMessageTypes.CodeTransformStop.type to IncomingCodeTransformMessage.CodeTransformStop::class,
             CodeTransformMessageTypes.CodeTransformCancel.type to IncomingCodeTransformMessage.CodeTransformCancel::class,
+            CodeTransformMessageTypes.ChatPrompt.type to IncomingCodeTransformMessage.ChatPrompt::class,
             CodeTransformMessageTypes.CodeTransformConfirmSkipTests.type to IncomingCodeTransformMessage.CodeTransformConfirmSkipTests::class,
             CodeTransformMessageTypes.CodeTransformNew.type to IncomingCodeTransformMessage.CodeTransformNew::class,
             CodeTransformMessageTypes.CodeTransformOpenTransformHub.type to IncomingCodeTransformMessage.CodeTransformOpenTransformHub::class,
@@ -153,8 +159,11 @@ class CodeTransformChatApp : AmazonQApp {
         when (message) {
             is IncomingCodeTransformMessage.Transform -> inboundAppMessagesHandler.processTransformQuickAction(message)
             is IncomingCodeTransformMessage.CodeTransformStart -> inboundAppMessagesHandler.processCodeTransformStartAction(message)
+            is IncomingCodeTransformMessage.CodeTransformSelectSQLMetadata -> inboundAppMessagesHandler.processCodeTransformSelectSQLMetadataAction(message)
+            is IncomingCodeTransformMessage.CodeTransformSelectSQLModuleSchema -> inboundAppMessagesHandler.processCodeTransformSelectSQLModuleSchemaAction(message)
             is IncomingCodeTransformMessage.CodeTransformCancel -> inboundAppMessagesHandler.processCodeTransformCancelAction(message)
             is IncomingCodeTransformMessage.CodeTransformStop -> inboundAppMessagesHandler.processCodeTransformStopAction(message.tabId)
+            is IncomingCodeTransformMessage.ChatPrompt -> inboundAppMessagesHandler.processChatPromptMessage(message)
             is IncomingCodeTransformMessage.CodeTransformConfirmSkipTests -> inboundAppMessagesHandler.processCodeTransformConfirmSkipTests(message)
             is IncomingCodeTransformMessage.CodeTransformNew -> inboundAppMessagesHandler.processCodeTransformNewAction(message)
             is IncomingCodeTransformMessage.CodeTransformOpenTransformHub -> inboundAppMessagesHandler.processCodeTransformOpenTransformHub(message)

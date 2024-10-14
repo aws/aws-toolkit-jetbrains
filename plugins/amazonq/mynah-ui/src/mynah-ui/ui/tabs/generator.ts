@@ -30,6 +30,9 @@ export class TabDataGenerator {
         ['featuredev', 'Describe your task or issue in detail'],
     ])
 
+    // feature flag for SQL transformations
+    private isSQLTransformReady: boolean = true
+
     private tabWelcomeMessage: Map<TabType, string> = new Map([
         [
             'unknown',
@@ -52,7 +55,12 @@ I can generate code to implement new functionality across your workspace. To get
 What would you like to work on?`,
         ],
         [
-            'codetransform',
+            'codetransform', this.isSQLTransformReady ?
+            `Welcome to Code Transformation!
+
+I can help you upgrade your Java 8 and 11 codebases to Java 17 ("language upgrade") & 
+I can also convert embedded SQL from Oracle to PostgreSQL ("SQL conversion"). What would you like to do?
+` :
             `Welcome to Code Transformation!
 
 I can help you upgrade your Java 8 and 11 codebases to Java 17.

@@ -5,12 +5,13 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.controller
 
 import kotlinx.coroutines.delay
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
+import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatInputEnabledMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessageContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessageType
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatUpdateMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformCreateTab
-import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformNotificationMessage
+import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformUpdatePlaceholderMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.session.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import java.util.UUID
@@ -36,14 +37,9 @@ class CodeTransformChatHelper(
 
     fun getHilPomItemId(): String? = hilPomItemId
 
-    suspend fun showChatNotification(title: String, content: String) {
-        messagePublisher.publish(
-            CodeTransformNotificationMessage(
-                title = title,
-                content = content,
-            )
-        )
-    }
+    suspend fun sendChatInputEnabledMessage(tabId: String, enabled: Boolean) = messagePublisher.publish(CodeTransformChatInputEnabledMessage(tabId, enabled))
+
+    suspend fun sendUpdatePlaceholderMessage(tabId: String, newPlaceholder: String) = messagePublisher.publish(CodeTransformUpdatePlaceholderMessage(tabId, newPlaceholder))
 
     suspend fun addNewMessage(
         content: CodeTransformChatMessageContent,

@@ -4,12 +4,14 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.modules
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.projectRoots.impl.JavaSdkImpl
 import com.intellij.openapi.roots.LanguageLevelProjectExtension
+import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VirtualFile
 
@@ -76,6 +78,13 @@ fun Project.getSupportedBuildFilesWithSupportedJdk(
 fun Project.getSupportedModules(supportedJavaMappings: Map<JavaSdkVersion, Set<JavaSdkVersion>>) = this.modules.filter {
     val moduleJdk = it.tryGetJdk(this) ?: return@filter false
     moduleJdk in supportedJavaMappings
+}
+
+fun Project.getJavaModules(): List<Module> {
+    return this.modules.filter { module ->
+        val rootManager = ModuleRootManager.getInstance(module)
+        rootManager.sdk?.sdkType?.name?.lowercase()?.contains("java") ?: false
+    }
 }
 
 fun Project.getModuleOrProjectNameForFile(file: VirtualFile) = ModuleUtil.findModuleForFile(file, this)?.name ?: this.name

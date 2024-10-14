@@ -30,6 +30,8 @@ type MessageCommand =
     | 'transform'
     | 'footer-info-link-click'
     | 'codetransform-start'
+    | 'codetransform-select-sql-metadata'
+    | 'codetransform-select-sql-module-schema'
     | 'codetransform-cancel'
     | 'codetransform-stop'
     | 'codetransform-confirm-skip-tests'
