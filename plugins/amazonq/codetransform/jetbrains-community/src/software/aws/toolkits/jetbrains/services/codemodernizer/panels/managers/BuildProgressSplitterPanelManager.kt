@@ -219,6 +219,8 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
                 statuses.update(BuildStepStatus.DONE, ProgressStepId.UPLOADING)
             }
 
+            // TODO: don't show users that we're building project for SQL conversions
+
             TransformationStatus.PREPARED -> {
                 loadingPanelText = message("codemodernizer.toolwindow.scan_in_progress.building", jdkVersion.description)
                 statuses.update(BuildStepStatus.DONE, ProgressStepId.BUILDING)

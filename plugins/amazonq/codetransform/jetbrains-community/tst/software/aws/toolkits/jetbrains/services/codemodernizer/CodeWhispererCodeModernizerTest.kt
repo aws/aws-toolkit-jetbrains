@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.codewhispererstreaming.model.Transformati
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArtifactResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.InvalidTelemetryReason
@@ -207,7 +208,7 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
 
     @Test
     fun `start transformation without IdC connection`() {
-        val result = codeModernizerManagerSpy.validate(project)
+        val result = codeModernizerManagerSpy.validate(project, CodeTransformType.LANGUAGE_UPGRADE)
         val expectedResult = ValidationResult(
             false,
             message("codemodernizer.notification.warn.invalid_project.description.reason.not_logged_in"),

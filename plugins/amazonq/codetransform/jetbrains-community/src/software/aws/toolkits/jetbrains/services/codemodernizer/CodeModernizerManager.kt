@@ -35,12 +35,14 @@ import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESH
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_POM_FILE_NAME
+import software.aws.toolkits.jetbrains.services.codemodernizer.controller.CodeTransformChatController
 import software.aws.toolkits.jetbrains.services.codemodernizer.file.PomFileAnnotator
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerException
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerStartJobResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.Dependency
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.InvalidTelemetryReason
@@ -59,6 +61,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeMo
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_WHERE_PLAN_EXIST
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.createFileCopy
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.findLineNumberByString
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getJavaModules
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getMavenVersion
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactPomFile
@@ -124,27 +127,26 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         JavaSdkVersion.JDK_1_8 to setOf(JavaSdkVersion.JDK_17),
         JavaSdkVersion.JDK_11 to setOf(JavaSdkVersion.JDK_17),
     )
+
     init {
         CodeModernizerSessionState.getInstance(project).setDefaults()
     }
 
-    fun validate(project: Project): ValidationResult {
+    fun validate(project: Project, transformationType: CodeTransformType): ValidationResult {
         fun validateCore(project: Project): ValidationResult {
             if (isRunningOnRemoteBackend()) {
                 return ValidationResult(
                     false,
-                    message("codemodernizer.notification.warn.invalid_project.description.reason.remote_backend"),
                     InvalidTelemetryReason(
-                        CodeTransformPreValidationError.RemoteRunProject
+                        CodeTransformPreValidationError.RemoteRunProject,
                     )
                 )
             }
             if (!isCodeTransformAvailable(project)) {
                 return ValidationResult(
                     false,
-                    message("codemodernizer.notification.warn.invalid_project.description.reason.not_logged_in"),
                     InvalidTelemetryReason(
-                        CodeTransformPreValidationError.NonSsoLogin
+                        CodeTransformPreValidationError.NonSsoLogin,
                     )
                 )
             }
@@ -152,25 +154,38 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             if (ProjectRootManager.getInstance(project).contentRoots.isEmpty()) {
                 return ValidationResult(
                     false,
-                    message("codemodernizer.notification.warn.invalid_project.description.reason.missing_content_roots"),
                     InvalidTelemetryReason(
-                        CodeTransformPreValidationError.NoPom
+                        CodeTransformPreValidationError.EmptyProject,
                     )
                 )
             }
+
+            if (transformationType == CodeTransformType.SQL_CONVERSION) {
+                val javaModules = project.getJavaModules()
+                return if (javaModules.isNotEmpty()) {
+                    ValidationResult(
+                        true,
+                        validatedJavaModules = javaModules,
+                    )
+                } else {
+                    ValidationResult(
+                        false,
+                        InvalidTelemetryReason(
+                            CodeTransformPreValidationError.NoJavaProject,
+                        )
+                    )
+                }
+            }
+
             val supportedModules = project.getSupportedModules(supportedJavaMappings).toSet()
             val validProjectJdk = project.getSupportedJavaMappings(supportedJavaMappings).isNotEmpty()
             val projectJdk = project.tryGetJdk()
             if (supportedModules.isEmpty() && !validProjectJdk) {
                 return ValidationResult(
                     false,
-                    message(
-                        "codemodernizer.notification.warn.invalid_project.description.reason.invalid_jdk_versions",
-                        supportedJavaMappings.keys.joinToString()
-                    ),
                     InvalidTelemetryReason(
                         CodeTransformPreValidationError.UnsupportedJavaVersion,
-                        projectJdk?.toString().orEmpty()
+                        projectJdk.toString()
                     )
                 )
             }
@@ -179,17 +194,12 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 ValidationResult(
                     true,
                     validatedBuildFiles = validatedBuildFiles,
-                    validatedProjectJdkName = projectJdk?.description.orEmpty(),
                     buildSystem = CodeTransformBuildSystem.Maven,
                     buildSystemVersion = getMavenVersion(project)
                 )
             } else {
                 ValidationResult(
                     false,
-                    invalidReason = message(
-                        "codemodernizer.notification.warn.invalid_project.description.reason.no_valid_files",
-                        supportedBuildFileNames.joinToString()
-                    ),
                     invalidTelemetryReason = InvalidTelemetryReason(
                         CodeTransformPreValidationError.UnsupportedBuildSystem,
                         if (isGradleProject(project)) "Gradle build" else "other build"
@@ -247,7 +257,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
     }
 
-    fun runModernize(copyResult: MavenCopyCommandsResult) {
+    fun runModernize(copyResult: MavenCopyCommandsResult? = null) {
         initStopParameters()
         val session = codeTransformationSession as CodeModernizerSession
         initModernizationJobUI(true, project.getModuleOrProjectNameForFile(session.sessionContext.configurationFile))
@@ -311,7 +321,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         )
     }
 
-    fun launchModernizationJob(session: CodeModernizerSession, copyResult: MavenCopyCommandsResult) = projectCoroutineScope(project).launch {
+    fun launchModernizationJob(session: CodeModernizerSession, copyResult: MavenCopyCommandsResult?) = projectCoroutineScope(project).launch {
         val result = initModernizationJob(session, copyResult)
 
         postModernizationJob(result)
@@ -394,7 +404,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     fun parseBuildFile(): String? = parseBuildFile(codeTransformationSession?.sessionContext?.configurationFile)
 
-    internal suspend fun initModernizationJob(session: CodeModernizerSession, copyResult: MavenCopyCommandsResult): CodeModernizerJobCompletedResult =
+    private suspend fun initModernizationJob(session: CodeModernizerSession, copyResult: MavenCopyCommandsResult?): CodeModernizerJobCompletedResult =
         when (val result = session.createModernizationJob(copyResult)) {
             is CodeModernizerStartJobResult.ZipCreationFailed -> {
                 CodeModernizerJobCompletedResult.UnableToCreateJob(
@@ -666,10 +676,13 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     fun createCodeModernizerSession(customerSelection: CustomerSelection, project: Project) {
         codeTransformationSession = CodeModernizerSession(
             CodeModernizerSessionContext(
-                project,
-                customerSelection.configurationFile,
-                customerSelection.sourceJavaVersion,
-                customerSelection.targetJavaVersion,
+                project = project,
+                configurationFile = customerSelection.configurationFile,
+                sourceJavaVersion = customerSelection.sourceJavaVersion,
+                targetJavaVersion = customerSelection.targetJavaVersion,
+                sourceVendor = customerSelection.sourceVendor,
+                targetVendor = customerSelection.targetVendor,
+                sourceServerName = customerSelection.sourceServerName,
             ),
         )
     }

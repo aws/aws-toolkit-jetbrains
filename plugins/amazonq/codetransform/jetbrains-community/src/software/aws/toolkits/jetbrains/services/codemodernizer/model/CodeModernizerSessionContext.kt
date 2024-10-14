@@ -26,6 +26,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeMo
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactPomFolder
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilDependenciesRootDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilUploadZip
+import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.IOException
@@ -52,10 +53,14 @@ const val INVALID_SUFFIX_SHA = "sha1"
 const val INVALID_SUFFIX_REPOSITORIES = "repositories"
 data class CodeModernizerSessionContext(
     val project: Project,
-    val configurationFile: VirtualFile,
-    val sourceJavaVersion: JavaSdkVersion,
-    val targetJavaVersion: JavaSdkVersion,
+    var configurationFile: VirtualFile, // always needed to ZIP module
+    val sourceJavaVersion: JavaSdkVersion, // always needed for startJob API
+    val targetJavaVersion: JavaSdkVersion = JavaSdkVersion.JDK_17, // only one supported
     var customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS, // run unit tests by default
+    var sourceVendor: String = "ORACLE", // only one supported
+    var targetVendor: String? = null,
+    var sourceServerName: String? = null,
+    var schema: String? = null,
 ) {
     private val mapper = jacksonObjectMapper()
     private val ignoredDependencyFileExtensions = setOf(INVALID_SUFFIX_SHA, INVALID_SUFFIX_REPOSITORIES)
@@ -104,8 +109,8 @@ data class CodeModernizerSessionContext(
     }
 
     fun getDependenciesUsingMaven(): MavenCopyCommandsResult {
-        val root = configurationFile.parent
-        val sourceFolder = File(root.path)
+        val root = configurationFile?.parent
+        val sourceFolder = File(root?.path)
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
         return executeMavenCopyCommands(sourceFolder, buildLogBuilder)
     }
@@ -174,10 +179,11 @@ data class CodeModernizerSessionContext(
             }
         }
 
-    fun createZipWithModuleFiles(copyResult: MavenCopyCommandsResult): ZipCreationResult {
+    fun createZipWithModuleFiles(copyResult: MavenCopyCommandsResult?): ZipCreationResult {
         val root = configurationFile.parent
         val sourceFolder = File(root.path)
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
+        // depDirectory will be null for SQL conversions since copyResult will be null
         val depDirectory = if (copyResult is MavenCopyCommandsResult.Success) {
             showTransformationHub()
             copyResult.dependencyDirectory
@@ -203,7 +209,12 @@ data class CodeModernizerSessionContext(
                 val outputFile = createTemporaryZipFile { zip ->
                     // 1) Manifest file
                     val dependenciesRoot = if (depDirectory != null) "$ZIP_DEPENDENCIES_PATH/${depDirectory.name}" else null
-                    mapper.writeValueAsString(ZipManifest(dependenciesRoot = dependenciesRoot, customBuildCommand = customBuildCommand))
+                    var manifest = ZipManifest(dependenciesRoot = dependenciesRoot, customBuildCommand = customBuildCommand)
+                    if (schema != null) {
+                        // doing a SQL conversion, not language upgrade
+                        manifest = ZipManifest(sourceVendor = sourceVendor, targetVendor = targetVendor, sourceServerName = sourceServerName, schema = schema)
+                    }
+                    mapper.writeValueAsString(manifest)
                         .byteInputStream()
                         .use {
                             zip.putNextEntry(Path(MANIFEST_PATH).toString(), it)
@@ -246,14 +257,15 @@ data class CodeModernizerSessionContext(
                         }
                     }
 
-                    LOG.info { "Source code files size = ${files.sumOf { it.length.toInt() }}" }
+                    LOG.info { "Source code files size = ${files?.sumOf { it.length.toInt() }}" }
 
                     // 4) Build Log
                     buildLogBuilder.toString().byteInputStream().use {
                         zip.putNextEntry(Path(BUILD_LOG_PATH).toString(), it)
                     }
                 }.toFile()
-                if (depDirectory != null) ZipCreationResult.Succeeded(outputFile) else ZipCreationResult.Missing1P(outputFile)
+                // only return Missing1P for language upgrades with a null depDirectory; for SQL conversions always use Succeeded since depDirectory not used
+                if (depDirectory != null || schema != null) ZipCreationResult.Succeeded(outputFile) else ZipCreationResult.Missing1P(outputFile)
             } catch (e: NoSuchFileException) {
                 throw CodeModernizerException("Source folder not found")
             } catch (e: Exception) {

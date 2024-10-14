@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codemodernizer
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.serviceContainer.AlreadyDisposedException
 import com.intellij.util.io.HttpRequests
 import kotlinx.coroutines.delay
@@ -49,6 +50,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isValidCode
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toTransformationLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanSession
+import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.FileInputStream
@@ -144,7 +146,7 @@ class CodeModernizerSession(
      *
      *  Based on [CodeWhispererCodeScanSession]
      */
-    fun createModernizationJob(copyResult: MavenCopyCommandsResult): CodeModernizerStartJobResult {
+    fun createModernizationJob(copyResult: MavenCopyCommandsResult?): CodeModernizerStartJobResult {
         LOG.info { "Compressing local project" }
         val payload: File?
         var payloadSize = 0
@@ -272,7 +274,9 @@ class CodeModernizerSession(
         } finally {
             telemetry.uploadProject(payloadSize, startTime, true, telemetryErrorMessage)
             if (payload != null) {
-                deleteUploadArtifact(payload)
+                // TODO: revert
+                notifyStickyInfo("zip path", payload.path)
+                // deleteUploadArtifact(payload)
             }
         }
 
