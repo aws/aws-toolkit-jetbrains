@@ -1,7 +1,7 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.cwc.inline
+package software.aws.toolkits.jetbrains.services.cwc.inline.listeners
 import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.AnAction
@@ -17,10 +17,10 @@ import com.intellij.openapi.editor.markup.RangeHighlighter
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import icons.AwsIcons
-import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
+import software.aws.toolkits.jetbrains.services.cwc.inline.OpenChatInputAction
 import javax.swing.Icon
 
-class ChatCaretListener(private val project: Project, private val context: AmazonQAppInitContext) : CaretListener {
+class ChatCaretListener(private val project: Project) : CaretListener {
     private var currentHighlighter: RangeHighlighter? = null
     init {
         val editor = FileEditorManager.getInstance(project).selectedTextEditor

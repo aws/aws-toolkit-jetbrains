@@ -66,9 +66,7 @@ import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileCon
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContextExtractor
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTriggerType
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextController
-import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextEditorListener
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.RelevantDocument
-import software.aws.toolkits.jetbrains.services.cwc.inline.ChatCaretListener
 import software.aws.toolkits.jetbrains.services.cwc.messages.AuthNeededException
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType

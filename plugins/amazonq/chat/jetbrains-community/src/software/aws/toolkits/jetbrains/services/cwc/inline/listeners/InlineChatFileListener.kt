@@ -1,7 +1,7 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.cwc.inline
+package software.aws.toolkits.jetbrains.services.cwc.inline.listeners
 
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -31,7 +31,7 @@ class InlineChatFileListener(private val context: AmazonQAppInitContext) : FileE
     private fun setupListenersForCurrentEditor() {
         currentEditor?.let { editor ->
             caretListener = editor.project?.let {
-                ChatCaretListener(it, context).also { listener ->
+                ChatCaretListener(it).also { listener ->
                     editor.caretModel.addCaretListener(listener)
                 }
             }

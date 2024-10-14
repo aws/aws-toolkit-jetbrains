@@ -30,7 +30,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapte
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.EditorThemeAdapter
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
-import software.aws.toolkits.jetbrains.services.cwc.inline.InlineChatFileListener
+import software.aws.toolkits.jetbrains.services.cwc.inline.listeners.InlineChatFileListener
 import javax.swing.JComponent
 
 @Service(Service.Level.PROJECT)
