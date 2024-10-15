@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.amazon.awssdk.services.toolkittelemetry.model.Unit
 import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ProfileSsoManagedBearerSsoConnection
@@ -233,17 +234,14 @@ fun reauthenticateWithQ(project: Project) {
 }
 
 fun emitUserState(project: Project) {
-
-    val scopes = ToolkitAuthManager.getInstance().listConnections().flatMap { connection ->
-        when (connection) {
-            is ProfileSsoManagedBearerSsoConnection -> connection.scopes
-            is LegacyManagedBearerSsoConnection -> connection.scopes
-            else -> emptyList()
-        }
-    }.toSet()
+    val explorerConnection = ToolkitConnectionManager.getInstance(project).activeConnection()
+    val scopes = when (explorerConnection) {
+        is ManagedBearerSsoConnection -> explorerConnection.scopes
+        else -> emptyList()
+    }
 
     TelemetryService.getInstance().record(project) {
-        datum("auth_userState"){
+        datum("auth_userState") {
             createTime(Instant.now())
             unit(Unit.NONE)
             value(1.0)
@@ -251,7 +249,9 @@ fun emitUserState(project: Project) {
             metadata("source", getStartupState().toString())
             metadata("authStatus", getAuthStatus(project).toString())
             metadata("authEnabledConnections", getEnabledConnections(project))
-            metadata("authScopes", scopes.joinToString(","))
+            if (getAuthStatus(project).toString() != "notConnected") {
+                metadata("authScopes", scopes.joinToString(","))
+            }
         }
     }
 }
