@@ -20,6 +20,7 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifierSso
+import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileWatcher
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants.SSO_SESSION_SECTION_NAME
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
@@ -204,6 +205,7 @@ fun loginSso(
 fun logoutFromSsoConnection(project: Project?, connection: AwsBearerTokenConnection, callback: () -> Unit = {}) {
     try {
         ToolkitAuthManager.getInstance().deleteConnection(connection.id)
+        ProfileWatcher.getInstance().forceRefresh()
         if (connection is ProfileSsoManagedBearerSsoConnection) {
             deleteSsoConnection(connection)
         }
@@ -338,7 +340,7 @@ fun deleteSsoConnection(connection: ProfileSsoManagedBearerSsoConnection) =
 fun deleteSsoConnection(connection: CredentialIdentifier) =
     deleteSsoConnection(getSsoSessionProfileNameFromCredentials(connection))
 
-fun deleteSsoConnection(sessionName: String) = DefaultConfigFilesFacade().deleteSsoConnectionFromConfig(sessionName)
+fun deleteSsoConnection(sessionName: String) = DefaultConfigFilesFacade().deleteSsoProfileScopesFromConfig(sessionName)
 
 private fun getSsoSessionProfileNameFromCredentials(connection: CredentialIdentifier): String {
     connection as ProfileCredentialsIdentifierSso
