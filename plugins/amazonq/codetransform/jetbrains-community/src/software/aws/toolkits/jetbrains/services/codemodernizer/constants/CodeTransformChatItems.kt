@@ -62,7 +62,7 @@ private val confirmUserSelectionSQLConversionModuleSchemaButton = Button(
 )
 
 private val confirmUserSelectionSQLConversionMetadataButton = Button(
-    keepCardAfterClick = true,
+    keepCardAfterClick = true, // TODO: make this false if you can't figure out how to disable the Select button after its been clicked once
     waitMandatoryFormItems = true,
     text = message("codemodernizer.chat.message.button.select"),
     id = CodeTransformButtonId.SelectSQLMetadata.id,
@@ -149,16 +149,14 @@ private fun getSelectModuleFormItem(project: Project, moduleBuildFiles: List<Vir
     }
 )
 
-private fun getSelectSQLModuleFormItem(javaModules: List<Module>) = FormItem(
+private fun getSelectSQLModuleFormItem(project: Project, javaModules: List<VirtualFile>) = FormItem(
     id = CodeTransformFormItemId.SelectModule.id,
     title = message("codemodernizer.chat.form.user_selection.item.choose_module"),
     mandatory = true,
     options = javaModules.map {
         FormItemOption(
-            label = it.name,
-            // TODO: what if there are no contentRoots?
-            // value = path to any file in the module, will use to ZIP the entire module later
-            value = ModuleRootManager.getInstance(it).contentRoots[0].children[0].path
+            label = project.getModuleOrProjectNameForFile(it),
+            value = it.path,
         )
     }
 )
@@ -261,7 +259,7 @@ fun buildProjectInvalidChatContent(validationResult: ValidationResult): CodeTran
         CodeTransformPreValidationError.NonSsoLogin -> message("codemodernizer.notification.warn.invalid_project.description.reason.not_logged_in")
         CodeTransformPreValidationError.EmptyProject -> message("codemodernizer.notification.warn.invalid_project.description.reason.missing_content_roots")
         CodeTransformPreValidationError.UnsupportedBuildSystem -> message("codemodernizer.chat.message.validation.error.no_pom")
-        CodeTransformPreValidationError.NoJavaProject -> "Sorry, I could not find an open Java module."
+        CodeTransformPreValidationError.NoJavaProject -> "Sorry, I could not find an open Java module. Make sure you have a module open that has the JDK configured and has at least 1 content root."
         else -> message("codemodernizer.chat.message.validation.error.other")
     }
 
@@ -328,14 +326,14 @@ fun buildUserInputSQLConversionMetadataChatContent(): CodeTransformChatMessageCo
     )
 }
 
-fun buildModuleSchemaFormChatContent(javaModules: List<Module>, schemaOptions: Set<String>) = CodeTransformChatMessageContent(
+fun buildModuleSchemaFormChatContent(project: Project, javaModules: List<VirtualFile>, schemaOptions: Set<String>) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
     buttons = listOf(
         confirmUserSelectionSQLConversionModuleSchemaButton,
         cancelUserSelectionButton,
     ),
     formItems = listOf(
-        getSelectSQLModuleFormItem(javaModules),
+        getSelectSQLModuleFormItem(project, javaModules),
         getSelectSQLSchemaFormItem(schemaOptions),
     ),
 )
@@ -364,9 +362,9 @@ fun buildSQLMetadataValidationSuccessDetailsChatContent(validationResult: SqlMet
 """.trimIndent(),
 )
 
-fun buildSQLMetadataValidationErrorChatContent(errorReason: String?) = CodeTransformChatMessageContent(
+fun buildSQLMetadataValidationErrorChatContent(errorReason: String) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
-    message = if (errorReason == "user cancelled .sct metadata dialog window") message("codemodernizer.chat.message.transform_cancelled_by_user") else errorReason,
+    message = errorReason,
 )
 
 fun buildUserCancelledChatContent() = CodeTransformChatMessageContent(
