@@ -13,4 +13,5 @@ data class CustomerSelection(
     val sourceVendor: String = "ORACLE", // only one supported
     val targetVendor: String? = null,
     val sourceServerName: String? = null,
+    // note: schema and customBuildCommand are passed in to CodeModernizerSessionContext separately, *after* CodeModernizerSession is created
 )

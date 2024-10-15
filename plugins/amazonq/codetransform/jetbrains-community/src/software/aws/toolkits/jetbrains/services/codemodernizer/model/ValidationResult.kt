@@ -4,14 +4,12 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.module.Module
 import software.aws.toolkits.telemetry.CodeTransformBuildSystem
 
 data class ValidationResult(
     val valid: Boolean,
     val invalidTelemetryReason: InvalidTelemetryReason = InvalidTelemetryReason(),
     val validatedBuildFiles: List<VirtualFile> = emptyList(),
-    val validatedJavaModules: List<Module> = emptyList(),
     val buildSystem: CodeTransformBuildSystem = CodeTransformBuildSystem.Unknown,
     val buildSystemVersion: String = "",
 )

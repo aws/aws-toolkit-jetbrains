@@ -289,10 +289,7 @@ class CodeTransformChatController(
         }
     }
 
-    private fun validateSctMetadata(selectedFile: VirtualFile?): SqlMetadataValidationResult {
-        if (selectedFile == null) {
-            return SqlMetadataValidationResult(false, "user cancelled .sct metadata dialog window")
-        }
+    private fun validateSctMetadata(selectedFile: VirtualFile): SqlMetadataValidationResult {
         val fileContent = selectedFile.contentsToByteArray().toString(Charsets.UTF_8)
         val xmlDeserializer = XmlMapper(JacksonXmlModule())
         var sctMetadata: Map<*, *>? = null
@@ -354,7 +351,7 @@ class CodeTransformChatController(
         val moduleName = context.project.getModuleOrProjectNameForFile(message.modulePath.toVirtualFile() as VirtualFile)
         codeTransformChatHelper.addNewMessage(buildUserSQLConversionSelectionSummaryChatContent(moduleName, message.schema))
         codeModernizerManager.codeTransformationSession?.let {
-            it.sessionContext.configurationFile = message.modulePath.toVirtualFile() as VirtualFile // any file in the module; will use to createZip
+            it.sessionContext.configurationFile = message.modulePath.toVirtualFile() as VirtualFile // any file in the selected module works fine; will use to createZip
             it.sessionContext.schema = message.schema
         }
         // start the SQL conversion
@@ -369,7 +366,7 @@ class CodeTransformChatController(
                 .withDescription("Select .sct metadata file")
                 .withFileFilter { it.extension == "sct" }
 
-            val selectedFile = FileChooser.chooseFile(descriptor, null, null)
+            val selectedFile = FileChooser.chooseFile(descriptor, null, null) ?: return@runInEdt
 
             val metadataValidationResult = this.validateSctMetadata(selectedFile)
 
@@ -388,7 +385,8 @@ class CodeTransformChatController(
                     addNewMessage(buildSQLMetadataValidationSuccessIntroChatContent())
                     addNewMessage(buildSQLMetadataValidationSuccessDetailsChatContent(metadataValidationResult))
                     addNewMessage(buildModuleSchemaFormIntroChatContent())
-                    addNewMessage(buildModuleSchemaFormChatContent(context.project.getJavaModules(), metadataValidationResult.schemaOptions))
+                    // already validated that there are open Java modules at this point
+                    addNewMessage(buildModuleSchemaFormChatContent(context.project, context.project.getJavaModules(), metadataValidationResult.schemaOptions))
                 }
                 val selection = CustomerSelection(
                     // for SQL conversions (no sourceJavaVersion), use dummy value of Java 8 so that startJob API can be called
@@ -397,7 +395,7 @@ class CodeTransformChatController(
                     sourceVendor = metadataValidationResult.sourceVendor,
                     targetVendor = metadataValidationResult.targetVendor,
                     sourceServerName = metadataValidationResult.sourceServerName,
-                    configurationFile = selectedFile!! // TODO (david): revisit this, will get overwritten in processCodeTransformSelectSQLModuleSchemaAction
+                    configurationFile = selectedFile
                 )
                 codeModernizerManager.createCodeModernizerSession(selection, context.project)
             }
