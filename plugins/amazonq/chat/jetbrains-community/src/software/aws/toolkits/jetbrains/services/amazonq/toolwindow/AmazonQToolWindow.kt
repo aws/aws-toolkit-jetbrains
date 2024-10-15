@@ -10,7 +10,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.ToolWindowManager
@@ -30,7 +29,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapte
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.EditorThemeAdapter
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
-import software.aws.toolkits.jetbrains.services.cwc.inline.listeners.InlineChatFileListener
 import javax.swing.JComponent
 
 @Service(Service.Level.PROJECT)
@@ -47,8 +45,6 @@ class AmazonQToolWindow private constructor(
     val component: JComponent = chatPanel.component
 
     private val appConnections = mutableListOf<AppConnection>()
-
-    private var listener : InlineChatFileListener? = null
 
     init {
         initConnections()
@@ -101,11 +97,6 @@ class AmazonQToolWindow private constructor(
                 messageTypeRegistry = connection.messageTypeRegistry,
                 fqnWebviewAdapter = fqnWebviewAdapter,
             )
-            if (listener == null) {
-                listener = InlineChatFileListener(initContext).apply {
-                    project.messageBus.connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this)
-                }
-            }
             // Connect the app to the UI
             connection.app.init(initContext)
             // Dispose of the app when the tool window is disposed.

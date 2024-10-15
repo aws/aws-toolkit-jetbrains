@@ -8,55 +8,55 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.fileEditor.TextEditor
-import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 
-class InlineChatFileListener(private val context: AmazonQAppInitContext) : FileEditorManagerListener {
-    private var currentEditor: Editor? = context.project.let { FileEditorManager.getInstance(it).selectedTextEditor }
+class InlineChatFileListener(project: Project) : FileEditorManagerListener {
+    private var currentEditor: Editor? = null
     private var caretListener: ChatCaretListener? = null
     private var selectionListener: InlineChatSelectionListener? = null
 
     init {
-        setupListenersForCurrentEditor()
+        val editor = project.let { FileEditorManager.getInstance(it).selectedTextEditor }
+        if (editor != null) {
+            setupListenersForEditor(editor)
+            currentEditor = editor
+        }
     }
 
     override fun selectionChanged(event: FileEditorManagerEvent) {
         val newEditor = (event.newEditor as? TextEditor)?.editor
-        if (newEditor != currentEditor) {
-            removeListenersFromCurrentEditor()
+        if (newEditor != null && newEditor != currentEditor) {
+            currentEditor?.let { removeListenersFromCurrentEditor(it) }
+            setupListenersForEditor(newEditor)
             currentEditor = newEditor
-            setupListenersForCurrentEditor()
         }
     }
 
-    private fun setupListenersForCurrentEditor() {
-        currentEditor?.let { editor ->
-            caretListener = editor.project?.let {
-                ChatCaretListener(it).also { listener ->
-                    editor.caretModel.addCaretListener(listener)
-                }
-            }
+    private fun setupListenersForEditor(editor: Editor) {
+        caretListener = ChatCaretListener().also { listener ->
+            editor.caretModel.addCaretListener(listener)
+        }
 
-            selectionListener = InlineChatSelectionListener().also { listener ->
-                editor.selectionModel.addSelectionListener(listener)
-            }
+        selectionListener = InlineChatSelectionListener().also { listener ->
+            editor.selectionModel.addSelectionListener(listener)
         }
     }
 
-    private fun removeListenersFromCurrentEditor() {
-        currentEditor?.let { editor ->
-            caretListener?.let { listener ->
-                editor.caretModel.removeCaretListener(listener)
-            }
-            selectionListener?.let { listener ->
-                editor.selectionModel.removeSelectionListener(listener)
-            }
+    private fun removeListenersFromCurrentEditor(editor: Editor) {
+        caretListener?.let { listener ->
+            editor.caretModel.removeCaretListener(listener)
+        }
+        selectionListener?.let { listener ->
+            editor.selectionModel.removeSelectionListener(listener)
+            listener.dispose()
         }
         caretListener = null
         selectionListener = null
     }
 
     fun dispose() {
-        removeListenersFromCurrentEditor()
+        currentEditor?.let { removeListenersFromCurrentEditor(it) }
         currentEditor = null
     }
 }

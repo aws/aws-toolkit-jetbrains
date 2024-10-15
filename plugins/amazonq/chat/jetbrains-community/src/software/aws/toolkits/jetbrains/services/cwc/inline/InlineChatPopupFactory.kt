@@ -20,7 +20,7 @@ import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.Te
 
 class InlineChatPopupFactory(
     private val editor: Editor,
-    private val submitHandler: suspend (String, String, Int) -> String,
+    private val submitHandler: suspend (String, String, Int, Editor) -> String,
     private val acceptHandler: () -> Unit,
     private val rejectHandler: () -> Unit,
     private val cancelHandler: () -> Unit,
@@ -65,7 +65,7 @@ class InlineChatPopupFactory(
                         val selectedLineStart = getSelectionStartLine(editor)
                         var errorMessage = ""
                         runBlocking {
-                            errorMessage = submitHandler(prompt, selectedCode, selectedLineStart)
+                            errorMessage = submitHandler(prompt, selectedCode, selectedLineStart, editor)
                         }
                         if (errorMessage.isNotEmpty()) {
                             setLabel(errorMessage)

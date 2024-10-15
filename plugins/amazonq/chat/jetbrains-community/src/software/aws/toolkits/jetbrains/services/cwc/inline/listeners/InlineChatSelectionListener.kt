@@ -3,38 +3,26 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.inline.listeners
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.event.SelectionEvent
 import com.intellij.openapi.editor.event.SelectionListener
 import software.aws.toolkits.jetbrains.services.cwc.inline.InlineChatEditorHint
 import java.awt.Point
 
-class InlineChatSelectionListener : SelectionListener {
-    private var inlineChatEditorHint: InlineChatEditorHint? = null
+class InlineChatSelectionListener : SelectionListener, Disposable {
+    private val inlineChatEditorHint = InlineChatEditorHint()
     override fun selectionChanged(e: SelectionEvent) {
         val editor = e.editor
         val selectionModel = editor.selectionModel
 
         if (selectionModel.hasSelection()) {
-            val selectionEnd = selectionModel.selectionEnd
-            val selectionLineEnd = editor.document.getLineEndOffset(editor.document.getLineNumber(selectionEnd))
-
-            val xyPosition = editor.offsetToXY(selectionLineEnd)
-            val editorLocation = editor.component.locationOnScreen
-            val editorContentLocation = editor.contentComponent.locationOnScreen
-            val position = Point(
-                editorContentLocation.x + xyPosition.x,
-                editorLocation.y + xyPosition.y - editor.scrollingModel.verticalScrollOffset - 50)
-
-            val visibleArea = editor.scrollingModel.visibleArea
-
-            val adjustedX = (position.x ).coerceAtMost(visibleArea.x + visibleArea.width - 50)
-            val adjustedY = (position.y ).coerceAtMost(visibleArea.y + visibleArea.height - 50)
-            val adjustedPosition = Point(adjustedX, adjustedY)
-
-            inlineChatEditorHint = editor.let { editor.project?.let { project -> InlineChatEditorHint(project, it) } }
-            inlineChatEditorHint?.show(adjustedPosition)
+            inlineChatEditorHint.show(editor)
         } else {
-            inlineChatEditorHint?.hide()
+            inlineChatEditorHint.hide()
         }
+    }
+
+    override fun dispose() {
+        inlineChatEditorHint.hide()
     }
 }

@@ -16,6 +16,8 @@ import com.intellij.openapi.command.UndoConfirmationPolicy
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.command.undo.BasicUndoableAction
 import com.intellij.openapi.command.undo.UndoManager
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.RangeMarker
@@ -23,6 +25,7 @@ import com.intellij.openapi.editor.markup.HighlighterLayer
 import com.intellij.openapi.editor.markup.HighlighterTargetArea
 import com.intellij.openapi.editor.markup.RangeHighlighter
 import com.intellij.openapi.editor.markup.TextAttributes
+import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupListener
@@ -69,6 +72,8 @@ import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileCon
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTriggerType
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.FileContextExtractor
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.util.LanguageExtractor
+import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextController
+import software.aws.toolkits.jetbrains.services.cwc.inline.listeners.InlineChatFileListener
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
@@ -77,9 +82,8 @@ import java.util.Stack
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 
-
+@Service(Service.Level.PROJECT)
 class InlineChatController(
-    private val editor: Editor,
     private val project: Project
 ) : Disposable {
     private var currentPopup: JBPopup? = null
@@ -94,6 +98,9 @@ class InlineChatController(
     private val isInProgress = AtomicBoolean(false)
     private var metrics: InlineChatMetrics? = null
     private var isPopupAborted = AtomicBoolean(true)
+    private var listener: InlineChatFileListener = InlineChatFileListener(project).apply {
+        project.messageBus.connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this)
+    }
 
     data class InlineChatMetrics(
         val requestId: String,
@@ -111,7 +118,7 @@ class InlineChatController(
         var charactersRemoved: Int? = null,
     )
 
-    private val popupSubmitHandler: suspend (String, String, Int) -> String = { prompt: String, selectedCode: String, selectedLineStart: Int ->
+    private val popupSubmitHandler: suspend (String, String, Int, Editor) -> String = { prompt: String, selectedCode: String, selectedLineStart: Int, editor: Editor ->
 //        val selectedCode = getSelectedText(editor)
         runBlocking {
             isInProgress.set(true)
@@ -162,7 +169,7 @@ class InlineChatController(
         metrics = null
     }
 
-    val diffAcceptHandler: () -> Unit = {
+    private val diffAcceptHandler: () -> Unit = {
         scope.launch(Dispatchers.EDT) {
             val undoManager = UndoManager.getGlobalInstance()
 //            undoManager.undoableActionPerformed()
@@ -180,7 +187,7 @@ class InlineChatController(
 
     }
 
-     val diffRejectHandler: () -> Unit = {
+     private val diffRejectHandler: () -> Unit = {
             scope.launch(Dispatchers.EDT) {
                 while (partialUndoActions.isNotEmpty()) {
                     val action = partialUndoActions.pop()
@@ -209,8 +216,7 @@ class InlineChatController(
     }
 
 
-    fun initPopup () {
-//        currentPopup?.dispose()
+    fun initPopup (editor: Editor) {
         currentPopup?.let { Disposer.dispose(it) }
         currentPopup = InlineChatPopupFactory(acceptHandler = diffAcceptHandler, rejectHandler = diffRejectHandler, editor = editor,
             telemetryHelper = telemetryHelper, submitHandler = popupSubmitHandler, cancelHandler = popupCancelHandler, scope = scope).createPopup()
@@ -248,7 +254,7 @@ class InlineChatController(
     }
 
 
-    fun hidePopup() {
+    private fun hidePopup() {
         isPopupAborted.set(false)
         currentPopup?.closeOk(null)
         currentPopup = null
@@ -391,10 +397,10 @@ class InlineChatController(
     }
 
 
-    private suspend fun insertNewLineIfNeeded(row: Int, document: Document) : Int {
+    private suspend fun insertNewLineIfNeeded(row: Int, editor: Editor) : Int {
         var newLineInserted = 0
-        while (row > document.lineCount - 1) {
-            insertString(document, document.textLength, "\n")
+        while (row > editor.document.lineCount - 1) {
+            insertString(editor, editor.document.textLength, "\n")
             newLineInserted++
         }
         return newLineInserted
@@ -444,13 +450,13 @@ class InlineChatController(
         }
     }
 
-    private suspend fun insertString(document: Document, offset: Int, text: String) : RangeMarker {
+    private suspend fun insertString(editor: Editor, offset: Int, text: String) : RangeMarker {
         var rangeMarker: RangeMarker? = null
         val action = {
-            document.insertString(offset, text)
+            editor.document.insertString(offset, text)
 //            CodeStyleManager.getInstance(project).adjustLineIndent(document, offset)
-            val row = document.getLineNumber(offset)
-            rangeMarker = document.createRangeMarker(offset, getLineEndOffset(document, row))
+            val row = editor.document.getLineNumber(offset)
+            rangeMarker = editor.document.createRangeMarker(offset, getLineEndOffset(editor.document, row))
             highlightCodeWithBackgroundColor(editor, rangeMarker!!.startOffset, rangeMarker!!.endOffset, true)
         }
         runChangeAction(project, action)
@@ -464,10 +470,10 @@ class InlineChatController(
         runChangeAction(project, action)
     }
 
-    private suspend fun highlightString(document: Document, start: Int, end: Int, isInsert: Boolean) : RangeMarker {
+    private suspend fun highlightString(editor: Editor, start: Int, end: Int, isInsert: Boolean) : RangeMarker {
         var rangeMarker: RangeMarker? = null
         val action = {
-            rangeMarker = document.createRangeMarker(start, end)
+            rangeMarker = editor.document.createRangeMarker(start, end)
             highlightCodeWithBackgroundColor(editor, rangeMarker!!.startOffset, rangeMarker!!.endOffset, isInsert)
         }
         runChangeAction(project, action)
@@ -480,7 +486,7 @@ class InlineChatController(
             DiffRow.Tag.DELETE -> {
                 val changeStartOffset = getLineStartOffset(document, row)
                 val changeEndOffset = getLineEndOffset(document, row)
-                val rangeMarker = highlightString(document, changeStartOffset, changeEndOffset, false)
+                val rangeMarker = highlightString(editor, changeStartOffset, changeEndOffset, false)
                 partialUndoActions.add {
                     editor.markupModel.removeAllHighlighters()
                 }
@@ -495,10 +501,10 @@ class InlineChatController(
             }
 
             DiffRow.Tag.INSERT -> {
-                val newLineInserted = insertNewLineIfNeeded(row, document)
+                val newLineInserted = insertNewLineIfNeeded(row, editor)
                 val insertOffset = getLineStartOffset(document, row)
                 val textToInsert =  unescape(diffRow.newLine) + "\n"
-                val rangeMarker = insertString(document, insertOffset, textToInsert)
+                val rangeMarker = insertString(editor, insertOffset, textToInsert)
                 partialUndoActions.add {
                     if (rangeMarker.isValid) {
                         scope.launch(Dispatchers.EDT) {
@@ -515,7 +521,7 @@ class InlineChatController(
             else -> {
                 val changeOffset = getLineStartOffset(document, row)
                 val changeEndOffset = getLineEndOffset(document, row)
-                val oldTextRangeMarker = highlightString(document, changeOffset, changeEndOffset, false)
+                val oldTextRangeMarker = highlightString(editor, changeOffset, changeEndOffset, false)
                 partialAcceptActions.add {
                     scope.launch(Dispatchers.EDT) {
                             if (oldTextRangeMarker.isValid) {
@@ -525,9 +531,9 @@ class InlineChatController(
                     editor.markupModel.removeAllHighlighters()
                 }
                 val insertOffset = getLineEndOffset(document, row)
-                val newLineInserted = insertNewLineIfNeeded(row, document)
+                val newLineInserted = insertNewLineIfNeeded(row, editor)
                 val textToInsert = unescape(diffRow.newLine) + "\n"
-                val newTextRangeMarker = insertString(document, insertOffset, textToInsert)
+                val newTextRangeMarker = insertString(editor, insertOffset, textToInsert)
                 partialUndoActions.add {
                     WriteCommandAction.runWriteCommandAction(project) {
                         if (newTextRangeMarker.isValid) {
@@ -637,6 +643,7 @@ class InlineChatController(
     }
 
     companion object {
+        fun getInstance(project: Project) = project.service<InlineChatController>()
         private val logger = getLogger<InlineChatController>()
     }
 

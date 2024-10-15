@@ -22,6 +22,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhisp
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextController
 import java.lang.management.ManagementFactory
 import java.time.Duration
+import software.aws.toolkits.jetbrains.services.cwc.inline.InlineChatController
 import java.util.concurrent.atomic.AtomicBoolean
 
 class AmazonQStartupActivity : ProjectActivity {
@@ -32,6 +33,7 @@ class AmazonQStartupActivity : ProjectActivity {
 
         // initialize html contents in BGT so users don't have to wait when they open the tool window
         AmazonQToolWindow.getInstance(project)
+        InlineChatController.getInstance(project)
 
         if (CodeWhispererExplorerActionManager.getInstance().getIsFirstRestartAfterQInstall()) {
             runInEdt {

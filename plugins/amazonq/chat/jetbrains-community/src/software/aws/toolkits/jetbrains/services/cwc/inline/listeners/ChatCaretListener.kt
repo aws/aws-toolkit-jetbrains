@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.cwc.inline.listeners
+
 import com.intellij.ide.DataManager
-import com.intellij.openapi.actionSystem.ActionGroup
-import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.Presentation
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
 import com.intellij.openapi.editor.markup.GutterIconRenderer
@@ -14,26 +15,16 @@ import com.intellij.openapi.editor.markup.HighlighterLayer
 import com.intellij.openapi.editor.markup.HighlighterTargetArea
 import com.intellij.openapi.editor.markup.MarkupModel
 import com.intellij.openapi.editor.markup.RangeHighlighter
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.project.Project
 import icons.AwsIcons
+import software.aws.toolkits.jetbrains.services.cwc.inline.InlineChatGutterIconRenderer
 import software.aws.toolkits.jetbrains.services.cwc.inline.OpenChatInputAction
-import javax.swing.Icon
 
-class ChatCaretListener(private val project: Project) : CaretListener {
+class ChatCaretListener : CaretListener {
     private var currentHighlighter: RangeHighlighter? = null
-    init {
-        val editor = FileEditorManager.getInstance(project).selectedTextEditor
-        editor?.caretModel?.addCaretListener(this)
-    }
 
-    override fun caretPositionChanged(event: CaretEvent) {
-        val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return
-        val lineNumber = event.newPosition.line
-        val startOffset = editor.document.getLineStartOffset(lineNumber)
-        val endOffset = editor.document.getLineEndOffset(lineNumber)
-        val markupModel: MarkupModel = editor.markupModel
-        val gutterIconRenderer = ChatGutterIconRenderer(AwsIcons.Logos.AWS_Q_GREY).apply {
+
+    private fun createGutterIconRenderer(editor: Editor):  GutterIconRenderer{
+        return InlineChatGutterIconRenderer(AwsIcons.Logos.AWS_Q_GREY).apply {
             setClickAction {
                 val action = OpenChatInputAction()
                 val dataContext = DataManager.getInstance().getDataContext(editor.component)
@@ -45,6 +36,14 @@ class ChatCaretListener(private val project: Project) : CaretListener {
                 action.actionPerformed(e)
             }
         }
+    }
+
+    override fun caretPositionChanged(event: CaretEvent) {
+        val editor = event.editor
+        val lineNumber = event.newPosition.line
+        val startOffset = editor.document.getLineStartOffset(lineNumber)
+        val endOffset = editor.document.getLineEndOffset(lineNumber)
+        val markupModel: MarkupModel = editor.markupModel
 
         if (event.oldPosition.line != event.newPosition.line) {
             currentHighlighter?.let {
@@ -59,41 +58,8 @@ class ChatCaretListener(private val project: Project) : CaretListener {
                     HighlighterTargetArea.LINES_IN_RANGE
                 )
                 currentHighlighter = highlighter
-                highlighter.gutterIconRenderer = gutterIconRenderer
+                highlighter.gutterIconRenderer = createGutterIconRenderer(editor)
             }
         }
     }
 }
-
-private class ChatGutterIconRenderer(private val icon: Icon) : GutterIconRenderer() {
-    private var clickAction: (() -> Unit)? = null
-    override fun equals(other: Any?): Boolean {
-        if (other is ChatGutterIconRenderer) {
-            return icon == other.icon
-        }
-        return false
-    }
-
-    override fun hashCode(): Int = icon.hashCode()
-
-    override fun getIcon(): Icon = icon
-
-    override fun getTooltipText(): String = "Ask Amazon Q"
-
-    override fun isNavigateAction(): Boolean = false
-
-    override fun getClickAction(): AnAction = object : AnAction() {
-        // bring up the chat inputbox
-        override fun actionPerformed(e: AnActionEvent) = clickAction?.invoke() ?: Unit
-        override fun update(e: AnActionEvent) = Unit
-    }
-
-    fun setClickAction (action: () -> Unit) {
-        clickAction = action
-    }
-
-    override fun getPopupMenuActions(): ActionGroup? = null
-
-    override fun getAlignment(): Alignment = Alignment.LEFT
-}
-

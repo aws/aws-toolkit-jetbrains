@@ -16,8 +16,8 @@ class OpenChatInputAction  : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         e.editor?.let { editor ->
             e.editor?.project?.let { project ->
-                inlineChatController = InlineChatController(editor, project)
-                inlineChatController?.initPopup()
+                inlineChatController = InlineChatController.getInstance(project)
+                inlineChatController?.initPopup(editor)
 
                 caretListener = createCaretListener(editor)
                 editor.caretModel.addCaretListener(caretListener!!)
