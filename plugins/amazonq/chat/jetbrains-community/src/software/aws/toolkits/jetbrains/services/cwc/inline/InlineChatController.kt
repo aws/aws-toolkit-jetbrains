@@ -98,7 +98,7 @@ class InlineChatController(
     private val isInProgress = AtomicBoolean(false)
     private var metrics: InlineChatMetrics? = null
     private var isPopupAborted = AtomicBoolean(true)
-    private var listener: InlineChatFileListener = InlineChatFileListener(project).apply {
+    private val listener: InlineChatFileListener = InlineChatFileListener(project).apply {
         project.messageBus.connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this)
     }
 
@@ -139,6 +139,7 @@ class InlineChatController(
             ApplicationManager.getApplication().executeOnPooledThread {
                 recordInlineChatTelemetry(InlineChatUserDecision.DISMISS)
             }
+            currentPopup?.dispose()
         }
     }
 
@@ -219,7 +220,7 @@ class InlineChatController(
     fun initPopup (editor: Editor) {
         currentPopup?.let { Disposer.dispose(it) }
         currentPopup = InlineChatPopupFactory(acceptHandler = diffAcceptHandler, rejectHandler = diffRejectHandler, editor = editor,
-            telemetryHelper = telemetryHelper, submitHandler = popupSubmitHandler, cancelHandler = popupCancelHandler, scope = scope).createPopup()
+            telemetryHelper = telemetryHelper, submitHandler = popupSubmitHandler, cancelHandler = popupCancelHandler).createPopup(scope)
         addPopupListeners(currentPopup!!)
         Disposer.register(this, currentPopup!!)
         isPopupAborted.set(true)

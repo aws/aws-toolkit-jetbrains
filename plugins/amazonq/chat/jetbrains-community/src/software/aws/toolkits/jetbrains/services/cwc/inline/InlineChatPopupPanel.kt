@@ -13,32 +13,44 @@ import com.intellij.openapi.editor.actionSystem.EditorActionManager
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.IdeBorderFactory
+import icons.AwsIcons
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_BUTTON_BORDER
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.POPUP_INFO_TEXT_SIZE
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.Font
 import javax.swing.BorderFactory
+import javax.swing.Icon
 import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTextField
-import javax.swing.event.DocumentEvent
-import javax.swing.event.DocumentListener
+import javax.swing.SwingConstants
 
-class InlineChatPopupPanel : JPanel(), Disposable {
+class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() {
+    private var submitClickListener: (() -> Unit)? = null
+
     val textField = JTextField().apply {
         val editorColorsScheme = EditorColorsManager.getInstance().globalScheme
+        preferredSize = Dimension(550, 35)
         border = IdeBorderFactory.createRoundedBorder().apply {
             setColor(POPUP_BUTTON_BORDER)
         }
         font = Font(editorColorsScheme.editorFontName, Font.PLAIN, editorColorsScheme.editorFontSize)
     }
-    val submitButton = JButton("Send").apply {
-        border = IdeBorderFactory.createRoundedBorder().apply {
-            setColor(POPUP_BUTTON_BORDER)
-        }
+
+    val submitButton = createButtonWithIcon(AwsIcons.Resources.InlineChat.CONFIRM, "Confirm")
+
+    private val cancelButton = createButtonWithIcon(AwsIcons.Resources.InlineChat.CANCEL, "Cancel").apply {
+        addActionListener { Disposer.dispose(parentDisposable) }
     }
+
+    private val buttonsPanel = JPanel(BorderLayout()).apply {
+        border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
+//        preferredSize = Dimension(180, 40)
+        add(submitButton, BorderLayout.WEST)
+        add(cancelButton, BorderLayout.EAST)
+    }
+
     private val acceptButton = JButton("Accept").apply {
         preferredSize = Dimension(80, 30)
         border = IdeBorderFactory.createRoundedBorder().apply {
@@ -51,8 +63,7 @@ class InlineChatPopupPanel : JPanel(), Disposable {
             setColor(POPUP_BUTTON_BORDER)
         }
     }
-    private var textChangeListener: ((String) -> Unit)? = null
-    private var submitClickListener: (() -> Unit)? = null
+//    private var submitClickListener: (() -> Unit)? = null
     private val textLabel = JLabel("").apply {
         val editorColorsScheme = EditorColorsManager.getInstance().globalScheme
             font = Font(editorColorsScheme.editorFontName, Font.PLAIN, editorColorsScheme.editorFontSize)
@@ -64,66 +75,83 @@ class InlineChatPopupPanel : JPanel(), Disposable {
         add(rejectButton, BorderLayout.EAST)
     }
     private val inputPanel = JPanel(BorderLayout()).apply {
-        border = BorderFactory.createEmptyBorder(12, 10, 12, 10)
-        maximumSize = Dimension(580, 30)
+        border = BorderFactory.createEmptyBorder(10, 10, 5, 10)
+        preferredSize = Dimension(600, 50)
+//        maximumSize = Dimension(580, 50)
     }
     private val labelPanel = JPanel(BorderLayout()).apply {
         border = BorderFactory.createEmptyBorder(5, 20, 5, 20)
         add(textLabel, BorderLayout.CENTER)
     }
 
+    private val logoPanel = JPanel(BorderLayout()).apply {
+        border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
+//        preferredSize = Dimension(180, 40)
+        val logoLabel = JLabel("Edit Code", AwsIcons.Logos.AWS_Q_GREY, SwingConstants.RIGHT).apply {
+            font = font.deriveFont(14f)
+        }
+        add(logoLabel, BorderLayout.CENTER)
+    }
+
+    private val bottomPanel = JPanel(BorderLayout()).apply {
+        add(logoPanel, BorderLayout.WEST)
+        add(buttonsPanel, BorderLayout.EAST)
+//        preferredSize = Dimension(650, 40)
+    }
+
     override fun getPreferredSize(): Dimension {
-        return Dimension(600, 60)
+        return Dimension(600, 90)
+    }
+
+    private fun createButtonWithIcon(icon: Icon, text: String): JButton {
+        return JButton(text).apply {
+            horizontalTextPosition = SwingConstants.LEFT
+            preferredSize = Dimension(80, 30)
+            setIcon(icon)
+            isOpaque = false
+            isContentAreaFilled = false
+            isBorderPainted = false
+            font = font.deriveFont(14f)
+        }
     }
 
     init {
         layout = BorderLayout()
-        inputPanel.add(submitButton, BorderLayout.EAST)
-        inputPanel.add(textField, BorderLayout.WEST)
-        textField.preferredSize = Dimension(500, 30)
-        submitButton.preferredSize = Dimension(60, 30)
-        inputPanel.preferredSize = Dimension(600, 30)
+        inputPanel.add(textField, BorderLayout.CENTER)
+        inputPanel.preferredSize = Dimension(600, 50)
         add(inputPanel, BorderLayout.CENTER)
-        val listener = object : DocumentListener {
-            override fun insertUpdate(e: DocumentEvent) {
-                updateText()
-            }
-
-            override fun removeUpdate(e: DocumentEvent) {
-                updateText()
-            }
-
-            override fun changedUpdate(e: DocumentEvent) {
-                updateText()
-            }
-
-            private fun updateText() {
-                val newText = textField.text
-                textChangeListener?.invoke(newText)
-            }
-        }
-        textField.document.addDocumentListener(listener)
+        add(bottomPanel, BorderLayout.SOUTH)
 
         submitButton.addActionListener {
             submitClickListener?.invoke()
         }
     }
 
-    fun setTextChangeListener(listener: (String) -> Unit) {
-        textChangeListener = listener
-    }
-
     fun setSubmitClickListener(listener: () -> Unit) {
         submitClickListener = listener
     }
 
-    private fun addActionListener(id: String, action: EditorActionHandler) : Disposable {
+    fun setCancelClickListener(listener: () -> Unit) {
+        cancelButton.addActionListener { listener.invoke() }
+    }
+
+    private fun addActionListener(id: String, action: EditorActionHandler) {
         val actionManager = EditorActionManager.getInstance()
         val originalHandler = actionManager.getActionHandler(id)
 
         actionManager.setActionHandler(id, action)
         val restorer = Disposable { actionManager.setActionHandler(id, originalHandler) }
-        return restorer
+        Disposer.register(parentDisposable, restorer)
+    }
+
+    private fun getEditorActionHandler(action: () -> Unit) : EditorActionHandler {
+        val  handler = object : EditorActionHandler() {
+            override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
+                action.invoke()
+                Disposer.dispose(parentDisposable)
+            }
+        }
+        return handler
     }
 
     fun addCodeActionsPanel(acceptAction: () -> Unit, rejectAction: () -> Unit ) {
@@ -133,25 +161,11 @@ class InlineChatPopupPanel : JPanel(), Disposable {
         acceptButton.addActionListener { acceptAction.invoke() }
         rejectButton.addActionListener { rejectAction.invoke() }
         add(actionsPanel, BorderLayout.SOUTH)
-        val enterHandler = object : EditorActionHandler() {
-            override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
-                acceptAction.invoke()
-                Disposer.dispose(this@InlineChatPopupPanel)
-            }
-        }
+        val enterHandler = getEditorActionHandler(acceptAction)
+        addActionListener(IdeActions.ACTION_EDITOR_ENTER, enterHandler)
 
-        val enterRestorer = addActionListener(IdeActions.ACTION_EDITOR_ENTER, enterHandler)
-        Disposer.register(this, enterRestorer)
-
-        val escapeHandler = object : EditorActionHandler() {
-            override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
-                rejectAction.invoke()
-                Disposer.dispose(this@InlineChatPopupPanel)
-            }
-        }
-
-        val escapeRestorer = addActionListener(IdeActions.ACTION_EDITOR_ESCAPE, escapeHandler)
-        Disposer.register(this, escapeRestorer)
+        val escapeHandler = getEditorActionHandler(rejectAction)
+        addActionListener(IdeActions.ACTION_EDITOR_ESCAPE, escapeHandler)
         revalidate()
     }
 
@@ -159,11 +173,8 @@ class InlineChatPopupPanel : JPanel(), Disposable {
         textLabel.text = text
         textLabel.revalidate()
         remove(inputPanel)
+        remove(bottomPanel)
         add(labelPanel)
         revalidate()
-    }
-
-    override fun dispose() {
-        TODO("Not yet implemented")
     }
 }

@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.cwc.inline
 
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.ui.popup.IconButton
@@ -12,6 +13,7 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.TextRange
 import com.intellij.ui.IdeBorderFactory
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_BUTTON_BORDER
@@ -25,8 +27,8 @@ class InlineChatPopupFactory(
     private val rejectHandler: () -> Unit,
     private val cancelHandler: () -> Unit,
     private val telemetryHelper: TelemetryHelper,
-    private val scope: CoroutineScope
-) {
+//    private val scope: CoroutineScope
+) : Disposable {
 
     private fun getSelectedText(editor: Editor): String {
         return ReadAction.compute<String, Throwable> {
@@ -46,8 +48,8 @@ class InlineChatPopupFactory(
         }
     }
 
-    fun createPopup(): JBPopup {
-        val popupPanel = InlineChatPopupPanel().apply {
+    fun createPopup(scope: CoroutineScope): JBPopup {
+        val popupPanel = InlineChatPopupPanel(this).apply {
             border = IdeBorderFactory.createRoundedBorder(10).apply {
                 setColor(POPUP_BUTTON_BORDER)
             }
@@ -80,8 +82,6 @@ class InlineChatPopupFactory(
                             addCodeActionsPanel(acceptAction , rejectAction)
                         }
                     }
-                } else {
-                    // TODO: show some message here
                 }
             }
             setSubmitClickListener(submitListener)
@@ -122,6 +122,10 @@ class InlineChatPopupFactory(
             .setLocateWithinScreenBounds(true)
             .createPopup()
         return popup
+    }
+
+    override fun dispose() {
+        cancelHandler.invoke()
     }
 }
 
