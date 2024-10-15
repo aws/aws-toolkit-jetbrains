@@ -41,7 +41,6 @@ interface ConfigFilesFacade {
     fun updateSectionInConfig(sectionName: String, profile: Profile)
 
     fun deleteSsoConnectionFromConfig(sessionName: String)
-    fun deleteSsoProfileScopesFromConfig(sessionName: String)
 }
 
 class DefaultConfigFilesFacade(
@@ -190,31 +189,6 @@ class DefaultConfigFilesFacade(
         val updatedArray = lines.subList(0, ssoHeaderLine) + lines.subList(endIndex, lines.size)
         val profileHeaderLine = getCorrespondingSsoSessionProfilePosition(updatedArray, sessionName)
         filePath.writeText(profileHeaderLine.joinToString("\n"))
-
-        val applicationManager = ApplicationManager.getApplication()
-        if (applicationManager != null && !applicationManager.isUnitTestMode) {
-            FileDocumentManager.getInstance().saveAllDocuments()
-            ProfileWatcher.getInstance().forceRefresh()
-        }
-    }
-
-    override fun deleteSsoProfileScopesFromConfig(sessionName: String) {
-        val filePath = configPath
-        val lines = filePath.inputStreamIfExists()?.reader()?.readLines().orEmpty().toMutableList()
-        val ssoHeaderLine = lines.indexOfFirst { it.startsWith("[${SsoSessionConstants.SSO_SESSION_SECTION_NAME} $sessionName]") }
-        if (ssoHeaderLine == -1) return
-        val nextHeaderLine = lines.subList(ssoHeaderLine + 1, lines.size).indexOfFirst { it.startsWith("[") }
-        val endIndex = if (nextHeaderLine == -1) lines.size else ssoHeaderLine + nextHeaderLine + 1
-
-        // Find and remove the sso_registration_scopes line
-        for (i in ssoHeaderLine until endIndex) {
-            if (lines[i].trim().startsWith("sso_registration_scopes=")) {
-                lines.removeAt(i)
-                break
-            }
-        }
-
-        filePath.writeText(lines.joinToString("\n"))
 
         val applicationManager = ApplicationManager.getApplication()
         if (applicationManager != null && !applicationManager.isUnitTestMode) {

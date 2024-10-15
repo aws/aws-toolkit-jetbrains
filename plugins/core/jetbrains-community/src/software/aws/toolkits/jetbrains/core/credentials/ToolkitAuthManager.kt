@@ -203,15 +203,9 @@ fun loginSso(
 
 @Suppress("UnusedParameter")
 fun logoutFromSsoConnection(project: Project?, connection: AwsBearerTokenConnection, callback: () -> Unit = {}) {
-    try {
-        ToolkitAuthManager.getInstance().deleteConnection(connection.id)
-        ProfileWatcher.getInstance().forceRefresh()
-        if (connection is ProfileSsoManagedBearerSsoConnection) {
-            deleteSsoConnection(connection)
-        }
-    } finally {
-        callback()
-    }
+    ToolkitAuthManager.getInstance().deleteConnection(connection.id)
+    ProfileWatcher.getInstance().forceRefresh()
+    callback()
 }
 
 fun lazyGetUnauthedBearerConnections() =
@@ -340,7 +334,7 @@ fun deleteSsoConnection(connection: ProfileSsoManagedBearerSsoConnection) =
 fun deleteSsoConnection(connection: CredentialIdentifier) =
     deleteSsoConnection(getSsoSessionProfileNameFromCredentials(connection))
 
-fun deleteSsoConnection(sessionName: String) = DefaultConfigFilesFacade().deleteSsoProfileScopesFromConfig(sessionName)
+fun deleteSsoConnection(sessionName: String) = DefaultConfigFilesFacade().deleteSsoConnectionFromConfig(sessionName)
 
 private fun getSsoSessionProfileNameFromCredentials(connection: CredentialIdentifier): String {
     connection as ProfileCredentialsIdentifierSso
