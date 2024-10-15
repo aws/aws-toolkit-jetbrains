@@ -15,6 +15,7 @@ jobs:
   qodana:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       # PR check
       checks: write
       # PR comments
