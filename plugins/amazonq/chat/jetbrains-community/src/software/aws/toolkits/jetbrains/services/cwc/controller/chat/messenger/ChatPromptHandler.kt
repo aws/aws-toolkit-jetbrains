@@ -33,7 +33,8 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
     private val codeReferences = mutableListOf<CodeReference>()
     private var requestId: String = ""
     private var statusCode: Int = 0
-    private var codeBlockLanguage: String = "plaintext"
+    private val defaultTestGenResponseLanguage: String = "plaintext"
+    private var codeBlockLanguage: String = defaultTestGenResponseLanguage
 
     companion object {
         private val CODE_BLOCK_PATTERN = Regex("<pre>\\s*<code")
@@ -148,18 +149,18 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
         // This fulfills both the cases of unit test generation(java, python) and general use case(Non java and Non python) languages.
         val codeBlockStart = message.indexOf("```")
         if (codeBlockStart == -1) {
-            return "plaintext"
+            return defaultTestGenResponseLanguage
         }
 
         val languageStart = codeBlockStart + 3
         val languageEnd = message.indexOf('\n', languageStart)
 
         if (languageEnd == -1) {
-            return "plaintext"
+            return defaultTestGenResponseLanguage
         }
 
         val language = message.substring(languageStart, languageEnd).trim()
-        return if (language.isNotEmpty()) language else "plaintext"
+        return if (language.isNotEmpty()) language else defaultTestGenResponseLanguage
     }
 
     private fun processChatEvent(
@@ -228,7 +229,7 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
             } else {
                 responseText.toString()
             }
-            if (codeBlockLanguage == "plaintext") {
+            if (codeBlockLanguage == defaultTestGenResponseLanguage) {
                 // To get the language of generated code in Q chat.
                 codeBlockLanguage = extractCodeBlockLanguage(message)
             }

@@ -692,10 +692,6 @@
                 {
                     "type": "cwsprChatHasProjectContext",
                     "required": false
-                },
-                {
-                    "type": "cwsprChatProgrammingLanguage",
-                    "required": false
                 }
             ]
         },
