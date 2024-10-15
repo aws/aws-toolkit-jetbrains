@@ -100,11 +100,6 @@
             "description": "Cpu usage of LSP server"
         },
         {
-            "name": "cwsprChatProgrammingLanguage",
-            "type": "string",
-            "description": "Programming language associated with the message"
-        },
-        {
             "name": "cwsprChatConversationType",
             "type": "string",
             "allowedValues": [
