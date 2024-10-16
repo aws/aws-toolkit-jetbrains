@@ -142,12 +142,10 @@ object IdeVersions {
         Profile(
             name = "2024.3",
             gateway = ProductProfile(
-                sdkFlavor = IdeFlavor.GW,
                 sdkVersion = "243.19420-EAP-CANDIDATE-SNAPSHOT",
                 bundledPlugins = listOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
-                sdkFlavor = IdeFlavor.IC,
                 sdkVersion = "243.19420-EAP-CANDIDATE-SNAPSHOT",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
@@ -161,7 +159,6 @@ object IdeVersions {
                 )
             ),
             ultimate = ProductProfile(
-                sdkFlavor = IdeFlavor.IU,
                 sdkVersion = "243.19420-EAP-CANDIDATE-SNAPSHOT",
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
