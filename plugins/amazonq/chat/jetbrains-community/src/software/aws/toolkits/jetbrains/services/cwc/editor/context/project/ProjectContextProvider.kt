@@ -162,7 +162,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         logger.debug { "project context index time: ${duration}ms" }
         if (connection.responseCode == 200) {
             val usage = getUsage()
-            TelemetryHelper.recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, true, usage?.memoryUsage, usage?.cpuUsage, startUrl)
+            TelemetryHelper.recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, true, usage?.memoryUsage?.div(1024 * 1024), usage?.cpuUsage, startUrl)
             logger.debug { "project context index finished for ${project.name}" }
             return true
         } else {
