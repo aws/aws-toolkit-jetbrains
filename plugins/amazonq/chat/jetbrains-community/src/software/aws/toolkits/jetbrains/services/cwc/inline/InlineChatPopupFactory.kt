@@ -59,7 +59,7 @@ class InlineChatPopupFactory(
                 textField.isEnabled = false
                 val prompt = textField.text
                 if (prompt.isNotBlank()) {
-                    setLabel("AmazonQ generating...")
+                    setLabel("Generating...")
                     revalidate()
 
                     scope.launch {
@@ -70,7 +70,7 @@ class InlineChatPopupFactory(
                             errorMessage = submitHandler(prompt, selectedCode, selectedLineStart, editor)
                         }
                         if (errorMessage.isNotEmpty()) {
-                            setLabel(errorMessage)
+                            setErrorMessage(errorMessage)
                             revalidate()
                         } else {
                             val acceptAction = {

@@ -6,6 +6,7 @@ import com.intellij.codeInsight.hint.HintManager
 import com.intellij.codeInsight.hint.HintManagerImpl
 import com.intellij.codeInsight.hint.HintUtil
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.ui.LightweightHint
 import com.intellij.ui.SimpleColoredText
 import com.intellij.ui.SimpleTextAttributes
@@ -48,12 +49,17 @@ class InlineChatEditorHint {
         val coloredText =
             SimpleColoredText("Edit", SimpleTextAttributes.REGULAR_ATTRIBUTES)
 
-        val shortCutIcon = AwsIcons.Misc.AWS_Q_INLINECHAT_SHORTCUT
+        coloredText.appendToComponent(component)
         val shortcutComponent = HintUtil.createInformationComponent()
-        shortcutComponent.isIconOnTheRight = true;
-        shortcutComponent.icon = shortCutIcon
-
-        coloredText.appendToComponent(shortcutComponent)
+        if (!SystemInfo.isWindows) {
+            val shortCutIcon = AwsIcons.Misc.AWS_Q_INLINECHAT_SHORTCUT
+            shortcutComponent.isIconOnTheRight = true;
+            shortcutComponent.icon = shortCutIcon
+        } else {
+            val shortcutText =
+                SimpleColoredText("(Ctrl + I)", SimpleTextAttributes.REGULAR_ATTRIBUTES)
+            shortcutText.appendToComponent(shortcutComponent)
+        }
 
         val panel = JPanel(BorderLayout()).apply {
             add(component, BorderLayout.WEST)

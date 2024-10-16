@@ -131,6 +131,7 @@ object AwsIcons {
         object InlineChat {
             @JvmField val CONFIRM = load("/icons/resources/inlinechat/amazonq_inline_chat_confirm_icon.svg")
             @JvmField val CANCEL = load("/icons/resources/inlinechat/amazonq_inline_chat_cancel_icon.svg")
+            @JvmField val REJECT = load("/icons/resources/inlinechat/amazonq_inline_chat_reject.svg")
         }
     }
 
