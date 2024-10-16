@@ -11,6 +11,7 @@ import com.intellij.ui.LightweightHint
 import com.intellij.ui.SimpleColoredText
 import com.intellij.ui.SimpleTextAttributes
 import icons.AwsIcons
+import software.aws.toolkits.resources.AmazonQBundle.message
 import java.awt.BorderLayout
 import java.awt.Point
 import javax.swing.JPanel
@@ -18,6 +19,7 @@ import javax.swing.JPanel
 
 class InlineChatEditorHint {
     private val hint = createHint()
+    private val HINT_BUFFER = 50
 
     private fun getHintLocation (editor: Editor): Point {
         val selectionModel = editor.selectionModel
@@ -29,12 +31,12 @@ class InlineChatEditorHint {
         val editorContentLocation = editor.contentComponent.locationOnScreen
         val position = Point(
             editorContentLocation.x + xyPosition.x,
-            editorLocation.y + xyPosition.y - editor.scrollingModel.verticalScrollOffset - 50)
+            editorLocation.y + xyPosition.y - editor.scrollingModel.verticalScrollOffset - HINT_BUFFER)
 
         val visibleArea = editor.scrollingModel.visibleArea
 
-        val adjustedX = (position.x ).coerceAtMost(visibleArea.x + visibleArea.width - 50)
-        val adjustedY = (position.y ).coerceAtMost(visibleArea.y + visibleArea.height - 50)
+        val adjustedX = (position.x ).coerceAtMost(visibleArea.x + visibleArea.width - HINT_BUFFER)
+        val adjustedY = (position.y ).coerceAtMost(visibleArea.y + visibleArea.height - HINT_BUFFER)
         val adjustedPosition = Point(adjustedX, adjustedY)
 
         return adjustedPosition
@@ -47,7 +49,7 @@ class InlineChatEditorHint {
         component.isIconOnTheRight = false;
         component.icon = icon
         val coloredText =
-            SimpleColoredText("Edit", SimpleTextAttributes.REGULAR_ATTRIBUTES)
+            SimpleColoredText(message("amazonqInlineChat.hint.edit"), SimpleTextAttributes.REGULAR_ATTRIBUTES)
 
         coloredText.appendToComponent(component)
         val shortcutComponent = HintUtil.createInformationComponent()
@@ -57,7 +59,7 @@ class InlineChatEditorHint {
             shortcutComponent.icon = shortCutIcon
         } else {
             val shortcutText =
-                SimpleColoredText("(Ctrl + I)", SimpleTextAttributes.REGULAR_ATTRIBUTES)
+                SimpleColoredText(message("amazonqInlineChat.hint.windows.shortCut"), SimpleTextAttributes.REGULAR_ATTRIBUTES)
             shortcutText.appendToComponent(shortcutComponent)
         }
 
@@ -79,7 +81,7 @@ class InlineChatEditorHint {
             hint, editor, location,
             HintManager.HIDE_BY_TEXT_CHANGE or HintManager.HIDE_BY_SCROLLING,
             0, false,
-            HintManagerImpl.createHintHint(editor, location, hint!!, HintManager.RIGHT_UNDER).setContentActive(false)
+            HintManagerImpl.createHintHint(editor, location, hint, HintManager.RIGHT_UNDER).setContentActive(false)
         )
     }
 

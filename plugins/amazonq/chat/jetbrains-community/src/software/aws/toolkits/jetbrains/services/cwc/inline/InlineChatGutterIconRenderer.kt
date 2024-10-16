@@ -7,6 +7,7 @@ import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.editor.markup.GutterIconRenderer
+import software.aws.toolkits.resources.AmazonQBundle.message
 import javax.swing.Icon
 
 class InlineChatGutterIconRenderer (private val icon: Icon) : GutterIconRenderer() {
@@ -22,7 +23,7 @@ class InlineChatGutterIconRenderer (private val icon: Icon) : GutterIconRenderer
 
     override fun getIcon(): Icon = icon
 
-    override fun getTooltipText(): String = "Amazon Q"
+    override fun getTooltipText(): String = message("amazonqInlineChat.gutter.tooltip")
 
     override fun isNavigateAction(): Boolean = false
 

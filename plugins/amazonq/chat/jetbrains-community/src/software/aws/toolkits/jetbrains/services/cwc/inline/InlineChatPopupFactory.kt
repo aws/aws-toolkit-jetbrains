@@ -12,10 +12,13 @@ import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.TextRange
 import com.intellij.ui.IdeBorderFactory
+import com.intellij.ui.awt.RelativePoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_BUTTON_BORDER
+import software.aws.toolkits.resources.AmazonQBundle.message
+import java.awt.Point
 
 
 class InlineChatPopupFactory(
@@ -55,7 +58,7 @@ class InlineChatPopupFactory(
                 textField.isEnabled = false
                 val prompt = textField.text
                 if (prompt.isNotBlank()) {
-                    setLabel("Generating...")
+                    setLabel(message("amazonqInlineChat.popup.generating"))
                     revalidate()
 
                     scope.launch {
@@ -83,9 +86,29 @@ class InlineChatPopupFactory(
             setSubmitClickListener(submitListener)
         }
         val popup = initPopup(popupPanel)
-        val popupPoint = editor.visualPositionToXY(editor.caretModel.currentCaret.visualPosition)
-        popup.setLocation(popupPoint)
-        popup.showInBestPositionFor(editor)
+        showPopupInEditor(popup, popupPanel, editor)
+
+        return popup
+    }
+
+    private fun showPopupInEditor(popup: JBPopup, popupPanel: InlineChatPopupPanel, editor: Editor) {
+        val popupHeight = popupPanel.POPUP_HEIGHT
+        val editorComponent = editor.component
+        val locationOnScreen = editorComponent.locationOnScreen
+        val popupPoint = JBPopupFactory.getInstance().guessBestPopupLocation(editor).point
+
+        val spaceAbove = popupPoint.y - locationOnScreen.y
+        val spaceNeeded = popupHeight + 15 // Add a small buffer
+
+        val adjustedPoint = if (spaceAbove >= spaceNeeded) {
+            // Position above the caret
+            Point(popupPoint.x, popupPoint.y - spaceNeeded)
+        } else {
+            // Position below the caret
+            popupPoint
+        }
+        popup.show(RelativePoint(adjustedPoint))
+
         popupPanel.textField.requestFocusInWindow()
         popupPanel.textField.addActionListener { e ->
             val inputText = popupPanel.textField.text.trim()
@@ -93,16 +116,15 @@ class InlineChatPopupFactory(
                 popupPanel.submitButton.doClick()
             }
         }
-        return popup
     }
 
     private fun initPopup(panel: InlineChatPopupPanel): JBPopup {
-        val cancelButton = IconButton("Cancel", AllIcons.Actions.Cancel)
+        val cancelButton = IconButton(message("amazonqInlineChat.popup.cancel"), AllIcons.Actions.Cancel)
         val popup = JBPopupFactory.getInstance()
             .createComponentPopupBuilder(panel, panel.textField)
             .setMovable(true)
             .setResizable(true)
-            .setTitle("Enter Instructions for Q")
+            .setTitle(message("amazonqInlineChat.popup.title"))
             .setCancelButton(cancelButton)
             .setCancelCallback {
                 cancelHandler.invoke()
