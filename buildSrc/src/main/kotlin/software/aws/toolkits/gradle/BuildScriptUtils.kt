@@ -28,10 +28,11 @@ fun Project.jvmTarget(): Provider<JavaVersion> = withCurrentProfileName {
     }
 }
 
-// https://plugins.jetbrains.com/docs/intellij/using-kotlin.html#other-bundled-kotlin-libraries
+// https://plugins.jetbrains.com/docs/intellij/using-kotlin.html#stdlib-miscellaneous
 fun Project.kotlinTarget(): Provider<String> = withCurrentProfileName {
     when (it) {
         "2023.3", "2024.1", "2024.2" -> KotlinVersionEnum.KOTLIN_1_9
+        "2024.3" -> KotlinVersionEnum.KOTLIN_2_0
         else -> error("not set")
     }.version
 }

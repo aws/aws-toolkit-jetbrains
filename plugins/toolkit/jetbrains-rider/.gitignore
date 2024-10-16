@@ -1,5 +1,6 @@
 /NuGet.Config
 /testData/NuGet.Config
+ReSharper.AWS.sln.DotSettings.user
 
 # Generated files
 *Generated.kt
