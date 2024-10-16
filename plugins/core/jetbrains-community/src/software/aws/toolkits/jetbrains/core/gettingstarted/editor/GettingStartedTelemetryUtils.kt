@@ -70,6 +70,37 @@ fun getEnabledConnectionsForTelemetry(project: Project?): Set<AuthFormId> {
 fun getEnabledConnections(project: Project?): String =
     getEnabledConnectionsForTelemetry(project).joinToString(",")
 
+fun getAuthScopesForTelemetry(project: Project?): Set<String> {
+    project ?: return emptySet()
+    val scopes = mutableSetOf<String>()
+
+    fun addScopes(connection: ActiveConnection) {
+        if (connection !is ActiveConnection.NotConnected) {
+            val connectionScopes = connection.activeConnectionBearer?.scopes
+            if (connectionScopes != null) {
+                scopes.addAll(connectionScopes)
+            }
+        }
+    }
+
+    val explorerConnection = checkIamConnectionValidity(project)
+    addScopes(explorerConnection)
+
+    val codeCatalystConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST)
+    addScopes(codeCatalystConnection)
+
+    val codeWhispererConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER)
+    addScopes(codeWhispererConnection)
+
+    val qConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
+    addScopes(qConnection)
+
+    return scopes
+}
+
+fun getAuthScopes(project: Project?): String =
+    getAuthScopesForTelemetry(project).joinToString(",")
+
 fun getStartupState(): StartUpState {
     val hasStartedToolkitBefore = tryOrNull {
         getPersistentStateComponentStorageLocation(AwsSettings::class.java)?.exists()

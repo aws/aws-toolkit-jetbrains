@@ -7,11 +7,9 @@ import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.amazon.awssdk.services.toolkittelemetry.model.Unit
 import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ProfileSsoManagedBearerSsoConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
@@ -19,6 +17,7 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.SourceOfEntry
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getAuthScopes
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getAuthStatus
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionCount
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getEnabledConnections
@@ -234,11 +233,6 @@ fun reauthenticateWithQ(project: Project) {
 }
 
 fun emitUserState(project: Project) {
-    val explorerConnection = ToolkitConnectionManager.getInstance(project).activeConnection()
-    val scopes = when (explorerConnection) {
-        is ManagedBearerSsoConnection -> explorerConnection.scopes
-        else -> emptyList()
-    }
 
     TelemetryService.getInstance().record(project) {
         datum("auth_userState") {
@@ -249,9 +243,7 @@ fun emitUserState(project: Project) {
             metadata("source", getStartupState().toString())
             metadata("authStatus", getAuthStatus(project).toString())
             metadata("authEnabledConnections", getEnabledConnections(project))
-            if (getAuthStatus(project).toString() != "notConnected") {
-                metadata("authScopes", scopes.joinToString(","))
-            }
+            metadata("authScopes", getAuthScopes(project))
         }
     }
 }
