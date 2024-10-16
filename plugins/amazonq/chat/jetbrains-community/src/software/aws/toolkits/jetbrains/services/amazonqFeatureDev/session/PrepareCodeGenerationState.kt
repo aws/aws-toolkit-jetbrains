@@ -30,10 +30,10 @@ class PrepareCodeGenerationState(
     val deletedFiles: List<DeletedFileInfo>,
     val references: List<CodeReferenceGenerated>,
     var uploadId: String,
-    private val currentIteration: Int,
+    override var currentIteration: Int?,
     private var messenger: MessagePublisher,
-    var codeGenerationRemainingIterationCount: Int? = null,
-    var codeGenerationTotalIterationCount: Int? = null,
+    override var codeGenerationRemainingIterationCount: Int? = null,
+    override var codeGenerationTotalIterationCount: Int? = null,
 ) : SessionState {
     override val phase = SessionStatePhase.CODEGEN
     override suspend fun interact(action: SessionStateAction): SessionStateInteraction {

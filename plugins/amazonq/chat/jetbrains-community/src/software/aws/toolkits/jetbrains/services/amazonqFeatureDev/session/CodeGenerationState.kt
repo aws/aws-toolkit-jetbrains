@@ -33,11 +33,11 @@ class CodeGenerationState(
     override var approach: String,
     val config: SessionStateConfig,
     val uploadId: String,
-    val currentIteration: Int,
+    override var currentIteration: Int? = 0,
     val repositorySize: Double,
     val messenger: MessagePublisher,
-    var codeGenerationRemainingIterationCount: Int? = null,
-    var codeGenerationTotalIterationCount: Int? = null,
+    override var codeGenerationRemainingIterationCount: Int? = null,
+    override var codeGenerationTotalIterationCount: Int? = null,
     var currentCodeGenerationId:  UUID? = null,
     override var token: CancellationTokenSource?
     ) : SessionState {
@@ -88,7 +88,7 @@ class CodeGenerationState(
                 filePaths = codeGenerationResult.newFiles,
                 deletedFiles = codeGenerationResult.deletedFiles,
                 references = codeGenerationResult.references,
-                currentIteration = currentIteration + 1,
+                currentIteration = currentIteration?.plus(1),
                 uploadId = uploadId,
                 messenger = messenger,
                 codeGenerationRemainingIterationCount = codeGenerationRemainingIterationCount,
@@ -114,20 +114,22 @@ class CodeGenerationState(
 
             throw e
         } finally {
-            AmazonqTelemetry.codeGenerationInvoke(
-                amazonqConversationId = config.conversationId,
-                amazonqCodeGenerationResult = codeGenerationWorkflowStatus.toString(),
-                amazonqGenerateCodeIteration = currentIteration.toDouble(),
-                amazonqNumberOfReferences = numberOfReferencesGenerated?.toDouble(),
-                amazonqGenerateCodeResponseLatency = (System.currentTimeMillis() - startTime).toDouble(),
-                amazonqNumberOfFilesGenerated = numberOfFilesGenerated?.toDouble(),
-                amazonqRepositorySize = repositorySize,
-                result = result,
-                reason = failureReason,
-                reasonDesc = failureReasonDesc,
-                duration = (System.currentTimeMillis() - startTime).toDouble(),
-                credentialStartUrl = getStartUrl(config.featureDevService.project)
-            )
+            currentIteration?.let {
+                AmazonqTelemetry.codeGenerationInvoke(
+                    amazonqConversationId = config.conversationId,
+                    amazonqCodeGenerationResult = codeGenerationWorkflowStatus.toString(),
+                    amazonqGenerateCodeIteration = it.toDouble(),
+                    amazonqNumberOfReferences = numberOfReferencesGenerated?.toDouble(),
+                    amazonqGenerateCodeResponseLatency = (System.currentTimeMillis() - startTime).toDouble(),
+                    amazonqNumberOfFilesGenerated = numberOfFilesGenerated?.toDouble(),
+                    amazonqRepositorySize = repositorySize,
+                    result = result,
+                    reason = failureReason,
+                    reasonDesc = failureReasonDesc,
+                    duration = (System.currentTimeMillis() - startTime).toDouble(),
+                    credentialStartUrl = getStartUrl(config.featureDevService.project)
+                )
+            }
         }
     }
 }

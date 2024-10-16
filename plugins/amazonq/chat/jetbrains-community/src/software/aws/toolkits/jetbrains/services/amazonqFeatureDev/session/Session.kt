@@ -42,7 +42,7 @@ class Session(val tabID: String, val project: Project) {
         context = FeatureDevSessionContext(project, MAX_PROJECT_SIZE_BYTES)
         proxyClient = FeatureDevClient.getInstance(project)
         featureDevService = FeatureDevService(proxyClient, project)
-        _state = ConversationNotStartedState("", tabID, null)
+        _state = ConversationNotStartedState("", tabID, null, 0, CODE_GENERATION_RETRY_LIMIT, 0)
         isAuthenticating = false
         codegenRetries = CODE_GENERATION_RETRY_LIMIT
     }
@@ -79,7 +79,7 @@ class Session(val tabID: String, val project: Project) {
             filePaths = emptyList(),
             deletedFiles = emptyList(),
             references = emptyList(),
-            currentIteration = 0, // first code gen iteration
+            currentIteration = 1, // first code gen iteration
             uploadId = "", // There is no code gen uploadId so far
             messenger = messenger,
             token = GradleConnector.newCancellationTokenSource()

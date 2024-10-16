@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.controller
 
 import com.intellij.notification.NotificationAction
 import org.gradle.tooling.GradleConnector
+import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATION_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUp
@@ -21,6 +22,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Delete
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.PrepareCodeGenerationState
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Session
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionState
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
@@ -44,19 +46,26 @@ suspend fun FeatureDevController.onCodeGeneration(session: Session, message: Str
             message = message("amazonqFeatureDev.chat_message.requesting_changes"),
             messageType = FeatureDevMessageType.AnswerStream,
         )
+        val state = session.sessionState
+
+        var remainingIterations: Int? = state.codeGenerationRemainingIterationCount
+        var totalIterations: Int? = state.codeGenerationTotalIterationCount
+
+
+        if (state.token?.token()?.isCancellationRequested == true) {
+            this.disposeToken(state, messenger, tabId, remainingIterations, totalIterations)
+            return
+        }
 
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.generating_code"))
 
         session.send(message) // Trigger code generation
 
-        val state = session.sessionState
 
         var filePaths: List<NewFileZipInfo> = emptyList()
         var deletedFiles: List<DeletedFileInfo> = emptyList()
         var references: List<CodeReferenceGenerated> = emptyList()
         var uploadId = ""
-        var remainingIterations: Int? = null
-        var totalIterations: Int? = null
 
         when (state) {
             is PrepareCodeGenerationState -> {
@@ -70,17 +79,7 @@ suspend fun FeatureDevController.onCodeGeneration(session: Session, message: Str
         }
 
         if (state.token?.token()?.isCancellationRequested == true) {
-            messenger.sendAnswer(
-                tabId = tabId,
-                messageType = FeatureDevMessageType.Answer,
-                message = message("amazonqFeatureDev.code_generation.stopped_code_generation")
-            )
-            messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = true)
-
-            messenger.sendUpdatePlaceholder(
-                tabId = tabId,
-                newPlaceholder = message("amazonqFeatureDev.placeholder.new_plan")
-            )
+            disposeToken(state, messenger, tabId, remainingIterations, totalIterations)
             return
         }
 
@@ -148,6 +147,32 @@ suspend fun FeatureDevController.onCodeGeneration(session: Session, message: Str
         }
     }
 }
+
+private suspend fun FeatureDevController.disposeToken(state: SessionState, messenger: MessagePublisher, tabId: String, remainingIterations: Number?, totalIterations: Number?) {
+    if (state.codeGenerationRemainingIterationCount !== null) {
+        messenger.sendAnswer(
+            tabId = tabId,
+            messageType = FeatureDevMessageType.Answer,
+            message = message("amazonqFeatureDev.code_generation.stopped_code_generation", remainingIterations ?: state.currentIteration as Any,
+                totalIterations ?: CODE_GENERATION_RETRY_LIMIT
+            )
+        )
+    } else {
+        messenger.sendAnswer(
+            tabId = tabId,
+            messageType = FeatureDevMessageType.Answer,
+            message = message("amazonqFeatureDev.code_generation.stopped_code_generation_without_total", state.currentIteration as Any)
+        )
+    }
+
+    messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = true)
+
+    messenger.sendUpdatePlaceholder(
+        tabId = tabId,
+        newPlaceholder = message("amazonqFeatureDev.placeholder.new_plan")
+    )
+}
+
 
 private fun FeatureDevController.openChatNotificationAction() = NotificationAction.createSimple(
     message("amazonqFeatureDev.code_generation.notification_open_link")
