@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.project.BaseProjectDirectories.Companion.getBaseDirectories
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
@@ -129,7 +130,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     private fun initEncryption(): Boolean {
-        logger.info { "project context: init key for ${project.basePath} on port ${encoderServer.port}" }
+        logger.info { "project context: init key for ${project.name} on port ${encoderServer.port}" }
         val url = URL("http://localhost:${encoderServer.port}/initialize")
         val payload = encoderServer.getEncryptionRequest()
         val connection = url.openConnection() as HttpURLConnection
@@ -274,7 +275,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         var currentTotalFileSize = 0L
         val featureDevSessionContext = FeatureDevSessionContext(project)
         val allFiles = mutableListOf<VirtualFile>()
-        project.baseDir?.let {
+        project.getBaseDirectories().forEach {
             VfsUtilCore.visitChildrenRecursively(
                 it,
                 object : VirtualFileVisitor<Unit>(NO_FOLLOW_SYMLINKS) {
