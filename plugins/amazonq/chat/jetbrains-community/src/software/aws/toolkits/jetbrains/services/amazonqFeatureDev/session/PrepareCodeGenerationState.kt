@@ -57,7 +57,7 @@ class PrepareCodeGenerationState(
                 config.conversationId,
                 zipFileChecksum,
                 zipFileLength,
-                uploadId
+                uploadId.toString()
             )
 
             uploadArtifactToS3(uploadUrlResponse.uploadUrl(), fileToUpload, zipFileChecksum, zipFileLength, uploadUrlResponse.kmsKeyArn())

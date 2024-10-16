@@ -31,7 +31,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Export
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.Result
-import java.util.UUID
 
 private val logger = getLogger<FeatureDevClient>()
 
@@ -83,7 +82,7 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
         }
     }
 
-    fun createUploadUrl(conversationId: String, contentChecksumSha256: String, contentLength: Long, uploadId: UUID):
+    fun createUploadUrl(conversationId: String, contentChecksumSha256: String, contentLength: Long, uploadId: String):
         CreateUploadUrlResponse {
         try {
             logger.debug { "Executing createUploadUrl with conversationId $conversationId" }
@@ -91,7 +90,7 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
                 conversationId,
                 contentChecksumSha256,
                 contentLength,
-                uploadId.toString()
+                uploadId
             )
             logger.debug {
                 "$FEATURE_NAME: Created upload url: {uploadId: $uploadId, requestId: ${uploadUrlResponse.responseMetadata().requestId()}}"

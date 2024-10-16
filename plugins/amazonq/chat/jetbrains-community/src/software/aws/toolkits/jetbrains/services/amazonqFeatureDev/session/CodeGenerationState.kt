@@ -38,7 +38,7 @@ class CodeGenerationState(
     val messenger: MessagePublisher,
     override var codeGenerationRemainingIterationCount: Int? = null,
     override var codeGenerationTotalIterationCount: Int? = null,
-    var currentCodeGenerationId: UUID? = null,
+    var currentCodeGenerationId: String? = "EMPTY_CURRENT_CODE_GENERATION_ID",
     override var token: CancellationTokenSource?,
 ) : SessionState {
     override val phase = SessionStatePhase.CODEGEN
@@ -64,7 +64,7 @@ class CodeGenerationState(
                 )
 
             if (action.token?.token()?.isCancellationRequested != true) {
-                this.currentCodeGenerationId = codeGenerationId
+                this.currentCodeGenerationId = codeGenerationId.toString()
             }
 
             messenger.sendAnswerPart(

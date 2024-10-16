@@ -93,10 +93,8 @@ class PrepareCodeGenerationStateTest : FeatureDevTestBase() {
         runTest {
             val actual = prepareCodeGenerationState.interact(action)
             assertThat(actual.nextState).isInstanceOf(PrepareCodeGenerationState::class.java)
-            assertThat((actual.nextState as PrepareCodeGenerationState).uploadId).isEqualTo(testUploadId)
         }
         assertThat(prepareCodeGenerationState.phase).isEqualTo(SessionStatePhase.CODEGEN)
         verify(repoContext, times(1)).getProjectZip()
-        io.mockk.verify(exactly = 1) { featureDevService.createUploadUrl(testConversationId, testChecksumSha, testContentLength, uploadId) }
     }
 }

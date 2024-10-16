@@ -28,7 +28,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.Featur
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeGenerationStreamResult
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
 import software.aws.toolkits.resources.message
-import java.util.UUID
 
 class FeatureDevServiceTest : FeatureDevTestBase() {
     @Rule
@@ -66,10 +65,10 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
     @Test
     fun `test createUploadUrl`() {
         whenever(
-            featureDevClient.createTaskAssistUploadUrl(testConversationId, testChecksumSha, testContentLength, uploadId = UUID.randomUUID().toString()),
+            featureDevClient.createTaskAssistUploadUrl(testConversationId, testChecksumSha, testContentLength, uploadId = testUploadId),
         ).thenReturn(exampleCreateUploadUrlResponse)
 
-        val actual = featureDevService.createUploadUrl(testConversationId, testChecksumSha, testContentLength, uploadId = UUID.randomUUID())
+        val actual = featureDevService.createUploadUrl(testConversationId, testChecksumSha, testContentLength, uploadId = testUploadId)
         assertThat(actual).isInstanceOf(CreateUploadUrlResponse::class.java)
         assertThat(actual)
             .usingRecursiveComparison()
@@ -80,17 +79,17 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
     @Test
     fun `test createUploadUrl with error`() {
         whenever(
-            featureDevClient.createTaskAssistUploadUrl(testConversationId, testChecksumSha, testContentLength, uploadId = UUID.randomUUID().toString()),
+            featureDevClient.createTaskAssistUploadUrl(testConversationId, testChecksumSha, testContentLength, uploadId = testUploadId),
         ).thenThrow(RuntimeException())
         assertThatThrownBy {
-            featureDevService.createUploadUrl(testConversationId, testChecksumSha, testContentLength, uploadId = UUID.randomUUID())
+            featureDevService.createUploadUrl(testConversationId, testChecksumSha, testContentLength, uploadId = testUploadId)
         }.isInstanceOf(FeatureDevException::class.java)
     }
 
     @Test
     fun `test createUploadUrl with validation error`() {
         whenever(
-            featureDevClient.createTaskAssistUploadUrl(testConversationId, testChecksumSha, testContentLength, uploadId = UUID.randomUUID().toString()),
+            featureDevClient.createTaskAssistUploadUrl(testConversationId, testChecksumSha, testContentLength, uploadId = testUploadId),
         ).thenThrow(
             ValidationException
                 .builder()
@@ -101,7 +100,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
         )
 
         assertThatThrownBy {
-            featureDevService.createUploadUrl(testConversationId, testChecksumSha, testContentLength, uploadId = UUID.randomUUID())
+            featureDevService.createUploadUrl(testConversationId, testChecksumSha, testContentLength, uploadId = testUploadId)
         }.isInstanceOf(ContentLengthException::class.java).hasMessage(message("amazonqFeatureDev.content_length.error_text"))
     }
 
@@ -149,7 +148,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 testUploadId,
                 userMessage,
                 codeGenerationId = codeGenerationId,
-                currentCodeGenerationId = null,
+                currentCodeGenerationId = "EMPTY_CURRENT_CODE_GENERATION_ID",
             ),
         ).thenReturn(exampleStartTaskAssistConversationResponse)
 
@@ -159,7 +158,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 testUploadId,
                 userMessage,
                 codeGenerationId = codeGenerationId,
-                currentCodeGenerationId = null,
+                currentCodeGenerationId = "EMPTY_CURRENT_CODE_GENERATION_ID",
             )
 
         assertThat(actual).isEqualTo(exampleStartTaskAssistConversationResponse)
@@ -179,7 +178,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 testUploadId,
                 userMessage,
                 codeGenerationId = codeGenerationId,
-                currentCodeGenerationId = null,
+                currentCodeGenerationId = "EMPTY_CURRENT_CODE_GENERATION_ID",
             ),
         ).thenThrow(exampleCWException)
 
@@ -189,7 +188,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 testUploadId,
                 userMessage,
                 codeGenerationId = codeGenerationId,
-                currentCodeGenerationId = null,
+                currentCodeGenerationId = "EMPTY_CURRENT_CODE_GENERATION_ID",
             )
         }.isExactlyInstanceOf(CodeIterationLimitException::class.java).withFailMessage(
             message("amazonqFeatureDev.code_generation.iteration_limit.error_text"),
@@ -210,7 +209,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 testUploadId,
                 userMessage,
                 codeGenerationId = codeGenerationId,
-                currentCodeGenerationId = null,
+                currentCodeGenerationId = "EMPTY_CURRENT_CODE_GENERATION_ID",
             ),
         ).thenThrow(exampleCWException)
 
@@ -220,7 +219,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 testUploadId,
                 userMessage,
                 codeGenerationId = codeGenerationId,
-                currentCodeGenerationId = null,
+                currentCodeGenerationId = "EMPTY_CURRENT_CODE_GENERATION_ID",
             )
         }.isExactlyInstanceOf(CodeIterationLimitException::class.java).withFailMessage(
             message("amazonqFeatureDev.code_generation.iteration_limit.error_text"),
@@ -241,7 +240,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 testUploadId,
                 userMessage,
                 codeGenerationId = codeGenerationId,
-                currentCodeGenerationId = null,
+                currentCodeGenerationId = "EMPTY_CURRENT_CODE_GENERATION_ID",
             ),
         ).thenThrow(exampleCWException)
 
@@ -251,7 +250,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 testUploadId,
                 userMessage,
                 codeGenerationId = codeGenerationId,
-                currentCodeGenerationId = null,
+                currentCodeGenerationId = "EMPTY_CURRENT_CODE_GENERATION_ID",
             )
         }.isExactlyInstanceOf(FeatureDevException::class.java).withFailMessage(cwExceptionMsg)
     }
@@ -265,7 +264,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 testUploadId,
                 userMessage,
                 codeGenerationId = codeGenerationId,
-                currentCodeGenerationId = null,
+                currentCodeGenerationId = "EMPTY_CURRENT_CODE_GENERATION_ID",
             ),
         ).thenThrow(exampleOtherException)
 
@@ -275,7 +274,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 testUploadId,
                 userMessage,
                 codeGenerationId = codeGenerationId,
-                currentCodeGenerationId = null,
+                currentCodeGenerationId = "EMPTY_CURRENT_CODE_GENERATION_ID",
             )
         }.isExactlyInstanceOf(FeatureDevException::class.java).withFailMessage(otherExceptionMsg)
     }

@@ -225,7 +225,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                 PrepareCodeGenerationState(
                     testTabId,
                     GradleConnector.newCancellationTokenSource(),
-                    mock(),
+                    "test-command",
                     sessionStateConfig,
                     newFileContents,
                     deletedFiles,
@@ -234,9 +234,10 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     0,
                     messenger,
                     0,
-                    0
+                    0,
                 ),
             )
+
             doNothing().`when`(spySession).insertChanges(any(), any(), any())
 
             spySession.preloader(userMessage, messenger)

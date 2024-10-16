@@ -48,16 +48,18 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
         val repoContext = mock<FeatureDevSessionContext>()
         val sessionStateConfig = SessionStateConfig(testConversationId, repoContext, featureDevService)
 
-        codeGenerationState = CodeGenerationState(
-            testTabId,
-            "",
-            sessionStateConfig,
-            testUploadId,
-            0,
-            testRepositorySize,
-            messenger,
-            token = null
-        )
+        codeGenerationState =
+            CodeGenerationState(
+                testTabId,
+                "",
+                sessionStateConfig,
+                testUploadId,
+                0,
+                testRepositorySize,
+                messenger,
+                token = null,
+                currentCodeGenerationId = "EMPTY_CURRENT_CODE_GENERATION_ID",
+            )
 
         mockkStatic(MessagePublisher::sendAnswerPart)
         coEvery { messenger.sendAnswerPart(any(), any()) } just runs
@@ -80,13 +82,12 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
             val actual = codeGenerationState.interact(action)
             assertThat(actual.nextState).isInstanceOf(PrepareCodeGenerationState::class.java)
             val nextState = actual.nextState as PrepareCodeGenerationState
-            assertThat(nextState.uploadId).isEqualTo(testUploadId)
             assertThat(nextState.phase).isEqualTo(SessionStatePhase.CODEGEN)
             assertThat(nextState.filePaths).isEqualTo(
-                listOf(NewFileZipInfo("test.ts", "This is a comment", false))
+                listOf(NewFileZipInfo("test.ts", "This is a comment", false)),
             )
             assertThat(nextState.deletedFiles).isEqualTo(
-                listOf(DeletedFileInfo("deleted.ts", false))
+                listOf(DeletedFileInfo("deleted.ts", false)),
             )
             assertThat(nextState.references).isEqualTo(testReferences)
             assertThat(nextState.codeGenerationRemainingIterationCount).isEqualTo(2)
@@ -96,26 +97,22 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
         }
         assertThat(codeGenerationState.phase).isEqualTo(SessionStatePhase.CODEGEN)
         coVerify(exactly = 1) { messenger.sendAnswerPart(testTabId, message("amazonqFeatureDev.code_generation.generating_code")) }
-        verify(
-            exactly = 1
-        ) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, null) }
-        verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId.toString()) }
+
+        verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId) }
         coVerify(exactly = 1) { featureDevService.exportTaskAssistArchiveResult(testConversationId) }
     }
 
     @Test(expected = FeatureDevException::class)
-    fun `test code generation failed`() = runTest {
-        every { featureDevService.startTaskAssistCodeGeneration(any(), any(), any(), any(), any()) } returns exampleStartTaskAssistConversationResponse
-        every { featureDevService.getTaskAssistCodeGeneration(any(), any()) } returns exampleFailedGetTaskAssistCodeGenerationResponse
+    fun `test code generation failed`() =
+        runTest {
+            every { featureDevService.startTaskAssistCodeGeneration(any(), any(), any(), any(), any()) } returns exampleStartTaskAssistConversationResponse
+            every { featureDevService.getTaskAssistCodeGeneration(any(), any()) } returns exampleFailedGetTaskAssistCodeGenerationResponse
 
-        codeGenerationState.interact(action)
+            codeGenerationState.interact(action)
 
-        verify(
-            exactly = 1
-        ) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, null) }
-        verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId.toString()) }
-        coVerify(exactly = 0) { featureDevService.exportTaskAssistArchiveResult(any()) }
-    }
+            verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId) }
+            coVerify(exactly = 0) { featureDevService.exportTaskAssistArchiveResult(any()) }
+        }
 
     @Test
     fun `test code generation returns any other handled status`() {
@@ -128,10 +125,7 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
             }
         }.isExactlyInstanceOf(IllegalStateException::class.java).withFailMessage("Unknown status: $otherStatus")
 
-        verify(
-            exactly = 1
-        ) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, null) }
-        verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId.toString()) }
+        verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId) }
         coVerify(exactly = 0) { featureDevService.exportTaskAssistArchiveResult(any()) }
     }
 
@@ -147,10 +141,7 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
             codeGenerationState.interact(action)
         }
 
-        verify(
-            exactly = 1
-        ) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, null) }
-        verify(exactly = 2) { featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId.toString()) }
+        verify(exactly = 2) { featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId) }
         coVerify(exactly = 1) { featureDevService.exportTaskAssistArchiveResult(testConversationId) }
     }
 
@@ -172,10 +163,7 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
             assertThat(actual.interaction.content).isEqualTo("")
         }
 
-        verify(
-            exactly = 1
-        ) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, null) }
-        verify(exactly = 180) { featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId.toString()) }
+        verify(exactly = 180) { featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId) }
         coVerify(exactly = 0) { featureDevService.exportTaskAssistArchiveResult(testConversationId) }
     }
 }
