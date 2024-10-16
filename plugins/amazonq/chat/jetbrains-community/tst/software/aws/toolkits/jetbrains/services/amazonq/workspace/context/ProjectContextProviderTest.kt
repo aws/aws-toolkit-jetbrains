@@ -13,8 +13,8 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.EncoderServer
-import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextProvider
+import software.aws.toolkits.jetbrains.services.amazonq.project.EncoderServer
+import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextProvider
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import java.net.ConnectException

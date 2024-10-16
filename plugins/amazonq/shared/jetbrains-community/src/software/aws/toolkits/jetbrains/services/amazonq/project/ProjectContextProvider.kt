@@ -1,7 +1,7 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.cwc.editor.context.project
+package software.aws.toolkits.jetbrains.services.amazonq.project
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -25,8 +25,8 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
-import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
+import software.aws.toolkits.telemetry.AmazonqTelemetry
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
@@ -162,11 +162,11 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         logger.debug { "project context index time: ${duration}ms" }
         if (connection.responseCode == 200) {
             val usage = getUsage()
-            TelemetryHelper.recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, true, usage?.memoryUsage, usage?.cpuUsage, startUrl)
+            recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, true, usage?.memoryUsage, usage?.cpuUsage, startUrl)
             logger.debug { "project context index finished for ${project.name}" }
             return true
         } else {
-            TelemetryHelper.recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, false, null, null, startUrl)
+            recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, false, null, null, startUrl)
             return false
         }
     }
@@ -198,6 +198,27 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
             logger.warn { "error parsing query response ${e.message}" }
             return emptyList()
         }
+    }
+
+    private fun recordIndexWorkspace(
+        duration: Double,
+        fileCount: Int = 0,
+        fileSize: Int = 0,
+        isSuccess: Boolean,
+        memoryUsage: Int? = 0,
+        cpuUsage: Int? = 0,
+        startUrl: String? = null,
+    ) {
+        AmazonqTelemetry.indexWorkspace(
+            project = null,
+            duration = duration,
+            amazonqIndexFileCount = fileCount.toLong(),
+            amazonqIndexFileSizeInMB = fileSize.toLong(),
+            success = isSuccess,
+            amazonqIndexMemoryUsageInMB = memoryUsage?.toLong(),
+            amazonqIndexCpuUsagePercentage = cpuUsage?.toLong(),
+            credentialStartUrl = startUrl
+        )
     }
 
     private fun getUsage(): Usage? {
