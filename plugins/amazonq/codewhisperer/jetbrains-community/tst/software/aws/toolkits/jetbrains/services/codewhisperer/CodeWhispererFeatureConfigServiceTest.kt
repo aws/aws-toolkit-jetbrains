@@ -10,19 +10,24 @@ import com.intellij.testFramework.replaceService
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
+import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
+import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
+import software.amazon.awssdk.services.codewhispererruntime.model.Customization
 import software.amazon.awssdk.services.codewhispererruntime.model.FeatureEvaluation
 import software.amazon.awssdk.services.codewhispererruntime.model.FeatureValue
+import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEvaluationsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEvaluationsResponse
+import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
-import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
-import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import kotlin.reflect.full.memberFunctions
 import kotlin.test.Test
@@ -39,6 +44,10 @@ class CodeWhispererFeatureConfigServiceTest {
     @JvmField
     @Rule
     val projectRule = ProjectRule()
+
+    @JvmField
+    @Rule
+    val mockClientManagerRule = MockClientManagerRule()
 
     @Test
     fun `test FEATURE_DEFINITIONS is not empty`() {
@@ -63,9 +72,8 @@ class CodeWhispererFeatureConfigServiceTest {
     }
 
     private fun testCustomizationArnOverrideABHelper(isIdc: Boolean, isInListAvailableCustomizations: Boolean) {
-        val clientAdaptorSpy = mock<CodeWhispererClientAdaptor>()
-        clientAdaptorSpy.stub {
-            on { listFeatureEvaluations() } doReturn ListFeatureEvaluationsResponse.builder().featureEvaluations(
+        mockClientManagerRule.create<CodeWhispererRuntimeClient>().stub {
+            on { listFeatureEvaluations(any<ListFeatureEvaluationsRequest>()) } doReturn ListFeatureEvaluationsResponse.builder().featureEvaluations(
                 listOf(
                     FeatureEvaluation.builder()
                         .feature(CodeWhispererFeatureConfigService.CUSTOMIZATION_ARN_OVERRIDE_NAME)
@@ -74,11 +82,12 @@ class CodeWhispererFeatureConfigServiceTest {
                         .build()
                 )
             ).build()
-            on { listAvailableCustomizations() } doReturn
+
+            on { listAvailableCustomizations(any<ListAvailableCustomizationsRequest>()) } doReturn
                 if (isInListAvailableCustomizations) {
-                    listOf(CodeWhispererCustomization(arn = "test arn", name = "Test Arn"))
+                    ListAvailableCustomizationsResponse.builder().customizations({ builder -> builder.arn("test arn").name("Test Arn") }).build()
                 } else {
-                    emptyList()
+                    ListAvailableCustomizationsResponse.builder().customizations(emptyList<Customization>()).build()
                 }
         }
 
@@ -89,12 +98,6 @@ class CodeWhispererFeatureConfigServiceTest {
         projectRule.project.replaceService(
             ToolkitConnectionManager::class.java,
             mock { on { activeConnectionForFeature(eq(CodeWhispererConnection.getInstance())) } doReturn mockSsoConnection },
-            disposableRule.disposable
-        )
-
-        projectRule.project.replaceService(
-            CodeWhispererClientAdaptor::class.java,
-            clientAdaptorSpy,
             disposableRule.disposable
         )
 
