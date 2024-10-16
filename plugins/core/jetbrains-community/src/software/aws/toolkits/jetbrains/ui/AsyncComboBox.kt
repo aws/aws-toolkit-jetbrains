@@ -30,14 +30,14 @@ import javax.swing.MutableComboBoxModel
 import javax.swing.event.ListDataListener
 
 class AsyncComboBox<T> private constructor(
-    private val comboBoxModel: MutableComboBoxModel<T>
+    private val comboBoxModel: MutableComboBoxModel<T>,
 ) : ComboBox<T>(comboBoxModel), Disposable {
     private val loading = AtomicBoolean(false)
     private val scope = disposableCoroutineScope(this)
 
     constructor(
         comboBoxModel: MutableComboBoxModel<T> = DefaultComboBoxModel(),
-        customizer: SimpleListCellRenderer.Customizer<in T>? = null
+        customizer: SimpleListCellRenderer.Customizer<in T>? = null,
     ) : this(comboBoxModel) {
         renderer = object : SimpleListCellRenderer<T>() {
             override fun getListCellRendererComponent(
@@ -45,7 +45,7 @@ class AsyncComboBox<T> private constructor(
                 value: T?,
                 index: Int,
                 selected: Boolean,
-                hasFocus: Boolean
+                hasFocus: Boolean,
             ): Component {
                 val component = super.getListCellRendererComponent(list, value, index, selected, hasFocus) as SimpleListCellRenderer<*>
 
@@ -65,7 +65,7 @@ class AsyncComboBox<T> private constructor(
 
     constructor(
         comboBoxModel: MutableComboBoxModel<T> = DefaultComboBoxModel(),
-        customRenderer: ListCellRenderer<T>
+        customRenderer: ListCellRenderer<T>,
     ) : this(comboBoxModel) {
         renderer = ListCellRenderer { list, value, index, selected, hasFocus ->
             if (loading.get() && index == -1) {

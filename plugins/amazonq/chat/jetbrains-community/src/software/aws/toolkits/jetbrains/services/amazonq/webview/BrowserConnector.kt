@@ -63,7 +63,7 @@ class BrowserConnector(
     suspend fun connectTheme(
         chatBrowser: CefBrowser,
         loginBrowser: CefBrowser,
-        themeSource: Flow<AmazonQTheme>
+        themeSource: Flow<AmazonQTheme>,
     ) = coroutineScope {
         themeSource
             .distinctUntilChanged()
@@ -77,7 +77,7 @@ class BrowserConnector(
     private fun addMessageHook(browser: Browser) = callbackFlow {
         val handler = Function<String, Response> {
             trySend(it)
-            null
+            Response(null)
         }
 
         browser.receiveMessageQuery.addHandler(handler)

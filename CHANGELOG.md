@@ -1,3 +1,37 @@
+# _3.32_ (2024-10-10)
+- **(Feature)** Loosen inline completion support limitations for YAML/JSON
+- **(Bug Fix)** Fix error occuring when Amazon Q attempts to show UI hints on manually triggerred inline suggestion ([#4929](https://github.com/aws/aws-toolkit-jetbrains/issues/4929))
+- **(Bug Fix)** Amazon Q (/dev): provide error messaging when no code changes are required for the prompt
+- **(Bug Fix)** Fix 'Slow operations are prohibited on EDT.' when Amazon Q is determining if a file supports inline suggestions ([#4823](https://github.com/aws/aws-toolkit-jetbrains/issues/4823))
+- **(Bug Fix)** Amazon Q Feature Dev: Add error messages when the upload URL expires
+- **(Bug Fix)** Fix toolkit connection dropdown getting hidden when panel width is small.
+- **(Bug Fix)** Fix inability to sign out in reauth view in Q chat panel
+- **(Bug Fix)** Raise max `@workspace` indexing size to 4GB
+- **(Bug Fix)** Automatically pause and resume `@workspace` indexing when OS CPU load is high
+
+# _3.31_ (2024-10-03)
+- **(Feature)** Amazon Q Developer: Updated legal disclaimer text
+- **(Feature)** Amazon Q Code Transformation: allow users to skip tests
+- **(Bug Fix)** Fix issue where multiple SSO login attempts in a short time result in 404
+- **(Bug Fix)** Fix issue where a user may get stuck while attempting to login to Builder ID
+
+# _3.30_ (2024-09-27)
+- **(Bug Fix)** Amazon Q Code Transformation: notify users when no JDK is set in Project Structure settings
+- **(Bug Fix)** Automatically terminate orphaned process for `@workspace` helper
+
+# _3.29_ (2024-09-19)
+- **(Feature)** Support `@workspace` queries for specific files like "`@workspace` what does test.ts do?".
+- **(Bug Fix)** Amazon Q Feature Dev: fix iteration count messaging during code insertion
+- **(Bug Fix)** Fix UI slowdown when Amazon Q Inline Suggestions are enabled, but token cannot be refreshed ([#4868](https://github.com/aws/aws-toolkit-jetbrains/issues/4868))
+- **(Bug Fix)** Fix "read access" error that may occur when Amazon Q Inline Suggestion is building context ([#4888](https://github.com/aws/aws-toolkit-jetbrains/issues/4888)) ([#4848](https://github.com/aws/aws-toolkit-jetbrains/issues/4848))
+
+# _3.28_ (2024-09-11)
+- **(Feature)** Improve workspace indexing by only index files that are changed since last indexing
+- **(Bug Fix)** Amazon Q Chat: Fixed inline code blocks are not vertically aligned with texts
+- **(Bug Fix)** Fix issue preventing login when running on 2024.2 remote environments
+- **(Bug Fix)** Automatically start workspace indexing when new project is opened
+- **(Removal)** Amazon Q Feature dev: Improve quality and UX by removing approach generation flow
+
 # _3.27_ (2024-09-05)
 - **(Feature)** Reduce `@workspace` indexing time by 50%
 - **(Feature)** Amazon Q /dev: include in progress state agent in code generation

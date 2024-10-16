@@ -87,7 +87,7 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
 
     fun getProjectContextIndexMaxSize(): Int = state.intValue.getOrDefault(
         CodeWhispererIntConfigurationType.ProjectContextIndexMaxSize,
-        200
+        250
     )
 
     fun setProjectContextIndexMaxSize(value: Int) {
@@ -126,7 +126,7 @@ enum class CodeWhispererConfigurationType {
     IsAutoUpdateFeatureNotificationShownOnce,
     IsProjectContextEnabled,
     IsProjectContextGpu,
-    HasEnabledProjectContextOnce
+    HasEnabledProjectContextOnce,
 }
 
 enum class CodeWhispererIntConfigurationType {

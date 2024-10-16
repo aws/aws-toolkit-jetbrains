@@ -24,7 +24,7 @@ import javax.swing.JComponent
 class CreateEcrRepoDialog(
     private val project: Project,
     private val ecrClient: EcrClient,
-    parent: Component? = null
+    parent: Component? = null,
 ) : DialogWrapper(project, parent, false, IdeModalityType.IDE) {
     var repoName: String = ""
 

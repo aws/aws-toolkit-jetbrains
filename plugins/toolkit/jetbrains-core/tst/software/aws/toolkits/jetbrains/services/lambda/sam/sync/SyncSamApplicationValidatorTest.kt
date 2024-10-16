@@ -398,7 +398,7 @@ class SyncSamApplicationValidatorTest {
         override val logicalName: String,
         private val type: String,
         private val defaultValue: String?,
-        private val additionalProperties: Map<String, String> = emptyMap()
+        private val additionalProperties: Map<String, String> = emptyMap(),
     ) : Parameter {
         override fun getScalarProperty(key: String): String = getOptionalScalarProperty(key) ?: throw Exception("Cannot be null")
 

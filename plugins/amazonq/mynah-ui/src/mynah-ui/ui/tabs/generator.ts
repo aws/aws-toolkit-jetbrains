@@ -27,7 +27,7 @@ export class TabDataGenerator {
     private tabInputPlaceholder: Map<TabType, string> = new Map([
         ['unknown', 'Ask a question or enter "/" for quick commands'],
         ['cwc', 'Ask a question or enter "/" for quick commands'],
-        ['featuredev', 'Describe your task or issue in as much detail as possible'],
+        ['featuredev', 'Describe your task or issue in detail'],
     ])
 
     private tabWelcomeMessage: Map<TabType, string> = new Map([
@@ -45,10 +45,11 @@ export class TabDataGenerator {
         ],
         [
             'featuredev',
-            `I can generate code to implement new functionality across your workspace. To get started, describe the task you're trying to accomplish, and I'll generate code. If you want to make changes, you can provide feedback and I'll regenerate code.
-            
-            What would you like work on?
-`,
+            `Hi! I'm the Amazon Q Developer Agent for software development. 
+
+I can generate code to implement new functionality across your workspace. To get started, describe the task you're trying to accomplish, and I'll generate code to implement it. If you want to make changes to the code, you can tell me what to improve and I'll generate new code based on your feedback. 
+
+What would you like to work on?`,
         ],
         [
             'codetransform',
@@ -71,7 +72,7 @@ I can help you upgrade your Java 8 and 11 codebases to Java 17.
         return {
             tabTitle: taskName ?? this.tabTitle.get(tabType),
             promptInputInfo:
-                'Use of Amazon Q is subject to the [AWS Responsible AI Policy](https://aws.amazon.com/machine-learning/responsible-ai/policy/).',
+                'Amazon Q Developer uses generative AI. You may need to verify responses. See the [AWS Responsible AI Policy](https://aws.amazon.com/machine-learning/responsible-ai/policy/).',
             quickActionCommands: this.quickActionsGenerator.generateForTab(tabType),
             promptInputPlaceholder: this.tabInputPlaceholder.get(tabType),
             contextCommands: [

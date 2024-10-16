@@ -33,7 +33,7 @@ import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.AwsCoreBundle
 
 data class IdcRolePopupState(
-    var roleInfo: RoleInfo? = null
+    var roleInfo: RoleInfo? = null,
 )
 
 class IdcRolePopup(
@@ -42,7 +42,7 @@ class IdcRolePopup(
     private val sessionName: String,
     private val tokenProvider: SdkTokenProvider,
     val state: IdcRolePopupState = IdcRolePopupState(),
-    private val configFilesFacade: ConfigFilesFacade = DefaultConfigFilesFacade()
+    private val configFilesFacade: ConfigFilesFacade = DefaultConfigFilesFacade(),
 ) : DialogWrapper(project) {
     init {
         title = AwsCoreBundle.message("gettingstarted.setup.idc.role.title")
@@ -82,14 +82,17 @@ class IdcRolePopup(
             combo.proposeModelUpdate { model ->
                 val token = tokenProvider.resolveToken().token()
 
-                client.listAccounts { it.accessToken(token) }
+                val rolesList = client.listAccountsPaginator { it.accessToken(token) }
                     .accountList()
                     .flatMap { account ->
-                        client.listAccountRoles {
+                        client.listAccountRolesPaginator {
                             it.accessToken(token)
                             it.accountId(account.accountId())
                         }.roleList()
-                    }.forEach {
+                    }
+
+                rolesList.sortedBy { it.roleName() }
+                    .forEach {
                         model.addElement(it)
                     }
 

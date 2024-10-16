@@ -113,7 +113,7 @@ fun drawSearchMatch(
     startX: Float,
     endX: Float,
     startY: Float,
-    height: Int
+    height: Int,
 ) {
     val color1 = JBColor.namedColor("SearchMatch.startBackground", JBColor.namedColor("SearchMatch.startColor", 0xffeaa2))
     val color2 = JBColor.namedColor("SearchMatch.endBackground", JBColor.namedColor("SearchMatch.endColor", 0xffd042))
@@ -182,7 +182,7 @@ private fun JTextArea.speedSearchHighlighter(speedSearchEnabledComponent: JCompo
 class WrappingCellRenderer(
     private val wrapOnSelection: Boolean = false,
     private val wrapOnToggle: Boolean = false,
-    private val truncateAfterChars: Int? = null
+    private val truncateAfterChars: Int? = null,
 ) : CellRendererPanel(), TableCellRenderer {
     var wrap: Boolean = false
 

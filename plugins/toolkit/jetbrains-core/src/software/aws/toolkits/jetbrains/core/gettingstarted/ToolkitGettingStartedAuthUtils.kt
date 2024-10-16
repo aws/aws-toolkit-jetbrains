@@ -23,12 +23,12 @@ import software.aws.toolkits.telemetry.Result
 fun requestCredentialsForCodeCatalyst(
     project: Project?,
     popupBuilderIdTab: Boolean = true,
-    initialConnectionCount: Int = getConnectionCount(),
+    initialConnectionCount: Long = getConnectionCount(),
     initialAuthConnections: String = getEnabledConnections(
         project
     ),
     isFirstInstance: Boolean = false,
-    connectionInitiatedFromExplorer: Boolean = false
+    connectionInitiatedFromExplorer: Boolean = false,
 ): Boolean? {
     if (isQWebviewsAvailable() && project != null) {
         ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Codecatalyst, true)) // TODO: consume data
@@ -89,7 +89,8 @@ fun requestCredentialsForCodeCatalyst(
             credentialSourceId = authenticationDialog.authType,
             isAggregated = true,
             attempts = authenticationDialog.attempts + 1,
-            result = Result.Succeeded
+            result = Result.Succeeded,
+            isReAuth = false
         )
         AuthTelemetry.addedConnections(
             project,
@@ -110,6 +111,7 @@ fun requestCredentialsForCodeCatalyst(
             isAggregated = false,
             attempts = authenticationDialog.attempts + 1,
             result = Result.Cancelled,
+            isReAuth = false
         )
     }
     return isAuthenticationSuccessful
@@ -117,12 +119,12 @@ fun requestCredentialsForCodeCatalyst(
 
 fun requestCredentialsForExplorer(
     project: Project,
-    initialConnectionCount: Int = getConnectionCount(),
+    initialConnectionCount: Long = getConnectionCount(),
     initialAuthConnections: String = getEnabledConnections(
         project
     ),
     isFirstInstance: Boolean = false,
-    connectionInitiatedFromExplorer: Boolean = false
+    connectionInitiatedFromExplorer: Boolean = false,
 ): Boolean? {
     if (isQWebviewsAvailable()) {
         ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AwsExplorer, true)) // TODO: consume data
@@ -157,7 +159,8 @@ fun requestCredentialsForExplorer(
             credentialSourceId = authenticationDialog.authType,
             isAggregated = true,
             attempts = authenticationDialog.attempts + 1,
-            result = Result.Succeeded
+            result = Result.Succeeded,
+            isReAuth = false
         )
         AuthTelemetry.addedConnections(
             project,
@@ -178,6 +181,7 @@ fun requestCredentialsForExplorer(
             isAggregated = false,
             attempts = authenticationDialog.attempts + 1,
             result = Result.Cancelled,
+            isReAuth = false
         )
     }
     return isAuthSuccessful

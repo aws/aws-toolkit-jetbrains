@@ -19,8 +19,9 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUr
 import software.amazon.awssdk.services.codewhispererruntime.model.ServiceQuotaExceededException
 import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.amazon.awssdk.services.codewhispererruntime.model.ValidationException
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitError
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthError
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ExportParseException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
@@ -91,7 +92,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
 
         assertThatThrownBy {
             featureDevService.createUploadUrl(testConversationId, testChecksumSha, testContentLength)
-        }.isInstanceOf(ContentLengthError::class.java).hasMessage(message("amazonqFeatureDev.content_length.error_text"))
+        }.isInstanceOf(ContentLengthException::class.java).hasMessage(message("amazonqFeatureDev.content_length.error_text"))
     }
 
     @Test
@@ -145,7 +146,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
 
         assertThatThrownBy {
             featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)
-        }.isExactlyInstanceOf(CodeIterationLimitError::class.java).withFailMessage(
+        }.isExactlyInstanceOf(CodeIterationLimitException::class.java).withFailMessage(
             message("amazonqFeatureDev.code_generation.iteration_limit.error_text")
         )
     }
@@ -159,7 +160,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
 
         assertThatThrownBy {
             featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)
-        }.isExactlyInstanceOf(CodeIterationLimitError::class.java).withFailMessage(
+        }.isExactlyInstanceOf(CodeIterationLimitException::class.java).withFailMessage(
             message("amazonqFeatureDev.code_generation.iteration_limit.error_text")
         )
     }
@@ -219,7 +220,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 whenever(featureDevClient.exportTaskAssistResultArchive(testConversationId)).thenReturn(mutableListOf(byteArrayOf(0, 1, 2)))
                 featureDevService.exportTaskAssistArchiveResult(testConversationId)
             }
-        }.isExactlyInstanceOf(FeatureDevException::class.java)
+        }.isExactlyInstanceOf(ExportParseException::class.java)
     }
 
     @Test

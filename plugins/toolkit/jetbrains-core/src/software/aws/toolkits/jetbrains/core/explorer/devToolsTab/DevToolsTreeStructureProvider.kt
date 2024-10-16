@@ -16,7 +16,7 @@ abstract class DevToolsTreeStructureProvider : TreeStructureProvider {
     final override fun modify(
         parent: AbstractTreeNode<*>,
         children: MutableCollection<AbstractTreeNode<*>>,
-        settings: ViewSettings?
+        settings: ViewSettings?,
     ): MutableCollection<AbstractTreeNode<*>> = modify(parent, children)
 
     abstract fun modify(parent: AbstractTreeNode<*>, children: MutableCollection<AbstractTreeNode<*>>): MutableCollection<AbstractTreeNode<*>>

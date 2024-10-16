@@ -1,0 +1,11 @@
+{
+  "date" : "2024-09-27",
+  "version" : "3.30",
+  "entries" : [ {
+    "type" : "bugfix",
+    "description" : "Amazon Q Code Transformation: notify users when no JDK is set in Project Structure settings"
+  }, {
+    "type" : "bugfix",
+    "description" : "Automatically terminate orphaned process for `@workspace` helper"
+  } ]
+}

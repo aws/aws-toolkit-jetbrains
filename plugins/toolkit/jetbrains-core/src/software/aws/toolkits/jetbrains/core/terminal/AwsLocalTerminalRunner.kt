@@ -11,7 +11,7 @@ import org.jetbrains.plugins.terminal.LocalTerminalDirectRunner
 class AwsLocalTerminalRunner(
     project: Project,
     private val termName: String,
-    private val applyConnection: (MutableMap<String, String>) -> Unit
+    private val applyConnection: (MutableMap<String, String>) -> Unit,
 ) : LocalTerminalDirectRunner(project) {
     override fun getInitialCommand(envs: MutableMap<String, String>): MutableList<String> = super.getInitialCommand(envs.apply(applyConnection))
     override fun createTerminalWidget(parent: Disposable, currentWorkingDirectory: String?, deferSessionStartUntilUiShown: Boolean): JBTerminalWidget {

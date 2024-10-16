@@ -28,6 +28,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.core.util.DefaultSdkAutoConstructList
 import software.amazon.awssdk.services.codewhisperer.model.CodeWhispererException
@@ -46,6 +47,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -53,10 +55,11 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererCon
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.checkLeftContextKeywordsForJsonAndYaml
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getCaretPosition
+import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.isSupportedJsonFormat
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJson
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
@@ -82,7 +85,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextPr
 import software.aws.toolkits.jetbrains.utils.isInjectedText
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.notifyWarn
-import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
@@ -98,26 +100,46 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         Disposer.register(this, codeInsightSettingsFacade)
     }
 
+    private var job: Job? = null
     fun showRecommendationsInPopup(
         editor: Editor,
         triggerTypeInfo: TriggerTypeInfo,
-        latencyContext: LatencyContext
+        latencyContext: LatencyContext,
+    ): Job? {
+        if (job == null || job?.isCompleted == true) {
+            job = cs.launch(getCoroutineBgContext()) {
+                doShowRecommendationsInPopup(editor, triggerTypeInfo, latencyContext)
+            }
+        }
+
+        // did some wrangling, but compiler didn't believe this can't be null
+        return job
+    }
+
+    private suspend fun doShowRecommendationsInPopup(
+        editor: Editor,
+        triggerTypeInfo: TriggerTypeInfo,
+        latencyContext: LatencyContext,
     ) {
         val project = editor.project ?: return
         if (!isCodeWhispererEnabled(project)) return
 
         latencyContext.credentialFetchingStart = System.nanoTime()
 
+        // try to refresh automatically if possible, otherwise ask user to login again
         if (isQExpired(project)) {
+            // consider changing to only running once a ~minute since this is relatively expensive
             // say the connection is un-refreshable if refresh fails for 3 times
             val shouldReauth = if (refreshFailure < MAX_REFRESH_ATTEMPT) {
-                pluginAwareExecuteOnPooledThread {
+                val attempt = withContext(getCoroutineBgContext()) {
                     promptReAuth(project)
-                }.get().also { success ->
-                    if (!success) {
-                        refreshFailure++
-                    }
                 }
+
+                if (!attempt) {
+                    refreshFailure++
+                }
+
+                attempt
             } else {
                 true
             }
@@ -150,7 +172,13 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
 
         val language = requestContext.fileContextInfo.programmingLanguage
         val leftContext = requestContext.fileContextInfo.caretContext.leftFileContext
-        if (!language.isCodeCompletionSupported() || (checkLeftContextKeywordsForJsonAndYaml(leftContext, language.languageId))) {
+        if (!language.isCodeCompletionSupported() || (
+                language is CodeWhispererJson && !isSupportedJsonFormat(
+                    requestContext.fileContextInfo.filename,
+                    leftContext
+                )
+                )
+        ) {
             LOG.debug { "Programming language $language is not supported by CodeWhisperer" }
             if (triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
                 showCodeWhispererInfoHint(
@@ -216,7 +244,8 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     val sessionId = response.sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
                     if (requestCount == 1) {
                         requestContext.latencyContext.codewhispererPostprocessingStart = System.nanoTime()
-                        requestContext.latencyContext.paginationFirstCompletionTime = latency
+                        requestContext.latencyContext.paginationFirstCompletionTime =
+                            (endTime - requestContext.latencyContext.codewhispererEndToEndStart).toDouble()
                         requestContext.latencyContext.firstRequestId = requestId
                         CodeWhispererInvocationStatus.getInstance().setInvocationSessionId(sessionId)
                     }
@@ -388,10 +417,8 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     if (requestContext.triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
                         // We should only show error hint when CodeWhisperer popup is not visible,
                         // and make it silent if CodeWhisperer popup is showing.
-                        runInEdt {
-                            if (!CodeWhispererInvocationStatus.getInstance().isPopupActive()) {
-                                showCodeWhispererErrorHint(requestContext.editor, displayMessage)
-                            }
+                        if (!CodeWhispererInvocationStatus.getInstance().isPopupActive()) {
+                            showCodeWhispererErrorHint(requestContext.editor, displayMessage)
                         }
                     }
                 }
@@ -503,7 +530,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         responseContext: ResponseContext,
         response: GenerateCompletionsResponse,
         caretMovement: CaretMovement,
-        popup: JBPopup
+        popup: JBPopup,
     ): InvocationContext? {
         val requestId = response.responseMetadata().requestId()
         val recommendations = response.completions()
@@ -548,7 +575,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
 
     private fun updateStates(
         states: InvocationContext,
-        response: GenerateCompletionsResponse
+        response: GenerateCompletionsResponse,
     ): InvocationContext {
         val recommendationContext = states.recommendationContext
         val details = recommendationContext.details
@@ -590,7 +617,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
     private fun sendDiscardedUserDecisionEventForAll(
         requestContext: RequestContext,
         responseContext: ResponseContext,
-        recommendations: List<Completion>
+        recommendations: List<Completion>,
     ) {
         val detailContexts = recommendations.map {
             DetailContext("", it, it, true, false, "", getCompletionType(it))
@@ -611,7 +638,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         editor: Editor,
         project: Project,
         psiFile: PsiFile,
-        latencyContext: LatencyContext
+        latencyContext: LatencyContext,
     ): RequestContext {
         // 1. file context
         val fileContext: FileContextInfo = runReadAction { FileContextProvider.getInstance(project).extractFileContext(editor, psiFile) }
@@ -662,7 +689,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         requestContext: RequestContext,
         responseContext: ResponseContext,
         recommendationContext: RecommendationContext,
-        popup: JBPopup
+        popup: JBPopup,
     ): InvocationContext {
         addPopupChildDisposables(popup)
         // Creating a disposable for managing all listeners lifecycle attached to the popup.
@@ -690,7 +717,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         responseContext: ResponseContext,
         recommendations: List<Completion>,
         latency: Double?,
-        exceptionType: String?
+        exceptionType: String?,
     ) {
         val recommendationLogs = recommendations.map { it.content().trimEnd() }
             .reduceIndexedOrNull { index, acc, recommendation -> "$acc\n[${index + 1}]\n$recommendation" }
@@ -733,12 +760,16 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         return true
     }
 
-    fun showCodeWhispererInfoHint(editor: Editor, message: String) {
-        HintManager.getInstance().showInformationHint(editor, message, HintManager.UNDER)
+    private fun showCodeWhispererInfoHint(editor: Editor, message: String) {
+        runInEdt {
+            HintManager.getInstance().showInformationHint(editor, message, HintManager.UNDER)
+        }
     }
 
-    fun showCodeWhispererErrorHint(editor: Editor, message: String) {
-        HintManager.getInstance().showErrorHint(editor, message, HintManager.UNDER)
+    private fun showCodeWhispererErrorHint(editor: Editor, message: String) {
+        runInEdt {
+            HintManager.getInstance().showErrorHint(editor, message, HintManager.UNDER)
+        }
     }
 
     override fun dispose() {}
@@ -765,7 +796,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         fun buildCodeWhispererRequest(
             fileContextInfo: FileContextInfo,
             supplementalContext: SupplementalContextInfo?,
-            customizationArn: String?
+            customizationArn: String?,
         ): GenerateCompletionsRequest {
             val programmingLanguage = ProgrammingLanguage.builder()
                 .languageName(fileContextInfo.programmingLanguage.toCodeWhispererRuntimeLanguage().languageId)
@@ -808,7 +839,7 @@ data class RequestContext(
     private val supplementalContextDeferred: Deferred<SupplementalContextInfo?>,
     val connection: ToolkitConnection?,
     val latencyContext: LatencyContext,
-    val customizationArn: String?
+    val customizationArn: String?,
 ) {
     // TODO: should make the entire getRequestContext() suspend function instead of making supplemental context only
     var supplementalContext: SupplementalContextInfo? = null

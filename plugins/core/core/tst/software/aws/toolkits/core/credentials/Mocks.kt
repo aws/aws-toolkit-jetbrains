@@ -9,14 +9,14 @@ import software.aws.toolkits.core.utils.test.aString
 
 fun aToolkitCredentialsProvider(
     identifier: CredentialIdentifier = aCredentialsIdentifier(),
-    delegate: AwsCredentialsProvider = mock()
+    delegate: AwsCredentialsProvider = mock(),
 ) = ToolkitCredentialsProvider(identifier, delegate)
 
 fun aCredentialsIdentifier(
     id: String = aString(),
     displayName: String = aString(),
     factoryId: String = aString(),
-    defaultRegionId: String? = null
+    defaultRegionId: String? = null,
 ) = object : CredentialIdentifierBase(CredentialType.StaticProfile) {
     override val id: String = id
     override val displayName: String = displayName

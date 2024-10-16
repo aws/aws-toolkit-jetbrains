@@ -59,7 +59,7 @@ class DeploySettings : PersistentStateComponent<DeployConfigs> {
 }
 
 data class DeployConfigs(
-    var samConfigs: MutableMap<String, DeploySamConfig> = mutableMapOf()
+    var samConfigs: MutableMap<String, DeploySamConfig> = mutableMapOf(),
 )
 
 data class DeploySamConfig(
@@ -68,7 +68,7 @@ data class DeploySamConfig(
     var repoUri: String? = null,
     var autoExecute: Boolean = false,
     var useContainer: Boolean = false,
-    var enabledCapabilities: List<CreateCapabilities>? = null
+    var enabledCapabilities: List<CreateCapabilities>? = null,
 )
 
 /**

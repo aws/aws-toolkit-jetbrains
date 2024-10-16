@@ -17,7 +17,7 @@ import software.aws.toolkits.resources.message
 fun notifyNoActiveCredentialsError(
     project: Project,
     title: String = message("aws.notification.title"),
-    content: String = message("aws.notification.credentials_missing")
+    content: String = message("aws.notification.credentials_missing"),
 ) {
     notifyError(
         title = title,
@@ -33,7 +33,7 @@ fun notifyNoActiveCredentialsError(
 fun notifySamCliNotValidError(
     project: Project,
     title: String = message("aws.notification.title"),
-    content: String
+    content: String,
 ) {
     notifyError(
         title = title,

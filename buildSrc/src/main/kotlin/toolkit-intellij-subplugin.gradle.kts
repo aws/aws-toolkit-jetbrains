@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
@@ -35,6 +36,10 @@ configurations {
         exclude(group = "org.slf4j")
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.jetbrains.kotlinx")
+
+        exclude(group = "com.fasterxml.jackson.core")
+        exclude(group = "com.fasterxml.jackson.module", "jackson-module-kotlin")
+        exclude(group = "com.fasterxml.jackson.dataformat", "jackson-dataformat-yaml")
     }
 
     listOf(
@@ -107,6 +112,10 @@ dependencies {
 
         bundledPlugins(toolkitIntelliJ.productProfile().map { it.bundledPlugins })
         plugins(toolkitIntelliJ.productProfile().map { it.marketplacePlugins })
+
+        testFramework(TestFrameworkType.Plugin.Java)
+        testFramework(TestFrameworkType.Platform)
+        testFramework(TestFrameworkType.JUnit5)
     }
 }
 

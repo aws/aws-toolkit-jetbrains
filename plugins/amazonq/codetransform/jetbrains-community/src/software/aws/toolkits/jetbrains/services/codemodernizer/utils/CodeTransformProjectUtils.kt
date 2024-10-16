@@ -61,7 +61,7 @@ fun Project.getSupportedBuildFilesWithSupportedJdk(
     supportedJavaMappings: Map<
         JavaSdkVersion,
         Set<JavaSdkVersion>
-        >
+        >,
 ): List<VirtualFile> {
     val detectedBuildFiles = this.getAllSupportedBuildFiles(supportedBuildFileNames)
     val supportedModules = this.getSupportedModules(supportedJavaMappings).toSet()

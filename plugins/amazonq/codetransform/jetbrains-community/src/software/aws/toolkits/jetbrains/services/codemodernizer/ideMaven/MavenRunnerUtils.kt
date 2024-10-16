@@ -4,7 +4,11 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven
 
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.ModuleRootManager
+import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.vfs.LocalFileSystem
 import org.jetbrains.idea.maven.execution.MavenRunner
 import org.jetbrains.idea.maven.execution.MavenRunnerParameters
 import org.jetbrains.idea.maven.execution.MavenRunnerSettings
@@ -15,26 +19,18 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTele
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
 import software.aws.toolkits.telemetry.CodeTransformBuildCommand
-import software.aws.toolkits.telemetry.CodeTransformMavenBuildCommand
 import software.aws.toolkits.telemetry.Result
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
-
-// TODO: deprecated metric - remove after BI started using new metric
-private fun emitMavenFailure(error: String, logger: Logger, telemetry: CodeTransformTelemetryManager, throwable: Throwable? = null) {
-    if (throwable != null) logger.error(throwable) { error } else logger.error { error }
-    telemetry.mvnBuildFailed(CodeTransformMavenBuildCommand.IDEBundledMaven, error)
-}
 
 fun runHilMavenCopyDependency(
     sourceFolder: File,
     destinationDir: File,
     buildlogBuilder: StringBuilder,
     logger: Logger,
-    project: Project
+    project: Project,
 ): MavenCopyCommandsResult {
-    val telemetry = CodeTransformTelemetryManager.getInstance(project)
     logger.info { "Executing IntelliJ bundled Maven" }
     try {
         // Create shared parameters
@@ -43,7 +39,7 @@ fun runHilMavenCopyDependency(
 
         // run copy dependencies
         val copyDependenciesRunnable =
-            runMavenCopyDependencies(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, destinationDir.toPath(), logger, telemetry)
+            runMavenCopyDependencies(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, destinationDir.toPath(), logger)
         copyDependenciesRunnable.await()
         buildlogBuilder.appendLine(copyDependenciesRunnable.getOutput())
         if (copyDependenciesRunnable.isComplete()) {
@@ -52,11 +48,9 @@ fun runHilMavenCopyDependency(
             buildlogBuilder.appendLine(successMsg)
         } else if (copyDependenciesRunnable.isTerminated()) {
             return MavenCopyCommandsResult.Cancelled
-        } else {
-            // TODO: deprecated metric - remove after BI started using new metric
-            emitMavenFailure("Maven Copy: bundled Maven failed: exitCode ${copyDependenciesRunnable.isComplete()}", logger, telemetry)
         }
     } catch (t: Throwable) {
+        logger.error(t) { "IntelliJ bundled Maven copy-dependencies failed" }
         return MavenCopyCommandsResult.Failure
     }
     // When all commands executed successfully, show the transformation hub
@@ -76,9 +70,16 @@ fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, log
         val transformMvnRunner = TransformMavenRunner(project)
         val mvnSettings = MavenRunner.getInstance(project).settings.clone() // clone required to avoid editing user settings
 
+        val sourceVirtualFile = LocalFileSystem.getInstance().findFileByIoFile(sourceFolder)
+        val module = sourceVirtualFile?.let { ModuleUtilCore.findModuleForFile(it, project) }
+        val moduleSdk = module?.let { ModuleRootManager.getInstance(it).sdk }
+        val sdk = moduleSdk ?: ProjectRootManager.getInstance(project).projectSdk
+        // edge case: module SDK and project SDK are null, and Maven Runner Settings is using the null project SDK, so Maven Runner will definitely fail
+        if (sdk == null && mvnSettings.jreName == "#USE_PROJECT_JDK") return MavenCopyCommandsResult.NoJdk
+
         // run copy dependencies
         val copyDependenciesRunnable =
-            runMavenCopyDependencies(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, destinationDir, logger, telemetry)
+            runMavenCopyDependencies(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, destinationDir, logger)
         copyDependenciesRunnable.await()
         buildlogBuilder.appendLine(copyDependenciesRunnable.getOutput())
         if (copyDependenciesRunnable.isComplete()) {
@@ -90,13 +91,10 @@ fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, log
             return MavenCopyCommandsResult.Cancelled
         } else {
             telemetryErrorMessage += "Maven Copy: bundled Maven failed. "
-
-            // TODO: deprecated metric - remove after BI started using new metric
-            emitMavenFailure("Maven Copy: bundled Maven failed: exitCode ${copyDependenciesRunnable.isComplete()}", logger, telemetry)
         }
 
         // Run clean
-        val cleanRunnable = runMavenClean(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, logger, telemetry, destinationDir)
+        val cleanRunnable = runMavenClean(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, logger, destinationDir)
         cleanRunnable.await()
         buildlogBuilder.appendLine(cleanRunnable.getOutput())
         if (cleanRunnable.isComplete()) {
@@ -109,15 +107,12 @@ fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, log
         } else {
             telemetryErrorMessage += "Maven Clean: bundled Maven failed."
 
-            // TODO: deprecated metric - remove after BI started using new metric
-            emitMavenFailure("Maven Clean: bundled Maven failed: exitCode ${cleanRunnable.isComplete()}", logger, telemetry)
-
             telemetryLocalBuildResult = Result.Failed
             return MavenCopyCommandsResult.Failure
         }
 
         // Run install
-        val installRunnable = runMavenInstall(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, logger, telemetry, destinationDir)
+        val installRunnable = runMavenInstall(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, logger, destinationDir)
         installRunnable.await()
         buildlogBuilder.appendLine(installRunnable.getOutput())
         if (installRunnable.isComplete()) {
@@ -130,16 +125,10 @@ fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, log
         } else {
             telemetryErrorMessage += "Maven Install: bundled Maven failed."
 
-            // TODO: deprecated metric - remove after BI started using new metric
-            emitMavenFailure("Maven Install: bundled Maven failed: exitCode ${installRunnable.isComplete()}", logger, telemetry)
-
             telemetryLocalBuildResult = Result.Failed
             return MavenCopyCommandsResult.Failure
         }
     } catch (t: Throwable) {
-        // TODO: deprecated metric - remove after BI started using new metric
-        emitMavenFailure("IntelliJ bundled Maven executed failed: ${t.message}", logger, telemetry, t)
-
         val errorMessage = "IntelliJ bundled Maven executed failed: ${t.message}"
         logger.error(t) { errorMessage }
         telemetryErrorMessage = errorMessage
@@ -160,7 +149,6 @@ private fun runMavenCopyDependencies(
     transformMavenRunner: TransformMavenRunner,
     destinationDir: Path,
     logger: Logger,
-    telemetry: CodeTransformTelemetryManager,
 ): TransformRunnable {
     buildlogBuilder.appendLine("Command Run: IntelliJ IDEA bundled Maven dependency:copy-dependencies")
     val copyCommandList = listOf(
@@ -187,9 +175,6 @@ private fun runMavenCopyDependencies(
             copyTransformRunnable.setExitCode(Integer.MIN_VALUE) // to stop looking for the exitCode
             logger.info(t) { error }
             buildlogBuilder.appendLine("IntelliJ bundled Maven copy dependencies failed: ${t.message}")
-
-            // TODO: deprecated metric - remove after BI started using new metric
-            telemetry.mvnBuildFailed(CodeTransformMavenBuildCommand.IDEBundledMaven, error)
         }
     }
     return copyTransformRunnable
@@ -201,8 +186,7 @@ private fun runMavenClean(
     mvnSettings: MavenRunnerSettings,
     transformMavenRunner: TransformMavenRunner,
     logger: Logger,
-    telemetry: CodeTransformTelemetryManager,
-    destinationDir: Path
+    destinationDir: Path,
 ): TransformRunnable {
     buildlogBuilder.appendLine("Command Run: IntelliJ IDEA bundled Maven clean")
     val cleanParams = MavenRunnerParameters(
@@ -218,13 +202,9 @@ private fun runMavenClean(
         try {
             transformMavenRunner.run(cleanParams, mvnSettings, cleanTransformRunnable)
         } catch (t: Throwable) {
-            val error = "Maven Clean: Unexpected error when executing bundled Maven clean"
-            logger.error { error }
+            logger.error { "Maven Clean: Unexpected error when executing bundled Maven clean" }
             cleanTransformRunnable.setExitCode(Integer.MIN_VALUE) // to stop looking for the exitCode
             buildlogBuilder.appendLine("IntelliJ bundled Maven clean failed: ${t.message}")
-
-            // TODO: deprecated metric - remove after BI started using new metric
-            emitMavenFailure(error, logger, telemetry, t)
         }
     }
     return cleanTransformRunnable
@@ -236,8 +216,7 @@ private fun runMavenInstall(
     mvnSettings: MavenRunnerSettings,
     transformMavenRunner: TransformMavenRunner,
     logger: Logger,
-    telemetry: CodeTransformTelemetryManager,
-    destinationDir: Path
+    destinationDir: Path,
 ): TransformRunnable {
     buildlogBuilder.appendLine("Command Run: IntelliJ IDEA bundled Maven install")
     val installParams = MavenRunnerParameters(
@@ -253,13 +232,9 @@ private fun runMavenInstall(
         try {
             transformMavenRunner.run(installParams, mvnSettings, installTransformRunnable)
         } catch (t: Throwable) {
-            val error = "Maven Install: Unexpected error when executing bundled Maven install"
-            logger.error { error }
+            logger.error(t) { "Maven Install: Unexpected error when executing bundled Maven install" }
             installTransformRunnable.setExitCode(Integer.MIN_VALUE) // to stop looking for the exitCode
             buildlogBuilder.appendLine("IntelliJ bundled Maven install failed: ${t.message}")
-
-            // TODO: deprecated metric - remove after BI started using new metric
-            emitMavenFailure(error, logger, telemetry, t)
         }
     }
     return installTransformRunnable
@@ -271,7 +246,6 @@ private fun runMavenDependencyUpdatesReport(
     mvnSettings: MavenRunnerSettings,
     transformMavenRunner: TransformMavenRunner,
     logger: Logger,
-    telemetry: CodeTransformTelemetryManager,
 ): TransformRunnable {
     buildlogBuilder.appendLine("Command Run: IntelliJ IDEA bundled Maven dependency updates report")
 
@@ -294,25 +268,21 @@ private fun runMavenDependencyUpdatesReport(
         try {
             transformMavenRunner.run(params, mvnSettings, dependencyUpdatesReportRunnable)
         } catch (t: Throwable) {
-            val error = "Maven dependency report: Unexpected error when executing bundled Maven dependency updates report"
+            logger.error(t) { "Maven dependency report: Unexpected error when executing bundled Maven dependency updates report" }
             dependencyUpdatesReportRunnable.setExitCode(Integer.MIN_VALUE) // to stop looking for the exitCode
             buildlogBuilder.appendLine("IntelliJ bundled Maven dependency updates report failed: ${t.message}")
-
-            // TODO: deprecated metric - remove after BI started using new metric
-            emitMavenFailure(error, logger, telemetry, t)
         }
     }
     return dependencyUpdatesReportRunnable
 }
 
 fun runDependencyReportCommands(sourceFolder: File, buildlogBuilder: StringBuilder, logger: Logger, project: Project): MavenDependencyReportCommandsResult {
-    val telemetry = CodeTransformTelemetryManager.getInstance(project)
     logger.info { "Executing IntelliJ bundled Maven" }
 
     val transformMvnRunner = TransformMavenRunner(project)
     val mvnSettings = MavenRunner.getInstance(project).settings.clone() // clone required to avoid editing user settings
 
-    val runnable = runMavenDependencyUpdatesReport(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, logger, telemetry)
+    val runnable = runMavenDependencyUpdatesReport(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, logger)
     runnable.await()
     buildlogBuilder.appendLine(runnable.getOutput())
     if (runnable.isComplete()) {
@@ -322,9 +292,6 @@ fun runDependencyReportCommands(sourceFolder: File, buildlogBuilder: StringBuild
     } else if (runnable.isTerminated()) {
         return MavenDependencyReportCommandsResult.Cancelled
     } else {
-        // TODO: deprecated metric - remove after BI started using new metric
-        emitMavenFailure("Maven dependency report: bundled Maven failed: exitCode ${runnable.isComplete()}", logger, telemetry)
-
         return MavenDependencyReportCommandsResult.Failure
     }
 

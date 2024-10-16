@@ -20,7 +20,7 @@ class SliderPanel(
     maxTick: Int = max,
     minorTick: Int = (max - min) / 30,
     majorTick: Int = (max - min) / 5,
-    snap: Boolean = false
+    snap: Boolean = false,
 ) {
     @Suppress("UnusedPrivateMember") // root element must be bound
     private lateinit var content: JPanel

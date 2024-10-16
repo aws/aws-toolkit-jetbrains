@@ -30,6 +30,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildAb
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCheckingValidProjectChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileHilAlternativeVersionContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalFailedChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalFailedNoJdkChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalInProgressChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalSuccessChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildDownloadFailureChatContent
@@ -54,7 +55,10 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTr
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserCancelledChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserHilSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputSkipTestsFlagChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputSkipTestsFlagChatIntroContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserSelectionSummaryChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserSkipTestsFlagSelectionChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserStopTransformChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.AuthenticationNeededExceptionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessage
@@ -65,6 +69,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransfo
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_RUN_UNIT_TESTS
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_SKIP_UNIT_TESTS
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.UploadFailureReason
@@ -82,7 +88,7 @@ import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 
 class CodeTransformChatController(
     private val context: AmazonQAppInitContext,
-    private val chatSessionStorage: ChatSessionStorage
+    private val chatSessionStorage: ChatSessionStorage,
 ) : InboundAppMessagesHandler {
     private val authController = AuthController()
     private val messagePublisher = context.messagesFromAppToUi
@@ -129,13 +135,10 @@ class CodeTransformChatController(
         }
 
         codeTransformChatHelper.updateLastPendingMessage(
-            buildProjectValidChatContent(validationResult)
+            buildProjectValidChatContent()
         )
 
         codeTransformChatHelper.chatDelayShort()
-
-        // TODO: deprecated metric - remove after BI started using new metric
-        telemetry.jobIsStartedFromChatPrompt()
 
         codeTransformChatHelper.addNewMessage(
             buildUserInputChatContent(context.project, validationResult)
@@ -210,37 +213,70 @@ class CodeTransformChatController(
         val moduleVirtualFile: VirtualFile = modulePath.toVirtualFile() as VirtualFile
         val moduleName = context.project.getModuleOrProjectNameForFile(moduleVirtualFile)
 
-        codeTransformChatHelper.run {
-            addNewMessage(buildUserSelectionSummaryChatContent(moduleName))
-            addNewMessage(buildCompileLocalInProgressChatContent())
-        }
+        codeTransformChatHelper.addNewMessage(buildUserSelectionSummaryChatContent(moduleName))
 
-        // this should never throw the RuntimeException since invalid JDK case is already handled in previous validation step
-        val moduleJdkVersion = ModuleUtil.findModuleForFile(moduleVirtualFile, context.project)?.tryGetJdk(context.project)
-        logger.info { "Found project JDK version: ${context.project.tryGetJdk()}, module JDK version: $moduleJdkVersion. Module JDK version prioritized." }
-        val sourceJdk = moduleJdkVersion ?: context.project.tryGetJdk() ?: throw RuntimeException("Unable to determine source JDK version")
+        val sourceJdk = getSourceJdk(moduleVirtualFile)
 
         val selection = CustomerSelection(
             moduleVirtualFile,
             sourceJdk,
-            JavaSdkVersion.JDK_17
+            JavaSdkVersion.JDK_17,
         )
+
+        // Create and set a session
+        codeModernizerManager.createCodeModernizerSession(selection, context.project)
 
         // Publish metric to capture user selection before local build starts
         telemetry.submitSelection("Confirm", selection)
 
-        codeModernizerManager.runLocalMavenBuild(context.project, selection)
+        codeTransformChatHelper.run {
+            addNewMessage(buildUserInputSkipTestsFlagChatIntroContent())
+            addNewMessage(buildUserInputSkipTestsFlagChatContent())
+        }
+    }
+
+    override suspend fun processCodeTransformConfirmSkipTests(message: IncomingCodeTransformMessage.CodeTransformConfirmSkipTests) {
+        val customBuildCommand = when (message.skipTestsSelection) {
+            message("codemodernizer.chat.message.skip_tests_form.skip") -> MAVEN_BUILD_SKIP_UNIT_TESTS
+            else -> MAVEN_BUILD_RUN_UNIT_TESTS
+        }
+        codeTransformChatHelper.addNewMessage(buildUserSkipTestsFlagSelectionChatContent(message.skipTestsSelection))
+        codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
+        codeModernizerManager.codeTransformationSession?.let {
+            it.sessionContext.customBuildCommand = customBuildCommand
+            codeModernizerManager.runLocalMavenBuild(context.project, it)
+        }
+    }
+
+    private fun getSourceJdk(moduleConfigurationFile: VirtualFile): JavaSdkVersion {
+        // this should never throw the RuntimeException since invalid JDK case is already handled in previous validation step
+        val moduleJdkVersion = ModuleUtil.findModuleForFile(moduleConfigurationFile, context.project)?.tryGetJdk(context.project)
+        logger.info { "Found project JDK version: ${context.project.tryGetJdk()}, module JDK version: $moduleJdkVersion. Module JDK version prioritized." }
+        val sourceJdk = moduleJdkVersion ?: context.project.tryGetJdk() ?: error("Unable to determine source JDK version")
+        return sourceJdk
     }
 
     private suspend fun handleMavenBuildResult(mavenBuildResult: MavenCopyCommandsResult) {
-        if (mavenBuildResult == MavenCopyCommandsResult.Cancelled) {
-            codeTransformChatHelper.updateLastPendingMessage(buildUserCancelledChatContent())
-            codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
-            return
-        } else if (mavenBuildResult == MavenCopyCommandsResult.Failure) {
-            codeTransformChatHelper.updateLastPendingMessage(buildCompileLocalFailedChatContent())
-            codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
-            return
+        when (mavenBuildResult) {
+            MavenCopyCommandsResult.Cancelled -> {
+                codeTransformChatHelper.updateLastPendingMessage(buildUserCancelledChatContent())
+                codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
+                return
+            }
+            MavenCopyCommandsResult.Failure -> {
+                codeTransformChatHelper.updateLastPendingMessage(buildCompileLocalFailedChatContent())
+                codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
+                return
+            }
+            MavenCopyCommandsResult.NoJdk -> {
+                codeTransformChatHelper.updateLastPendingMessage(buildCompileLocalFailedNoJdkChatContent())
+                codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
+                return
+            }
+
+            is MavenCopyCommandsResult.Success -> {
+                // proceed with transformation
+            }
         }
 
         codeTransformChatHelper.run {

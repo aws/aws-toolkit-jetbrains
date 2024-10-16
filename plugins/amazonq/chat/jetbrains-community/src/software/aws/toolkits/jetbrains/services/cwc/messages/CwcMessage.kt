@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonSerializer
 import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthFollowUpType
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
@@ -65,22 +66,26 @@ sealed interface IncomingCwcMessage : CwcMessage {
         val command: String?,
         @JsonProperty("tabID") val tabId: String,
         val messageId: String,
+        val userIntent: UserIntent?,
         val code: String,
         val insertionTargetType: String?,
         val eventId: String?,
         val codeBlockIndex: Int?,
-        val totalCodeBlocks: Int?
+        val totalCodeBlocks: Int?,
+        val codeBlockLanguage: String?,
     ) : IncomingCwcMessage
 
     data class InsertCodeAtCursorPosition(
         @JsonProperty("tabID") val tabId: String,
         val messageId: String,
+        val userIntent: UserIntent?,
         val code: String,
         val insertionTargetType: String?,
         val codeReference: List<CodeReference>?,
         val eventId: String?,
         val codeBlockIndex: Int?,
-        val totalCodeBlocks: Int?
+        val totalCodeBlocks: Int?,
+        val codeBlockLanguage: String?,
     ) : IncomingCwcMessage
 
     data class TriggerTabIdReceived(
@@ -210,6 +215,8 @@ data class ChatMessage(
     val followUpsHeader: String? = null,
     val relatedSuggestions: List<Suggestion>? = null,
     val codeReference: List<CodeReference>? = null,
+    val userIntent: UserIntent? = null,
+    val codeBlockLanguage: String? = "plaintext",
 ) : UiMessage(
     tabId = tabId,
     type = "chatMessage",
@@ -255,7 +262,7 @@ data class QuickActionMessage(
 data class OnboardingPageInteractionMessage(
     val message: String,
     val interactionType: OnboardingPageInteractionType,
-    @JsonProperty("triggerID") val triggerId: String
+    @JsonProperty("triggerID") val triggerId: String,
 ) : UiMessage(
     tabId = null,
     type = "editorContextCommandMessage",

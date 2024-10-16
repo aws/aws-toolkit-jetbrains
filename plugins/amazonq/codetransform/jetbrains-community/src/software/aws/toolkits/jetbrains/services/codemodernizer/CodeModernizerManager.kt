@@ -112,7 +112,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     private val isJobSuccessfullyResumed = AtomicBoolean(false)
 
     private val transformationStoppedByUsr = AtomicBoolean(false)
-    private var codeTransformationSession: CodeModernizerSession? = null
+    var codeTransformationSession: CodeModernizerSession? = null
         set(session) {
             if (session != null) {
                 Disposer.register(this, session)
@@ -200,9 +200,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         }
 
         val result = validateCore(project)
-
-        // TODO: deprecated metric - remove after BI started using new metric
-        telemetry.sendValidationResult(result)
 
         telemetry.validateProject(result)
 
@@ -367,10 +364,17 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     fun handleLocalMavenBuildResult(mavenCopyCommandsResult: MavenCopyCommandsResult) {
         codeTransformationSession?.setLastMvnBuildResult(mavenCopyCommandsResult)
         // Send IDE notifications first
-        if (mavenCopyCommandsResult == MavenCopyCommandsResult.Failure) {
+        if (mavenCopyCommandsResult is MavenCopyCommandsResult.Failure) {
             notifyStickyInfo(
                 message("codemodernizer.notification.warn.maven_failed.title"),
                 message("codemodernizer.notification.warn.maven_failed.content"),
+                project,
+                listOf(openTroubleshootingGuideNotificationAction(CODE_TRANSFORM_TROUBLESHOOT_DOC_MVN_FAILURE), displayFeedbackNotificationAction()),
+            )
+        } else if (mavenCopyCommandsResult is MavenCopyCommandsResult.NoJdk) {
+            notifyStickyInfo(
+                message("codemodernizer.notification.warn.maven_failed.title"),
+                message("codemodernizer.notification.warn.validation.no_jdk"),
                 project,
                 listOf(openTroubleshootingGuideNotificationAction(CODE_TRANSFORM_TROUBLESHOOT_DOC_MVN_FAILURE), displayFeedbackNotificationAction()),
             )
@@ -379,15 +383,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         CodeTransformMessageListener.instance.onMavenBuildResult(mavenCopyCommandsResult)
     }
 
-    fun runLocalMavenBuild(project: Project, customerSelection: CustomerSelection) {
-        // TODO: deprecated metric - remove after BI started using new metric
-        telemetry.jobStartedCompleteFromPopupDialog(customerSelection)
-
-        // Create and set a session
-        codeTransformationSession = null
-        val session = createCodeModernizerSession(customerSelection, project)
-        codeTransformationSession = session
-
+    fun runLocalMavenBuild(project: Project, session: CodeModernizerSession) {
         projectCoroutineScope(project).launch {
             isMvnRunning.set(true)
             val result = session.getDependenciesUsingMaven()
@@ -443,7 +439,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     private suspend fun handleJobResumedFromHil(
         jobId: JobId,
-        session: CodeModernizerSession
+        session: CodeModernizerSession,
     ): CodeModernizerJobCompletedResult = session.pollUntilJobCompletion(
         jobId
     ) { new, plan ->
@@ -497,7 +493,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     /**
      * Silently try to resume the job, informs users only when job successfully resumed, suppresses exceptions.
      */
-    fun tryResumeJob(onProjectFirstOpen: Boolean = false) = projectCoroutineScope(project).launch {
+    fun tryResumeJob() = projectCoroutineScope(project).launch {
         try {
             val notYetResumed = isResumingJob.compareAndSet(false, true)
             // If the job is already running, compareAndSet will return false because the expected
@@ -508,13 +504,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
             LOG.info { "Attempting to resume job, current state is: $managerState" }
             if (!managerState.flags.getOrDefault(StateFlags.IS_ONGOING, false)) return@launch
-
-            // Gather project details
-            // TODO: deprecated metric - remove after BI started using new metric
-            if (onProjectFirstOpen) {
-                val validationResult = validate(project)
-                telemetry.sendValidationResult(validationResult, onProjectFirstOpen)
-            }
 
             val context = managerState.toSessionContext(project)
             val session = CodeModernizerSession(context)
@@ -674,14 +663,16 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         telemetry.totalRunTime(result.toString(), jobId)
     }
 
-    fun createCodeModernizerSession(customerSelection: CustomerSelection, project: Project) = CodeModernizerSession(
-        CodeModernizerSessionContext(
-            project,
-            customerSelection.configurationFile,
-            customerSelection.sourceJavaVersion,
-            customerSelection.targetJavaVersion,
-        ),
-    )
+    fun createCodeModernizerSession(customerSelection: CustomerSelection, project: Project) {
+        codeTransformationSession = CodeModernizerSession(
+            CodeModernizerSessionContext(
+                project,
+                customerSelection.configurationFile,
+                customerSelection.sourceJavaVersion,
+                customerSelection.targetJavaVersion,
+            ),
+        )
+    }
 
     fun showModernizationProgressUI() = codeModernizerBottomWindowPanelManager.showUnalteredJobUI()
 

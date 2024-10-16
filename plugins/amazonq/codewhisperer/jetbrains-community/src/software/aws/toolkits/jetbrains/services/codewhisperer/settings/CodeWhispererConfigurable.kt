@@ -124,7 +124,7 @@ class CodeWhispererConfigurable(private val project: Project) :
 
             row(message("aws.settings.codewhisperer.project_context_index_max_size")) {
                 intTextField(
-                    range = IntRange(1, 250)
+                    range = IntRange(1, 4096)
                 ).bindIntText(codeWhispererSettings::getProjectContextIndexMaxSize, codeWhispererSettings::setProjectContextIndexMaxSize)
                     .align(AlignX.FILL).apply {
                         connect.subscribe(

@@ -14,7 +14,7 @@ class CawsCommandExecutor(
     private val cawsClient: CodeCatalystClient,
     ssmTarget: String,
     private val spaceName: String,
-    private val projectName: String
+    private val projectName: String,
 ) : AbstractSsmCommandExecutor(AwsRegion.GLOBAL, ssmTarget) {
     override fun startSsh(): StartSessionResponse =
         startSession {

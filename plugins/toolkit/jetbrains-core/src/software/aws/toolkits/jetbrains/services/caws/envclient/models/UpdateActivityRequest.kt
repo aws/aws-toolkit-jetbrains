@@ -4,5 +4,5 @@
 package software.aws.toolkits.jetbrains.services.caws.envclient.models
 
 data class UpdateActivityRequest(
-    val timestamp: String? = null
+    val timestamp: String? = null,
 )

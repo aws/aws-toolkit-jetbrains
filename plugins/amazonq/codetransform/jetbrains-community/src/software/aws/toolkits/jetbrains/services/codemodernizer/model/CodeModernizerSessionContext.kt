@@ -16,7 +16,6 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.putNextEntry
-import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_DEPENDENCIES_ROOT_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_MANIFEST_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runDependencyReportCommands
@@ -45,6 +44,8 @@ const val ZIP_SOURCES_PATH = "sources"
 const val ZIP_DEPENDENCIES_PATH = "dependencies"
 const val BUILD_LOG_PATH = "build-logs.txt"
 const val MAVEN_CONFIGURATION_FILE_NAME = "pom.xml"
+const val MAVEN_BUILD_RUN_UNIT_TESTS = "clean test"
+const val MAVEN_BUILD_SKIP_UNIT_TESTS = "clean test-compile"
 const val MAVEN_DEFAULT_BUILD_DIRECTORY_NAME = "target"
 const val IDEA_DIRECTORY_NAME = ".idea"
 const val INVALID_SUFFIX_SHA = "sha1"
@@ -54,6 +55,7 @@ data class CodeModernizerSessionContext(
     val configurationFile: VirtualFile,
     val sourceJavaVersion: JavaSdkVersion,
     val targetJavaVersion: JavaSdkVersion,
+    var customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS, // run unit tests by default
 ) {
     private val mapper = jacksonObjectMapper()
     private val ignoredDependencyFileExtensions = setOf(INVALID_SUFFIX_SHA, INVALID_SUFFIX_REPOSITORIES)
@@ -115,7 +117,7 @@ data class CodeModernizerSessionContext(
     }
     private fun executeDependencyVersionReportUsingMaven(
         sourceFolder: File,
-        buildLogBuilder: StringBuilder
+        buildLogBuilder: StringBuilder,
     ) = runDependencyReportCommands(sourceFolder, buildLogBuilder, LOG, project)
 
     fun createZipForHilUpload(hilTempPath: Path, manifest: CodeTransformHilDownloadManifest?, targetVersion: String): ZipCreationResult =
@@ -173,14 +175,11 @@ data class CodeModernizerSessionContext(
         }
 
     fun createZipWithModuleFiles(copyResult: MavenCopyCommandsResult): ZipCreationResult {
-        val telemetry = CodeTransformTelemetryManager.getInstance(project)
         val root = configurationFile.parent
         val sourceFolder = File(root.path)
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
         val depDirectory = if (copyResult is MavenCopyCommandsResult.Success) {
             showTransformationHub()
-            // TODO: deprecated metric - remove after BI started using new metric
-            telemetry.dependenciesCopied()
             copyResult.dependencyDirectory
         } else {
             null
@@ -204,7 +203,7 @@ data class CodeModernizerSessionContext(
                 val outputFile = createTemporaryZipFile { zip ->
                     // 1) Manifest file
                     val dependenciesRoot = if (depDirectory != null) "$ZIP_DEPENDENCIES_PATH/${depDirectory.name}" else null
-                    mapper.writeValueAsString(ZipManifest(dependenciesRoot = dependenciesRoot))
+                    mapper.writeValueAsString(ZipManifest(dependenciesRoot = dependenciesRoot, customBuildCommand = customBuildCommand))
                         .byteInputStream()
                         .use {
                             zip.putNextEntry(Path(MANIFEST_PATH).toString(), it)

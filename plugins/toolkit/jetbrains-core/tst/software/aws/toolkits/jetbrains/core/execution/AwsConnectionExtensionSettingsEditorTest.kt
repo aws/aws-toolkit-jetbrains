@@ -128,7 +128,7 @@ class AwsConnectionExtensionSettingsEditorTest {
     private fun ApplicationConfiguration.extensionOptions() = getCopyableUserData(AWS_CONNECTION_RUN_CONFIGURATION_KEY)
 
     private fun ObjectAssert<AwsConnectionExtensionSettingsEditor<ApplicationConfiguration>>.isPersistedAs(
-        expected: AwsCredentialInjectionOptions.() -> Unit
+        expected: AwsCredentialInjectionOptions.() -> Unit,
     ) {
         satisfiesKt {
             val updatedConfiguration = createConfiguration { }

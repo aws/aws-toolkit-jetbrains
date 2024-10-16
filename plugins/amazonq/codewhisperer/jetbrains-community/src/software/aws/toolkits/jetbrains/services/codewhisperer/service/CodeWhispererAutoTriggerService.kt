@@ -42,6 +42,8 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
 
     private var lastInvocationTime: Instant? = null
     private var lastInvocationLineNum: Int? = null
+    var timeAtLastCharTyped: Instant = Instant.now()
+        private set
 
     init {
         scheduleReset()
@@ -54,6 +56,7 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
     // a util wrapper
     fun tryInvokeAutoTrigger(editor: Editor, triggerType: CodeWhispererAutomatedTriggerType): Job? {
         // only needed for Classifier group, thus calculate it lazily
+        timeAtLastCharTyped = Instant.now()
         val classifierResult: ClassifierResult by lazy { shouldTriggerClassifier(editor, triggerType.telemetryType) }
         val language = runReadAction {
             FileDocumentManager.getInstance().getFile(editor.document)?.programmingLanguage()
@@ -139,7 +142,7 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
 
     fun shouldTriggerClassifier(
         editor: Editor,
-        automatedTriggerType: CodewhispererAutomatedTriggerType = CodewhispererAutomatedTriggerType.Classifier // TODO: need this?
+        automatedTriggerType: CodewhispererAutomatedTriggerType = CodewhispererAutomatedTriggerType.Classifier, // TODO: need this?
     ): ClassifierResult {
         val caretContext = runReadAction { CodeWhispererEditorUtil.extractCaretContext(editor) }
         val language = runReadAction {
@@ -305,7 +308,7 @@ private enum class VariableTypeNeedNormalize {
     },
     LineDiff {
         override fun normalize(value: Double): Double = 0.0
-    };
+    }, ;
 
     abstract fun normalize(toDouble: Double): Double
 

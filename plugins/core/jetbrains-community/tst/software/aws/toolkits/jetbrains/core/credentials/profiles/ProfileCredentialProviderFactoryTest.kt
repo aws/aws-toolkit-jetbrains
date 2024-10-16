@@ -961,7 +961,7 @@ class ProfileCredentialProviderFactoryTest {
 
     private fun profileName(
         expectedProfileName: String,
-        defaultRegion: String? = null
+        defaultRegion: String? = null,
     ): Condition<Iterable<CredentialIdentifier>> =
         object : Condition<Iterable<CredentialIdentifier>>(expectedProfileName) {
             override fun matches(value: Iterable<CredentialIdentifier>): Boolean = value.any {
@@ -970,7 +970,7 @@ class ProfileCredentialProviderFactoryTest {
         }
 
     private fun ssoSessionName(
-        expectedProfileName: String
+        expectedProfileName: String,
     ): Condition<Iterable<SsoSessionIdentifier>> =
         object : Condition<Iterable<SsoSessionIdentifier>>(expectedProfileName) {
             override fun matches(value: Iterable<SsoSessionIdentifier>): Boolean = value.any {

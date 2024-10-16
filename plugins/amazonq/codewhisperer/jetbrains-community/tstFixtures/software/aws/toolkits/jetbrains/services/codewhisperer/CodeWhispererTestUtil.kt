@@ -191,7 +191,7 @@ object CodeWhispererTestUtil {
         licenseName: String,
         repository: String,
         start: Int,
-        end: Int
+        end: Int,
     ): Completion =
         Completion.builder()
             .content(content)
@@ -214,7 +214,7 @@ object CodeWhispererTestUtil {
 fun aRequestContext(
     project: Project,
     myFileContextInfo: FileContextInfo? = null,
-    mySupplementalContextInfo: SupplementalContextInfo? = null
+    mySupplementalContextInfo: SupplementalContextInfo? = null,
 ): RequestContext {
     val triggerType = aTriggerType()
     val automatedTriggerType = if (triggerType == CodewhispererTriggerType.AutoTrigger) {

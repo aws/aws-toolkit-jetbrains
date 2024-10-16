@@ -14,10 +14,10 @@ import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.telemetry.AuthStatus
 import software.aws.toolkits.telemetry.StartUpState
 
-fun getConnectionCount(): Int {
+fun getConnectionCount(): Long {
     val bearerTokenCount = ToolkitAuthManager.getInstance().listConnections().size
     val iamCredentialCount = CredentialManager.getInstance().getCredentialIdentifiers().count { it !is ProfileCredentialsIdentifierSso }
-    return bearerTokenCount + iamCredentialCount
+    return (bearerTokenCount + iamCredentialCount).toLong()
 }
 
 fun getEnabledConnectionsForTelemetry(project: Project?): Set<AuthFormId> {
@@ -79,9 +79,11 @@ fun getStartupState(): StartUpState {
 
 fun getAuthStatus(project: Project) = when (checkConnectionValidity(project)) {
     is ActiveConnection.ExpiredIam,
-    is ActiveConnection.ExpiredBearer -> AuthStatus.Expired
+    is ActiveConnection.ExpiredBearer,
+    -> AuthStatus.Expired
     is ActiveConnection.ValidIam,
-    is ActiveConnection.ValidBearer -> AuthStatus.Connected
+    is ActiveConnection.ValidBearer,
+    -> AuthStatus.Connected
     else -> AuthStatus.NotConnected
 }
 
@@ -94,5 +96,5 @@ enum class AuthFormId {
     IDENTITYCENTER_CODEWHISPERER,
     BUILDERID_Q,
     IDENTITYCENTER_Q,
-    UNKNOWN
+    UNKNOWN,
 }
