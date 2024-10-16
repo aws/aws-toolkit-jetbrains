@@ -313,7 +313,7 @@ class InlineChatController(
         if(event.message?.isNotEmpty() == true) {
             val codeBlocks = getCodeBlocks(event.message)
             if(codeBlocks.isEmpty()) {
-                logger.info { "No code block found in inline chat response with requestId: ${event.messageId} \nresponse: ${event.message} " }
+                logger.info { "No code block found in inline chat response with requestId: ${event.messageId}" }
                 return
             }
             val recommendation = unescape(extractContentAfterFirstNewline(codeBlocks.first()))
@@ -343,6 +343,7 @@ class InlineChatController(
                 recordInlineChatTelemetry(InlineChatUserDecision.DISMISS)
                 return
             }
+            var isAllEqual = true
             diff.forEach { row ->
                 when (row.tag) {
                     DiffRow.Tag.EQUAL -> {
@@ -350,6 +351,7 @@ class InlineChatController(
                         insertLine++
                     }
                     DiffRow.Tag.DELETE, DiffRow.Tag.CHANGE -> {
+                        isAllEqual = false
                         try {
                             if (row.tag == DiffRow.Tag.CHANGE && row.newLine.trimIndent() == row.oldLine?.trimIndent()) return
                             showCodeChangeInEditor(row, currentDocumentLine, editor)
@@ -367,6 +369,7 @@ class InlineChatController(
                         deletedCharsCount += row.oldLine?.length?: 0
                     }
                     DiffRow.Tag.INSERT -> {
+                        isAllEqual = false
                         try {
                             showCodeChangeInEditor(row, insertLine, editor)
                         } catch (e: Exception) {
@@ -377,6 +380,9 @@ class InlineChatController(
                         addedCharsCount += row.newLine?.length?: 0
                     }
                 }
+            }
+            if (isAllEqual) {
+                throw Exception("No recommendation provided. Please try again with a different question.")
             }
 
             isInProgress.set(false)
@@ -570,28 +576,46 @@ class InlineChatController(
         var firstResponseLatency = 0.0
         val messages = mutableListOf<ChatMessage>()
         val triggerId = UUID.randomUUID().toString()
-
-        val languageExtractor = LanguageExtractor()
         val intentRecognizer = UserIntentRecognizer()
-        val language = editor.project?.let { languageExtractor.extractProgrammingLanguageNameFromCurrentFile(editor, it) } ?: ""
 
-        var baseRules = "- Plan out the changes step-by-step before making them, this should be brief and not include any code\n" +
-            "- Do not explain the code after, the plan and code are sufficient\n"
+//        val languageExtractor = LanguageExtractor()
+//        val language = editor.project?.let { languageExtractor.extractProgrammingLanguageNameFromCurrentFile(editor, it) } ?: ""
+//        This is temporary. TODO: remove this after prompt added on service side
         var prompt = ""
         if (selectedCode.isNotBlank()) {
-            if (language.isNotEmpty()) {
-                baseRules += "- Ensure the code is written in $language\n"
-            }
-            prompt = "Rules for writing code:\n" + baseRules +
-                "Write a code snipped based on the following:\n" + message
+            prompt = "You are a code transformation assistant. Your task is to modify a selection of lines from a given code file according to a specific instruction.\n"+
+                "Follow these steps carefully:\n" +
+                "- You will be given some selected code from a file to be transformed, enclosed in <selected_code></selected_code> XML tags\n" +
+                "- You will receive an instruction for how to transform the selected code, enclosed in <instruction></instruction> XML tags\n" +
+                "- You will be given the contents of that same file as context, enclosed in <context></context> XML tags\n"
+                "- Your task is to:\n" +
+                "- Apply the transformation instruction to the selected code\n" +
+                "- Ensure that the transformation is applied correctly and consistently\n" +
+                "- Reuse existing functions and other code from the context wherever possible\n" +
+                "- Important rules to follow:\n" +
+                "- Maintain the original indentation of the selected code\n" +
+                "- If the instruction asks to provide explanations or answer questions about the code, add these as new comment lines above the relevant lines in the code; do not change the code lines themselves\n" +
+                "- If the instruction is unclear or cannot be applied, do not make any changes to the code\n" +
+                "- After performing the transformation, return the transformed code. If the transformation generates new code but does not modify the selected code, be sure to include the selected code in your response.\n"
         } else {
-            baseRules += "- If the query is a question only attempt to add comments to the code that answer it\n" +
-                "- Make sure to preserve the original indentation, code formatting, tab size and structure as much as possible\n" +
-                "- Do not change the code more than required, try to maintain variables, function names, and other identifiers"
-            prompt = "```$language\n$selectedCode\n```\n" +
-                "Rules for rewriting the code:\n" + baseRules +
-                "Rewrite the above code to do the following:\n" + message
+            prompt = "You are a coding assistant. Your task is to generate code according to an specific instruction.\n" +
+                "Follow these steps carefully:\n" +
+                "- You will receive an instruction for how to generate code, enclosed in <instruction></instruction> XML tags\n" +
+                "- You will be given the contents of that same file as context, enclosed in <context></context> XML tags\n" +
+                "- Your task is to:\n" +
+                "- Generate code according to the instruction\n" +
+                "- Reuse existing functions and other code from the context wherever possible\n" +
+                "- Important rules to follow:\n" +
+                "- If the instruction asks to provide explanations or answer questions about the code, add these as new comment lines above the relevant lines in the code; do not change the code lines themselves\n" +
+                "- If the instruction is unclear or cannot be applied, do not make any changes to the code\n" +
+                "- After generating the code, return ONLY the new code you generated; do not include any existing lines of code from the context.\n"
         }
+
+        prompt += "- Respond with the code in markdown format. Do not include any explanations or other text outside of the code itself\n" +
+            "Remember, your output should contain nothing but the transformed code or code comments.\n"
+        if (selectedCode.isNotBlank()) { prompt += "<selected_code>$selectedCode</selected_code>\n" }
+        prompt += "<instruction>$message</instruction>\n"
+        prompt += "<context>${editor.document.text.take(8000)}</context>"
 
         logger.info { "Inline chat prompt: $prompt" }
 
