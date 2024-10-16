@@ -9,7 +9,6 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
@@ -130,7 +129,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     private fun initEncryption(): Boolean {
-        logger.info { "project context: init key for ${project.guessProjectDir()} on port ${encoderServer.port}" }
+        logger.info { "project context: init key for ${project.basePath} on port ${encoderServer.port}" }
         val url = URL("http://localhost:${encoderServer.port}/initialize")
         val payload = encoderServer.getEncryptionRequest()
         val connection = url.openConnection() as HttpURLConnection
@@ -148,7 +147,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         var duration = (System.currentTimeMillis() - indexStartTime).toDouble()
         logger.debug { "project context file collection time: ${duration}ms" }
         logger.debug { "list of files collected: ${filesResult.files.joinToString("\n")}" }
-        val projectRoot = project.guessProjectDir()?.path ?: return false
+        val projectRoot = project.basePath ?: return false
         val payload = IndexRequestPayload(filesResult.files, projectRoot, false)
         val payloadJson = mapper.writeValueAsString(payload)
         val encrypted = encoderServer.encrypt(payloadJson)
@@ -275,7 +274,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         var currentTotalFileSize = 0L
         val featureDevSessionContext = FeatureDevSessionContext(project)
         val allFiles = mutableListOf<VirtualFile>()
-        project.guessProjectDir()?.let {
+        project.baseDir?.let {
             VfsUtilCore.visitChildrenRecursively(
                 it,
                 object : VirtualFileVisitor<Unit>(NO_FOLLOW_SYMLINKS) {
