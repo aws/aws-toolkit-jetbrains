@@ -38,9 +38,9 @@ class CodeGenerationState(
     val messenger: MessagePublisher,
     override var codeGenerationRemainingIterationCount: Int? = null,
     override var codeGenerationTotalIterationCount: Int? = null,
-    var currentCodeGenerationId:  UUID? = null,
-    override var token: CancellationTokenSource?
-    ) : SessionState {
+    var currentCodeGenerationId: UUID? = null,
+    override var token: CancellationTokenSource?,
+) : SessionState {
     override val phase = SessionStatePhase.CODEGEN
 
     override suspend fun interact(action: SessionStateAction): SessionStateInteraction {
@@ -53,7 +53,6 @@ class CodeGenerationState(
         var numberOfFilesGenerated: Int? = null
         try {
             val codeGenerationId = UUID.randomUUID()
-
 
             val response = config.featureDevService.startTaskAssistCodeGeneration(
                 conversationId = config.conversationId,
@@ -138,11 +137,9 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String, m
     val pollCount = 180
     val requestDelay = 10000L
 
-
     repeat(pollCount) {
-
         if (token?.token()?.isCancellationRequested == true) {
-            return CodeGenerationResult(emptyList(), emptyList(), emptyList());
+            return CodeGenerationResult(emptyList(), emptyList(), emptyList())
         }
         val codeGenerationResultState = config.featureDevService.getTaskAssistCodeGeneration(
             conversationId = config.conversationId,

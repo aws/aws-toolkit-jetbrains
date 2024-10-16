@@ -291,7 +291,12 @@ class FeatureDevController(
     private suspend fun handleStopMessage(message: IncomingFeatureDevMessage.StopResponse) {
         var session: Session? = null
         AmazonqTelemetry.stopCodeGeneration(tabId = message.tabId)
-        messenger.sendAnswer( tabId = message.tabId, message("amazonqFeatureDev.code_generation.stopping_code_generation"), messageType = FeatureDevMessageType.Answer, canBeVoted = false)
+        messenger.sendAnswer(
+            tabId = message.tabId,
+            message("amazonqFeatureDev.code_generation.stopping_code_generation"),
+            messageType = FeatureDevMessageType.Answer,
+            canBeVoted = false
+        )
         messenger.sendUpdatePlaceholder(
             tabId = message.tabId,
             newPlaceholder = message("amazonqFeatureDev.code_generation.stopping_code_generation")

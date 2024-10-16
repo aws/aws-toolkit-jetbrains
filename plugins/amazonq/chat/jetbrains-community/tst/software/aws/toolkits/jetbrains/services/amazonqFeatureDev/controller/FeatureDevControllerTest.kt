@@ -18,7 +18,6 @@ import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
-import org.gradle.tooling.CancellationTokenSource
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -50,7 +49,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendC
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendSystemPrompt
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendUpdatePlaceholder
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.updateFileComponent
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Interaction
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo

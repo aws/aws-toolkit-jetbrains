@@ -51,7 +51,6 @@ suspend fun FeatureDevController.onCodeGeneration(session: Session, message: Str
         var remainingIterations: Int? = state.codeGenerationRemainingIterationCount
         var totalIterations: Int? = state.codeGenerationTotalIterationCount
 
-
         if (state.token?.token()?.isCancellationRequested == true) {
             this.disposeToken(state, messenger, tabId, remainingIterations, totalIterations)
             return
@@ -60,7 +59,6 @@ suspend fun FeatureDevController.onCodeGeneration(session: Session, message: Str
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.generating_code"))
 
         session.send(message) // Trigger code generation
-
 
         var filePaths: List<NewFileZipInfo> = emptyList()
         var deletedFiles: List<DeletedFileInfo> = emptyList()
@@ -130,7 +128,6 @@ suspend fun FeatureDevController.onCodeGeneration(session: Session, message: Str
 
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
     } finally {
-
         if (session.sessionState.token?.token()?.isCancellationRequested == true) {
             session.sessionState.token = GradleConnector.newCancellationTokenSource()
         } else {
@@ -153,7 +150,9 @@ private suspend fun FeatureDevController.disposeToken(state: SessionState, messe
         messenger.sendAnswer(
             tabId = tabId,
             messageType = FeatureDevMessageType.Answer,
-            message = message("amazonqFeatureDev.code_generation.stopped_code_generation", remainingIterations ?: state.currentIteration as Any,
+            message = message(
+                "amazonqFeatureDev.code_generation.stopped_code_generation",
+                remainingIterations ?: state.currentIteration as Any,
                 totalIterations ?: CODE_GENERATION_RETRY_LIMIT
             )
         )
@@ -172,7 +171,6 @@ private suspend fun FeatureDevController.disposeToken(state: SessionState, messe
         newPlaceholder = message("amazonqFeatureDev.placeholder.new_plan")
     )
 }
-
 
 private fun FeatureDevController.openChatNotificationAction() = NotificationAction.createSimple(
     message("amazonqFeatureDev.code_generation.notification_open_link")

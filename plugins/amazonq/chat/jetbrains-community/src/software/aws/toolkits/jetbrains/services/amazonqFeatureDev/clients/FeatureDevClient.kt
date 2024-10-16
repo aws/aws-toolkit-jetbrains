@@ -107,22 +107,23 @@ class FeatureDevClient(private val project: Project) {
                 )
         }
 
-    fun startTaskAssistCodeGeneration(conversationId: String, uploadId: String, userMessage: String, codeGenerationId: UUID, currentCodeGenerationId: String?): StartTaskAssistCodeGenerationResponse = bearerClient()
-        .startTaskAssistCodeGeneration {
-                request ->
-            request
-                .conversationState {
-                    it
-                        .conversationId(conversationId)
-                        .chatTriggerType(SyncChatTriggerType.MANUAL)
-                        .currentMessage { cm -> cm.userInputMessage { um -> um.content(userMessage) } }
-                }
-                .workspaceState {
-                    it
-                        .programmingLanguage { pl -> pl.languageName("javascript") } // This parameter is omitted by featureDev but required in the request
-                        .uploadId(uploadId)
-                }.codeGenerationId(codeGenerationId.toString()).currentCodeGenerationId(currentCodeGenerationId)
-        }
+    fun startTaskAssistCodeGeneration(conversationId: String, uploadId: String, userMessage: String, codeGenerationId: UUID, currentCodeGenerationId: String?): StartTaskAssistCodeGenerationResponse =
+        bearerClient()
+            .startTaskAssistCodeGeneration {
+                    request ->
+                request
+                    .conversationState {
+                        it
+                            .conversationId(conversationId)
+                            .chatTriggerType(SyncChatTriggerType.MANUAL)
+                            .currentMessage { cm -> cm.userInputMessage { um -> um.content(userMessage) } }
+                    }
+                    .workspaceState {
+                        it
+                            .programmingLanguage { pl -> pl.languageName("javascript") } // This parameter is omitted by featureDev but required in the request
+                            .uploadId(uploadId)
+                    }.codeGenerationId(codeGenerationId.toString()).currentCodeGenerationId(currentCodeGenerationId)
+            }
 
     fun getTaskAssistCodeGeneration(conversationId: String, codeGenerationId: String): GetTaskAssistCodeGenerationResponse = bearerClient()
         .getTaskAssistCodeGeneration {

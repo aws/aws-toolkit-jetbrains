@@ -96,7 +96,9 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
         }
         assertThat(codeGenerationState.phase).isEqualTo(SessionStatePhase.CODEGEN)
         coVerify(exactly = 1) { messenger.sendAnswerPart(testTabId, message("amazonqFeatureDev.code_generation.generating_code")) }
-        verify(exactly = 1) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, currentCodeGenerationId) }
+        verify(
+            exactly = 1
+        ) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, currentCodeGenerationId) }
         verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
         coVerify(exactly = 1) { featureDevService.exportTaskAssistArchiveResult(testConversationId) }
     }
@@ -108,7 +110,9 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
 
         codeGenerationState.interact(action)
 
-        verify(exactly = 1) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, currentCodeGenerationId) }
+        verify(
+            exactly = 1
+        ) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, currentCodeGenerationId) }
         verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
         coVerify(exactly = 0) { featureDevService.exportTaskAssistArchiveResult(any()) }
     }
@@ -124,7 +128,9 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
             }
         }.isExactlyInstanceOf(IllegalStateException::class.java).withFailMessage("Unknown status: $otherStatus")
 
-        verify(exactly = 1) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, currentCodeGenerationId) }
+        verify(
+            exactly = 1
+        ) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, currentCodeGenerationId) }
         verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
         coVerify(exactly = 0) { featureDevService.exportTaskAssistArchiveResult(any()) }
     }
@@ -141,7 +147,9 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
             codeGenerationState.interact(action)
         }
 
-        verify(exactly = 1) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, currentCodeGenerationId) }
+        verify(
+            exactly = 1
+        ) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, currentCodeGenerationId) }
         verify(exactly = 2) { featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
         coVerify(exactly = 1) { featureDevService.exportTaskAssistArchiveResult(testConversationId) }
     }
@@ -164,7 +172,9 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
             assertThat(actual.interaction.content).isEqualTo("")
         }
 
-        verify(exactly = 1) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, currentCodeGenerationId) }
+        verify(
+            exactly = 1
+        ) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, currentCodeGenerationId) }
         verify(exactly = 180) { featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
         coVerify(exactly = 0) { featureDevService.exportTaskAssistArchiveResult(testConversationId) }
     }

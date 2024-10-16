@@ -52,7 +52,7 @@ class PrepareCodeGenerationState(
             zipFileLength = repoZipResult.contentLength
             val fileToUpload = repoZipResult.payload
 
-            val uploadId = UUID.randomUUID();
+            val uploadId = UUID.randomUUID()
             val uploadUrlResponse = config.featureDevService.createUploadUrl(
                 config.conversationId,
                 zipFileChecksum,

@@ -94,7 +94,7 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
                 uploadId.toString()
             )
             logger.debug {
-                "$FEATURE_NAME: Created upload url: {uploadId: ${uploadId.toString()}, requestId: ${uploadUrlResponse.responseMetadata().requestId()}}"
+                "$FEATURE_NAME: Created upload url: {uploadId: $uploadId, requestId: ${uploadUrlResponse.responseMetadata().requestId()}}"
             }
             return uploadUrlResponse
         } catch (e: Exception) {

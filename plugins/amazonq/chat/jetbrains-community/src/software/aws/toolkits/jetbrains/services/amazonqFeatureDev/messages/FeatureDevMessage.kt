@@ -69,7 +69,7 @@ sealed interface IncomingFeatureDevMessage : FeatureDevBaseMessage {
     data class StopResponse(
         @JsonProperty("tabID") val tabId: String,
         val command: String,
-        val messageId: String?
+        val messageId: String?,
     ) : IncomingFeatureDevMessage
 
     data class InsertCodeAtCursorPosition(

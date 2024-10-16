@@ -12,7 +12,7 @@ class ConversationNotStartedState(
     override var codeGenerationRemainingIterationCount: Int?,
     override var codeGenerationTotalIterationCount: Int?,
     override var currentIteration: Int?,
-    ) : SessionState {
+) : SessionState {
     override val phase = SessionStatePhase.INIT
 
     override suspend fun interact(action: SessionStateAction): SessionStateInteraction {

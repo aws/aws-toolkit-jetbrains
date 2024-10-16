@@ -12,7 +12,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.RecommendationConte
 data class SessionStateAction(
     val task: String,
     val msg: String,
-    val token: CancellationTokenSource? = null
+    val token: CancellationTokenSource? = null,
 )
 
 data class Interaction(
