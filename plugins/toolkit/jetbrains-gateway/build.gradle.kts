@@ -116,6 +116,12 @@ listOf("compileClasspath", "runtimeClasspath").forEach { configuration ->
     }
 }
 
+configurations {
+    all {
+        exclude("com.jetbrains.intellij.spellchecker")
+    }
+}
+
 val gatewayResources = configurations.create("gatewayResources") {
     isCanBeResolved = false
 }

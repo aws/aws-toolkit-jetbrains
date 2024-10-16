@@ -6,7 +6,9 @@ package software.aws.toolkits.jetbrains.services.lambda.wizard
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.Sdk
+import com.intellij.openapi.projectRoots.impl.SdkConfigurationUtil
 import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
@@ -29,12 +31,19 @@ interface SdkSelector {
     fun sdkSelectionLabel(): JLabel?
 
     fun applySdkSettings(model: ModifiableRootModel) {
-        val sdk = getSdk() ?: return
+        var sdk = getSdk() ?: return
         val project = model.project
 
         val projectRootManager = ProjectRootManager.getInstance(project)
         WriteAction.runAndWait(
             ThrowableRunnable<Exception> {
+                val existingSdk = ProjectJdkTable.getInstance().findJdk(sdk.name)
+                if (existingSdk != null) {
+                    sdk = existingSdk
+                } else {
+                    SdkConfigurationUtil.addSdk(sdk)
+                }
+
                 if (projectRootManager.projectSdk == null) {
                     projectRootManager.projectSdk = sdk
                 }

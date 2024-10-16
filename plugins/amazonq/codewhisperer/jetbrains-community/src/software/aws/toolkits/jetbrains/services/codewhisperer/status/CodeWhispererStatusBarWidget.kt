@@ -19,6 +19,7 @@ import com.intellij.ui.AnimatedIcon
 import com.intellij.util.Consumer
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileWatcher
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.QActionGroups.Q_SIGNED_OUT_ACTION_GROUP
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomizationListener
@@ -104,11 +105,16 @@ class CodeWhispererStatusBarWidget(project: Project) :
             )
         }
 
-    override fun getSelectedValue(): String = CodeWhispererModelConfigurator.getInstance().activeCustomization(project).let {
-        if (it == null) {
-            message("codewhisperer.statusbar.display_name")
-        } else {
-            "${message("codewhisperer.statusbar.display_name")} | ${it.name}"
+    override fun getSelectedValue(): String {
+        // HACK: Force ProfileWatcher to load under EDT so that ToolkitConnectionManager#activeConnectionForFeature does not deadlock while ProfileWatcher#<init>
+        // is waiting for VFS events to propagate on EDT
+        ProfileWatcher.getInstance()
+        return CodeWhispererModelConfigurator.getInstance().activeCustomization(project).let {
+            if (it == null) {
+                message("codewhisperer.statusbar.display_name")
+            } else {
+                "${message("codewhisperer.statusbar.display_name")} | ${it.name}"
+            }
         }
     }
 
