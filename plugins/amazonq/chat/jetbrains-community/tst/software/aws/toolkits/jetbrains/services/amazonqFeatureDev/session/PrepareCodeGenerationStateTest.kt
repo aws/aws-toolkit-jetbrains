@@ -49,9 +49,11 @@ class PrepareCodeGenerationStateTest : FeatureDevTestBase() {
         every { featureDevService.project } returns projectRule.project
         messenger = mock()
         sessionStateConfig = SessionStateConfig(testConversationId, repoContext, featureDevService)
+
         prepareCodeGenerationState = PrepareCodeGenerationState(
             "",
-            "tabId",
+            null,
+            "test-approach",
             sessionStateConfig,
             emptyList(),
             emptyList(),

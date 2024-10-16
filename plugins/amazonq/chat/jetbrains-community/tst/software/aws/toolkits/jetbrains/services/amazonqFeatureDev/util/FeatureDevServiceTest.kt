@@ -28,6 +28,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.Featur
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeGenerationStreamResult
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
 import software.aws.toolkits.resources.message
+import java.util.UUID
 
 class FeatureDevServiceTest : FeatureDevTestBase() {
     @Rule
@@ -64,9 +65,11 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
 
     @Test
     fun `test createUploadUrl`() {
-        whenever(featureDevClient.createTaskAssistUploadUrl(testConversationId, testChecksumSha, testContentLength)).thenReturn(exampleCreateUploadUrlResponse)
+        whenever(
+            featureDevClient.createTaskAssistUploadUrl(testConversationId, testChecksumSha, testContentLength, uploadId = UUID.randomUUID().toString())
+        ).thenReturn(exampleCreateUploadUrlResponse)
 
-        val actual = featureDevService.createUploadUrl(testConversationId, testChecksumSha, testContentLength)
+        val actual = featureDevService.createUploadUrl(testConversationId, testChecksumSha, testContentLength, uploadId = UUID.randomUUID())
         assertThat(actual).isInstanceOf(CreateUploadUrlResponse::class.java)
         assertThat(actual).usingRecursiveComparison().comparingOnlyFields("uploadUrl", "uploadId", "kmsKeyArn")
             .isEqualTo(exampleCreateUploadUrlResponse)
@@ -74,15 +77,19 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
 
     @Test
     fun `test createUploadUrl with error`() {
-        whenever(featureDevClient.createTaskAssistUploadUrl(testConversationId, testChecksumSha, testContentLength)).thenThrow(RuntimeException())
+        whenever(
+            featureDevClient.createTaskAssistUploadUrl(testConversationId, testChecksumSha, testContentLength, uploadId = UUID.randomUUID().toString())
+        ).thenThrow(RuntimeException())
         assertThatThrownBy {
-            featureDevService.createUploadUrl(testConversationId, testChecksumSha, testContentLength)
+            featureDevService.createUploadUrl(testConversationId, testChecksumSha, testContentLength, uploadId = UUID.randomUUID())
         }.isInstanceOf(FeatureDevException::class.java)
     }
 
     @Test
     fun `test createUploadUrl with validation error`() {
-        whenever(featureDevClient.createTaskAssistUploadUrl(testConversationId, testChecksumSha, testContentLength)).thenThrow(
+        whenever(
+            featureDevClient.createTaskAssistUploadUrl(testConversationId, testChecksumSha, testContentLength, uploadId = UUID.randomUUID().toString())
+        ).thenThrow(
             ValidationException.builder()
                 .requestId(testRequestId)
                 .message("Invalid contentLength")
@@ -91,7 +98,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
         )
 
         assertThatThrownBy {
-            featureDevService.createUploadUrl(testConversationId, testChecksumSha, testContentLength)
+            featureDevService.createUploadUrl(testConversationId, testChecksumSha, testContentLength, uploadId = UUID.randomUUID())
         }.isInstanceOf(ContentLengthException::class.java).hasMessage(message("amazonqFeatureDev.content_length.error_text"))
     }
 
@@ -129,10 +136,22 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
     @Test
     fun `test startTaskAssistConversation success`() {
         whenever(
-            featureDevClient.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)
+            featureDevClient.startTaskAssistCodeGeneration(
+                testConversationId,
+                testUploadId,
+                userMessage,
+                codeGenerationId = UUID.randomUUID(),
+                currentCodeGenerationId = null
+            )
         ).thenReturn(exampleStartTaskAssistConversationResponse)
 
-        val actual = featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)
+        val actual = featureDevService.startTaskAssistCodeGeneration(
+            testConversationId,
+            testUploadId,
+            userMessage,
+            codeGenerationId = UUID.randomUUID(),
+            currentCodeGenerationId = null
+        )
 
         assertThat(actual).isEqualTo(exampleStartTaskAssistConversationResponse)
     }
@@ -142,10 +161,24 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
         val exampleCWException = ThrottlingException.builder().awsErrorDetails(
             AwsErrorDetails.builder().errorMessage("limit for number of iterations on a code generation").build()
         ).build()
-        whenever(featureDevClient.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)).thenThrow(exampleCWException)
+        whenever(
+            featureDevClient.startTaskAssistCodeGeneration(
+                testConversationId,
+                testUploadId,
+                userMessage,
+                codeGenerationId = UUID.randomUUID(),
+                currentCodeGenerationId = null
+            )
+        ).thenThrow(exampleCWException)
 
         assertThatThrownBy {
-            featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)
+            featureDevService.startTaskAssistCodeGeneration(
+                testConversationId,
+                testUploadId,
+                userMessage,
+                codeGenerationId = UUID.randomUUID(),
+                currentCodeGenerationId = null
+            )
         }.isExactlyInstanceOf(CodeIterationLimitException::class.java).withFailMessage(
             message("amazonqFeatureDev.code_generation.iteration_limit.error_text")
         )
@@ -156,10 +189,24 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
         val exampleCWException = ServiceQuotaExceededException.builder().awsErrorDetails(
             AwsErrorDetails.builder().errorMessage("service quota exceeded").build()
         ).build()
-        whenever(featureDevClient.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)).thenThrow(exampleCWException)
+        whenever(
+            featureDevClient.startTaskAssistCodeGeneration(
+                testConversationId,
+                testUploadId,
+                userMessage,
+                codeGenerationId = UUID.randomUUID(),
+                currentCodeGenerationId = null
+            )
+        ).thenThrow(exampleCWException)
 
         assertThatThrownBy {
-            featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)
+            featureDevService.startTaskAssistCodeGeneration(
+                testConversationId,
+                testUploadId,
+                userMessage,
+                codeGenerationId = UUID.randomUUID(),
+                currentCodeGenerationId = null
+            )
         }.isExactlyInstanceOf(CodeIterationLimitException::class.java).withFailMessage(
             message("amazonqFeatureDev.code_generation.iteration_limit.error_text")
         )
@@ -170,20 +217,48 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
         val exampleCWException = CodeWhispererRuntimeException.builder().awsErrorDetails(
             AwsErrorDetails.builder().errorMessage(cwExceptionMsg).build()
         ).build()
-        whenever(featureDevClient.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)).thenThrow(exampleCWException)
+        whenever(
+            featureDevClient.startTaskAssistCodeGeneration(
+                testConversationId,
+                testUploadId,
+                userMessage,
+                codeGenerationId = UUID.randomUUID(),
+                currentCodeGenerationId = null
+            )
+        ).thenThrow(exampleCWException)
 
         assertThatThrownBy {
-            featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)
+            featureDevService.startTaskAssistCodeGeneration(
+                testConversationId,
+                testUploadId,
+                userMessage,
+                codeGenerationId = UUID.randomUUID(),
+                currentCodeGenerationId = null
+            )
         }.isExactlyInstanceOf(FeatureDevException::class.java).withFailMessage(cwExceptionMsg)
     }
 
     @Test
     fun `test startTaskAssistConversation throws any other exception`() {
         val exampleOtherException = RuntimeException(otherExceptionMsg)
-        whenever(featureDevClient.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)).thenThrow(exampleOtherException)
+        whenever(
+            featureDevClient.startTaskAssistCodeGeneration(
+                testConversationId,
+                testUploadId,
+                userMessage,
+                codeGenerationId = UUID.randomUUID(),
+                currentCodeGenerationId = null
+            )
+        ).thenThrow(exampleOtherException)
 
         assertThatThrownBy {
-            featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage)
+            featureDevService.startTaskAssistCodeGeneration(
+                testConversationId,
+                testUploadId,
+                userMessage,
+                codeGenerationId = UUID.randomUUID(),
+                currentCodeGenerationId = null
+            )
         }.isExactlyInstanceOf(FeatureDevException::class.java).withFailMessage(otherExceptionMsg)
     }
 
