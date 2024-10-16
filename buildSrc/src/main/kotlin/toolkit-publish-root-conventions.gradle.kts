@@ -70,8 +70,4 @@ tasks.runIde {
     systemProperty("ide.plugins.snapshot.on.unload.fail", true)
     systemProperty("memory.snapshots.path", project.rootDir)
     systemProperty("idea.auto.reload.plugins", false)
-
-    val home = project.layout.buildDirectory.dir("USER_HOME").get()
-    systemProperty("user.home", home)
-    environment("HOME", home)
 }
