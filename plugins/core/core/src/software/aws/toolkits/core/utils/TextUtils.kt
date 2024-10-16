@@ -19,8 +19,8 @@ fun convertMarkdownToHTML(markdown: String): String {
 
 fun extractCodeBlockLanguage(message: String): String {
     // This fulfills both the cases of unit test generation(java, python) and general use case(Non java and Non python) languages.
-    val defaultTestGenResponseLanguage: String = "plaintext"
-    val indexStart: Int = 3
+    val defaultTestGenResponseLanguage = "plaintext"
+    val indexStart = 3
     val codeBlockStart = message.indexOf("```")
     if (codeBlockStart == -1) {
         return defaultTestGenResponseLanguage
