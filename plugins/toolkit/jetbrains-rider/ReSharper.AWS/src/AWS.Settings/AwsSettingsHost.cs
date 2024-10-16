@@ -1,6 +1,7 @@
 ﻿using AWS.Daemon.Settings;
 using AWS.Toolkit.Rider.Model;
 using JetBrains.Annotations;
+using JetBrains.Application.Parts;
 using JetBrains.Application.Settings;
 using JetBrains.Lifetimes;
 using JetBrains.ProjectModel;
@@ -10,7 +11,11 @@ using JetBrains.ReSharper.Feature.Services.Protocol;
 
 namespace AWS.Settings
 {
+    #if (PROFILE_2023_3 || PROFILE_2024_1 || PROFILE_2024_2)
     [SolutionComponent]
+    #else
+    [SolutionComponent(InstantiationEx.UnspecifiedDefault)]
+    #endif
     public class AwsSettingsHost
     {
         public AwsSettingsHost(Lifetime lifetime, [NotNull] ISolution solution, [NotNull] ISettingsStore settingsStore)
