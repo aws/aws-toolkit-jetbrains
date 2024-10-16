@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "\"@workspace cannot properly locate certain folders for certain project setup"
+  "description" : "`@workspace` cannot properly locate certain folders for certain project setup"
 }
