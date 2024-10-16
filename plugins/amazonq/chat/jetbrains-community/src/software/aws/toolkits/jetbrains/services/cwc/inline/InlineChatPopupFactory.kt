@@ -13,11 +13,9 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.TextRange
 import com.intellij.ui.IdeBorderFactory
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_BUTTON_BORDER
-import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
 
 
 class InlineChatPopupFactory(
@@ -26,8 +24,6 @@ class InlineChatPopupFactory(
     private val acceptHandler: () -> Unit,
     private val rejectHandler: () -> Unit,
     private val cancelHandler: () -> Unit,
-    private val telemetryHelper: TelemetryHelper,
-//    private val scope: CoroutineScope
 ) : Disposable {
 
     private fun getSelectedText(editor: Editor): String {

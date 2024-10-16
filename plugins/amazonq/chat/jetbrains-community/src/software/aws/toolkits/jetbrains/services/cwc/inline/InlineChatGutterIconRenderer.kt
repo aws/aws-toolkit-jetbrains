@@ -22,7 +22,7 @@ class InlineChatGutterIconRenderer (private val icon: Icon) : GutterIconRenderer
 
     override fun getIcon(): Icon = icon
 
-    override fun getTooltipText(): String = "Amazon Q: Edit ⌘ + I"
+    override fun getTooltipText(): String = "Amazon Q"
 
     override fun isNavigateAction(): Boolean = false
 

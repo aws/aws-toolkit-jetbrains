@@ -14,7 +14,6 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.command.UndoConfirmationPolicy
 import com.intellij.openapi.command.WriteCommandAction
-import com.intellij.openapi.command.undo.BasicUndoableAction
 import com.intellij.openapi.command.undo.UndoManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -32,15 +31,13 @@ import com.intellij.openapi.ui.popup.JBPopupListener
 import com.intellij.openapi.ui.popup.LightweightWindowEvent
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.ToolWindowManager
-import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.ui.JBColor
 import com.intellij.ui.jcef.JBCefApp
 import com.jetbrains.rd.util.AtomicInteger
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -54,25 +51,19 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
-import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForQ
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AMAZON_Q_WINDOW_ID
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererLanguageManager
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
 import software.aws.toolkits.jetbrains.services.cwc.controller.ReferenceLogController
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.messenger.ChatPromptHandler
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.userIntent.UserIntentRecognizer
-import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContext
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContextExtractor
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTriggerType
-import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.FileContextExtractor
-import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.util.LanguageExtractor
-import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextController
 import software.aws.toolkits.jetbrains.services.cwc.inline.listeners.InlineChatFileListener
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
@@ -84,10 +75,11 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 @Service(Service.Level.PROJECT)
 class InlineChatController(
-    private val project: Project
+    private val project: Project,
+    private val scope: CoroutineScope
 ) : Disposable {
     private var currentPopup: JBPopup? = null
-    private val scope = disposableCoroutineScope(this)
+//    private val scope = disposableCoroutineScope(this)
     private var rangeHighlighter: RangeHighlighter? = null
     private val partialUndoActions = Stack<() -> Unit>()
     private val partialAcceptActions = Stack<() -> Unit>()
@@ -220,7 +212,7 @@ class InlineChatController(
     fun initPopup (editor: Editor) {
         currentPopup?.let { Disposer.dispose(it) }
         currentPopup = InlineChatPopupFactory(acceptHandler = diffAcceptHandler, rejectHandler = diffRejectHandler, editor = editor,
-            telemetryHelper = telemetryHelper, submitHandler = popupSubmitHandler, cancelHandler = popupCancelHandler).createPopup(scope)
+            submitHandler = popupSubmitHandler, cancelHandler = popupCancelHandler).createPopup(scope)
         addPopupListeners(currentPopup!!)
         Disposer.register(this, currentPopup!!)
         isPopupAborted.set(true)
