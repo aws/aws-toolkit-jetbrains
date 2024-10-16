@@ -31,16 +31,16 @@ class PluginAmazonQJvmBinaryCompatabilityTest {
     fun `CodeWhisperer customization classes are available`() {
         // v1.0.133.0 of internal plugin
         // $ javap -c -classpath aws-toolkit-amazonq-2024.1.jar <...>.amazonq.AmazonQConfigurationServiceKt
-        //   public static final software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization findCustomizationToUse(java.util.List<software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization>);
-        //      45: getfield      #40                 // Field software/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererCustomization.arn:Ljava/lang/String;
-        //      58: getfield      #49                 // Field software/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererCustomization.name:Ljava/lang/String;
+        //   public static final software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization findCustomizationToUse(java.util.List<software/aws/toolkits/jetbrains/services/amazonq/CodeWhispererCustomization>);
+        //      45: getfield      #40                 // Field software/aws/toolkits/jetbrains/services/amazonq/CodeWhispererCustomization.arn:Ljava/lang/String;
+        //      58: getfield      #49                 // Field software/aws/toolkits/jetbrains/services/amazonq/CodeWhispererCustomization.name:Ljava/lang/String;
 
         //   public static final void setCustomization(com.intellij.openapi.project.Project);
         //       6: getstatic     #72                 // Field migration/software/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererModelConfigurator.Companion:Lmigration/software/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererModelConfigurator$Companion;
         //       9: invokevirtual #78                 // Method migration/software/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererModelConfigurator$Companion.getInstance:()Lmigration/software/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererModelConfigurator;
         //      19: invokestatic  #82                 // InterfaceMethod migration/software/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererModelConfigurator.listCustomizations$default:(Lmigration/software/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererModelConfigurator;Lcom/intellij/openapi/project/Project;ZILjava/lang/Object;)Ljava/util/List;
-        //      106: invokevirtual #106                // Method software/aws/toolkits/jetbrains/services/codewhisperer/customization/CustomizationUiItem.getCustomization:()Lsoftware/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererCustomization;
-        //      140: invokeinterface #118,  3          // InterfaceMethod migration/software/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererModelConfigurator.switchCustomization:(Lcom/intellij/openapi/project/Project;Lsoftware/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererCustomization;)V
+        //      106: invokevirtual #106                // Method software/aws/toolkits/jetbrains/services/codewhisperer/customization/CustomizationUiItem.getCustomization:()Lsoftware/aws/toolkits/jetbrains/services/amazonq/CodeWhispererCustomization;
+        //      140: invokeinterface #118,  3          // InterfaceMethod migration/software/aws/toolkits/jetbrains/services/codewhisperer/customization/CodeWhispererModelConfigurator.switchCustomization:(Lcom/intellij/openapi/project/Project;Lsoftware/aws/toolkits/jetbrains/services/amazonq/CodeWhispererCustomization;)V
 
         // CodeWhispererModelConfigurator.getInstance()
         assertThat(Class.forName("migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator\$Companion").getMethod("getInstance").returnType)
