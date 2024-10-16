@@ -62,7 +62,7 @@ class PluginAmazonQJvmBinaryCompatabilityTest {
         ).isEqualTo(Class.forName("java.util.List"))
 
         // CodeWhispererCustomization fields
-        val customizationClazz = Class.forName("software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization")
+        val customizationClazz = Class.forName("software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererCustomization")
         assertThat(customizationClazz.getField("arn").type).isEqualTo(Class.forName("java.lang.String"))
         assertThat(customizationClazz.getField("name").type).isEqualTo(Class.forName("java.lang.String"))
 
