@@ -233,6 +233,8 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     testUploadId,
                     0,
                     messenger,
+                    0,
+                    0
                 ),
             )
             doNothing().`when`(spySession).insertChanges(any(), any(), any())

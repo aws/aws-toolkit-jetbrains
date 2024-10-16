@@ -98,8 +98,8 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
         coVerify(exactly = 1) { messenger.sendAnswerPart(testTabId, message("amazonqFeatureDev.code_generation.generating_code")) }
         verify(
             exactly = 1
-        ) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, currentCodeGenerationId) }
-        verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
+        ) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, null) }
+        verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId.toString()) }
         coVerify(exactly = 1) { featureDevService.exportTaskAssistArchiveResult(testConversationId) }
     }
 
@@ -112,8 +112,8 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
 
         verify(
             exactly = 1
-        ) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, currentCodeGenerationId) }
-        verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
+        ) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, null) }
+        verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId.toString()) }
         coVerify(exactly = 0) { featureDevService.exportTaskAssistArchiveResult(any()) }
     }
 
@@ -130,8 +130,8 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
 
         verify(
             exactly = 1
-        ) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, currentCodeGenerationId) }
-        verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
+        ) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, null) }
+        verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId.toString()) }
         coVerify(exactly = 0) { featureDevService.exportTaskAssistArchiveResult(any()) }
     }
 
@@ -149,8 +149,8 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
 
         verify(
             exactly = 1
-        ) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, currentCodeGenerationId) }
-        verify(exactly = 2) { featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
+        ) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, null) }
+        verify(exactly = 2) { featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId.toString()) }
         coVerify(exactly = 1) { featureDevService.exportTaskAssistArchiveResult(testConversationId) }
     }
 
@@ -174,8 +174,8 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
 
         verify(
             exactly = 1
-        ) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, currentCodeGenerationId) }
-        verify(exactly = 180) { featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
+        ) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage, codeGenerationId, null) }
+        verify(exactly = 180) { featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId.toString()) }
         coVerify(exactly = 0) { featureDevService.exportTaskAssistArchiveResult(testConversationId) }
     }
 }

@@ -64,7 +64,6 @@ open class FeatureDevTestBase(
     internal val currentCodeGenerationId = UUID.randomUUID()
     internal val testUploadId = "5678"
     internal val testRepositorySize = 20.0 // Picked a random size
-    internal val testCodeGenerationId = "1234"
     internal val otherStatus = "Other"
     internal val testTabId = "test-tab-id"
     internal val testFilePaths = mapOf(Pair("test.ts", "This is a comment"))
@@ -92,7 +91,7 @@ open class FeatureDevTestBase(
 
     internal val exampleStartTaskAssistConversationResponse = StartTaskAssistCodeGenerationResponse.builder()
         .conversationId(testConversationId)
-        .codeGenerationId(testCodeGenerationId)
+        .codeGenerationId(codeGenerationId.toString())
         .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
         .build() as StartTaskAssistCodeGenerationResponse
 
