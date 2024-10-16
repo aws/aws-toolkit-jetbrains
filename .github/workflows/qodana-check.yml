@@ -15,6 +15,7 @@ jobs:
   qodana:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       # PR check
       checks: write
       # PR comments
@@ -33,7 +34,7 @@ jobs:
           tool-cache: false
           large-packages: false
       - name: 'Qodana Scan'
-        uses: JetBrains/qodana-action@v2024.1.9
+        uses: JetBrains/qodana-action@v2024.2.3
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
         with:

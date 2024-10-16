@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using JetBrains.Application.Parts;
 using JetBrains.ProjectModel;
 using JetBrains.Util;
 
@@ -13,7 +14,11 @@ namespace AWS.Localization
     /// We would like to use same localized strings to share values between IDEA and R#.
     /// Note: the original .properties file is added to AWS.Localization project as a static resource.
     /// </summary>
+    #if (PROFILE_2023_3 || PROFILE_2024_1 || PROFILE_2024_2)
     [SolutionComponent]
+    #else
+    [SolutionComponent(InstantiationEx.UnspecifiedDefault)]
+    #endif
     public class JavaPropertiesLoader
     {
         private readonly IDictionary<string, string> myLocalizedStrings = new Dictionary<string, string>();

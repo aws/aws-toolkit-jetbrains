@@ -1,4 +1,5 @@
 ﻿using AWS.Toolkit.Rider.Model;
+using JetBrains.Application.Parts;
 using JetBrains.ProjectModel;
 using JetBrains.Rd.Tasks;
 using JetBrains.ReSharper.Feature.Services.Protocol;
@@ -7,7 +8,11 @@ using JetBrains.Util;
 
 namespace AWS.Project
 {
+    #if (PROFILE_2023_3 || PROFILE_2024_1 || PROFILE_2024_2)
     [SolutionComponent]
+    #else
+    [SolutionComponent(InstantiationEx.UnspecifiedDefault)]
+    #endif
     public class AwsProjectHost
     {
         public AwsProjectHost(ISolution solution)
