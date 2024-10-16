@@ -36,7 +36,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTo
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import java.time.Instant
-import java.util.UUID
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatTriggerType as SyncChatTriggerType
 
 @Service(Service.Level.PROJECT)
@@ -125,7 +124,7 @@ class FeatureDevClient(
         conversationId: String,
         uploadId: String,
         userMessage: String,
-        codeGenerationId: UUID,
+        codeGenerationId: String?,
         currentCodeGenerationId: String?,
     ): StartTaskAssistCodeGenerationResponse =
         bearerClient()

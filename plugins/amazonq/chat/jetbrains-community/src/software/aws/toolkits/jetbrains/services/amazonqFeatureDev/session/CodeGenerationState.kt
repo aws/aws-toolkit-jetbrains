@@ -59,8 +59,8 @@ class CodeGenerationState(
                     conversationId = config.conversationId,
                     uploadId = uploadId,
                     message = action.msg,
-                    codeGenerationId = codeGenerationId,
-                    currentCodeGenerationId = currentCodeGenerationId,
+                    codeGenerationId = codeGenerationId.toString(),
+                    currentCodeGenerationId = currentCodeGenerationId.toString(),
                 )
 
             if (action.token?.token()?.isCancellationRequested != true) {

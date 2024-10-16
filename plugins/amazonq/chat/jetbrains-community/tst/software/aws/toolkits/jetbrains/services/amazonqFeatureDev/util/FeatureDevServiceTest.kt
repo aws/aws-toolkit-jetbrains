@@ -148,7 +148,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 testConversationId,
                 testUploadId,
                 userMessage,
-                codeGenerationId = UUID.randomUUID(),
+                codeGenerationId = codeGenerationId,
                 currentCodeGenerationId = null,
             ),
         ).thenReturn(exampleStartTaskAssistConversationResponse)
@@ -158,7 +158,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 testConversationId,
                 testUploadId,
                 userMessage,
-                codeGenerationId = UUID.randomUUID(),
+                codeGenerationId = codeGenerationId,
                 currentCodeGenerationId = null,
             )
 
@@ -178,7 +178,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 testConversationId,
                 testUploadId,
                 userMessage,
-                codeGenerationId = UUID.randomUUID(),
+                codeGenerationId = codeGenerationId,
                 currentCodeGenerationId = null,
             ),
         ).thenThrow(exampleCWException)
@@ -188,7 +188,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 testConversationId,
                 testUploadId,
                 userMessage,
-                codeGenerationId = UUID.randomUUID(),
+                codeGenerationId = codeGenerationId,
                 currentCodeGenerationId = null,
             )
         }.isExactlyInstanceOf(CodeIterationLimitException::class.java).withFailMessage(
@@ -209,7 +209,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 testConversationId,
                 testUploadId,
                 userMessage,
-                codeGenerationId = UUID.randomUUID(),
+                codeGenerationId = codeGenerationId,
                 currentCodeGenerationId = null,
             ),
         ).thenThrow(exampleCWException)
@@ -219,7 +219,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 testConversationId,
                 testUploadId,
                 userMessage,
-                codeGenerationId = UUID.randomUUID(),
+                codeGenerationId = codeGenerationId,
                 currentCodeGenerationId = null,
             )
         }.isExactlyInstanceOf(CodeIterationLimitException::class.java).withFailMessage(
@@ -240,7 +240,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 testConversationId,
                 testUploadId,
                 userMessage,
-                codeGenerationId = UUID.randomUUID(),
+                codeGenerationId = codeGenerationId,
                 currentCodeGenerationId = null,
             ),
         ).thenThrow(exampleCWException)
@@ -250,7 +250,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 testConversationId,
                 testUploadId,
                 userMessage,
-                codeGenerationId = UUID.randomUUID(),
+                codeGenerationId = codeGenerationId,
                 currentCodeGenerationId = null,
             )
         }.isExactlyInstanceOf(FeatureDevException::class.java).withFailMessage(cwExceptionMsg)
@@ -264,7 +264,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 testConversationId,
                 testUploadId,
                 userMessage,
-                codeGenerationId = UUID.randomUUID(),
+                codeGenerationId = codeGenerationId,
                 currentCodeGenerationId = null,
             ),
         ).thenThrow(exampleOtherException)
@@ -274,7 +274,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 testConversationId,
                 testUploadId,
                 userMessage,
-                codeGenerationId = UUID.randomUUID(),
+                codeGenerationId = codeGenerationId,
                 currentCodeGenerationId = null,
             )
         }.isExactlyInstanceOf(FeatureDevException::class.java).withFailMessage(otherExceptionMsg)

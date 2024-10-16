@@ -144,7 +144,7 @@ class FeatureDevClientTest : FeatureDevTestBase() {
             "test-user-message",
             currentCodeGenerationId = UUID.randomUUID()
                 .toString(),
-            codeGenerationId = UUID.randomUUID()
+            codeGenerationId = codeGenerationId
         )
 
         argumentCaptor<StartTaskAssistCodeGenerationRequest>().apply {

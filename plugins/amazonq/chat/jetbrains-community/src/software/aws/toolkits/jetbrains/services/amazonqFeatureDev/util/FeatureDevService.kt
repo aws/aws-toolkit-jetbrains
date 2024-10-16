@@ -113,7 +113,7 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
         }
     }
 
-    fun startTaskAssistCodeGeneration(conversationId: String, uploadId: String, message: String, codeGenerationId: UUID, currentCodeGenerationId: UUID?):
+    fun startTaskAssistCodeGeneration(conversationId: String, uploadId: String, message: String, codeGenerationId: String?, currentCodeGenerationId: String?):
         StartTaskAssistCodeGenerationResponse {
         try {
             logger.debug { "Executing startTaskAssistCodeGeneration with conversationId: $conversationId , uploadId: $uploadId" }
@@ -122,7 +122,7 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
                 uploadId,
                 message,
                 codeGenerationId,
-                currentCodeGenerationId?.toString() ?: "EMPTY_CURRENT_CODE_GENERATION_ID"
+                currentCodeGenerationId ?: "EMPTY_CURRENT_CODE_GENERATION_ID"
             )
 
             logger.debug { "$FEATURE_NAME: Started code generation with requestId: ${startCodeGenerationResponse.responseMetadata().requestId()}" }
