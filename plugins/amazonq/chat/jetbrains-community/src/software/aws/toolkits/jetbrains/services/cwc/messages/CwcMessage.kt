@@ -72,6 +72,7 @@ sealed interface IncomingCwcMessage : CwcMessage {
         val eventId: String?,
         val codeBlockIndex: Int?,
         val totalCodeBlocks: Int?,
+        val codeBlockLanguage: String?,
     ) : IncomingCwcMessage
 
     data class InsertCodeAtCursorPosition(
@@ -84,6 +85,7 @@ sealed interface IncomingCwcMessage : CwcMessage {
         val eventId: String?,
         val codeBlockIndex: Int?,
         val totalCodeBlocks: Int?,
+        val codeBlockLanguage: String?,
     ) : IncomingCwcMessage
 
     data class TriggerTabIdReceived(
@@ -214,6 +216,7 @@ data class ChatMessage(
     val relatedSuggestions: List<Suggestion>? = null,
     val codeReference: List<CodeReference>? = null,
     val userIntent: UserIntent? = null,
+    val codeBlockLanguage: String? = "plaintext",
 ) : UiMessage(
     tabId = tabId,
     type = "chatMessage",
