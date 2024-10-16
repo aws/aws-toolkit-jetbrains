@@ -7,11 +7,14 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
+import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.FeatureValue
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.services.amazonq.calculateIfBIDConnection
 import software.aws.toolkits.jetbrains.services.amazonq.calculateIfIamIdentityCenterConnection
+import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.utils.isQExpired
 
@@ -25,7 +28,9 @@ class CodeWhispererFeatureConfigService {
 
         LOG.debug { "Fetching feature configs" }
         try {
-            val response = CodeWhispererClientAdaptor.getInstance(project).listFeatureEvaluations()
+            val response = project.awsClient<CodeWhispererRuntimeClient>().listFeatureEvaluations {
+                it.userContext(codeWhispererUserContext())
+            }
 
             // Simply force overwrite feature configs from server response, no needed to check existing values.
             response.featureEvaluations().forEach {
