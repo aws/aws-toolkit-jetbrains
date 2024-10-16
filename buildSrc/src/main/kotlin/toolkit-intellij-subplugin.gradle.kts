@@ -32,13 +32,31 @@ sourceSets {
 
 configurations {
     runtimeClasspath {
-        // IDE provides Kotlin
+        // Exclude dependencies that ship with IDE
+        exclude(group = "org.slf4j")
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.jetbrains.kotlinx")
 
         exclude(group = "com.fasterxml.jackson.core")
         exclude(group = "com.fasterxml.jackson.module", "jackson-module-kotlin")
         exclude(group = "com.fasterxml.jackson.dataformat", "jackson-dataformat-yaml")
+    }
+
+    listOf(
+        "testRuntimeClasspath",
+        "integrationTestRuntimeClasspath",
+    ).forEach {
+        try {
+            it {
+                // Exclude dependencies that ship with IDE
+                exclude(group = "org.slf4j")
+                // we want kotlinx-coroutines-debug and kotlinx-coroutines-test
+                exclude(group = "org.jetbrains.kotlinx", "kotlinx-coroutines-core-jvm")
+                exclude(group = "org.jetbrains.kotlinx", "kotlinx-coroutines-core")
+            }
+        } catch (e: Exception){
+            logger.info("Skipped excluding IDE deps for $it because hit $e")
+        }
     }
 
     configureEach {
@@ -48,12 +66,6 @@ configurations {
         if (name.startsWith("detekt")) {
             return@configureEach
         }
-
-        // Exclude dependencies that ship with iDE
-        exclude(group = "org.slf4j")
-        // we want kotlinx-coroutines-debug and kotlinx-coroutines-test
-        exclude(group = "org.jetbrains.kotlinx", "kotlinx-coroutines-core-jvm")
-        exclude(group = "org.jetbrains.kotlinx", "kotlinx-coroutines-core")
 
         resolutionStrategy.eachDependency {
             if (requested.group == "org.jetbrains.kotlinx" && requested.name.startsWith("kotlinx-coroutines")) {
