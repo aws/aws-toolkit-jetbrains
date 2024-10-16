@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.onStart
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererstreaming.model.CodeWhispererStreamingException
 import software.aws.toolkits.core.utils.convertMarkdownToHTML
+import software.aws.toolkits.core.utils.extractCodeBlockLanguage
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatResponseEvent
@@ -143,24 +144,6 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                     shouldAddIndexInProgressMessage
                 )?.let { emit(it) }
             }
-    }
-
-    private fun extractCodeBlockLanguage(message: String): String {
-        // This fulfills both the cases of unit test generation(java, python) and general use case(Non java and Non python) languages.
-        val codeBlockStart = message.indexOf("```")
-        if (codeBlockStart == -1) {
-            return defaultTestGenResponseLanguage
-        }
-
-        val languageStart = codeBlockStart + 3
-        val languageEnd = message.indexOf('\n', languageStart)
-
-        if (languageEnd == -1) {
-            return defaultTestGenResponseLanguage
-        }
-
-        val language = message.substring(languageStart, languageEnd).trim()
-        return if (language.isNotEmpty()) language else defaultTestGenResponseLanguage
     }
 
     private fun processChatEvent(
