@@ -305,7 +305,7 @@ class FeatureDevController(
         session = getSessionInfo(message.tabId)
 
         if (session.sessionState.token?.token() !== null) {
-            session.sessionState?.token?.cancel()
+            session.sessionState.token?.cancel()
         }
     }
     private suspend fun insertCode(tabId: String) {

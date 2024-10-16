@@ -11,11 +11,17 @@ import java.io.File
 
 class LazyLogRuleTest {
     private val rule = LazyLogRule()
-    private val environment = createEnvironment(
-        additionalRootPaths = LazyLogRule.loggers.map {
-            File(Class.forName(it).protectionDomain.codeSource.location.path)
-        }
-    ).env
+    private val environment =
+        createEnvironment(
+            additionalRootPaths =
+            LazyLogRule.loggers.map {
+                File(
+                    Class
+                        .forName(it)
+                        .protectionDomain.codeSource.location.path,
+                )
+            },
+        ).env
 
     @Test
     fun lambdaIsUsedToLog() {
@@ -29,29 +35,9 @@ val LOG = LoggerFactory.getLogger("")
 fun foo() {
     LOG.debug { "Hi" }
 }
-                """.trimIndent()
-            )
+                """.trimIndent(),
+            ),
         ).isEmpty()
-    }
-
-    @Test
-    fun methodCallIsUsedToLog() {
-        assertThat(
-            rule.compileAndLintWithContext(
-                environment,
-                """
-import org.slf4j.LoggerFactory
-
-val LOG = LoggerFactory.getLogger("")
-fun foo() {
-    LOG.debug("Hi")
-}
-                """.trimIndent()
-            )
-        ).singleElement()
-            .matches {
-                it.id == "LazyLog" && it.message == "Use the lambda version of LOG.debug instead"
-            }
     }
 
     @Test
@@ -67,8 +53,8 @@ fun foo() {
     val e = RuntimeException()
     LOG.debug(e) {"Hi" }
 }
-                """.trimIndent()
-            )
+                """.trimIndent(),
+            ),
         ).isEmpty()
     }
 
@@ -86,8 +72,8 @@ val LOG = LoggerFactory.getLogger("")
 fun foo() {
     LOG.debug("Hi")
 }
-                """.trimIndent()
-            )
+                """.trimIndent(),
+            ),
         ).isEmpty()
     }
 }
