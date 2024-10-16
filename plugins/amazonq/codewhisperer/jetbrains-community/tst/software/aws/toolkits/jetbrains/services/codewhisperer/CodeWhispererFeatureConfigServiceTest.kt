@@ -29,7 +29,7 @@ import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoCo
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import kotlin.reflect.full.memberFunctions
 import kotlin.test.Test
 

@@ -1,7 +1,7 @@
-// Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.codewhisperer.service
+package software.aws.toolkits.jetbrains.services.amazonq
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -13,9 +13,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableC
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.services.amazonq.calculateIfBIDConnection
-import software.aws.toolkits.jetbrains.services.amazonq.calculateIfIamIdentityCenterConnection
-import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
 import software.aws.toolkits.jetbrains.utils.isQExpired
 
 @Service
@@ -127,7 +124,7 @@ class CodeWhispererFeatureConfigService {
 
         // TODO: add real feature later
         // Also serve as default values in case server-side config isn't there yet
-        internal val FEATURE_DEFINITIONS = mapOf(
+        val FEATURE_DEFINITIONS = mapOf(
             TEST_FEATURE_NAME to FeatureContext(
                 TEST_FEATURE_NAME,
                 "CONTROL",
