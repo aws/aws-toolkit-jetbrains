@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableC
 import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEvaluationsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEvaluationsResponse
+import software.amazon.awssdk.services.codewhispererruntime.paginators.ListAvailableCustomizationsIterable
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -83,12 +84,25 @@ class CodeWhispererFeatureConfigServiceTest {
                 )
             ).build()
 
-            on { listAvailableCustomizations(any<ListAvailableCustomizationsRequest>()) } doReturn
+            val mockResponseIterable: ListAvailableCustomizationsIterable = mock()
+            mockResponseIterable.stub {
                 if (isInListAvailableCustomizations) {
-                    ListAvailableCustomizationsResponse.builder().customizations({ builder -> builder.arn("test arn").name("Test Arn") }).build()
+                    on { stream() } doReturn listOf(
+                        ListAvailableCustomizationsResponse.builder()
+                            .customizations(
+                                Customization.builder().arn("test arn").name("Test Arn").build()
+                            ).build()
+                    ).stream()
                 } else {
-                    ListAvailableCustomizationsResponse.builder().customizations(emptyList<Customization>()).build()
+                    on { stream() } doReturn listOf(
+                        ListAvailableCustomizationsResponse.builder()
+                            .customizations(
+                                emptyList()
+                            ).build()
+                    ).stream()
                 }
+            }
+            on { listAvailableCustomizationsPaginator(any<ListAvailableCustomizationsRequest>()) } doReturn mockResponseIterable
         }
 
         val mockSsoConnection = mock<LegacyManagedBearerSsoConnection> {
