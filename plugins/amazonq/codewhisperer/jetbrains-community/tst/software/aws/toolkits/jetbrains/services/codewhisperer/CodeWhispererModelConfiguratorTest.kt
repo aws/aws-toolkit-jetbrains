@@ -37,7 +37,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
-import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererCustomization
+import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomizationState
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.DefaultCodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService

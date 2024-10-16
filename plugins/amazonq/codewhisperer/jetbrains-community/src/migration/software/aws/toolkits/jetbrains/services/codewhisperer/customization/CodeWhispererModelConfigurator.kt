@@ -5,7 +5,7 @@ package migration.software.aws.toolkits.jetbrains.services.codewhisperer.customi
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererCustomization
+import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CustomizationUiItem
 
 // A component responsible managing client's codewhisperer model configuration (currently customization feature only support enterprise tier users)
