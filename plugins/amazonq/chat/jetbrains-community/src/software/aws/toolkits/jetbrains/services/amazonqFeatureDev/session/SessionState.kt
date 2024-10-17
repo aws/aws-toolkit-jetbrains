@@ -3,9 +3,15 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
+import org.gradle.tooling.CancellationTokenSource
+
 interface SessionState {
     val tabID: String
     val phase: SessionStatePhase?
+    var token: CancellationTokenSource?
+    var codeGenerationRemainingIterationCount: Int?
+    var codeGenerationTotalIterationCount: Int?
+    var currentIteration: Int?
     var approach: String
     suspend fun interact(action: SessionStateAction): SessionStateInteraction
 }

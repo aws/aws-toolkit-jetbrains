@@ -130,6 +130,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
                 mynahUI.updateStore(tabID, {
                     loadingChat: true,
                     promptInputDisabledState: true,
+                    cancelButtonWhenLoading: true,
                 })
                 if (message) {
                     mynahUI.updateLastChatAnswer(tabID, {
@@ -199,6 +200,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
 
                 mynahUI.addChatItem(tabID, chatItem)
                 mynahUI.updateStore(tabID, {
+                    cancelButtonWhenLoading: false,
                     loadingChat: chatItem.type !== ChatItemType.ANSWER,
                 })
 
@@ -271,6 +273,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
             ) {
                 mynahUI.updateStore(tabID, {
                     loadingChat: true,
+                    cancelButtonWhenLoading: false,
                     promptInputDisabledState: true,
                 })
 
@@ -413,6 +416,13 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
                 quickActionCommands: tabDataGenerator.quickActionsGenerator.generateForTab('unknown'),
             })
             connector.onTabAdd(tabID)
+        },
+        onStopChatResponse: (tabID: string) => {
+            mynahUI.updateStore(tabID, {
+                loadingChat: false,
+                promptInputDisabledState: false,
+            })
+            connector.onStopChatResponse(tabID)
         },
         onTabRemove: connector.onTabRemove,
         onTabChange: connector.onTabChange,
