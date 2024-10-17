@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.core.gettingstarted
 
 import com.intellij.openapi.project.Project
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.amazon.awssdk.services.toolkittelemetry.model.Unit
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
@@ -15,6 +17,7 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.SourceOfEntry
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getAuthScopes
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getAuthStatus
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionCount
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getEnabledConnections
@@ -26,6 +29,7 @@ import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.Result
+import java.time.Instant
 
 fun requestCredentialsForCodeWhisperer(
     project: Project,
@@ -235,13 +239,19 @@ fun reauthenticateWithQ(project: Project) {
 }
 
 fun emitUserState(project: Project) {
-    AuthTelemetry.userState(
-        project,
-        source = getStartupState().toString(),
-        authEnabledConnections = getEnabledConnections(project),
-        authStatus = getAuthStatus(project),
-        passive = true
-    )
+
+    TelemetryService.getInstance().record(project) {
+        datum("auth_userState") {
+            createTime(Instant.now())
+            unit(Unit.NONE)
+            value(1.0)
+            passive(true)
+            metadata("source", getStartupState().toString())
+            metadata("authStatus", getAuthStatus(project).toString())
+            metadata("authEnabledConnections", getEnabledConnections(project))
+            metadata("authScopes", getAuthScopes(project))
+        }
+    }
 }
 
 const val CODEWHISPERER_AUTH_LEARN_MORE_LINK = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/codewhisperer-auth.html"
