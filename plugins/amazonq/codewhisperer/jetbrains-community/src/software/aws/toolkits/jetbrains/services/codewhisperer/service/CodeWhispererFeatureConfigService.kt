@@ -7,12 +7,15 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
+import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.FeatureValue
+import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsRequest
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.calculateIfBIDConnection
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.calculateIfIamIdentityCenterConnection
+import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.services.amazonq.calculateIfBIDConnection
+import software.aws.toolkits.jetbrains.services.amazonq.calculateIfIamIdentityCenterConnection
+import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
 import software.aws.toolkits.jetbrains.utils.isQExpired
 
 @Service
@@ -25,7 +28,9 @@ class CodeWhispererFeatureConfigService {
 
         LOG.debug { "Fetching feature configs" }
         try {
-            val response = CodeWhispererClientAdaptor.getInstance(project).listFeatureEvaluations()
+            val response = project.awsClient<CodeWhispererRuntimeClient>().listFeatureEvaluations {
+                it.userContext(codeWhispererUserContext())
+            }
 
             // Simply force overwrite feature configs from server response, no needed to check existing values.
             response.featureEvaluations().forEach {
@@ -49,7 +54,16 @@ class CodeWhispererFeatureConfigService {
                 val availableCustomizations =
                     calculateIfIamIdentityCenterConnection(project) {
                         try {
-                            CodeWhispererClientAdaptor.getInstance(project).listAvailableCustomizations().map { c -> c.arn }
+                            project.awsClient<CodeWhispererRuntimeClient>().listAvailableCustomizationsPaginator(
+                                ListAvailableCustomizationsRequest.builder().build()
+                            )
+                                .stream()
+                                .toList()
+                                .flatMap { resp ->
+                                    resp.customizations().map {
+                                        it.arn()
+                                    }
+                                }
                         } catch (e: Exception) {
                             LOG.debug(e) { "Failed to list available customizations" }
                             null
@@ -71,9 +85,11 @@ class CodeWhispererFeatureConfigService {
     }
 
     fun getFeatureConfigsTelemetry(): String =
-        "{${featureConfigs.entries.joinToString(", ") { (name, context) ->
-            "$name: ${context.variation}"
-        }}}"
+        "{${
+            featureConfigs.entries.joinToString(", ") { (name, context) ->
+                "$name: ${context.variation}"
+            }
+        }}"
 
     // TODO: for all feature variations, define a contract that can be enforced upon the implementation of
     // the business logic.
@@ -88,7 +104,8 @@ class CodeWhispererFeatureConfigService {
     // 6) Add a test case for this feature.
     fun getTestFeature(): String = getFeatureValueForKey(TEST_FEATURE_NAME).stringValue()
 
-    fun getIsDataCollectionEnabled(): Boolean = getFeatureValueForKey(DATA_COLLECTION_FEATURE).stringValue() == "data-collection"
+    fun getIsDataCollectionEnabled(): Boolean =
+        getFeatureValueForKey(DATA_COLLECTION_FEATURE).stringValue() == "data-collection"
 
     fun getCustomizationArnOverride(): String = getFeatureValueForKey(CUSTOMIZATION_ARN_OVERRIDE_NAME).stringValue()
 
