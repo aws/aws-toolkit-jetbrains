@@ -417,7 +417,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     if (requestContext.triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
                         // We should only show error hint when CodeWhisperer popup is not visible,
                         // and make it silent if CodeWhisperer popup is showing.
-                        if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()) {
+                        if (!CodeWhispererInvocationStatus.getInstance().isPopupActive()) {
                             showCodeWhispererErrorHint(requestContext.editor, displayMessage)
                         }
                     }
@@ -753,7 +753,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             return false
         }
 
-        if (CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()) {
+        if (CodeWhispererInvocationStatus.getInstance().isPopupActive()) {
             LOG.debug { "Find an existing CodeWhisperer popup window before triggering CodeWhisperer, not invoking service" }
             return false
         }

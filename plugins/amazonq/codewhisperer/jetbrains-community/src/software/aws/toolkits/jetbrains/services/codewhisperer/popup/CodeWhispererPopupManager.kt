@@ -305,7 +305,7 @@ class CodeWhispererPopupManager {
         var popupRect = Rectangle(p.x, yBelowLastLine, popupSize.width, popupSize.height)
         var shouldHidePopup = false
 
-        CodeWhispererInvocationStatus.getInstance().setDisplaySessionActive(true)
+        CodeWhispererInvocationStatus.getInstance().setPopupActive(true)
 
         // Check if the current editor still has focus. If not, don't show the popup.
         val isSameEditorAsTrigger = if (!AppMode.isRemoteDevHost()) {

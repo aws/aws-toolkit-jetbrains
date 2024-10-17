@@ -12,13 +12,13 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.Cod
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupRightArrowHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupTabHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatusNew
 
 class CodeWhispererActionPromoter : ActionPromoter {
     override fun promote(actions: MutableList<out AnAction>, context: DataContext): MutableList<AnAction> {
         if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
             val results = actions.toMutableList()
-            if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()) return results
+            if (!CodeWhispererInvocationStatusNew.getInstance().isDisplaySessionActive()) return results
 
             results.sortWith { a, b ->
                 if (isCodeWhispererForceAction(a)) {

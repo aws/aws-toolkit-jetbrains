@@ -28,6 +28,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.QStatusBa
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStateChangeListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatusNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.reconnectCodeWhisperer
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
@@ -124,7 +125,13 @@ class CodeWhispererStatusBarWidget(project: Project) :
             AllIcons.General.BalloonWarning
         } else if (!isQConnected(project)) {
             AllIcons.RunConfigurations.TestState.Run
-        } else if (CodeWhispererInvocationStatus.getInstance().hasExistingServiceInvocation()) {
+        } else if (
+            if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
+                CodeWhispererInvocationStatusNew.getInstance().hasExistingServiceInvocation()
+            } else {
+                CodeWhispererInvocationStatus.getInstance().hasExistingServiceInvocation()
+            }
+        ) {
             // AnimatedIcon can't serialize over remote host
             if (!AppMode.isRemoteDevHost()) {
                 AnimatedIcon.Default()

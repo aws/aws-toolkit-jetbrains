@@ -10,7 +10,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAware
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatusNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererServiceNew
 import software.aws.toolkits.resources.message
 
@@ -20,12 +20,12 @@ class CodeWhispererNavigatePrevAction : AnAction(message("codewhisperer.inline.n
     override fun update(e: AnActionEvent) {
         e.presentation.isEnabled = e.project != null &&
             e.getData(CommonDataKeys.EDITOR) != null &&
-            CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()
+            CodeWhispererInvocationStatusNew.getInstance().isDisplaySessionActive()
     }
 
     override fun actionPerformed(e: AnActionEvent) {
         val sessionContext = e.project?.getUserData(CodeWhispererServiceNew.KEY_SESSION_CONTEXT) ?: return
-        if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()) return
+        if (!CodeWhispererInvocationStatusNew.getInstance().isDisplaySessionActive()) return
         ApplicationManager.getApplication().messageBus.syncPublisher(
             CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED
         ).navigatePrevious(sessionContext)

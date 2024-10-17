@@ -10,12 +10,13 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationCo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatusNew
 
 class CodeWhispererScrollListener(private val states: InvocationContext) : VisibleAreaListener {
     override fun visibleAreaChanged(e: VisibleAreaEvent) {
         val oldRect = e.oldRectangle
         val newRect = e.newRectangle
-        if (CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive() &&
+        if (CodeWhispererInvocationStatus.getInstance().isPopupActive() &&
             (oldRect.x != newRect.x || oldRect.y != newRect.y)
         ) {
             ApplicationManager.getApplication().messageBus.syncPublisher(
@@ -29,7 +30,7 @@ class CodeWhispererScrollListenerNew(private val sessionContext: SessionContextN
     override fun visibleAreaChanged(e: VisibleAreaEvent) {
         val oldRect = e.oldRectangle
         val newRect = e.newRectangle
-        if (CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive() &&
+        if (CodeWhispererInvocationStatusNew.getInstance().isDisplaySessionActive() &&
             (oldRect.x != newRect.x || oldRect.y != newRect.y)
         ) {
             ApplicationManager.getApplication().messageBus.syncPublisher(
