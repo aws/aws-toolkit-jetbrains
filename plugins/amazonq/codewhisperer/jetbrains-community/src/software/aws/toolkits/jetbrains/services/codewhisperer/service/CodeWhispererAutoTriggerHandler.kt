@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.service
 import com.intellij.openapi.editor.Editor
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
