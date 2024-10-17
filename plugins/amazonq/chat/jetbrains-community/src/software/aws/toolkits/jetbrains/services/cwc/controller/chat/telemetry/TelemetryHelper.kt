@@ -90,7 +90,7 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
             cwsprChatUserIntent = data.userIntent?.let { getTelemetryUserIntent(it) },
             cwsprChatHasCodeSnippet = data.activeFileContext.focusAreaContext?.codeSelection?.isNotEmpty() ?: false,
             cwsprChatProgrammingLanguage = data.activeFileContext.fileContext?.fileLanguage,
-            credentialStartUrl = getStartUrl(context.project),
+            credentialStartUrl = getStartUrl(project),
             cwsprChatHasProjectContext = getIsProjectContextEnabled() && data.useRelevantDocuments && data.relevantTextDocuments.isNotEmpty()
         )
     }
@@ -140,11 +140,7 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
             numberOfCodeBlocks,
             getMessageHasProjectContext(response.messageId),
             data.customization
-        ).also {
-            logger.debug {
-                "Successfully sendTelemetryEvent for ChatAddMessage with requestId=${it.responseMetadata().requestId()}"
-            }
-        }
+        )
     }
 
     fun recordInlineChatTelemetry(
@@ -166,11 +162,7 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
             requestId, inputLength, numSelectedLines, codeIntent, userDecision,
             responseStartLatency, responseEndLatency, numSuggestionAddChars, numSuggestionAddLines, numSuggestionDelChars, numSuggestionDelLines,
             charactersAdded, charactersRemoved
-        ).also {
-            logger.debug {
-                "Successfully sendTelemetryEvent for InlineChat with requestId=${it.responseMetadata().requestId()}"
-            }
-        }
+        )
     }
 
     fun recordMessageResponseError(data: ChatRequestData, tabId: String, responseCode: Int) {
@@ -201,7 +193,7 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
                         "downvote" -> CwsprChatInteractionType.Downvote
                         else -> CwsprChatInteractionType.Unknown
                     },
-                    credentialStartUrl = getStartUrl(context.project),
+                    credentialStartUrl = getStartUrl(project),
                     cwsprChatHasProjectContext = getMessageHasProjectContext(message.messageId)
                 )
                 ChatInteractWithMessageEvent.builder().apply {
@@ -223,7 +215,7 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
                     cwsprChatConversationId = getConversationId(message.tabId).orEmpty(),
                     cwsprChatMessageId = message.messageId.orEmpty(),
                     cwsprChatInteractionType = CwsprChatInteractionType.ClickFollowUp,
-                    credentialStartUrl = getStartUrl(context.project),
+                    credentialStartUrl = getStartUrl(project),
                     cwsprChatHasProjectContext = getMessageHasProjectContext(message.messageId.orEmpty())
                 )
                 ChatInteractWithMessageEvent.builder().apply {
@@ -243,7 +235,7 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
                     cwsprChatAcceptedCharactersLength = message.code.length.toLong(),
                     cwsprChatInteractionTarget = message.insertionTargetType,
                     cwsprChatHasReference = null,
-                    credentialStartUrl = getStartUrl(context.project),
+                    credentialStartUrl = getStartUrl(project),
                     cwsprChatCodeBlockIndex = message.codeBlockIndex?.toLong(),
                     cwsprChatTotalCodeBlocks = message.totalCodeBlocks?.toLong(),
                     cwsprChatHasProjectContext = getMessageHasProjectContext(message.messageId),
@@ -269,7 +261,7 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
                     cwsprChatAcceptedNumberOfLines = message.code.lines().size.toLong(),
                     cwsprChatInteractionTarget = message.insertionTargetType,
                     cwsprChatHasReference = null,
-                    credentialStartUrl = getStartUrl(context.project),
+                    credentialStartUrl = getStartUrl(project),
                     cwsprChatCodeBlockIndex = message.codeBlockIndex?.toLong(),
                     cwsprChatTotalCodeBlocks = message.totalCodeBlocks?.toLong(),
                     cwsprChatHasProjectContext = getMessageHasProjectContext(message.messageId),
@@ -301,7 +293,7 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
                     cwsprChatInteractionType = linkInteractionType,
                     cwsprChatInteractionTarget = message.link,
                     cwsprChatHasReference = null,
-                    credentialStartUrl = getStartUrl(context.project),
+                    credentialStartUrl = getStartUrl(project),
                     cwsprChatHasProjectContext = getMessageHasProjectContext(message.messageId)
                 )
                 ChatInteractWithMessageEvent.builder().apply {

@@ -510,7 +510,7 @@ class InlineChatController(
         if (credentialState != null) {
             // handle auth
             if (!JBCefApp.isSupported()) {
-                requestCredentialsForQ(project)
+                requestCredentialsForQ(project, isReauth = false)
             } else {
                 runInEdt {
                     QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
@@ -578,10 +578,11 @@ class InlineChatController(
             tabId = "inlineChat-editor",
             message = prompt,
             activeFileContext = fileContext,
-            userIntent = intentRecognizer.getUserIntentFromPromptChatMessage(message),
+            userIntent = intentRecognizer.getUserIntentFromPromptChatMessage(message, null),
             triggerType = TriggerType.Click,
             customization = CodeWhispererModelConfigurator.getInstance().activeCustomization(project),
-            relevantTextDocuments = emptyList()
+            relevantTextDocuments = emptyList(),
+            useRelevantDocuments = false
         )
 
         val sessionInfo = sessionStorage.getSession("inlineChat-editor", project)

@@ -57,8 +57,13 @@ class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() 
         font = font.deriveFont(popupButtonFontSize)
     }
 
-    private val errorLabel = JLabel("", AwsIcons.Logos.AWS_Q_GREY, SwingConstants.RIGHT).apply {
+    private val errorLabel = JLabel("").apply {
         font = font.deriveFont(popupButtonFontSize)
+    }
+
+    private val errorPanel = JPanel(BorderLayout()).apply {
+        add(errorLabel, BorderLayout.CENTER)
+        border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
     }
 
     private val inputPanel = JPanel(BorderLayout()).apply {
@@ -153,7 +158,7 @@ class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() 
 
     fun setErrorMessage(text: String) {
         errorLabel.text = text
-        add(errorLabel, BorderLayout.CENTER)
+        add(errorPanel, BorderLayout.CENTER)
         remove(inputPanel)
         remove(bottomPanel)
         revalidate()
