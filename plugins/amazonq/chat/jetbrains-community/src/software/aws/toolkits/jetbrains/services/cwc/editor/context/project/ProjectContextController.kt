@@ -8,6 +8,11 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.openapi.vfs.newvfs.BulkFileListener
+import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent
+import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
+import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.getLogger
@@ -18,13 +23,28 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhisp
 class ProjectContextController(private val project: Project, private val cs: CoroutineScope) : Disposable {
     private val encoderServer: EncoderServer = EncoderServer(project)
     private val projectContextProvider: ProjectContextProvider = ProjectContextProvider(project, encoderServer, cs)
+
     init {
         cs.launch {
             if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
                 encoderServer.downloadArtifactsAndStartServer()
             }
         }
+
+        project.messageBus.connect(this).subscribe(
+            VirtualFileManager.VFS_CHANGES,
+            object : BulkFileListener {
+                override fun after(events: MutableList<out VFileEvent>) {
+                    val createdFiles = events.filterIsInstance<VFileCreateEvent>().mapNotNull { it.file?.path }
+                    val deletedFiles = events.filterIsInstance<VFileDeleteEvent>().map { it.file.path }
+
+                    updateIndex(createdFiles, ProjectContextProvider.IndexUpdateMode.ADD)
+                    updateIndex(deletedFiles, ProjectContextProvider.IndexUpdateMode.REMOVE)
+                }
+            }
+        )
     }
+
 
     fun getProjectContextIndexComplete() = projectContextProvider.isIndexComplete.get()
 
@@ -37,9 +57,22 @@ class ProjectContextController(private val project: Project, private val cs: Cor
         }
     }
 
-    fun updateIndex(filePath: String) {
+    fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> {
         try {
-            return projectContextProvider.updateIndex(filePath)
+            return projectContextProvider.queryInline(query, filePath)
+        } catch (e: Exception) {
+            logger.warn { "error while querying inline for project context $e.message" }
+            return emptyList()
+        }
+    }
+
+    fun updateIndex(filePath: String) {
+        updateIndex(listOf(filePath), ProjectContextProvider.IndexUpdateMode.UPDATE)
+    }
+
+    fun updateIndex(filePaths: List<String>, mode: ProjectContextProvider.IndexUpdateMode) {
+        try {
+            return projectContextProvider.updateIndex(filePaths, mode)
         } catch (e: Exception) {
             logger.warn { "error while updating index for project context $e.message" }
         }

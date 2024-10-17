@@ -54,6 +54,12 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
+    enum class IndexUpdateMode(val value: String) {
+        UPDATE("update"),
+        REMOVE("remove"),
+        ADD("add"),
+    }
+
     data class FileCollectionResult(
         val files: List<String>,
         val fileSize: Int,
@@ -185,9 +191,9 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
-    fun updateIndex(filePaths: List<String>, mode: String) {
+    fun updateIndex(filePaths: List<String>, mode: IndexUpdateMode) {
         if (!isIndexComplete.get()) return
-        val encrypted = encryptRequest(UpdateIndexRequest(filePaths, mode))
+        val encrypted = encryptRequest(UpdateIndexRequest(filePaths, mode.value))
         sendMsgToLsp(LspMessage.UpdateIndex, encrypted)
     }
 
