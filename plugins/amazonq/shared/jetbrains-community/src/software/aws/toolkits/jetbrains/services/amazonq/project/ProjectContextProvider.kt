@@ -24,8 +24,8 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
-import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
