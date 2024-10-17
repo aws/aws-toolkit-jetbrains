@@ -109,7 +109,7 @@ class CodeWhispererFeatureConfigService {
 
     fun getCustomizationArnOverride(): String = getFeatureValueForKey(CUSTOMIZATION_ARN_OVERRIDE_NAME).stringValue()
 
-    fun getNewAutoTriggerUX(): Boolean = getFeatureValueForKey(NEW_AUTO_TRIGGER_UX).boolValue()
+    fun getNewAutoTriggerUX(): Boolean = getFeatureValueForKey(NEW_AUTO_TRIGGER_UX).stringValue() == "TREATMENT"
 
     // Get the feature value for the given key.
     // In case of a misconfiguration, it will return a default feature value of Boolean false.
@@ -142,7 +142,7 @@ class CodeWhispererFeatureConfigService {
             NEW_AUTO_TRIGGER_UX to FeatureContext(
                 NEW_AUTO_TRIGGER_UX,
                 "CONTROL",
-                FeatureValue.builder().boolValue(false).build()
+                FeatureValue.builder().stringValue("CONTROL").build()
             ),
         )
     }
