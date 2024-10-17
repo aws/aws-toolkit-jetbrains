@@ -420,7 +420,8 @@ class TelemetryHelperTest {
                 "insertionTargetType",
                 "eventId",
                 codeBlockIndex,
-                totalCodeBlocks
+                totalCodeBlocks,
+                lang
             )
         )
 
@@ -484,7 +485,8 @@ class TelemetryHelperTest {
                 emptyList(),
                 eventId,
                 codeBlockIndex,
-                totalCodeBlocks
+                totalCodeBlocks,
+                lang
             )
         )
 

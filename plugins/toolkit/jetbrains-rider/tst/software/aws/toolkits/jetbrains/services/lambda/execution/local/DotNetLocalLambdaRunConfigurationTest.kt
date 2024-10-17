@@ -23,7 +23,7 @@ import software.aws.toolkits.jetbrains.utils.OPEN_SOLUTION_DIR_NAME
 import software.aws.toolkits.resources.message
 
 class DotNetLocalLambdaRunConfigurationTest : AwsReuseSolutionTestBase() {
-    override fun getSolutionDirectoryName(): String = OPEN_SOLUTION_DIR_NAME
+    override fun solutionDirectoryName(): String = OPEN_SOLUTION_DIR_NAME
 
     override val waitForCaches = true
 
