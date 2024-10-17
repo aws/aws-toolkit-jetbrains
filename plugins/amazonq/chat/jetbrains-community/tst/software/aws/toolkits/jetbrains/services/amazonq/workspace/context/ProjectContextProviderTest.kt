@@ -16,6 +16,7 @@ import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
@@ -180,8 +181,10 @@ class ProjectContextProviderTest {
                 )
             )
         )
-        val r = sut.query("foo")
-        assertThat(r).isEmpty()
+
+        assertThrows<Exception> {
+            sut.query("foo")
+        }
     }
 
     @Test
@@ -203,7 +206,7 @@ class ProjectContextProviderTest {
     }
 
     @Test
-    fun `query inline should return empty if resultset not deserializable`() {
+    fun `query inline should throw if resultset not deserializable`() {
         stubFor(
             any(urlPathEqualTo("/queryInlineProjectContext")).willReturn(
                 aResponse().withStatus(200).withResponseBody(
@@ -218,8 +221,9 @@ class ProjectContextProviderTest {
             )
         )
 
-        val r = sut.queryInline("foo", "filepath")
-        assertThat(r).isEmpty()
+        assertThrows<Exception> {
+            sut.queryInline("foo", "filepath")
+        }
     }
 
     @Test

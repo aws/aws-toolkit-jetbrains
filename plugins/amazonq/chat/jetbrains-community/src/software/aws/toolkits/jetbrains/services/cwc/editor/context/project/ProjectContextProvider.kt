@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
 import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
@@ -163,8 +164,8 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
             val parsedResponse = mapper.readValue<List<Chunk>>(response.responseBody)
             queryResultToRelevantDocuments(parsedResponse)
         } catch (e: Exception) {
-            logger.warn { "error parsing query response ${e.message}" }
-            emptyList()
+            logger.error { "error parsing query response ${e.message}" }
+            throw e
         }
     }
 
@@ -175,8 +176,8 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         return try {
             mapper.readValue<List<InlineBm25Chunk>>(response.responseBody)
         } catch (e: Exception) {
-            logger.warn { "error parsing query response ${e.message}" }
-            emptyList()
+            logger.error { "error parsing query response ${e.message}" }
+            throw e
         }
     }
 
