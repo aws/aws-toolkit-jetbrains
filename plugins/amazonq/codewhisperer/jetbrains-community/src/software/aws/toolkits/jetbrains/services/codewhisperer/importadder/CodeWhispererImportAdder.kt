@@ -14,7 +14,10 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContextNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.PreviewContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
 
 abstract class CodeWhispererImportAdder {
     abstract val supportedLanguages: List<CodeWhispererProgrammingLanguage>
@@ -29,7 +32,47 @@ abstract class CodeWhispererImportAdder {
         }
     }
 
+    fun insertImportStatements(states: InvocationContextNew, previews: List<PreviewContext>, sessionContext: SessionContextNew) {
+        val imports = previews[sessionContext.selectedIndex].detail.recommendation.mostRelevantMissingImports()
+        LOG.info { "Adding ${imports.size} imports for completions, sessionId: ${states.responseContext.sessionId}" }
+        imports.forEach {
+            insertImportStatement(states, it)
+        }
+    }
+
     private fun insertImportStatement(states: InvocationContext, import: Import) {
+        val project = states.requestContext.project
+        val editor = states.requestContext.editor
+        val document = editor.document
+        val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document) ?: return
+
+        val statement = import.statement()
+        LOG.info { "Import statement to be added: $statement" }
+        val newImport = createNewImportPsiElement(psiFile, statement)
+        if (newImport == null) {
+            LOG.debug { "Failed to create the import element using the import string" }
+            return
+        }
+
+        if (!isSupportedImportStyle(newImport)) {
+            LOG.debug { "Import statement \"${newImport.text}\" is not supported" }
+            return
+        }
+
+        LOG.debug { "Checking duplicates with existing imports" }
+        val hasDuplicate = hasDuplicatedImports(psiFile, editor, newImport)
+        if (hasDuplicate) {
+            LOG.debug { "Found duplicates with existing imports, not adding the new import" }
+            return
+        } else {
+            LOG.debug { "Found no duplicates with existing imports" }
+        }
+
+        val added = addImport(psiFile, editor, newImport)
+        LOG.info { "Added import: $added" }
+    }
+
+    private fun insertImportStatement(states: InvocationContextNew, import: Import) {
         val project = states.requestContext.project
         val editor = states.requestContext.editor
         val document = editor.document

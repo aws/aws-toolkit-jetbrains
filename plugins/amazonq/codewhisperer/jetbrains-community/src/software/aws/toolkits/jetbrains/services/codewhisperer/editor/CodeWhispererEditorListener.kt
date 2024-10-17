@@ -11,7 +11,9 @@ import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatusNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker
 
 class CodeWhispererEditorListener : EditorFactoryListener {
@@ -29,7 +31,11 @@ class CodeWhispererEditorListener : EditorFactoryListener {
                 // the most accurate code percentage data.
                 override fun documentChanged(event: DocumentEvent) {
                     if (!isCodeWhispererEnabled(project)) return
-                    CodeWhispererInvocationStatus.getInstance().documentChanged()
+                    if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
+                        CodeWhispererInvocationStatusNew.getInstance().documentChanged()
+                    } else {
+                        CodeWhispererInvocationStatus.getInstance().documentChanged()
+                    }
                     CodeWhispererCodeCoverageTracker.getInstance(project, language).apply {
                         activateTrackerIfNotActive()
                         documentChanged(event)
