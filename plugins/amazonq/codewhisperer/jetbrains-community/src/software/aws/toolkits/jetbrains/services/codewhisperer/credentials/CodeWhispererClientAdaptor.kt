@@ -368,7 +368,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 }
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
-            requestBuilder.userContext(codeWhispererUserContext)
+            requestBuilder.userContext(codeWhispererUserContext())
         }
     }
 
