@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.startup
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.waitForSmartMode
@@ -27,6 +28,8 @@ class AmazonQStartupActivity : ProjectActivity {
     private val runOnce = AtomicBoolean(false)
 
     override suspend fun execute(project: Project) {
+        if (ApplicationManager.getApplication().isUnitTestMode) return
+
         // initialize html contents in BGT so users don't have to wait when they open the tool window
         AmazonQToolWindow.getInstance(project)
 

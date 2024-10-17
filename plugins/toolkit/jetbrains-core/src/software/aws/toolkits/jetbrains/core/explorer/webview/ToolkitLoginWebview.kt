@@ -16,9 +16,8 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.panels.Wrapper
+import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.dsl.gridLayout.HorizontalAlign
-import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefBrowserBuilder
@@ -73,8 +72,7 @@ class ToolkitWebviewPanel(val project: Project, private val scope: CoroutineScop
     val component = panel {
         row {
             cell(webviewContainer)
-                .horizontalAlign(HorizontalAlign.FILL)
-                .verticalAlign(VerticalAlign.FILL)
+                .align(Align.FILL)
         }.resizableRow()
 
         if (isDeveloperMode()) {
@@ -88,8 +86,7 @@ class ToolkitWebviewPanel(val project: Project, private val scope: CoroutineScop
                         )
                     },
                 )
-                    .horizontalAlign(HorizontalAlign.CENTER)
-                    .verticalAlign(VerticalAlign.BOTTOM)
+                    .align(Align.FILL)
             }
         }
     }

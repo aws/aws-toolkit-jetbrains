@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix an IDE deadlock that may occur while attempting to initialize Amazon Q UI elements (#4966)"
+}
