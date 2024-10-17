@@ -16,5 +16,8 @@ class ProjectContextEditorListener : FileEditorManagerListener {
                 saveDocument(it)
             }
         }
+
+        val project = event.manager.project
+        ProjectContextController.getInstance(project).updateIndex(oldFile.path)
     }
 }
