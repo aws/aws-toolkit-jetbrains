@@ -176,11 +176,11 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
             mapper.readValue<List<InlineBm25Chunk>>(response.responseBody)
         } catch (e: Exception) {
             logger.warn { "error parsing query response ${e.message}" }
-            throw e
+            emptyList()
         }
     }
 
-    private fun getUsage(): Usage? {
+    fun getUsage(): Usage? {
         val response = sendMsgToLsp(LspMessage.GetUsageMetrics, request = null)
         return try {
             val parsedResponse = mapper.readValue<Usage>(response.responseBody)

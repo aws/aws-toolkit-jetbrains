@@ -22,7 +22,7 @@ sealed interface LspMessage {
         override val endpoint: String = "query"
     }
 
-    data object QueryInlineCompletion: LspMessage {
+    data object QueryInlineCompletion : LspMessage {
         override val endpoint: String = "queryInlineProjectContext"
     }
 
@@ -37,22 +37,22 @@ data class IndexRequest(
     val filePaths: List<String>,
     val projectRoot: String,
     val config: String,
-    val language: String = ""
-): LspRequest
+    val language: String = "",
+) : LspRequest
 
 data class UpdateIndexRequest(
     val filePaths: List<String>,
     val mode: String,
-): LspRequest
+) : LspRequest
 
 data class QueryChatRequest(
     val query: String,
-): LspRequest
+) : LspRequest
 
 data class QueryInlineCompletionRequest(
     val query: String,
-    val filePath: String
-): LspRequest
+    val filePath: String,
+) : LspRequest
 
 data class LspResponse(
     val responseCode: Int,

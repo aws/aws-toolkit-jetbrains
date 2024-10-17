@@ -45,7 +45,6 @@ class ProjectContextController(private val project: Project, private val cs: Cor
         )
     }
 
-
     fun getProjectContextIndexComplete() = projectContextProvider.isIndexComplete.get()
 
     fun query(prompt: String): List<RelevantDocument> {

@@ -96,7 +96,7 @@ class CodeWhispererFeatureConfigService {
     fun getNewAutoTriggerUX(): Boolean = getFeatureValueForKey(NEW_AUTO_TRIGGER_UX).boolValue()
 
     // TODO: remove dev mode flag
-    fun getInlineCompletion(): Boolean = if(isDeveloperMode()) true else getFeatureValueForKey(INLINE_COMPLETION).boolValue()
+    fun getInlineCompletion(): Boolean = if (isDeveloperMode()) true else getFeatureValueForKey(INLINE_COMPLETION).boolValue()
 
     // Get the feature value for the given key.
     // In case of a misconfiguration, it will return a default feature value of Boolean false.
@@ -107,6 +107,7 @@ class CodeWhispererFeatureConfigService {
     companion object {
         fun getInstance(): CodeWhispererFeatureConfigService = service()
         private const val TEST_FEATURE_NAME = "testFeature"
+
         // TODO: update
         private const val INLINE_COMPLETION = "inlineCompletion"
         private const val DATA_COLLECTION_FEATURE = "IDEProjectContextDataCollection"
