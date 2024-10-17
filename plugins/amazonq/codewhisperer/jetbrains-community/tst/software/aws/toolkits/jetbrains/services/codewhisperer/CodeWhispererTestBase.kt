@@ -194,7 +194,7 @@ open class CodeWhispererTestBase {
             jobRef.get()?.join()
 
             // wait for subsequent background operations to be complete
-            while (CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
+            while (CodeWhispererInvocationStatus.getInstance().hasExistingServiceInvocation()) {
                 yield()
                 delay(10)
             }

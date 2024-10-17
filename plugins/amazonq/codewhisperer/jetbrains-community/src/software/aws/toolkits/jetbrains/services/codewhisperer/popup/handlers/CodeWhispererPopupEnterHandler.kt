@@ -10,7 +10,9 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler
 import com.intellij.openapi.util.TextRange
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManagerNew
 
 class CodeWhispererPopupEnterHandler(
     private val defaultHandler: EditorActionHandler,
@@ -26,6 +28,24 @@ class CodeWhispererPopupEnterHandler(
             ApplicationManager.getApplication().messageBus.syncPublisher(
                 CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED
             ).enter(states, newText)
+        }
+    }
+}
+
+class CodeWhispererPopupEnterHandlerNew(
+    private val defaultHandler: EditorActionHandler,
+    sessionContext: SessionContextNew,
+) : CodeWhispererEditorActionHandlerNew(sessionContext) {
+    override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
+        val popupManager = CodeWhispererPopupManagerNew.getInstance()
+        popupManager.dontClosePopupAndRun {
+            val oldOffset = editor.caretModel.offset
+            defaultHandler.execute(editor, caret, dataContext)
+            val newOffset = editor.caretModel.offset
+            val newText = editor.document.getText(TextRange.create(oldOffset, newOffset))
+            ApplicationManager.getApplication().messageBus.syncPublisher(
+                CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED
+            ).enter(sessionContext, newText)
         }
     }
 }
