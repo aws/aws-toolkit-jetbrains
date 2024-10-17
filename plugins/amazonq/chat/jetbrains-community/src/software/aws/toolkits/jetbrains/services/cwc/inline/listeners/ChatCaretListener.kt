@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.cwc.inline.listeners
 
 import com.intellij.ide.DataManager
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.editor.Editor

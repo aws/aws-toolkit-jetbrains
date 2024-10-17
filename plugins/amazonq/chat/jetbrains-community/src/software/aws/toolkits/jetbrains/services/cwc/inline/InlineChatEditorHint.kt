@@ -48,7 +48,7 @@ class InlineChatEditorHint {
         coloredText.appendToComponent(component)
         val shortcutComponent = HintUtil.createInformationComponent()
         if (!SystemInfo.isWindows) {
-            val shortCutIcon = AwsIcons.Misc.AWS_Q_INLINECHAT_SHORTCUT
+            val shortCutIcon = AwsIcons.Resources.InlineChat.AWS_Q_INLINECHAT_SHORTCUT
             shortcutComponent.isIconOnTheRight = true;
             shortcutComponent.icon = shortCutIcon
         } else {

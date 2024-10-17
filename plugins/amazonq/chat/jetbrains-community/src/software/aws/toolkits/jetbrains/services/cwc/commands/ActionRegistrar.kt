@@ -14,8 +14,8 @@ class ActionRegistrar {
     private val _messages by lazy { MutableSharedFlow<AmazonQMessage>(extraBufferCapacity = 10) }
     val flow = _messages.asSharedFlow()
 
-    fun reportMessageClick(command: EditorContextCommand, project: Project, message: String? = null) {
-        _messages.tryEmit(ContextMenuActionMessage(command, project, message))
+    fun reportMessageClick(command: EditorContextCommand, project: Project) {
+        _messages.tryEmit(ContextMenuActionMessage(command, project))
     }
 
     fun reportMessageClick(command: EditorContextCommand, issue: MutableMap<String, String>, project: Project) {

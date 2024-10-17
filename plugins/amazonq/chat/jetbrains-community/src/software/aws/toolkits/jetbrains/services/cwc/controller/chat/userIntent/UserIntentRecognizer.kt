@@ -18,7 +18,6 @@ class UserIntentRecognizer {
         EditorContextCommand.ExplainCodeScanIssue -> UserIntent.EXPLAIN_CODE_SELECTION
         EditorContextCommand.GenerateUnitTests -> UserIntent.GENERATE_UNIT_TESTS
         EditorContextCommand.SendToPrompt -> null
-        EditorContextCommand.SendToChat -> null
     }
 
     fun getUserIntentFromPromptChatMessage(prompt: String, startUrl: String?) = when {

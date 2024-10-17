@@ -7,7 +7,6 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.event.SelectionEvent
 import com.intellij.openapi.editor.event.SelectionListener
 import software.aws.toolkits.jetbrains.services.cwc.inline.InlineChatEditorHint
-import java.awt.Point
 
 class InlineChatSelectionListener : SelectionListener, Disposable {
     private val inlineChatEditorHint = InlineChatEditorHint()

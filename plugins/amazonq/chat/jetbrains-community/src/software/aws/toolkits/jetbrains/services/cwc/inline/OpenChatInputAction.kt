@@ -28,10 +28,8 @@ class OpenChatInputAction  : AnAction() {
     private fun createCaretListener(editor: Editor): CaretListener {
         return object : CaretListener {
             override fun caretPositionChanged(event: CaretEvent) {
-                // Remove the popup when the caret moves
                 inlineChatController?.disposePopup()
 
-                // Remove the listener after closing the popup
                 editor.caretModel.removeCaretListener(this)
                 caretListener = null
                 inlineChatController = null

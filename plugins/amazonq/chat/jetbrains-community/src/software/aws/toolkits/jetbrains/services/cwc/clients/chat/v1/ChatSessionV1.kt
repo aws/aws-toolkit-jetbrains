@@ -178,8 +178,7 @@ class ChatSessionV1(
                 logger.info { "Request from tab: ${data.tabId}, conversationId: $conversationId, request: $request" }
                 client.generateAssistantResponse(request, responseHandler).await()
             }
-        } catch (e: Exception) {
-            println(e.message)
+        } catch (e: TimeoutCancellationException) {
             // Re-throw an exception that can be caught downstream
             throw ChatApiException(
                 message = "API request timed out",

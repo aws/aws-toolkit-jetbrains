@@ -89,8 +89,6 @@ class ChatController private constructor(
     private val contextExtractor: ActiveFileContextExtractor,
     private val intentRecognizer: UserIntentRecognizer,
     private val authController: AuthController,
-//    private val editorListener: ProjectContextEditorListener,
-//    private val caretListener: ChatCaretListener,
 ) : InboundAppMessagesHandler {
 
     private val messagePublisher: MessagePublisher = context.messagesFromAppToUi
@@ -103,8 +101,6 @@ class ChatController private constructor(
         contextExtractor = ActiveFileContextExtractor.create(fqnWebviewAdapter = context.fqnWebviewAdapter, project = context.project),
         intentRecognizer = UserIntentRecognizer(),
         authController = AuthController(),
-//        editorListener = ProjectContextEditorListener(context),
-//        caretListener = ChatCaretListener(context.project, context),
     )
 
     override suspend fun processClearQuickAction(message: IncomingCwcMessage.ClearChat) {

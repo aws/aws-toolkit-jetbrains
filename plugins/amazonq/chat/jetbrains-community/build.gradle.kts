@@ -20,8 +20,7 @@ dependencies {
     // everything references codewhisperer, which is not ideal
     implementation(project(":plugin-amazonq:codewhisperer:jetbrains-community"))
     implementation(libs.nimbus.jose.jwt)
-    implementation("org.jetbrains:markdown:0.7.3")
-    implementation("io.github.java-diff-utils:java-diff-utils:4.12")
+    implementation(libs.diff.util)
 
     compileOnly(project(":plugin-core:jetbrains-community"))
 

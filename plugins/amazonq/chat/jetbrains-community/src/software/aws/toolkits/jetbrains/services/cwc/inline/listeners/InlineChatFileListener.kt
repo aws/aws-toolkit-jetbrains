@@ -9,7 +9,6 @@ import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Disposer
 
 class InlineChatFileListener(project: Project) : FileEditorManagerListener {
     private var currentEditor: Editor? = null
