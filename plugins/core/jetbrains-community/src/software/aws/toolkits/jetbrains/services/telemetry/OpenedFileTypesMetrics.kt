@@ -52,7 +52,8 @@ class OpenedFileTypesMetricsService : Disposable {
     @Synchronized
     fun addToExistingTelemetryBatch(fileExt: String) {
         if (fileExt in ALLOWED_CODE_EXTENSIONS) {
-            currentOpenedFileTypes.add(fileExt)
+            val extension = ".$fileExt"
+            currentOpenedFileTypes.add(extension)
         }
     }
 
