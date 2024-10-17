@@ -215,6 +215,24 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         // takeLast(11) will extract 10 lines (exclusing current line) of left context as the query parameter
         val query = targetContext.caretContext.leftFileContext.split("\n").takeLast(11).joinToString("\n")
 
+        // TODO: uncomment
+//        if (CodeWhispererFeatureConfigService.getInstance().getInlineCompletion()) {
+//            val response = ProjectContextController.getInstance(project).queryInline(query, psiFile.virtualFile?.path ?: "").filter { it.content.isBlank() }
+//            return SupplementalContextInfo(
+//                isUtg = false,
+//                contents = response.map {
+//                    Chunk(
+//                        content = it.content,
+//                        path = it.filePath,
+//                        nextChunk = it.content,
+//                        score = it.score
+//                    )
+//                },
+//                targetFileName = targetContext.filename,
+//                strategy = CrossFileStrategy.ProjectContext
+//            )
+//        }
+
         // step 1: prepare data
         val first60Chunks: List<Chunk> = try {
             runReadAction { codewhispererCodeChunksIndex.getFileData(psiFile) }
