@@ -293,7 +293,7 @@ class InlineChatController(
             val diff = compareDiffs(selectedCode.split("\n"), recommendation.split("\n"))
             while (partialUndoActions.isNotEmpty()) {
                 val action = partialUndoActions.pop()
-                action.invoke()
+                runChangeAction(project, action)
             }
             partialAcceptActions.clear()
             selectionStartLine = AtomicInteger(selectedLineStart)
@@ -321,25 +321,32 @@ class InlineChatController(
                         currentDocumentLine++
                         insertLine++
                     }
-                    DiffRow.Tag.DELETE, DiffRow.Tag.CHANGE -> {
-                        if (row.tag == DiffRow.Tag.CHANGE && row.newLine.trimIndent() == row.oldLine?.trimIndent()) return
+                    DiffRow.Tag.DELETE -> {
                         isAllEqual = false
                         showCodeChangeInEditor(row, currentDocumentLine, editor)
-
-                        if (row.tag == DiffRow.Tag.CHANGE) {
-                            insertLine += 2
-                            currentDocumentLine += 2
-                        } else {
-                            insertLine++
-                            currentDocumentLine++
-                        }
+                        insertLine++
+                        currentDocumentLine++
                         deletedLinesCount++
                         deletedCharsCount += row.oldLine?.length ?: 0
+                    }
+                    DiffRow.Tag.CHANGE -> {
+                        if (row.newLine.trimIndent() != row.oldLine?.trimIndent()){
+                            isAllEqual = false
+                            showCodeChangeInEditor(row, currentDocumentLine, editor)
+                            insertLine += 2
+                            currentDocumentLine += 2
+                            deletedLinesCount++
+                            deletedCharsCount += row.oldLine?.length ?: 0
+                            addedLinesCount++
+                            addedCharsCount += row.newLine?.length ?: 0
+                        } else {
+                            currentDocumentLine++
+                            insertLine++
+                        }
                     }
                     DiffRow.Tag.INSERT -> {
                         isAllEqual = false
                         showCodeChangeInEditor(row, insertLine, editor)
-
                         insertLine++
                         addedLinesCount++
                         addedCharsCount += row.newLine?.length ?: 0
