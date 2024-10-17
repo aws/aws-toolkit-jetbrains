@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
+import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.ide.BrowserUtil
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
@@ -12,6 +13,8 @@ import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.wm.WindowManager
+import com.intellij.ui.ComponentUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -321,6 +324,12 @@ object CodeWhispererUtil {
 
     private fun getEditDistance(modifiedString: String, originalString: String): Double =
         levenshteinChecker.distance(modifiedString, originalString)
+
+    fun setIntelliSensePopupAlpha(editor: Editor, alpha: Float) {
+        ComponentUtil.getWindow(LookupManager.getActiveLookup(editor)?.component)?.let {
+            WindowManager.getInstance().setAlphaModeRatio(it, alpha)
+        }
+    }
 }
 
 enum class CaretMovement {

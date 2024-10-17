@@ -19,7 +19,11 @@ interface CodeWhispererAutoTriggerHandler {
         val triggerTypeInfo = TriggerTypeInfo(CodewhispererTriggerType.AutoTrigger, automatedTriggerType)
 
         LOG.debug { "autotriggering CodeWhisperer with type ${automatedTriggerType.telemetryType}" }
-        CodeWhispererService.getInstance().showRecommendationsInPopup(editor, triggerTypeInfo, latencyContext)
+        if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
+            CodeWhispererServiceNew.getInstance().showRecommendationsInPopup(editor, triggerTypeInfo, latencyContext)
+        } else {
+            CodeWhispererService.getInstance().showRecommendationsInPopup(editor, triggerTypeInfo, latencyContext)
+        }
     }
 
     companion object {
