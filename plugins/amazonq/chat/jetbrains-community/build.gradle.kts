@@ -19,7 +19,6 @@ dependencies {
     implementation(project(":plugin-amazonq:shared:jetbrains-community"))
     // everything references codewhisperer, which is not ideal
     implementation(project(":plugin-amazonq:codewhisperer:jetbrains-community"))
-    implementation(libs.nimbus.jose.jwt)
 
     compileOnly(project(":plugin-core:jetbrains-community"))
 

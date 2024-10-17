@@ -51,7 +51,7 @@ import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.Reference
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.SuggestedFollowUp
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.Suggestion
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContext
-import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.RelevantDocument
+import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
 
 class ChatSessionV1(
     private val project: Project,

@@ -35,3 +35,5 @@ const val CODE_TRANSFORM_TROUBLESHOOT_DOC_DOWNLOAD_ERROR_OVERVIEW =
 
 const val CODE_TRANSFORM_PREREQUISITES =
     "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/code-transformation.html#prerequisites"
+
+const val FEATURE_EVALUATION_PRODUCT_NAME = "CodeWhisperer"

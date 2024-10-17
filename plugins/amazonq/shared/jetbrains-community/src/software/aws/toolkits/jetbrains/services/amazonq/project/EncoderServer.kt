@@ -1,7 +1,7 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.cwc.editor.context.project
+package software.aws.toolkits.jetbrains.services.amazonq.project
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.execution.configurations.GeneralCommandLine
@@ -26,8 +26,8 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.tryDirOp
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
-import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.manifest.ManifestManager
+import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import java.io.FileOutputStream
 import java.io.IOException
 import java.nio.file.Files
