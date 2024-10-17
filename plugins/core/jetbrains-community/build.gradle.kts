@@ -3,7 +3,6 @@
 
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
-import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
 
@@ -56,12 +55,6 @@ configurations.testFixturesApi {
 }
 
 dependencies {
-    intellijPlatform {
-        testFramework(TestFrameworkType.Plugin.Java)
-        testFramework(TestFrameworkType.Platform)
-        testFramework(TestFrameworkType.JUnit5)
-    }
-
     compileOnlyApi(project(":plugin-core:core"))
     compileOnlyApi(libs.aws.apacheClient)
     compileOnlyApi(libs.aws.nettyClient)

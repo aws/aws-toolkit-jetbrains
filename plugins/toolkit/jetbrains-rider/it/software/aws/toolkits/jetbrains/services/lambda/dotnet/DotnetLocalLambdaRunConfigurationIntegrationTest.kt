@@ -56,7 +56,7 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
         PropertiesComponent.getInstance().setValue("debugger.immediate.window.in.watches", initialImmediateWindow)
     }
 
-    override fun getSolutionDirectoryName(): String = "testData/solutions/$solutionName"
+    override fun solutionDirectoryName(): String = "testData/solutions/$solutionName"
 
     // broken
     @Test(enabled = false)
@@ -106,7 +106,7 @@ abstract class DotnetLocalLambdaRunConfigurationIntegrationTestBase(private val 
 
     @Test
     fun samIsExecutedWithFileInput() {
-        val input = Files.createTempFile(tempTestDirectory.toPath(), "tmp", null).also {
+        val input = Files.createTempFile("tmp", null).also {
             it.writeText("Hello World")
         }
 
@@ -152,7 +152,7 @@ abstract class DotnetLocalLambdaImageRunConfigurationIntegrationTestBase(private
         removeAllBreakpoints(project)
     }
 
-    override fun getSolutionDirectoryName(): String = "testData/solutions/$solutionName"
+    override fun solutionDirectoryName(): String = "testData/solutions/$solutionName"
 
     @Test
     fun samIsExecutedImage() {
