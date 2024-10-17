@@ -214,7 +214,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                 }
         }
 
-        CodeWhispererInvocationStatusNew.getInstance().startInvocation()
+        CodeWhispererInvocationStatus.getInstance().startInvocation()
 
         invokeCodeWhispererInBackground(requestContext, currentJobId, latencyContext)
     }

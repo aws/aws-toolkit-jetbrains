@@ -10,7 +10,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAware
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatusNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererServiceNew
 import software.aws.toolkits.resources.message
 
@@ -19,12 +19,12 @@ open class CodeWhispererAcceptAction(title: String = message("codewhisperer.inli
 
     override fun update(e: AnActionEvent) {
         e.presentation.isEnabled = e.project != null && e.getData(CommonDataKeys.EDITOR) != null &&
-            CodeWhispererInvocationStatusNew.getInstance().isDisplaySessionActive()
+            CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()
     }
 
     override fun actionPerformed(e: AnActionEvent) {
         val sessionContext = e.project?.getUserData(CodeWhispererServiceNew.KEY_SESSION_CONTEXT) ?: return
-        if (!CodeWhispererInvocationStatusNew.getInstance().isDisplaySessionActive()) return
+        if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()) return
         ApplicationManager.getApplication().messageBus.syncPublisher(
             CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED
         ).beforeAccept(sessionContext)

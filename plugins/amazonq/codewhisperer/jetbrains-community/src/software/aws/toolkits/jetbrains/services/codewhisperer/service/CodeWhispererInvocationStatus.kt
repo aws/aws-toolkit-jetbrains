@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.service
 
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.util.messages.Topic
 import software.aws.toolkits.core.utils.debug
@@ -14,20 +13,27 @@ import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 
-@Service
-class CodeWhispererInvocationStatus {
-    private val isInvokingCodeWhisperer: AtomicBoolean = AtomicBoolean(false)
+abstract class CodeWhispererInvocationStatus {
+    internal val isInvokingService: AtomicBoolean = AtomicBoolean(false)
     private var invokingSessionId: String? = null
     private var timeAtLastInvocationComplete: Instant? = null
     var timeAtLastDocumentChanged: Instant = Instant.now()
-        private set
-    private var isPopupActive: Boolean = false
-    private var timeAtLastInvocationStart: Instant? = null
+        internal set
+    private var isDisplaySessionActive: Boolean = false
+    internal var timeAtLastInvocationStart: Instant? = null
     var popupStartTimestamp: Instant? = null
-        private set
+        internal set
 
-    fun checkExistingInvocationAndSet(): Boolean =
-        if (isInvokingCodeWhisperer.getAndSet(true)) {
+    open fun startInvocation() {}
+
+    fun hasExistingServiceInvocation(): Boolean = isInvokingService.get()
+
+    open fun setInvocationComplete() {
+        timeAtLastInvocationComplete = Instant.now()
+    }
+
+    open fun checkExistingInvocationAndSet(): Boolean =
+        if (isInvokingService.getAndSet(true)) {
             LOG.debug { "Have existing CodeWhisperer invocation, sessionId: $invokingSessionId" }
             true
         } else {
@@ -36,18 +42,13 @@ class CodeWhispererInvocationStatus {
             false
         }
 
-    fun hasExistingServiceInvocation(): Boolean = isInvokingCodeWhisperer.get()
 
     fun finishInvocation() {
-        if (isInvokingCodeWhisperer.compareAndSet(true, false)) {
+        if (isInvokingService.compareAndSet(true, false)) {
             ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_INVOCATION_STATE_CHANGED).invocationStateChanged(false)
             LOG.debug { "Ending CodeWhisperer invocation" }
             invokingSessionId = null
         }
-    }
-
-    fun setInvocationComplete() {
-        timeAtLastInvocationComplete = Instant.now()
     }
 
     fun documentChanged() {
@@ -64,15 +65,20 @@ class CodeWhispererInvocationStatus {
         return timeInDouble
     }
 
-    fun hasEnoughDelayToShowCodeWhisperer(): Boolean {
+    open fun hasEnoughDelayToShowCodeWhisperer(): Boolean {
         val timeCanShowCodeWhisperer = timeAtLastDocumentChanged.plusMillis(CodeWhispererConstants.POPUP_DELAY)
         return timeCanShowCodeWhisperer.isBefore(Instant.now())
     }
 
-    fun isPopupActive(): Boolean = isPopupActive
+    open fun hasEnoughDelayToInvokeCodeWhisperer(): Boolean {
+        val timeCanShowCodeWhisperer = timeAtLastInvocationStart?.plusMillis(CodeWhispererConstants.INVOCATION_INTERVAL) ?: return true
+        return timeCanShowCodeWhisperer.isBefore(Instant.now())
+    }
 
-    fun setPopupActive(value: Boolean) {
-        isPopupActive = value
+    fun isDisplaySessionActive(): Boolean = isDisplaySessionActive
+
+    fun setDisplaySessionActive(value: Boolean) {
+        isDisplaySessionActive = value
     }
 
     fun setInvocationStart() {
@@ -84,14 +90,14 @@ class CodeWhispererInvocationStatus {
         invokingSessionId = sessionId
     }
 
-    fun hasEnoughDelayToInvokeCodeWhisperer(): Boolean {
-        val timeCanShowCodeWhisperer = timeAtLastInvocationStart?.plusMillis(CodeWhispererConstants.INVOCATION_INTERVAL) ?: return true
-        return timeCanShowCodeWhisperer.isBefore(Instant.now())
-    }
-
     companion object {
-        private val LOG = getLogger<CodeWhispererInvocationStatus>()
-        fun getInstance(): CodeWhispererInvocationStatus = service()
+        internal val LOG = getLogger<CodeWhispererInvocationStatus>()
+        fun getInstance(): CodeWhispererInvocationStatus =
+            if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
+                CodeWhispererInvocationStatusNew.getInstance()
+            } else {
+                service()
+            }
         val CODEWHISPERER_INVOCATION_STATE_CHANGED: Topic<CodeWhispererInvocationStateChangeListener> = Topic.create(
             "CodeWhisperer popup state changed",
             CodeWhispererInvocationStateChangeListener::class.java

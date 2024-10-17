@@ -21,7 +21,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispere
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererIntelliSenseOnHoverListener
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatusNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererServiceNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContextNew
@@ -179,10 +179,10 @@ data class SessionContextNew(
         CodeWhispererTelemetryServiceNew.getInstance().sendUserDecisionEventForAll(
             this,
             hasAccepted,
-            CodeWhispererInvocationStatusNew.getInstance().popupStartTimestamp?.let { Duration.between(it, Instant.now()) }
+            CodeWhispererInvocationStatus.getInstance().popupStartTimestamp?.let { Duration.between(it, Instant.now()) }
         )
         setIntelliSensePopupAlpha(editor, 0f)
-        CodeWhispererInvocationStatusNew.getInstance().setDisplaySessionActive(false)
+        CodeWhispererInvocationStatus.getInstance().setDisplaySessionActive(false)
 
         if (hasAccepted) {
             popup?.closeOk(null)
@@ -191,7 +191,7 @@ data class SessionContextNew(
         }
         popup?.let { Disposer.dispose(it) }
         popup = null
-        CodeWhispererInvocationStatusNew.getInstance().finishInvocation()
+        CodeWhispererInvocationStatus.getInstance().finishInvocation()
         isDisposed = true
     }
 
