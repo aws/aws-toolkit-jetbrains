@@ -3,8 +3,13 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.editor.context.file
 
+import com.intellij.idea.AppMode
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.client.ClientKind
+import com.intellij.openapi.client.sessions
+import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Document
+import com.intellij.openapi.fileEditor.ClientFileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDocumentManager
@@ -17,9 +22,13 @@ import software.aws.toolkits.jetbrains.utils.computeOnEdt
 class FileContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter, private val project: Project) {
     private val languageExtractor: LanguageExtractor = LanguageExtractor()
     suspend fun extract(): FileContext? {
-        val editor = computeOnEdt {
-            FileEditorManager.getInstance(project).selectedTextEditor
-        } ?: return null
+        val editor = if (AppMode.isRemoteDevHost()) {
+            project.sessions(ClientKind.REMOTE).firstOrNull()?.service<ClientFileEditorManager>()?.getSelectedTextEditor() ?: return null
+        } else {
+            computeOnEdt {
+                FileEditorManager.getInstance(project).selectedTextEditor
+            } ?: return null
+        }
 
         val fileLanguage = computeOnEdt {
             languageExtractor.extractLanguageNameFromCurrentFile(editor, project)
