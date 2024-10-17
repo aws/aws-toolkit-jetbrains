@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fix language server memory usage telemetry"
-}
