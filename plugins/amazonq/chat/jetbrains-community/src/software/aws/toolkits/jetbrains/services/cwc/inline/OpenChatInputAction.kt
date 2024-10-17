@@ -10,7 +10,7 @@ import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
 import org.jetbrains.plugins.terminal.exp.TerminalDataContextUtils.editor
 
-class OpenChatInputAction  : AnAction() {
+class OpenChatInputAction : AnAction() {
     private var inlineChatController: InlineChatController? = null
     private var caretListener: CaretListener? = null
     override fun actionPerformed(e: AnActionEvent) {
@@ -25,15 +25,13 @@ class OpenChatInputAction  : AnAction() {
         }
     }
 
-    private fun createCaretListener(editor: Editor): CaretListener {
-        return object : CaretListener {
-            override fun caretPositionChanged(event: CaretEvent) {
-                inlineChatController?.disposePopup()
+    private fun createCaretListener(editor: Editor): CaretListener = object : CaretListener {
+        override fun caretPositionChanged(event: CaretEvent) {
+            inlineChatController?.disposePopup()
 
-                editor.caretModel.removeCaretListener(this)
-                caretListener = null
-                inlineChatController = null
-            }
+            editor.caretModel.removeCaretListener(this)
+            caretListener = null
+            inlineChatController = null
         }
     }
 }

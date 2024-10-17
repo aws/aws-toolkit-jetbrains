@@ -10,7 +10,7 @@ import com.intellij.openapi.editor.markup.GutterIconRenderer
 import software.aws.toolkits.resources.AmazonQBundle.message
 import javax.swing.Icon
 
-class InlineChatGutterIconRenderer (private val icon: Icon) : GutterIconRenderer() {
+class InlineChatGutterIconRenderer(private val icon: Icon) : GutterIconRenderer() {
     private var clickAction: (() -> Unit)? = null
     override fun equals(other: Any?): Boolean {
         if (other is InlineChatGutterIconRenderer) {
@@ -32,7 +32,7 @@ class InlineChatGutterIconRenderer (private val icon: Icon) : GutterIconRenderer
         override fun update(e: AnActionEvent) = Unit
     }
 
-    fun setClickAction (action: () -> Unit) {
+    fun setClickAction(action: () -> Unit) {
         clickAction = action
     }
 
@@ -40,4 +40,3 @@ class InlineChatGutterIconRenderer (private val icon: Icon) : GutterIconRenderer
 
     override fun getAlignment(): Alignment = Alignment.CENTER
 }
-

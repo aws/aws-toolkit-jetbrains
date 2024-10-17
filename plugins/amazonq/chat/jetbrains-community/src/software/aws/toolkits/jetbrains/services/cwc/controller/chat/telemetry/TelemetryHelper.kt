@@ -14,7 +14,6 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
@@ -148,22 +147,26 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
         }
     }
 
-    fun recordInlineChatTelemetry(requestId: String,
-                                  inputLength: Int?,
-                                  numSelectedLines: Int?,
-                                  codeIntent: Boolean?,
-                                  userDecision: InlineChatUserDecision?,
-                                  responseStartLatency: Double?,
-                                  responseEndLatency: Double?,
-                                  numSuggestionAddChars: Int?,
-                                  numSuggestionAddLines: Int?,
-                                  numSuggestionDelChars: Int?,
-                                  numSuggestionDelLines: Int?,
-                                  charactersAdded: Int?,
-                                  charactersRemoved: Int?) {
-        CodeWhispererClientAdaptor.getInstance(project).sendInlineChatTelemetry(requestId, inputLength, numSelectedLines, codeIntent, userDecision,
-            responseStartLatency, responseEndLatency,numSuggestionAddChars, numSuggestionAddLines, numSuggestionDelChars, numSuggestionDelLines,
-            charactersAdded, charactersRemoved).also {
+    fun recordInlineChatTelemetry(
+        requestId: String,
+        inputLength: Int?,
+        numSelectedLines: Int?,
+        codeIntent: Boolean?,
+        userDecision: InlineChatUserDecision?,
+        responseStartLatency: Double?,
+        responseEndLatency: Double?,
+        numSuggestionAddChars: Int?,
+        numSuggestionAddLines: Int?,
+        numSuggestionDelChars: Int?,
+        numSuggestionDelLines: Int?,
+        charactersAdded: Int?,
+        charactersRemoved: Int?
+    ) {
+        CodeWhispererClientAdaptor.getInstance(project).sendInlineChatTelemetry(
+            requestId, inputLength, numSelectedLines, codeIntent, userDecision,
+            responseStartLatency, responseEndLatency, numSuggestionAddChars, numSuggestionAddLines, numSuggestionDelChars, numSuggestionDelLines,
+            charactersAdded, charactersRemoved
+        ).also {
             logger.debug {
                 "Successfully sendTelemetryEvent for InlineChat with requestId=${it.responseMetadata().requestId()}"
             }

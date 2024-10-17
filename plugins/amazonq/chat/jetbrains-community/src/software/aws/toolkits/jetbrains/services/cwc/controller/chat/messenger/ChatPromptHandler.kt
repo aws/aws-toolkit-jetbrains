@@ -141,6 +141,7 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                 if(isInlineChat) processChatEvent(tabId, triggerId, responseEvent, shouldAddIndexInProgressMessage)?.let { emit(it) }
             }
             .collect { responseEvent ->
+                if(!isInlineChat)
                 processChatEvent(
                     tabId,
                     triggerId,

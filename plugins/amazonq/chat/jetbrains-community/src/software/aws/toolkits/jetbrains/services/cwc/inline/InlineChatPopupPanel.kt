@@ -29,20 +29,19 @@ import javax.swing.SwingConstants
 
 class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() {
     private var submitClickListener: (() -> Unit)? = null
-    private val POPUP_BUTTON_FONT_SIZE = 14f
-    private val POPUP_WIDTH = 600
-    val POPUP_HEIGHT = 90
-    private val POPUP_BUTTON_HEIGHT = 30
-    private val POPUP_BUTTON_WIDTH = 80
-    private val POPUP_INPUT_HEIGHT = 40
-    private val POPUP_INPUT_WIDTH = 500
-
+    private val popupButtonFontSize = 14f
+    private val popupWidth = 600
+    val popupHeight = 90
+    private val popupButtonHeight = 30
+    private val popupButtonWidth = 80
+    private val popupInputHeight = 40
+    private val popupInputWidth = 500
 
     val textField = createTextField()
 
     val submitButton = createButtonWithIcon(AwsIcons.Resources.InlineChat.CONFIRM, message("amazonqInlineChat.popup.confirm"))
 
-    private val cancelButton = createButtonWithIcon(AwsIcons.Resources.InlineChat.CANCEL,  message("amazonqInlineChat.popup.cancel")).apply {
+    private val cancelButton = createButtonWithIcon(AwsIcons.Resources.InlineChat.CANCEL, message("amazonqInlineChat.popup.cancel")).apply {
         addActionListener { Disposer.dispose(parentDisposable) }
     }
 
@@ -55,11 +54,11 @@ class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() 
     private val acceptButton = createButtonWithIcon(AwsIcons.Resources.InlineChat.CONFIRM, message("amazonqInlineChat.popup.accept"))
     private val rejectButton = createButtonWithIcon(AwsIcons.Resources.InlineChat.REJECT, message("amazonqInlineChat.popup.reject"))
     private val textLabel = JLabel(message("amazonqInlineChat.popup.editCode"), AwsIcons.Logos.AWS_Q_GREY, SwingConstants.RIGHT).apply {
-        font = font.deriveFont(POPUP_BUTTON_FONT_SIZE)
+        font = font.deriveFont(popupButtonFontSize)
     }
 
     private val errorLabel = JLabel("", AwsIcons.Logos.AWS_Q_GREY, SwingConstants.RIGHT).apply {
-        font = font.deriveFont(POPUP_BUTTON_FONT_SIZE)
+        font = font.deriveFont(popupButtonFontSize)
     }
 
     private val inputPanel = JPanel(BorderLayout()).apply {
@@ -76,29 +75,25 @@ class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() 
         add(buttonsPanel, BorderLayout.EAST)
     }
 
-    override fun getPreferredSize(): Dimension {
-        return Dimension(POPUP_WIDTH, POPUP_HEIGHT)
-    }
+    override fun getPreferredSize(): Dimension = Dimension(popupWidth, popupHeight)
 
-    private fun createTextField() : JTextField = JTextField().apply {
+    private fun createTextField(): JTextField = JTextField().apply {
         val editorColorsScheme = EditorColorsManager.getInstance().globalScheme
-        preferredSize = Dimension(POPUP_INPUT_WIDTH, POPUP_INPUT_HEIGHT)
+        preferredSize = Dimension(popupInputWidth, popupInputHeight)
         border = IdeBorderFactory.createRoundedBorder().apply {
             setColor(POPUP_BUTTON_BORDER)
         }
         font = Font(editorColorsScheme.editorFontName, Font.PLAIN, editorColorsScheme.editorFontSize)
     }
 
-    private fun createButtonWithIcon(icon: Icon, text: String): JButton {
-        return JButton(text).apply {
-            horizontalTextPosition = SwingConstants.LEFT
-            preferredSize = Dimension(POPUP_BUTTON_WIDTH, POPUP_BUTTON_HEIGHT)
-            setIcon(icon)
-            isOpaque = false
-            isContentAreaFilled = false
-            isBorderPainted = false
-            font = font.deriveFont(POPUP_BUTTON_FONT_SIZE)
-        }
+    private fun createButtonWithIcon(icon: Icon, text: String): JButton = JButton(text).apply {
+        horizontalTextPosition = SwingConstants.LEFT
+        preferredSize = Dimension(popupButtonWidth, popupButtonHeight)
+        setIcon(icon)
+        isOpaque = false
+        isContentAreaFilled = false
+        isBorderPainted = false
+        font = font.deriveFont(popupButtonFontSize)
     }
 
     init {
@@ -125,17 +120,14 @@ class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() 
         Disposer.register(parentDisposable, restorer)
     }
 
-    private fun getEditorActionHandler(action: () -> Unit) : EditorActionHandler {
-        val  handler = object : EditorActionHandler() {
-            override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
-                action.invoke()
-                Disposer.dispose(parentDisposable)
-            }
+    private fun getEditorActionHandler(action: () -> Unit): EditorActionHandler = object : EditorActionHandler() {
+        override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
+            action.invoke()
+            Disposer.dispose(parentDisposable)
         }
-        return handler
     }
 
-    fun addCodeActionsPanel(acceptAction: () -> Unit, rejectAction: () -> Unit ) {
+    fun addCodeActionsPanel(acceptAction: () -> Unit, rejectAction: () -> Unit) {
         textLabel.text = message("amazonqInlineChat.popup.editCode")
         // this is a workaround somehow the textField will interfere with the enter handler
         val emptyTextField = createTextField()

@@ -20,7 +20,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.resources.AmazonQBundle.message
 import java.awt.Point
 
-
 class InlineChatPopupFactory(
     private val editor: Editor,
     private val submitHandler: suspend (String, String, Int, Editor) -> String,
@@ -29,22 +28,20 @@ class InlineChatPopupFactory(
     private val cancelHandler: () -> Unit,
 ) : Disposable {
 
-    private fun getSelectedText(editor: Editor): String {
-        return ReadAction.compute<String, Throwable> {
-            val selectionStartOffset = editor.selectionModel.selectionStart
-            val selectionEndOffset = editor.selectionModel.selectionEnd
-            if (selectionEndOffset > selectionStartOffset) {
-                val selectionLineStart = editor.document.getLineStartOffset(editor.document.getLineNumber(selectionStartOffset))
-                val selectionLineEnd = editor.document.getLineEndOffset(editor.document.getLineNumber(selectionEndOffset))
-                editor.document.getText(TextRange(selectionLineStart, selectionLineEnd))
-            } else ""
+    private fun getSelectedText(editor: Editor): String = ReadAction.compute<String, Throwable> {
+        val selectionStartOffset = editor.selectionModel.selectionStart
+        val selectionEndOffset = editor.selectionModel.selectionEnd
+        if (selectionEndOffset > selectionStartOffset) {
+            val selectionLineStart = editor.document.getLineStartOffset(editor.document.getLineNumber(selectionStartOffset))
+            val selectionLineEnd = editor.document.getLineEndOffset(editor.document.getLineNumber(selectionEndOffset))
+            editor.document.getText(TextRange(selectionLineStart, selectionLineEnd))
+        } else {
+            ""
         }
     }
 
-    private fun getSelectionStartLine(editor: Editor): Int {
-        return ReadAction.compute<Int, Throwable> {
-            editor.document.getLineNumber(editor.selectionModel.selectionStart)
-        }
+    private fun getSelectionStartLine(editor: Editor): Int = ReadAction.compute<Int, Throwable> {
+        editor.document.getLineNumber(editor.selectionModel.selectionStart)
     }
 
     fun createPopup(scope: CoroutineScope): JBPopup {
@@ -78,7 +75,7 @@ class InlineChatPopupFactory(
                             val rejectAction = {
                                 rejectHandler.invoke()
                             }
-                            addCodeActionsPanel(acceptAction , rejectAction)
+                            addCodeActionsPanel(acceptAction, rejectAction)
                         }
                     }
                 }
@@ -92,7 +89,7 @@ class InlineChatPopupFactory(
     }
 
     private fun showPopupInEditor(popup: JBPopup, popupPanel: InlineChatPopupPanel, editor: Editor) {
-        val popupHeight = popupPanel.POPUP_HEIGHT
+        val popupHeight = popupPanel.popupHeight
         val editorComponent = editor.component
         val locationOnScreen = editorComponent.locationOnScreen
         val popupPoint = JBPopupFactory.getInstance().guessBestPopupLocation(editor).point
@@ -146,4 +143,3 @@ class InlineChatPopupFactory(
         cancelHandler.invoke()
     }
 }
-

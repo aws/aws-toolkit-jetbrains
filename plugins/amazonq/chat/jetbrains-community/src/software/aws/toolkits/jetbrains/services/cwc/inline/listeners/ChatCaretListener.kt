@@ -21,19 +21,16 @@ import software.aws.toolkits.jetbrains.services.cwc.inline.OpenChatInputAction
 class ChatCaretListener : CaretListener {
     private var currentHighlighter: RangeHighlighter? = null
 
-
-    private fun createGutterIconRenderer(editor: Editor):  GutterIconRenderer{
-        return InlineChatGutterIconRenderer(AwsIcons.Logos.AWS_Q_GREY).apply {
-            setClickAction {
-                val action = OpenChatInputAction()
-                val dataContext = DataManager.getInstance().getDataContext(editor.component)
-                val e = AnActionEvent.createFromDataContext(
-                    "GutterIconClick",
-                    Presentation(),
-                    dataContext
-                )
-                action.actionPerformed(e)
-            }
+    private fun createGutterIconRenderer(editor: Editor): GutterIconRenderer = InlineChatGutterIconRenderer(AwsIcons.Logos.AWS_Q_GREY).apply {
+        setClickAction {
+            val action = OpenChatInputAction()
+            val dataContext = DataManager.getInstance().getDataContext(editor.component)
+            val e = AnActionEvent.createFromDataContext(
+                "GutterIconClick",
+                Presentation(),
+                dataContext
+            )
+            action.actionPerformed(e)
         }
     }
 

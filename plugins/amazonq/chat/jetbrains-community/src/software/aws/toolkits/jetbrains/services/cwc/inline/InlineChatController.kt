@@ -7,7 +7,6 @@ import com.github.difflib.text.DiffRow
 import com.github.difflib.text.DiffRowGenerator
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.application.runInEdt
@@ -34,7 +33,6 @@ import com.intellij.ui.JBColor
 import com.intellij.ui.jcef.JBCefApp
 import com.jetbrains.rd.util.AtomicInteger
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onEach
@@ -111,7 +109,8 @@ class InlineChatController(
         var charactersRemoved: Int? = null,
     )
 
-    private val popupSubmitHandler: suspend (String, String, Int, Editor) -> String = { prompt: String, selectedCode: String, selectedLineStart: Int, editor: Editor ->
+    private val popupSubmitHandler: suspend (String, String, Int, Editor) -> String = {
+            prompt: String, selectedCode: String, selectedLineStart: Int, editor: Editor ->
         runBlocking {
             isInProgress.set(true)
             val message = handleChat(prompt, selectedCode, editor, selectedLineStart)
@@ -121,7 +120,7 @@ class InlineChatController(
 
     val popupCancelHandler: () -> Unit = {
         if (isPopupAborted.get() && currentPopup != null) {
-            scope.launch(Dispatchers.EDT) {
+            scope.launch(EDT) {
                 while (partialUndoActions.isNotEmpty()) {
                     val action = partialUndoActions.pop()
                     runChangeAction(project, action)
@@ -136,7 +135,7 @@ class InlineChatController(
     }
 
     private fun recordInlineChatTelemetry(decision: InlineChatUserDecision) {
-        if(metrics == null) return
+        if (metrics == null) return
         metrics?.userDecision = decision
         if (decision == InlineChatUserDecision.ACCEPT) {
             metrics?.charactersAdded = metrics?.numSuggestionAddChars
@@ -163,32 +162,31 @@ class InlineChatController(
     }
 
     private val diffAcceptHandler: () -> Unit = {
-        scope.launch(Dispatchers.EDT) {
+        scope.launch(EDT) {
             partialUndoActions.clear()
-                while (partialAcceptActions.isNotEmpty()) {
-                    val action = partialAcceptActions.pop()
-                    runChangeAction(project, action)
-                }
+            while (partialAcceptActions.isNotEmpty()) {
+                val action = partialAcceptActions.pop()
+                runChangeAction(project, action)
+            }
             invokeLater { hidePopup() }
         }
         ApplicationManager.getApplication().executeOnPooledThread {
             recordInlineChatTelemetry(InlineChatUserDecision.ACCEPT)
         }
-
     }
 
-     private val diffRejectHandler: () -> Unit = {
-            scope.launch(Dispatchers.EDT) {
-                while (partialUndoActions.isNotEmpty()) {
-                    val action = partialUndoActions.pop()
-                    runChangeAction(project, action)
-                }
-                partialAcceptActions.clear()
-                invokeLater { hidePopup() }
+    private val diffRejectHandler: () -> Unit = {
+        scope.launch(EDT) {
+            while (partialUndoActions.isNotEmpty()) {
+                val action = partialUndoActions.pop()
+                runChangeAction(project, action)
             }
-         ApplicationManager.getApplication().executeOnPooledThread {
+            partialAcceptActions.clear()
+            invokeLater { hidePopup() }
+        }
+        ApplicationManager.getApplication().executeOnPooledThread {
             recordInlineChatTelemetry(InlineChatUserDecision.REJECT)
-         }
+        }
     }
 
     private fun addPopupListeners(popup: JBPopup) {
@@ -203,19 +201,18 @@ class InlineChatController(
         popup.addListener(popupListener)
     }
 
-
-    fun initPopup (editor: Editor) {
+    fun initPopup(editor: Editor) {
         currentPopup?.let { Disposer.dispose(it) }
-        currentPopup = InlineChatPopupFactory(acceptHandler = diffAcceptHandler, rejectHandler = diffRejectHandler, editor = editor,
-            submitHandler = popupSubmitHandler, cancelHandler = popupCancelHandler).createPopup(scope)
+        currentPopup = InlineChatPopupFactory(
+            acceptHandler = diffAcceptHandler, rejectHandler = diffRejectHandler, editor = editor,
+            submitHandler = popupSubmitHandler, cancelHandler = popupCancelHandler
+        ).createPopup(scope)
         addPopupListeners(currentPopup!!)
         Disposer.register(this, currentPopup!!)
         isPopupAborted.set(true)
-
     }
 
     private fun highlightCodeWithBackgroundColor(editor: Editor, startOffset: Int, endOffset: Int, isGreen: Boolean) {
-
         val greenBackgroundAttributes = TextAttributes().apply {
             backgroundColor = JBColor(0x66BB6A, 0x006400)
             effectColor = JBColor(0x66BB6A, 0x006400)
@@ -226,7 +223,7 @@ class InlineChatController(
             effectColor = JBColor(0xEF9A9A, 0x8B0000)
         }
         val attributes = if (isGreen) greenBackgroundAttributes else redBackgroundAttributes
-        rangeHighlighter= editor.markupModel.addRangeHighlighter(
+        rangeHighlighter = editor.markupModel.addRangeHighlighter(
             startOffset, endOffset, HighlighterLayer.SELECTION + 1,
             attributes, HighlighterTargetArea.EXACT_RANGE
         )
@@ -240,7 +237,6 @@ class InlineChatController(
             ""
         }
     }
-
 
     private fun hidePopup() {
         isPopupAborted.set(false)
@@ -261,17 +257,15 @@ class InlineChatController(
 
         while (currentIndex < src.length) {
             val startIndex = src.indexOf("```", currentIndex)
-            if (startIndex == -1) break
+            if (startIndex == -1) return codeBlocks
 
             val endIndex = src.indexOf("```", startIndex + 3)
-            if (endIndex == -1) break
+            if (endIndex == -1) return codeBlocks
 
             val code = src.substring(startIndex + 3, endIndex)
             codeBlocks.add(code)
-
             currentIndex = endIndex + 3
         }
-
         return codeBlocks
     }
 
@@ -281,18 +275,15 @@ class InlineChatController(
         return rows
     }
 
-
-    private fun unescape(s: String): String {
-        return StringEscapeUtils.unescapeHtml3(s)
-            .replace("&quot;", "\"")
-            .replace("&#39;", "'")
-            .replace("=&gt;", "=>")
-    }
+    private fun unescape(s: String): String = StringEscapeUtils.unescapeHtml3(s)
+        .replace("&quot;", "\"")
+        .replace("&#39;", "'")
+        .replace("=&gt;", "=>")
 
     private suspend fun processChatMessage(selectedCode: String, event: ChatMessage, editor: Editor, selectedLineStart: Int, prevMessage: String) {
-        if(event.message?.isNotEmpty() == true) {
+        if (event.message?.isNotEmpty() == true) {
             val codeBlocks = getCodeBlocks(event.message)
-            if(codeBlocks.isEmpty()) {
+            if (codeBlocks.isEmpty()) {
                 logger.info { "No code block found in inline chat response with requestId: ${event.messageId}" }
                 return
             }
@@ -308,7 +299,7 @@ class InlineChatController(
             selectionStartLine = AtomicInteger(selectedLineStart)
             var currentDocumentLine = selectedLineStart
             var insertLine = selectedLineStart
-            if(event.codeReference?.isNotEmpty() == true) {
+            if (event.codeReference?.isNotEmpty() == true) {
                 editor.project?.let { ReferenceLogController.addReferenceLog(recommendation, event.codeReference, editor, it) }
             }
 
@@ -336,14 +327,14 @@ class InlineChatController(
                         showCodeChangeInEditor(row, currentDocumentLine, editor)
 
                         if (row.tag == DiffRow.Tag.CHANGE) {
-                            insertLine+=2
-                            currentDocumentLine+=2
+                            insertLine += 2
+                            currentDocumentLine += 2
                         } else {
                             insertLine++
                             currentDocumentLine++
                         }
                         deletedLinesCount++
-                        deletedCharsCount += row.oldLine?.length?: 0
+                        deletedCharsCount += row.oldLine?.length ?: 0
                     }
                     DiffRow.Tag.INSERT -> {
                         isAllEqual = false
@@ -351,7 +342,7 @@ class InlineChatController(
 
                         insertLine++
                         addedLinesCount++
-                        addedCharsCount += row.newLine?.length?: 0
+                        addedCharsCount += row.newLine?.length ?: 0
                     }
                 }
             }
@@ -368,7 +359,7 @@ class InlineChatController(
         } else {
             if (event.messageType == ChatMessageType.Answer) {
                 val codeBlocks = getCodeBlocks(prevMessage)
-                if(codeBlocks.isEmpty()) {
+                if (codeBlocks.isEmpty()) {
                     logger.warn { "No code block found in inline chat response with requestId: ${event.messageId} \nresponse: ${event.message}" }
                     isInProgress.set(false)
                     throw Exception("No recommendation provided. Please try again with a different question.")
@@ -377,8 +368,7 @@ class InlineChatController(
         }
     }
 
-
-    private suspend fun insertNewLineIfNeeded(row: Int, editor: Editor) : Int {
+    private suspend fun insertNewLineIfNeeded(row: Int, editor: Editor): Int {
         var newLineInserted = 0
         while (row > editor.document.lineCount - 1) {
             insertString(editor, editor.document.textLength, "\n")
@@ -387,36 +377,31 @@ class InlineChatController(
         return newLineInserted
     }
 
-    private fun getLineStartOffset(document: Document, row: Int): Int {
-        return ReadAction.compute<Int, Throwable> {
-            document.getLineStartOffset(row)
+    private fun getLineStartOffset(document: Document, row: Int): Int = ReadAction.compute<Int, Throwable> {
+        document.getLineStartOffset(row)
+    }
+
+    private fun getLineEndOffset(document: Document, row: Int): Int = ReadAction.compute<Int, Throwable> {
+        if (row == document.lineCount - 1) {
+            document.getLineEndOffset(row)
+        } else {
+            document.getLineEndOffset(row) + 1
         }
     }
 
-    private fun getLineEndOffset(document: Document, row: Int): Int {
-        return ReadAction.compute<Int, Throwable> {
-            if (row == document.lineCount - 1) {
-                document.getLineEndOffset(row)
-            } else {
-                document.getLineEndOffset(row) + 1
-            }
-        }
-    }
-
-    private suspend fun runChangeAction(project: Project, action: () -> Unit, shouldRecordForUndo: Boolean = false) {
+    private suspend fun runChangeAction(project: Project, action: () -> Unit) {
         withContext(EDT) {
             CommandProcessor.getInstance().executeCommand(project, {
-                    ApplicationManager.getApplication().runWriteAction {
-                        WriteCommandAction.runWriteCommandAction(project) {
-                            action()
-                        }
+                ApplicationManager.getApplication().runWriteAction {
+                    WriteCommandAction.runWriteCommandAction(project) {
+                        action()
                     }
-
+                }
             }, "", null, UndoConfirmationPolicy.DO_NOT_REQUEST_CONFIRMATION, false)
         }
     }
 
-    private suspend fun insertString(editor: Editor, offset: Int, text: String) : RangeMarker {
+    private suspend fun insertString(editor: Editor, offset: Int, text: String): RangeMarker {
         var rangeMarker: RangeMarker? = null
         val action = {
             editor.document.insertString(offset, text)
@@ -436,7 +421,7 @@ class InlineChatController(
         runChangeAction(project, action)
     }
 
-    private suspend fun highlightString(editor: Editor, start: Int, end: Int, isInsert: Boolean) : RangeMarker {
+    private suspend fun highlightString(editor: Editor, start: Int, end: Int, isInsert: Boolean): RangeMarker {
         var rangeMarker: RangeMarker? = null
         val action = {
             rangeMarker = editor.document.createRangeMarker(start, end)
@@ -459,7 +444,7 @@ class InlineChatController(
                     }
                     partialAcceptActions.add {
                         if (rangeMarker.isValid) {
-                            scope.launch(Dispatchers.EDT) {
+                            scope.launch(EDT) {
                                 deleteString(document, rangeMarker.startOffset, rangeMarker.endOffset)
                             }
                         }
@@ -474,7 +459,7 @@ class InlineChatController(
                     val rangeMarker = insertString(editor, insertOffset, textToInsert)
                     partialUndoActions.add {
                         if (rangeMarker.isValid) {
-                            scope.launch(Dispatchers.EDT) {
+                            scope.launch(EDT) {
                                 deleteString(document, rangeMarker.startOffset, rangeMarker.endOffset + newLineInserted)
                             }
                         }
@@ -490,7 +475,7 @@ class InlineChatController(
                     val changeEndOffset = getLineEndOffset(document, row)
                     val oldTextRangeMarker = highlightString(editor, changeOffset, changeEndOffset, false)
                     partialAcceptActions.add {
-                        scope.launch(Dispatchers.EDT) {
+                        scope.launch(EDT) {
                             if (oldTextRangeMarker.isValid) {
                                 deleteString(document, oldTextRangeMarker.startOffset, oldTextRangeMarker.endOffset)
                             }
@@ -504,7 +489,7 @@ class InlineChatController(
                     partialUndoActions.add {
                         WriteCommandAction.runWriteCommandAction(project) {
                             if (newTextRangeMarker.isValid) {
-                                scope.launch(Dispatchers.EDT) {
+                                scope.launch(EDT) {
                                     deleteString(document, newTextRangeMarker.startOffset, newTextRangeMarker.endOffset + newLineInserted)
                                 }
                             }
@@ -514,13 +499,12 @@ class InlineChatController(
                 }
             }
         } catch (e: Exception) {
-            logger.warn {"Error when showing inline chat diff in editor: ${e.message} \n ${e.stackTraceToString()}"}
+            logger.warn { "Error when showing inline chat diff in editor: ${e.message} \n ${e.stackTraceToString()}" }
             throw Exception("Unexpected error, please try again.")
         }
     }
 
-
-    private suspend fun handleChat (message: String, selectedCode: String = "", editor: Editor, selectedLineStart: Int) : String {
+    private suspend fun handleChat(message: String, selectedCode: String = "", editor: Editor, selectedLineStart: Int): String {
         val authController = AuthController()
         val credentialState = authController.getAuthNeededStates(project).chat
         if (credentialState != null) {
@@ -547,20 +531,23 @@ class InlineChatController(
 //        This is temporary. TODO: remove this after prompt added on service side
         var prompt = ""
         if (selectedCode.isNotBlank()) {
-            prompt = "You are a code transformation assistant. Your task is to modify a selection of lines from a given code file according to a specific instruction.\n"+
+            prompt = "You are a code transformation assistant." +
+                " Your task is to modify a selection of lines from a given code file according to a specific instruction.\n" +
                 "Follow these steps carefully:\n" +
                 "- You will be given some selected code from a file to be transformed, enclosed in <selected_code></selected_code> XML tags\n" +
                 "- You will receive an instruction for how to transform the selected code, enclosed in <instruction></instruction> XML tags\n" +
                 "- You will be given the contents of that same file as context, enclosed in <context></context> XML tags\n"
-                "- Your task is to:\n" +
+            "- Your task is to:\n" +
                 "- Apply the transformation instruction to the selected code\n" +
                 "- Ensure that the transformation is applied correctly and consistently\n" +
                 "- Reuse existing functions and other code from the context wherever possible\n" +
                 "- Important rules to follow:\n" +
                 "- Maintain the original indentation of the selected code\n" +
-                "- If the instruction asks to provide explanations or answer questions about the code, add these as new comment lines above the relevant lines in the code; do not change the code lines themselves\n" +
+                "- If the instruction asks to provide explanations or answer questions about the code," +
+                " add these as new comment lines above the relevant lines in the code; do not change the code lines themselves\n" +
                 "- If the instruction is unclear or cannot be applied, do not make any changes to the code\n" +
-                "- After performing the transformation, return the transformed code. If the transformation generates new code but does not modify the selected code, be sure to include the selected code in your response.\n"
+                "- After performing the transformation, return the transformed code." +
+                " If the transformation generates new code but does not modify the selected code, be sure to include the selected code in your response.\n"
         } else {
             prompt = "You are a coding assistant. Your task is to generate code according to an specific instruction.\n" +
                 "Follow these steps carefully:\n" +
@@ -570,7 +557,8 @@ class InlineChatController(
                 "- Generate code according to the instruction\n" +
                 "- Reuse existing functions and other code from the context wherever possible\n" +
                 "- Important rules to follow:\n" +
-                "- If the instruction asks to provide explanations or answer questions about the code, add these as new comment lines above the relevant lines in the code; do not change the code lines themselves\n" +
+                "- If the instruction asks to provide explanations or answer questions about the code," +
+                " add these as new comment lines above the relevant lines in the code; do not change the code lines themselves\n" +
                 "- If the instruction is unclear or cannot be applied, do not make any changes to the code\n" +
                 "- After generating the code, return ONLY the new code you generated; do not include any existing lines of code from the context.\n"
         }
@@ -603,29 +591,38 @@ class InlineChatController(
         var errorMessage = ""
         var prevMessage = ""
         val chat = sessionInfo.scope.async {
-            ChatPromptHandler(telemetryHelper).handle("inlineChat-editor", triggerId, requestData, sessionInfo, false, true)
-            .catch { e ->
-                logger.warn { "Error in inline chat request: ${e.message}" }
-                errorMessage = e.message ?: ""
-            }
-            .onEach{ event: ChatMessage ->
-                if (event.message?.isNotEmpty() == true && prevMessage != event.message) {
-                    runBlocking { processChatMessage(selectedCode, event, editor, selectedLineStart, prevMessage) }
-                    prevMessage = event.message
+            ChatPromptHandler(telemetryHelper).handle(
+                "inlineChat-editor",
+                triggerId,
+                requestData,
+                sessionInfo,
+                false,
+                true
+            )
+                .catch { e ->
+                    logger.warn { "Error in inline chat request: ${e.message}" }
+                    errorMessage = e.message ?: ""
                 }
-                if (messages.isEmpty()) {
-                    firstResponseLatency = (System.currentTimeMillis() - startTime).toDouble()
+                .onEach { event: ChatMessage ->
+                    if (event.message?.isNotEmpty() == true && prevMessage != event.message) {
+                        runBlocking { processChatMessage(selectedCode, event, editor, selectedLineStart, prevMessage) }
+                        prevMessage = event.message
+                    }
+                    if (messages.isEmpty()) {
+                        firstResponseLatency = (System.currentTimeMillis() - startTime).toDouble()
+                    }
+                    messages.add(event)
                 }
-                messages.add(event)
-            }
-            .toList()
+                .toList()
         }
         chat.await()
         val lastResponseLatency = (System.currentTimeMillis() - startTime).toDouble()
         val requestId = messages.lastOrNull()?.messageId
-        requestId?.let{
-            metrics = InlineChatMetrics(requestId = it, inputLength = message.length,  numSelectedLines = selectedCode.split("\n").size,
-                codeIntent = true, responseStartLatency = firstResponseLatency, responseEndLatency = lastResponseLatency)
+        requestId?.let {
+            metrics = InlineChatMetrics(
+                requestId = it, inputLength = message.length, numSelectedLines = selectedCode.split("\n").size,
+                codeIntent = true, responseStartLatency = firstResponseLatency, responseEndLatency = lastResponseLatency
+            )
         }
 
         return errorMessage
@@ -641,5 +638,3 @@ class InlineChatController(
         hidePopup()
     }
 }
-
-

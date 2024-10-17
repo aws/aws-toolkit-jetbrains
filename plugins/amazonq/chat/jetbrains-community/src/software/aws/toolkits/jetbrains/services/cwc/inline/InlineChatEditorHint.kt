@@ -17,30 +17,29 @@ import java.awt.BorderLayout
 import java.awt.Point
 import javax.swing.JPanel
 
-
 class InlineChatEditorHint {
     private val hint = createHint()
-    private val HINT_LOCATION_BUFFER = 50
+    private val hintLocationBuffer = 50
 
-    private fun getHintLocation (editor: Editor): Point {
+    private fun getHintLocation(editor: Editor): Point {
         val selectionModel = editor.selectionModel
         val lineSelected = selectionModel.selectedText?.split("\n")?.size
-        val offset: Int = if (lineSelected != null && lineSelected > 1) {(lineSelected - 1).times(editor.lineHeight)} else {0}
+        val offset: Int = if (lineSelected != null && lineSelected > 1) { (lineSelected - 1).times(editor.lineHeight) } else { 0 }
         val bestPosition = JBPopupFactory.getInstance().guessBestPopupLocation(editor).point
         val visibleArea = editor.scrollingModel.visibleArea
 
-        val adjustedX = (bestPosition.x + 200).coerceAtMost(visibleArea.x + visibleArea.width - HINT_LOCATION_BUFFER)
-        val adjustedY = (bestPosition.y + offset).coerceAtMost(visibleArea.y + visibleArea.height - HINT_LOCATION_BUFFER)
+        val adjustedX = (bestPosition.x + 200).coerceAtMost(visibleArea.x + visibleArea.width - hintLocationBuffer)
+        val adjustedY = (bestPosition.y + offset).coerceAtMost(visibleArea.y + visibleArea.height - hintLocationBuffer)
         val adjustedPosition = Point(adjustedX, adjustedY)
 
         return adjustedPosition
     }
 
-    private fun createHint ():  LightweightHint{
+    private fun createHint(): LightweightHint {
         val icon = AwsIcons.Logos.AWS_Q_GREY
 
         val component = HintUtil.createInformationComponent()
-        component.isIconOnTheRight = false;
+        component.isIconOnTheRight = false
         component.icon = icon
         val coloredText =
             SimpleColoredText(message("amazonqInlineChat.hint.edit"), SimpleTextAttributes.REGULAR_ATTRIBUTES)
@@ -49,7 +48,7 @@ class InlineChatEditorHint {
         val shortcutComponent = HintUtil.createInformationComponent()
         if (!SystemInfo.isWindows) {
             val shortCutIcon = AwsIcons.Resources.InlineChat.AWS_Q_INLINECHAT_SHORTCUT
-            shortcutComponent.isIconOnTheRight = true;
+            shortcutComponent.isIconOnTheRight = true
             shortcutComponent.icon = shortCutIcon
         } else {
             val shortcutText =
@@ -72,9 +71,12 @@ class InlineChatEditorHint {
     fun show(editor: Editor) {
         val location = getHintLocation(editor)
         HintManagerImpl.getInstanceImpl().showEditorHint(
-            hint, editor, location,
+            hint,
+            editor,
+            location,
             HintManager.HIDE_BY_TEXT_CHANGE or HintManager.HIDE_BY_SCROLLING,
-            0, false,
+            0,
+            false,
             HintManagerImpl.createHintHint(editor, location, hint, HintManager.RIGHT_UNDER).setContentActive(false)
         )
     }
@@ -83,7 +85,3 @@ class InlineChatEditorHint {
         hint.hide()
     }
 }
-
-
-
-
