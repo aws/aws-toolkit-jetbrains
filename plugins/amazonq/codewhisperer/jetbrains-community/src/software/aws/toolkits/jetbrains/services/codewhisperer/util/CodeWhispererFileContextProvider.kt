@@ -217,7 +217,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
         // TODO: uncomment
 //        if (CodeWhispererFeatureConfigService.getInstance().getInlineCompletion()) {
-//            val response = ProjectContextController.getInstance(project).queryInline(query, psiFile.virtualFile?.path ?: "").filter { it.content.isBlank() }
+//            val response = ProjectContextController.getInstance(project).queryInline(query, psiFile.virtualFile?.path ?: "").filter { it.content.isNotBlank() }
 //            return SupplementalContextInfo(
 //                isUtg = false,
 //                contents = response.map {
