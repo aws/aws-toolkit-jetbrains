@@ -56,7 +56,7 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
         data: ChatRequestData,
         sessionInfo: ChatSessionInfo,
         shouldAddIndexInProgressMessage: Boolean,
-        isInlineChat: Boolean = false
+        isInlineChat: Boolean = false,
     ) = flow {
         val session = sessionInfo.session
         session.chat(data)
@@ -138,17 +138,18 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                 }
             }
             .onEach { responseEvent ->
-                if(isInlineChat) processChatEvent(tabId, triggerId, responseEvent, shouldAddIndexInProgressMessage)?.let { emit(it) }
+                if (isInlineChat) processChatEvent(tabId, triggerId, responseEvent, shouldAddIndexInProgressMessage)?.let { emit(it) }
             }
             .collect { responseEvent ->
-                if(!isInlineChat)
-                processChatEvent(
-                    tabId,
-                    triggerId,
-                    data,
-                    responseEvent,
-                    shouldAddIndexInProgressMessage
-                )?.let { emit(it) }
+                if (!isInlineChat) {
+                    processChatEvent(
+                        tabId,
+                        triggerId,
+                        data,
+                        responseEvent,
+                        shouldAddIndexInProgressMessage
+                    )?.let { emit(it) }
+                }
             }
     }
 

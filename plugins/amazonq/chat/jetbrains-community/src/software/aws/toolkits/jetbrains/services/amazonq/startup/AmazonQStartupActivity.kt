@@ -20,9 +20,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWi
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextController
+import software.aws.toolkits.jetbrains.services.cwc.inline.InlineChatController
 import java.lang.management.ManagementFactory
 import java.time.Duration
-import software.aws.toolkits.jetbrains.services.cwc.inline.InlineChatController
 import java.util.concurrent.atomic.AtomicBoolean
 
 class AmazonQStartupActivity : ProjectActivity {

@@ -73,7 +73,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 @Service(Service.Level.PROJECT)
 class InlineChatController(
     private val project: Project,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
 ) : Disposable {
     private var currentPopup: JBPopup? = null
     private var rangeHighlighter: RangeHighlighter? = null

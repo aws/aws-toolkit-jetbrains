@@ -578,7 +578,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         numSuggestionDelChars: Int?,
         numSuggestionDelLines: Int?,
         charactersAdded: Int?,
-        charactersRemoved: Int?
+        charactersRemoved: Int?,
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.inlineChatEvent {
