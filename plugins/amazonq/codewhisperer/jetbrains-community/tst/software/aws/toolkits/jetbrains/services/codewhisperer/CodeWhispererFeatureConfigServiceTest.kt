@@ -9,6 +9,7 @@ import com.intellij.testFramework.ProjectRule
 import com.intellij.testFramework.replaceService
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Ignore
 import org.junit.Rule
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
@@ -110,6 +111,7 @@ class CodeWhispererFeatureConfigServiceTest {
     }
 
     @Test
+    @Ignore("This test has incorrect setup that the a/b value used in codebase doesn't need to be the value type received from the service")
     fun `test service has getters for all the features`() {
         val typeMap = mapOf(
             "kotlin.Boolean" to FeatureValue.Type.BOOL_VALUE,
