@@ -10,6 +10,7 @@ import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifierSso
+import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.telemetry.AuthStatus
 import software.aws.toolkits.telemetry.StartUpState
@@ -83,8 +84,10 @@ fun getAuthScopesForTelemetry(project: Project?): Set<String> {
         }
     }
 
-    val explorerConnection = checkIamConnectionValidity(project)
-    addScopes(explorerConnection)
+    val explorerConnection = checkIamProfileByCredentialType(project)
+    if (explorerConnection !is ActiveConnection.NotConnected && explorerConnection.connectionType == ActiveConnectionType.IAM_IDC) {
+        scopes.add(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
+    }
 
     val codeCatalystConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST)
     addScopes(codeCatalystConnection)
