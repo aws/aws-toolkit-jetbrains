@@ -750,25 +750,6 @@
             ]
         },
         {
-            "name": "auth_userState",
-            "description": "The state of the user's authentication.",
-            "metadata": [
-                {
-                    "type": "source",
-                    "required": true
-                },
-                {
-                    "type": "authStatus",
-                    "required": true
-                },
-                {
-                    "type": "authEnabledConnections",
-                    "required": true
-                }
-            ],
-            "passive": true
-        },
-        {
             "name": "webview_amazonqSignInOpened",
             "description": "Called when a Amazon Q sign in webview is opened.",
             "metadata": [

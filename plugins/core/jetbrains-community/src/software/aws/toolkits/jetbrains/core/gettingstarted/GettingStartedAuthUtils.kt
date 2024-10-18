@@ -233,19 +233,13 @@ fun reauthenticateWithQ(project: Project) {
 }
 
 fun emitUserState(project: Project) {
-
-    TelemetryService.getInstance().record(project) {
-        datum("auth_userState") {
-            createTime(Instant.now())
-            unit(Unit.NONE)
-            value(1.0)
-            passive(true)
-            metadata("source", getStartupState().toString())
-            metadata("authStatus", getAuthStatus(project).toString())
-            metadata("authEnabledConnections", getEnabledConnections(project))
-            metadata("authScopes", getAuthScopes(project))
-        }
-    }
+    AuthTelemetry.userState(
+        project,
+        authEnabledConnections = getEnabledConnections(project),
+        authScopes = getAuthScopes(project),
+        authStatus = getAuthStatus(project),
+        source = getStartupState().toString()
+    )
 }
 
 const val CODEWHISPERER_AUTH_LEARN_MORE_LINK = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/codewhisperer-auth.html"
