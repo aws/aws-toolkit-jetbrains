@@ -7,6 +7,7 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.VisualPosition
 import com.intellij.openapi.ui.popup.IconButton
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
@@ -95,7 +96,8 @@ class InlineChatPopupFactory(
         val preferredXY = editor.offsetToXY(selectionStart)
         val visibleArea = editor.scrollingModel.visibleArea
         val isBelow = preferredXY.y - visibleArea.y < popupBufferHeight
-        val preferredX = editor.contentComponent.locationOnScreen.x + popupPanel.popupWidth / 2
+        val xOffset = getLineByVisualStart(editor, selectionStart)
+        val preferredX = editor.contentComponent.locationOnScreen.x + xOffset
 
         if (isBelow) {
             val offsetXY = editor.offsetToXY(selectionEnd)
@@ -113,6 +115,30 @@ class InlineChatPopupFactory(
                 popupPanel.submitButton.doClick()
             }
         }
+    }
+
+    fun getIndentationForLine(editor: Editor, lineNumber: Int): Int {
+        val document = editor.document
+        val lineStartOffset = document.getLineStartOffset(lineNumber)
+        val lineEndOffset = document.getLineEndOffset(lineNumber)
+        val lineText = document.getText(TextRange(lineStartOffset, lineEndOffset))
+
+        // Find the index of the first non-whitespace character
+        val firstNonWhitespace = lineText.indexOfFirst { !it.isWhitespace() }
+
+        return if (firstNonWhitespace == -1) {
+            0
+        } else {
+            firstNonWhitespace + 1
+        }
+    }
+
+    private fun getLineByVisualStart(editor: Editor, offset: Int): Int {
+        val visualPosition = editor.offsetToVisualPosition(offset)
+        val line = visualPosition.line
+        val column = getIndentationForLine(editor, line)
+        val lineStartPosition = VisualPosition(line, column)
+        return editor.visualToLogicalPosition(lineStartPosition).line
     }
 
     private fun initPopup(panel: InlineChatPopupPanel): JBPopup {

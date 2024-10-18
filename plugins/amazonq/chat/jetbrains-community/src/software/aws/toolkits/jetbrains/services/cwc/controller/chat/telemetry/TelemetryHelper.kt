@@ -64,7 +64,7 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
     }
 
     private fun getTelemetryTriggerType(triggerType: TriggerType): CwsprChatTriggerInteraction = when (triggerType) {
-        TriggerType.Click, TriggerType.CodeScanButton -> CwsprChatTriggerInteraction.Click
+        TriggerType.Click, TriggerType.CodeScanButton, TriggerType.Inline -> CwsprChatTriggerInteraction.Click
         TriggerType.ContextMenu, TriggerType.Hotkeys -> CwsprChatTriggerInteraction.ContextMenu
     }
 
