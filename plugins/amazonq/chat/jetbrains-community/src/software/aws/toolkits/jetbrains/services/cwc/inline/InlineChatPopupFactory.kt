@@ -26,7 +26,7 @@ class InlineChatPopupFactory(
     private val acceptHandler: () -> Unit,
     private val rejectHandler: () -> Unit,
     private val cancelHandler: () -> Unit,
-    private val popupBufferHeight: Int = 150
+    private val popupBufferHeight: Int = 150,
 ) : Disposable {
 
     private fun getSelectedText(editor: Editor): String = ReadAction.compute<String, Throwable> {
@@ -95,7 +95,7 @@ class InlineChatPopupFactory(
         val preferredXY = editor.offsetToXY(selectionStart)
         val visibleArea = editor.scrollingModel.visibleArea
         val isBelow = preferredXY.y - visibleArea.y < popupBufferHeight
-        val preferredX = editor.contentComponent.locationOnScreen.x + editor.contentComponent.width / 2 - popupPanel.popupWidth / 2
+        val preferredX = editor.contentComponent.locationOnScreen.x + popupPanel.popupWidth / 2
 
         if (isBelow) {
             val offsetXY = editor.offsetToXY(selectionEnd)

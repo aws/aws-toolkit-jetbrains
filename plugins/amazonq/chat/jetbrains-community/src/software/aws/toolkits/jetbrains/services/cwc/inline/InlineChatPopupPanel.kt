@@ -13,6 +13,7 @@ import com.intellij.openapi.editor.actionSystem.EditorActionManager
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.IdeBorderFactory
+import com.intellij.ui.components.JBTextArea
 import icons.AwsIcons
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_BUTTON_BORDER
 import software.aws.toolkits.resources.AmazonQBundle.message
@@ -30,6 +31,7 @@ import javax.swing.SwingConstants
 class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() {
     private var submitClickListener: (() -> Unit)? = null
     private val popupButtonFontSize = 14f
+    private val popupTextAreaFontSize = 12f
     val popupWidth = 600
     val popupHeight = 90
     private val popupButtonHeight = 30
@@ -57,8 +59,11 @@ class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() 
         font = font.deriveFont(popupButtonFontSize)
     }
 
-    private val errorLabel = JLabel("").apply {
-        font = font.deriveFont(popupButtonFontSize)
+    private val errorLabel = JBTextArea("").apply {
+        font = font.deriveFont(popupTextAreaFontSize)
+        lineWrap = true
+        wrapStyleWord = true
+        isOpaque = false
     }
 
     private val errorPanel = JPanel(BorderLayout()).apply {

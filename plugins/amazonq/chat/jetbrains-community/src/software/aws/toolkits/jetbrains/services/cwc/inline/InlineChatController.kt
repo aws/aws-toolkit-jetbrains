@@ -40,7 +40,6 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import org.apache.commons.text.StringEscapeUtils
 import software.amazon.awssdk.services.codewhispererruntime.model.InlineChatUserDecision
 import software.aws.toolkits.core.utils.debug
@@ -53,6 +52,7 @@ import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AMAZON_Q_WINDOW_ID
+import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
 import software.aws.toolkits.jetbrains.services.cwc.controller.ReferenceLogController
@@ -85,10 +85,10 @@ class InlineChatController(
     private val shouldShowActions = AtomicBoolean(false)
     private val isInProgress = AtomicBoolean(false)
     private var metrics: InlineChatMetrics? = null
-    private var isPopupAborted = AtomicBoolean(true)
+    private var canPopupAbort = AtomicBoolean(true)
 
     init {
-        InlineChatFileListener(project).apply {
+        InlineChatFileListener(project, this).apply {
             project.messageBus.connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this)
         }
     }
@@ -119,7 +119,7 @@ class InlineChatController(
     }
 
     val popupCancelHandler: () -> Unit = {
-        if (isPopupAborted.get() && currentPopup != null) {
+        if (canPopupAbort.get() && currentPopup != null) {
             scope.launch(EDT) {
                 while (partialUndoActions.isNotEmpty()) {
                     val action = partialUndoActions.pop()
@@ -193,7 +193,7 @@ class InlineChatController(
         val popupListener = object : JBPopupListener {
 
             override fun onClosed(event: LightweightWindowEvent) {
-                if (isPopupAborted.get() && event.asPopup().isDisposed) {
+                if (canPopupAbort.get() && event.asPopup().isDisposed) {
                     popupCancelHandler.invoke()
                 }
             }
@@ -209,7 +209,7 @@ class InlineChatController(
         ).createPopup(scope)
         addPopupListeners(currentPopup!!)
         Disposer.register(this, currentPopup!!)
-        isPopupAborted.set(true)
+        canPopupAbort.set(true)
     }
 
     private fun highlightCodeWithBackgroundColor(editor: Editor, startOffset: Int, endOffset: Int, isGreen: Boolean) {
@@ -239,16 +239,18 @@ class InlineChatController(
     }
 
     private fun hidePopup() {
-        isPopupAborted.set(false)
+        canPopupAbort.set(false)
         currentPopup?.closeOk(null)
         currentPopup = null
         isInProgress.set(false)
         shouldShowActions.set(false)
     }
 
-    fun disposePopup() {
-        currentPopup?.let { Disposer.dispose(it) }
-        hidePopup()
+    fun disposePopup(isFromFileChange: Boolean) {
+        if (currentPopup != null && !shouldShowActions.get() || isFromFileChange) {
+            currentPopup?.let { Disposer.dispose(it) }
+            hidePopup()
+        }
     }
 
     private fun getCodeBlocks(src: String): List<String> {
@@ -330,7 +332,7 @@ class InlineChatController(
                         deletedCharsCount += row.oldLine?.length ?: 0
                     }
                     DiffRow.Tag.CHANGE -> {
-                        if (row.newLine.trimIndent() != row.oldLine?.trimIndent()){
+                        if (row.newLine.trimIndent() != row.oldLine?.trimIndent()) {
                             isAllEqual = false
                             showCodeChangeInEditor(row, currentDocumentLine, editor)
                             insertLine += 2
@@ -369,6 +371,7 @@ class InlineChatController(
                 if (codeBlocks.isEmpty()) {
                     logger.warn { "No code block found in inline chat response with requestId: ${event.messageId} \nresponse: ${event.message}" }
                     isInProgress.set(false)
+                    shouldShowActions.set(false)
                     throw Exception("No recommendation provided. Please try again with a different question.")
                 }
             }
@@ -404,7 +407,7 @@ class InlineChatController(
                         action()
                     }
                 }
-            }, "", null, UndoConfirmationPolicy.DO_NOT_REQUEST_CONFIRMATION, false)
+            }, "", "q-inline-chat", UndoConfirmationPolicy.DO_NOT_REQUEST_CONFIRMATION, false)
         }
     }
 

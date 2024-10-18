@@ -9,8 +9,9 @@ import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
+import software.aws.toolkits.jetbrains.services.cwc.inline.InlineChatController
 
-class InlineChatFileListener(project: Project) : FileEditorManagerListener {
+class InlineChatFileListener(project: Project, private val controller: InlineChatController) : FileEditorManagerListener {
     private var currentEditor: Editor? = null
     private var selectionListener: InlineChatSelectionListener? = null
 
@@ -28,6 +29,7 @@ class InlineChatFileListener(project: Project) : FileEditorManagerListener {
             currentEditor?.let { removeListenersFromCurrentEditor(it) }
             setupListenersForEditor(newEditor)
             currentEditor = newEditor
+            controller.disposePopup(true)
         }
     }
 

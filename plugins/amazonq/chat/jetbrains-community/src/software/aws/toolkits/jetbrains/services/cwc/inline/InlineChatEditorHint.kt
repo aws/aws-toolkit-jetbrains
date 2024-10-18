@@ -7,9 +7,7 @@ import com.intellij.codeInsight.hint.HintManagerImpl
 import com.intellij.codeInsight.hint.HintUtil
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.VisualPosition
-import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.SystemInfo
-import com.intellij.openapi.util.TextRange
 import com.intellij.ui.LightweightHint
 import com.intellij.ui.SimpleColoredText
 import com.intellij.ui.SimpleTextAttributes
