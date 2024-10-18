@@ -84,11 +84,11 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
     }.orEmpty()
 
     override fun listCrossFileCandidate(target: PsiFile): List<VirtualFile> {
-        val targetFile = target.virtualFile
+        val targetFile = target.viewProvider.virtualFile
 
         val openedFiles = runReadAction {
             FileEditorManager.getInstance(target.project).openFiles.toList().filter {
-                it.name != target.virtualFile.name &&
+                it.name != targetFile.name &&
                     isSameDialect(it.extension) &&
                     !isTestFile(it, target.project)
             }

@@ -3,23 +3,30 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture
+import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
+import software.aws.toolkits.jetbrains.services.amazonq.project.InlineBm25Chunk
+import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCpp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCsharp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererGo
@@ -32,6 +39,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTsx
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTypeScript
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.DefaultCodeWhispererFileContextProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
@@ -59,6 +67,172 @@ class CodeWhispererFileContextProviderTest {
         project = projectRule.project
 
         sut = FileContextProvider.getInstance(project) as DefaultCodeWhispererFileContextProvider
+    }
+
+    @Test
+    fun `should use open tabs if project context is empty due to project context is disabled`() = runTest {
+        sut = spy(sut)
+        val file1 = "Human machine interface for lab abc computer applications"
+        val file2 = "A survey of user opinion of computer system response time"
+        val file3 = "The EPS user interface management system"
+        val file4 = "System and human system engineering testing of EPS"
+        val file5 = "Relation of user perceived response time to error measurement"
+        val file6 = "The generation of random binary unordered trees"
+        val file7 = "The intersection graph of paths in trees"
+        val file8 = "Graph minors IV Widths of trees and well quasi ordering"
+        val file9 = "Graph minors A survey"
+        val query = "The intersection of graph survey and trees"
+
+        val queryPsi = fixture.addFileToProject("Query.java", query)
+        val file1Psi = fixture.addFileToProject("File1.java", file1)
+        val file2Psi = fixture.addFileToProject("File2.java", file2)
+        val file3Psi = fixture.addFileToProject("File3.java", file3)
+        val file4Psi = fixture.addFileToProject("File4.java", file4)
+        val file5Psi = fixture.addFileToProject("File5.java", file5)
+        val file6Psi = fixture.addFileToProject("File6.java", file6)
+        val file7Psi = fixture.addFileToProject("File7.java", file7)
+        val file8Psi = fixture.addFileToProject("File8.java", file8)
+        val file9Psi = fixture.addFileToProject("File9.java", file9)
+
+        runInEdtAndWait {
+            fixture.openFileInEditor(file1Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file2Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file3Psi.viewProvider.virtualFile)
+
+            fixture.openFileInEditor(file4Psi.viewProvider.virtualFile)
+
+            fixture.openFileInEditor(file5Psi.viewProvider.virtualFile)
+
+            fixture.openFileInEditor(file6Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file7Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file8Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file9Psi.viewProvider.virtualFile)
+        }
+
+        val mockFileContext = aFileContextInfo(CodeWhispererJava.INSTANCE)
+        val mockFeatureConfig: CodeWhispererFeatureConfigService = mock { on { getInlineCompletion() } doReturn false }
+        ApplicationManager.getApplication()
+            .replaceService(CodeWhispererFeatureConfigService::class.java, mockFeatureConfig, disposableRule.disposable)
+
+        val result = sut.extractSupplementalFileContextForSrc(queryPsi, mockFileContext)
+
+        assertThat(result.isUtg).isFalse
+        assertThat(result.strategy).isEqualTo(CrossFileStrategy.OpenTabsBM25)
+        assertThat(result.contents).hasSize(3)
+    }
+
+    @Test
+    fun `should use open tabs if project context is empty due to unknown error`() = runTest {
+        sut = spy(sut)
+        val file1 = "Human machine interface for lab abc computer applications"
+        val file2 = "A survey of user opinion of computer system response time"
+        val file3 = "The EPS user interface management system"
+        val file4 = "System and human system engineering testing of EPS"
+        val file5 = "Relation of user perceived response time to error measurement"
+        val file6 = "The generation of random binary unordered trees"
+        val file7 = "The intersection graph of paths in trees"
+        val file8 = "Graph minors IV Widths of trees and well quasi ordering"
+        val file9 = "Graph minors A survey"
+        val query = "The intersection of graph survey and trees"
+
+        val queryPsi = fixture.addFileToProject("Query.java", query)
+        val file1Psi = fixture.addFileToProject("File1.java", file1)
+        val file2Psi = fixture.addFileToProject("File2.java", file2)
+        val file3Psi = fixture.addFileToProject("File3.java", file3)
+        val file4Psi = fixture.addFileToProject("File4.java", file4)
+        val file5Psi = fixture.addFileToProject("File5.java", file5)
+        val file6Psi = fixture.addFileToProject("File6.java", file6)
+        val file7Psi = fixture.addFileToProject("File7.java", file7)
+        val file8Psi = fixture.addFileToProject("File8.java", file8)
+        val file9Psi = fixture.addFileToProject("File9.java", file9)
+
+        runInEdtAndWait {
+            fixture.openFileInEditor(file1Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file2Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file3Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file4Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file5Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file6Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file7Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file8Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file9Psi.viewProvider.virtualFile)
+        }
+
+        val mockFileContext = aFileContextInfo(CodeWhispererJava.INSTANCE)
+        val mockFeatureConfig: CodeWhispererFeatureConfigService = mock { on { getInlineCompletion() } doReturn true }
+        ApplicationManager.getApplication()
+            .replaceService(CodeWhispererFeatureConfigService::class.java, mockFeatureConfig, disposableRule.disposable)
+
+        val mockProjectContext = mock<ProjectContextController> {
+            on { queryInline(any(), any()) } doReturn emptyList()
+        }
+        project.replaceService(ProjectContextController::class.java, mockProjectContext, disposableRule.disposable)
+
+        val result = sut.extractSupplementalFileContextForSrc(queryPsi, mockFileContext)
+
+        assertThat(result.isUtg).isFalse
+        assertThat(result.strategy).isEqualTo(CrossFileStrategy.OpenTabsBM25)
+        assertThat(result.contents).hasSize(3)
+    }
+
+    @Test
+    fun `should use project context if it is present`() = runTest {
+        sut = spy(sut)
+        val file1 = "Human machine interface for lab abc computer applications"
+        val file2 = "A survey of user opinion of computer system response time"
+        val file3 = "The EPS user interface management system"
+        val file4 = "System and human system engineering testing of EPS"
+        val file5 = "Relation of user perceived response time to error measurement"
+        val file6 = "The generation of random binary unordered trees"
+        val file7 = "The intersection graph of paths in trees"
+        val file8 = "Graph minors IV Widths of trees and well quasi ordering"
+        val file9 = "Graph minors A survey"
+        val query = "The intersection of graph survey and trees"
+
+        val queryPsi = fixture.addFileToProject("Query.java", query)
+        val file1Psi = fixture.addFileToProject("File1.java", file1)
+        val file2Psi = fixture.addFileToProject("File2.java", file2)
+        val file3Psi = fixture.addFileToProject("File3.java", file3)
+        val file4Psi = fixture.addFileToProject("File4.java", file4)
+        val file5Psi = fixture.addFileToProject("File5.java", file5)
+        val file6Psi = fixture.addFileToProject("File6.java", file6)
+        val file7Psi = fixture.addFileToProject("File7.java", file7)
+        val file8Psi = fixture.addFileToProject("File8.java", file8)
+        val file9Psi = fixture.addFileToProject("File9.java", file9)
+
+        runInEdtAndWait {
+            fixture.openFileInEditor(file1Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file2Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file3Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file4Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file5Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file6Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file7Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file8Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file9Psi.viewProvider.virtualFile)
+        }
+
+        val mockFileContext = aFileContextInfo(CodeWhispererJava.INSTANCE)
+        val mockFeatureConfig: CodeWhispererFeatureConfigService = mock { on { getInlineCompletion() } doReturn true }
+        ApplicationManager.getApplication()
+            .replaceService(CodeWhispererFeatureConfigService::class.java, mockFeatureConfig, disposableRule.disposable)
+
+        val mockProjectContext = mock<ProjectContextController> {
+            on {
+                queryInline(any(), any())
+            } doReturn listOf(
+                InlineBm25Chunk("project_context1", "projectContext", 0.0),
+                InlineBm25Chunk("project_context2", "projectContext", 0.0),
+                InlineBm25Chunk("project_context3", "projectContext", 0.0),
+            )
+        }
+        project.replaceService(ProjectContextController::class.java, mockProjectContext, disposableRule.disposable)
+
+        val result = sut.extractSupplementalFileContextForSrc(queryPsi, mockFileContext)
+
+        assertThat(result.isUtg).isFalse
+        assertThat(result.strategy).isEqualTo(CrossFileStrategy.ProjectContext)
+        assertThat(result.contents).hasSize(3)
     }
 
     @Test
@@ -250,17 +424,50 @@ class CodeWhispererFileContextProviderTest {
      *
      */
     // TODO: fix this test, in test env, psiFile.virtualFile == null @psiGist.getFileData(psiFile) { psiFile -> ... }
-    @Ignore
     @Test
     fun `extractSupplementalFileContext from src file should extract src`() = runTest {
-        val psiFiles = setupFixture(fixture)
+        val file1 = "Human machine interface for lab abc computer applications"
+        val file2 = "A survey of user opinion of computer system response time"
+        val file3 = "The EPS user interface management system"
+        val file4 = "System and human system engineering testing of EPS"
+        val file5 = "Relation of user perceived response time to error measurement"
+        val file6 = "The generation of random binary unordered trees"
+        val file7 = "The intersection graph of paths in trees"
+        val file8 = "Graph minors IV Widths of trees and well quasi ordering"
+        val file9 = "Graph minors A survey"
+        val query = "The intersection of graph survey and trees"
+
+        val queryPsi = fixture.addFileToProject("Query.java", query)
+        val file1Psi = fixture.addFileToProject("File1.java", file1)
+        val file2Psi = fixture.addFileToProject("File2.java", file2)
+        val file3Psi = fixture.addFileToProject("File3.java", file3)
+        val file4Psi = fixture.addFileToProject("File4.java", file4)
+        val file5Psi = fixture.addFileToProject("File5.java", file5)
+        val file6Psi = fixture.addFileToProject("File6.java", file6)
+        val file7Psi = fixture.addFileToProject("File7.java", file7)
+        val file8Psi = fixture.addFileToProject("File8.java", file8)
+        val file9Psi = fixture.addFileToProject("File9.java", file9)
+
+        runInEdtAndWait {
+            fixture.openFileInEditor(file1Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file2Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file3Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file4Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file5Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file6Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file7Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file8Psi.viewProvider.virtualFile)
+            fixture.openFileInEditor(file9Psi.viewProvider.virtualFile)
+        }
+
         sut = spy(sut)
 
-        val fileContext = sut.extractFileContext(fixture.editor, psiFiles[0])
+        val fileContext = readAction { sut.extractFileContext(fixture.editor, queryPsi) }
+        val supplementalContext = sut.extractSupplementalFileContext(queryPsi, fileContext, timeout = 50)
 
-        val supplementalContext = sut.extractSupplementalFileContext(psiFiles[0], fileContext, timeout = 50)
-        assertThat(supplementalContext?.contents).isNotNull.isNotEmpty
-
+        assertThat(supplementalContext?.contents)
+            .isNotNull
+            .isNotEmpty
         verify(sut).extractSupplementalFileContextForSrc(any(), any())
         verify(sut, times(0)).extractSupplementalFileContextForTst(any(), any())
     }

@@ -32,6 +32,8 @@ import software.aws.toolkits.telemetry.AmazonqTelemetry
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -172,14 +174,10 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
 
     fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> {
         val encrypted = encryptRequest(QueryInlineCompletionRequest(query, filePath))
-        val response = sendMsgToLsp(LspMessage.QueryInlineCompletion, encrypted)
-
-        return try {
-            mapper.readValue<List<InlineBm25Chunk>>(response.responseBody)
-        } catch (e: Exception) {
-            logger.error { "error parsing query response ${e.message}" }
-            throw e
-        }
+        return CompletableFuture.supplyAsync {
+            val r = sendMsgToLsp(LspMessage.QueryInlineCompletion, encrypted)
+            mapper.readValue<List<InlineBm25Chunk>>(r.responseBody)
+        }.get(50L, TimeUnit.MILLISECONDS)
     }
 
     fun getUsage(): Usage? {

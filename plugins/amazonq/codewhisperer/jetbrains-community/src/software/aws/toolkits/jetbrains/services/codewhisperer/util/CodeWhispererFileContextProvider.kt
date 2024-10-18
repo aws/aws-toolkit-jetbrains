@@ -22,6 +22,8 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
+import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
@@ -206,33 +208,49 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
     override fun isTestFile(psiFile: PsiFile) = psiFile.programmingLanguage().fileCrawler.isTestFile(psiFile.virtualFile, psiFile.project)
 
-    @VisibleForTesting
     suspend fun extractSupplementalFileContextForSrc(psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo {
         if (!targetContext.programmingLanguage.isSupplementalContextSupported()) {
             return SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
         }
 
-        // takeLast(11) will extract 10 lines (exclusing current line) of left context as the query parameter
-        val query = targetContext.caretContext.leftFileContext.split("\n").takeLast(11).joinToString("\n")
+        val query = generateQuery(targetContext)
 
-        // TODO: uncomment
-//        if (CodeWhispererFeatureConfigService.getInstance().getInlineCompletion()) {
-//            val response = ProjectContextController.getInstance(project).queryInline(query, psiFile.virtualFile?.path ?: "").filter { it.content.isNotBlank() }
-//            return SupplementalContextInfo(
-//                isUtg = false,
-//                contents = response.map {
-//                    Chunk(
-//                        content = it.content,
-//                        path = it.filePath,
-//                        nextChunk = it.content,
-//                        score = it.score
-//                    )
-//                },
-//                targetFileName = targetContext.filename,
-//                strategy = CrossFileStrategy.ProjectContext
-//            )
-//        }
+        val projectContext = if (CodeWhispererFeatureConfigService.getInstance().getInlineCompletion()) {
+            fetchProjectContext(query, psiFile, targetContext)
+        } else {
+            null
+        }
 
+        val openTabsContext = fetchOpentabsContext(query, psiFile, targetContext)
+
+        return if (projectContext == null || projectContext.contents.isEmpty()) {
+            openTabsContext
+        } else {
+            projectContext
+        }
+    }
+
+    @VisibleForTesting
+    suspend fun fetchProjectContext(query: String, psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo {
+        val response = ProjectContextController.getInstance(project).queryInline(query, psiFile.virtualFile?.path ?: "")
+
+        return SupplementalContextInfo(
+            isUtg = false,
+            contents = response.map {
+                Chunk(
+                    content = it.content,
+                    path = it.filePath,
+                    nextChunk = it.content,
+                    score = it.score
+                )
+            },
+            targetFileName = targetContext.filename,
+            strategy = CrossFileStrategy.ProjectContext
+        )
+    }
+
+    @VisibleForTesting
+    suspend fun fetchOpentabsContext(query: String, psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo {
         // step 1: prepare data
         val first60Chunks: List<Chunk> = try {
             runReadAction { codewhispererCodeChunksIndex.getFileData(psiFile) }
@@ -322,6 +340,9 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
             return SupplementalContextInfo.emptyUtgFileContextInfo(targetContext.filename)
         }
     }
+
+    // takeLast(11) will extract 10 lines (exclusing current line) of left context as the query parameter
+    fun generateQuery(fileContext: FileContextInfo) = fileContext.caretContext.leftFileContext.split("\n").takeLast(11).joinToString("\n")
 
     companion object {
         private val LOG = getLogger<DefaultCodeWhispererFileContextProvider>()

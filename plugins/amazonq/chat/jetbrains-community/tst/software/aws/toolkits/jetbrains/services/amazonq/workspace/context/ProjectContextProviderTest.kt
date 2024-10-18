@@ -19,7 +19,7 @@ import org.junit.Rule
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
+import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -32,6 +32,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import java.net.ConnectException
+import java.util.concurrent.TimeoutException
 import kotlin.test.Test
 
 class ProjectContextProviderTest {
@@ -46,13 +47,16 @@ class ProjectContextProviderTest {
     private val project: Project
         get() = projectRule.project
 
-    private val encoderServer: EncoderServer = mock()
+    private lateinit var encoderServer: EncoderServer
     private lateinit var sut: ProjectContextProvider
 
     @Before
     fun setup() {
-        sut = ProjectContextProvider(project, encoderServer, TestScope())
+        encoderServer = spy(EncoderServer(project))
         encoderServer.stub { on { port } doReturn wireMock.port() }
+
+        sut = ProjectContextProvider(project, encoderServer, TestScope())
+
         // initialization
         stubFor(any(urlPathEqualTo("/initialize")).willReturn(aResponse().withStatus(200).withResponseBody(Body("initialize response"))))
 
@@ -67,73 +71,18 @@ class ProjectContextProviderTest {
         // query
         stubFor(
             any(urlPathEqualTo("/query")).willReturn(
-                aResponse().withStatus(200).withResponseBody(
-                    Body(
-                        """
-                            [
-                                {
-                                    "filePath": "file1",
-                                    "content": "content1",
-                                    "id": "id1",
-                                    "index": "index1",
-                                    "vec": [
-                                        "vec_1-1",
-                                        "vec_1-2",
-                                        "vec_1-3"
-                                    ],
-                                    "context": "context1",
-                                    "prev": "prev1",
-                                    "next": "next1",
-                                    "relativePath": "relativeFilePath1",
-                                    "programmingLanguage": "language1"
-                                },
-                                {
-                                    "filePath": "file2",
-                                    "content": "content2",
-                                    "id": "id2",
-                                    "index": "index2",
-                                    "vec": [
-                                        "vec_2-1",
-                                        "vec_2-2",
-                                        "vec_2-3"
-                                    ],
-                                    "context": "context2",
-                                    "prev": "prev2",
-                                    "next": "next2",
-                                    "relativePath": "relativeFilePath2",
-                                    "programmingLanguage": "language2"
-                                }
-                            ]
-                        """.trimIndent()
-                    )
-                )
+                aResponse()
+                    .withStatus(200)
+                    .withResponseBody(Body(validQueryChatResponse))
             )
         )
         stubFor(
             any(urlPathEqualTo("/queryInlineProjectContext")).willReturn(
-                aResponse().withStatus(200).withResponseBody(
-                    Body(
-                        """
-                            [
-                                {
-                                    "content": "content1",
-                                    "filePath": "file1",
-                                    "score": 0.1
-                                },
-                                {
-                                    "content": "content2",
-                                    "filePath": "file2",
-                                    "score": 0.2
-                                },
-                                {
-                                    "content": "content3",
-                                    "filePath": "file3",
-                                    "score": 0.3
-                                }
-                            ]    
-                        """.trimIndent()
+                aResponse()
+                    .withStatus(200)
+                    .withResponseBody(
+                        Body(validQueryInlineResponse)
                     )
-                )
             )
         )
 
@@ -142,16 +91,7 @@ class ProjectContextProviderTest {
                 .willReturn(
                     aResponse()
                         .withStatus(200)
-                        .withResponseBody(
-                            Body(
-                                """
-                                {
-                                "memoryUsage":123,
-                                "cpuUsage":456
-                                } 
-                                """.trimIndent()
-                            )
-                        )
+                        .withResponseBody(Body(validGetUsageResponse))
                 )
         )
     }
@@ -260,6 +200,24 @@ class ProjectContextProviderTest {
     }
 
     @Test
+    fun `should return empty if timeout with 50ms`() {
+        stubFor(
+            any(urlPathEqualTo("/queryInlineProjectContext")).willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withResponseBody(
+                        Body(validQueryInlineResponse)
+                    )
+                    .withFixedDelay(51) // 10 sec
+            )
+        )
+
+        assertThrows<TimeoutException> {
+            sut.queryInline("foo", "bar")
+        }
+    }
+
+    @Test
     fun `test index payload is encrypted`() = runTest {
         whenever(encoderServer.port).thenReturn(3000)
         try {
@@ -283,3 +241,67 @@ class ProjectContextProviderTest {
 
     private fun createMockServer() = WireMockRule(wireMockConfig().dynamicPort())
 }
+
+val validQueryInlineResponse = """
+                            [
+                                {
+                                    "content": "content1",
+                                    "filePath": "file1",
+                                    "score": 0.1
+                                },
+                                {
+                                    "content": "content2",
+                                    "filePath": "file2",
+                                    "score": 0.2
+                                },
+                                {
+                                    "content": "content3",
+                                    "filePath": "file3",
+                                    "score": 0.3
+                                }
+                            ]    
+""".trimIndent()
+
+val validQueryChatResponse = """
+                            [
+                                {
+                                    "filePath": "file1",
+                                    "content": "content1",
+                                    "id": "id1",
+                                    "index": "index1",
+                                    "vec": [
+                                        "vec_1-1",
+                                        "vec_1-2",
+                                        "vec_1-3"
+                                    ],
+                                    "context": "context1",
+                                    "prev": "prev1",
+                                    "next": "next1",
+                                    "relativePath": "relativeFilePath1",
+                                    "programmingLanguage": "language1"
+                                },
+                                {
+                                    "filePath": "file2",
+                                    "content": "content2",
+                                    "id": "id2",
+                                    "index": "index2",
+                                    "vec": [
+                                        "vec_2-1",
+                                        "vec_2-2",
+                                        "vec_2-3"
+                                    ],
+                                    "context": "context2",
+                                    "prev": "prev2",
+                                    "next": "next2",
+                                    "relativePath": "relativeFilePath2",
+                                    "programmingLanguage": "language2"
+                                }
+                            ]
+""".trimIndent()
+
+val validGetUsageResponse = """
+                                {
+                                "memoryUsage":123,
+                                "cpuUsage":456
+                                } 
+""".trimIndent()

@@ -56,14 +56,13 @@ class ProjectContextController(private val project: Project, private val cs: Cor
         }
     }
 
-    fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> {
+    fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> =
         try {
-            return projectContextProvider.queryInline(query, filePath)
+            projectContextProvider.queryInline(query, filePath)
         } catch (e: Exception) {
             logger.warn { "error while querying inline for project context $e.message" }
-            return emptyList()
+            emptyList()
         }
-    }
 
     fun updateIndex(filePath: String) {
         updateIndex(listOf(filePath), ProjectContextProvider.IndexUpdateMode.UPDATE)

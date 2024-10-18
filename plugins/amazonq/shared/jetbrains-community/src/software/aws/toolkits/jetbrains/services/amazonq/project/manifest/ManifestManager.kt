@@ -14,8 +14,8 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.getTextFromUrl
 
 class ManifestManager {
-    private val cloudFrontUrl = "https://aws-toolkit-language-servers.amazonaws.com/q-context/manifest.json"
-    val currentVersion = "0.1.13"
+    private val cloudFrontUrl = "https://ducvaeoffl85c.cloudfront.net/manifest-0.1.17.json"
+    val currentVersion = "0.1.17"
     val currentOs = getOs()
     private val arch = CpuArch.CURRENT
     private val mapper = jacksonObjectMapper()
