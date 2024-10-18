@@ -10,6 +10,7 @@ import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifierSso
+import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.telemetry.AuthStatus
 import software.aws.toolkits.telemetry.StartUpState
@@ -69,6 +70,39 @@ fun getEnabledConnectionsForTelemetry(project: Project?): Set<AuthFormId> {
 
 fun getEnabledConnections(project: Project?): String =
     getEnabledConnectionsForTelemetry(project).joinToString(",")
+
+fun getAuthScopesForTelemetry(project: Project?): Set<String> {
+    project ?: return emptySet()
+    val scopes = mutableSetOf<String>()
+
+    fun addScopes(connection: ActiveConnection) {
+        if (connection !is ActiveConnection.NotConnected) {
+            val connectionScopes = connection.activeConnectionBearer?.scopes
+            if (connectionScopes != null) {
+                scopes.addAll(connectionScopes)
+            }
+        }
+    }
+
+    val explorerConnection = checkIamProfileByCredentialType(project)
+    if (explorerConnection !is ActiveConnection.NotConnected && explorerConnection.connectionType == ActiveConnectionType.IAM_IDC) {
+        scopes.add(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
+    }
+
+    val codeCatalystConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST)
+    addScopes(codeCatalystConnection)
+
+    val codeWhispererConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER)
+    addScopes(codeWhispererConnection)
+
+    val qConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
+    addScopes(qConnection)
+
+    return scopes
+}
+
+fun getAuthScopes(project: Project?): String =
+    getAuthScopesForTelemetry(project).joinToString(",")
 
 fun getStartupState(): StartUpState {
     val hasStartedToolkitBefore = tryOrNull {
