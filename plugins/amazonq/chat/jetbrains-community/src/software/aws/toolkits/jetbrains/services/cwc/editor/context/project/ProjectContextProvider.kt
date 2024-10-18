@@ -37,22 +37,22 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     private val retryCount = AtomicInteger(0)
     val isIndexComplete = AtomicBoolean(false)
     private val mapper = jacksonObjectMapper()
+
     init {
         cs.launch {
-            if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
-                while (true) {
-                    if (encoderServer.isNodeProcessRunning()) {
-                        // TODO: need better solution for this
-                        delay(10000)
-                        initAndIndex()
-                        break
-                    } else {
-                        yield()
-                    }
+            while (true) {
+                if (encoderServer.isNodeProcessRunning()) {
+                    // TODO: need better solution for this
+                    delay(10000)
+                    initAndIndex()
+                    break
+                } else {
+                    yield()
                 }
             }
         }
     }
+
     data class IndexRequestPayload(
         val filePaths: List<String>,
         val projectRoot: String,
@@ -113,9 +113,11 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
                     if (isInitSuccess) {
                         logger.info { "project context index starting" }
                         delay(300)
-                        val isIndexSuccess = index()
-                        if (isIndexSuccess) isIndexComplete.set(true)
-                        return@launch
+                        if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
+                            val isIndexSuccess = index()
+                            if (isIndexSuccess) isIndexComplete.set(true)
+                            return@launch
+                        }
                     }
                 } catch (e: Exception) {
                     if (e.stackTraceToString().contains("Connection refused")) {
