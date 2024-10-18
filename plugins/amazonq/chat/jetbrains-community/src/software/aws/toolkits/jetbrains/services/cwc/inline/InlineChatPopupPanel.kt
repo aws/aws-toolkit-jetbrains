@@ -30,7 +30,7 @@ import javax.swing.SwingConstants
 class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() {
     private var submitClickListener: (() -> Unit)? = null
     private val popupButtonFontSize = 14f
-    private val popupWidth = 600
+    val popupWidth = 600
     val popupHeight = 90
     private val popupButtonHeight = 30
     private val popupButtonWidth = 80
@@ -41,7 +41,7 @@ class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() 
 
     val submitButton = createButtonWithIcon(AwsIcons.Resources.InlineChat.CONFIRM, message("amazonqInlineChat.popup.confirm"))
 
-    private val cancelButton = createButtonWithIcon(AwsIcons.Resources.InlineChat.CANCEL, message("amazonqInlineChat.popup.cancel")).apply {
+    private val cancelButton = createButtonWithIcon(AwsIcons.Resources.InlineChat.REJECT, message("amazonqInlineChat.popup.cancel")).apply {
         addActionListener { Disposer.dispose(parentDisposable) }
     }
 

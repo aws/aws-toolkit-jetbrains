@@ -613,7 +613,13 @@ class InlineChatController(
                 }
                 .onEach { event: ChatMessage ->
                     if (event.message?.isNotEmpty() == true && prevMessage != event.message) {
-                        runBlocking { processChatMessage(selectedCode, event, editor, selectedLineStart, prevMessage) }
+                        runBlocking {
+                            try {
+                                processChatMessage(selectedCode, event, editor, selectedLineStart, prevMessage)
+                            } catch (e: Exception) {
+                                errorMessage = e.message ?: ""
+                            }
+                        }
                         prevMessage = event.message
                     }
                     if (messages.isEmpty()) {

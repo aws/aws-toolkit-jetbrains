@@ -12,7 +12,6 @@ import com.intellij.openapi.project.Project
 
 class InlineChatFileListener(project: Project) : FileEditorManagerListener {
     private var currentEditor: Editor? = null
-    private var caretListener: ChatCaretListener? = null
     private var selectionListener: InlineChatSelectionListener? = null
 
     init {
@@ -33,24 +32,16 @@ class InlineChatFileListener(project: Project) : FileEditorManagerListener {
     }
 
     private fun setupListenersForEditor(editor: Editor) {
-        caretListener = ChatCaretListener().also { listener ->
-            editor.caretModel.addCaretListener(listener)
-        }
-
         selectionListener = InlineChatSelectionListener().also { listener ->
             editor.selectionModel.addSelectionListener(listener)
         }
     }
 
     private fun removeListenersFromCurrentEditor(editor: Editor) {
-        caretListener?.let { listener ->
-            editor.caretModel.removeCaretListener(listener)
-        }
         selectionListener?.let { listener ->
             editor.selectionModel.removeSelectionListener(listener)
             listener.dispose()
         }
-        caretListener = null
         selectionListener = null
     }
 

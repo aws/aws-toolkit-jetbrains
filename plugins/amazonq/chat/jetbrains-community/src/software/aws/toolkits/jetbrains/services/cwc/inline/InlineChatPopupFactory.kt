@@ -26,6 +26,7 @@ class InlineChatPopupFactory(
     private val acceptHandler: () -> Unit,
     private val rejectHandler: () -> Unit,
     private val cancelHandler: () -> Unit,
+    private val popupBufferHeight: Int = 150
 ) : Disposable {
 
     private fun getSelectedText(editor: Editor): String = ReadAction.compute<String, Throwable> {
@@ -89,22 +90,21 @@ class InlineChatPopupFactory(
     }
 
     private fun showPopupInEditor(popup: JBPopup, popupPanel: InlineChatPopupPanel, editor: Editor) {
-        val popupHeight = popupPanel.popupHeight
-        val editorComponent = editor.component
-        val locationOnScreen = editorComponent.locationOnScreen
-        val popupPoint = JBPopupFactory.getInstance().guessBestPopupLocation(editor).point
+        val selectionEnd = editor.selectionModel.selectionEnd
+        val selectionStart = editor.selectionModel.selectionStart
+        val preferredXY = editor.offsetToXY(selectionStart)
+        val visibleArea = editor.scrollingModel.visibleArea
+        val isBelow = preferredXY.y - visibleArea.y < popupBufferHeight
+        val preferredX = editor.contentComponent.locationOnScreen.x + editor.contentComponent.width / 2 - popupPanel.popupWidth / 2
 
-        val spaceAbove = popupPoint.y - locationOnScreen.y
-        val spaceNeeded = popupHeight + 15 // Add a small buffer
-
-        val adjustedPoint = if (spaceAbove >= spaceNeeded) {
-            // Position above the caret
-            Point(popupPoint.x, popupPoint.y - spaceNeeded)
+        if (isBelow) {
+            val offsetXY = editor.offsetToXY(selectionEnd)
+            val point = Point(preferredX, offsetXY.y - visibleArea.y + popupBufferHeight)
+            popup.show(RelativePoint(point))
         } else {
-            // Position below the caret
-            popupPoint
+            val popupXY = Point(preferredX, preferredXY.y - visibleArea.y - editor.lineHeight)
+            popup.show(RelativePoint(popupXY))
         }
-        popup.show(RelativePoint(adjustedPoint))
 
         popupPanel.textField.requestFocusInWindow()
         popupPanel.textField.addActionListener { e ->
@@ -129,7 +129,6 @@ class InlineChatPopupFactory(
             }
             .setShowBorder(true)
             .setCancelOnWindowDeactivation(false)
-            .setAlpha(0.2F)
             .setCancelOnClickOutside(false)
             .setCancelOnOtherWindowOpen(false)
             .setFocusable(true)
