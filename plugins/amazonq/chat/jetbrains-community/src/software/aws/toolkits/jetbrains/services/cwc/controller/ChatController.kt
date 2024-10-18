@@ -43,6 +43,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
+import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
+import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererUserModificationTracker
 import software.aws.toolkits.jetbrains.services.cwc.InboundAppMessagesHandler
@@ -64,8 +66,6 @@ import software.aws.toolkits.jetbrains.services.cwc.controller.chat.userIntent.U
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContext
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContextExtractor
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTriggerType
-import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextController
-import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.cwc.messages.AuthNeededException
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
