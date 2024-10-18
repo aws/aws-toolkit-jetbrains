@@ -15,11 +15,11 @@ import kotlinx.coroutines.time.withTimeout
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.gettingstarted.emitUserState
+import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindow
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
-import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
 import java.lang.management.ManagementFactory
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
