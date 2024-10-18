@@ -4,8 +4,6 @@
 package software.aws.toolkits.jetbrains.core.gettingstarted
 
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
-import software.amazon.awssdk.services.toolkittelemetry.model.Unit
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
@@ -29,7 +27,6 @@ import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.Result
-import java.time.Instant
 
 fun requestCredentialsForCodeWhisperer(
     project: Project,
