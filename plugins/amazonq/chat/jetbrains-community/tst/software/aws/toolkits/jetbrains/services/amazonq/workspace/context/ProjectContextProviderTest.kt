@@ -247,6 +247,7 @@ class ProjectContextProviderTest {
     private fun createMockServer() = WireMockRule(wireMockConfig().dynamicPort())
 }
 
+// language=JSON
 val validQueryChatResponse = """
                             [
                                 {
@@ -284,9 +285,10 @@ val validQueryChatResponse = """
                             ]
 """.trimIndent()
 
+// language=JSON
 val validGetUsageResponse = """
                                 {
-                                "memoryUsage":123,
-                                "cpuUsage":456
+                                  "memoryUsage":123,
+                                  "cpuUsage":456
                                 } 
 """.trimIndent()
