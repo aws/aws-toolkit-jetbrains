@@ -108,6 +108,7 @@ class CodeWhispererFeatureConfigService {
 
     fun getNewAutoTriggerUX(): Boolean = getFeatureValueForKey(NEW_AUTO_TRIGGER_UX).stringValue() == "TREATMENT"
 
+    @Suppress("UNUSED")
     fun getInlineCompletion(): Boolean = getFeatureValueForKey(INLINE_COMPLETION).stringValue() == "TREATMENT"
 
     // Get the feature value for the given key.
