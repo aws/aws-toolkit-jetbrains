@@ -163,7 +163,13 @@ class CodeTransformChatController(
         // Publish a metric when transform is first initiated from chat prompt.
         telemetry.initiateTransform()
 
-        this.getUserObjective(message.tabId)
+        val isSqlTransformReady = false // feature flag for SQL conversions
+
+        if (isSqlTransformReady) {
+            this.getUserObjective(message.tabId)
+        } else {
+            this.handleLanguageUpgrade()
+        }
     }
 
     private suspend fun getUserObjective(tabId: String) {
@@ -323,8 +329,6 @@ class CodeTransformChatController(
             val selectedZipFile = FileChooser.chooseFile(descriptor, null, null) ?: return@runInEdt
             val extractedZip = createTempDirectory("codeTransformSQLMetadata", null) // .path.toVirtualFile()
             unzipFile(selectedZipFile.toNioPath(), extractedZip.toPath())
-
-            notifyStickyInfo("tempDir", extractedZip.path)
 
             val sctFile = extractedZip.listFiles { file -> file.name.endsWith(".sct") }.firstOrNull()
 

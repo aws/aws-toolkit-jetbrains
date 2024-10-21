@@ -226,7 +226,6 @@ data class CodeModernizerSessionContext(
 
                     // 2) Dependencies / SQL conversion metadata
                     if (depDirectory != null) {
-                        notifyStickyInfo("depDirectory", "depDirectory is NOT null")
                         dependencyFiles.forEach { depFile ->
                             val relativePath = File(depFile.path).relativeTo(depDirectory)
                             val paddedPath = depSources.resolve(relativePath)
