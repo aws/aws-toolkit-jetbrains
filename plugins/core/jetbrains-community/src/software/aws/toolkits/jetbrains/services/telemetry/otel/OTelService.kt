@@ -1,5 +1,6 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
+@file:Suppress("UnusedPrivateClass")
 
 package software.aws.toolkits.jetbrains.services.telemetry.otel
 
@@ -31,7 +32,10 @@ import software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner
 import java.io.ByteArrayOutputStream
 import java.net.ConnectException
 
-private class BasicOtlpSpanProcessor(private val coroutineScope: CoroutineScope, private val traceUrl: String = "http://127.0.0.1:4318/v1/traces") : SpanProcessor {
+private class BasicOtlpSpanProcessor(
+    private val coroutineScope: CoroutineScope,
+    private val traceUrl: String = "http://127.0.0.1:4318/v1/traces",
+) : SpanProcessor {
     override fun onStart(parentContext: Context, span: ReadWriteSpan) {}
     override fun isStartRequired() = false
     override fun isEndRequired() = true
@@ -56,7 +60,11 @@ private class BasicOtlpSpanProcessor(private val coroutineScope: CoroutineScope,
     }
 }
 
-private class SigV4OtlpSpanProcessor(private val coroutineScope: CoroutineScope, private val traceUrl: String, private val creds: AwsCredentialsProvider) : SpanProcessor {
+private class SigV4OtlpSpanProcessor(
+    private val coroutineScope: CoroutineScope,
+    private val traceUrl: String,
+    private val creds: AwsCredentialsProvider,
+) : SpanProcessor {
     override fun onStart(parentContext: Context, span: ReadWriteSpan) {}
     override fun isStartRequired() = false
     override fun isEndRequired() = true
@@ -117,7 +125,7 @@ private object StdoutSpanProcessor : SpanProcessor {
 }
 
 @Service
-class OTelService(private val cs: CoroutineScope) : Disposable {
+class OTelService : Disposable {
     private val sdkDelegate = lazy {
         val configurator = OpenTelemetryConfigurator(
             sdkBuilder = OpenTelemetrySdk.builder(),

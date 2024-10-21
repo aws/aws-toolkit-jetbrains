@@ -32,13 +32,12 @@ abstract class AbstractSpanBuilder<Builder : AbstractSpanBuilder<Builder, Span>,
      *
      * @inheritdoc
      */
-    inline fun<T> use(operation: (Span) -> T): T {
-        return startSpan().useWithoutActiveScope { span ->
+    inline fun<T> use(operation: (Span) -> T): T =
+        startSpan().useWithoutActiveScope { span ->
             (span as Span).makeCurrent().use {
                 operation(span)
             }
         }
-    }
 
     protected var parent: Context? = null
     override fun setParent(context: Context): Builder {
