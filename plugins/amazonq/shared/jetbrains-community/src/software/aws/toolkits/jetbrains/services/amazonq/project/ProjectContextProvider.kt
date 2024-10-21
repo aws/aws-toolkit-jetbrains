@@ -125,7 +125,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     fun index(): Boolean {
-        val projectRoot = project.guessProjectDir()?.path ?: return false
+        val projectRoot = project.basePath ?: return false
 
         val indexStartTime = System.currentTimeMillis()
         val filesResult = collectFiles()
