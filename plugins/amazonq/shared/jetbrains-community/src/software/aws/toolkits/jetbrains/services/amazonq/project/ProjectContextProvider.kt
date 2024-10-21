@@ -108,11 +108,9 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
                     if (isInitSuccess) {
                         logger.info { "project context index starting" }
                         delay(300)
-                        if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
-                            val isIndexSuccess = index()
-                            if (isIndexSuccess) isIndexComplete.set(true)
-                            return@launch
-                        }
+                        val isIndexSuccess = index()
+                        if (isIndexSuccess) isIndexComplete.set(true)
+                        return@launch
                     }
                 } catch (e: Exception) {
                     if (e.stackTraceToString().contains("Connection refused")) {
