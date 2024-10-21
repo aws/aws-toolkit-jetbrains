@@ -33,6 +33,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.project.InlineBm25Chunk
 import software.aws.toolkits.jetbrains.services.amazonq.project.LspMessage
 import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextProvider
 import software.aws.toolkits.jetbrains.services.amazonq.project.QueryChatRequest
+import software.aws.toolkits.jetbrains.services.amazonq.project.QueryInlineCompletionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.amazonq.project.UpdateIndexRequest
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
@@ -188,6 +189,25 @@ class ProjectContextProviderTest {
         wireMock.verify(
             1,
             postRequestedFor(urlPathEqualTo("/query"))
+                .withHeader("Content-Type", equalTo("text/plain"))
+                .withRequestBody(equalTo(encryptedRequest))
+        )
+    }
+
+    @Test
+    fun `queryInline should send correct encrypted request to lsp`() {
+        sut.queryInline("foo", "Foo.java")
+
+        val request = QueryInlineCompletionRequest("foo", "Foo.java")
+        val requestJson = mapper.writeValueAsString(request)
+
+        assertThat(mapper.readTree(requestJson)).isEqualTo(mapper.readTree("""{ "query": "foo", "filePath": "Foo.java" }"""))
+
+        val encryptedRequest = encoderServer.encrypt(requestJson)
+
+        wireMock.verify(
+            1,
+            postRequestedFor(urlPathEqualTo("/queryInlineProjectContext"))
                 .withHeader("Content-Type", equalTo("text/plain"))
                 .withRequestBody(equalTo(encryptedRequest))
         )
