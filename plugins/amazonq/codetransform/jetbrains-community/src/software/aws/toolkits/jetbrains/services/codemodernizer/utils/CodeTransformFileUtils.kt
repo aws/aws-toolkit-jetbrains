@@ -3,13 +3,16 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
+import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
 import software.aws.toolkits.core.utils.createParentDirectories
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager.Companion.LOG
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_ARTIFACT_DIR_NAME
@@ -20,8 +23,10 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_DEP
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_POM_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_POM_VERSION_PLACEHOLDER
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_UPLOAD_ZIP_NAME
+import software.aws.toolkits.jetbrains.services.codemodernizer.controller.CodeTransformChatController
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DependencyUpdatesReport
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_CONFIGURATION_FILE_NAME
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.SqlMetadataValidationResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.content
 import software.aws.toolkits.resources.message
 import java.io.File
@@ -126,6 +131,67 @@ fun parseXmlDependenciesReport(pathToXmlDependency: Path): DependencyUpdatesRepo
     val xmlMapper = XmlMapper()
     val report = xmlMapper.readValue(reportFile, DependencyUpdatesReport::class.java)
     return report
+}
+
+fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {
+    if (sctFile == null) {
+        return SqlMetadataValidationResult(false, "No .sct metadata file found in the provided ZIP.")
+    }
+    val fileContent = sctFile.readBytes().toString(Charsets.UTF_8)
+    val xmlDeserializer = XmlMapper(JacksonXmlModule())
+    var sctMetadata: Map<*, *>? = null
+    try {
+        sctMetadata = xmlDeserializer.readValue(fileContent, Any::class.java) as Map<*, *>
+    } catch (e: Exception) {
+        getLogger<CodeTransformChatController>().error { "Error parsing .sct metadata file; invalid XML encountered." }
+        return SqlMetadataValidationResult(false, "Invalid XML encountered.")
+    }
+
+    try {
+        val instances = sctMetadata["instances"] as Map<*, *>
+        val projectModel = instances["ProjectModel"] as Map<*, *>
+        val entities = projectModel["entities"] as Map<*, *>
+
+        val sources = entities["sources"] as Map<*, *>
+        val sourceDbServer = sources["DbServer"] as Map<*, *>
+        val sourceVendor = (sourceDbServer["vendor"] as String).trim().uppercase()
+        if (sourceVendor != "ORACLE") {
+            return SqlMetadataValidationResult(false, "Sorry, your .sct metadata file appears to be invalid; the source DB must be Oracle.")
+        }
+
+        val sourceServerName = (sourceDbServer["name"] as String).trim()
+
+        val targets = entities["targets"] as Map<*, *>
+        val targetDbServer = targets["DbServer"] as Map<*, *>
+        val targetVendor = (targetDbServer["vendor"] as String).trim().uppercase()
+        if (targetVendor != "AURORA_POSTGRESQL" && targetVendor != "RDS_POSTGRESQL") {
+            return SqlMetadataValidationResult(false, "Sorry, your .sct metadata file appears to be invalid; the target DB must be Aurora PostgreSQL or Amazon RDS for PostgreSQL.")
+        }
+
+        val relations = projectModel["relations"] as Map<*, *>
+        val serverNodeLocations = relations["server-node-location"] as List<Map<*, *>>
+        val schemaNames = mutableSetOf<String>()
+        for (serverNodeLocation in serverNodeLocations) {
+            val fullNameNodeInfoList = serverNodeLocation["FullNameNodeInfoList"] as Map<*, *>
+            val nameParts = fullNameNodeInfoList["nameParts"] as Map<*, *>
+            var fullNameNodeInfo = nameParts["FullNameNodeInfo"] // as List<Map<*, *>>
+            if (fullNameNodeInfo is Map<*, *>) {
+                continue
+            } else {
+                fullNameNodeInfo = fullNameNodeInfo as List<Map<*, *>>
+            }
+            fullNameNodeInfo.forEach{ node ->
+                if ((node["typeNode"] as String).lowercase() == "schema") {
+                    schemaNames.add((node["nameNode"] as String).uppercase()) // user will choose one later
+                }
+            }
+        }
+        // .sct metadata file is valid, return SqlMetadataValidationResult with all data we parsed
+        return SqlMetadataValidationResult(true, "", sourceVendor, targetVendor, sourceServerName, schemaNames)
+    } catch (e: Exception) {
+        getLogger<CodeTransformChatController>().error { "Error parsing .sct metadata file: $e" }
+        return SqlMetadataValidationResult(false, "Sorry, the .sct metadata file you provided appears to be invalid.")
+    }
 }
 
 fun createFileCopy(originalFile: File, outputPath: Path): File {

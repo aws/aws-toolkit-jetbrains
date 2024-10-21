@@ -211,7 +211,6 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
         val result = codeModernizerManagerSpy.validate(project, CodeTransformType.LANGUAGE_UPGRADE)
         val expectedResult = ValidationResult(
             false,
-            message("codemodernizer.notification.warn.invalid_project.description.reason.not_logged_in"),
             InvalidTelemetryReason(
                 CodeTransformPreValidationError.NonSsoLogin
             )

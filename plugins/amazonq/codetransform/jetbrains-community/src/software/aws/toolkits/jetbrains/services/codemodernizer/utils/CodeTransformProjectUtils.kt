@@ -104,4 +104,4 @@ fun Project.getJavaModules(): List<VirtualFile> {
     }
 }
 
-fun Project.getModuleOrProjectNameForFile(file: VirtualFile) = ModuleUtil.findModuleForFile(file, this)?.name ?: this.name
+fun Project.getModuleOrProjectNameForFile(file: VirtualFile?) = file?.let { ModuleUtil.findModuleForFile(it, this)?.name } ?: this.name

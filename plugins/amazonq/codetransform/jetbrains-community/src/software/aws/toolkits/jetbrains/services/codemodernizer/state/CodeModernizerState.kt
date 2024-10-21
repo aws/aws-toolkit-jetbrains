@@ -28,7 +28,7 @@ fun buildState(context: CodeModernizerSessionContext, isJobOngoing: Boolean, job
     lastJobContext.putAll(
         setOf(
             JobDetails.LAST_JOB_ID to jobId.id,
-            JobDetails.CONFIGURATION_FILE_PATH to context.configurationFile.path,
+            JobDetails.CONFIGURATION_FILE_PATH to if (context.configurationFile != null) context.configurationFile!!.path else "",
             JobDetails.TARGET_JAVA_VERSION to context.targetJavaVersion.description,
             JobDetails.SOURCE_JAVA_VERSION to context.sourceJavaVersion.description,
             JobDetails.CUSTOM_BUILD_COMMAND to context.customBuildCommand

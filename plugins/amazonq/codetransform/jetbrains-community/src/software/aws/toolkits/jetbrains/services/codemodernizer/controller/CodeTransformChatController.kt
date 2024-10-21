@@ -11,6 +11,8 @@ import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.projectRoots.JavaSdkVersion
+import com.intellij.openapi.util.io.FileUtil.createTempDirectory
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -102,10 +104,20 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOr
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toVirtualFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
+import java.io.BufferedReader
+import java.io.File
+import java.io.FileInputStream
+import java.io.InputStreamReader
+import java.nio.charset.StandardCharsets
+import java.util.zip.ZipFile
+import java.util.zip.ZipInputStream
+import kotlin.io.path.Path
 
 class CodeTransformChatController(
     private val context: AmazonQAppInitContext,
@@ -289,69 +301,11 @@ class CodeTransformChatController(
         }
     }
 
-    private fun validateSctMetadata(selectedFile: VirtualFile): SqlMetadataValidationResult {
-        val fileContent = selectedFile.contentsToByteArray().toString(Charsets.UTF_8)
-        val xmlDeserializer = XmlMapper(JacksonXmlModule())
-        var sctMetadata: Map<*, *>? = null
-        try {
-            sctMetadata = xmlDeserializer.readValue(fileContent, Any::class.java) as Map<*, *>
-        } catch (e: Exception) {
-            getLogger<CodeTransformChatController>().error { "Error parsing .sct metadata file; invalid XML encountered." }
-            return SqlMetadataValidationResult(false, "Invalid XML encountered.")
-        }
-
-        try {
-            val instances = sctMetadata["instances"] as Map<*, *>
-            val projectModel = instances["ProjectModel"] as Map<*, *>
-            val entities = projectModel["entities"] as Map<*, *>
-
-            val sources = entities["sources"] as Map<*, *>
-            val sourceDbServer = sources["DbServer"] as Map<*, *>
-            val sourceVendor = (sourceDbServer["vendor"] as String).trim().uppercase()
-            if (sourceVendor != "ORACLE") {
-                return SqlMetadataValidationResult(false, "Sorry, your .sct metadata file appears to be invalid; the source DB must be Oracle.")
-            }
-
-            val sourceServerName = (sourceDbServer["name"] as String).trim()
-
-            val targets = entities["targets"] as Map<*, *>
-            val targetDbServer = targets["DbServer"] as Map<*, *>
-            val targetVendor = (targetDbServer["vendor"] as String).trim().uppercase()
-            if (targetVendor != "AURORA_POSTGRESQL" && targetVendor != "RDS_POSTGRESQL") {
-                return SqlMetadataValidationResult(false, "Sorry, your .sct metadata file appears to be invalid; the target DB must be Aurora PostgreSQL or Amazon RDS for PostgreSQL.")
-            }
-
-            val relations = projectModel["relations"] as Map<*, *>
-            val serverNodeLocations = relations["server-node-location"] as List<Map<*, *>>
-            val schemaNames = mutableSetOf<String>()
-            for (serverNodeLocation in serverNodeLocations) {
-                val fullNameNodeInfoList = serverNodeLocation["FullNameNodeInfoList"] as Map<*, *>
-                val nameParts = fullNameNodeInfoList["nameParts"] as Map<*, *>
-                var fullNameNodeInfo = nameParts["FullNameNodeInfo"] // as List<Map<*, *>>
-                if (fullNameNodeInfo is Map<*, *>) {
-                    continue
-                } else {
-                    fullNameNodeInfo = fullNameNodeInfo as List<Map<*, *>>
-                }
-                fullNameNodeInfo.forEach{ node ->
-                    if ((node["typeNode"] as String).lowercase() == "schema") {
-                        schemaNames.add((node["nameNode"] as String).uppercase()) // user will choose one later
-                    }
-                }
-            }
-            // .sct metadata file is valid, return SqlMetadataValidationResult with all data we parsed
-            return SqlMetadataValidationResult(true, "", sourceVendor, targetVendor, sourceServerName, schemaNames)
-        } catch (e: Exception) {
-            getLogger<CodeTransformChatController>().error { "Error parsing .sct metadata file: $e" }
-            return SqlMetadataValidationResult(false, "Sorry, the .sct metadata file you provided appears to be invalid.")
-        }
-    }
-
     override suspend fun processCodeTransformSelectSQLModuleSchemaAction(message: IncomingCodeTransformMessage.CodeTransformSelectSQLModuleSchema) {
-        val moduleName = context.project.getModuleOrProjectNameForFile(message.modulePath.toVirtualFile() as VirtualFile)
+        val moduleName = context.project.getModuleOrProjectNameForFile(message.modulePath.toVirtualFile())
         codeTransformChatHelper.addNewMessage(buildUserSQLConversionSelectionSummaryChatContent(moduleName, message.schema))
         codeModernizerManager.codeTransformationSession?.let {
-            it.sessionContext.configurationFile = message.modulePath.toVirtualFile() as VirtualFile // any file in the selected module works fine; will use to createZip
+            it.sessionContext.configurationFile = message.modulePath.toVirtualFile()
             it.sessionContext.schema = message.schema
         }
         // start the SQL conversion
@@ -363,12 +317,18 @@ class CodeTransformChatController(
     override suspend fun processCodeTransformSelectSQLMetadataAction(message: IncomingCodeTransformMessage.CodeTransformSelectSQLMetadata) {
         runInEdt {
             val descriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
-                .withDescription("Select .sct metadata file")
-                .withFileFilter { it.extension == "sct" }
+                .withDescription("Select metadata ZIP file")
+                .withFileFilter { it.extension == "zip" }
 
-            val selectedFile = FileChooser.chooseFile(descriptor, null, null) ?: return@runInEdt
+            val selectedZipFile = FileChooser.chooseFile(descriptor, null, null) ?: return@runInEdt
+            val extractedZip = createTempDirectory("codeTransformSQLMetadata", null) // .path.toVirtualFile()
+            unzipFile(selectedZipFile.toNioPath(), extractedZip.toPath())
 
-            val metadataValidationResult = this.validateSctMetadata(selectedFile)
+            notifyStickyInfo("tempDir", extractedZip.path)
+
+            val sctFile = extractedZip.listFiles { file -> file.name.endsWith(".sct") }.firstOrNull()
+
+            val metadataValidationResult = validateSctMetadata(sctFile)
 
             if (!metadataValidationResult.valid) {
                 CoroutineScope(Dispatchers.Main).launch {
@@ -395,7 +355,7 @@ class CodeTransformChatController(
                     sourceVendor = metadataValidationResult.sourceVendor,
                     targetVendor = metadataValidationResult.targetVendor,
                     sourceServerName = metadataValidationResult.sourceServerName,
-                    configurationFile = selectedFile
+                    sqlMetadataZip = extractedZip,
                 )
                 codeModernizerManager.createCodeModernizerSession(selection, context.project)
             }

@@ -24,8 +24,10 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getTableMap
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseBuildFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.refreshToken
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.io.path.createTempFile
 
 class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase() {
     @Before
@@ -228,5 +230,174 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
             "Amazon Q Developer pricing</a>.</p>"
         val actual = getBillingText(376)
         assertThat(expected).isEqualTo(actual)
+    }
+
+    @Test
+    fun `WHEN validateMetadataFile on fully valid sct file THEN passes validation`() {
+        val sampleFileContents = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <tree>
+        <instances>
+            <ProjectModel>
+            <entities>
+                <sources>
+                <DbServer vendor="oracle" name="sample.rds.amazonaws.com">
+                </DbServer>
+                </sources>
+                <targets>
+                <DbServer vendor="aurora_postgresql" />
+                </targets>
+            </entities>
+            <relations>
+                <server-node-location>
+                <FullNameNodeInfoList>
+                    <nameParts>
+                    <FullNameNodeInfo typeNode="schema" nameNode="schema1"/>
+                    <FullNameNodeInfo typeNode="table" nameNode="table1"/>
+                    </nameParts>
+                </FullNameNodeInfoList>
+                </server-node-location>
+                <server-node-location>
+                <FullNameNodeInfoList>
+                    <nameParts>
+                    <FullNameNodeInfo typeNode="schema" nameNode="schema2"/>
+                    <FullNameNodeInfo typeNode="table" nameNode="table2"/>
+                    </nameParts>
+                </FullNameNodeInfoList>
+                </server-node-location>
+                <server-node-location>
+                <FullNameNodeInfoList>
+                    <nameParts>
+                    <FullNameNodeInfo typeNode="schema" nameNode="schema3"/>
+                    <FullNameNodeInfo typeNode="table" nameNode="table3"/>
+                    </nameParts>
+                </FullNameNodeInfoList>
+                </server-node-location>
+            </relations>
+            </ProjectModel>
+        </instances>
+        </tree>
+    """.trimIndent()
+
+        val tempFile = createTempFile("valid-sctFile", ".xml").toFile()
+        tempFile.writeText(sampleFileContents)
+
+        val isValidMetadata = validateSctMetadata(tempFile)
+        assertThat(isValidMetadata.valid).isTrue()
+        assertThat(isValidMetadata.errorReason).isEmpty()
+        assertThat(isValidMetadata.sourceVendor).isEqualTo("ORACLE")
+        assertThat(isValidMetadata.targetVendor).isEqualTo("AURORA_POSTGRESQL")
+        assertThat(isValidMetadata.sourceServerName).isEqualTo("sample.rds.amazonaws.com")
+        assertThat(isValidMetadata.schemaOptions.containsAll(setOf("SCHEMA1", "SCHEMA2", "SCHEMA3"))).isTrue()
+    }
+
+    @Test
+    fun `WHEN validateMetadataFile on sct file with invalid source DB THEN fails validation`() {
+        val sampleFileContents = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <tree>
+        <instances>
+            <ProjectModel>
+            <entities>
+                <sources>
+                <DbServer vendor="oracle-invalid" name="sample.rds.amazonaws.com">
+                </DbServer>
+                </sources>
+                <targets>
+                <DbServer vendor="aurora_postgresql" />
+                </targets>
+            </entities>
+            <relations>
+                <server-node-location>
+                <FullNameNodeInfoList>
+                    <nameParts>
+                    <FullNameNodeInfo typeNode="schema" nameNode="schema1"/>
+                    <FullNameNodeInfo typeNode="table" nameNode="table1"/>
+                    </nameParts>
+                </FullNameNodeInfoList>
+                </server-node-location>
+                <server-node-location>
+                <FullNameNodeInfoList>
+                    <nameParts>
+                    <FullNameNodeInfo typeNode="schema" nameNode="schema2"/>
+                    <FullNameNodeInfo typeNode="table" nameNode="table2"/>
+                    </nameParts>
+                </FullNameNodeInfoList>
+                </server-node-location>
+                <server-node-location>
+                <FullNameNodeInfoList>
+                    <nameParts>
+                    <FullNameNodeInfo typeNode="schema" nameNode="schema3"/>
+                    <FullNameNodeInfo typeNode="table" nameNode="table3"/>
+                    </nameParts>
+                </FullNameNodeInfoList>
+                </server-node-location>
+            </relations>
+            </ProjectModel>
+        </instances>
+        </tree>
+    """.trimIndent()
+
+        val tempFile = createTempFile("invalid-sctFile1", ".xml").toFile()
+        tempFile.writeText(sampleFileContents)
+
+        val isValidMetadata = validateSctMetadata(tempFile)
+        assertThat(isValidMetadata.valid).isFalse()
+        assertThat(isValidMetadata.errorReason.contains("the source DB must be Oracle")).isTrue()
+    }
+
+    @Test
+    fun `WHEN validateMetadataFile on sct file with invalid target DB THEN fails validation`() {
+        val sampleFileContents = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <tree>
+        <instances>
+            <ProjectModel>
+            <entities>
+                <sources>
+                <DbServer vendor="oracle" name="sample.rds.amazonaws.com">
+                </DbServer>
+                </sources>
+                <targets>
+                <DbServer vendor="aurora_postgresql-invalid" />
+                </targets>
+            </entities>
+            <relations>
+                <server-node-location>
+                <FullNameNodeInfoList>
+                    <nameParts>
+                    <FullNameNodeInfo typeNode="schema" nameNode="schema1"/>
+                    <FullNameNodeInfo typeNode="table" nameNode="table1"/>
+                    </nameParts>
+                </FullNameNodeInfoList>
+                </server-node-location>
+                <server-node-location>
+                <FullNameNodeInfoList>
+                    <nameParts>
+                    <FullNameNodeInfo typeNode="schema" nameNode="schema2"/>
+                    <FullNameNodeInfo typeNode="table" nameNode="table2"/>
+                    </nameParts>
+                </FullNameNodeInfoList>
+                </server-node-location>
+                <server-node-location>
+                <FullNameNodeInfoList>
+                    <nameParts>
+                    <FullNameNodeInfo typeNode="schema" nameNode="schema3"/>
+                    <FullNameNodeInfo typeNode="table" nameNode="table3"/>
+                    </nameParts>
+                </FullNameNodeInfoList>
+                </server-node-location>
+            </relations>
+            </ProjectModel>
+        </instances>
+        </tree>
+    """.trimIndent()
+
+        val tempFile = createTempFile("invalid-sctFile2", ".xml").toFile()
+        tempFile.writeText(sampleFileContents)
+
+        val isValidMetadata = validateSctMetadata(tempFile)
+        assertThat(isValidMetadata.valid).isFalse()
+        assertThat(isValidMetadata.errorReason.contains("the target DB must be Aurora PostgreSQL or Amazon RDS for PostgreSQL")).isTrue()
     }
 }

@@ -64,7 +64,8 @@ suspend fun JobId.pollTransformationStatusAndPlan(
 
     // We refresh token at the start of polling, but for some long jobs that runs for 30 minutes plus, tokens may need to be
     // refreshed again when AccessDeniedException or InvalidGrantException are caught.
-    refreshToken(project)
+    // TODO: revert this
+    // refreshToken(project)
 
     try {
         waitUntil(

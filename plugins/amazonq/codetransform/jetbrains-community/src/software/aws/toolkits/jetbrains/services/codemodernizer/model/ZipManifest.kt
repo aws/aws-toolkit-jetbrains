@@ -3,22 +3,25 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
-import software.aws.toolkits.jetbrains.services.codemodernizer.BUILD_LOG_PATH
-import software.aws.toolkits.jetbrains.services.codemodernizer.EXPLAINABILITY_V1
-import software.aws.toolkits.jetbrains.services.codemodernizer.HIL_1P_UPGRADE_CAPABILITY
-import software.aws.toolkits.jetbrains.services.codemodernizer.UPLOAD_ZIP_MANIFEST_VERSION
-import software.aws.toolkits.jetbrains.services.codemodernizer.ZIP_SOURCES_PATH
-
 data class ZipManifest(
     val sourcesRoot: String = ZIP_SOURCES_PATH,
-    val dependenciesRoot: String? = null,
+    val dependenciesRoot: String = ZIP_DEPENDENCIES_PATH,
     val buildLogs: String = BUILD_LOG_PATH,
-    val version: String = UPLOAD_ZIP_MANIFEST_VERSION.toString(),
+    val version: String = UPLOAD_ZIP_MANIFEST_VERSION,
     val hilCapabilities: List<String> = listOf(HIL_1P_UPGRADE_CAPABILITY),
     val transformCapabilities: List<String> = listOf(EXPLAINABILITY_V1),
     val customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS,
-    val sourceVendor: String? = null,
-    val targetVendor: String? = null,
-    val sourceServerName: String? = null,
+    val requestedConversions: RequestedConversions = RequestedConversions(sqlConversion = null),
+)
+
+data class RequestedConversions(
+    val sqlConversion: SQLConversion? = null,
+)
+
+data class SQLConversion(
+    val source: String? = null,
+    val target: String? = null,
     val schema: String? = null,
+    val host: String? = null,
+    val sctFileName: String? = null,
 )
