@@ -9,6 +9,7 @@ import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import software.aws.toolkits.jetbrains.services.cwc.inline.InlineChatController
 
 class InlineChatFileListener(project: Project, private val controller: InlineChatController) : FileEditorManagerListener {
@@ -24,8 +25,8 @@ class InlineChatFileListener(project: Project, private val controller: InlineCha
     }
 
     override fun selectionChanged(event: FileEditorManagerEvent) {
-        val newEditor = (event.newEditor as? TextEditor)?.editor
-        if (newEditor != null && newEditor != currentEditor) {
+        val newEditor = (event.newEditor as? TextEditor)?.editor ?: return
+        if (newEditor != currentEditor) {
             currentEditor?.let { removeListenersFromCurrentEditor(it) }
             setupListenersForEditor(newEditor)
             currentEditor = newEditor
@@ -42,7 +43,7 @@ class InlineChatFileListener(project: Project, private val controller: InlineCha
     private fun removeListenersFromCurrentEditor(editor: Editor) {
         selectionListener?.let { listener ->
             editor.selectionModel.removeSelectionListener(listener)
-            listener.dispose()
+            Disposer.dispose(listener)
         }
         selectionListener = null
     }

@@ -50,6 +50,7 @@ import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.Recommend
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.Reference
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.SuggestedFollowUp
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.Suggestion
+import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContext
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.RelevantDocument
 
@@ -200,6 +201,7 @@ class ChatSessionV1(
         val userInputMessageContextBuilder = UserInputMessageContext.builder()
         userInputMessageContextBuilder.editorState(activeFileContext.toEditorState(relevantTextDocuments, useRelevantDocuments))
         val userInputMessageContext = userInputMessageContextBuilder.build()
+        val chatTriggerType = if (triggerType == TriggerType.Inline) ChatTriggerType.INLINE_CHAT else ChatTriggerType.MANUAL
 
         val userInput = UserInputMessage.builder()
             .content(message.take(ChatConstants.CUSTOMER_MESSAGE_SIZE_LIMIT))
@@ -209,7 +211,7 @@ class ChatSessionV1(
         val conversationState = ConversationState.builder()
             .conversationId(conversationId)
             .currentMessage(ChatMessage.fromUserInputMessage(userInput))
-            .chatTriggerType(ChatTriggerType.MANUAL)
+            .chatTriggerType(chatTriggerType)
             .customizationArn(customization?.arn)
             .build()
         return GenerateAssistantResponseRequest.builder()

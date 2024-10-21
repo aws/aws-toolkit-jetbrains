@@ -43,8 +43,12 @@ class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() 
 
     val submitButton = createButtonWithIcon(AwsIcons.Resources.InlineChat.CONFIRM, message("amazonqInlineChat.popup.confirm"))
 
-    private val cancelButton = createButtonWithIcon(AwsIcons.Resources.InlineChat.REJECT, message("amazonqInlineChat.popup.cancel")).apply {
-        addActionListener { Disposer.dispose(parentDisposable) }
+    val cancelButton = createButtonWithIcon(AwsIcons.Resources.InlineChat.REJECT, message("amazonqInlineChat.popup.cancel")).apply {
+        addActionListener {
+            if (!Disposer.isDisposed(parentDisposable)) {
+                Disposer.dispose(parentDisposable)
+            }
+        }
     }
 
     private val buttonsPanel = JPanel(BorderLayout()).apply {

@@ -22,7 +22,6 @@ import software.aws.toolkits.resources.AmazonQBundle.message
 import java.awt.Point
 
 class InlineChatPopupFactory(
-    private val editor: Editor,
     private val submitHandler: suspend (String, String, Int, Editor) -> String,
     private val acceptHandler: () -> Unit,
     private val rejectHandler: () -> Unit,
@@ -46,7 +45,7 @@ class InlineChatPopupFactory(
         editor.document.getLineNumber(editor.selectionModel.selectionStart)
     }
 
-    fun createPopup(scope: CoroutineScope): JBPopup {
+    fun createPopup(editor: Editor, scope: CoroutineScope): JBPopup {
         val popupPanel = InlineChatPopupPanel(this).apply {
             border = IdeBorderFactory.createRoundedBorder(10).apply {
                 setColor(POPUP_BUTTON_BORDER)
@@ -54,6 +53,7 @@ class InlineChatPopupFactory(
 
             val submitListener: () -> Unit = {
                 submitButton.isEnabled = false
+                cancelButton.isEnabled = false
                 textField.isEnabled = false
                 val prompt = textField.text
                 if (prompt.isNotBlank()) {
@@ -117,7 +117,7 @@ class InlineChatPopupFactory(
         }
     }
 
-    fun getIndentationForLine(editor: Editor, lineNumber: Int): Int {
+    private fun getIndentationForLine(editor: Editor, lineNumber: Int): Int {
         val document = editor.document
         val lineStartOffset = document.getLineStartOffset(lineNumber)
         val lineEndOffset = document.getLineEndOffset(lineNumber)

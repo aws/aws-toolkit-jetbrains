@@ -11,7 +11,6 @@ import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.CommandProcessor
-import com.intellij.openapi.command.UndoConfirmationPolicy
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -39,7 +38,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.apache.commons.text.StringEscapeUtils
 import software.amazon.awssdk.services.codewhispererruntime.model.InlineChatUserDecision
 import software.aws.toolkits.core.utils.debug
@@ -123,7 +121,7 @@ class InlineChatController(
             scope.launch(EDT) {
                 while (partialUndoActions.isNotEmpty()) {
                     val action = partialUndoActions.pop()
-                    runChangeAction(project, action)
+                    action.invoke()
                 }
                 partialAcceptActions.clear()
             }
@@ -166,7 +164,7 @@ class InlineChatController(
             partialUndoActions.clear()
             while (partialAcceptActions.isNotEmpty()) {
                 val action = partialAcceptActions.pop()
-                runChangeAction(project, action)
+                action.invoke()
             }
             invokeLater { hidePopup() }
         }
@@ -179,7 +177,7 @@ class InlineChatController(
         scope.launch(EDT) {
             while (partialUndoActions.isNotEmpty()) {
                 val action = partialUndoActions.pop()
-                runChangeAction(project, action)
+                action.invoke()
             }
             partialAcceptActions.clear()
             invokeLater { hidePopup() }
@@ -204,9 +202,9 @@ class InlineChatController(
     fun initPopup(editor: Editor) {
         currentPopup?.let { Disposer.dispose(it) }
         currentPopup = InlineChatPopupFactory(
-            acceptHandler = diffAcceptHandler, rejectHandler = diffRejectHandler, editor = editor,
+            acceptHandler = diffAcceptHandler, rejectHandler = diffRejectHandler,
             submitHandler = popupSubmitHandler, cancelHandler = popupCancelHandler
-        ).createPopup(scope)
+        ).createPopup(editor, scope)
         addPopupListeners(currentPopup!!)
         Disposer.register(this, currentPopup!!)
         canPopupAbort.set(true)
@@ -282,7 +280,7 @@ class InlineChatController(
         .replace("&#39;", "'")
         .replace("=&gt;", "=>")
 
-    private suspend fun processChatMessage(selectedCode: String, event: ChatMessage, editor: Editor, selectedLineStart: Int, prevMessage: String) {
+    private fun processChatMessage(selectedCode: String, event: ChatMessage, editor: Editor, selectedLineStart: Int, prevMessage: String) {
         if (event.message?.isNotEmpty() == true) {
             val codeBlocks = getCodeBlocks(event.message)
             if (codeBlocks.isEmpty()) {
@@ -295,7 +293,7 @@ class InlineChatController(
             val diff = compareDiffs(selectedCode.split("\n"), recommendation.split("\n"))
             while (partialUndoActions.isNotEmpty()) {
                 val action = partialUndoActions.pop()
-                runChangeAction(project, action)
+                action.invoke()
             }
             partialAcceptActions.clear()
             selectionStartLine = AtomicInteger(selectedLineStart)
@@ -378,7 +376,7 @@ class InlineChatController(
         }
     }
 
-    private suspend fun insertNewLineIfNeeded(row: Int, editor: Editor): Int {
+    private fun insertNewLineIfNeeded(row: Int, editor: Editor): Int {
         var newLineInserted = 0
         while (row > editor.document.lineCount - 1) {
             insertString(editor, editor.document.textLength, "\n")
@@ -399,49 +397,49 @@ class InlineChatController(
         }
     }
 
-    private suspend fun runChangeAction(project: Project, action: () -> Unit) {
-        withContext(EDT) {
-            CommandProcessor.getInstance().executeCommand(project, {
-                ApplicationManager.getApplication().runWriteAction {
-                    WriteCommandAction.runWriteCommandAction(project) {
-                        action()
-                    }
+    private fun insertString(editor: Editor, offset: Int, text: String): RangeMarker {
+        var rangeMarker: RangeMarker? = null
+
+        ApplicationManager.getApplication().invokeAndWait {
+            CommandProcessor.getInstance().runUndoTransparentAction {
+                WriteCommandAction.runWriteCommandAction(project) {
+                    editor.document.insertString(offset, text)
+                    val row = editor.document.getLineNumber(offset)
+                    rangeMarker = editor.document.createRangeMarker(offset, getLineEndOffset(editor.document, row))
                 }
-            }, "", "q-inline-chat", UndoConfirmationPolicy.DO_NOT_REQUEST_CONFIRMATION, false)
+                rangeMarker?.let { marker ->
+                    highlightCodeWithBackgroundColor(editor, marker.startOffset, marker.endOffset, true)
+                }
+            }
         }
-    }
 
-    private suspend fun insertString(editor: Editor, offset: Int, text: String): RangeMarker {
-        var rangeMarker: RangeMarker? = null
-        val action = {
-            editor.document.insertString(offset, text)
-//            CodeStyleManager.getInstance(project).adjustLineIndent(document, offset)
-            val row = editor.document.getLineNumber(offset)
-            rangeMarker = editor.document.createRangeMarker(offset, getLineEndOffset(editor.document, row))
-            highlightCodeWithBackgroundColor(editor, rangeMarker!!.startOffset, rangeMarker!!.endOffset, true)
-        }
-        runChangeAction(project, action)
         return rangeMarker!!
     }
 
-    private suspend fun deleteString(document: Document, start: Int, end: Int) {
-        val action = {
-            document.deleteString(start, end)
+    private fun deleteString(document: Document, start: Int, end: Int) {
+        ApplicationManager.getApplication().invokeAndWait {
+            CommandProcessor.getInstance().runUndoTransparentAction {
+                WriteCommandAction.runWriteCommandAction(project) {
+                    document.deleteString(start, end)
+                }
+            }
         }
-        runChangeAction(project, action)
     }
 
-    private suspend fun highlightString(editor: Editor, start: Int, end: Int, isInsert: Boolean): RangeMarker {
+    private fun highlightString(editor: Editor, start: Int, end: Int, isInsert: Boolean): RangeMarker {
         var rangeMarker: RangeMarker? = null
-        val action = {
-            rangeMarker = editor.document.createRangeMarker(start, end)
-            highlightCodeWithBackgroundColor(editor, rangeMarker!!.startOffset, rangeMarker!!.endOffset, isInsert)
+        ApplicationManager.getApplication().invokeAndWait {
+            CommandProcessor.getInstance().runUndoTransparentAction {
+                WriteCommandAction.runWriteCommandAction(project) {
+                    rangeMarker = editor.document.createRangeMarker(start, end)
+                    highlightCodeWithBackgroundColor(editor, rangeMarker!!.startOffset, rangeMarker!!.endOffset, isInsert)
+                }
+            }
         }
-        runChangeAction(project, action)
         return rangeMarker!!
     }
 
-    private suspend fun showCodeChangeInEditor(diffRow: DiffRow, row: Int, editor: Editor) {
+    private fun showCodeChangeInEditor(diffRow: DiffRow, row: Int, editor: Editor) {
         try {
             val document = editor.document
             when (diffRow.tag) {
@@ -470,7 +468,7 @@ class InlineChatController(
                     partialUndoActions.add {
                         if (rangeMarker.isValid) {
                             scope.launch(EDT) {
-                                deleteString(document, rangeMarker.startOffset, rangeMarker.endOffset + newLineInserted)
+                                deleteString(document, rangeMarker.startOffset, (rangeMarker.endOffset + newLineInserted).coerceAtMost(document.textLength))
                             }
                         }
                         editor.markupModel.removeAllHighlighters()
@@ -572,7 +570,7 @@ class InlineChatController(
 //                "- If the instruction is unclear or cannot be applied, do not make any changes to the code\n" +
 //                "- After generating the code, return ONLY the new code you generated; do not include any existing lines of code from the context.\n"
 //        }
-//
+
 //        prompt += "- Respond with the code in markdown format. Do not include any explanations or other text outside of the code itself\n" +
 //            "Remember, your output should contain nothing but the transformed code or code comments.\n"
         if (selectedCode.isNotBlank()) { prompt += "<selected_code>$selectedCode</selected_code>\n" }
@@ -617,12 +615,10 @@ class InlineChatController(
                 }
                 .onEach { event: ChatMessage ->
                     if (event.message?.isNotEmpty() == true && prevMessage != event.message) {
-                        runBlocking {
-                            try {
-                                processChatMessage(selectedCode, event, editor, selectedLineStart, prevMessage)
-                            } catch (e: Exception) {
-                                errorMessage = e.message ?: "Error processing request; please try again."
-                            }
+                        try {
+                            processChatMessage(selectedCode, event, editor, selectedLineStart, prevMessage)
+                        } catch (e: Exception) {
+                            errorMessage = e.message ?: "Error processing request; please try again."
                         }
                         prevMessage = event.message
                     }
