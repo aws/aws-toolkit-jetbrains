@@ -3,17 +3,18 @@
 
 package software.aws.toolkits.jetbrains.services.telemetry
 
+import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import software.aws.toolkits.telemetry.SessionTelemetry
-import java.util.concurrent.atomic.AtomicBoolean
 
 class AwsToolkitStartupMetrics : ProjectActivity {
-    companion object {
-        private var runOnce = AtomicBoolean(false)
-    }
     override suspend fun execute(project: Project) {
-        if (runOnce.getAndSet(true)) return
-        SessionTelemetry.start(project)
+        RunOnceUtil.runOnceForApp(taskId) {
+            SessionTelemetry.start(project)
+        }
+    }
+    private companion object {
+        const val taskId = "software.aws.toolkits.jetbrains.services.telemetry.AwsToolkitStartupMetrics"
     }
 }
