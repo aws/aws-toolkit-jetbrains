@@ -30,6 +30,8 @@ import software.aws.toolkits.telemetry.AuthType
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.Result
+import java.io.FileNotFoundException
+import java.io.IOException
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -361,6 +363,7 @@ class SsoAccessTokenProvider(
         }
     }
 
+    // error being thrown while loading registration, add try-catch blocks.
     fun refreshToken(currentToken: AccessToken): AccessToken {
         if (currentToken.refreshToken == null) {
             val message = "Requested token refresh, but refresh token was null"
@@ -373,16 +376,29 @@ class SsoAccessTokenProvider(
             throw InvalidRequestException.builder().message(message).build()
         }
 
-        val registration = when (currentToken) {
-            is DeviceAuthorizationGrantToken -> loadDagClientRegistration()
-            is PKCEAuthorizationGrantToken -> loadPkceClientRegistration()
+        var registration: ClientRegistration? = null
+        try {
+            registration = when (currentToken) {
+                is DeviceAuthorizationGrantToken -> loadDagClientRegistration()
+                is PKCEAuthorizationGrantToken -> loadPkceClientRegistration()
+            }
+        } catch (e: Exception) {
+            val message = "Error loading client registration: ${e.message}"
+            sendRefreshCredentialsMetric(
+                currentToken,
+                reason = "Failed to load client registration",
+                reasonDesc = "Step: Load Registration - $message",
+                result = Result.Failed
+            )
+            throw InvalidClientException.builder().message(message).cause(e).build()
         }
+
         if (registration == null) {
             val message = "Unable to load client registration from cache"
             sendRefreshCredentialsMetric(
                 currentToken,
                 reason = "Null client registration",
-                reasonDesc = message,
+                reasonDesc = "Step: Load Registration - $message",
                 result = Result.Failed
             )
             throw InvalidClientException.builder().message(message).build()
@@ -420,15 +436,13 @@ class SsoAccessTokenProvider(
                 else -> null
             }
 
-            // AwsServiceException#message will automatically pull in AwsServiceException#awsErrorDetails
-            // we expect messages for SsoOidcException to be populated in e.message using execution executor added in
-            // https://github.com/aws/aws-toolkit-jetbrains/commit/cc9ed87fa9391dd39ac05cbf99b4437112fa3d10
             val message = e.message ?: "$stageName: ${e::class.java.name}"
+            val reasonDesc = "Step: $stageName - $message"
 
             sendRefreshCredentialsMetric(
                 currentToken,
                 reason = "Refresh access token request failed: $stageName",
-                reasonDesc = message,
+                reasonDesc = reasonDesc,
                 requestId = requestId,
                 result = Result.Failed
             )
@@ -442,40 +456,61 @@ class SsoAccessTokenProvider(
         SAVE_TOKEN,
     }
 
+    // these throw fileNotFoundException if file doesnt exist.
     private fun loadDagClientRegistration(): ClientRegistration? =
-        cache.loadClientRegistration(dagClientRegistrationCacheKey)?.let {
-            return it
+        try {
+            cache.loadClientRegistration(dagClientRegistrationCacheKey)?.let {
+                return it
+            }
+        } catch (e: FileNotFoundException) {
+            throw e
         }
 
     private fun loadPkceClientRegistration(): PKCEClientRegistration? =
-        cache.loadClientRegistration(pkceClientRegistrationCacheKey)?.let {
-            return it as PKCEClientRegistration
+        try {
+            cache.loadClientRegistration(pkceClientRegistrationCacheKey)?.let {
+                return it as PKCEClientRegistration
+            }
+        } catch (e: FileNotFoundException) {
+            throw e
         }
 
     private fun saveClientRegistration(registration: ClientRegistration) {
-        when (registration) {
-            is DeviceAuthorizationClientRegistration -> {
-                cache.saveClientRegistration(dagClientRegistrationCacheKey, registration)
-            }
+        try {
+            when (registration) {
+                is DeviceAuthorizationClientRegistration -> {
+                    cache.saveClientRegistration(dagClientRegistrationCacheKey, registration)
+                }
 
-            is PKCEClientRegistration -> {
-                cache.saveClientRegistration(pkceClientRegistrationCacheKey, registration)
+                is PKCEClientRegistration -> {
+                    cache.saveClientRegistration(pkceClientRegistrationCacheKey, registration)
+                }
             }
+        } catch (e: Exception) {
+            throw e
         }
     }
 
     private fun invalidateClientRegistration() {
-        cache.invalidateClientRegistration(dagClientRegistrationCacheKey)
-        cache.invalidateClientRegistration(pkceClientRegistrationCacheKey)
+        try {
+            cache.invalidateClientRegistration(dagClientRegistrationCacheKey)
+            cache.invalidateClientRegistration(pkceClientRegistrationCacheKey)
+        } catch (e: Exception) {
+            throw e
+        }
     }
 
     private fun saveAccessToken(token: AccessToken) {
-        when (token) {
-            is DeviceAuthorizationGrantToken -> {
-                cache.saveAccessToken(dagAccessTokenCacheKey, token)
-            }
+        try {
+            when (token) {
+                is DeviceAuthorizationGrantToken -> {
+                    cache.saveAccessToken(dagAccessTokenCacheKey, token)
+                }
 
-            is PKCEAuthorizationGrantToken -> cache.saveAccessToken(pkceAccessTokenCacheKey, token)
+                is PKCEAuthorizationGrantToken -> cache.saveAccessToken(pkceAccessTokenCacheKey, token)
+            }
+        } catch (e:Exception){
+            throw e
         }
     }
 
