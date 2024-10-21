@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.startup
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.waitForSmartMode
@@ -14,11 +15,11 @@ import kotlinx.coroutines.time.withTimeout
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.gettingstarted.emitUserState
+import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindow
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
-import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextController
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import java.lang.management.ManagementFactory
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
@@ -27,6 +28,8 @@ class AmazonQStartupActivity : ProjectActivity {
     private val runOnce = AtomicBoolean(false)
 
     override suspend fun execute(project: Project) {
+        if (ApplicationManager.getApplication().isUnitTestMode) return
+
         // initialize html contents in BGT so users don't have to wait when they open the tool window
         AmazonQToolWindow.getInstance(project)
 

@@ -3,10 +3,10 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
+import base.BaseTestWithMarkup
 import base.backendStartTimeout
 import com.jetbrains.rdclient.testFramework.waitForDaemon
 import com.jetbrains.rider.projectView.solution
-import com.jetbrains.rider.test.base.BaseTestWithMarkup
 import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
 import software.aws.toolkits.jetbrains.protocol.awsSettingModel
@@ -19,9 +19,8 @@ class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
     }
 
     override val backendLoadedTimeout: Duration = backendStartTimeout
-    override val backendShellLoadTimeout: Duration = backendStartTimeout
 
-    override fun getSolutionDirectoryName(): String = "SamHelloWorldApp"
+    override fun solutionDirectoryName() = "SamHelloWorldApp"
 
     @Test
     fun testClass_FunctionClass_Detected() = verifyLambdaGutterMark()

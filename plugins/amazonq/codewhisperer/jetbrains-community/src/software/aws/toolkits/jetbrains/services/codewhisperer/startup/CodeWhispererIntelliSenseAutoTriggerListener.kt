@@ -8,8 +8,14 @@ import com.intellij.codeInsight.lookup.LookupEvent
 import com.intellij.codeInsight.lookup.LookupListener
 import com.intellij.codeInsight.lookup.LookupManagerListener
 import com.intellij.codeInsight.lookup.impl.LookupImpl
+import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.observable.util.addMouseHoverListener
+import com.intellij.ui.hover.HoverListener
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererServiceNew
+import java.awt.Component
 
 object CodeWhispererIntelliSenseAutoTriggerListener : LookupManagerListener {
     override fun activeLookupChanged(oldLookup: Lookup?, newLookup: Lookup?) {
@@ -35,5 +41,22 @@ object CodeWhispererIntelliSenseAutoTriggerListener : LookupManagerListener {
                 newLookup.removeLookupListener(this)
             }
         })
+
+        if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
+            (newLookup as LookupImpl).component.addMouseHoverListener(
+                newLookup,
+                object : HoverListener() {
+                    override fun mouseEntered(component: Component, x: Int, y: Int) {
+                        runReadAction {
+                            newLookup.project.messageBus.syncPublisher(
+                                CodeWhispererServiceNew.CODEWHISPERER_INTELLISENSE_POPUP_ON_HOVER,
+                            ).onEnter()
+                        }
+                    }
+                    override fun mouseMoved(component: Component, x: Int, y: Int) {}
+                    override fun mouseExited(component: Component) {}
+                }
+            )
+        }
     }
 }

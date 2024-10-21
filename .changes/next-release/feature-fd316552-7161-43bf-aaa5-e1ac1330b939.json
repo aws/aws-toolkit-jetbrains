@@ -1,4 +1,0 @@
-{
-  "type" : "feature",
-  "description" : "Loosen inline completion support limitations for YAML/JSON"
-}
