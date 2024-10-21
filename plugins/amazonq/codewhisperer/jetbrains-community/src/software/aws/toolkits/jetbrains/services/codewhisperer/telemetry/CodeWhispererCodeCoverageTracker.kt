@@ -19,12 +19,16 @@ import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContextNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.PreviewContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererUserActionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererCodeCompletionServiceListener
@@ -85,25 +89,52 @@ abstract class CodeWhispererCodeCoverageTracker(
         if (!isTelemetryEnabled() || isActive.getAndSet(true)) return
 
         val conn = ApplicationManager.getApplication().messageBus.connect()
-        conn.subscribe(
-            CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
-            object : CodeWhispererUserActionListener {
-                override fun afterAccept(states: InvocationContext, sessionContext: SessionContext, rangeMarker: RangeMarker) {
-                    if (states.requestContext.fileContextInfo.programmingLanguage != language) return
-                    rangeMarkers.add(rangeMarker)
-                    val originalRecommendation = extractRangeMarkerString(rangeMarker) ?: return
-                    rangeMarker.putUserData(KEY_REMAINING_RECOMMENDATION, originalRecommendation)
-                    runReadAction {
-                        // also increment total tokens because accepted tokens are part of it
-                        incrementTotalCharsCount(rangeMarker.document, originalRecommendation.length)
-                        // avoid counting CodeWhisperer inserted suggestion twice in total tokens
-                        if (rangeMarker.textRange.length in 2..49 && originalRecommendation.trim().isNotEmpty()) {
-                            incrementTotalCharsCount(rangeMarker.document, -rangeMarker.textRange.length)
+        if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
+            conn.subscribe(
+                CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
+                object : CodeWhispererUserActionListener {
+                    override fun afterAccept(
+                        states: InvocationContextNew,
+                        previews: List<PreviewContext>,
+                        sessionContext: SessionContextNew,
+                        rangeMarker: RangeMarker,
+                    ) {
+                        if (states.requestContext.fileContextInfo.programmingLanguage != language) return
+                        rangeMarkers.add(rangeMarker)
+                        val originalRecommendation = extractRangeMarkerString(rangeMarker) ?: return
+                        rangeMarker.putUserData(KEY_REMAINING_RECOMMENDATION, originalRecommendation)
+                        runReadAction {
+                            // also increment total tokens because accepted tokens are part of it
+                            incrementTotalCharsCount(rangeMarker.document, originalRecommendation.length)
+                            // avoid counting CodeWhisperer inserted suggestion twice in total tokens
+                            if (rangeMarker.textRange.length in 2..49 && originalRecommendation.trim().isNotEmpty()) {
+                                incrementTotalCharsCount(rangeMarker.document, -rangeMarker.textRange.length)
+                            }
                         }
                     }
                 }
-            }
-        )
+            )
+        } else {
+            conn.subscribe(
+                CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
+                object : CodeWhispererUserActionListener {
+                    override fun afterAccept(states: InvocationContext, sessionContext: SessionContext, rangeMarker: RangeMarker) {
+                        if (states.requestContext.fileContextInfo.programmingLanguage != language) return
+                        rangeMarkers.add(rangeMarker)
+                        val originalRecommendation = extractRangeMarkerString(rangeMarker) ?: return
+                        rangeMarker.putUserData(KEY_REMAINING_RECOMMENDATION, originalRecommendation)
+                        runReadAction {
+                            // also increment total tokens because accepted tokens are part of it
+                            incrementTotalCharsCount(rangeMarker.document, originalRecommendation.length)
+                            // avoid counting CodeWhisperer inserted suggestion twice in total tokens
+                            if (rangeMarker.textRange.length in 2..49 && originalRecommendation.trim().isNotEmpty()) {
+                                incrementTotalCharsCount(rangeMarker.document, -rangeMarker.textRange.length)
+                            }
+                        }
+                    }
+                }
+            )
+        }
 
         conn.subscribe(
             CodeWhispererService.CODEWHISPERER_CODE_COMPLETION_PERFORMED,

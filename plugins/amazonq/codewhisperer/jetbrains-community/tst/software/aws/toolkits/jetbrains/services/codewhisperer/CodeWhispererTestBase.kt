@@ -46,10 +46,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispere
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererRecommendationManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfiguration
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurationType
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_DIM_HEX
+import software.aws.toolkits.jetbrains.settings.CodeWhispererConfiguration
+import software.aws.toolkits.jetbrains.settings.CodeWhispererConfigurationType
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.resources.message
 import java.util.concurrent.atomic.AtomicReference
@@ -194,7 +194,7 @@ open class CodeWhispererTestBase {
             jobRef.get()?.join()
 
             // wait for subsequent background operations to be complete
-            while (CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
+            while (CodeWhispererInvocationStatus.getInstance().hasExistingServiceInvocation()) {
                 yield()
                 delay(10)
             }
