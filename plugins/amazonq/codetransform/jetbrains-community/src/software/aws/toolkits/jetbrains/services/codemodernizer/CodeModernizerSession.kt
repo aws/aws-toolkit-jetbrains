@@ -268,9 +268,7 @@ class CodeModernizerSession(
         } finally {
             telemetry.uploadProject(payloadSize, startTime, true, telemetryErrorMessage)
             if (payload != null) {
-                // TODO: revert this
-                notifyStickyInfo("zip path", payload.path)
-                // deleteUploadArtifact(payload)
+                deleteUploadArtifact(payload)
             }
         }
 
