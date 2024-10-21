@@ -1,3 +1,6 @@
+# _3.34_ (2024-10-21)
+- **(Bug Fix)** Fix issue where before diff of generated code is read-only
+
 # _3.33_ (2024-10-17)
 - **(Feature)** Add support for 2024.3
 - **(Bug Fix)** `@workspace` cannot properly locate certain folders for certain project setup
