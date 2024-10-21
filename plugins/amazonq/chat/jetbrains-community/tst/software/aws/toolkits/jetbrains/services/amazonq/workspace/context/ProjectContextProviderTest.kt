@@ -70,11 +70,9 @@ class ProjectContextProviderTest {
         stubFor(any(urlPathEqualTo("/initialize")).willReturn(aResponse().withStatus(200).withResponseBody(Body("initialize response"))))
 
         // build index
-        stubFor(any(urlPathEqualTo("/indexFiles")).willReturn(aResponse().withStatus(200).withResponseBody(Body("initialize response"))))
         stubFor(any(urlPathEqualTo("/buildIndex")).willReturn(aResponse().withStatus(200).withResponseBody(Body("initialize response"))))
 
         // update index
-        stubFor(any(urlPathEqualTo("/updateIndex")).willReturn(aResponse().withStatus(200).withResponseBody(Body("initialize response"))))
         stubFor(any(urlPathEqualTo("/updateIndexV2")).willReturn(aResponse().withStatus(200).withResponseBody(Body("initialize response"))))
 
         // query
@@ -109,7 +107,6 @@ class ProjectContextProviderTest {
     fun `Lsp endpoint correctness`() {
         assertThat(LspMessage.Initialize.endpoint).isEqualTo("initialize")
         assertThat(LspMessage.Index.endpoint).isEqualTo("buildIndex")
-        assertThat(LspMessage.Index.endpoint).isEqualTo("indexFiles")
         assertThat(LspMessage.UpdateIndex.endpoint).isEqualTo("updateIndexV2")
         assertThat(LspMessage.QueryChat.endpoint).isEqualTo("query")
         assertThat(LspMessage.QueryInlineCompletion.endpoint).isEqualTo("queryInlineProjectContext")

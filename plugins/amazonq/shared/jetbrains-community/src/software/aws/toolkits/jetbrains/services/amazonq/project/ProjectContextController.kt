@@ -64,10 +64,6 @@ class ProjectContextController(private val project: Project, private val cs: Cor
             emptyList()
         }
 
-    fun updateIndex(filePath: String) {
-        updateIndex(listOf(filePath), ProjectContextProvider.IndexUpdateMode.UPDATE)
-    }
-
     fun updateIndex(filePaths: List<String>, mode: ProjectContextProvider.IndexUpdateMode) {
         try {
             return projectContextProvider.updateIndex(filePaths, mode)

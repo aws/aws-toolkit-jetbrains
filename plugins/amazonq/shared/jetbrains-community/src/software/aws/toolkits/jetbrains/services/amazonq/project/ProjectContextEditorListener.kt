@@ -13,12 +13,12 @@ class ProjectContextEditorListener : FileEditorManagerListener {
 
         // TODO: should respect isIdeAutosave config
         with(FileDocumentManager.getInstance()) {
-            getDocument(oldFile)?.let {
-                saveDocument(it)
+            this.getDocument(oldFile)?.let {
+                this.saveDocument(it)
             }
         }
 
         val project = event.manager.project
-        ProjectContextController.getInstance(project).updateIndex(oldFile.path)
+        ProjectContextController.getInstance(project).updateIndex(listOf(oldFile.path), ProjectContextProvider.IndexUpdateMode.UPDATE)
     }
 }

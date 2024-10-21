@@ -231,7 +231,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
     }
 
     @VisibleForTesting
-    suspend fun fetchProjectContext(query: String, psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo {
+    fun fetchProjectContext(query: String, psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo {
         val response = ProjectContextController.getInstance(project).queryInline(query, psiFile.virtualFile?.path ?: "")
 
         return SupplementalContextInfo(
