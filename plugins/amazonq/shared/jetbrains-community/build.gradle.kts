@@ -20,6 +20,7 @@ dependencies {
 
     // CodeWhispererTelemetryService uses a CircularFifoQueue
     implementation(libs.commons.collections)
+    implementation(libs.nimbus.jose.jwt)
 
     testFixturesApi(testFixtures(project(":plugin-core:jetbrains-community")))
 }

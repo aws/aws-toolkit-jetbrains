@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
+import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.ide.BrowserUtil
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
@@ -12,6 +13,8 @@ import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.wm.WindowManager
+import com.intellij.ui.ComponentUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -46,27 +49,6 @@ import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
-
-fun <T> calculateIfIamIdentityCenterConnection(project: Project, calculationTask: (connection: ToolkitConnection) -> T): T? =
-    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
-        calculateIfIamIdentityCenterConnection(it, calculationTask)
-    }
-
-fun <T> calculateIfIamIdentityCenterConnection(connection: ToolkitConnection, calculationTask: (connection: ToolkitConnection) -> T): T? =
-    if (connection.isSono()) {
-        null
-    } else {
-        calculationTask(connection)
-    }
-
-fun <T> calculateIfBIDConnection(project: Project, calculationTask: (connection: ToolkitConnection) -> T): T? =
-    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
-        if (it.isSono()) {
-            calculationTask(it)
-        } else {
-            null
-        }
-    }
 
 // Controls the condition to send telemetry event to CodeWhisperer service, currently:
 // 1. It will be sent for Builder ID users, only if they have optin telemetry sharing.
@@ -321,6 +303,12 @@ object CodeWhispererUtil {
 
     private fun getEditDistance(modifiedString: String, originalString: String): Double =
         levenshteinChecker.distance(modifiedString, originalString)
+
+    fun setIntelliSensePopupAlpha(editor: Editor, alpha: Float) {
+        ComponentUtil.getWindow(LookupManager.getActiveLookup(editor)?.component)?.let {
+            WindowManager.getInstance().setAlphaModeRatio(it, alpha)
+        }
+    }
 }
 
 enum class CaretMovement {

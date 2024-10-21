@@ -40,6 +40,7 @@ import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.cwc.ChatConstants
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.ChatSession
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
@@ -51,7 +52,6 @@ import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.Reference
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.SuggestedFollowUp
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.Suggestion
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContext
-import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.RelevantDocument
 
 class ChatSessionV1(
     private val project: Project,

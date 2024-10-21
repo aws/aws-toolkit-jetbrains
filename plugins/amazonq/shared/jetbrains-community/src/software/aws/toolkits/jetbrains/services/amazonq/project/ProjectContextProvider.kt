@@ -1,13 +1,14 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.cwc.editor.context.project
+package software.aws.toolkits.jetbrains.services.amazonq.project
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.project.BaseProjectDirectories.Companion.getBaseDirectories
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VfsUtilCore
@@ -25,9 +26,9 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
-import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
+import software.aws.toolkits.telemetry.AmazonqTelemetry
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
@@ -140,17 +141,18 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val encrypted = encryptRequest(IndexRequest(filesResult.files, projectRoot, "all", ""))
         val response = sendMsgToLsp(LspMessage.Index, encrypted)
 
+
         duration = (System.currentTimeMillis() - indexStartTime).toDouble()
         logger.debug { "project context index time: ${duration}ms" }
 
         val startUrl = getStartUrl(project)
         if (response.responseCode == 200) {
             val usage = getUsage()
-            TelemetryHelper.recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, true, usage?.memoryUsage, usage?.cpuUsage, startUrl)
+            recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, true, usage?.memoryUsage, usage?.cpuUsage, startUrl)
             logger.debug { "project context index finished for ${project.name}" }
             return true
         } else {
-            TelemetryHelper.recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, false, null, null, startUrl)
+            recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, false, null, null, startUrl)
             return false
         }
     }
@@ -198,6 +200,27 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         sendMsgToLsp(LspMessage.UpdateIndex, encrypted)
     }
 
+        private fun recordIndexWorkspace(
+            duration: Double,
+            fileCount: Int = 0,
+            fileSize: Int = 0,
+            isSuccess: Boolean,
+            memoryUsage: Int? = 0,
+            cpuUsage: Int? = 0,
+            startUrl: String? = null,
+        ) {
+            AmazonqTelemetry.indexWorkspace(
+                project = null,
+                duration = duration,
+                amazonqIndexFileCount = fileCount.toLong(),
+                amazonqIndexFileSizeInMB = fileSize.toLong(),
+                success = isSuccess,
+                amazonqIndexMemoryUsageInMB = memoryUsage?.toLong(),
+                amazonqIndexCpuUsagePercentage = cpuUsage?.toLong(),
+                credentialStartUrl = startUrl
+            )
+        }
+
     private fun setConnectionTimeout(connection: HttpURLConnection) {
         connection.connectTimeout = 5000 // 5 seconds
         connection.readTimeout = 5000 // 5 second
@@ -233,7 +256,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         var currentTotalFileSize = 0L
         val featureDevSessionContext = FeatureDevSessionContext(project)
         val allFiles = mutableListOf<VirtualFile>()
-        project.guessProjectDir()?.let {
+        project.getBaseDirectories().forEach {
             VfsUtilCore.visitChildrenRecursively(
                 it,
                 object : VirtualFileVisitor<Unit>(NO_FOLLOW_SYMLINKS) {
