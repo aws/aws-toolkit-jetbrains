@@ -362,7 +362,6 @@ class SsoAccessTokenProvider(
         }
     }
 
-    // error being thrown while loading registration, add try-catch blocks.
     fun refreshToken(currentToken: AccessToken): AccessToken {
         if (currentToken.refreshToken == null) {
             val message = "Requested token refresh, but refresh token was null"
@@ -464,7 +463,6 @@ class SsoAccessTokenProvider(
         SAVE_TOKEN,
     }
 
-    // these throw fileNotFoundException if file doesnt exist.
     private fun loadDagClientRegistration(): ClientRegistration? =
         try {
             cache.loadClientRegistration(dagClientRegistrationCacheKey)?.let {
@@ -484,7 +482,7 @@ class SsoAccessTokenProvider(
         }
 
     private fun saveClientRegistration(registration: ClientRegistration) {
-        var credentialType: String
+        val credentialType: String
         try {
             when (registration) {
                 is DeviceAuthorizationClientRegistration -> {
