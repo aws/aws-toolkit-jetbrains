@@ -10,7 +10,6 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.BaseProjectDirectories.Companion.getBaseDirectories
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
@@ -133,7 +132,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     fun index(): Boolean {
-        val projectRoot = project.guessProjectDir()?.path ?: return false
+        val projectRoot = project.basePath ?: return false
 
         val indexStartTime = System.currentTimeMillis()
         val filesResult = collectFiles()

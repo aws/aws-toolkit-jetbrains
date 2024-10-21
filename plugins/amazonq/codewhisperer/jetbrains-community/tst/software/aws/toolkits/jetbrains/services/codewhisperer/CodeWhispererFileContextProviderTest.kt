@@ -375,19 +375,6 @@ class CodeWhispererFileContextProviderTest {
         )
     }
 
-    /**
-     * - src/
-     *     - java/
-     *          - Main.java
-     *          - Util.java
-     *          - controllers/
-     *              -MyApiController.java
-     * - tst/
-     *     - java/
-     *          - MainTest.java
-     *
-     */
-    // TODO: fix this test, in test env, psiFile.virtualFile == null @psiGist.getFileData(psiFile) { psiFile -> ... }
     @Test
     fun `extractSupplementalFileContext from src file should extract src`() = runTest {
         val queryPsi = fixture.addFileToProject("Query.java", SampleCase.query)
@@ -417,6 +404,11 @@ class CodeWhispererFileContextProviderTest {
 
         val fileContext = readAction { sut.extractFileContext(fixture.editor, queryPsi) }
         val supplementalContext = sut.extractSupplementalFileContext(queryPsi, fileContext, timeout = 50)
+
+        assertThat(supplementalContext?.contents)
+            .isNotNull
+            .isNotEmpty
+            .hasSize(3)
 
         assertThat(supplementalContext?.contents)
             .isNotNull

@@ -109,6 +109,7 @@ class ProjectContextProviderTest {
     fun `Lsp endpoint correctness`() {
         assertThat(LspMessage.Initialize.endpoint).isEqualTo("initialize")
         assertThat(LspMessage.Index.endpoint).isEqualTo("buildIndex")
+        assertThat(LspMessage.Index.endpoint).isEqualTo("indexFiles")
         assertThat(LspMessage.UpdateIndex.endpoint).isEqualTo("updateIndexV2")
         assertThat(LspMessage.QueryChat.endpoint).isEqualTo("query")
         assertThat(LspMessage.QueryInlineCompletion.endpoint).isEqualTo("queryInlineProjectContext")
@@ -142,28 +143,12 @@ class ProjectContextProviderTest {
     }
 
     @Test
-    fun `updateIndex will not send message to lsp if index is not complete`() {
-        sut.isIndexComplete.set(false)
-
-        sut.updateIndex(listOf("foo.java"), ProjectContextProvider.IndexUpdateMode.UPDATE)
-
-        assertThat(wireMock.allServeEvents).isEmpty()
-        wireMock.verify(
-            0,
-            postRequestedFor(urlPathEqualTo("/updateIndexV2"))
-                .withHeader("Content-Type", equalTo("text/plain"))
-        )
-    }
-
-    @Test
     fun `updateIndex should send correct encrypted request to lsp`() {
-        sut.isIndexComplete.set(true)
-
         sut.updateIndex(listOf("foo.java"), ProjectContextProvider.IndexUpdateMode.UPDATE)
         val request = UpdateIndexRequest(listOf("foo.java"), ProjectContextProvider.IndexUpdateMode.UPDATE.value)
         val requestJson = mapper.writeValueAsString(request)
 
-        assertThat(mapper.readTree(requestJson)).isEqualTo(mapper.readTree("""{ "filePaths": ["foo.java"], "mode": "update" }"""))
+        assertThat(mapper.readTree(requestJson)).isEqualTo(mapper.readTree("""{ "filePath": "foo.java" }"""))
 
         val encryptedRequest = encoderServer.encrypt(requestJson)
 
@@ -349,6 +334,7 @@ class ProjectContextProviderTest {
     private fun createMockServer() = WireMockRule(wireMockConfig().dynamicPort())
 }
 
+// language=JSON
 val validQueryInlineResponse = """
                             [
                                 {
@@ -369,6 +355,7 @@ val validQueryInlineResponse = """
                             ]    
 """.trimIndent()
 
+// language=JSON
 val validQueryChatResponse = """
                             [
                                 {
@@ -406,9 +393,10 @@ val validQueryChatResponse = """
                             ]
 """.trimIndent()
 
+// language=JSON
 val validGetUsageResponse = """
                                 {
-                                "memoryUsage":123,
-                                "cpuUsage":456
+                                  "memoryUsage":123,
+                                  "cpuUsage":456
                                 } 
 """.trimIndent()
