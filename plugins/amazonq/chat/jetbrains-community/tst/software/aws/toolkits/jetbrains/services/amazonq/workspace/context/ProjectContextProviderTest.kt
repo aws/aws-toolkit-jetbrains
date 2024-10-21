@@ -125,23 +125,7 @@ class ProjectContextProviderTest {
     }
 
     @Test
-    fun `updateIndex will not send message to lsp if index is not complete`() {
-        sut.isIndexComplete.set(false)
-
-        sut.updateIndex("foo.java")
-
-        assertThat(wireMock.allServeEvents).isEmpty()
-        wireMock.verify(
-            0,
-            postRequestedFor(urlPathEqualTo("/updateIndex"))
-                .withHeader("Content-Type", equalTo("text/plain"))
-        )
-    }
-
-    @Test
     fun `updateIndex should send correct encrypted request to lsp`() {
-        sut.isIndexComplete.set(true)
-
         sut.updateIndex("foo.java")
         val request = UpdateIndexRequest("foo.java")
         val requestJson = mapper.writeValueAsString(request)

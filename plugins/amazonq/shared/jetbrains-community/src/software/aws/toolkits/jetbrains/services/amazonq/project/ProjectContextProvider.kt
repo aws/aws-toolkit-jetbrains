@@ -174,7 +174,6 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     fun updateIndex(filePath: String) {
-        if (!isIndexComplete.get()) return
         val encrypted = encryptRequest(UpdateIndexRequest(filePath))
         sendMsgToLsp(LspMessage.UpdateIndex, encrypted)
     }
