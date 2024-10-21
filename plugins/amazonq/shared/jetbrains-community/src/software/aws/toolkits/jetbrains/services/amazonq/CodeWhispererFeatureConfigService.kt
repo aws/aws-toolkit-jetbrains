@@ -12,8 +12,8 @@ import software.amazon.awssdk.services.codewhispererruntime.model.FeatureValue
 import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsRequest
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.utils.isQExpired
 
 @Service

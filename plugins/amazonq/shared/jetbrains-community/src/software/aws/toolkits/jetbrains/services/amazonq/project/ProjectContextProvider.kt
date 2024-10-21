@@ -141,7 +141,6 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val encrypted = encryptRequest(IndexRequest(filesResult.files, projectRoot, "all", ""))
         val response = sendMsgToLsp(LspMessage.Index, encrypted)
 
-
         duration = (System.currentTimeMillis() - indexStartTime).toDouble()
         logger.debug { "project context index time: ${duration}ms" }
 
@@ -200,26 +199,26 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         sendMsgToLsp(LspMessage.UpdateIndex, encrypted)
     }
 
-        private fun recordIndexWorkspace(
-            duration: Double,
-            fileCount: Int = 0,
-            fileSize: Int = 0,
-            isSuccess: Boolean,
-            memoryUsage: Int? = 0,
-            cpuUsage: Int? = 0,
-            startUrl: String? = null,
-        ) {
-            AmazonqTelemetry.indexWorkspace(
-                project = null,
-                duration = duration,
-                amazonqIndexFileCount = fileCount.toLong(),
-                amazonqIndexFileSizeInMB = fileSize.toLong(),
-                success = isSuccess,
-                amazonqIndexMemoryUsageInMB = memoryUsage?.toLong(),
-                amazonqIndexCpuUsagePercentage = cpuUsage?.toLong(),
-                credentialStartUrl = startUrl
-            )
-        }
+    private fun recordIndexWorkspace(
+        duration: Double,
+        fileCount: Int = 0,
+        fileSize: Int = 0,
+        isSuccess: Boolean,
+        memoryUsage: Int? = 0,
+        cpuUsage: Int? = 0,
+        startUrl: String? = null,
+    ) {
+        AmazonqTelemetry.indexWorkspace(
+            project = null,
+            duration = duration,
+            amazonqIndexFileCount = fileCount.toLong(),
+            amazonqIndexFileSizeInMB = fileSize.toLong(),
+            success = isSuccess,
+            amazonqIndexMemoryUsageInMB = memoryUsage?.toLong(),
+            amazonqIndexCpuUsagePercentage = cpuUsage?.toLong(),
+            credentialStartUrl = startUrl
+        )
+    }
 
     private fun setConnectionTimeout(connection: HttpURLConnection) {
         connection.connectTimeout = 5000 // 5 seconds
