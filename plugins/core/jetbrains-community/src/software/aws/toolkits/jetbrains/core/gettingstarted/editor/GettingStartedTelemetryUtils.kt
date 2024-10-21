@@ -92,9 +92,6 @@ fun getAuthScopesForTelemetry(project: Project?): Set<String> {
     val codeCatalystConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST)
     addScopes(codeCatalystConnection)
 
-    val codeWhispererConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER)
-    addScopes(codeWhispererConnection)
-
     val qConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
     addScopes(qConnection)
 
