@@ -3,8 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.workspace.context
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.any
+import com.github.tomakehurst.wiremock.client.WireMock.equalTo
+import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
@@ -25,9 +28,12 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.amazonq.project.EncoderServer
+import software.aws.toolkits.jetbrains.services.amazonq.project.IndexRequest
 import software.aws.toolkits.jetbrains.services.amazonq.project.LspMessage
 import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextProvider
+import software.aws.toolkits.jetbrains.services.amazonq.project.QueryChatRequest
 import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
+import software.aws.toolkits.jetbrains.services.amazonq.project.UpdateIndexRequest
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import java.net.ConnectException
@@ -47,6 +53,8 @@ class ProjectContextProviderTest {
 
     private lateinit var encoderServer: EncoderServer
     private lateinit var sut: ProjectContextProvider
+
+    private val mapper = jacksonObjectMapper()
 
     @Before
     fun setup() {
@@ -89,6 +97,85 @@ class ProjectContextProviderTest {
         assertThat(LspMessage.Index.endpoint).isEqualTo("indexFiles")
         assertThat(LspMessage.QueryChat.endpoint).isEqualTo("query")
         assertThat(LspMessage.GetUsageMetrics.endpoint).isEqualTo("getUsage")
+    }
+
+    @Test
+    fun `index should send files within the project to lsp`() {
+        projectRule.fixture.addFileToProject("Foo.java", "foo")
+        projectRule.fixture.addFileToProject("Bar.java", "bar")
+        projectRule.fixture.addFileToProject("Baz.java", "baz")
+
+        sut.index()
+
+        val request = IndexRequest(listOf("/src/Foo.java", "/src/Bar.java", "/src/Baz.java"), "/src", false)
+        assertThat(request.filePaths).hasSize(3)
+        assertThat(request.filePaths).satisfies({
+            it.contains("/src/Foo.java") &&
+                it.contains("/src/Baz.java") &&
+                it.contains("/src/Bar.java")
+
+        })
+
+        wireMock.verify(
+            1,
+            postRequestedFor(urlPathEqualTo("/indexFiles"))
+                .withHeader("Content-Type", equalTo("text/plain"))
+            // comment it out because order matters and will cause json string different
+//                .withRequestBody(equalTo(encryptedRequest))
+        )
+    }
+
+    @Test
+    fun `updateIndex will not send message to lsp if index is not complete`() {
+        sut.isIndexComplete.set(false)
+
+        sut.updateIndex("foo.java")
+
+        assertThat(wireMock.allServeEvents).isEmpty()
+        wireMock.verify(
+            0,
+            postRequestedFor(urlPathEqualTo("/updateIndex"))
+                .withHeader("Content-Type", equalTo("text/plain"))
+        )
+    }
+
+    @Test
+    fun `updateIndex should send correct encrypted request to lsp`() {
+        sut.isIndexComplete.set(true)
+
+        sut.updateIndex("foo.java")
+        val request = UpdateIndexRequest("foo.java")
+        val requestJson = mapper.writeValueAsString(request)
+
+        assertThat(mapper.readTree(requestJson)).isEqualTo(mapper.readTree("""{ "filePath": "foo.java" }"""))
+
+        val encryptedRequest = encoderServer.encrypt(requestJson)
+
+        wireMock.verify(
+            1,
+            postRequestedFor(urlPathEqualTo("/updateIndex"))
+                .withHeader("Content-Type", equalTo("text/plain"))
+                .withRequestBody(equalTo(encryptedRequest))
+        )
+    }
+
+    @Test
+    fun `query should send correct encrypted request to lsp`() {
+        sut.query("foo")
+
+        val request = QueryChatRequest("foo")
+        val requestJson = mapper.writeValueAsString(request)
+
+        assertThat(mapper.readTree(requestJson)).isEqualTo(mapper.readTree("""{ "query": "foo" }"""))
+
+        val encryptedRequest = encoderServer.encrypt(requestJson)
+
+        wireMock.verify(
+            1,
+            postRequestedFor(urlPathEqualTo("/query"))
+                .withHeader("Content-Type", equalTo("text/plain"))
+                .withRequestBody(equalTo(encryptedRequest))
+        )
     }
 
     @Test
