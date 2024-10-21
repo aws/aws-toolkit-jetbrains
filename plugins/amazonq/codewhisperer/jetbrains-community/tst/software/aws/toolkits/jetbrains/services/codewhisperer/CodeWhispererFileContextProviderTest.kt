@@ -72,16 +72,16 @@ class CodeWhispererFileContextProviderTest {
     @Test
     fun `should use open tabs if project context is empty due to project context is disabled`() = runTest {
         sut = spy(sut)
-        val queryPsi = fixture.addFileToProject("Query.java", sampleCase.query)
-        val file1Psi = fixture.addFileToProject("File1.java", sampleCase.file1)
-        val file2Psi = fixture.addFileToProject("File2.java", sampleCase.file2)
-        val file3Psi = fixture.addFileToProject("File3.java", sampleCase.file3)
-        val file4Psi = fixture.addFileToProject("File4.java", sampleCase.file4)
-        val file5Psi = fixture.addFileToProject("File5.java", sampleCase.file5)
-        val file6Psi = fixture.addFileToProject("File6.java", sampleCase.file6)
-        val file7Psi = fixture.addFileToProject("File7.java", sampleCase.file7)
-        val file8Psi = fixture.addFileToProject("File8.java", sampleCase.file8)
-        val file9Psi = fixture.addFileToProject("File9.java", sampleCase.file9)
+        val queryPsi = fixture.addFileToProject("Query.java", SampleCase.query)
+        val file1Psi = fixture.addFileToProject("File1.java", SampleCase.file1)
+        val file2Psi = fixture.addFileToProject("File2.java", SampleCase.file2)
+        val file3Psi = fixture.addFileToProject("File3.java", SampleCase.file3)
+        val file4Psi = fixture.addFileToProject("File4.java", SampleCase.file4)
+        val file5Psi = fixture.addFileToProject("File5.java", SampleCase.file5)
+        val file6Psi = fixture.addFileToProject("File6.java", SampleCase.file6)
+        val file7Psi = fixture.addFileToProject("File7.java", SampleCase.file7)
+        val file8Psi = fixture.addFileToProject("File8.java", SampleCase.file8)
+        val file9Psi = fixture.addFileToProject("File9.java", SampleCase.file9)
 
         runInEdtAndWait {
             fixture.openFileInEditor(file1Psi.viewProvider.virtualFile)
@@ -110,16 +110,16 @@ class CodeWhispererFileContextProviderTest {
     @Test
     fun `should use open tabs if project context is empty due to unknown error`() = runTest {
         sut = spy(sut)
-        val queryPsi = fixture.addFileToProject("Query.java", sampleCase.query)
-        val file1Psi = fixture.addFileToProject("File1.java", sampleCase.file1)
-        val file2Psi = fixture.addFileToProject("File2.java", sampleCase.file2)
-        val file3Psi = fixture.addFileToProject("File3.java", sampleCase.file3)
-        val file4Psi = fixture.addFileToProject("File4.java", sampleCase.file4)
-        val file5Psi = fixture.addFileToProject("File5.java", sampleCase.file5)
-        val file6Psi = fixture.addFileToProject("File6.java", sampleCase.file6)
-        val file7Psi = fixture.addFileToProject("File7.java", sampleCase.file7)
-        val file8Psi = fixture.addFileToProject("File8.java", sampleCase.file8)
-        val file9Psi = fixture.addFileToProject("File9.java", sampleCase.file9)
+        val queryPsi = fixture.addFileToProject("Query.java", SampleCase.query)
+        val file1Psi = fixture.addFileToProject("File1.java", SampleCase.file1)
+        val file2Psi = fixture.addFileToProject("File2.java", SampleCase.file2)
+        val file3Psi = fixture.addFileToProject("File3.java", SampleCase.file3)
+        val file4Psi = fixture.addFileToProject("File4.java", SampleCase.file4)
+        val file5Psi = fixture.addFileToProject("File5.java", SampleCase.file5)
+        val file6Psi = fixture.addFileToProject("File6.java", SampleCase.file6)
+        val file7Psi = fixture.addFileToProject("File7.java", SampleCase.file7)
+        val file8Psi = fixture.addFileToProject("File8.java", SampleCase.file8)
+        val file9Psi = fixture.addFileToProject("File9.java", SampleCase.file9)
 
         runInEdtAndWait {
             fixture.openFileInEditor(file1Psi.viewProvider.virtualFile)
@@ -153,16 +153,16 @@ class CodeWhispererFileContextProviderTest {
     @Test
     fun `should use project context if it is present`() = runTest {
         sut = spy(sut)
-        val queryPsi = fixture.addFileToProject("Query.java", sampleCase.query)
-        val file1Psi = fixture.addFileToProject("File1.java", sampleCase.file1)
-        val file2Psi = fixture.addFileToProject("File2.java", sampleCase.file2)
-        val file3Psi = fixture.addFileToProject("File3.java", sampleCase.file3)
-        val file4Psi = fixture.addFileToProject("File4.java", sampleCase.file4)
-        val file5Psi = fixture.addFileToProject("File5.java", sampleCase.file5)
-        val file6Psi = fixture.addFileToProject("File6.java", sampleCase.file6)
-        val file7Psi = fixture.addFileToProject("File7.java", sampleCase.file7)
-        val file8Psi = fixture.addFileToProject("File8.java", sampleCase.file8)
-        val file9Psi = fixture.addFileToProject("File9.java", sampleCase.file9)
+        val queryPsi = fixture.addFileToProject("Query.java", SampleCase.query)
+        val file1Psi = fixture.addFileToProject("File1.java", SampleCase.file1)
+        val file2Psi = fixture.addFileToProject("File2.java", SampleCase.file2)
+        val file3Psi = fixture.addFileToProject("File3.java", SampleCase.file3)
+        val file4Psi = fixture.addFileToProject("File4.java", SampleCase.file4)
+        val file5Psi = fixture.addFileToProject("File5.java", SampleCase.file5)
+        val file6Psi = fixture.addFileToProject("File6.java", SampleCase.file6)
+        val file7Psi = fixture.addFileToProject("File7.java", SampleCase.file7)
+        val file8Psi = fixture.addFileToProject("File8.java", SampleCase.file8)
+        val file9Psi = fixture.addFileToProject("File9.java", SampleCase.file9)
 
         runInEdtAndWait {
             fixture.openFileInEditor(file1Psi.viewProvider.virtualFile)
@@ -390,16 +390,16 @@ class CodeWhispererFileContextProviderTest {
     // TODO: fix this test, in test env, psiFile.virtualFile == null @psiGist.getFileData(psiFile) { psiFile -> ... }
     @Test
     fun `extractSupplementalFileContext from src file should extract src`() = runTest {
-        val queryPsi = fixture.addFileToProject("Query.java", sampleCase.query)
-        val file1Psi = fixture.addFileToProject("File1.java", sampleCase.file1)
-        val file2Psi = fixture.addFileToProject("File2.java", sampleCase.file2)
-        val file3Psi = fixture.addFileToProject("File3.java", sampleCase.file3)
-        val file4Psi = fixture.addFileToProject("File4.java", sampleCase.file4)
-        val file5Psi = fixture.addFileToProject("File5.java", sampleCase.file5)
-        val file6Psi = fixture.addFileToProject("File6.java", sampleCase.file6)
-        val file7Psi = fixture.addFileToProject("File7.java", sampleCase.file7)
-        val file8Psi = fixture.addFileToProject("File8.java", sampleCase.file8)
-        val file9Psi = fixture.addFileToProject("File9.java", sampleCase.file9)
+        val queryPsi = fixture.addFileToProject("Query.java", SampleCase.query)
+        val file1Psi = fixture.addFileToProject("File1.java", SampleCase.file1)
+        val file2Psi = fixture.addFileToProject("File2.java", SampleCase.file2)
+        val file3Psi = fixture.addFileToProject("File3.java", SampleCase.file3)
+        val file4Psi = fixture.addFileToProject("File4.java", SampleCase.file4)
+        val file5Psi = fixture.addFileToProject("File5.java", SampleCase.file5)
+        val file6Psi = fixture.addFileToProject("File6.java", SampleCase.file6)
+        val file7Psi = fixture.addFileToProject("File7.java", SampleCase.file7)
+        val file8Psi = fixture.addFileToProject("File8.java", SampleCase.file8)
+        val file9Psi = fixture.addFileToProject("File9.java", SampleCase.file9)
 
         runInEdtAndWait {
             fixture.openFileInEditor(file1Psi.viewProvider.virtualFile)
@@ -522,15 +522,15 @@ class CodeWhispererFileContextProviderTest {
     }
 }
 
-private object sampleCase {
-    val file1 = "Human machine interface for lab abc computer applications"
-    val file2 = "A survey of user opinion of computer system response time"
-    val file3 = "The EPS user interface management system"
-    val file4 = "System and human system engineering testing of EPS"
-    val file5 = "Relation of user perceived response time to error measurement"
-    val file6 = "The generation of random binary unordered trees"
-    val file7 = "The intersection graph of paths in trees"
-    val file8 = "Graph minors IV Widths of trees and well quasi ordering"
-    val file9 = "Graph minors A survey"
-    val query = "The intersection of graph survey and trees"
+private object SampleCase {
+    const val file1 = "Human machine interface for lab abc computer applications"
+    const val file2 = "A survey of user opinion of computer system response time"
+    const val file3 = "The EPS user interface management system"
+    const val file4 = "System and human system engineering testing of EPS"
+    const val file5 = "Relation of user perceived response time to error measurement"
+    const val file6 = "The generation of random binary unordered trees"
+    const val file7 = "The intersection graph of paths in trees"
+    const val file8 = "Graph minors IV Widths of trees and well quasi ordering"
+    const val file9 = "Graph minors A survey"
+    const val query = "The intersection of graph survey and trees"
 }
