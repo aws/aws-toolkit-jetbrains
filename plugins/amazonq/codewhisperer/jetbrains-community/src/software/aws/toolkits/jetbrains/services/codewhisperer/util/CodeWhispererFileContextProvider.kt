@@ -140,7 +140,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 return@withTimeout supplementalContext?.let {
                     if (it.contents.isNotEmpty()) {
                         val logStr = buildString {
-                            append("Successfully fetched supplemental context.")
+                            append("Successfully fetched supplemental context with strategy ${it.strategy}.")
                             it.contents.forEachIndexed { index, chunk ->
                                 append(
                                     """
