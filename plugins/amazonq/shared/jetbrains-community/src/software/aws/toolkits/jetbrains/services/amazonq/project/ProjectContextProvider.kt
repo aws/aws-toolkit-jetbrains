@@ -139,7 +139,8 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         var duration = (System.currentTimeMillis() - indexStartTime).toDouble()
         logger.debug { "time elapsed to collect project context files: ${duration}ms, collected ${filesResult.files.size} files" }
 
-        val encrypted = encryptRequest(IndexRequest(filesResult.files, projectRoot, "all", ""))
+        val indexOption = if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) IndexOption.ALL else IndexOption.DEFAULT
+        val encrypted = encryptRequest(IndexRequest(filesResult.files, projectRoot, indexOption, ""))
         val response = sendMsgToLsp(LspMessage.Index, encrypted)
 
         duration = (System.currentTimeMillis() - indexStartTime).toDouble()
@@ -191,7 +192,6 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     fun updateIndex(filePaths: List<String>, mode: IndexUpdateMode) {
-        if (!isIndexComplete.get()) return
         val encrypted = encryptRequest(UpdateIndexRequest(filePaths, mode.value))
         sendMsgToLsp(LspMessage.UpdateIndex, encrypted)
     }
@@ -336,5 +336,9 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
 
     companion object {
         private val logger = getLogger<ProjectContextProvider>()
+        private object IndexOption {
+            const val ALL = "all"
+            const val DEFAULT = "default"
+        }
     }
 }

@@ -13,7 +13,10 @@ import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import com.github.tomakehurst.wiremock.http.Body
 import com.github.tomakehurst.wiremock.junit.WireMockRule
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
+import com.intellij.testFramework.DisposableRule
+import com.intellij.testFramework.replaceService
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
@@ -22,6 +25,7 @@ import org.junit.Rule
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
@@ -36,6 +40,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.project.QueryChatRequest
 import software.aws.toolkits.jetbrains.services.amazonq.project.QueryInlineCompletionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.amazonq.project.UpdateIndexRequest
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import java.net.ConnectException
@@ -46,6 +51,10 @@ class ProjectContextProviderTest {
     @Rule
     @JvmField
     val projectRule: CodeInsightTestFixtureRule = JavaCodeInsightTestFixtureRule()
+
+    @Rule
+    @JvmField
+    val disposableRule: DisposableRule = DisposableRule()
 
     @Rule
     @JvmField
@@ -114,7 +123,13 @@ class ProjectContextProviderTest {
     }
 
     @Test
-    fun `index should send files within the project to lsp`() {
+    fun `index should send files within the project to lsp - vector index enabled`() {
+        ApplicationManager.getApplication().replaceService(
+            CodeWhispererSettings::class.java,
+            mock { on { isProjectContextEnabled() } doReturn true },
+            disposableRule.disposable
+        )
+
         projectRule.fixture.addFileToProject("Foo.java", "foo")
         projectRule.fixture.addFileToProject("Bar.java", "bar")
         projectRule.fixture.addFileToProject("Baz.java", "baz")
@@ -140,12 +155,44 @@ class ProjectContextProviderTest {
     }
 
     @Test
+    fun `index should send files within the project to lsp - vector index disabled`() {
+        ApplicationManager.getApplication().replaceService(
+            CodeWhispererSettings::class.java,
+            mock { on { isProjectContextEnabled() } doReturn false },
+            disposableRule.disposable
+        )
+
+        projectRule.fixture.addFileToProject("Foo.java", "foo")
+        projectRule.fixture.addFileToProject("Bar.java", "bar")
+        projectRule.fixture.addFileToProject("Baz.java", "baz")
+
+        sut.index()
+
+        val request = IndexRequest(listOf("/src/Foo.java", "/src/Bar.java", "/src/Baz.java"), "/src", "default", "")
+        assertThat(request.filePaths).hasSize(3)
+        assertThat(request.filePaths).satisfies({
+            it.contains("/src/Foo.java") &&
+                it.contains("/src/Baz.java") &&
+                it.contains("/src/Bar.java")
+        })
+        assertThat(request.config).isEqualTo("default")
+
+        wireMock.verify(
+            1,
+            postRequestedFor(urlPathEqualTo("/buildIndex"))
+                .withHeader("Content-Type", equalTo("text/plain"))
+            // comment it out because order matters and will cause json string different
+//                .withRequestBody(equalTo(encryptedRequest))
+        )
+    }
+
+    @Test
     fun `updateIndex should send correct encrypted request to lsp`() {
         sut.updateIndex(listOf("foo.java"), ProjectContextProvider.IndexUpdateMode.UPDATE)
         val request = UpdateIndexRequest(listOf("foo.java"), ProjectContextProvider.IndexUpdateMode.UPDATE.value)
         val requestJson = mapper.writeValueAsString(request)
 
-        assertThat(mapper.readTree(requestJson)).isEqualTo(mapper.readTree("""{ "filePath": "foo.java" }"""))
+        assertThat(mapper.readTree(requestJson)).isEqualTo(mapper.readTree("""{ "filePaths": ["foo.java"], "mode": "update" }"""))
 
         val encryptedRequest = encoderServer.encrypt(requestJson)
 
