@@ -31,7 +31,6 @@ import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.Result
 import java.io.FileNotFoundException
-import java.io.IOException
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -394,10 +393,19 @@ class SsoAccessTokenProvider(
         }
 
         if (registration == null) {
-            val message = "Unable to load client registration from cache"
+            val (message, reason) = when {
+                currentToken.expiresAt.isBefore(Instant.now(clock)) -> Pair(
+                    "Client registration has expired",
+                    "Expired client registration"
+                )
+                else -> Pair(
+                    "Unable to load client registration from cache",
+                    "Null client registration"
+                )
+            }
             sendRefreshCredentialsMetric(
                 currentToken,
-                reason = "Null client registration",
+                reason = reason,
                 reasonDesc = "Step: Load Registration - $message",
                 result = Result.Failed
             )
@@ -476,19 +484,31 @@ class SsoAccessTokenProvider(
         }
 
     private fun saveClientRegistration(registration: ClientRegistration) {
+        var credentialType: String
         try {
             when (registration) {
                 is DeviceAuthorizationClientRegistration -> {
+                    credentialType = DeviceAuthorizationClientRegistration::class.java.name
                     cache.saveClientRegistration(dagClientRegistrationCacheKey, registration)
                 }
 
                 is PKCEClientRegistration -> {
+                    credentialType = PKCEClientRegistration::class.java.name
                     cache.saveClientRegistration(pkceClientRegistrationCacheKey, registration)
                 }
             }
         } catch (e: Exception) {
+            AwsTelemetry.createCredentials(
+                result = Result.Failed,
+                reason = "Failed to save client registration to cache",
+                reasonDesc = e.message
+            )
             throw e
         }
+        AwsTelemetry.createCredentials(
+            result = Result.Succeeded,
+            reason = "$credentialType successfully written to cache",
+        )
     }
 
     private fun invalidateClientRegistration() {
@@ -509,7 +529,7 @@ class SsoAccessTokenProvider(
 
                 is PKCEAuthorizationGrantToken -> cache.saveAccessToken(pkceAccessTokenCacheKey, token)
             }
-        } catch (e:Exception){
+        } catch (e: Exception) {
             throw e
         }
     }
