@@ -113,7 +113,6 @@ class ProjectContextProviderTest {
             it.contains("/src/Foo.java") &&
                 it.contains("/src/Baz.java") &&
                 it.contains("/src/Bar.java")
-
         })
 
         wireMock.verify(
