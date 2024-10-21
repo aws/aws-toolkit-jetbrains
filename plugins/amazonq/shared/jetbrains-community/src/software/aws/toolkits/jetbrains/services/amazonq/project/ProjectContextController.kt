@@ -1,7 +1,7 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.cwc.editor.context.project
+package software.aws.toolkits.jetbrains.services.amazonq.project
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
@@ -12,7 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 
 @Service(Service.Level.PROJECT)
 class ProjectContextController(private val project: Project, private val cs: CoroutineScope) : Disposable {

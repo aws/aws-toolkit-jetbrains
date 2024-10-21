@@ -1,15 +1,15 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.cwc.editor.context.project
+package software.aws.toolkits.jetbrains.services.amazonq.project
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.project.BaseProjectDirectories.Companion.getBaseDirectories
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
@@ -20,13 +20,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
 import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
-import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
+import software.aws.toolkits.telemetry.AmazonqTelemetry
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
@@ -53,23 +54,9 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
-    data class IndexRequestPayload(
-        val filePaths: List<String>,
-        val projectRoot: String,
-        val refresh: Boolean,
-    )
-
     data class FileCollectionResult(
         val files: List<String>,
         val fileSize: Int,
-    )
-
-    data class QueryRequestPayload(
-        val query: String,
-    )
-
-    data class UpdateIndexRequestPayload(
-        val filePath: String,
     )
 
     data class Usage(
@@ -132,114 +119,85 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     private fun initEncryption(): Boolean {
-        logger.info { "project context: init key for ${project.guessProjectDir()} on port ${encoderServer.port}" }
-        val url = URL("http://localhost:${encoderServer.port}/initialize")
-        val payload = encoderServer.getEncryptionRequest()
-        val connection = url.openConnection() as HttpURLConnection
-        setConnectionProperties(connection)
-        setConnectionRequest(connection, payload)
-        logger.info { "project context initialize response code: ${connection.responseCode} for ${project.name}" }
-        return connection.responseCode == 200
+        val request = encoderServer.getEncryptionRequest()
+        val response = sendMsgToLsp(LspMessage.Initialize, request)
+        return response.responseCode == 200
     }
 
     fun index(): Boolean {
-        logger.info { "project context: indexing ${project.name} on port ${encoderServer.port}" }
+        val projectRoot = project.basePath ?: return false
+
         val indexStartTime = System.currentTimeMillis()
-        val url = URL("http://localhost:${encoderServer.port}/indexFiles")
         val filesResult = collectFiles()
         var duration = (System.currentTimeMillis() - indexStartTime).toDouble()
-        logger.debug { "project context file collection time: ${duration}ms" }
-        logger.debug { "list of files collected: ${filesResult.files.joinToString("\n")}" }
-        val projectRoot = project.guessProjectDir()?.path ?: return false
-        val payload = IndexRequestPayload(filesResult.files, projectRoot, false)
-        val payloadJson = mapper.writeValueAsString(payload)
-        val encrypted = encoderServer.encrypt(payloadJson)
+        logger.debug { "time elapsed to collect project context files: ${duration}ms, collected ${filesResult.files.size} files" }
 
-        val connection = url.openConnection() as HttpURLConnection
-        setConnectionProperties(connection)
-        setConnectionRequest(connection, encrypted)
-        logger.info { "project context index response code: ${connection.responseCode} for ${project.name}" }
+        val encrypted = encryptRequest(IndexRequest(filesResult.files, projectRoot, false))
+        val response = sendMsgToLsp(LspMessage.Index, encrypted)
+
         duration = (System.currentTimeMillis() - indexStartTime).toDouble()
-        val startUrl = getStartUrl(project)
         logger.debug { "project context index time: ${duration}ms" }
-        if (connection.responseCode == 200) {
+
+        val startUrl = getStartUrl(project)
+        if (response.responseCode == 200) {
             val usage = getUsage()
-            TelemetryHelper.recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, true, usage?.memoryUsage, usage?.cpuUsage, startUrl)
+            recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, true, usage?.memoryUsage, usage?.cpuUsage, startUrl)
             logger.debug { "project context index finished for ${project.name}" }
             return true
         } else {
-            TelemetryHelper.recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, false, null, null, startUrl)
+            recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, false, null, null, startUrl)
             return false
         }
     }
 
     fun query(prompt: String): List<RelevantDocument> {
-        logger.info { "project context: querying ${project.name} on port ${encoderServer.port}" }
-        val url = URL("http://localhost:${encoderServer.port}/query")
-        val payload = QueryRequestPayload(prompt)
-        val payloadJson = mapper.writeValueAsString(payload)
-        val encrypted = encoderServer.encrypt(payloadJson)
+        val encrypted = encryptRequest(QueryChatRequest(prompt))
+        val response = sendMsgToLsp(LspMessage.QueryChat, encrypted)
 
-        val connection = url.openConnection() as HttpURLConnection
-        setConnectionProperties(connection)
-        setConnectionTimeout(connection)
-        setConnectionRequest(connection, encrypted)
-
-        val responseCode = connection.responseCode
-        logger.info { "project context query response code: $responseCode for $prompt" }
-        val responseBody = if (responseCode == 200) {
-            connection.inputStream.bufferedReader().use { reader -> reader.readText() }
-        } else {
-            ""
-        }
-        connection.disconnect()
-        try {
-            val parsedResponse = mapper.readValue<List<Chunk>>(responseBody)
-            return queryResultToRelevantDocuments(parsedResponse)
+        return try {
+            val parsedResponse = mapper.readValue<List<Chunk>>(response.responseBody)
+            queryResultToRelevantDocuments(parsedResponse)
         } catch (e: Exception) {
-            logger.warn { "error parsing query response ${e.message}" }
-            return emptyList()
+            logger.error { "error parsing query response ${e.message}" }
+            throw e
         }
     }
 
-    private fun getUsage(): Usage? {
-        logger.info { "project context: getting usage for ${project.name} on port ${encoderServer.port}" }
-        val url = URL("http://localhost:${encoderServer.port}/getUsage")
-        val connection = url.openConnection() as HttpURLConnection
-        setConnectionProperties(connection)
-        val responseCode = connection.responseCode
-
-        logger.info { "project context getUsage response code: $responseCode for ${project.name} " }
-        val responseBody = if (responseCode == 200) {
-            connection.inputStream.bufferedReader().use { reader -> reader.readText() }
-        } else {
-            ""
-        }
-        connection.disconnect()
-        try {
-            val parsedResponse = mapper.readValue<Usage>(responseBody)
-            return parsedResponse
+    fun getUsage(): Usage? {
+        val response = sendMsgToLsp(LspMessage.GetUsageMetrics, request = null)
+        return try {
+            val parsedResponse = mapper.readValue<Usage>(response.responseBody)
+            parsedResponse
         } catch (e: Exception) {
             logger.warn { "error parsing query response ${e.message}" }
-            return null
+            null
         }
     }
 
     fun updateIndex(filePath: String) {
-        if (!isIndexComplete.get()) return
-        logger.info { "project context: updating index for $filePath on port ${encoderServer.port}" }
-        val url = URL("http://localhost:${encoderServer.port}/updateIndex")
-        val payload = UpdateIndexRequestPayload(filePath)
-        val payloadJson = mapper.writeValueAsString(payload)
-        val encrypted = encoderServer.encrypt(payloadJson)
-        with(url.openConnection() as HttpURLConnection) {
-            setConnectionProperties(this)
-            setConnectionTimeout(this)
-            setConnectionRequest(this, encrypted)
-            val responseCode = responseCode
-            logger.debug { "project context update index response code: $responseCode for $filePath" }
-            return
-        }
+        val encrypted = encryptRequest(UpdateIndexRequest(filePath))
+        sendMsgToLsp(LspMessage.UpdateIndex, encrypted)
+    }
+
+    private fun recordIndexWorkspace(
+        duration: Double,
+        fileCount: Int = 0,
+        fileSize: Int = 0,
+        isSuccess: Boolean,
+        memoryUsage: Int? = 0,
+        cpuUsage: Int? = 0,
+        startUrl: String? = null,
+    ) {
+        AmazonqTelemetry.indexWorkspace(
+            project = null,
+            duration = duration,
+            amazonqIndexFileCount = fileCount.toLong(),
+            amazonqIndexFileSizeInMB = fileSize.toLong(),
+            success = isSuccess,
+            amazonqIndexMemoryUsageInMB = memoryUsage?.toLong(),
+            amazonqIndexCpuUsagePercentage = cpuUsage?.toLong(),
+            credentialStartUrl = startUrl
+        )
     }
 
     private fun setConnectionTimeout(connection: HttpURLConnection) {
@@ -277,7 +235,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         var currentTotalFileSize = 0L
         val featureDevSessionContext = FeatureDevSessionContext(project)
         val allFiles = mutableListOf<VirtualFile>()
-        project.guessProjectDir()?.let {
+        project.getBaseDirectories().forEach {
             VfsUtilCore.visitChildrenRecursively(
                 it,
                 object : VirtualFileVisitor<Unit>(NO_FOLLOW_SYMLINKS) {
@@ -325,6 +283,34 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
             }
         }
         return documents
+    }
+
+    private fun encryptRequest(r: LspRequest): String {
+        val payloadJson = mapper.writeValueAsString(r)
+        return encoderServer.encrypt(payloadJson)
+    }
+
+    private fun sendMsgToLsp(msgType: LspMessage, request: String?): LspResponse {
+        logger.info { "sending message: ${msgType.endpoint} to lsp on port ${encoderServer.port}" }
+        val url = URL("http://localhost:${encoderServer.port}/${msgType.endpoint}")
+
+        return with(url.openConnection() as HttpURLConnection) {
+            setConnectionProperties(this)
+            setConnectionTimeout(this)
+            request?.let { r ->
+                setConnectionRequest(this, r)
+            }
+            val responseCode = this.responseCode
+            logger.info { "receiving response for $msgType with responseCode $responseCode" }
+
+            val responseBody = if (responseCode == 200) {
+                this.inputStream.bufferedReader().use { reader -> reader.readText() }
+            } else {
+                ""
+            }
+
+            LspResponse(responseCode, responseBody)
+        }
     }
 
     override fun dispose() {
