@@ -13,7 +13,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableC
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.utils.isQExpired
 
 @Service
@@ -109,8 +108,7 @@ class CodeWhispererFeatureConfigService {
 
     fun getNewAutoTriggerUX(): Boolean = getFeatureValueForKey(NEW_AUTO_TRIGGER_UX).stringValue() == "TREATMENT"
 
-    // TODO: remove dev mode flag
-    fun getInlineCompletion(): Boolean = if (isDeveloperMode()) true else getFeatureValueForKey(INLINE_COMPLETION).boolValue()
+    fun getInlineCompletion(): Boolean = getFeatureValueForKey(INLINE_COMPLETION).stringValue() == "TREATMENT"
 
     // Get the feature value for the given key.
     // In case of a misconfiguration, it will return a default feature value of Boolean false.
@@ -121,9 +119,7 @@ class CodeWhispererFeatureConfigService {
     companion object {
         fun getInstance(): CodeWhispererFeatureConfigService = service()
         private const val TEST_FEATURE_NAME = "testFeature"
-
-        // TODO: update
-        private const val INLINE_COMPLETION = "inlineCompletion"
+        private const val INLINE_COMPLETION = "ProjectContextV2"
         private const val DATA_COLLECTION_FEATURE = "IDEProjectContextDataCollection"
         const val CUSTOMIZATION_ARN_OVERRIDE_NAME = "customizationArnOverride"
         private const val NEW_AUTO_TRIGGER_UX = "newAutoTriggerUX"
@@ -148,6 +144,11 @@ class CodeWhispererFeatureConfigService {
                 "CONTROL",
                 FeatureValue.builder().stringValue("CONTROL").build()
             ),
+            INLINE_COMPLETION to FeatureContext(
+                INLINE_COMPLETION,
+                "CONTROL",
+                FeatureValue.builder().stringValue("CONTROL").build()
+            )
         )
     }
 }
