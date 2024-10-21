@@ -3,8 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.workspace.context
 
-import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.any
 import com.github.tomakehurst.wiremock.client.WireMock.equalTo
 import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
