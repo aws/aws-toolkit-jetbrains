@@ -687,6 +687,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 sourceVendor = customerSelection.sourceVendor,
                 targetVendor = customerSelection.targetVendor,
                 sourceServerName = customerSelection.sourceServerName,
+                sqlMetadataZip = customerSelection.sqlMetadataZip,
             ),
         )
     }

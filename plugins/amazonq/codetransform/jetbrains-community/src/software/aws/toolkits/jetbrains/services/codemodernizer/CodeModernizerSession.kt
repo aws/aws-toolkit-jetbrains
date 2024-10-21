@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.codemodernizer
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.serviceContainer.AlreadyDisposedException
 import com.intellij.util.io.HttpRequests
 import kotlinx.coroutines.delay
@@ -63,12 +62,7 @@ import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.SSLHandshakeException
 
-const val ZIP_SOURCES_PATH = "sources"
-const val BUILD_LOG_PATH = "build-logs.txt"
-const val UPLOAD_ZIP_MANIFEST_VERSION = 1.0F
 const val MAX_ZIP_SIZE = 2000000000 // 2GB
-const val HIL_1P_UPGRADE_CAPABILITY = "HIL_1pDependency_VersionUpgrade"
-const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
 
 // constants for handling SDKClientException
 const val CONNECTION_REFUSED_ERROR: String = "Connection refused"
@@ -274,7 +268,7 @@ class CodeModernizerSession(
         } finally {
             telemetry.uploadProject(payloadSize, startTime, true, telemetryErrorMessage)
             if (payload != null) {
-                // TODO: revert
+                // TODO: revert this
                 notifyStickyInfo("zip path", payload.path)
                 // deleteUploadArtifact(payload)
             }

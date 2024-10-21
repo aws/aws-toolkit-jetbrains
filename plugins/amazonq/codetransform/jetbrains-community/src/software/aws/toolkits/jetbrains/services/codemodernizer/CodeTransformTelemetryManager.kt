@@ -145,7 +145,7 @@ class CodeTransformTelemetryManager(private val project: Project) {
     }
 
     fun getProjectHash(customerSelection: CustomerSelection) = Base64.getEncoder().encodeToString(
-        DigestUtils.sha256(customerSelection.configurationFile.toNioPath().toAbsolutePath().toString())
+        DigestUtils.sha256(customerSelection.configurationFile?.toNioPath()?.toAbsolutePath().toString())
     )
 
     /**
