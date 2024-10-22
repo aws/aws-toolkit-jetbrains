@@ -19,7 +19,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import software.aws.toolkits.jetbrains.core.coroutines.EDT
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.services.amazonq.project.EncoderServer
 import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
@@ -62,8 +62,9 @@ class ProjectContextControllerTest {
 
     private fun assertEncoderServerStarted() = runTest {
         mockConstruction(EncoderServer::class.java).use {
+            // TODO: figure out how to make this testScope work
 //            val cs = TestScope(context = StandardTestDispatcher()) // not works and the test never finish
-            val cs = CoroutineScope(EDT) // works
+            val cs = CoroutineScope(getCoroutineBgContext()) // works
 
             assertThat(it.constructed()).isEmpty()
             sut = ProjectContextController(project, cs)
