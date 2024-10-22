@@ -17,7 +17,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 
 @Service(Service.Level.PROJECT)
 class ProjectContextController(private val project: Project, private val cs: CoroutineScope) : Disposable {
@@ -26,9 +25,7 @@ class ProjectContextController(private val project: Project, private val cs: Cor
 
     init {
         cs.launch {
-            if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
-                encoderServer.downloadArtifactsAndStartServer()
-            }
+            encoderServer.downloadArtifactsAndStartServer()
         }
 
         project.messageBus.connect(this).subscribe(

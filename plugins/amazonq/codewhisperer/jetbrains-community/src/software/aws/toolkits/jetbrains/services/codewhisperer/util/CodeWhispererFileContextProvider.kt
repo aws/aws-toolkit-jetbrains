@@ -14,7 +14,9 @@ import com.intellij.psi.PsiFile
 import com.intellij.util.gist.GistManager
 import com.intellij.util.io.DataExternalizer
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
 import org.jetbrains.annotations.VisibleForTesting
@@ -39,6 +41,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.Supplemental
 import java.io.DataInput
 import java.io.DataOutput
 import java.util.Collections
+import kotlin.coroutines.coroutineContext
 
 private val contentRootPathProvider = CopyContentRootPathProvider()
 
@@ -140,7 +143,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 return@withTimeout supplementalContext?.let {
                     if (it.contents.isNotEmpty()) {
                         val logStr = buildString {
-                            append("Successfully fetched supplemental context with strategy ${it.strategy}.")
+                            append("Successfully fetched supplemental context with strategy ${it.strategy} with ${it.latency} ms")
                             it.contents.forEachIndexed { index, chunk ->
                                 append(
                                     """
@@ -180,7 +183,6 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
     }
 
     override suspend fun extractCodeChunksFromFiles(psiFile: PsiFile, fileProducers: List<suspend (PsiFile) -> List<VirtualFile>>): List<Chunk> {
-        val parseFilesStart = System.currentTimeMillis()
         val hasUsed = Collections.synchronizedSet(mutableSetOf<VirtualFile>())
         val chunks = mutableListOf<Chunk>()
 
@@ -196,13 +198,11 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 chunks.addAll(file.toCodeChunk(relativePath))
                 hasUsed.add(file)
                 if (chunks.size > CodeWhispererConstants.CrossFile.CHUNK_SIZE) {
-                    LOG.debug { "finish fetching ${CodeWhispererConstants.CrossFile.CHUNK_SIZE} chunks in ${System.currentTimeMillis() - parseFilesStart} ms" }
                     return chunks.take(CodeWhispererConstants.CrossFile.CHUNK_SIZE)
                 }
             }
         }
 
-        LOG.debug { "finish fetching ${CodeWhispererConstants.CrossFile.CHUNK_SIZE} chunks in ${System.currentTimeMillis() - parseFilesStart} ms" }
         return chunks.take(CodeWhispererConstants.CrossFile.CHUNK_SIZE)
     }
 
@@ -215,18 +215,42 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
         val query = generateQuery(targetContext)
 
-        val projectContext = if (CodeWhispererFeatureConfigService.getInstance().getInlineCompletion()) {
-            fetchProjectContext(query, psiFile, targetContext)
+        val projectContextDeferred = if (CodeWhispererFeatureConfigService.getInstance().getInlineCompletion()) {
+            withContext(coroutineContext) {
+                async {
+                    val t0 = System.currentTimeMillis()
+                    val r = fetchProjectContext(query, psiFile, targetContext)
+                    val t1 = System.currentTimeMillis()
+                    LOG.debug { "fetchProjectContext cost ${t1 - t0} ms" }
+
+                    r
+                }
+            }
         } else {
             null
         }
 
-        val openTabsContext = fetchOpentabsContext(query, psiFile, targetContext)
+        val openTabsContextDeferred = withContext(coroutineContext) {
+            async {
+                val t0 = System.currentTimeMillis()
+                val r = fetchOpentabsContext(query, psiFile, targetContext)
+                val t1 = System.currentTimeMillis()
+                LOG.debug { "fetchOpenTabsContext cost ${t1 - t0} ms" }
 
-        return if (projectContext == null || projectContext.contents.isEmpty()) {
-            openTabsContext
+                r
+            }
+        }
+
+        if (projectContextDeferred == null) {
+            return openTabsContextDeferred.await()
         } else {
-            projectContext
+            val projectContext = projectContextDeferred.await()
+            return if (projectContext.contents.isNotEmpty()) {
+                projectContext
+            } else {
+                val openTabsContext = openTabsContextDeferred.await()
+                openTabsContext
+            }
         }
     }
 
@@ -275,7 +299,6 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         // step 2: bm25 calculation
         val timeBeforeBm25 = System.currentTimeMillis()
         val top3Chunks: List<BM25Result> = BM250kapi(first60Chunks.map { it.content }).topN(query)
-        LOG.info { "Time ellapsed for BM25 algorithm: ${System.currentTimeMillis() - timeBeforeBm25} ms" }
 
         yield()
 
