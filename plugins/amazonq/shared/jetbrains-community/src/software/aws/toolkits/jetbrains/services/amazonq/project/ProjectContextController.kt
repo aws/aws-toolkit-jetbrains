@@ -9,21 +9,19 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 
 @Service(Service.Level.PROJECT)
 class ProjectContextController(private val project: Project, private val cs: CoroutineScope) : Disposable {
+    // TODO: Ideally we should inject dependencies via constructor for easier testing, refer to how [TelemetryService] inject publisher and batcher
     private val encoderServer: EncoderServer = EncoderServer(project)
     private val projectContextProvider: ProjectContextProvider = ProjectContextProvider(project, encoderServer, cs)
-    init {
-        cs.launch {
-            if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
-                encoderServer.downloadArtifactsAndStartServer()
-            }
-        }
+
+    val initJob: Job = cs.launch {
+        encoderServer.downloadArtifactsAndStartServer()
     }
 
     fun getProjectContextIndexComplete() = projectContextProvider.isIndexComplete.get()
