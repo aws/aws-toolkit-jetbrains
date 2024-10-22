@@ -336,7 +336,7 @@ class ProjectContextProviderTest {
     }
 
     @Test
-    fun `should return empty if timeout with 50ms`() {
+    fun `queryInline should throw if time elapsed is greater than 50ms`() {
         stubFor(
             any(urlPathEqualTo("/queryInlineProjectContext")).willReturn(
                 aResponse()
