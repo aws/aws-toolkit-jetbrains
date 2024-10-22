@@ -6,15 +6,19 @@ package software.aws.toolkits.jetbrains.services.telemetry.otel
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
-import com.intellij.platform.diagnostic.telemetry.impl.OpenTelemetryConfigurator
+import com.intellij.openapi.util.SystemInfoRt
 import com.intellij.platform.util.http.ContentType
 import com.intellij.platform.util.http.httpPost
+import io.opentelemetry.api.common.AttributeKey
+import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.exporter.internal.otlp.traces.TraceRequestMarshaler
 import io.opentelemetry.sdk.OpenTelemetrySdk
+import io.opentelemetry.sdk.resources.Resource
 import io.opentelemetry.sdk.trace.ReadWriteSpan
 import io.opentelemetry.sdk.trace.ReadableSpan
 import io.opentelemetry.sdk.trace.SdkTracerProvider
@@ -127,25 +131,33 @@ private object StdoutSpanProcessor : SpanProcessor {
 @Service
 class OTelService : Disposable {
     private val sdkDelegate = lazy {
-        val configurator = OpenTelemetryConfigurator(
-            sdkBuilder = OpenTelemetrySdk.builder(),
-        )
-
-        configurator.getConfiguredSdkBuilder()
+        OpenTelemetrySdk.builder()
             .setTracerProvider(
                 SdkTracerProvider.builder()
                     .addSpanProcessor(StdoutSpanProcessor)
-                    .setResource(configurator.resource)
+                    .setResource(
+                        Resource.create(
+                            Attributes.builder()
+                                .put(AttributeKey.stringKey("os.type"), SystemInfoRt.OS_NAME)
+                                .put(AttributeKey.stringKey("os.version"), SystemInfoRt.OS_VERSION)
+                                .put(AttributeKey.stringKey("host.arch"), System.getProperty("os.arch"))
+                                .build()
+                        )
+                    )
                     .build()
             )
             .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
             .build()
     }
-    val sdk: OpenTelemetrySdk by sdkDelegate
+    internal val sdk: OpenTelemetrySdk by sdkDelegate
 
     override fun dispose() {
         if (sdkDelegate.isInitialized()) {
             sdk.close()
         }
+    }
+
+    companion object {
+        fun getSdk() = service<OTelService>().sdk
     }
 }

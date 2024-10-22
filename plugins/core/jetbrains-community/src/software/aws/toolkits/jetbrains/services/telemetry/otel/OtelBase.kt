@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.telemetry.otel
 
-import com.intellij.platform.diagnostic.telemetry.helpers.useWithoutActiveScope
+import com.intellij.platform.diagnostic.telemetry.helpers.use as ijUse
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.Span
@@ -17,7 +17,6 @@ import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
 import software.aws.toolkits.jetbrains.services.telemetry.PluginResolver
 import java.time.Instant
 import java.util.concurrent.TimeUnit
-import kotlin.use
 
 val AWS_PRODUCT_CONTEXT_KEY = ContextKey.named<AWSProduct>("pluginDescriptor")
 private val PLUGIN_ATTRIBUTE_KEY = AttributeKey.stringKey("plugin")
@@ -33,10 +32,8 @@ abstract class AbstractSpanBuilder<Builder : AbstractSpanBuilder<Builder, Span>,
      * @inheritdoc
      */
     inline fun<T> use(operation: (Span) -> T): T =
-        startSpan().useWithoutActiveScope { span ->
-            (span as Span).makeCurrent().use {
-                operation(span)
-            }
+        startSpan().ijUse { span ->
+            operation(span as Span)
         }
 
     protected var parent: Context? = null
@@ -124,9 +121,10 @@ abstract class AbstractSpanBuilder<Builder : AbstractSpanBuilder<Builder, Span>,
 
         val contextValue = parent.get(AWS_PRODUCT_CONTEXT_KEY)
         if (contextValue == null) {
-            val s = Span.fromContextOrNull(parent)
+            // FIX_WHEN_MIN_IS_243: Kotlin compiler can't figure out difference between class/type parameter until 2.x
+            val s = io.opentelemetry.api.trace.Span.fromContextOrNull(parent)
             if (s is AbstractBaseSpan) {
-                setParent(s.context.with(Span.fromContext(parent)))
+                setParent(s.context.with(io.opentelemetry.api.trace.Span.fromContext(parent)))
             } else {
                 setParent(parent.with(AWS_PRODUCT_CONTEXT_KEY, resolvePluginName()))
             }
@@ -144,6 +142,16 @@ abstract class AbstractSpanBuilder<Builder : AbstractSpanBuilder<Builder, Span>,
 }
 
 abstract class AbstractBaseSpan(internal val context: Context, private val delegate: Span) : Span by delegate {
+    /**
+     * Same as [com.intellij.platform.diagnostic.telemetry.helpers.use] except downcasts to specific subclass of [BaseSpan]
+     *
+     * @inheritdoc
+     */
+    inline fun<T> use(operation: (Span) -> T): T =
+        ijUse { span ->
+            operation(span as Span)
+        }
+
     fun metadata(key: String, value: String) = setAttribute(key, value)
 
     override fun makeCurrent(): Scope =

@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.credentials.sso
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.ApplicationRule
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -93,6 +94,13 @@ class SsoCredentialProviderTest {
         assertThatThrownBy { sut.resolveCredentials() }.isNotNull()
 
         verify(ssoAccessTokenProvider).invalidate()
+    }
+
+    @Test
+    fun aaaaa() {
+        ApplicationManager.getApplication().executeOnPooledThread {
+            println(Thread.currentThread().getContextClassLoader())
+        }.get()
     }
 
     private fun createSsoResponse(expirationTime: Instant) {
