@@ -13,7 +13,6 @@ import com.intellij.openapi.editor.actionSystem.EditorActionManager
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.IdeBorderFactory
-import com.intellij.ui.components.JBTextArea
 import icons.AwsIcons
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_BUTTON_BORDER
 import software.aws.toolkits.resources.AmazonQBundle.message
@@ -63,17 +62,6 @@ class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() 
         font = font.deriveFont(popupButtonFontSize)
     }
 
-    private val errorLabel = JBTextArea("").apply {
-        font = font.deriveFont(popupTextAreaFontSize)
-        lineWrap = true
-        wrapStyleWord = true
-        isOpaque = false
-    }
-
-    private val errorPanel = JPanel(BorderLayout()).apply {
-        add(errorLabel, BorderLayout.CENTER)
-        border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
-    }
 
     private val inputPanel = JPanel(BorderLayout()).apply {
         border = BorderFactory.createEmptyBorder(10, 10, 5, 10)
@@ -165,13 +153,6 @@ class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() 
         revalidate()
     }
 
-    fun setErrorMessage(text: String) {
-        errorLabel.text = text
-        add(errorPanel, BorderLayout.CENTER)
-        remove(inputPanel)
-        remove(bottomPanel)
-        revalidate()
-    }
 
     fun setLabel(text: String) {
         textLabel.text = text

@@ -68,7 +68,7 @@ class InlineChatPopupFactory(
                             errorMessage = submitHandler(prompt, selectedCode, selectedLineStart, editor)
                         }
                         if (errorMessage.isNotEmpty()) {
-                            setErrorMessage(errorMessage)
+                            setLabel(errorMessage)
                             revalidate()
                         } else {
                             val acceptAction = {
