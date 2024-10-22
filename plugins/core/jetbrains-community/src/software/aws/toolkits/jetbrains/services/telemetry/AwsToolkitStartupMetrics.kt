@@ -10,11 +10,8 @@ import software.aws.toolkits.telemetry.SessionTelemetry
 
 class AwsToolkitStartupMetrics : ProjectActivity {
     override suspend fun execute(project: Project) {
-        RunOnceUtil.runOnceForApp(taskId) {
+        RunOnceUtil.runOnceForApp(this::class.qualifiedName.toString()) {
             SessionTelemetry.start(project)
         }
-    }
-    private companion object {
-        const val taskId = "software.aws.toolkits.jetbrains.services.telemetry.AwsToolkitStartupMetrics"
     }
 }
