@@ -11,6 +11,7 @@ import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.util.SystemInfoRt
 import com.intellij.platform.util.http.ContentType
 import com.intellij.platform.util.http.httpPost
+import com.intellij.serviceContainer.NonInjectable
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
@@ -129,12 +130,19 @@ private object StdoutSpanProcessor : SpanProcessor {
 }
 
 @Service
-class OTelService : Disposable {
+class OTelService @NonInjectable internal constructor(spanProcessors: List<SpanProcessor>): Disposable {
+    @Suppress("unused")
+    constructor() : this(listOf(StdoutSpanProcessor))
+
     private val sdkDelegate = lazy {
         OpenTelemetrySdk.builder()
             .setTracerProvider(
                 SdkTracerProvider.builder()
-                    .addSpanProcessor(StdoutSpanProcessor)
+                    .apply {
+                        spanProcessors.forEach {
+                            addSpanProcessor(it)
+                        }
+                    }
                     .setResource(
                         Resource.create(
                             Attributes.builder()
