@@ -20,7 +20,7 @@ tasks.withType<PatchPluginXmlTask>().configureEach {
 intellijPlatform {
     instrumentCode = false
 
-    verifyPlugin {
+    pluginVerification {
         ides {
             // recommended() appears to resolve latest EAP for a product?
             ide(provider { IntelliJPlatformType.IntellijIdeaCommunity }, toolkitIntelliJ.version())
@@ -62,14 +62,6 @@ dependencies {
             create(type, version, useInstaller = false)
             jetbrainsRuntime()
         }
-    }
-}
-
-configurations {
-    runtimeClasspath {
-        exclude(group = "com.fasterxml.jackson.core")
-        exclude(group = "com.fasterxml.jackson.module", "jackson-module-kotlin")
-        exclude(group = "com.fasterxml.jackson.dataformat", "jackson-dataformat-yaml")
     }
 }
 
