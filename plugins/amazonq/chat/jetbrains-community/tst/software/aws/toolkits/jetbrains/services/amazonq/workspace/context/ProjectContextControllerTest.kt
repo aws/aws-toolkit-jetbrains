@@ -12,7 +12,6 @@ import com.intellij.testFramework.replaceService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.Mockito.mockConstruction
@@ -31,8 +30,11 @@ class ProjectContextControllerTest {
     val project: Project
         get() = projectExtension.project
 
-    @BeforeEach
-    fun setup() {}
+    private companion object {
+        @JvmField
+        @RegisterExtension
+        val projectExtension = ProjectExtension()
+    }
 
     @Test
     fun `should start encoderServer if chat project context is disabled`(@TestDisposable disposable: Disposable) = runTest {
@@ -72,11 +74,5 @@ class ProjectContextControllerTest {
             val encoderServer = it.constructed().first()
             verify(encoderServer, times(1)).downloadArtifactsAndStartServer()
         }
-    }
-
-    private companion object {
-        @JvmField
-        @RegisterExtension
-        val projectExtension = ProjectExtension()
     }
 }
