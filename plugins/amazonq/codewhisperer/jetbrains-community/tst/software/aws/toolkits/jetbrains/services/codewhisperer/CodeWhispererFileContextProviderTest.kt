@@ -13,6 +13,8 @@ import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
@@ -27,6 +29,7 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.Mockito.mockConstruction
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.project.EncoderServer
@@ -52,6 +55,7 @@ import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtu
 import software.aws.toolkits.jetbrains.utils.rules.addClass
 import software.aws.toolkits.jetbrains.utils.rules.addModule
 import software.aws.toolkits.jetbrains.utils.rules.addTestClass
+import kotlin.test.assertNotNull
 
 class CodeWhispererFileContextProviderTest {
     @JvmField
@@ -88,6 +92,29 @@ class CodeWhispererFileContextProviderTest {
 
         mockProjectContext = mock()
         project.replaceService(ProjectContextController::class.java, mockProjectContext, disposableRule.disposable)
+    }
+
+    @Test
+    fun `extractSupplementalFileContext should timeout 50ms`() = runTest {
+        featureConfigService.stub { on { getInlineCompletion() } doReturn false }
+        sut = spy(sut)
+
+        val files = NaiveSampleCase.setupFixture(fixture)
+        val queryPsi = files[0]
+        val mockFileContext = aFileContextInfo(CodeWhispererJava.INSTANCE)
+
+        sut.stub {
+            runBlocking {
+                doAnswer {
+                    runBlocking { delay(100) }
+                    aSupplementalContextInfo()
+                }.whenever(sut).fetchOpenTabsContext(any(), any(), any())
+            }
+        }
+
+        val result = sut.extractSupplementalFileContext(queryPsi, mockFileContext, 50L)
+        assertNotNull(result)
+        assertThat(result.isProcessTimeout).isTrue
     }
 
     @Test
