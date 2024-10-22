@@ -180,7 +180,7 @@ fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {
             } else {
                 fullNameNodeInfo = fullNameNodeInfo as List<Map<*, *>>
             }
-            fullNameNodeInfo.forEach{ node ->
+            fullNameNodeInfo.forEach { node ->
                 if ((node["typeNode"] as String).lowercase() == "schema") {
                     schemaNames.add((node["nameNode"] as String).uppercase()) // user will choose one later
                 }
