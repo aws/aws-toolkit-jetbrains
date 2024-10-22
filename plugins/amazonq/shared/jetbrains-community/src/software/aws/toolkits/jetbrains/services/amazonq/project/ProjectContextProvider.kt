@@ -54,7 +54,6 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
-
     data class FileCollectionResult(
         val files: List<String>,
         val fileSize: Int,
@@ -285,7 +284,6 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
         return documents
     }
-
 
     private fun encryptRequest(r: LspRequest): String {
         val payloadJson = mapper.writeValueAsString(r)
