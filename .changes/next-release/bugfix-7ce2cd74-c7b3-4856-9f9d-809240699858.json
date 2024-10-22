@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fix issue where the plugin can't read SSO tokens from disk / always returns 'Unable to load client registration'"
-}
