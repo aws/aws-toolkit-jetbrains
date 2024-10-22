@@ -297,7 +297,6 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
         // BM250 only take list of string as argument
         // step 2: bm25 calculation
-        val timeBeforeBm25 = System.currentTimeMillis()
         val top3Chunks: List<BM25Result> = BM250kapi(first60Chunks.map { it.content }).topN(query)
 
         yield()
