@@ -115,15 +115,15 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
         }
     }
 
-    fun handleProgressStateChanged(newState: TransformationStatus, transformationPlan: TransformationPlan?, jdkVersion: JavaSdkVersion, transformationType: CodeTransformType) {
+    fun handleProgressStateChanged(newState: TransformationStatus, plan: TransformationPlan?, jdk: JavaSdkVersion, transformationType: CodeTransformType) {
         val currentState = statusTreePanel.getCurrentElements()
         val loadingPanelText: String
         // show the details panel when there are progress updates
         // otherwise it would show an empty panel
         val backendProgressStepsAvailable = (
-            transformationPlan != null &&
-                transformationPlan.hasTransformationSteps() &&
-                haveProgressUpdates(transformationPlan)
+            plan != null &&
+                plan.hasTransformationSteps() &&
+                haveProgressUpdates(plan)
             )
 
         fun maybeAdd(stepId: ProgressStepId, string: String) {
@@ -191,11 +191,11 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
         val statuses: List<BuildProgressStepTreeItem> = if (currentState.isEmpty()) {
             defaultProgressData().toList()
         } else {
-            if (backendProgressStepsAvailable && transformationPlan != null) {
+            if (backendProgressStepsAvailable && plan != null) {
                 currentBuildingTransformationStep = newBuildingTransformationStep
                 // skip step 0 (contains supplemental info)
-                newBuildingTransformationStep = transformationPlan.transformationSteps().size - 1
-                val transformationPlanSteps = transformationPlan.transformationSteps()?.drop(1)?.map {
+                newBuildingTransformationStep = plan.transformationSteps().size - 1
+                val transformationPlanSteps = plan.transformationSteps()?.drop(1)?.map {
                     getUpdatedBuildProgressStepTreeItem(it)
                 }
                 transformationPlanSteps?.sortedBy { it.transformationStepId }
@@ -217,17 +217,29 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
             }
 
             TransformationStatus.PREPARING -> {
-                loadingPanelText = if (transformationType != CodeTransformType.SQL_CONVERSION) message("codemodernizer.toolwindow.scan_in_progress.building", jdkVersion.description) else message("codemodernizer.toolwindow.scan_in_progress.planning")
+                loadingPanelText = if (transformationType != CodeTransformType.SQL_CONVERSION) {
+                    message("codemodernizer.toolwindow.scan_in_progress.building", jdk.description)
+                } else {
+                    message("codemodernizer.toolwindow.scan_in_progress.planning")
+                }
                 statuses.update(BuildStepStatus.DONE, ProgressStepId.UPLOADING)
             }
 
             TransformationStatus.PREPARED -> {
-                loadingPanelText = if (transformationType != CodeTransformType.SQL_CONVERSION) message("codemodernizer.toolwindow.scan_in_progress.building", jdkVersion.description) else message("codemodernizer.toolwindow.scan_in_progress.planning")
+                loadingPanelText = if (transformationType != CodeTransformType.SQL_CONVERSION) {
+                    message("codemodernizer.toolwindow.scan_in_progress.building", jdk.description)
+                } else {
+                    message("codemodernizer.toolwindow.scan_in_progress.planning")
+                }
                 statuses.update(BuildStepStatus.DONE, ProgressStepId.BUILDING)
             }
 
             TransformationStatus.PLANNING -> {
-                loadingPanelText = if (transformationType != CodeTransformType.SQL_CONVERSION) message("codemodernizer.toolwindow.scan_in_progress.building", jdkVersion.description) else message("codemodernizer.toolwindow.scan_in_progress.planning")
+                loadingPanelText = if (transformationType != CodeTransformType.SQL_CONVERSION) {
+                    message("codemodernizer.toolwindow.scan_in_progress.building", jdk.description)
+                } else {
+                    message("codemodernizer.toolwindow.scan_in_progress.planning")
+                }
                 statuses.update(BuildStepStatus.DONE, ProgressStepId.BUILDING)
             }
 
@@ -291,8 +303,8 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
                 this.remove(loadingPanel)
                 setProgressStepsDefaultUI()
             }
-            if (transformationPlan != null) {
-                buildProgressStepDetailsPanel.setTransformationPlan(transformationPlan)
+            if (plan != null) {
+                buildProgressStepDetailsPanel.setTransformationPlan(plan)
                 // automatically jump to the next step's right details' panel only when the current step is finished and next step starts
                 if (newBuildingTransformationStep == 1 || currentBuildingTransformationStep != newBuildingTransformationStep) {
                     buildProgressStepDetailsPanel.updateListData(newBuildingTransformationStep)

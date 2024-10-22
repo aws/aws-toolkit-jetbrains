@@ -39,7 +39,8 @@ class CodeTransformChatHelper(
 
     suspend fun sendChatInputEnabledMessage(tabId: String, enabled: Boolean) = messagePublisher.publish(CodeTransformChatInputEnabledMessage(tabId, enabled))
 
-    suspend fun sendUpdatePlaceholderMessage(tabId: String, newPlaceholder: String) = messagePublisher.publish(CodeTransformUpdatePlaceholderMessage(tabId, newPlaceholder))
+    suspend fun sendUpdatePlaceholderMessage(tabId: String, newPlaceholder: String) =
+        messagePublisher.publish(CodeTransformUpdatePlaceholderMessage(tabId, newPlaceholder))
 
     suspend fun addNewMessage(
         content: CodeTransformChatMessageContent,

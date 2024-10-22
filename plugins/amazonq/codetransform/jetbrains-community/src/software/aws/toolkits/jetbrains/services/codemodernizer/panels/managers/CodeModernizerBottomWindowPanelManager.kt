@@ -239,7 +239,7 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
         return actionManager.createActionToolbar(ACTION_PLACE, group, false)
     }
 
-    fun handleJobTransition(new: TransformationStatus, plan: TransformationPlan?, sourceJavaVersion: JavaSdkVersion, transformationType: CodeTransformType) = invokeLater {
+    fun handleJobTransition(new: TransformationStatus, plan: TransformationPlan?, sourceJdk: JavaSdkVersion, transformType: CodeTransformType) = invokeLater {
         if (new in listOf(
                 TransformationStatus.PLANNED,
                 TransformationStatus.TRANSFORMING,
@@ -252,7 +252,7 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
             addPlanToBanner()
         }
         buildProgressSplitterPanelManager.apply {
-            handleProgressStateChanged(new, plan, sourceJavaVersion, transformationType)
+            handleProgressStateChanged(new, plan, sourceJdk, transformType)
             if (timer == null) {
                 timer = Timer()
                 timer?.scheduleAtFixedRate(
@@ -301,11 +301,11 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
         }
     }
 
-    fun setResumeJobUI(currentJobResult: TransformationJob, plan: TransformationPlan?, sourceJavaVersion: JavaSdkVersion, transformationType: CodeTransformType) {
+    fun setResumeJobUI(currentJobResult: TransformationJob, plan: TransformationPlan?, sourceJdk: JavaSdkVersion, transformationType: CodeTransformType) {
         setJobRunningUI()
         buildProgressSplitterPanelManager.apply {
             reset()
-            handleProgressStateChanged(currentJobResult.status(), plan, sourceJavaVersion, transformationType)
+            handleProgressStateChanged(currentJobResult.status(), plan, sourceJdk, transformationType)
         }
     }
 

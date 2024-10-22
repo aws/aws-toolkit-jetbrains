@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.controller
 
-import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule
-import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileChooser.FileChooser
@@ -12,10 +10,8 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.util.io.FileUtil.createTempDirectory
-import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -23,6 +19,7 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthFollowUpType
@@ -92,7 +89,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_SKIP_UNIT_TESTS
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.SqlMetadataValidationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.UploadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
@@ -107,17 +103,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
-import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
-import java.io.BufferedReader
-import java.io.File
-import java.io.FileInputStream
-import java.io.InputStreamReader
-import java.nio.charset.StandardCharsets
-import java.util.zip.ZipFile
-import java.util.zip.ZipInputStream
-import kotlin.io.path.Path
 
 class CodeTransformChatController(
     private val context: AmazonQAppInitContext,
@@ -163,7 +150,7 @@ class CodeTransformChatController(
         // Publish a metric when transform is first initiated from chat prompt.
         telemetry.initiateTransform()
 
-        val isSqlTransformReady = false // feature flag for SQL conversions
+        val isSqlTransformReady = true // feature flag for SQL conversions
 
         if (isSqlTransformReady) {
             this.getUserObjective(message.tabId)
@@ -335,7 +322,7 @@ class CodeTransformChatController(
             val metadataValidationResult = validateSctMetadata(sctFile)
 
             if (!metadataValidationResult.valid) {
-                CoroutineScope(Dispatchers.Main).launch {
+                CoroutineScope(EDT).launch {
                     codeTransformChatHelper.run {
                         addNewMessage(buildSQLMetadataValidationErrorChatContent(metadataValidationResult.errorReason))
                         addNewMessage(buildStartNewTransformFollowup())
@@ -344,7 +331,7 @@ class CodeTransformChatController(
                 return@runInEdt
             }
 
-            CoroutineScope(Dispatchers.Main).launch {
+            CoroutineScope(EDT).launch {
                 codeTransformChatHelper.run {
                     addNewMessage(buildSQLMetadataValidationSuccessIntroChatContent())
                     addNewMessage(buildSQLMetadataValidationSuccessDetailsChatContent(metadataValidationResult))

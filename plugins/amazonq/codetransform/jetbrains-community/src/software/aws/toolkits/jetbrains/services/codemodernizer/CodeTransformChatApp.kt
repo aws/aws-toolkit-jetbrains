@@ -160,7 +160,8 @@ class CodeTransformChatApp : AmazonQApp {
             is IncomingCodeTransformMessage.Transform -> inboundAppMessagesHandler.processTransformQuickAction(message)
             is IncomingCodeTransformMessage.CodeTransformStart -> inboundAppMessagesHandler.processCodeTransformStartAction(message)
             is IncomingCodeTransformMessage.CodeTransformSelectSQLMetadata -> inboundAppMessagesHandler.processCodeTransformSelectSQLMetadataAction(message)
-            is IncomingCodeTransformMessage.CodeTransformSelectSQLModuleSchema -> inboundAppMessagesHandler.processCodeTransformSelectSQLModuleSchemaAction(message)
+            is IncomingCodeTransformMessage.CodeTransformSelectSQLModuleSchema ->
+                inboundAppMessagesHandler.processCodeTransformSelectSQLModuleSchemaAction(message)
             is IncomingCodeTransformMessage.CodeTransformCancel -> inboundAppMessagesHandler.processCodeTransformCancelAction(message)
             is IncomingCodeTransformMessage.CodeTransformStop -> inboundAppMessagesHandler.processCodeTransformStopAction(message.tabId)
             is IncomingCodeTransformMessage.ChatPrompt -> inboundAppMessagesHandler.processChatPromptMessage(message)
