@@ -1,0 +1,8 @@
+{
+  "date" : "2024-10-22",
+  "version" : "3.34",
+  "entries" : [ {
+    "type" : "bugfix",
+    "description" : "Fix issue where the plugin can't read SSO tokens from disk / always returns 'Unable to load client registration'"
+  } ]
+}
