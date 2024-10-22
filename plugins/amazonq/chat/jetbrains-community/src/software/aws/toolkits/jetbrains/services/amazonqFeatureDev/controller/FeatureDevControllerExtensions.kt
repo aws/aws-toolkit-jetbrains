@@ -162,38 +162,37 @@ private suspend fun FeatureDevController.disposeToken(
     remainingIterations: Number?,
     totalIterations: Number?,
 ) {
-
-    if (remainingIterations !== null &&  remainingIterations.toInt() <= 0) {
+    if (remainingIterations !== null && remainingIterations.toInt() <= 0) {
         messenger.sendAnswer(
             tabId = tabId,
             messageType = FeatureDevMessageType.Answer,
             message =
             message(
-                "amazonqFeatureDev.code_generation.stopped_code_generation_no_iterations"
+                "amazonqFeatureDev.code_generation.stopped_code_generation_no_iterations",
             ),
         )
-        //I stopped generating your code. You don't have more iterations left, however, you can start a new session
+        // I stopped generating your code. You don't have more iterations left, however, you can start a new session
         messenger.sendSystemPrompt(
             tabId = tabId,
-            followUp = listOf(
+            followUp =
+            listOf(
                 FollowUp(
                     pillText = message("amazonqFeatureDev.follow_up.new_task"),
                     type = FollowUpTypes.NEW_TASK,
-                    status = FollowUpStatusType.Info
+                    status = FollowUpStatusType.Info,
                 ),
                 FollowUp(
                     pillText = message("amazonqFeatureDev.follow_up.close_session"),
                     type = FollowUpTypes.CLOSE_SESSION,
-                    status = FollowUpStatusType.Info
-                )
-            )
+                    status = FollowUpStatusType.Info,
+                ),
+            ),
         )
         messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = false)
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
 
         return
     }
-
 
     messenger.sendAnswer(
         tabId = tabId,
