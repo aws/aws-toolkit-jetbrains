@@ -82,23 +82,23 @@ fun Project.getSupportedModules(supportedJavaMappings: Map<JavaSdkVersion, Set<J
 // return the first file or directory found inside each open Java module, so that user can select a Module for us to ZIP
 // does not strictly need to return the first file or directory found, any one would work fine
 fun Project.getJavaModules() = this.modules.flatMap { module ->
-        val rootManager = ModuleRootManager.getInstance(module)
-        if (rootManager.sdk?.sdkType?.name?.lowercase()?.contains("java") == true) {
-            val contentRoots = rootManager.contentRoots
-            if (contentRoots.isNotEmpty()) {
-                val firstContentRoot = contentRoots.first()
-                val children = firstContentRoot.children
-                if (children.isNotEmpty()) {
-                    listOf(children.first())
-                } else {
-                    emptyList()
-                }
+    val rootManager = ModuleRootManager.getInstance(module)
+    if (rootManager.sdk?.sdkType?.name?.lowercase()?.contains("java") == true) {
+        val contentRoots = rootManager.contentRoots
+        if (contentRoots.isNotEmpty()) {
+            val firstContentRoot = contentRoots.first()
+            val children = firstContentRoot.children
+            if (children.isNotEmpty()) {
+                listOf(children.first())
             } else {
                 emptyList()
             }
         } else {
             emptyList()
         }
+    } else {
+        emptyList()
     }
+}
 
 fun Project.getModuleOrProjectNameForFile(file: VirtualFile?) = file?.let { ModuleUtil.findModuleForFile(it, this)?.name } ?: this.name

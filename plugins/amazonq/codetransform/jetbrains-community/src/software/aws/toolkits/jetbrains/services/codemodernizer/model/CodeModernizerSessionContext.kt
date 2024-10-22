@@ -199,7 +199,7 @@ data class CodeModernizerSessionContext(
                 val files = root?.let {
                     VfsUtil.collectChildrenRecursively(it).filter { child ->
                         val childPath = Path(child.path)
-                        !child.isDirectory && directoriesToExclude.none { childPath.startsWith(it.toPath()) }
+                        !child.isDirectory && directoriesToExclude.none { dir -> childPath.startsWith(dir.toPath()) }
                     }
                 }
                 val dependencyFiles = if (depDirectory != null) {
@@ -217,8 +217,11 @@ data class CodeModernizerSessionContext(
                     if (sqlMetadataZip != null) {
                         // doing a SQL conversion, not language upgrade
                         val sctFileName = sqlMetadataZip.listFiles { file -> file.name.endsWith(".sct") }.first().name
-                        manifest = ZipManifest(requestedConversions = RequestedConversions(
-                            SQLConversion(sourceVendor, targetVendor, schema, sourceServerName, sctFileName)))
+                        manifest = ZipManifest(
+                            requestedConversions = RequestedConversions(
+                                SQLConversion(sourceVendor, targetVendor, schema, sourceServerName, sctFileName)
+                            )
+                        )
                     }
                     mapper.writeValueAsString(manifest)
                         .byteInputStream()

@@ -312,13 +312,13 @@ fun buildUserInputLanguageUpgradeChatContent(project: Project, validationResult:
 }
 
 fun buildUserInputSQLConversionMetadataChatContent() = CodeTransformChatMessageContent(
-        message = message("codemodernizer.chat.form.user_selection.item.choose_sql_metadata_file"),
-        buttons = listOf(
-            confirmUserSelectionSQLConversionMetadataButton,
-            cancelUserSelectionButton,
-        ),
-        type = CodeTransformChatMessageType.FinalizedAnswer,
-    )
+    message = message("codemodernizer.chat.form.user_selection.item.choose_sql_metadata_file"),
+    buttons = listOf(
+        confirmUserSelectionSQLConversionMetadataButton,
+        cancelUserSelectionButton,
+    ),
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+)
 
 fun buildModuleSchemaFormChatContent(project: Project, javaModules: List<VirtualFile>, schemaOptions: Set<String>) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
@@ -353,7 +353,7 @@ fun buildSQLMetadataValidationSuccessDetailsChatContent(validationResult: SqlMet
         | **Source DB**             |   ${validationResult.sourceVendor}   |
         | **Target DB**             |   ${validationResult.targetVendor} |
         | **Host**             |   ${validationResult.sourceServerName} |
-""".trimIndent(),
+    """.trimIndent(),
 )
 
 fun buildSQLMetadataValidationErrorChatContent(errorReason: String) = CodeTransformChatMessageContent(
