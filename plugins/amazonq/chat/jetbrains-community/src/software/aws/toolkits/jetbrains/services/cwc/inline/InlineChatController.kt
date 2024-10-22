@@ -39,7 +39,6 @@ import org.apache.commons.text.StringEscapeUtils
 import software.amazon.awssdk.services.codewhispererruntime.model.InlineChatUserDecision
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForQ
@@ -84,7 +83,7 @@ class InlineChatController(
     private var currentSelectionRange: RangeMarker? = null
 
     init {
-        InlineChatFileListener(project, this).apply {
+        InlineChatFileListener(project).apply {
             project.messageBus.connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this)
         }
     }
@@ -270,7 +269,7 @@ class InlineChatController(
         .replace("=&gt;", "=>")
 
     private fun processNewCode(editor: Editor, line: Int, code: String, prevMessage: String) {
-        logger.info("received inline chat recommendation with code: \n $code")
+        logger.debug { "received inline chat recommendation with code: \n $code" }
         var insertLine = line
         var linesToAdd = emptyList<String>()
         val prevLines = prevMessage.split("\n")
@@ -358,8 +357,6 @@ class InlineChatController(
                 partialAcceptActions.clear()
 
                 val recommendation = unescape(event.message)
-                logger.info { "Received Inline chat code recommendation:\n ```$recommendation``` \nfrom requestId: ${event.messageId}" }
-                logger.info { "Original selected code:\n ```$selectedCode```" }
                 if (selectedCode == recommendation) {
                     throw Exception("No suggestions from Q; please try a different instruction.")
                 }
@@ -564,7 +561,7 @@ class InlineChatController(
         prompt += "<instruction>$message</instruction>\n"
         prompt += "<context>${if (editor.document.text.isNotEmpty()) editor.document.text.take(8000) else "file written in $language"}</context>"
 
-        logger.info { "Inline chat prompt: $prompt" }
+        logger.debug { "Inline chat prompt: $prompt" }
 
         val contextExtractor = ActiveFileContextExtractor.create(fqnWebviewAdapter = null, project = project)
         val fileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ChatMessage)
@@ -603,7 +600,7 @@ class InlineChatController(
                         try {
                             processNewCode(editor, selectedLineStart, unescape(event.message), prevMessage)
                         } catch (e: Exception) {
-                            logger.info("error streaming chat message to editor: ${e.stackTraceToString()}")
+                            logger.warn { "error streaming chat message to editor: ${e.stackTraceToString()}" }
                             errorMessage = e.message ?: "Error processing request; please try again."
                         }
                         prevMessage = unescape(event.message)
@@ -621,7 +618,7 @@ class InlineChatController(
             try {
                 processChatDiff(selectedCode, finalMessage, editor, selectionRange!!)
             } catch (e: Exception) {
-                logger.info("error precessing chat diff in editor: ${e.stackTraceToString()}")
+                logger.warn {"error precessing chat diff in editor: ${e.stackTraceToString()}" }
                 errorMessage = "Error processing request; please try again."
             }
         }

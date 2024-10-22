@@ -30,7 +30,6 @@ import javax.swing.SwingConstants
 class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() {
     private var submitClickListener: (() -> Unit)? = null
     private val popupButtonFontSize = 14f
-    private val popupTextAreaFontSize = 12f
     val popupWidth = 600
     val popupHeight = 90
     private val popupButtonHeight = 30
