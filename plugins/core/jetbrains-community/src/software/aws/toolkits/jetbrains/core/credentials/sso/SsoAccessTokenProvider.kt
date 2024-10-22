@@ -393,10 +393,15 @@ class SsoAccessTokenProvider(
             throw InvalidClientException.builder().message(message).cause(e).build()
         }
 
+        var isExpired = currentToken.expiresAt.isBefore(Instant.now(clock))
+        if (isExpired){
+            registration = reauthExpiredRegistration(currentToken)
+            isExpired = accessToken().expiresAt.isBefore(Instant.now(clock))
+        }
         if (registration == null) {
             val (message, reason) = when {
-                currentToken.expiresAt.isBefore(Instant.now(clock)) -> Pair(
-                    "Client registration has expired",
+                isExpired -> Pair(
+                    "Client registration has expired and reauth failed",
                     "Expired client registration"
                 )
                 else -> Pair(
@@ -407,7 +412,7 @@ class SsoAccessTokenProvider(
             sendRefreshCredentialsMetric(
                 currentToken,
                 reason = reason,
-                reasonDesc = "Step: Load Registration - $message",
+                reasonDesc = "Step: Check Registration - $message",
                 result = Result.Failed
             )
             throw InvalidClientException.builder().message(message).build()
@@ -534,6 +539,28 @@ class SsoAccessTokenProvider(
                 reasonDesc = e.message,
                 source = "SsoAccessTokenProvider.invalidateClientRegistration"
             )
+        }
+    }
+
+    private fun reauthExpiredRegistration(expiredToken: AccessToken): ClientRegistration? {
+        when (expiredToken) {
+            is DeviceAuthorizationGrantToken -> registerDAGClient()
+            is PKCEAuthorizationGrantToken -> registerPkceClient()
+        }
+        try {
+            return when (expiredToken) {
+                is DeviceAuthorizationGrantToken -> loadDagClientRegistration()
+                is PKCEAuthorizationGrantToken -> loadPkceClientRegistration()
+            }
+        } catch (e: Exception) {
+            val message = "Error loading client registration: ${e.message}"
+            sendRefreshCredentialsMetric(
+                expiredToken,
+                reason = "Failed to load client registration",
+                reasonDesc = "Step: Load Registration after reauth - $message",
+                result = Result.Failed
+            )
+            throw InvalidClientException.builder().message(message).cause(e).build()
         }
     }
 
