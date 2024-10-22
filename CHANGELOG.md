@@ -1,3 +1,6 @@
+# _3.34_ (2024-10-22)
+- **(Bug Fix)** Fix issue where the plugin can't read SSO tokens from disk / always returns 'Unable to load client registration'
+
 # _3.33_ (2024-10-17)
 - **(Feature)** Add support for 2024.3
 - **(Bug Fix)** `@workspace` cannot properly locate certain folders for certain project setup
