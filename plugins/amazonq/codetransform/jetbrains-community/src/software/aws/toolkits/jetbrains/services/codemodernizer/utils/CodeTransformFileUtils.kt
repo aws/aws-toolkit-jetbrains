@@ -156,7 +156,7 @@ fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {
         val sourceDbServer = sources["DbServer"] as Map<*, *>
         val sourceVendor = (sourceDbServer["vendor"] as String).trim().uppercase()
         if (sourceVendor != "ORACLE") {
-            return SqlMetadataValidationResult(false, "Sorry, your .sct metadata file appears to be invalid; the source DB must be Oracle.")
+            return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.invalid_source_db"))
         }
 
         val sourceServerName = (sourceDbServer["name"] as String).trim()
@@ -165,7 +165,7 @@ fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {
         val targetDbServer = targets["DbServer"] as Map<*, *>
         val targetVendor = (targetDbServer["vendor"] as String).trim().uppercase()
         if (targetVendor != "AURORA_POSTGRESQL" && targetVendor != "RDS_POSTGRESQL") {
-            return SqlMetadataValidationResult(false, "Sorry, your .sct metadata file appears to be invalid; the target DB must be Aurora PostgreSQL or Amazon RDS for PostgreSQL.")
+            return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.invalid_target_db"))
         }
 
         val relations = projectModel["relations"] as Map<*, *>

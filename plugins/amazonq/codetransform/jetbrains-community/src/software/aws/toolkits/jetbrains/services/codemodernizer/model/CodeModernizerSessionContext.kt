@@ -26,7 +26,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeMo
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactPomFolder
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilDependenciesRootDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilUploadZip
-import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.IOException
@@ -190,7 +189,9 @@ data class CodeModernizerSessionContext(
         val depDirectory = if (copyResult is MavenCopyCommandsResult.Success) {
             showTransformationHub()
             copyResult.dependencyDirectory
-        } else sqlMetadataZip // null copyResult means doing a SQL conversion
+        } else {
+            sqlMetadataZip // null copyResult means doing a SQL conversion
+        }
 
         return runReadAction {
             try {
@@ -215,8 +216,9 @@ data class CodeModernizerSessionContext(
                     var manifest = ZipManifest(customBuildCommand = customBuildCommand)
                     if (sqlMetadataZip != null) {
                         // doing a SQL conversion, not language upgrade
-                        // sctFileName below will not work since configurationFile points to any file in the Java module, not the metadata ZIP
-                        manifest = ZipManifest(requestedConversions = RequestedConversions(sqlConversion = SQLConversion(source = sourceVendor, target = targetVendor, schema = schema, host = sourceServerName, sctFileName = sqlMetadataZip.listFiles { file -> file.name.endsWith(".sct") }.first().name)))
+                        val sctFileName = sqlMetadataZip.listFiles { file -> file.name.endsWith(".sct") }.first().name
+                        manifest = ZipManifest(requestedConversions = RequestedConversions(
+                            SQLConversion(sourceVendor, targetVendor, schema, sourceServerName, sctFileName)))
                     }
                     mapper.writeValueAsString(manifest)
                         .byteInputStream()

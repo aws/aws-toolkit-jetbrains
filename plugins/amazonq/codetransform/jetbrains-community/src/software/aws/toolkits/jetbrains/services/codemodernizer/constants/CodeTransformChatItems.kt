@@ -3,11 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.constants
 
-import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.vfs.VirtualFile
-import com.jetbrains.python.sdk.basePath
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_PREREQUISITES
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_ALLOW_S3_ACCESS
@@ -37,7 +34,6 @@ import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FollowUpT
 import software.aws.toolkits.jetbrains.services.cwc.messages.FollowUp
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
-import java.io.File
 
 // shared Cancel button
 private val cancelUserSelectionButton = Button(
@@ -259,7 +255,7 @@ fun buildProjectInvalidChatContent(validationResult: ValidationResult): CodeTran
         CodeTransformPreValidationError.NonSsoLogin -> message("codemodernizer.notification.warn.invalid_project.description.reason.not_logged_in")
         CodeTransformPreValidationError.EmptyProject -> message("codemodernizer.notification.warn.invalid_project.description.reason.missing_content_roots")
         CodeTransformPreValidationError.UnsupportedBuildSystem -> message("codemodernizer.chat.message.validation.error.no_pom")
-        CodeTransformPreValidationError.NoJavaProject -> "Sorry, I could not find an open Java module. Make sure you have a module open that has the JDK configured and has at least 1 content root."
+        CodeTransformPreValidationError.NoJavaProject -> message("codemodernizer.chat.message.validation.error.no_java_project")
         else -> message("codemodernizer.chat.message.validation.error.other")
     }
 
@@ -315,8 +311,7 @@ fun buildUserInputLanguageUpgradeChatContent(project: Project, validationResult:
     )
 }
 
-fun buildUserInputSQLConversionMetadataChatContent(): CodeTransformChatMessageContent {
-    return CodeTransformChatMessageContent(
+fun buildUserInputSQLConversionMetadataChatContent() = CodeTransformChatMessageContent(
         message = message("codemodernizer.chat.form.user_selection.item.choose_sql_metadata_file"),
         buttons = listOf(
             confirmUserSelectionSQLConversionMetadataButton,
@@ -324,7 +319,6 @@ fun buildUserInputSQLConversionMetadataChatContent(): CodeTransformChatMessageCo
         ),
         type = CodeTransformChatMessageType.FinalizedAnswer,
     )
-}
 
 fun buildModuleSchemaFormChatContent(project: Project, javaModules: List<VirtualFile>, schemaOptions: Set<String>) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,

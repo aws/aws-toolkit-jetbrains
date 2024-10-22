@@ -37,7 +37,9 @@ class CodeModernizerSessionState {
         currentJobStatus = TransformationStatus.UNKNOWN_TO_SDK_VERSION
     }
 
-    private fun getJobModuleName(sessionContext: CodeModernizerSessionContext) = sessionContext.configurationFile?.let { Path(it.path).toAbsolutePath().toString() }
+    private fun getJobModuleName(sessionContext: CodeModernizerSessionContext) =
+        sessionContext.configurationFile?.let { Path(it.path).toAbsolutePath().toString() }
+
     fun putJobHistory(sessionContext: CodeModernizerSessionContext, status: TransformationStatus, jobId: String = "", startedAt: Instant = Instant.now()) {
         val moduleName = getJobModuleName(sessionContext)
         val jobHistoryItem = JobHistoryItem(

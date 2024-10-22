@@ -35,7 +35,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESH
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_POM_FILE_NAME
-import software.aws.toolkits.jetbrains.services.codemodernizer.controller.CodeTransformChatController
 import software.aws.toolkits.jetbrains.services.codemodernizer.file.PomFileAnnotator
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerException
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
@@ -264,7 +263,8 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     }
 
     suspend fun resumePollingFromHil() {
-        val transformationType = if (codeTransformationSession?.sessionContext?.schema != null) CodeTransformType.SQL_CONVERSION else CodeTransformType.LANGUAGE_UPGRADE
+        val transformationType =
+            if (codeTransformationSession?.sessionContext?.schema != null) CodeTransformType.SQL_CONVERSION else CodeTransformType.LANGUAGE_UPGRADE
         val result = handleJobResumedFromHil(managerState.getLatestJobId(), codeTransformationSession as CodeModernizerSession, transformationType)
         postModernizationJob(result)
     }

@@ -277,7 +277,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
             </ProjectModel>
         </instances>
         </tree>
-    """.trimIndent()
+""".trimIndent()
 
         val tempFile = createTempFile("valid-sctFile", ".xml").toFile()
         tempFile.writeText(sampleFileContents)
@@ -336,7 +336,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
             </ProjectModel>
         </instances>
         </tree>
-    """.trimIndent()
+""".trimIndent()
 
         val tempFile = createTempFile("invalid-sctFile1", ".xml").toFile()
         tempFile.writeText(sampleFileContents)
@@ -391,7 +391,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
             </ProjectModel>
         </instances>
         </tree>
-    """.trimIndent()
+""".trimIndent()
 
         val tempFile = createTempFile("invalid-sctFile2", ".xml").toFile()
         tempFile.writeText(sampleFileContents)

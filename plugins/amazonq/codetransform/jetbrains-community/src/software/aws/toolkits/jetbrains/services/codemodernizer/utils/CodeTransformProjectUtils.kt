@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.modules
@@ -82,8 +81,7 @@ fun Project.getSupportedModules(supportedJavaMappings: Map<JavaSdkVersion, Set<J
 
 // return the first file or directory found inside each open Java module, so that user can select a Module for us to ZIP
 // does not strictly need to return the first file or directory found, any one would work fine
-fun Project.getJavaModules(): List<VirtualFile> {
-    return this.modules.flatMap { module ->
+fun Project.getJavaModules() = this.modules.flatMap { module ->
         val rootManager = ModuleRootManager.getInstance(module)
         if (rootManager.sdk?.sdkType?.name?.lowercase()?.contains("java") == true) {
             val contentRoots = rootManager.contentRoots
@@ -102,6 +100,5 @@ fun Project.getJavaModules(): List<VirtualFile> {
             emptyList()
         }
     }
-}
 
 fun Project.getModuleOrProjectNameForFile(file: VirtualFile?) = file?.let { ModuleUtil.findModuleForFile(it, this)?.name } ?: this.name
