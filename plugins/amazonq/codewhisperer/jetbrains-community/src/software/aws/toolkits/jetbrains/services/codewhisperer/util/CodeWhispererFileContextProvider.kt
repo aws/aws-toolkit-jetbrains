@@ -233,7 +233,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         val openTabsContextDeferred = withContext(coroutineContext) {
             async {
                 val t0 = System.currentTimeMillis()
-                val r = fetchOpentabsContext(query, psiFile, targetContext)
+                val r = fetchOpenTabsContext(query, psiFile, targetContext)
                 val t1 = System.currentTimeMillis()
                 LOG.debug { "fetchOpenTabsContext cost ${t1 - t0} ms" }
 
@@ -274,7 +274,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
     }
 
     @VisibleForTesting
-    suspend fun fetchOpentabsContext(query: String, psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo {
+    suspend fun fetchOpenTabsContext(query: String, psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo {
         // step 1: prepare data
         val first60Chunks: List<Chunk> = try {
             runReadAction { codewhispererCodeChunksIndex.getFileData(psiFile) }
