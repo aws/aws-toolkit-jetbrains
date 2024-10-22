@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.telemetry.otel
 
-import com.intellij.platform.diagnostic.telemetry.helpers.use as ijUse
-import com.intellij.platform.diagnostic.telemetry.helpers.useWithScope as ijUseWithScope
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.Span
@@ -23,6 +21,8 @@ import java.time.Instant
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import com.intellij.platform.diagnostic.telemetry.helpers.use as ijUse
+import com.intellij.platform.diagnostic.telemetry.helpers.useWithScope as ijUseWithScope
 
 val AWS_PRODUCT_CONTEXT_KEY = ContextKey.named<AWSProduct>("pluginDescriptor")
 internal val PLUGIN_ATTRIBUTE_KEY = AttributeKey.stringKey("plugin")
@@ -49,7 +49,7 @@ abstract class AbstractSpanBuilder<Builder : AbstractSpanBuilder<Builder, Span>,
      */
     suspend inline fun<T> useWithScope(
         context: CoroutineContext = EmptyCoroutineContext,
-        crossinline operation: suspend CoroutineScope.(Span) -> T
+        crossinline operation: suspend CoroutineScope.(Span) -> T,
     ): T =
         ijUseWithScope(context) { span ->
             operation(span as Span)

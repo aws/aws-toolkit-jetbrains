@@ -144,7 +144,7 @@ class OtelBaseTest {
     }
 
     @Test
-    fun `context override propagates from parent to child when only child is coroutine`()  {
+    fun `context override propagates from parent to child when only child is coroutine`() {
         spanBuilder("tracer", "parentSpan").setParent(Context.current().with(AWS_PRODUCT_CONTEXT_KEY, AWSProduct.AMAZON_Q_FOR_VS_CODE)).use {
             runTest {
                 spanBuilder("anotherTracer", "childSpan").useWithScope {
@@ -199,7 +199,7 @@ class OtelBaseTest {
     }
 
     @Test
-    fun `context override does not propagate from parent to child coroutines if context is not preserved`()  {
+    fun `context override does not propagate from parent to child coroutines if context is not preserved`() {
         spanBuilder("tracer", "parentSpan").setParent(Context.current().with(AWS_PRODUCT_CONTEXT_KEY, AWSProduct.AMAZON_Q_FOR_VS_CODE)).use {
             runBlocking(getCoroutineBgContext()) {
                 spanBuilder("anotherTracer", "childSpan").use {}
@@ -218,7 +218,7 @@ class OtelBaseTest {
     }
 
     @Test
-    fun `context override propagates from parent to child coroutines with manual coroutine context propagation`()  {
+    fun `context override propagates from parent to child coroutines with manual coroutine context propagation`() {
         spanBuilder("tracer", "parentSpan").setParent(Context.current().with(AWS_PRODUCT_CONTEXT_KEY, AWSProduct.AMAZON_Q_FOR_VS_CODE)).use {
             runBlocking(getCoroutineBgContext() + Context.current().asContextElement()) {
                 spanBuilder("anotherTracer", "childSpan").use {}
@@ -277,32 +277,34 @@ class OtelExtension : AfterEachCallback, AfterAllCallback {
     val completedSpans
         get() = _completedSpans.reversed().toList()
 
-    val sdk = OTelService(listOf(
-        // should probably be a service loader
-        object : SpanProcessor {
-            override fun isStartRequired() = true
-            override fun isEndRequired() = true
+    val sdk = OTelService(
+        listOf(
+            // should probably be a service loader
+            object : SpanProcessor {
+                override fun isStartRequired() = true
+                override fun isEndRequired() = true
 
-            override fun onStart(parentContext: Context, span: ReadWriteSpan) {
-                openSpans.add(span)
-            }
-
-            override fun onEnd(span: ReadableSpan) {
-                println(span)
-                _completedSpans.add(span)
-
-                if (!openSpans.contains(span)) {
-                    LOG.warn(RuntimeException("Span ended without corresponding start")) { span.toString() }
+                override fun onStart(parentContext: Context, span: ReadWriteSpan) {
+                    openSpans.add(span)
                 }
-                openSpans.remove(span)
-            }
 
-            override fun forceFlush(): CompletableResultCode {
-                assert(openSpans.isEmpty()) { "Not all open spans were closed: ${openSpans.joinToString(", ")}" }
-                return CompletableResultCode.ofSuccess()
+                override fun onEnd(span: ReadableSpan) {
+                    println(span)
+                    _completedSpans.add(span)
+
+                    if (!openSpans.contains(span)) {
+                        LOG.warn(RuntimeException("Span ended without corresponding start")) { span.toString() }
+                    }
+                    openSpans.remove(span)
+                }
+
+                override fun forceFlush(): CompletableResultCode {
+                    assert(openSpans.isEmpty()) { "Not all open spans were closed: ${openSpans.joinToString(", ")}" }
+                    return CompletableResultCode.ofSuccess()
+                }
             }
-        }
-    ))
+        )
+    )
 
     override fun afterEach(context: ExtensionContext?) {
         reset()

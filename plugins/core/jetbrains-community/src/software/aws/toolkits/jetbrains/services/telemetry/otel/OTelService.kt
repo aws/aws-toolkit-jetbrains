@@ -130,7 +130,7 @@ private object StdoutSpanProcessor : SpanProcessor {
 }
 
 @Service
-class OTelService @NonInjectable internal constructor(spanProcessors: List<SpanProcessor>): Disposable {
+class OTelService @NonInjectable internal constructor(spanProcessors: List<SpanProcessor>) : Disposable {
     @Suppress("unused")
     constructor() : this(listOf(StdoutSpanProcessor))
 
