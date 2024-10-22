@@ -51,6 +51,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AMAZON_Q_WINDOW_ID
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
 import software.aws.toolkits.jetbrains.services.cwc.controller.ReferenceLogController
@@ -78,6 +79,7 @@ class InlineChatController(
     private val partialUndoActions = Stack<() -> Unit>()
     private val partialAcceptActions = Stack<() -> Unit>()
     private var selectionStartLine = AtomicInteger(0)
+    private var insertionLine = AtomicInteger(-1)
     private val sessionStorage = ChatSessionStorage()
     private val telemetryHelper = TelemetryHelper(project, sessionStorage)
     private val shouldShowActions = AtomicBoolean(false)
@@ -227,19 +229,10 @@ class InlineChatController(
         )
     }
 
-    private fun extractContentAfterFirstNewline(input: String): String {
-        val newlineIndex = input.indexOf('\n')
-        return if (newlineIndex != -1) {
-            input.substring(newlineIndex + 1)
-        } else {
-            ""
-        }
-    }
-
     private fun hidePopup() {
         canPopupAbort.set(false)
         currentPopup?.closeOk(null)
-        currentPopup = null
+//        currentPopup = null
         isInProgress.set(false)
         shouldShowActions.set(false)
     }
@@ -248,25 +241,8 @@ class InlineChatController(
         if (currentPopup != null && !shouldShowActions.get() || isFromFileChange) {
             currentPopup?.let { Disposer.dispose(it) }
             hidePopup()
+            currentPopup = null
         }
-    }
-
-    private fun getCodeBlocks(src: String): List<String> {
-        val codeBlocks = mutableListOf<String>()
-        var currentIndex = 0
-
-        while (currentIndex < src.length) {
-            val startIndex = src.indexOf("```", currentIndex)
-            if (startIndex == -1) return codeBlocks
-
-            val endIndex = src.indexOf("```", startIndex + 3)
-            if (endIndex == -1) return codeBlocks
-
-            val code = src.substring(startIndex + 3, endIndex)
-            codeBlocks.add(code)
-            currentIndex = endIndex + 3
-        }
-        return codeBlocks
     }
 
     private fun compareDiffs(original: List<String>, recommendation: List<String>): List<DiffRow> {
@@ -280,33 +256,107 @@ class InlineChatController(
         .replace("&#39;", "'")
         .replace("=&gt;", "=>")
 
-    private fun processChatMessage(selectedCode: String, event: ChatMessage, editor: Editor, selectedLineStart: Int, prevMessage: String) {
-        if (event.message?.isNotEmpty() == true) {
-            val codeBlocks = getCodeBlocks(event.message)
-            if (codeBlocks.isEmpty()) {
-                logger.info { "No code block found in inline chat response with requestId: ${event.messageId}" }
-                return
-            }
-            val recommendation = unescape(extractContentAfterFirstNewline(codeBlocks.first()))
-            logger.info { "Recived Inline chat code recommendation:\n ```$recommendation``` \nfrom requestId: ${event.messageId}" }
-            logger.info { "Original selected code:\n ```$selectedCode```" }
-            val diff = compareDiffs(selectedCode.split("\n"), recommendation.split("\n"))
+    private fun processNewCode(editor: Editor, line: Int, code: String, prevMessage: String) {
+        logger.info ("received inline chat recommendation with code: \n $code")
+        var insertLine = line
+        var linesToAdd = emptyList<String>()
+        val prevLines = prevMessage.split("\n")
+        if (prevLines.size > 1 && code.startsWith(prevMessage)) {
+            if(insertionLine.get() != -1) insertLine = insertionLine.get()
+            linesToAdd = code.split("\n").drop(prevLines.size - 1)
+        } else {
             while (partialUndoActions.isNotEmpty()) {
                 val action = partialUndoActions.pop()
                 action.invoke()
             }
             partialAcceptActions.clear()
-            selectionStartLine = AtomicInteger(selectedLineStart)
-            var currentDocumentLine = selectedLineStart
-            var insertLine = selectedLineStart
+            linesToAdd = code.split("\n")
+        }
+        if(linesToAdd.last() == "") linesToAdd = linesToAdd.dropLast(1)
+        linesToAdd.forEach{ l ->
+            val row = DiffRow(DiffRow.Tag.INSERT, "", l)
+            showCodeChangeInEditor(row, insertLine, editor)
+            insertLine++
+            insertionLine.set(insertLine)
+        }
+    }
+
+    private fun processDiffRows(diffRows: List<DiffRow>, startLine: Int, editor: Editor): Boolean {
+        var isAllEqual = true
+        selectionStartLine = AtomicInteger(startLine)
+        var currentDocumentLine = startLine
+        var insertLine = startLine
+        var deletedCharsCount = 0
+        var addedCharsCount = 0
+        var addedLinesCount = 0
+        var deletedLinesCount = 0
+        diffRows.forEach { row ->
+            when (row.tag) {
+                DiffRow.Tag.EQUAL -> {
+                    currentDocumentLine++
+                    insertLine++
+                }
+
+                DiffRow.Tag.DELETE -> {
+                    isAllEqual = false
+                    showCodeChangeInEditor(row, currentDocumentLine, editor)
+                    insertLine++
+                    currentDocumentLine++
+                    deletedLinesCount++
+                    deletedCharsCount += row.oldLine?.length ?: 0
+                }
+
+                DiffRow.Tag.CHANGE -> {
+                    if (row.newLine.trimIndent() != row.oldLine?.trimIndent()) {
+                        isAllEqual = false
+                        showCodeChangeInEditor(row, currentDocumentLine, editor)
+                        insertLine += 2
+                        currentDocumentLine += 2
+                        deletedLinesCount++
+                        deletedCharsCount += row.oldLine?.length ?: 0
+                        addedLinesCount++
+                        addedCharsCount += row.newLine?.length ?: 0
+                    } else {
+                        currentDocumentLine++
+                        insertLine++
+                    }
+                }
+
+                DiffRow.Tag.INSERT -> {
+                    isAllEqual = false
+                    showCodeChangeInEditor(row, insertLine, editor)
+                    insertLine++
+                    addedLinesCount++
+                    addedCharsCount += row.newLine?.length ?: 0
+                }
+            }
+        }
+        metrics?.numSuggestionAddChars = addedCharsCount
+        metrics?.numSuggestionAddLines = addedLinesCount
+        metrics?.numSuggestionDelChars = deletedCharsCount
+        metrics?.numSuggestionDelLines = deletedLinesCount
+        return isAllEqual
+    }
+
+    private fun processChatDiff(selectedCode: String, event: ChatMessage, editor: Editor, selectedLineStart: Int) {
+        if (event.message?.isNotEmpty() == true) {
+            runBlocking {
+                while (partialUndoActions.isNotEmpty()) {
+                    val action = partialUndoActions.pop()
+                    runBlocking { action.invoke() }
+                }
+                partialAcceptActions.clear()
+                return@runBlocking
+            }
+            val recommendation = unescape(event.message)
+            logger.info { "Received Inline chat code recommendation:\n ```$recommendation``` \nfrom requestId: ${event.messageId}" }
+            logger.info { "Original selected code:\n ```$selectedCode```" }
+            var selection = selectedCode.split("\n")
+            val recommendationList = recommendation.split("\n")
+            val diff = compareDiffs(selection, recommendationList)
             if (event.codeReference?.isNotEmpty() == true) {
                 editor.project?.let { ReferenceLogController.addReferenceLog(recommendation, event.codeReference, editor, it) }
             }
-
-            var deletedCharsCount = 0
-            var addedCharsCount = 0
-            var addedLinesCount = 0
-            var deletedLinesCount = 0
 
             if (currentPopup?.isVisible != true) {
                 logger.debug { "inline chat popup cancelled before diff is shown" }
@@ -314,67 +364,18 @@ class InlineChatController(
                 recordInlineChatTelemetry(InlineChatUserDecision.DISMISS)
                 return
             }
-            var isAllEqual = true
-            diff.forEach { row ->
-                when (row.tag) {
-                    DiffRow.Tag.EQUAL -> {
-                        currentDocumentLine++
-                        insertLine++
-                    }
-                    DiffRow.Tag.DELETE -> {
-                        isAllEqual = false
-                        showCodeChangeInEditor(row, currentDocumentLine, editor)
-                        insertLine++
-                        currentDocumentLine++
-                        deletedLinesCount++
-                        deletedCharsCount += row.oldLine?.length ?: 0
-                    }
-                    DiffRow.Tag.CHANGE -> {
-                        if (row.newLine.trimIndent() != row.oldLine?.trimIndent()) {
-                            isAllEqual = false
-                            showCodeChangeInEditor(row, currentDocumentLine, editor)
-                            insertLine += 2
-                            currentDocumentLine += 2
-                            deletedLinesCount++
-                            deletedCharsCount += row.oldLine?.length ?: 0
-                            addedLinesCount++
-                            addedCharsCount += row.newLine?.length ?: 0
-                        } else {
-                            currentDocumentLine++
-                            insertLine++
-                        }
-                    }
-                    DiffRow.Tag.INSERT -> {
-                        isAllEqual = false
-                        showCodeChangeInEditor(row, insertLine, editor)
-                        insertLine++
-                        addedLinesCount++
-                        addedCharsCount += row.newLine?.length ?: 0
-                    }
-                }
-            }
-            if (isAllEqual) {
-                throw Exception("No suggestions from Q; please try a different instruction.")
-            }
-
-            isInProgress.set(false)
-            shouldShowActions.set(true)
-            metrics?.numSuggestionAddChars = addedCharsCount
-            metrics?.numSuggestionAddLines = addedLinesCount
-            metrics?.numSuggestionDelChars = deletedCharsCount
-            metrics?.numSuggestionDelLines = deletedLinesCount
-        } else {
-            if (event.messageType == ChatMessageType.Answer) {
-                val codeBlocks = getCodeBlocks(prevMessage)
-                if (codeBlocks.isEmpty()) {
-                    logger.warn { "No code block found in inline chat response with requestId: ${event.messageId} \nresponse: ${event.message}" }
-                    isInProgress.set(false)
-                    shouldShowActions.set(false)
+            invokeLater {
+                val isAllEqual = processDiffRows(diff, selectedLineStart, editor)
+                if (isAllEqual) {
                     throw Exception("No suggestions from Q; please try a different instruction.")
                 }
+
+                isInProgress.set(false)
+                shouldShowActions.set(true)
             }
         }
     }
+
 
     private fun insertNewLineIfNeeded(row: Int, editor: Editor): Int {
         var newLineInserted = 0
@@ -534,8 +535,7 @@ class InlineChatController(
         val triggerId = UUID.randomUUID().toString()
         val intentRecognizer = UserIntentRecognizer()
 
-//        val languageExtractor = LanguageExtractor()
-//        val language = editor.project?.let { languageExtractor.extractProgrammingLanguageNameFromCurrentFile(editor, it) } ?: ""
+        val language = editor.virtualFile?.programmingLanguage()
 //        This is temporary. TODO: remove this after prompt added on service side
         var prompt = ""
 //        if (selectedCode.isNotBlank()) {
@@ -575,7 +575,7 @@ class InlineChatController(
 //            "Remember, your output should contain nothing but the transformed code or code comments.\n"
         if (selectedCode.isNotBlank()) { prompt += "<selected_code>$selectedCode</selected_code>\n" }
         prompt += "<instruction>$message</instruction>\n"
-        prompt += "<context>${editor.document.text.take(8000)}</context>"
+        prompt += "<context>${if (editor.document.text.isNotEmpty()) editor.document.text.take(8000) else "file written in $language"}</context>"
 
         logger.info { "Inline chat prompt: $prompt" }
 
@@ -616,11 +616,11 @@ class InlineChatController(
                 .onEach { event: ChatMessage ->
                     if (event.message?.isNotEmpty() == true && prevMessage != event.message) {
                         try {
-                            processChatMessage(selectedCode, event, editor, selectedLineStart, prevMessage)
+                            processNewCode(editor, selectedLineStart, unescape(event.message), prevMessage)
                         } catch (e: Exception) {
                             errorMessage = e.message ?: "Error processing request; please try again."
                         }
-                        prevMessage = event.message
+                        prevMessage = unescape(event.message)
                     }
                     if (messages.isEmpty()) {
                         firstResponseLatency = (System.currentTimeMillis() - startTime).toDouble()
@@ -630,6 +630,11 @@ class InlineChatController(
                 .toList()
         }
         chat.await()
+        val finalMessage = messages.lastOrNull { m -> m.messageType == ChatMessageType.AnswerPart }
+        if(selectedCode.isNotEmpty() && finalMessage != null) {
+            processChatDiff(selectedCode, finalMessage, editor, selectedLineStart)
+        }
+        insertionLine.set(-1)
         val lastResponseLatency = (System.currentTimeMillis() - startTime).toDouble()
         val requestId = messages.lastOrNull()?.messageId
         requestId?.let {
