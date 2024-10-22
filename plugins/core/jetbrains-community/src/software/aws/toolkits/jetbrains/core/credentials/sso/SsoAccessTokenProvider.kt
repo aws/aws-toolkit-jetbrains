@@ -28,9 +28,11 @@ import software.aws.toolkits.jetbrains.utils.sleepWithCancellation
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AuthType
 import software.aws.toolkits.telemetry.AwsTelemetry
+import software.aws.toolkits.telemetry.CredentialModification
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.Result
 import java.io.FileNotFoundException
+import java.io.IOException
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -442,14 +444,15 @@ class SsoAccessTokenProvider(
                 is AwsServiceException -> e.requestId()
                 else -> null
             }
-
+            // AwsServiceException#message will automatically pull in AwsServiceException#awsErrorDetails
+            // we expect messages for SsoOidcException to be populated in e.message using execution executor added in
+            // https://github.com/aws/aws-toolkit-jetbrains/commit/cc9ed87fa9391dd39ac05cbf99b4437112fa3d10
             val message = e.message ?: "$stageName: ${e::class.java.name}"
-            val reasonDesc = "Step: $stageName - $message"
 
             sendRefreshCredentialsMetric(
                 currentToken,
                 reason = "Refresh access token request failed: $stageName",
-                reasonDesc = reasonDesc,
+                reasonDesc = "Step: $message",
                 requestId = requestId,
                 result = Result.Failed
             )
@@ -469,6 +472,11 @@ class SsoAccessTokenProvider(
                 return it
             }
         } catch (e: FileNotFoundException) {
+            AwsTelemetry.openCredentials(
+                result = Result.Failed,
+                reason = "Failed to load DAG client registration from cache",
+                reasonDesc = e.message
+            )
             throw e
         }
 
@@ -478,6 +486,11 @@ class SsoAccessTokenProvider(
                 return it as PKCEClientRegistration
             }
         } catch (e: FileNotFoundException) {
+            AwsTelemetry.openCredentials(
+                result = Result.Failed,
+                reason = "Failed to load PKCE client registration from cache",
+                reasonDesc = e.message
+            )
             throw e
         }
 
@@ -513,8 +526,14 @@ class SsoAccessTokenProvider(
         try {
             cache.invalidateClientRegistration(dagClientRegistrationCacheKey)
             cache.invalidateClientRegistration(pkceClientRegistrationCacheKey)
-        } catch (e: Exception) {
-            throw e
+        } catch (e: IOException) {
+            AwsTelemetry.modifyCredentials(
+                credentialModification = CredentialModification.Delete,
+                result = Result.Failed,
+                reason = "Failed to invalidate client registration",
+                reasonDesc = e.message,
+                source = "SsoAccessTokenProvider.invalidateClientRegistration"
+            )
         }
     }
 
