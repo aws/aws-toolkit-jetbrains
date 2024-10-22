@@ -57,7 +57,7 @@ suspend fun FeatureDevController.onCodeGeneration(
         var totalIterations: Int? = state.codeGenerationTotalIterationCount
 
         if (state.token?.token()?.isCancellationRequested == true) {
-            this.disposeToken(state, messenger, tabId, remainingIterations, totalIterations)
+            this.disposeToken(state, messenger, tabId, state.currentIteration?.let { CODE_GENERATION_RETRY_LIMIT.minus(it) }, CODE_GENERATION_RETRY_LIMIT)
             return
         }
 
@@ -82,7 +82,7 @@ suspend fun FeatureDevController.onCodeGeneration(
         }
 
         if (state.token?.token()?.isCancellationRequested == true) {
-            disposeToken(state, messenger, tabId, remainingIterations, totalIterations)
+            disposeToken(state, messenger, tabId, state.currentIteration?.let { CODE_GENERATION_RETRY_LIMIT.minus(it) }, CODE_GENERATION_RETRY_LIMIT)
             return
         }
 
@@ -162,24 +162,49 @@ private suspend fun FeatureDevController.disposeToken(
     remainingIterations: Number?,
     totalIterations: Number?,
 ) {
-    if (state.codeGenerationRemainingIterationCount !== null) {
+
+    if (remainingIterations !== null &&  remainingIterations.toInt() <= 0) {
         messenger.sendAnswer(
             tabId = tabId,
             messageType = FeatureDevMessageType.Answer,
             message =
             message(
-                "amazonqFeatureDev.code_generation.stopped_code_generation",
-                remainingIterations ?: state.currentIteration as Any,
-                totalIterations ?: CODE_GENERATION_RETRY_LIMIT,
+                "amazonqFeatureDev.code_generation.stopped_code_generation_no_iterations"
             ),
         )
-    } else {
-        messenger.sendAnswer(
+        //I stopped generating your code. You don't have more iterations left, however, you can start a new session
+        messenger.sendSystemPrompt(
             tabId = tabId,
-            messageType = FeatureDevMessageType.Answer,
-            message = message("amazonqFeatureDev.code_generation.stopped_code_generation_without_total", state.currentIteration as Any),
+            followUp = listOf(
+                FollowUp(
+                    pillText = message("amazonqFeatureDev.follow_up.new_task"),
+                    type = FollowUpTypes.NEW_TASK,
+                    status = FollowUpStatusType.Info
+                ),
+                FollowUp(
+                    pillText = message("amazonqFeatureDev.follow_up.close_session"),
+                    type = FollowUpTypes.CLOSE_SESSION,
+                    status = FollowUpStatusType.Info
+                )
+            )
         )
+        messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = false)
+        messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
+
+        return
     }
+
+
+    messenger.sendAnswer(
+        tabId = tabId,
+        messageType = FeatureDevMessageType.Answer,
+        message =
+        message(
+            "amazonqFeatureDev.code_generation.stopped_code_generation",
+            remainingIterations ?: state.currentIteration?.let { CODE_GENERATION_RETRY_LIMIT.minus(it) } as Any,
+            totalIterations ?: CODE_GENERATION_RETRY_LIMIT,
+        ),
+    )
 
     messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = true)
 
