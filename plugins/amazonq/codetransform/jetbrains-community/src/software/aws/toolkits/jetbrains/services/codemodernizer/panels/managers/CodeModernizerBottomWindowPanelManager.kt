@@ -217,15 +217,6 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
         }
     }
 
-    fun setProjectInvalidUI(reason: String) = setUI {
-        banner.updateContent(reason, AllIcons.General.Error)
-        fullSizeLoadingPanel.apply {
-            fullSizeLoadingPanel.showFailureUI()
-            revalidate()
-            repaint()
-        }
-    }
-
     fun userInitiatedStopCodeModernizationUI() = setUI {
         stopTimer()
         add(BorderLayout.CENTER, buildProgressSplitterPanelManager)
@@ -247,7 +238,7 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
                 TransformationStatus.PAUSED,
                 TransformationStatus.COMPLETED,
                 TransformationStatus.PARTIALLY_COMPLETED
-            )
+            ) && transformType != CodeTransformType.SQL_CONVERSION // no plan for SQL conversions
         ) {
             addPlanToBanner()
         }

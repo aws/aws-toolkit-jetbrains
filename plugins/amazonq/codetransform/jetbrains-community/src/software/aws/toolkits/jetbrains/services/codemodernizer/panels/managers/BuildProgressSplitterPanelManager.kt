@@ -43,12 +43,9 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
             val userObject = selectedNode.userObject
             if (userObject is BuildProgressStepTreeItem) {
                 if (isValidStepClick(userObject.id) && userObject.transformationStepId != null) {
-                    System.out.println("Is valid stepID")
                     buildProgressStepDetailsPanel.updateListData(userObject.transformationStepId)
                     revalidate()
                     repaint()
-                } else {
-                    System.out.println("Is NOT valid stepID")
                 }
             }
         }
@@ -127,8 +124,8 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
             )
 
         fun maybeAdd(stepId: ProgressStepId, string: String) {
-            // don't show building message for SQL conversions since we don't build the code
-            if (string == message("codemodernizer.toolwindow.progress.building") && transformType == CodeTransformType.SQL_CONVERSION) {
+            // don't show building or generate plan message for SQL conversions since we don't build or generate plan
+            if (transformType == CodeTransformType.SQL_CONVERSION && (string == message("codemodernizer.toolwindow.progress.building") || string == message("codemodernizer.toolwindow.progress.planning"))) {
                 return
             }
             if (currentState.none { it.id == stepId }) {
@@ -145,8 +142,7 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
             maybeAdd(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
             maybeAdd(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
         }
-        // immediately jump to planning stage for SQL conversions after upload completes since we don't build the code
-        if (newState in setOf(TransformationStatus.PREPARED, newState == TransformationStatus.PLANNING) || transformType == CodeTransformType.SQL_CONVERSION) {
+        if (newState in setOf(TransformationStatus.PREPARED, newState == TransformationStatus.PLANNING)) {
             maybeAdd(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
             maybeAdd(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
             maybeAdd(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
@@ -217,26 +213,26 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
             }
 
             TransformationStatus.PREPARING -> {
-                loadingPanelText = if (transformType != CodeTransformType.SQL_CONVERSION) {
-                    message("codemodernizer.toolwindow.scan_in_progress.building", jdk.description)
+                loadingPanelText = if (transformType == CodeTransformType.SQL_CONVERSION) {
+                    message("codemodernizer.toolwindow.scan_in_progress.transforming")
                 } else {
-                    message("codemodernizer.toolwindow.scan_in_progress.planning")
+                    message("codemodernizer.toolwindow.scan_in_progress.building", jdk.description)
                 }
                 statuses.update(BuildStepStatus.DONE, ProgressStepId.UPLOADING)
             }
 
             TransformationStatus.PREPARED -> {
-                loadingPanelText = if (transformType != CodeTransformType.SQL_CONVERSION) {
-                    message("codemodernizer.toolwindow.scan_in_progress.building", jdk.description)
+                loadingPanelText = if (transformType == CodeTransformType.SQL_CONVERSION) {
+                    message("codemodernizer.toolwindow.scan_in_progress.transforming")
                 } else {
-                    message("codemodernizer.toolwindow.scan_in_progress.planning")
+                    message("codemodernizer.toolwindow.scan_in_progress.building", jdk.description)
                 }
                 statuses.update(BuildStepStatus.DONE, ProgressStepId.BUILDING)
             }
 
             TransformationStatus.PLANNING -> {
-                loadingPanelText = if (transformType != CodeTransformType.SQL_CONVERSION) {
-                    message("codemodernizer.toolwindow.scan_in_progress.building", jdk.description)
+                loadingPanelText = if (transformType == CodeTransformType.SQL_CONVERSION) {
+                    message("codemodernizer.toolwindow.scan_in_progress.transforming")
                 } else {
                     message("codemodernizer.toolwindow.scan_in_progress.planning")
                 }
@@ -244,7 +240,11 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
             }
 
             TransformationStatus.PLANNED -> {
-                loadingPanelText = message("codemodernizer.toolwindow.scan_in_progress.planning")
+                loadingPanelText = if (transformType == CodeTransformType.SQL_CONVERSION) {
+                    message("codemodernizer.toolwindow.scan_in_progress.transforming")
+                } else {
+                    message("codemodernizer.toolwindow.scan_in_progress.planning")
+                }
                 statuses.update(BuildStepStatus.DONE, ProgressStepId.PLANNING)
             }
 

@@ -264,7 +264,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     suspend fun resumePollingFromHil() {
         val transformationType =
-            if (codeTransformationSession?.sessionContext?.schema != null) CodeTransformType.SQL_CONVERSION else CodeTransformType.LANGUAGE_UPGRADE
+            if (codeTransformationSession?.sessionContext?.sqlMetadataZip != null) CodeTransformType.SQL_CONVERSION else CodeTransformType.LANGUAGE_UPGRADE
         val result = handleJobResumedFromHil(managerState.getLatestJobId(), codeTransformationSession as CodeModernizerSession, transformationType)
         postModernizationJob(result)
     }
@@ -348,7 +348,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             CodeModernizerSessionState.getInstance(project).currentJobCreationTime = currentJobResult.creationTime()
             codeTransformationSession = session
             initModernizationJobUI(false, project.getModuleOrProjectNameForFile(session.sessionContext.configurationFile))
-            val transformationType = if (session.sessionContext.schema != null) CodeTransformType.SQL_CONVERSION else CodeTransformType.LANGUAGE_UPGRADE
+            val transformationType = if (session.sessionContext.sqlMetadataZip != null) CodeTransformType.SQL_CONVERSION else CodeTransformType.LANGUAGE_UPGRADE
             codeModernizerBottomWindowPanelManager.setResumeJobUI(currentJobResult, plan, session.sessionContext.sourceJavaVersion, transformationType)
             session.resumeJob(currentJobResult.creationTime(), lastJobId)
             val result = handleJobStarted(lastJobId, session)
@@ -466,7 +466,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             codeModernizerBottomWindowPanelManager.setJobRunningUI()
         }
 
-        val transformationType = if (session.sessionContext.schema != null) CodeTransformType.SQL_CONVERSION else CodeTransformType.LANGUAGE_UPGRADE
+        val transformationType = if (session.sessionContext.sqlMetadataZip != null) CodeTransformType.SQL_CONVERSION else CodeTransformType.LANGUAGE_UPGRADE
 
         return session.pollUntilJobCompletion(jobId) { new, plan ->
             codeModernizerBottomWindowPanelManager.handleJobTransition(new, plan, session.sessionContext.sourceJavaVersion, transformationType)
