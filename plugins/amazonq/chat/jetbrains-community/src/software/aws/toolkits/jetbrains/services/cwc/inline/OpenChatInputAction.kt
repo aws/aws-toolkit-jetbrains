@@ -5,17 +5,17 @@ package software.aws.toolkits.jetbrains.services.cwc.inline
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
-import org.jetbrains.plugins.terminal.exp.TerminalDataContextUtils.editor
 
 class OpenChatInputAction : AnAction() {
     private var inlineChatController: InlineChatController? = null
     private var caretListener: CaretListener? = null
     override fun actionPerformed(e: AnActionEvent) {
-        val editor = e.editor
-        val project = editor?.project
+        val editor = e.getRequiredData(CommonDataKeys.EDITOR)
+        val project = editor.project
 
         if (editor == null || project == null) return
         inlineChatController = InlineChatController.getInstance(project)

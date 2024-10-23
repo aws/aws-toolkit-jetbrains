@@ -12,10 +12,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import software.aws.toolkits.jetbrains.services.cwc.inline.InlineChatController
 
-class InlineChatFileListener(project: Project) : FileEditorManagerListener {
+class InlineChatFileListener(project: Project, private val controller: InlineChatController) : FileEditorManagerListener {
     private var currentEditor: Editor? = null
     private var selectionListener: InlineChatSelectionListener? = null
-    private val controller = InlineChatController.getInstance(project)
 
     init {
         val editor = project.let { FileEditorManager.getInstance(it).selectedTextEditor }

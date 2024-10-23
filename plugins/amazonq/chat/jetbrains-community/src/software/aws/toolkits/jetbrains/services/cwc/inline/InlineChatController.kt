@@ -83,7 +83,7 @@ class InlineChatController(
     private var currentSelectionRange: RangeMarker? = null
 
     init {
-        InlineChatFileListener(project).apply {
+        InlineChatFileListener(project, this).apply {
             project.messageBus.connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this)
         }
     }
@@ -508,7 +508,7 @@ class InlineChatController(
             }
         } catch (e: Exception) {
             logger.warn { "Error when showing inline chat diff in editor: ${e.message} \n ${e.stackTraceToString()}" }
-            throw Exception("Unexpected error, please try again.")
+            throw Exception("Error processing request; please try again.")
         }
     }
 
@@ -601,7 +601,7 @@ class InlineChatController(
                             processNewCode(editor, selectedLineStart, unescape(event.message), prevMessage)
                         } catch (e: Exception) {
                             logger.warn { "error streaming chat message to editor: ${e.stackTraceToString()}" }
-                            errorMessage = e.message ?: "Error processing request; please try again."
+                            errorMessage = "Error processing request; please try again."
                         }
                         prevMessage = unescape(event.message)
                     }
