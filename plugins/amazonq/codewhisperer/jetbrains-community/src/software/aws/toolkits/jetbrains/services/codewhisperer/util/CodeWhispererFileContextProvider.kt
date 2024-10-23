@@ -15,6 +15,7 @@ import com.intellij.util.gist.GistManager
 import com.intellij.util.io.DataExternalizer
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -38,6 +39,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmi
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.SUPPLEMETAL_CONTEXT_BUFFER
 import java.io.DataInput
 import java.io.DataOutput
 import java.util.Collections
@@ -117,54 +119,55 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         val startFetchingTimestamp = System.currentTimeMillis()
         val isTst = readAction { isTestFile(psiFile) }
         return try {
-            withTimeout(timeout) {
-                val language = targetContext.programmingLanguage
+            val language = targetContext.programmingLanguage
 
-                val supplementalContext = if (isTst) {
-                    when (shouldFetchUtgContext(language)) {
-                        true -> extractSupplementalFileContextForTst(psiFile, targetContext)
-                        false -> SupplementalContextInfo.emptyUtgFileContextInfo(targetContext.filename)
-                        null -> {
-                            LOG.debug { "UTG is not supporting ${targetContext.programmingLanguage.languageId}" }
-                            null
-                        }
-                    }
-                } else {
-                    when (shouldFetchCrossfileContext(language)) {
-                        true -> extractSupplementalFileContextForSrc(psiFile, targetContext)
-                        false -> SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
-                        null -> {
-                            LOG.debug { "Crossfile is not supporting ${targetContext.programmingLanguage.languageId}" }
-                            null
-                        }
+            val supplementalContext = if (isTst) {
+                when (shouldFetchUtgContext(language)) {
+                    true -> withTimeout(timeout) { extractSupplementalFileContextForTst(psiFile, targetContext) }
+                    false -> SupplementalContextInfo.emptyUtgFileContextInfo(targetContext.filename)
+                    null -> {
+                        LOG.debug { "UTG is not supporting ${targetContext.programmingLanguage.languageId}" }
+                        null
                     }
                 }
+            } else {
+                when (shouldFetchCrossfileContext(language)) {
+                    // we need this buffer 10ms as when project context timeout by 50ms,
+                    // the entire [extractSupplementalFileContextForSrc] call will time out and not even return openTabsContext
+                    true -> withTimeout(timeout + SUPPLEMETAL_CONTEXT_BUFFER) { extractSupplementalFileContextForSrc(psiFile, targetContext) }
+                    false -> SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
+                    null -> {
+                        LOG.debug { "Crossfile is not supporting ${targetContext.programmingLanguage.languageId}" }
+                        null
+                    }
+                }
+            }
 
-                return@withTimeout supplementalContext?.let {
-                    if (it.contents.isNotEmpty()) {
-                        val logStr = buildString {
-                            append("Successfully fetched supplemental context with strategy ${it.strategy} with ${it.latency} ms")
-                            it.contents.forEachIndexed { index, chunk ->
-                                append(
-                                    """
+            return supplementalContext?.let {
+                if (it.contents.isNotEmpty()) {
+                    val logStr = buildString {
+                        append("Successfully fetched supplemental context with strategy ${it.strategy} with ${it.latency} ms")
+                        it.contents.forEachIndexed { index, chunk ->
+                            append(
+                                """
                             |
                             | Chunk ${index + 1}:
                             |    path = ${chunk.path},
                             |    score = ${chunk.score},
                             |    contentLength = ${chunk.content.length}
                             |
-                                    """.trimMargin()
-                                )
-                            }
+                                """.trimMargin()
+                            )
                         }
-
-                        LOG.info { logStr }
-                    } else {
-                        LOG.warn { "Failed to fetch supplemental context, empty list." }
                     }
 
-                    it.copy(latency = System.currentTimeMillis() - startFetchingTimestamp)
+                    LOG.info { logStr }
+                } else {
+                    LOG.warn { "Failed to fetch supplemental context, empty list." }
                 }
+
+                // TODO: fix this latency
+                it.copy(latency = System.currentTimeMillis() - startFetchingTimestamp)
             }
         } catch (e: TimeoutCancellationException) {
             LOG.debug {
@@ -215,47 +218,60 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
         val query = generateQuery(targetContext)
 
-        val projectContextDeferred = if (CodeWhispererFeatureConfigService.getInstance().getInlineCompletion()) {
-            withContext(coroutineContext) {
+        val contexts = withContext(coroutineContext) {
+            val projectContextDeferred1 = if (CodeWhispererFeatureConfigService.getInstance().getInlineCompletion()) {
                 async {
                     val t0 = System.currentTimeMillis()
                     val r = fetchProjectContext(query, psiFile, targetContext)
                     val t1 = System.currentTimeMillis()
-                    LOG.debug { "fetchProjectContext cost ${t1 - t0} ms" }
+                    LOG.debug {
+                        buildString {
+                            append("time elapse for fetching project context=${t1 - t0}ms; ")
+                            append("numberOfChunks=${r.contents.size}; ")
+                            append("totalLength=${r.contentLength}")
+                        }
+                    }
 
                     r
                 }
+            } else {
+                null
             }
-        } else {
-            null
-        }
 
-        val openTabsContextDeferred = withContext(coroutineContext) {
-            async {
+            val openTabsContextDeferred1 = async {
                 val t0 = System.currentTimeMillis()
                 val r = fetchOpenTabsContext(query, psiFile, targetContext)
                 val t1 = System.currentTimeMillis()
-                LOG.debug { "fetchOpenTabsContext cost ${t1 - t0} ms" }
+                LOG.debug {
+                    buildString {
+                        append("time elapse for open tabs context=${t1 - t0}ms; ")
+                        append("numberOfChunks=${r.contents.size}; ")
+                        append("totalLength=${r.contentLength}")
+                    }
+                }
 
                 r
             }
+
+            if (projectContextDeferred1 != null) {
+                awaitAll(projectContextDeferred1, openTabsContextDeferred1)
+            } else {
+                awaitAll(openTabsContextDeferred1)
+            }
         }
 
-        if (projectContextDeferred == null) {
-            return openTabsContextDeferred.await()
+        val projectContext = contexts.find { it.strategy == CrossFileStrategy.ProjectContext }
+        val openTabsContext = contexts.find { it.strategy == CrossFileStrategy.OpenTabsBM25 }
+
+        return if (projectContext != null && projectContext.contents.isNotEmpty()) {
+            projectContext
         } else {
-            val projectContext = projectContextDeferred.await()
-            return if (projectContext.contents.isNotEmpty()) {
-                projectContext
-            } else {
-                val openTabsContext = openTabsContextDeferred.await()
-                openTabsContext
-            }
+            openTabsContext ?: SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
         }
     }
 
     @VisibleForTesting
-    fun fetchProjectContext(query: String, psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo {
+    suspend fun fetchProjectContext(query: String, psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo {
         val response = ProjectContextController.getInstance(project).queryInline(query, psiFile.virtualFile?.path ?: "")
 
         return SupplementalContextInfo(

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.BaseProjectDirectories.Companion.getBaseDirectories
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtilCore
@@ -15,9 +16,11 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.openapi.vfs.isFile
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
@@ -31,8 +34,6 @@ import software.aws.toolkits.telemetry.AmazonqTelemetry
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -43,6 +44,10 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
 
     init {
         cs.launch {
+            if (ApplicationManager.getApplication().isUnitTestMode) {
+                return@launch
+            }
+
             while (true) {
                 if (encoderServer.isNodeProcessRunning()) {
                     // TODO: need better solution for this
@@ -167,12 +172,12 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
-    fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> {
-        val encrypted = encryptRequest(QueryInlineCompletionRequest(query, filePath))
-        return CompletableFuture.supplyAsync {
+    suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> = withTimeout(50L) {
+        cs.async {
+            val encrypted = encryptRequest(QueryInlineCompletionRequest(query, filePath))
             val r = sendMsgToLsp(LspMessage.QueryInlineCompletion, encrypted)
-            mapper.readValue<List<InlineBm25Chunk>>(r.responseBody)
-        }.get(50L, TimeUnit.MILLISECONDS)
+            return@async mapper.readValue<List<InlineBm25Chunk>>(r.responseBody)
+        }.await()
     }
 
     fun getUsage(): Usage? {
