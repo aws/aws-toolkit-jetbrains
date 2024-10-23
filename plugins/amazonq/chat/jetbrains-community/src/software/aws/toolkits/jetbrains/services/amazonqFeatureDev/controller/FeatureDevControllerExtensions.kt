@@ -200,7 +200,7 @@ private suspend fun FeatureDevController.disposeToken(
         message =
         message(
             "amazonqFeatureDev.code_generation.stopped_code_generation",
-            remainingIterations ?: state.currentIteration?.let { CODE_GENERATION_RETRY_LIMIT.minus(it) } as Any,
+            remainingIterations ?: state.currentIteration?.let { CODE_GENERATION_RETRY_LIMIT - it } as Any,
             totalIterations ?: CODE_GENERATION_RETRY_LIMIT,
         ),
     )
