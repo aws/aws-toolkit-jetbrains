@@ -11,27 +11,11 @@ import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
 
 class OpenChatInputAction : AnAction() {
-    private var inlineChatController: InlineChatController? = null
-    private var caretListener: CaretListener? = null
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getRequiredData(CommonDataKeys.EDITOR)
-        val project = editor.project
+        val project = editor.project ?: return
 
-        if (editor == null || project == null) return
-        inlineChatController = InlineChatController.getInstance(project)
-        inlineChatController?.initPopup(editor)
-
-        caretListener = createCaretListener(editor)
-        editor.caretModel.addCaretListener(caretListener!!)
-    }
-
-    private fun createCaretListener(editor: Editor): CaretListener = object : CaretListener {
-        override fun caretPositionChanged(event: CaretEvent) {
-            inlineChatController?.disposePopup(false)
-
-            editor.caretModel.removeCaretListener(this)
-            caretListener = null
-            inlineChatController = null
-        }
+        val inlineChatController = InlineChatController.getInstance(project)
+        inlineChatController.initPopup(editor)
     }
 }

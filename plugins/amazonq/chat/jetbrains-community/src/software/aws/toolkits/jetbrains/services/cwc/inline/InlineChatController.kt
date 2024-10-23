@@ -17,6 +17,8 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.RangeMarker
+import com.intellij.openapi.editor.event.CaretEvent
+import com.intellij.openapi.editor.event.CaretListener
 import com.intellij.openapi.editor.markup.HighlighterLayer
 import com.intellij.openapi.editor.markup.HighlighterTargetArea
 import com.intellij.openapi.editor.markup.RangeHighlighter
@@ -81,11 +83,11 @@ class InlineChatController(
     private var metrics: InlineChatMetrics? = null
     private var canPopupAbort = AtomicBoolean(true)
     private var currentSelectionRange: RangeMarker? = null
+    private val listener = InlineChatFileListener(project, this)
 
     init {
-        InlineChatFileListener(project, this).apply {
-            project.messageBus.connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this)
-        }
+        Disposer.register(this, listener)
+        project.messageBus.connect(this).subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, listener)
     }
 
     data class InlineChatMetrics(
@@ -151,7 +153,7 @@ class InlineChatController(
         metrics = null
     }
 
-    private fun undoChanges () {
+    private fun undoChanges() {
         scope.launch(EDT) {
             while (partialUndoActions.isNotEmpty()) {
                 val action = partialUndoActions.pop()
@@ -203,8 +205,18 @@ class InlineChatController(
             submitHandler = popupSubmitHandler, cancelHandler = { popupCancelHandler(editor) }
         ).createPopup(editor, scope)
         addPopupListeners(currentPopup!!, editor)
+        val caretListener = createCaretListener(editor)
+        editor.caretModel.addCaretListener(caretListener)
         Disposer.register(this, currentPopup!!)
         canPopupAbort.set(true)
+    }
+
+    private fun createCaretListener(editor: Editor): CaretListener = object : CaretListener {
+        override fun caretPositionChanged(event: CaretEvent) {
+            disposePopup(false)
+
+            editor.caretModel.removeCaretListener(this)
+        }
     }
 
     private fun removeSelection(editor: Editor) {
@@ -588,8 +600,8 @@ class InlineChatController(
                 triggerId,
                 requestData,
                 sessionInfo,
-                false,
-                true
+                shouldAddIndexInProgressMessage = false,
+                isInlineChat = true
             )
                 .catch { e ->
                     logger.warn { "Error in inline chat request: ${e.message}" }
@@ -618,7 +630,7 @@ class InlineChatController(
             try {
                 processChatDiff(selectedCode, finalMessage, editor, selectionRange!!)
             } catch (e: Exception) {
-                logger.warn {"error precessing chat diff in editor: ${e.stackTraceToString()}" }
+                logger.warn { "error precessing chat diff in editor: ${e.stackTraceToString()}" }
                 errorMessage = "Error processing request; please try again."
             }
         }
@@ -631,7 +643,7 @@ class InlineChatController(
                 codeIntent = true, responseStartLatency = firstResponseLatency, responseEndLatency = lastResponseLatency
             )
         }
-        if(errorMessage.isNotEmpty()) {
+        if (errorMessage.isNotEmpty()) {
             undoChanges()
         }
         return errorMessage

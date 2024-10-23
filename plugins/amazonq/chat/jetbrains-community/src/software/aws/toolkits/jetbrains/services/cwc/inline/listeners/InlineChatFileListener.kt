@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.inline.listeners
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
@@ -12,7 +13,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import software.aws.toolkits.jetbrains.services.cwc.inline.InlineChatController
 
-class InlineChatFileListener(project: Project, private val controller: InlineChatController) : FileEditorManagerListener {
+class InlineChatFileListener(project: Project, private val controller: InlineChatController) : FileEditorManagerListener, Disposable {
     private var currentEditor: Editor? = null
     private var selectionListener: InlineChatSelectionListener? = null
 
@@ -37,6 +38,7 @@ class InlineChatFileListener(project: Project, private val controller: InlineCha
     private fun setupListenersForEditor(editor: Editor) {
         selectionListener = InlineChatSelectionListener().also { listener ->
             editor.selectionModel.addSelectionListener(listener)
+            Disposer.register(this, listener)
         }
     }
 
@@ -48,7 +50,7 @@ class InlineChatFileListener(project: Project, private val controller: InlineCha
         selectionListener = null
     }
 
-    fun dispose() {
+    override fun dispose() {
         currentEditor?.let { removeListenersFromCurrentEditor(it) }
         currentEditor = null
     }

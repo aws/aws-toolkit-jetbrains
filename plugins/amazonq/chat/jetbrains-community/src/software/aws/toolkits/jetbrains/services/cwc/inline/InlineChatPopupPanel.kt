@@ -61,7 +61,6 @@ class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() 
         font = font.deriveFont(popupButtonFontSize)
     }
 
-
     private val inputPanel = JPanel(BorderLayout()).apply {
         border = BorderFactory.createEmptyBorder(10, 10, 5, 10)
     }
@@ -151,7 +150,6 @@ class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() 
         addActionListener(IdeActions.ACTION_EDITOR_ESCAPE, escapeHandler)
         revalidate()
     }
-
 
     fun setLabel(text: String) {
         textLabel.text = text

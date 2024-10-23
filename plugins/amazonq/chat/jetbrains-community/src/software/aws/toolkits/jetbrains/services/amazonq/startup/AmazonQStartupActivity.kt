@@ -20,7 +20,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWi
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.cwc.inline.InlineChatController
-import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import java.lang.management.ManagementFactory
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
