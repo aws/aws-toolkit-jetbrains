@@ -286,7 +286,7 @@ class CodeTransformChatController(
         codeModernizerManager.createCodeModernizerSession(selection, context.project)
 
         // Publish metric to capture user selection before local build starts
-        telemetry.submitSelection("Confirm", selection)
+        telemetry.submitSelection("Confirm-Java", selection)
 
         codeTransformChatHelper.run {
             addNewMessage(buildUserInputSkipTestsFlagChatIntroContent())
@@ -349,6 +349,7 @@ class CodeTransformChatController(
                     sqlMetadataZip = extractedZip,
                 )
                 codeModernizerManager.createCodeModernizerSession(selection, context.project)
+                telemetry.submitSelection("Confirm-SQL", selection)
             }
         }
     }

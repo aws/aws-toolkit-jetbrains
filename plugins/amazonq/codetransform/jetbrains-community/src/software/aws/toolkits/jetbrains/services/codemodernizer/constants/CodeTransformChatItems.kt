@@ -58,7 +58,7 @@ private val confirmUserSelectionSQLConversionModuleSchemaButton = Button(
 )
 
 private val confirmUserSelectionSQLConversionMetadataButton = Button(
-    keepCardAfterClick = true, // TODO: make this false if you can't figure out how to disable the Select button after its been clicked once
+    keepCardAfterClick = true,
     waitMandatoryFormItems = true,
     text = message("codemodernizer.chat.message.button.select"),
     id = CodeTransformButtonId.SelectSQLMetadata.id,
