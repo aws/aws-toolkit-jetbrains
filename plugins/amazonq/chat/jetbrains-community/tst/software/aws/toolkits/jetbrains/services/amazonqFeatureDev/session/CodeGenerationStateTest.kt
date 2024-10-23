@@ -164,7 +164,7 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
         }
 
         verify(exactly = 1) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage) }
-        verify(exactly = 180) { featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
+        verify(exactly = 360) { featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
         coVerify(exactly = 0) { featureDevService.exportTaskAssistArchiveResult(testConversationId) }
     }
 }
