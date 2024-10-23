@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.BaseProjectDirectories.Companion.getBaseDirectories
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtilCore
@@ -41,6 +42,10 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
 
     init {
         cs.launch {
+            if (ApplicationManager.getApplication().isUnitTestMode) {
+                return@launch
+            }
+
             while (true) {
                 if (encoderServer.isNodeProcessRunning()) {
                     // TODO: need better solution for this
