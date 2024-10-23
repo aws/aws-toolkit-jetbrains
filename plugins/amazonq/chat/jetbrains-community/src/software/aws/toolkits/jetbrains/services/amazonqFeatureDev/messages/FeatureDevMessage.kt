@@ -66,6 +66,12 @@ sealed interface IncomingFeatureDevMessage : FeatureDevBaseMessage {
         val link: String,
     ) : IncomingFeatureDevMessage
 
+    data class StopResponse(
+        @JsonProperty("tabID") val tabId: String,
+        val command: String,
+        val messageId: String?,
+    ) : IncomingFeatureDevMessage
+
     data class InsertCodeAtCursorPosition(
         @JsonProperty("tabID") val tabId: String,
         val code: String,
