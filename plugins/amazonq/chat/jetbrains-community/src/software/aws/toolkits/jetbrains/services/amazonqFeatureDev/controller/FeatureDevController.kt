@@ -15,6 +15,7 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.wm.ToolWindowManager
 import kotlinx.coroutines.withContext
@@ -74,6 +75,7 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.UiTelemetry
 import java.util.UUID
 
 class FeatureDevController(
@@ -90,6 +92,10 @@ class FeatureDevController(
             tabId = message.tabId,
             message = message.chatMessage
         )
+    }
+
+    override suspend fun processStopMessage(message: IncomingFeatureDevMessage.StopResponse) {
+        handleStopMessage(message)
     }
 
     override suspend fun processNewTabCreatedMessage(message: IncomingFeatureDevMessage.NewTabCreated) {
@@ -284,6 +290,26 @@ class FeatureDevController(
         }
     }
 
+    private suspend fun handleStopMessage(message: IncomingFeatureDevMessage.StopResponse) {
+        val session: Session?
+        UiTelemetry.click(null as Project?, "amazonq_stopCodeGeneration")
+        messenger.sendAnswer(
+            tabId = message.tabId,
+            message("amazonqFeatureDev.code_generation.stopping_code_generation"),
+            messageType = FeatureDevMessageType.Answer,
+            canBeVoted = false
+        )
+        messenger.sendUpdatePlaceholder(
+            tabId = message.tabId,
+            newPlaceholder = message("amazonqFeatureDev.code_generation.stopping_code_generation")
+        )
+        messenger.sendChatInputEnabledMessage(tabId = message.tabId, enabled = false)
+        session = getSessionInfo(message.tabId)
+
+        if (session.sessionState.token?.token !== null) {
+            session.sessionState.token?.cancel()
+        }
+    }
     private suspend fun insertCode(tabId: String) {
         var session: Session? = null
         try {
