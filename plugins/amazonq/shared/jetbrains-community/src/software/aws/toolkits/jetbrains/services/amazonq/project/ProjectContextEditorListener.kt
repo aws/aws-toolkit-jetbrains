@@ -19,6 +19,6 @@ class ProjectContextEditorListener : FileEditorManagerListener {
         }
 
         val project = event.manager.project
-        ProjectContextController.getInstance(project).updateIndex(listOf(oldFile.path), ProjectContextProvider.IndexUpdateMode.UPDATE)
+        ProjectContextController.getInstance(project).updateIndex(listOf(oldFile.path), IndexUpdateMode.UPDATE)
     }
 }

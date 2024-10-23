@@ -58,3 +58,9 @@ data class LspResponse(
     val responseCode: Int,
     val responseBody: String,
 )
+
+enum class IndexUpdateMode(val value: String) {
+    UPDATE("update"),
+    REMOVE("remove"),
+    ADD("add"),
+}

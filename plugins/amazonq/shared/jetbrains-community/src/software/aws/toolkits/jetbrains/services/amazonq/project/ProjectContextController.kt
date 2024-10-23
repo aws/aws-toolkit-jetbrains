@@ -36,8 +36,8 @@ class ProjectContextController(private val project: Project, private val cs: Cor
                     val createdFiles = events.filterIsInstance<VFileCreateEvent>().mapNotNull { it.file?.path }
                     val deletedFiles = events.filterIsInstance<VFileDeleteEvent>().map { it.file.path }
 
-                    updateIndex(createdFiles, ProjectContextProvider.IndexUpdateMode.ADD)
-                    updateIndex(deletedFiles, ProjectContextProvider.IndexUpdateMode.REMOVE)
+                    updateIndex(createdFiles, IndexUpdateMode.ADD)
+                    updateIndex(deletedFiles, IndexUpdateMode.REMOVE)
                 }
             }
         )
@@ -62,7 +62,7 @@ class ProjectContextController(private val project: Project, private val cs: Cor
             emptyList()
         }
 
-    fun updateIndex(filePaths: List<String>, mode: ProjectContextProvider.IndexUpdateMode) {
+    fun updateIndex(filePaths: List<String>, mode: IndexUpdateMode) {
         try {
             return projectContextProvider.updateIndex(filePaths, mode)
         } catch (e: Exception) {
