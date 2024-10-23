@@ -15,9 +15,11 @@ import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
+import java.util.concurrent.TimeoutException
 
 @Service(Service.Level.PROJECT)
 class ProjectContextController(private val project: Project, private val cs: CoroutineScope) : Disposable {
@@ -54,11 +56,15 @@ class ProjectContextController(private val project: Project, private val cs: Cor
         }
     }
 
-    fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> =
+    suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> =
         try {
             projectContextProvider.queryInline(query, filePath)
         } catch (e: Exception) {
-            logger.warn { "error while querying inline for project context $e.message" }
+            var logStr = "error while querying inline for project context $e.message"
+            if (e is TimeoutCancellationException || e is TimeoutException) {
+                logStr = "project context times out with 50ms ${e.message}"
+            }
+            logger.warn { logStr }
             emptyList()
         }
 

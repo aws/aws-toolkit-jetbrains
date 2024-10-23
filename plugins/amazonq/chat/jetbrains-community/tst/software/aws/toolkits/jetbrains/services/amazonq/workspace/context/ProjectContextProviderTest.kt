@@ -17,8 +17,13 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.replaceService
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -31,6 +36,7 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.services.amazonq.project.EncoderServer
 import software.aws.toolkits.jetbrains.services.amazonq.project.IndexRequest
 import software.aws.toolkits.jetbrains.services.amazonq.project.IndexUpdateMode
@@ -45,9 +51,9 @@ import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import java.net.ConnectException
-import java.util.concurrent.TimeoutException
 import kotlin.test.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ProjectContextProviderTest {
     @Rule
     @JvmField
@@ -69,12 +75,14 @@ class ProjectContextProviderTest {
 
     private val mapper = jacksonObjectMapper()
 
+    private val dispatcher = StandardTestDispatcher()
+
     @Before
     fun setup() {
         encoderServer = spy(EncoderServer(project))
         encoderServer.stub { on { port } doReturn wireMock.port() }
 
-        sut = ProjectContextProvider(project, encoderServer, TestScope())
+        sut = ProjectContextProvider(project, encoderServer, TestScope(context = dispatcher))
 
         // initialization
         stubFor(any(urlPathEqualTo("/initialize")).willReturn(aResponse().withStatus(200).withResponseBody(Body("initialize response"))))
@@ -225,8 +233,10 @@ class ProjectContextProviderTest {
     }
 
     @Test
-    fun `queryInline should send correct encrypted request to lsp`() {
+    fun `queryInline should send correct encrypted request to lsp`() = runTest {
+        sut = ProjectContextProvider(project, encoderServer, this)
         sut.queryInline("foo", "Foo.java")
+        advanceUntilIdle()
 
         val request = QueryInlineCompletionRequest("foo", "Foo.java")
         val requestJson = mapper.writeValueAsString(request)
@@ -234,7 +244,6 @@ class ProjectContextProviderTest {
         assertThat(mapper.readTree(requestJson)).isEqualTo(mapper.readTree("""{ "query": "foo", "filePath": "Foo.java" }"""))
 
         val encryptedRequest = encoderServer.encrypt(requestJson)
-
         wireMock.verify(
             1,
             postRequestedFor(urlPathEqualTo("/queryInlineProjectContext"))
@@ -284,27 +293,35 @@ class ProjectContextProviderTest {
 
     @Test
     fun `query inline should throw if resultset not deserializable`() {
-        stubFor(
-            any(urlPathEqualTo("/queryInlineProjectContext")).willReturn(
-                aResponse().withStatus(200).withResponseBody(
-                    Body(
-                        """
+        assertThrows<Exception> {
+            runTest {
+                sut = ProjectContextProvider(project, encoderServer, this)
+                stubFor(
+                    any(urlPathEqualTo("/queryInlineProjectContext")).willReturn(
+                        aResponse().withStatus(200).withResponseBody(
+                            Body(
+                                """
                             [
                                 "foo", "bar"
                             ]
-                        """.trimIndent()
+                                """.trimIndent()
+                            )
+                        )
                     )
                 )
-            )
-        )
 
-        assertThrows<Exception> {
-            sut.queryInline("foo", "filepath")
+                assertThrows<Exception> {
+                    sut.queryInline("foo", "filepath")
+                    advanceUntilIdle()
+                }
+            }
         }
     }
 
     @Test
     fun `query inline should return deserialized bm25 chunks`() = runTest {
+        sut = ProjectContextProvider(project, encoderServer, this)
+        advanceUntilIdle()
         val r = sut.queryInline("foo", "filepath")
         assertThat(r).hasSize(3)
         assertThat(r[0]).isEqualTo(
@@ -337,20 +354,26 @@ class ProjectContextProviderTest {
     }
 
     @Test
-    fun `queryInline should throw if time elapsed is greater than 50ms`() {
-        stubFor(
-            any(urlPathEqualTo("/queryInlineProjectContext")).willReturn(
-                aResponse()
-                    .withStatus(200)
-                    .withResponseBody(
-                        Body(validQueryInlineResponse)
-                    )
-                    .withFixedDelay(51) // 10 sec
+    fun `queryInline should throw if time elapsed is greater than 50ms`() = runTest {
+        assertThrows<TimeoutCancellationException> {
+            sut = ProjectContextProvider(project, encoderServer, this)
+            stubFor(
+                any(urlPathEqualTo("/queryInlineProjectContext")).willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withResponseBody(
+                            Body(validQueryInlineResponse)
+                        )
+                        .withFixedDelay(51) // 10 sec
+                )
             )
-        )
 
-        assertThrows<TimeoutException> {
-            sut.queryInline("foo", "bar")
+            // it won't throw if it's executed within TestDispatcher context
+            withContext(getCoroutineBgContext()) {
+                sut.queryInline("foo", "bar")
+            }
+
+            advanceUntilIdle()
         }
     }
 

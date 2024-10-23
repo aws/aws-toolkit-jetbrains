@@ -138,7 +138,7 @@ class CodeWhispererFileContextProviderTest {
 
     @Test
     fun `should call both and use openTabsContext if projectContext is empty when it's enabled`() = runTest {
-        mockProjectContext.stub { on { queryInline(any(), any()) } doReturn emptyList() }
+        mockProjectContext.stub { onBlocking { queryInline(any(), any()) }.doReturn(emptyList()) }
         featureConfigService.stub { on { getInlineCompletion() } doReturn true }
         sut = spy(sut)
 
@@ -158,7 +158,7 @@ class CodeWhispererFileContextProviderTest {
 
     // move to projectContextControllerTest
     @Test
-    fun `projectContextController should return empty result if provider throws`() {
+    fun `projectContextController should return empty result if provider throws`() = runTest {
         mockConstruction(ProjectContextProvider::class.java).use { providerContext ->
             mockConstruction(EncoderServer::class.java).use { serverContext ->
                 assertThat(providerContext.constructed()).hasSize(0)
@@ -178,11 +178,15 @@ class CodeWhispererFileContextProviderTest {
     @Test
     fun `should use project context if it is present`() = runTest {
         mockProjectContext.stub {
-            on { queryInline(any(), any()) } doReturn listOf(
-                InlineBm25Chunk("project_context1", "path1", 0.0),
-                InlineBm25Chunk("project_context2", "path2", 0.0),
-                InlineBm25Chunk("project_context3", "path3", 0.0),
-            )
+            runBlocking {
+                doReturn(
+                    listOf(
+                        InlineBm25Chunk("project_context1", "path1", 0.0),
+                        InlineBm25Chunk("project_context2", "path2", 0.0),
+                        InlineBm25Chunk("project_context3", "path3", 0.0),
+                    )
+                ).whenever(it).queryInline(any(), any())
+            }
         }
         featureConfigService.stub { on { getInlineCompletion() } doReturn true }
         sut = spy(sut)
