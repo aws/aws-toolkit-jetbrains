@@ -14,20 +14,21 @@ import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 
 @Service(Service.Level.PROJECT)
 class ProjectContextController(private val project: Project, private val cs: CoroutineScope) : Disposable {
+    // TODO: Ideally we should inject dependencies via constructor for easier testing, refer to how [TelemetryService] inject publisher and batcher
     private val encoderServer: EncoderServer = EncoderServer(project)
     private val projectContextProvider: ProjectContextProvider = ProjectContextProvider(project, encoderServer, cs)
+    val initJob: Job = cs.launch {
+        encoderServer.downloadArtifactsAndStartServer()
+    }
 
     init {
-        cs.launch {
-            encoderServer.downloadArtifactsAndStartServer()
-        }
-
         project.messageBus.connect(this).subscribe(
             VirtualFileManager.VFS_CHANGES,
             object : BulkFileListener {
