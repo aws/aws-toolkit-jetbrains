@@ -219,6 +219,7 @@ class FeatureDevController(
                     }
 
                     val request = SimpleDiffRequest(message.filePath, leftDiffContent, rightDiffContent, null, null)
+                    request.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true)
 
                     DiffManager.getInstance().showDiff(project, request)
                 }
