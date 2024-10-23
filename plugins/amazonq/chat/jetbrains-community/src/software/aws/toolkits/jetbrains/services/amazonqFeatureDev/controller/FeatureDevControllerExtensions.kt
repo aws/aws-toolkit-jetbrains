@@ -57,7 +57,7 @@ suspend fun FeatureDevController.onCodeGeneration(
         var totalIterations: Int? = state.codeGenerationTotalIterationCount
 
         if (state.token?.token()?.isCancellationRequested == true) {
-            this.disposeToken(state, messenger, tabId, state.currentIteration?.let { CODE_GENERATION_RETRY_LIMIT.minus(it) }, CODE_GENERATION_RETRY_LIMIT)
+            disposeToken(state, messenger, tabId, state.currentIteration?.let { CODE_GENERATION_RETRY_LIMIT.minus(it) }, CODE_GENERATION_RETRY_LIMIT)
             return
         }
 
@@ -155,7 +155,7 @@ suspend fun FeatureDevController.onCodeGeneration(
     }
 }
 
-private suspend fun FeatureDevController.disposeToken(
+private suspend fun disposeToken(
     state: SessionState,
     messenger: MessagePublisher,
     tabId: String,
