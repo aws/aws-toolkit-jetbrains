@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
-import org.gradle.tooling.GradleConnector
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATION_RETRY_LIMIT
@@ -83,7 +82,7 @@ class Session(val tabID: String, val project: Project) {
             currentIteration = 1, // first code gen iteration
             uploadId = "", // There is no code gen uploadId so far
             messenger = messenger,
-            token =  CancellationTokenSource()
+            token = CancellationTokenSource()
         )
     }
 

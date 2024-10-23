@@ -13,7 +13,6 @@ import io.mockk.runs
 import io.mockk.unmockkAll
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
-import org.gradle.tooling.GradleConnector
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule

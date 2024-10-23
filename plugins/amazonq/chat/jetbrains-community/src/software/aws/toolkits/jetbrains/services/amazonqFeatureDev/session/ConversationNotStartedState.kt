@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
 
-
 class ConversationNotStartedState(
     override var approach: String,
     override val tabID: String,

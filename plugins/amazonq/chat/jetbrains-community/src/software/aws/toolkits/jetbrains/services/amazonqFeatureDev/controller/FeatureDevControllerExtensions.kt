@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.controller
 
 import com.intellij.notification.NotificationAction
-import org.gradle.tooling.GradleConnector
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATION_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
