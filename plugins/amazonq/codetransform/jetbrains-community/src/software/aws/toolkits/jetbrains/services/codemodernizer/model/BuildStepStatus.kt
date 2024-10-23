@@ -17,5 +17,4 @@ fun mapTransformationPlanApiStatus(apiStatus: TransformationProgressUpdateStatus
     TransformationProgressUpdateStatus.FAILED, TransformationProgressUpdateStatus.PAUSED -> BuildStepStatus.WARNING
     TransformationProgressUpdateStatus.IN_PROGRESS -> BuildStepStatus.WORKING
     TransformationProgressUpdateStatus.UNKNOWN_TO_SDK_VERSION -> BuildStepStatus.ERROR
-    TransformationProgressUpdateStatus.AWAITING_CLIENT_ACTION -> TODO()
 }
