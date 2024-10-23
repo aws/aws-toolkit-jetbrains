@@ -120,8 +120,8 @@ class CodeGenerationState(
 }
 
 private suspend fun CodeGenerationState.generateCode(codeGenerationId: String, messenger: MessagePublisher): CodeGenerationResult {
-    val pollCount = 180
-    val requestDelay = 10000L
+    val pollCount = 360
+    val requestDelay = 5000L
 
     repeat(pollCount) {
         val codeGenerationResultState = config.featureDevService.getTaskAssistCodeGeneration(
