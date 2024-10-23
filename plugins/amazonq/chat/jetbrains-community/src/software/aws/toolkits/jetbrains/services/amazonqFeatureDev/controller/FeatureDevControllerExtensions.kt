@@ -35,8 +35,7 @@ suspend fun FeatureDevController.onCodeGeneration(
     messenger.sendAsyncEventProgress(
         tabId = tabId,
         inProgress = true,
-        message =
-        if (session.retries == CODE_GENERATION_RETRY_LIMIT) {
+        message = if (session.retries == CODE_GENERATION_RETRY_LIMIT) {
             message(
                 "amazonqFeatureDev.chat_message.start_code_generation",
             )
