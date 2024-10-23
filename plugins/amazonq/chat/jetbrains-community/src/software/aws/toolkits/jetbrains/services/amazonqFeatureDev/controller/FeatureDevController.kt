@@ -289,7 +289,7 @@ class FeatureDevController(
     }
 
     private suspend fun handleStopMessage(message: IncomingFeatureDevMessage.StopResponse) {
-        var session: Session?
+        val session: Session?
         AmazonqTelemetry.stopCodeGeneration(tabId = message.tabId)
         messenger.sendAnswer(
             tabId = message.tabId,
