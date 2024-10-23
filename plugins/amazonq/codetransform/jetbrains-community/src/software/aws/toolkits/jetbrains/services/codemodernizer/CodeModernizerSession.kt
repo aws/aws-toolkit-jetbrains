@@ -458,8 +458,8 @@ class CodeModernizerSession(
                     }
                 }
 
-                // Open the transformation plan detail panel once transformation plan is available
-                if (state.transformationPlan != null && !isTransformationPlanEditorOpened) {
+                // Open the transformation plan detail panel once transformation plan is available (no plan for SQL conversions)
+                if (sessionContext.sqlMetadataZip == null && state.transformationPlan != null && !isTransformationPlanEditorOpened) {
                     tryOpenTransformationPlanEditor()
                     isTransformationPlanEditorOpened = true
                 }
