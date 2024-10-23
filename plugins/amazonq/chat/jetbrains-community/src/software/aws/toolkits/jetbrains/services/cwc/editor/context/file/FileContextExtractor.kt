@@ -14,7 +14,7 @@ import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.util.Lan
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.util.MatchPolicyExtractor
 import software.aws.toolkits.jetbrains.utils.computeOnEdt
 
-class FileContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter, private val project: Project) {
+class FileContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter?, private val project: Project) {
     private val languageExtractor: LanguageExtractor = LanguageExtractor()
     suspend fun extract(): FileContext? {
         val editor = computeOnEdt {

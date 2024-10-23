@@ -6,6 +6,7 @@ assertJ = "3.26.3"
 awsSdk = "2.26.25"
 commonmark = "0.22.0"
 detekt = "1.23.7"
+diff-util = "4.12"
 intellijExt = "1.1.8"
 # match with <root>/settings.gradle.kts
 intellijGradle = "2.1.0"
@@ -71,6 +72,7 @@ commons-collections = { module = "org.apache.commons:commons-collections4", vers
 commons-io = { module = "commons-io:commons-io", version.ref = "apache-commons-io" }
 detekt-api = { module = "io.gitlab.arturbosch.detekt:detekt-api", version.ref = "detekt" }
 detekt-formattingRules = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
+diff-util = { module = "io.github.java-diff-utils:java-diff-utils", version.ref = "diff-util" }
 detekt-test = { module = "io.gitlab.arturbosch.detekt:detekt-test", version.ref = "detekt" }
 gradlePlugin-detekt = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 gradlePlugin-ideaExt = { module = "gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext", version.ref = "intellijExt" }

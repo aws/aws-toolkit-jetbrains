@@ -14,6 +14,7 @@ enum class TriggerType {
     ContextMenu,
     Hotkeys,
     CodeScanButton,
+    Inline,
 }
 
 data class ChatRequestData(

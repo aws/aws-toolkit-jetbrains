@@ -169,7 +169,8 @@
             "type":"string",
             "enum":[
                 "MANUAL",
-                "DIAGNOSTIC"
+                "DIAGNOSTIC",
+                "INLINE_CHAT"
             ]
         },
         "CodeReferenceEvent":{

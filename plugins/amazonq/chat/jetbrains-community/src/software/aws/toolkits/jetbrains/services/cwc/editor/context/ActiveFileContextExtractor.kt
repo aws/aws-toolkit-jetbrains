@@ -34,7 +34,7 @@ class ActiveFileContextExtractor(
     }
 
     companion object {
-        fun create(fqnWebviewAdapter: FqnWebviewAdapter, project: Project) = ActiveFileContextExtractor(
+        fun create(fqnWebviewAdapter: FqnWebviewAdapter?, project: Project) = ActiveFileContextExtractor(
             fileContextExtractor = FileContextExtractor(fqnWebviewAdapter, project),
             focusAreaContextExtractor = FocusAreaContextExtractor(fqnWebviewAdapter, project),
         )
