@@ -58,6 +58,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Sessio
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStateConfig
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStatePhase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.storage.ChatSessionStorage
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.selectFolder
@@ -224,7 +225,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             whenever(spySession.sessionState).thenReturn(
                 PrepareCodeGenerationState(
                     testTabId,
-                    GradleConnector.newCancellationTokenSource(),
+                    CancellationTokenSource(),
                     "test-command",
                     sessionStateConfig,
                     newFileContents,
@@ -285,7 +286,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             whenever(mockSession.sessionState).thenReturn(
                 PrepareCodeGenerationState(
                     testTabId,
-                    GradleConnector.newCancellationTokenSource(),
+                    CancellationTokenSource(),
                     "test-command",
                     sessionStateConfig,
                     newFileContents,
@@ -344,7 +345,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             whenever(mockSession.sessionState).thenReturn(
                 PrepareCodeGenerationState(
                     testTabId,
-                    GradleConnector.newCancellationTokenSource(),
+                    CancellationTokenSource(),
                     "",
                     mock(),
                     filePaths,
@@ -383,7 +384,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             whenever(mockSession.sessionState).thenReturn(
                 PrepareCodeGenerationState(
                     testTabId,
-                    GradleConnector.newCancellationTokenSource(),
+                    CancellationTokenSource(),
                     "",
                     mock(),
                     filePaths,
@@ -415,7 +416,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             whenever(spySession.sessionState).thenReturn(
                 PrepareCodeGenerationState(
                     testTabId,
-                    GradleConnector.newCancellationTokenSource(),
+                    CancellationTokenSource(),
                     "",
                     mock(),
                     newFileContents,

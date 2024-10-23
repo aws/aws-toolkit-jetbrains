@@ -27,6 +27,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.ZipCreationResult
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.deleteUploadArtifact
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.uploadArtifactToS3
@@ -53,7 +54,7 @@ class PrepareCodeGenerationStateTest : FeatureDevTestBase() {
 
         prepareCodeGenerationState = PrepareCodeGenerationState(
             "",
-            GradleConnector.newCancellationTokenSource(),
+            CancellationTokenSource(),
             "test-approach",
             sessionStateConfig,
             emptyList(),

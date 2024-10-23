@@ -304,7 +304,7 @@ class FeatureDevController(
         messenger.sendChatInputEnabledMessage(tabId = message.tabId, enabled = false)
         session = getSessionInfo(message.tabId)
 
-        if (session.sessionState.token?.token() !== null) {
+        if (session.sessionState.token?.token !== null) {
             session.sessionState.token?.cancel()
         }
     }

@@ -3,7 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
-import org.gradle.tooling.CancellationTokenSource
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
+
 
 class ConversationNotStartedState(
     override var approach: String,

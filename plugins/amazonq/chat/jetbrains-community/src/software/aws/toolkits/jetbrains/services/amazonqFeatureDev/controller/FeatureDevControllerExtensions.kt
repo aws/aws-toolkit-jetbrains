@@ -23,6 +23,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFil
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.PrepareCodeGenerationState
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Session
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionState
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
@@ -55,7 +56,7 @@ suspend fun FeatureDevController.onCodeGeneration(
         var remainingIterations: Int? = state.codeGenerationRemainingIterationCount
         var totalIterations: Int? = state.codeGenerationTotalIterationCount
 
-        if (state.token?.token()?.isCancellationRequested == true) {
+        if (state.token?.token?.isCancellationRequested() == true) {
             disposeToken(state, messenger, tabId, state.currentIteration?.let { CODE_GENERATION_RETRY_LIMIT.minus(it) }, CODE_GENERATION_RETRY_LIMIT)
             return
         }
@@ -80,7 +81,7 @@ suspend fun FeatureDevController.onCodeGeneration(
             }
         }
 
-        if (state.token?.token()?.isCancellationRequested == true) {
+        if (state.token?.token?.isCancellationRequested() == true) {
             disposeToken(state, messenger, tabId, state.currentIteration?.let { CODE_GENERATION_RETRY_LIMIT.minus(it) }, CODE_GENERATION_RETRY_LIMIT)
             return
         }
@@ -135,10 +136,10 @@ suspend fun FeatureDevController.onCodeGeneration(
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
     } finally {
         if (session.sessionState.token
-                ?.token()
-                ?.isCancellationRequested == true
+                ?.token
+                ?.isCancellationRequested() == true
         ) {
-            session.sessionState.token = GradleConnector.newCancellationTokenSource()
+            session.sessionState.token = CancellationTokenSource()
         } else {
             messenger.sendAsyncEventProgress(tabId = tabId, inProgress = false) // Finish processing the event
             messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = false) // Lock chat input until a follow-up is clicked.

@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
 import kotlinx.coroutines.delay
-import org.gradle.tooling.CancellationTokenSource
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeGenerationWorkflowStatus
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -20,6 +19,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PromptRefusalE
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ThrottlingException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendUpdatePlaceholder
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
@@ -63,7 +63,7 @@ class CodeGenerationState(
                     currentCodeGenerationId = currentCodeGenerationId.toString(),
                 )
 
-            if (action.token?.token()?.isCancellationRequested != true) {
+            if (action.token?.token?.isCancellationRequested() != true) {
                 this.currentCodeGenerationId = codeGenerationId.toString()
             }
 
@@ -144,7 +144,7 @@ private suspend fun CodeGenerationState.generateCode(
     val requestDelay = 10000L
 
     repeat(pollCount) {
-        if (token?.token()?.isCancellationRequested == true) {
+        if (token?.token?.isCancellationRequested() == true) {
             return CodeGenerationResult(emptyList(), emptyList(), emptyList())
         }
         val codeGenerationResultState =

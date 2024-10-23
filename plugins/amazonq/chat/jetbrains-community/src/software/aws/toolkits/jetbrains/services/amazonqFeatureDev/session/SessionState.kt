@@ -3,7 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
-import org.gradle.tooling.CancellationTokenSource
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
+
 
 interface SessionState {
     val tabID: String
