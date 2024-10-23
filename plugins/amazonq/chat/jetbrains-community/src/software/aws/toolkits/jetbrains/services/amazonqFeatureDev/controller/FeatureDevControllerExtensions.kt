@@ -158,10 +158,10 @@ private suspend fun disposeToken(
     state: SessionState,
     messenger: MessagePublisher,
     tabId: String,
-    remainingIterations: Number?,
-    totalIterations: Number?,
+    remainingIterations: Int?,
+    totalIterations: Int?,
 ) {
-    if (remainingIterations !== null && remainingIterations.toInt() <= 0) {
+    if (remainingIterations !== null && remainingIterations <= 0) {
         messenger.sendAnswer(
             tabId = tabId,
             messageType = FeatureDevMessageType.Answer,
