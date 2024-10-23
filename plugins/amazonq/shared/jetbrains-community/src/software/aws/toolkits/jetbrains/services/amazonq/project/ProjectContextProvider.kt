@@ -61,6 +61,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val fileSize: Int,
     )
 
+    // TODO: move to LspMessage.kt
     data class Usage(
         @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("memoryUsage")
@@ -69,6 +70,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val cpuUsage: Int? = null,
     )
 
+    // TODO: move to LspMessage.kt
     data class Chunk(
         @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("filePath")
@@ -133,7 +135,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         logger.debug { "time elapsed to collect project context files: ${duration}ms, collected ${filesResult.files.size} files" }
 
         val indexOption = if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) IndexOption.ALL else IndexOption.DEFAULT
-        val encrypted = encryptRequest(IndexRequest(filesResult.files, projectRoot, indexOption, ""))
+        val encrypted = encryptRequest(IndexRequest(filesResult.files, projectRoot, indexOption.command, ""))
         val response = sendMsgToLsp(LspMessage.Index, encrypted)
 
         duration = (System.currentTimeMillis() - indexStartTime).toDouble()
@@ -185,7 +187,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     fun updateIndex(filePaths: List<String>, mode: IndexUpdateMode) {
-        val encrypted = encryptRequest(UpdateIndexRequest(filePaths, mode.value))
+        val encrypted = encryptRequest(UpdateIndexRequest(filePaths, mode.command))
         sendMsgToLsp(LspMessage.UpdateIndex, encrypted)
     }
 
@@ -329,9 +331,5 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
 
     companion object {
         private val logger = getLogger<ProjectContextProvider>()
-        private object IndexOption {
-            const val ALL = "all"
-            const val DEFAULT = "default"
-        }
     }
 }

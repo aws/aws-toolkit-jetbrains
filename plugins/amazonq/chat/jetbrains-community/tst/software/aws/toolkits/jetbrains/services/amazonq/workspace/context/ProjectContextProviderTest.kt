@@ -33,6 +33,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.amazonq.project.EncoderServer
 import software.aws.toolkits.jetbrains.services.amazonq.project.IndexRequest
+import software.aws.toolkits.jetbrains.services.amazonq.project.IndexUpdateMode
 import software.aws.toolkits.jetbrains.services.amazonq.project.InlineBm25Chunk
 import software.aws.toolkits.jetbrains.services.amazonq.project.LspMessage
 import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextProvider
@@ -188,8 +189,8 @@ class ProjectContextProviderTest {
 
     @Test
     fun `updateIndex should send correct encrypted request to lsp`() {
-        sut.updateIndex(listOf("foo.java"), ProjectContextProvider.IndexUpdateMode.UPDATE)
-        val request = UpdateIndexRequest(listOf("foo.java"), ProjectContextProvider.IndexUpdateMode.UPDATE.value)
+        sut.updateIndex(listOf("foo.java"), IndexUpdateMode.UPDATE)
+        val request = UpdateIndexRequest(listOf("foo.java"), IndexUpdateMode.UPDATE.command)
         val requestJson = mapper.writeValueAsString(request)
 
         assertThat(mapper.readTree(requestJson)).isEqualTo(mapper.readTree("""{ "filePaths": ["foo.java"], "mode": "update" }"""))

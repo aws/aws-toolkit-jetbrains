@@ -59,8 +59,20 @@ data class LspResponse(
     val responseBody: String,
 )
 
-enum class IndexUpdateMode(val value: String) {
+enum class IndexUpdateMode(val command: String) {
     UPDATE("update"),
     REMOVE("remove"),
     ADD("add"),
 }
+
+enum class IndexOption(val command: String) {
+    ALL("all"),
+    DEFAULT("default"),
+}
+
+// TODO: unify with [software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk]
+data class InlineBm25Chunk(
+    val content: String,
+    val filePath: String,
+    val score: Double,
+)
