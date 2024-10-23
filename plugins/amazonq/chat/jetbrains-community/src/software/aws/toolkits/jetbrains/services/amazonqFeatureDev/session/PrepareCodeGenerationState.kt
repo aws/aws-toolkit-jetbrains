@@ -9,6 +9,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublishe
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendUpdatePlaceholder
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.deleteUploadArtifact
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.uploadArtifactToS3
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
@@ -16,21 +17,23 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.AmazonqUploadIntent
 import software.aws.toolkits.telemetry.Result
+import java.util.UUID
 
 private val logger = getLogger<PrepareCodeGenerationState>()
 
 class PrepareCodeGenerationState(
     override var tabID: String,
+    override var token: CancellationTokenSource?,
     override var approach: String,
     private var config: SessionStateConfig,
     val filePaths: List<NewFileZipInfo>,
     val deletedFiles: List<DeletedFileInfo>,
     val references: List<CodeReferenceGenerated>,
     var uploadId: String,
-    private val currentIteration: Int,
+    override var currentIteration: Int?,
     private var messenger: MessagePublisher,
-    var codeGenerationRemainingIterationCount: Int? = null,
-    var codeGenerationTotalIterationCount: Int? = null,
+    override var codeGenerationRemainingIterationCount: Int? = null,
+    override var codeGenerationTotalIterationCount: Int? = null,
 ) : SessionState {
     override val phase = SessionStatePhase.CODEGEN
     override suspend fun interact(action: SessionStateAction): SessionStateInteraction {
@@ -49,16 +52,18 @@ class PrepareCodeGenerationState(
             zipFileLength = repoZipResult.contentLength
             val fileToUpload = repoZipResult.payload
 
+            val uploadId = UUID.randomUUID()
             val uploadUrlResponse = config.featureDevService.createUploadUrl(
                 config.conversationId,
                 zipFileChecksum,
-                zipFileLength
+                zipFileLength,
+                uploadId.toString()
             )
 
             uploadArtifactToS3(uploadUrlResponse.uploadUrl(), fileToUpload, zipFileChecksum, zipFileLength, uploadUrlResponse.kmsKeyArn())
             deleteUploadArtifact(fileToUpload)
 
-            this.uploadId = uploadUrlResponse.uploadId()
+            this.uploadId = uploadId.toString()
             messenger.sendAnswerPart(tabId = this.tabID, message = message("amazonqFeatureDev.placeholder.context_gathering_complete"))
             messenger.sendUpdatePlaceholder(tabId = this.tabID, newPlaceholder = message("amazonqFeatureDev.placeholder.context_gathering_complete"))
             nextState = CodeGenerationState(
@@ -68,7 +73,8 @@ class PrepareCodeGenerationState(
                 uploadId = this.uploadId,
                 currentIteration = this.currentIteration,
                 repositorySize = zipFileLength.toDouble(),
-                messenger = messenger
+                messenger = messenger,
+                token = this.token
             )
         } catch (e: Exception) {
             result = Result.Failed
