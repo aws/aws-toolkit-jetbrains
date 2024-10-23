@@ -67,10 +67,13 @@ class CodeTransformTelemetryManager(private val project: Project) {
 
     fun submitSelection(userChoice: String, customerSelection: CustomerSelection? = null, telemetryErrorMessage: String? = null) {
         CodetransformTelemetry.submitSelection(
+            // TODO: remove below 2 lines (JavaSource / JavaTarget) once BI is updated to use source / target
             codeTransformJavaSourceVersionsAllowed = CodeTransformJavaSourceVersionsAllowed.from(customerSelection?.sourceJavaVersion?.name.orEmpty()),
             codeTransformJavaTargetVersionsAllowed = CodeTransformJavaTargetVersionsAllowed.from(customerSelection?.targetJavaVersion?.name.orEmpty()),
             codeTransformSessionId = sessionId,
             codeTransformProjectId = customerSelection?.let { getProjectHash(it) },
+            source = if (userChoice == "Confirm-Java") customerSelection?.sourceJavaVersion?.name.orEmpty() else customerSelection?.sourceVendor.orEmpty(),
+            target = if (userChoice == "Confirm-Java") customerSelection?.targetJavaVersion?.name.orEmpty() else customerSelection?.targetVendor.orEmpty(),
             userChoice = userChoice,
             result = if (telemetryErrorMessage.isNullOrEmpty()) Result.Succeeded else Result.Failed,
             reason = telemetryErrorMessage,

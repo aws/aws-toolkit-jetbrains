@@ -125,7 +125,11 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
 
         fun maybeAdd(stepId: ProgressStepId, string: String) {
             // don't show building or generate plan message for SQL conversions since we don't build or generate plan
-            if (transformType == CodeTransformType.SQL_CONVERSION && (string == message("codemodernizer.toolwindow.progress.building") || string == message("codemodernizer.toolwindow.progress.planning"))) {
+            if (transformType == CodeTransformType.SQL_CONVERSION && (
+                    string == message("codemodernizer.toolwindow.progress.building") ||
+                        string == message("codemodernizer.toolwindow.progress.planning")
+                    )
+            ) {
                 return
             }
             if (currentState.none { it.id == stepId }) {
@@ -362,6 +366,7 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
             .toKotlinDuration().inWholeSeconds.seconds.toString() to formatter.format(Date.from(endTime))
     }
 
+    // will be False for SQL conversions, which is what we want so that the (nonexistent) progressUpdates do not render
     private fun haveProgressUpdates(plan: TransformationPlan): Boolean = plan.transformationSteps().any { it.progressUpdates().size > 0 }
 
     private fun isValidStepClick(stepId: ProgressStepId): Boolean = when (stepId) {
