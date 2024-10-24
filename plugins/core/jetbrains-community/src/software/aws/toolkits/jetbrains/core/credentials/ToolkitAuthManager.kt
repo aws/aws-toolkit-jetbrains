@@ -8,6 +8,8 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import migration.software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.core.ClientConnectionSettings
@@ -25,12 +27,16 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAu
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.AwsCoreBundle
+import software.aws.toolkits.resources.AwsCoreBundle.message
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.Result
+import java.net.UnknownHostException
 import java.time.Instant
+import kotlin.math.min
 
 sealed interface ToolkitConnection {
     val id: String
@@ -305,7 +311,7 @@ fun maybeReauthProviderIfNeeded(
     onReauthRequired: (SsoOidcException?) -> Any,
 ): Boolean {
     val state = tokenProvider.state()
-    when (state) {
+    return when (state) {
         BearerTokenAuthState.NOT_AUTHENTICATED -> {
             getLogger<ToolkitAuthManager>().info { "Token provider NOT_AUTHENTICATED, requesting login" }
             onReauthRequired(null)
@@ -314,15 +320,36 @@ fun maybeReauthProviderIfNeeded(
 
         BearerTokenAuthState.NEEDS_REFRESH -> {
             try {
-                return runUnderProgressIfNeeded(project, AwsCoreBundle.message("credentials.refreshing"), true) {
-                    tokenProvider.resolveToken()
-                    BearerTokenProviderListener.notifyCredUpdate(tokenProvider.id)
-                    return@runUnderProgressIfNeeded false
+                retryWithBackoff {
+                    return@retryWithBackoff runUnderProgressIfNeeded(project, AwsCoreBundle.message("credentials.refreshing"), true) {
+                        tokenProvider.refresh()
+                        hasNotifiedNetworkErrorOnce = false
+                        BearerTokenProviderListener.notifyCredUpdate(tokenProvider.id)
+                        return@runUnderProgressIfNeeded false
+                    }
                 }
-            } catch (e: SsoOidcException) {
-                getLogger<ToolkitAuthManager>().warn(e) { "Redriving bearer token login flow since token could not be refreshed" }
-                onReauthRequired(e)
-                return true
+            } catch (e: Exception) {
+                when {
+                    e is SsoOidcException -> {
+                        getLogger<ToolkitAuthManager>().warn(e) { "Redriving bearer token login flow since token could not be refreshed" }
+                        onReauthRequired(e)
+                        return true
+                    }
+
+                    e is UnknownHostException || e.message?.contains("Unable to execute HTTP request") == true -> {
+                        getLogger<ToolkitAuthManager>().error("Failed to refresh token", e)
+                        if (!hasNotifiedNetworkErrorOnce) {
+                            hasNotifiedNetworkErrorOnce = true
+                            notifyInfo(
+                                message("general.auth.network.error"),
+                                message("general.auth.network.error.message"),
+                                project
+                            )
+                        }
+                        return false
+                    }
+                    else -> {return false}
+                }
             }
         }
 
@@ -391,6 +418,30 @@ private fun recordAddConnection(
         }
     }
 }
+
+private fun <T> retryWithBackoff(
+maxAttempts: Int = 3,
+initialDelayMs: Long = 1000,
+maxDelayMs: Long = 10000,
+factor: Double = 2.0,
+block: () -> T
+): T {
+    var currentDelay = initialDelayMs
+    repeat(maxAttempts) { attempt ->
+        try {
+            return block()
+        } catch (e: Exception) {
+            if (attempt == maxAttempts - 1 || e is SsoOidcException) throw e
+            println("Attempt ${attempt + 1} failed. Retrying in $currentDelay ms")
+            runBlocking { delay(currentDelay) }
+
+            currentDelay = min(maxDelayMs, (currentDelay * factor).toLong())
+        }
+    }
+    throw IllegalStateException("This line should never be reached")
+}
+
+private var hasNotifiedNetworkErrorOnce = false
 
 data class ConnectionMetadata(
     val sourceId: String? = null,
