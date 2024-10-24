@@ -21,10 +21,12 @@ enum class UtgStrategy : SupplementalContextStrategy {
 enum class CrossFileStrategy : SupplementalContextStrategy {
     OpenTabsBM25,
     Empty,
+    ProjectContext,
     ;
 
     override fun toString() = when (this) {
         OpenTabsBM25 -> "OpenTabs_BM25"
         Empty -> "Empty"
+        ProjectContext -> "ProjectContext"
     }
 }
