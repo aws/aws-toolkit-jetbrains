@@ -19,6 +19,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedEx
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdate
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getBillingText
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getTableMapping
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseBuildFile
@@ -49,6 +50,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
         val mutableList = mutableListOf<TransformationStatus>()
         runBlocking {
             jobId.pollTransformationStatusAndPlan(
+                CodeTransformType.LANGUAGE_UPGRADE,
                 setOf(TransformationStatus.STARTED),
                 setOf(TransformationStatus.FAILED),
                 clientAdaptorSpy,
@@ -90,6 +92,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
         val mutableList = mutableListOf<TransformationStatus>()
         runBlocking {
             jobId.pollTransformationStatusAndPlan(
+                CodeTransformType.LANGUAGE_UPGRADE,
                 setOf(TransformationStatus.STARTED),
                 setOf(TransformationStatus.FAILED),
                 clientAdaptorSpy,
@@ -131,6 +134,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
         val mutableList = mutableListOf<TransformationStatus>()
         runBlocking {
             jobId.pollTransformationStatusAndPlan(
+                CodeTransformType.LANGUAGE_UPGRADE,
                 setOf(TransformationStatus.STARTED),
                 setOf(TransformationStatus.FAILED),
                 clientAdaptorSpy,
@@ -163,6 +167,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
 
         val result = runBlocking {
             jobId.pollTransformationStatusAndPlan(
+                CodeTransformType.LANGUAGE_UPGRADE,
                 setOf(TransformationStatus.COMPLETED),
                 setOf(TransformationStatus.FAILED),
                 clientAdaptorSpy,

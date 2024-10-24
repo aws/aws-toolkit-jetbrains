@@ -70,7 +70,6 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         when (val result = downloadArtifact(job, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS)) {
             is DownloadArtifactResult.Success -> {
                 if (result.artifact !is CodeModernizerArtifact) return notifyUnableToApplyPatch("")
-                notifyStickyInfo("patch path", result.artifact.patch.path)
                 displayDiffUsingPatch(result.artifact.patch, job, source)
             }
             is DownloadArtifactResult.ParseZipFailure -> notifyUnableToApplyPatch(result.failureReason.errorMessage)
