@@ -163,8 +163,7 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
             assertThat(actual.interaction.content).isEqualTo("")
         }
 
-        verify(exactly = 1) { featureDevService.startTaskAssistCodeGeneration(testConversationId, testUploadId, userMessage) }
-        verify(exactly = 360) { featureDevService.getTaskAssistCodeGeneration(testConversationId, testCodeGenerationId) }
+        verify(exactly = 360) { featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId) }
         coVerify(exactly = 0) { featureDevService.exportTaskAssistArchiveResult(testConversationId) }
     }
 }
