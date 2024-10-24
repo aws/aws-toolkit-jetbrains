@@ -1,0 +1,14 @@
+{
+  "date" : "2024-10-24",
+  "version" : "3.35",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Amazon Q /dev: Add stop generation action"
+  }, {
+    "type" : "bugfix",
+    "description" : "Update `@workspace` index when adding or deleting a file"
+  }, {
+    "type" : "deprecation",
+    "description" : "An upcoming release will remove support for JetBrains Gateway version 2024.2 and for IDEs based on the 2023.3 platform"
+  } ]
+}

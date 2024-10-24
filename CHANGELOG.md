@@ -1,3 +1,8 @@
+# _3.35_ (2024-10-24)
+- **(Feature)** Amazon Q /dev: Add stop generation action
+- **(Bug Fix)** Update `@workspace` index when adding or deleting a file
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2024.2 and for IDEs based on the 2023.3 platform
+
 # _3.34_ (2024-10-22)
 - **(Bug Fix)** Fix issue where the plugin can't read SSO tokens from disk / always returns 'Unable to load client registration'
 
