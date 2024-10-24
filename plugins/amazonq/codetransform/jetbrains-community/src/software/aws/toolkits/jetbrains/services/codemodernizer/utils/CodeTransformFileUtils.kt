@@ -174,7 +174,7 @@ fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {
         for (serverNodeLocation in serverNodeLocations) {
             val fullNameNodeInfoList = serverNodeLocation["FullNameNodeInfoList"] as Map<*, *>
             val nameParts = fullNameNodeInfoList["nameParts"] as Map<*, *>
-            var fullNameNodeInfo = nameParts["FullNameNodeInfo"] // as List<Map<*, *>>
+            var fullNameNodeInfo = nameParts["FullNameNodeInfo"]
             if (fullNameNodeInfo is Map<*, *>) {
                 continue
             } else {

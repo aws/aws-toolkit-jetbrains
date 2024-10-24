@@ -189,6 +189,8 @@ data class CodeModernizerSessionContext(
         val depDirectory = if (copyResult is MavenCopyCommandsResult.Success) {
             showTransformationHub()
             copyResult.dependencyDirectory
+        } else if (copyResult != null) { // failure cases already handled by now, but to be safe set depDir to null if copyResult failed
+            null
         } else {
             sqlMetadataZip // null copyResult means doing a SQL conversion
         }
@@ -212,7 +214,6 @@ data class CodeModernizerSessionContext(
                 val depSources = File(ZIP_DEPENDENCIES_PATH)
                 val outputFile = createTemporaryZipFile { zip ->
                     // 1) Manifest file
-                    // val dependenciesRoot = if (depDirectory != null) "$ZIP_DEPENDENCIES_PATH/${depDirectory.name}" else null
                     var manifest = ZipManifest(customBuildCommand = customBuildCommand)
                     if (sqlMetadataZip != null) {
                         // doing a SQL conversion, not language upgrade
@@ -273,8 +274,8 @@ data class CodeModernizerSessionContext(
                         zip.putNextEntry(Path(BUILD_LOG_PATH).toString(), it)
                     }
                 }.toFile()
-                // only return Missing1P for language upgrades with a null depDirectory; for SQL conversions always use Succeeded since depDirectory not used
-                if (depDirectory != null || schema != null) ZipCreationResult.Succeeded(outputFile) else ZipCreationResult.Missing1P(outputFile)
+                // depDirectory should never be null
+                if (depDirectory != null) ZipCreationResult.Succeeded(outputFile) else ZipCreationResult.Missing1P(outputFile)
             } catch (e: NoSuchFileException) {
                 throw CodeModernizerException("Source folder not found")
             } catch (e: Exception) {
