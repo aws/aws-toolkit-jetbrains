@@ -160,6 +160,7 @@ class CodeModernizerSession(
                 telemetryErrorMessage = "Disposed when about to create zip"
                 return CodeModernizerStartJobResult.Disposed
             }
+            // for language upgrades, copyResult should always be Successful here, failure cases already handled
             val result = sessionContext.createZipWithModuleFiles(copyResult)
 
             if (result is ZipCreationResult.Missing1P) {
