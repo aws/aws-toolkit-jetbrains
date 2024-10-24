@@ -28,6 +28,7 @@ import software.aws.toolkits.jetbrains.utils.sleepWithCancellation
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AuthType
 import software.aws.toolkits.telemetry.AwsTelemetry
+import software.aws.toolkits.telemetry.CredentialModification
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.Result
 import java.time.Clock
@@ -362,33 +363,58 @@ class SsoAccessTokenProvider(
     }
 
     fun refreshToken(currentToken: AccessToken): AccessToken {
+        var stageName = RefreshCredentialStage.VALIDATE_REFRESH_TOKEN
         if (currentToken.refreshToken == null) {
             val message = "Requested token refresh, but refresh token was null"
             sendRefreshCredentialsMetric(
                 currentToken,
-                reason = "Null refresh token",
-                reasonDesc = message,
+                reason = "Null refresh token: $stageName",
+                reasonDesc = "$stageName: $message",
                 result = Result.Failed
             )
             throw InvalidRequestException.builder().message(message).build()
         }
 
-        val registration = when (currentToken) {
-            is DeviceAuthorizationGrantToken -> loadDagClientRegistration()
-            is PKCEAuthorizationGrantToken -> loadPkceClientRegistration()
-        }
-        if (registration == null) {
-            val message = "Unable to load client registration from cache"
+        stageName = RefreshCredentialStage.LOAD_REGISTRATION
+        var registration: ClientRegistration? = null
+        try {
+            registration = when (currentToken) {
+                is DeviceAuthorizationGrantToken -> loadDagClientRegistration()
+                is PKCEAuthorizationGrantToken -> loadPkceClientRegistration()
+            }
+        } catch (e: Exception) {
+            val message = e.message ?: "$stageName: ${e::class.java.name}"
             sendRefreshCredentialsMetric(
                 currentToken,
-                reason = "Null client registration",
+                reason = "Failed to load client registration: $stageName",
                 reasonDesc = message,
+                result = Result.Failed
+            )
+            throw InvalidClientException.builder().message(message).cause(e).build()
+        }
+
+        stageName = RefreshCredentialStage.VALIDATE_REGISTRATION
+        if (registration == null) {
+            val (reason, message) = when {
+                currentToken.expiresAt.isBefore(Instant.now(clock)) -> Pair(
+                    "Reauth Required: $stageName",
+                    "Expired client registration"
+                )
+                else -> Pair(
+                    "Unable to load client registration from cache: $stageName",
+                    "Null client registration"
+                )
+            }
+            sendRefreshCredentialsMetric(
+                currentToken,
+                reason = reason,
+                reasonDesc = "$stageName: $message",
                 result = Result.Failed
             )
             throw InvalidClientException.builder().message(message).build()
         }
 
-        var stageName = RefreshCredentialStage.CREATE_TOKEN
+        stageName = RefreshCredentialStage.CREATE_TOKEN
         try {
             val newToken = client.createToken {
                 it.clientId(registration.clientId)
@@ -419,7 +445,6 @@ class SsoAccessTokenProvider(
                 is AwsServiceException -> e.requestId()
                 else -> null
             }
-
             // AwsServiceException#message will automatically pull in AwsServiceException#awsErrorDetails
             // we expect messages for SsoOidcException to be populated in e.message using execution executor added in
             // https://github.com/aws/aws-toolkit-jetbrains/commit/cc9ed87fa9391dd39ac05cbf99b4437112fa3d10
@@ -437,6 +462,9 @@ class SsoAccessTokenProvider(
     }
 
     private enum class RefreshCredentialStage {
+        VALIDATE_REFRESH_TOKEN,
+        LOAD_REGISTRATION,
+        VALIDATE_REGISTRATION,
         CREATE_TOKEN,
         GET_TOKEN_DETAILS,
         SAVE_TOKEN,
@@ -453,20 +481,49 @@ class SsoAccessTokenProvider(
         }
 
     private fun saveClientRegistration(registration: ClientRegistration) {
-        when (registration) {
-            is DeviceAuthorizationClientRegistration -> {
-                cache.saveClientRegistration(dagClientRegistrationCacheKey, registration)
-            }
+        val credentialType = registration::class.java.name
+        try {
+            when (registration) {
+                is DeviceAuthorizationClientRegistration -> {
+                    cache.saveClientRegistration(dagClientRegistrationCacheKey, registration)
+                }
 
-            is PKCEClientRegistration -> {
-                cache.saveClientRegistration(pkceClientRegistrationCacheKey, registration)
+                is PKCEClientRegistration -> {
+                    cache.saveClientRegistration(pkceClientRegistrationCacheKey, registration)
+                }
             }
+        } catch (e: Exception) {
+            AwsTelemetry.saveCredentials(
+                result = Result.Failed,
+                reason = "$credentialType failed to write to cache",
+                reasonDesc = e.message
+            )
+            throw e
         }
+        AwsTelemetry.saveCredentials(
+            result = Result.Succeeded,
+            reason = "$credentialType successfully written to cache",
+        )
     }
 
     private fun invalidateClientRegistration() {
-        cache.invalidateClientRegistration(dagClientRegistrationCacheKey)
-        cache.invalidateClientRegistration(pkceClientRegistrationCacheKey)
+        try {
+            cache.invalidateClientRegistration(dagClientRegistrationCacheKey)
+            cache.invalidateClientRegistration(pkceClientRegistrationCacheKey)
+        } catch (e: Exception) {
+            AwsTelemetry.modifyCredentials(
+                credentialModification = CredentialModification.Delete,
+                result = Result.Failed,
+                reason = "Failed to invalidate client registration",
+                reasonDesc = e.message,
+                source = "SsoAccessTokenProvider.invalidateClientRegistration"
+            )
+        }
+        AwsTelemetry.modifyCredentials(
+            credentialModification = CredentialModification.Delete,
+            result = Result.Succeeded,
+            source = "SsoAccessTokenProvider.invalidateClientRegistration"
+        )
     }
 
     private fun saveAccessToken(token: AccessToken) {
@@ -474,7 +531,6 @@ class SsoAccessTokenProvider(
             is DeviceAuthorizationGrantToken -> {
                 cache.saveAccessToken(dagAccessTokenCacheKey, token)
             }
-
             is PKCEAuthorizationGrantToken -> cache.saveAccessToken(pkceAccessTokenCacheKey, token)
         }
     }
