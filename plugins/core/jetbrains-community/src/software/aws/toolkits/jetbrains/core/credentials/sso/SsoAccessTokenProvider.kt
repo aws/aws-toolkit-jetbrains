@@ -492,14 +492,14 @@ class SsoAccessTokenProvider(
                 }
             }
         } catch (e: Exception) {
-            AwsTelemetry.openCredentials(
+            AwsTelemetry.saveCredentials(
                 result = Result.Failed,
                 reason = "$credentialType failed to write to cache",
                 reasonDesc = e.message
             )
             throw e
         }
-        AwsTelemetry.createCredentials(
+        AwsTelemetry.saveCredentials(
             result = Result.Succeeded,
             reason = "$credentialType successfully written to cache",
         )
