@@ -14,17 +14,14 @@ val EXCEPTION_ESCAPED = AttributeKey.booleanKey("exception.escaped")
 inline fun <T> Span.useWithoutActiveScope(operation: (Span) -> T): T {
     try {
         return operation(this)
-    }
-    catch (e: CancellationException) {
+    } catch (e: CancellationException) {
         recordException(e, Attributes.of(EXCEPTION_ESCAPED, true))
         throw e
-    }
-    catch (e: Throwable) {
+    } catch (e: Throwable) {
         recordException(e, Attributes.of(EXCEPTION_ESCAPED, true))
         setStatus(StatusCode.ERROR)
         throw e
-    }
-    finally {
+    } finally {
         end()
     }
 }

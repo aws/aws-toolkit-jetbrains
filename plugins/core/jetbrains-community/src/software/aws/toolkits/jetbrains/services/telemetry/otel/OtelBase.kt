@@ -33,7 +33,12 @@ class DefaultSpanBuilder(delegate: SpanBuilder) : AbstractSpanBuilder<DefaultSpa
     override fun doStartSpan() = BaseSpan(parent, delegate.startSpan())
 }
 
-abstract class AbstractSpanBuilder<BuilderType : AbstractSpanBuilder<BuilderType, SpanType>, SpanType : AbstractBaseSpan>(protected val delegate: SpanBuilder) : SpanBuilder {
+abstract class AbstractSpanBuilder<
+    BuilderType : AbstractSpanBuilder<BuilderType, SpanType>,
+    SpanType : AbstractBaseSpan,
+    >(
+    protected val delegate: SpanBuilder,
+) : SpanBuilder {
     /**
      * Same as [com.intellij.platform.diagnostic.telemetry.helpers.use] except downcasts to specific subclass of [BaseSpan]
      *
