@@ -262,7 +262,8 @@ class CodeWhispererClientAdaptorTest {
             CodewhispererSuggestionState.Accept,
             3,
             1,
-            2
+            2,
+            10
         )
 
         argumentCaptor<SendTelemetryEventRequest>().apply {
@@ -275,6 +276,7 @@ class CodeWhispererClientAdaptorTest {
                 assertThat(it.generatedLine()).isEqualTo(1)
                 assertThat(it.recommendationLatencyMilliseconds()).isEqualTo(20.0)
                 assertThat(it.numberOfRecommendations()).isEqualTo(2)
+                assertThat(it.acceptedCharacterCount()).isEqualTo(10)
             }
         }
     }
@@ -380,7 +382,8 @@ class CodeWhispererClientAdaptorTest {
                 aSuggestionState(),
                 0,
                 1,
-                2
+                2,
+                10
             )
         }
     }
