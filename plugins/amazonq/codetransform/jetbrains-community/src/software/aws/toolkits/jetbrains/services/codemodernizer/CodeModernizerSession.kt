@@ -32,6 +32,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerStartJobResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArtifactResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
@@ -319,11 +320,6 @@ class CodeModernizerSession(
         return clientAdaptor.getCodeModernizationJob(jobId.id).transformationJob()
     }
 
-    fun getTransformPlanDetails(jobId: JobId): TransformationPlan {
-        LOG.info { "Getting transform plan details." }
-        return clientAdaptor.getCodeModernizationPlan(jobId).transformationPlan()
-    }
-
     /**
      * This will resume the job, i.e. it will resume the main job loop kicked of by [createModernizationJob]
      */
@@ -413,6 +409,7 @@ class CodeModernizerSession(
     }
 
     suspend fun pollUntilJobCompletion(
+        transformType: CodeTransformType,
         jobId: JobId,
         jobTransitionHandler: (currentStatus: TransformationStatus, migrationPlan: TransformationPlan?) -> Unit,
     ): CodeModernizerJobCompletedResult {
@@ -427,6 +424,7 @@ class CodeModernizerSession(
             var passedStart = false
 
             val result = jobId.pollTransformationStatusAndPlan(
+                transformType,
                 succeedOn = setOf(
                     TransformationStatus.COMPLETED,
                     TransformationStatus.PAUSED,
@@ -459,7 +457,7 @@ class CodeModernizerSession(
                 }
 
                 // Open the transformation plan detail panel once transformation plan is available (no plan for SQL conversions)
-                if (sessionContext.sqlMetadataZip == null && state.transformationPlan != null && !isTransformationPlanEditorOpened) {
+                if (transformType != CodeTransformType.SQL_CONVERSION && state.transformationPlan != null && !isTransformationPlanEditorOpened) {
                     tryOpenTransformationPlanEditor()
                     isTransformationPlanEditorOpened = true
                 }

@@ -451,11 +451,12 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     private suspend fun handleJobResumedFromHil(
         jobId: JobId,
         session: CodeModernizerSession,
-        transformationType: CodeTransformType,
+        transformType: CodeTransformType,
     ): CodeModernizerJobCompletedResult = session.pollUntilJobCompletion(
+        transformType,
         jobId
     ) { new, plan ->
-        codeModernizerBottomWindowPanelManager.handleJobTransition(new, plan, session.sessionContext.sourceJavaVersion, transformationType)
+        codeModernizerBottomWindowPanelManager.handleJobTransition(new, plan, session.sessionContext.sourceJavaVersion, transformType)
     }
 
     private suspend fun handleJobStarted(jobId: JobId, session: CodeModernizerSession): CodeModernizerJobCompletedResult {
@@ -466,10 +467,10 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             codeModernizerBottomWindowPanelManager.setJobRunningUI()
         }
 
-        val transformationType = if (session.sessionContext.sqlMetadataZip != null) CodeTransformType.SQL_CONVERSION else CodeTransformType.LANGUAGE_UPGRADE
+        val transformType = if (session.sessionContext.sqlMetadataZip != null) CodeTransformType.SQL_CONVERSION else CodeTransformType.LANGUAGE_UPGRADE
 
-        return session.pollUntilJobCompletion(jobId) { new, plan ->
-            codeModernizerBottomWindowPanelManager.handleJobTransition(new, plan, session.sessionContext.sourceJavaVersion, transformationType)
+        return session.pollUntilJobCompletion(transformType, jobId) { new, plan ->
+            codeModernizerBottomWindowPanelManager.handleJobTransition(new, plan, session.sessionContext.sourceJavaVersion, transformType)
         }
     }
 
