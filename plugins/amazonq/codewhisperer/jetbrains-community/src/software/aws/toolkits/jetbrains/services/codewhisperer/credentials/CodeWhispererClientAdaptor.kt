@@ -293,7 +293,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         suggestionReferenceCount: Int,
         lineCount: Int,
         numberOfRecommendations: Int,
-        acceptedCharCount: Int
+        acceptedCharCount: Int,
     ): SendTelemetryEventResponse {
         val fileContext = requestContext.fileContextInfo
         val programmingLanguage = fileContext.programmingLanguage
