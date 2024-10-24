@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.CodeModernizerBanner
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.CodeModernizerJobHistoryTablePanel
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.LoadingPanel
@@ -216,15 +217,6 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
         }
     }
 
-    fun setProjectInvalidUI(reason: String) = setUI {
-        banner.updateContent(reason, AllIcons.General.Error)
-        fullSizeLoadingPanel.apply {
-            fullSizeLoadingPanel.showFailureUI()
-            revalidate()
-            repaint()
-        }
-    }
-
     fun userInitiatedStopCodeModernizationUI() = setUI {
         stopTimer()
         add(BorderLayout.CENTER, buildProgressSplitterPanelManager)
@@ -238,7 +230,7 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
         return actionManager.createActionToolbar(ACTION_PLACE, group, false)
     }
 
-    fun handleJobTransition(new: TransformationStatus, plan: TransformationPlan?, sourceJavaVersion: JavaSdkVersion) = invokeLater {
+    fun handleJobTransition(new: TransformationStatus, plan: TransformationPlan?, sourceJdk: JavaSdkVersion, transformType: CodeTransformType) = invokeLater {
         if (new in listOf(
                 TransformationStatus.PLANNED,
                 TransformationStatus.TRANSFORMING,
@@ -246,12 +238,12 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
                 TransformationStatus.PAUSED,
                 TransformationStatus.COMPLETED,
                 TransformationStatus.PARTIALLY_COMPLETED
-            )
+            ) && transformType != CodeTransformType.SQL_CONVERSION // no plan for SQL conversions
         ) {
             addPlanToBanner()
         }
         buildProgressSplitterPanelManager.apply {
-            handleProgressStateChanged(new, plan, sourceJavaVersion)
+            handleProgressStateChanged(new, plan, sourceJdk, transformType)
             if (timer == null) {
                 timer = Timer()
                 timer?.scheduleAtFixedRate(
@@ -300,11 +292,11 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
         }
     }
 
-    fun setResumeJobUI(currentJobResult: TransformationJob, plan: TransformationPlan?, sourceJavaVersion: JavaSdkVersion) {
+    fun setResumeJobUI(currentJobResult: TransformationJob, plan: TransformationPlan?, sourceJdk: JavaSdkVersion, transformationType: CodeTransformType) {
         setJobRunningUI()
         buildProgressSplitterPanelManager.apply {
             reset()
-            handleProgressStateChanged(currentJobResult.status(), plan, sourceJavaVersion)
+            handleProgressStateChanged(currentJobResult.status(), plan, sourceJdk, transformationType)
         }
     }
 

@@ -13,7 +13,13 @@ interface InboundAppMessagesHandler {
 
     suspend fun processCodeTransformStartAction(message: IncomingCodeTransformMessage.CodeTransformStart)
 
+    suspend fun processCodeTransformSelectSQLMetadataAction(message: IncomingCodeTransformMessage.CodeTransformSelectSQLMetadata)
+
+    suspend fun processCodeTransformSelectSQLModuleSchemaAction(message: IncomingCodeTransformMessage.CodeTransformSelectSQLModuleSchema)
+
     suspend fun processCodeTransformStopAction(tabId: String)
+
+    suspend fun processChatPromptMessage(message: IncomingCodeTransformMessage.ChatPrompt)
 
     suspend fun processCodeTransformConfirmSkipTests(message: IncomingCodeTransformMessage.CodeTransformConfirmSkipTests)
 

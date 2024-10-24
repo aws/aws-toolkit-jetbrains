@@ -23,6 +23,7 @@ import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.BILLING_RATE
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.resources.message
 import java.time.Duration
@@ -40,6 +41,7 @@ data class PollingResult(
  * Wrapper around [waitUntil] that polls the API DescribeMigrationJob to check the migration job status.
  */
 suspend fun JobId.pollTransformationStatusAndPlan(
+    transformType: CodeTransformType,
     succeedOn: Set<TransformationStatus>,
     failOn: Set<TransformationStatus>,
     clientAdaptor: GumbyClient,
@@ -85,7 +87,7 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                 transformationResponse = clientAdaptor.getCodeModernizationJob(this.id)
                 val newStatus = transformationResponse?.transformationJob()?.status() ?: throw RuntimeException("Unable to get job status")
                 var newPlan: TransformationPlan? = null
-                if (newStatus in STATES_WHERE_PLAN_EXIST) {
+                if (newStatus in STATES_WHERE_PLAN_EXIST && transformType != CodeTransformType.SQL_CONVERSION) { // no plan for SQL conversions
                     delay(sleepDurationMillis)
                     newPlan = clientAdaptor.getCodeModernizationPlan(this).transformationPlan()
                 }

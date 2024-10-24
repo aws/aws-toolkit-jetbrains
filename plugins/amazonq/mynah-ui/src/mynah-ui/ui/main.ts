@@ -435,6 +435,11 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
                 mynahUI.addChatItem(tabID, {
                     type: ChatItemType.ANSWER_STREAM,
                 })
+            } else if (tabsStorage.getTab(tabID)?.type === 'codetransform') {
+                connector.requestAnswer(tabID, {
+                    chatMessage: prompt.prompt ?? ''
+                })
+                return
             }
 
             if (prompt.command !== undefined && prompt.command.trim() !== '') {

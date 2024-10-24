@@ -8,6 +8,7 @@ import {ExtensionMessage} from '../commands'
 import {TabsStorage, TabType} from '../storages/tabsStorage'
 import {FollowUpGenerator} from '../followUps/generator'
 import {FormButtonIds} from '../forms/constants'
+import {ChatPayload} from "../connector";
 
 export interface ICodeTransformChatConnectorProps {
     sendMessageToExtension: (message: ExtensionMessage) => void
@@ -15,6 +16,8 @@ export interface ICodeTransformChatConnectorProps {
     onCodeTransformMessageReceived: (tabID: string, message: ChatItem, isLoading: boolean, clearPreviousItemButtons?: boolean) => void
     onCodeTransformMessageUpdate: (tabID: string, messageId: string, chatItem: Partial<ChatItem>) => void
     onCodeTransformCommandMessageReceived: (message: ChatItem, command?: string) => void
+    onChatInputEnabled: (tabID: string, enabled: boolean) => void
+    onUpdatePlaceholder: (tabID: string, newPlaceholder: string) => void
     onNotification: (props: {content: string; title?: string; type: NotificationType}) => void
     onStartNewTransform: (tabID: string) => void
     onUpdateAuthentication: (featureDevEnabled: boolean, codeTransformEnabled: boolean, authenticatingTabIDs: string[]) => void
@@ -29,6 +32,8 @@ export class CodeTransformChatConnector {
     private readonly onCodeTransformMessageUpdated
     private readonly onCodeTransformCommandMessageReceived
     private readonly onNotification
+    private readonly onUpdatePlaceholder
+    private readonly onChatInputEnabled
     private readonly onStartNewTransform
     private readonly onUpdateAuthentication
     private readonly onNewTab
@@ -42,6 +47,8 @@ export class CodeTransformChatConnector {
         this.onCodeTransformMessageReceived = props.onCodeTransformMessageReceived
         this.onCodeTransformMessageUpdated = props.onCodeTransformMessageUpdate
         this.onCodeTransformCommandMessageReceived = props.onCodeTransformCommandMessageReceived
+        this.onChatInputEnabled = props.onChatInputEnabled
+        this.onUpdatePlaceholder = props.onUpdatePlaceholder
         this.onNotification = props.onNotification
         this.onUpdateAuthentication = props.onUpdateAuthentication
         this.tabsStorage = props.tabsStorage
@@ -66,6 +73,16 @@ export class CodeTransformChatConnector {
         if (codeTransformTab === undefined || !codeTransformTab.isSelected) {
             this.onNotification({ content: messageData.content, title: messageData.title, type: NotificationType.INFO })
         }
+    }
+
+    requestAnswer = (tabID: string, payload: ChatPayload) => {
+        this.tabsStorage.updateTabStatus(tabID, 'busy')
+        this.sendMessageToExtension({
+            tabID: tabID,
+            command: 'chat-prompt',
+            tabType: 'codetransform',
+            message: payload.chatMessage
+        })
     }
 
     private processCodeTransformCommandMessage = (messageData: any): void => {
@@ -168,6 +185,16 @@ export class CodeTransformChatConnector {
             return
         }
 
+        if (messageData.type === 'updatePlaceholderMessage') {
+            this.onUpdatePlaceholder(messageData.tabID, messageData.newPlaceholder)
+            return
+        }
+
+        if (messageData.type === 'chatInputEnabledMessage') {
+            this.onChatInputEnabled(messageData.tabID, messageData.enabled)
+            return
+        }
+
         if (messageData.type === 'authNeededException') {
             await this.processAuthNeededException(messageData)
             return
@@ -204,6 +231,20 @@ export class CodeTransformChatConnector {
                 tabType: 'codetransform',
                 modulePath: action.formItemValues?.module,
                 targetVersion: 'Java 17',
+            })
+        } else if (action.id === FormButtonIds.CodeTransformInputSQLMetadata) {
+            this.sendMessageToExtension({
+                command: 'codetransform-select-sql-metadata',
+                tabID,
+                tabType: 'codetransform',
+            })
+        } else if (action.id === FormButtonIds.CodeTransformInputSQLModuleSchema) {
+            this.sendMessageToExtension({
+                command: 'codetransform-select-sql-module-schema',
+                tabID,
+                tabType: 'codetransform',
+                modulePath: action.formItemValues?.module,
+                schema: action.formItemValues?.sqlSchema,
             })
         } else if (action.id === FormButtonIds.CodeTransformInputCancel) {
             this.sendMessageToExtension({

@@ -43,6 +43,9 @@ const val MANIFEST_PATH = "manifest.json"
 const val ZIP_SOURCES_PATH = "sources"
 const val ZIP_DEPENDENCIES_PATH = "dependencies"
 const val BUILD_LOG_PATH = "build-logs.txt"
+const val UPLOAD_ZIP_MANIFEST_VERSION = "1.0"
+const val HIL_1P_UPGRADE_CAPABILITY = "HIL_1pDependency_VersionUpgrade"
+const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
 const val MAVEN_CONFIGURATION_FILE_NAME = "pom.xml"
 const val MAVEN_BUILD_RUN_UNIT_TESTS = "clean test"
 const val MAVEN_BUILD_SKIP_UNIT_TESTS = "clean test-compile"
@@ -52,10 +55,15 @@ const val INVALID_SUFFIX_SHA = "sha1"
 const val INVALID_SUFFIX_REPOSITORIES = "repositories"
 data class CodeModernizerSessionContext(
     val project: Project,
-    val configurationFile: VirtualFile,
-    val sourceJavaVersion: JavaSdkVersion,
-    val targetJavaVersion: JavaSdkVersion,
+    var configurationFile: VirtualFile? = null, // used to ZIP module
+    val sourceJavaVersion: JavaSdkVersion, // always needed for startJob API
+    val targetJavaVersion: JavaSdkVersion = JavaSdkVersion.JDK_17, // only one supported
     var customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS, // run unit tests by default
+    val sourceVendor: String = "ORACLE", // only one supported
+    val targetVendor: String? = null,
+    val sourceServerName: String? = null,
+    var schema: String? = null,
+    val sqlMetadataZip: File? = null,
 ) {
     private val mapper = jacksonObjectMapper()
     private val ignoredDependencyFileExtensions = setOf(INVALID_SUFFIX_SHA, INVALID_SUFFIX_REPOSITORIES)
@@ -104,8 +112,8 @@ data class CodeModernizerSessionContext(
     }
 
     fun getDependenciesUsingMaven(): MavenCopyCommandsResult {
-        val root = configurationFile.parent
-        val sourceFolder = File(root.path)
+        val root = configurationFile?.parent
+        val sourceFolder = File(root?.path)
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
         return executeMavenCopyCommands(sourceFolder, buildLogBuilder)
     }
@@ -174,23 +182,27 @@ data class CodeModernizerSessionContext(
             }
         }
 
-    fun createZipWithModuleFiles(copyResult: MavenCopyCommandsResult): ZipCreationResult {
-        val root = configurationFile.parent
-        val sourceFolder = File(root.path)
+    fun createZipWithModuleFiles(copyResult: MavenCopyCommandsResult?): ZipCreationResult {
+        val root = configurationFile?.parent
+        val sourceFolder = File(root?.path)
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
         val depDirectory = if (copyResult is MavenCopyCommandsResult.Success) {
             showTransformationHub()
             copyResult.dependencyDirectory
-        } else {
+        } else if (copyResult != null) { // failure cases already handled by now, but to be safe set depDir to null if copyResult failed
             null
+        } else {
+            sqlMetadataZip // null copyResult means doing a SQL conversion
         }
 
         return runReadAction {
             try {
                 val directoriesToExclude = findDirectoriesToExclude(sourceFolder)
-                val files = VfsUtil.collectChildrenRecursively(root).filter { child ->
-                    val childPath = Path(child.path)
-                    !child.isDirectory && directoriesToExclude.none { childPath.startsWith(it.toPath()) }
+                val files = root?.let {
+                    VfsUtil.collectChildrenRecursively(it).filter { child ->
+                        val childPath = Path(child.path)
+                        !child.isDirectory && directoriesToExclude.none { dir -> childPath.startsWith(dir.toPath()) }
+                    }
                 }
                 val dependencyFiles = if (depDirectory != null) {
                     iterateThroughDependencies(depDirectory)
@@ -202,17 +214,26 @@ data class CodeModernizerSessionContext(
                 val depSources = File(ZIP_DEPENDENCIES_PATH)
                 val outputFile = createTemporaryZipFile { zip ->
                     // 1) Manifest file
-                    val dependenciesRoot = if (depDirectory != null) "$ZIP_DEPENDENCIES_PATH/${depDirectory.name}" else null
-                    mapper.writeValueAsString(ZipManifest(dependenciesRoot = dependenciesRoot, customBuildCommand = customBuildCommand))
+                    var manifest = ZipManifest(customBuildCommand = customBuildCommand)
+                    if (sqlMetadataZip != null) {
+                        // doing a SQL conversion, not language upgrade
+                        val sctFileName = sqlMetadataZip.listFiles { file -> file.name.endsWith(".sct") }.first().name
+                        manifest = ZipManifest(
+                            requestedConversions = RequestedConversions(
+                                SQLConversion(sourceVendor, targetVendor, schema, sourceServerName, sctFileName)
+                            )
+                        )
+                    }
+                    mapper.writeValueAsString(manifest)
                         .byteInputStream()
                         .use {
                             zip.putNextEntry(Path(MANIFEST_PATH).toString(), it)
                         }
 
-                    // 2) Dependencies
+                    // 2) Dependencies / SQL conversion metadata
                     if (depDirectory != null) {
                         dependencyFiles.forEach { depFile ->
-                            val relativePath = File(depFile.path).relativeTo(depDirectory.parentFile)
+                            val relativePath = File(depFile.path).relativeTo(depDirectory)
                             val paddedPath = depSources.resolve(relativePath)
                             var paddedPathString = paddedPath.toPath().toString()
                             // Convert Windows file path to work on Linux
@@ -228,7 +249,7 @@ data class CodeModernizerSessionContext(
                     LOG.info { "Dependency files size = ${dependencyFiles.sumOf { it.length().toInt() }}" }
 
                     // 3) Sources
-                    files.forEach { file ->
+                    files?.forEach { file ->
                         val relativePath = File(file.path).relativeTo(sourceFolder)
                         val paddedPath = zipSources.resolve(relativePath)
                         var paddedPathString = paddedPath.toPath().toString()
@@ -246,13 +267,14 @@ data class CodeModernizerSessionContext(
                         }
                     }
 
-                    LOG.info { "Source code files size = ${files.sumOf { it.length.toInt() }}" }
+                    LOG.info { "Source code files size = ${files?.sumOf { it.length.toInt() }}" }
 
                     // 4) Build Log
                     buildLogBuilder.toString().byteInputStream().use {
                         zip.putNextEntry(Path(BUILD_LOG_PATH).toString(), it)
                     }
                 }.toFile()
+                // depDirectory should never be null
                 if (depDirectory != null) ZipCreationResult.Succeeded(outputFile) else ZipCreationResult.Missing1P(outputFile)
             } catch (e: NoSuchFileException) {
                 throw CodeModernizerException("Source folder not found")

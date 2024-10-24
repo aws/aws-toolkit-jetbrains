@@ -129,6 +129,13 @@ export class Connector {
         }
     }
 
+    requestAnswer = (tabID: string, payload: ChatPayload) => {
+        switch (this.tabsStorage.getTab(tabID)?.type) {
+            case 'codetransform':
+                return this.codeTransformChatConnector.requestAnswer(tabID, payload)
+        }
+    }
+
     requestGenerativeAIAnswer = (tabID: string, payload: ChatPayload): Promise<any> =>
         new Promise((resolve, reject) => {
             if (this.isUIReady) {
