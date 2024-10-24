@@ -28,6 +28,7 @@ import software.aws.toolkits.jetbrains.utils.sleepWithCancellation
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AuthType
 import software.aws.toolkits.telemetry.AwsTelemetry
+import software.aws.toolkits.telemetry.CredentialModification
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.Result
 import java.time.Clock
@@ -505,10 +506,24 @@ class SsoAccessTokenProvider(
         )
     }
 
-
     private fun invalidateClientRegistration() {
-        cache.invalidateClientRegistration(dagClientRegistrationCacheKey)
-        cache.invalidateClientRegistration(pkceClientRegistrationCacheKey)
+        try {
+            cache.invalidateClientRegistration(dagClientRegistrationCacheKey)
+            cache.invalidateClientRegistration(pkceClientRegistrationCacheKey)
+        } catch (e: Exception) {
+            AwsTelemetry.modifyCredentials(
+                credentialModification = CredentialModification.Delete,
+                result = Result.Failed,
+                reason = "Failed to invalidate client registration",
+                reasonDesc = e.message,
+                source = "SsoAccessTokenProvider.invalidateClientRegistration"
+            )
+        }
+        AwsTelemetry.modifyCredentials(
+            credentialModification = CredentialModification.Delete,
+            result = Result.Succeeded,
+            source = "SsoAccessTokenProvider.invalidateClientRegistration"
+        )
     }
 
     private fun saveAccessToken(token: AccessToken) {
