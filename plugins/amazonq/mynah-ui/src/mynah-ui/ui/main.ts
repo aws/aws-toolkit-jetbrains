@@ -24,7 +24,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
     let mynahUI: MynahUI
     // eslint-disable-next-line prefer-const
     let connector: Connector
-    const messageUserIntentMap = new Map<string, string>()
+    const responseMetadata = new Map<string, string[]>()
 
     const tabsStorage = new TabsStorage({
         onTabTimeout: tabID => {
@@ -130,6 +130,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
                 mynahUI.updateStore(tabID, {
                     loadingChat: true,
                     promptInputDisabledState: true,
+                    cancelButtonWhenLoading: true,
                 })
                 if (message) {
                     mynahUI.updateLastChatAnswer(tabID, {
@@ -199,6 +200,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
 
                 mynahUI.addChatItem(tabID, chatItem)
                 mynahUI.updateStore(tabID, {
+                    cancelButtonWhenLoading: false,
                     loadingChat: chatItem.type !== ChatItemType.ANSWER,
                 })
 
@@ -254,8 +256,8 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
                         ? { type: ChatItemType.CODE_RESULT, fileList: item.fileList }
                         : {}),
                 })
-                if (item.messageId !== undefined && item.userIntent !== undefined) {
-                    messageUserIntentMap.set(item.messageId, item.userIntent)
+                if (item.messageId !== undefined && item.userIntent !== undefined && item.codeBlockLanguage !== undefined) {
+                    responseMetadata.set(item.messageId, [item.userIntent, item.codeBlockLanguage])
                 }
                 return
             }
@@ -271,6 +273,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
             ) {
                 mynahUI.updateStore(tabID, {
                     loadingChat: true,
+                    cancelButtonWhenLoading: false,
                     promptInputDisabledState: true,
                 })
 
@@ -414,6 +417,13 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
             })
             connector.onTabAdd(tabID)
         },
+        onStopChatResponse: (tabID: string) => {
+            mynahUI.updateStore(tabID, {
+                loadingChat: false,
+                promptInputDisabledState: false,
+            })
+            connector.onStopChatResponse(tabID)
+        },
         onTabRemove: connector.onTabRemove,
         onTabChange: connector.onTabChange,
         onChatPrompt: (tabID, prompt, eventId) => {
@@ -466,7 +476,8 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
                         eventId,
                         codeBlockIndex,
                         totalCodeBlocks,
-                        messageUserIntentMap.get(messageId) ?? undefined
+                        responseMetadata.get(messageId)?.[0] ?? undefined,
+                        responseMetadata.get(messageId)?.[1] ?? undefined
                     )
                     break
                 case 'copy':
@@ -479,7 +490,8 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
                         eventId,
                         codeBlockIndex,
                         totalCodeBlocks,
-                        messageUserIntentMap.get(messageId) ?? undefined
+                        responseMetadata.get(messageId)?.[0] ?? undefined,
+                        responseMetadata.get(messageId)?.[1] ?? undefined
                     )
                     mynahUI.notify({
                         type: NotificationType.SUCCESS,

@@ -100,11 +100,6 @@
             "description": "Cpu usage of LSP server"
         },
         {
-            "name": "cwsprChatProgrammingLanguage",
-            "type": "string",
-            "description": "Programming language associated with the message"
-        },
-        {
             "name": "cwsprChatConversationType",
             "type": "string",
             "allowedValues": [
@@ -318,6 +313,11 @@
                 "IAM"
             ],
             "description": "Login is with Legacy device code or newer PKCE flow"
+        },
+        {
+            "name": "tabId",
+            "type": "string",
+            "description": "The unique identifier of a tab"
         }
     ],
     "metrics": [
@@ -645,57 +645,6 @@
             ]
         },
         {
-            "name": "amazonq_interactWithMessage",
-            "description": "When a user interacts with a message in the conversation",
-            "metadata": [
-                {
-                    "type": "cwsprChatConversationId"
-                },
-                {
-                    "type": "cwsprChatMessageId"
-                },
-                {
-                    "type": "cwsprChatUserIntent",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatInteractionType"
-                },
-                {
-                    "type": "cwsprChatInteractionTarget",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatCodeBlockIndex",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatTotalCodeBlocks",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatAcceptedCharactersLength",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatAcceptedNumberOfLines",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatHasReference",
-                    "required": false
-                },
-                {
-                    "type": "credentialStartUrl",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatHasProjectContext",
-                    "required": false
-                }
-            ]
-        },
-        {
             "name": "amazonq_modifyCode",
             "description": "Percentage of code modified by the user after copying/inserting code from a message",
             "metadata": [
@@ -808,6 +757,60 @@
                 },
                 {
                     "type": "authType"
+                }
+            ]
+        },
+        {
+            "name": "auth_addConnection",
+            "description": "Captures the result of adding a new connection in the 'Add New Connection' workflow",
+            "metadata": [
+                {
+                    "type": "attempts",
+                    "required": false
+                },
+                {
+                    "type": "credentialSourceId"
+                },
+                {
+                    "type": "featureId",
+                    "required": false
+                },
+                {
+                    "type": "invalidInputFields",
+                    "required": false
+                },
+                {
+                    "type": "isAggregated",
+                    "required": false
+                },
+                {
+                    "type": "reason",
+                    "required": false
+                },
+                {
+                    "type": "result"
+                },
+                {
+                    "type": "source",
+                    "required": false
+                },
+                {
+                    "type": "credentialStartUrl",
+                    "required": false
+                },
+                {
+                    "type": "isReAuth",
+                    "required": false
+                }
+            ]
+        },
+        {
+            "name": "amazonq_stopCodeGeneration",
+            "description": "User stopped the code generation",
+            "metadata": [
+                {
+                    "type": "tabId",
+                    "required": true
                 }
             ]
         }

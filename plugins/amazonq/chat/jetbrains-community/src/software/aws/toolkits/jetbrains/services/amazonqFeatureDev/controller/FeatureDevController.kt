@@ -15,6 +15,7 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.wm.ToolWindowManager
 import kotlinx.coroutines.withContext
@@ -36,6 +37,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevExce
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ModifySourceFolderErrorReason
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.UploadURLExpired
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileCorruptedException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.createUserFacingErrorMessage
@@ -73,6 +75,7 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.UiTelemetry
 import java.util.UUID
 
 class FeatureDevController(
@@ -89,6 +92,10 @@ class FeatureDevController(
             tabId = message.tabId,
             message = message.chatMessage
         )
+    }
+
+    override suspend fun processStopMessage(message: IncomingFeatureDevMessage.StopResponse) {
+        handleStopMessage(message)
     }
 
     override suspend fun processNewTabCreatedMessage(message: IncomingFeatureDevMessage.NewTabCreated) {
@@ -283,6 +290,26 @@ class FeatureDevController(
         }
     }
 
+    private suspend fun handleStopMessage(message: IncomingFeatureDevMessage.StopResponse) {
+        val session: Session?
+        UiTelemetry.click(null as Project?, "amazonq_stopCodeGeneration")
+        messenger.sendAnswer(
+            tabId = message.tabId,
+            message("amazonqFeatureDev.code_generation.stopping_code_generation"),
+            messageType = FeatureDevMessageType.Answer,
+            canBeVoted = false
+        )
+        messenger.sendUpdatePlaceholder(
+            tabId = message.tabId,
+            newPlaceholder = message("amazonqFeatureDev.code_generation.stopping_code_generation")
+        )
+        messenger.sendChatInputEnabledMessage(tabId = message.tabId, enabled = false)
+        session = getSessionInfo(message.tabId)
+
+        if (session.sessionState.token?.token !== null) {
+            session.sessionState.token?.cancel()
+        }
+    }
     private suspend fun insertCode(tabId: String) {
         var session: Session? = null
         try {
@@ -351,7 +378,7 @@ class FeatureDevController(
         }
     }
 
-    private suspend fun newTask(tabId: String) {
+    private suspend fun newTask(tabId: String, isException: Boolean? = false) {
         val session = getSessionInfo(tabId)
         val sessionLatency = System.currentTimeMillis() - session.sessionStartTime
         AmazonqTelemetry.endChat(
@@ -362,9 +389,15 @@ class FeatureDevController(
         chatSessionStorage.deleteSession(tabId)
 
         newTabOpened(tabId)
-
-        messenger.sendAnswer(tabId = tabId, messageType = FeatureDevMessageType.Answer, message = message("amazonqFeatureDev.chat_message.ask_for_new_task"))
+        if (isException != null && !isException) {
+            messenger.sendAnswer(
+                tabId = tabId,
+                messageType = FeatureDevMessageType.Answer,
+                message = message("amazonqFeatureDev.chat_message.ask_for_new_task")
+            )
+        }
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.new_plan"))
+        messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = true)
     }
 
     private suspend fun closeSession(tabId: String) {
@@ -432,6 +465,16 @@ class FeatureDevController(
                         )
                     ),
                 )
+            }
+            is NoChangeRequiredException -> {
+                val isException = true
+                messenger.sendAnswer(
+                    tabId = tabId,
+                    message = err.message,
+                    messageType = FeatureDevMessageType.Answer,
+                    canBeVoted = true
+                )
+                return this.newTask(message, isException)
             }
             is ZipFileCorruptedException -> {
                 messenger.sendError(

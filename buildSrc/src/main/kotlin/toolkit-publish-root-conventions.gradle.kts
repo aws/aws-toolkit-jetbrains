@@ -20,7 +20,7 @@ tasks.withType<PatchPluginXmlTask>().configureEach {
 intellijPlatform {
     instrumentCode = false
 
-    verifyPlugin {
+    pluginVerification {
         ides {
             // recommended() appears to resolve latest EAP for a product?
             ide(provider { IntelliJPlatformType.IntellijIdeaCommunity }, toolkitIntelliJ.version())

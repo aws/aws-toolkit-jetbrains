@@ -16,19 +16,23 @@ import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import info.debatty.java.stringsimilarity.Levenshtein
 import org.assertj.core.util.VisibleForTesting
+import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererLanguageManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getConnectionStartUrl
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getUnmodifiedAcceptedCharsCount
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.InsertedCodeModificationEntry
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererRuntime
@@ -152,28 +156,18 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
 
         if (file == null || (!file.isValid)) {
             sendModificationTelemetry(acceptedSuggestion, null)
-            // temp remove event sent as further discussion needed for metric calculation
-            // sendUserModificationTelemetryToServiceAPI(acceptedSuggestion, 1.0)
+            sendUserModificationTelemetryToServiceAPI(acceptedSuggestion)
         } else {
-            try {
-                /**
-                 * this try-catch is to check if the offsets are valid since the method does not return null
-                 */
-                val document = runReadAction {
-                    FileDocumentManager.getInstance().getDocument(file)
-                }
-                val currentString = document?.getText(
-                    TextRange(acceptedSuggestion.range.startOffset, acceptedSuggestion.range.endOffset)
-                )
-                val modificationPercentage = checkDiff(currentString?.trim(), acceptedSuggestion.suggestion.trim())
-                sendModificationTelemetry(acceptedSuggestion, modificationPercentage)
-                // temp remove event sent as further discussion needed for metric calculation
-                // sendUserModificationTelemetryToServiceAPI(acceptedSuggestion, modificationPercentage)
-            } catch (e: Exception) {
-                sendModificationTelemetry(acceptedSuggestion, null)
-                // temp remove event sent as further discussion needed for metric calculation
-                // sendUserModificationTelemetryToServiceAPI(acceptedSuggestion, 1.0)
+            // Will remove this later when we truly don't need toolkit user modification telemetry anymore
+            val document = runReadAction {
+                FileDocumentManager.getInstance().getDocument(file)
             }
+            val currentString = document?.getText(
+                TextRange(acceptedSuggestion.range.startOffset, acceptedSuggestion.range.endOffset)
+            )
+            val modificationPercentage = checkDiff(currentString?.trim(), acceptedSuggestion.suggestion.trim())
+            sendModificationTelemetry(acceptedSuggestion, modificationPercentage)
+            sendUserModificationTelemetryToServiceAPI(acceptedSuggestion)
         }
     }
 
@@ -237,47 +231,37 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
         }
     }
 
-// temp disable user modfication event for further discussion on metric calculation
-//    private fun sendUserModificationTelemetryToServiceAPI(
-//        suggestion: AcceptedSuggestionEntry,
-//        modificationPercentage: Double
-//    ) {
-//        calculateIfIamIdentityCenterConnection(project) {
-//            val response = try {
-//                CodeWhispererClientAdaptor.getInstance(project)
-//                    .sendUserModificationTelemetry(
-//                        suggestion.sessionId,
-//                        suggestion.requestId,
-//                        suggestion.vFile?.let { CodeWhispererLanguageManager.getInstance().getLanguage(suggestion.vFile) },
-//                        CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn.orEmpty(),
-//                        modificationPercentage
-//                    )
-//            } catch (e: Exception) {
-//                when (e) {
-//                    is CodeWhispererRuntimeException -> {
-//                        LOG.info(e) {
-//                            "Failed to send code scan telemetry with Code Whisperer Runtime Exception"
-//                        }
-//                    }
-//
-//                    is CodeWhispererException -> {
-//                        LOG.info(e) {
-//                            "Failed to send code scan telemetry with Code Whisperer Exception"
-//                        }
-//                    }
-//
-//                    else -> {
-//                        LOG.info(e) { "Failed to send user modification telemetry." }
-//                    }
-//                }
-//                null
-//            }
-//
-//            response?.let {
-//                LOG.debug { "Successfully sent user modification telemetry. RequestId: ${it.responseMetadata().requestId()}" }
-//            }
-//        }
-//    }
+    private fun sendUserModificationTelemetryToServiceAPI(
+        suggestion: AcceptedSuggestionEntry,
+    ) {
+        runIfIdcConnectionOrTelemetryEnabled(project) {
+            try {
+                // should be impossible from the caller logic
+                if (suggestion.vFile == null) return@runIfIdcConnectionOrTelemetryEnabled
+                val document = runReadAction {
+                    FileDocumentManager.getInstance().getDocument(suggestion.vFile)
+                }
+                val modifiedSuggestion = document?.getText(
+                    TextRange(suggestion.range.startOffset, suggestion.range.endOffset)
+                ).orEmpty()
+                val response = CodeWhispererClientAdaptor.getInstance(project)
+                    .sendUserModificationTelemetry(
+                        suggestion.sessionId,
+                        suggestion.requestId,
+                        CodeWhispererLanguageManager.getInstance().getLanguage(suggestion.vFile),
+                        CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn.orEmpty(),
+                        suggestion.suggestion.length,
+                        getUnmodifiedAcceptedCharsCount(suggestion.suggestion, modifiedSuggestion)
+                    )
+                LOG.debug { "Successfully sent user modification telemetry. RequestId: ${response.responseMetadata().requestId()}" }
+            } catch (e: Exception) {
+                val requestId = if (e is CodeWhispererRuntimeException) e.requestId() else null
+                LOG.debug {
+                    "Failed to send user modification telemetry. RequestId: $requestId, ErrorMessage: ${e.message}"
+                }
+            }
+        }
+    }
 
     companion object {
         private val DEFAULT_CHECK_INTERVAL = Duration.ofMinutes(1)

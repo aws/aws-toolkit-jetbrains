@@ -43,7 +43,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitConte
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.ChatSession
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.CodeNamesImpl
@@ -63,6 +62,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.LinkType
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionInfo
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryServiceExtension
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.CwsprChatConversationType
 import software.aws.toolkits.telemetry.CwsprChatInteractionType
 import software.aws.toolkits.telemetry.CwsprChatTriggerInteraction
@@ -420,7 +420,8 @@ class TelemetryHelperTest {
                 "insertionTargetType",
                 "eventId",
                 codeBlockIndex,
-                totalCodeBlocks
+                totalCodeBlocks,
+                lang
             )
         )
 
@@ -484,7 +485,8 @@ class TelemetryHelperTest {
                 emptyList(),
                 eventId,
                 codeBlockIndex,
-                totalCodeBlocks
+                totalCodeBlocks,
+                lang
             )
         )
 

@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.service
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -14,18 +13,17 @@ import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.apache.commons.collections4.queue.CircularFifoQueue
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.coroutines.applicationCoroutineScope
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryServiceNew
 import software.aws.toolkits.telemetry.CodewhispererAutomatedTriggerType
 import software.aws.toolkits.telemetry.CodewhispererPreviousSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
@@ -42,6 +40,8 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
 
     private var lastInvocationTime: Instant? = null
     private var lastInvocationLineNum: Int? = null
+    var timeAtLastCharTyped: Instant = Instant.now()
+        private set
 
     init {
         scheduleReset()
@@ -54,10 +54,8 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
     // a util wrapper
     fun tryInvokeAutoTrigger(editor: Editor, triggerType: CodeWhispererAutomatedTriggerType): Job? {
         // only needed for Classifier group, thus calculate it lazily
+        timeAtLastCharTyped = Instant.now()
         val classifierResult: ClassifierResult by lazy { shouldTriggerClassifier(editor, triggerType.telemetryType) }
-        val language = runReadAction {
-            FileDocumentManager.getInstance().getFile(editor.document)?.programmingLanguage()
-        } ?: CodeWhispererUnknownLanguage.INSTANCE
 
         // we need classifier result for any type of triggering for classifier group for supported languages
         triggerType.calculationResult = classifierResult.calculatedResult
@@ -81,7 +79,14 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
 
     // real auto trigger logic
     fun invoke(editor: Editor, triggerType: CodeWhispererAutomatedTriggerType): Job? {
-        if (!CodeWhispererService.getInstance().canDoInvocation(editor, CodewhispererTriggerType.AutoTrigger)) {
+        if (!(
+                if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
+                    CodeWhispererServiceNew.getInstance().canDoInvocation(editor, CodewhispererTriggerType.AutoTrigger)
+                } else {
+                    CodeWhispererService.getInstance().canDoInvocation(editor, CodewhispererTriggerType.AutoTrigger)
+                }
+                )
+        ) {
             return null
         }
 
@@ -95,29 +100,8 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
 
         val coroutineScope = applicationCoroutineScope()
 
-        return when (triggerType) {
-            is CodeWhispererAutomatedTriggerType.IdleTime -> run {
-                coroutineScope.launch {
-                    // TODO: potential race condition between hasExistingInvocation and entering edt
-                    // but in that case we will just return in performAutomatedTriggerAction
-                    while (!CodeWhispererInvocationStatus.getInstance().hasEnoughDelayToInvokeCodeWhisperer() ||
-                        CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()
-                    ) {
-                        if (!isActive) return@launch
-                        delay(CodeWhispererConstants.IDLE_TIME_CHECK_INTERVAL)
-                    }
-                    runInEdt {
-                        if (CodeWhispererInvocationStatus.getInstance().isPopupActive()) return@runInEdt
-                        performAutomatedTriggerAction(editor, CodeWhispererAutomatedTriggerType.IdleTime(), latencyContext)
-                    }
-                }
-            }
-
-            else -> run {
-                coroutineScope.launch(EDT) {
-                    performAutomatedTriggerAction(editor, triggerType, latencyContext)
-                }
-            }
+        return coroutineScope.launch(EDT) {
+            performAutomatedTriggerAction(editor, triggerType, latencyContext)
         }
     }
 
@@ -195,7 +179,12 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
         var previousOneAccept: Double = 0.0
         var previousOneReject: Double = 0.0
         var previousOneOther: Double = 0.0
-        val previousOneDecision = CodeWhispererTelemetryService.getInstance().previousUserTriggerDecision
+        val previousOneDecision =
+            if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
+                CodeWhispererTelemetryServiceNew.getInstance().previousUserTriggerDecision
+            } else {
+                CodeWhispererTelemetryService.getInstance().previousUserTriggerDecision
+            }
         if (previousOneDecision == null) {
             previousOneAccept = 0.0
             previousOneReject = 0.0

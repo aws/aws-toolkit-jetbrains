@@ -1,3 +1,22 @@
+# _3.34_ (2024-10-22)
+- **(Bug Fix)** Fix issue where the plugin can't read SSO tokens from disk / always returns 'Unable to load client registration'
+
+# _3.33_ (2024-10-17)
+- **(Feature)** Add support for 2024.3
+- **(Bug Fix)** `@workspace` cannot properly locate certain folders for certain project setup
+- **(Bug Fix)** Fix an IDE deadlock that may occur while attempting to initialize Amazon Q UI elements ([#4966](https://github.com/aws/aws-toolkit-jetbrains/issues/4966))
+
+# _3.32_ (2024-10-10)
+- **(Feature)** Loosen inline completion support limitations for YAML/JSON
+- **(Bug Fix)** Fix error occuring when Amazon Q attempts to show UI hints on manually triggerred inline suggestion ([#4929](https://github.com/aws/aws-toolkit-jetbrains/issues/4929))
+- **(Bug Fix)** Amazon Q (/dev): provide error messaging when no code changes are required for the prompt
+- **(Bug Fix)** Fix 'Slow operations are prohibited on EDT.' when Amazon Q is determining if a file supports inline suggestions ([#4823](https://github.com/aws/aws-toolkit-jetbrains/issues/4823))
+- **(Bug Fix)** Amazon Q Feature Dev: Add error messages when the upload URL expires
+- **(Bug Fix)** Fix toolkit connection dropdown getting hidden when panel width is small.
+- **(Bug Fix)** Fix inability to sign out in reauth view in Q chat panel
+- **(Bug Fix)** Raise max `@workspace` indexing size to 4GB
+- **(Bug Fix)** Automatically pause and resume `@workspace` indexing when OS CPU load is high
+
 # _3.31_ (2024-10-03)
 - **(Feature)** Amazon Q Developer: Updated legal disclaimer text
 - **(Feature)** Amazon Q Code Transformation: allow users to skip tests

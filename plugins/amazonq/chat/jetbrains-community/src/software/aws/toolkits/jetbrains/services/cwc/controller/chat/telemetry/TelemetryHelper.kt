@@ -16,7 +16,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitConte
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.v1.ChatSessionV1
@@ -26,6 +25,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.LinkType
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
@@ -219,7 +219,8 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                     credentialStartUrl = getStartUrl(context.project),
                     cwsprChatCodeBlockIndex = message.codeBlockIndex?.toLong(),
                     cwsprChatTotalCodeBlocks = message.totalCodeBlocks?.toLong(),
-                    cwsprChatHasProjectContext = getMessageHasProjectContext(message.messageId)
+                    cwsprChatHasProjectContext = getMessageHasProjectContext(message.messageId),
+                    cwsprChatProgrammingLanguage = message.codeBlockLanguage,
                 )
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
@@ -244,7 +245,8 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
                     credentialStartUrl = getStartUrl(context.project),
                     cwsprChatCodeBlockIndex = message.codeBlockIndex?.toLong(),
                     cwsprChatTotalCodeBlocks = message.totalCodeBlocks?.toLong(),
-                    cwsprChatHasProjectContext = getMessageHasProjectContext(message.messageId)
+                    cwsprChatHasProjectContext = getMessageHasProjectContext(message.messageId),
+                    cwsprChatProgrammingLanguage = message.codeBlockLanguage,
                 )
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
@@ -411,27 +413,6 @@ class TelemetryHelper(private val context: AmazonQAppInitContext, private val se
 
         fun recordTelemetryChatRunCommand(type: CwsprChatCommandType, name: String? = null, startUrl: String? = null) {
             AmazonqTelemetry.runCommand(cwsprChatCommandType = type, cwsprChatCommandName = name, credentialStartUrl = startUrl)
-        }
-
-        fun recordIndexWorkspace(
-            duration: Double,
-            fileCount: Int = 0,
-            fileSize: Int = 0,
-            isSuccess: Boolean,
-            memoryUsage: Int? = 0,
-            cpuUsage: Int? = 0,
-            startUrl: String? = null,
-        ) {
-            AmazonqTelemetry.indexWorkspace(
-                project = null,
-                duration = duration,
-                amazonqIndexFileCount = fileCount.toLong(),
-                amazonqIndexFileSizeInMB = fileSize.toLong(),
-                success = isSuccess,
-                amazonqIndexMemoryUsageInMB = memoryUsage?.toLong(),
-                amazonqIndexCpuUsagePercentage = cpuUsage?.toLong(),
-                credentialStartUrl = startUrl
-            )
         }
     }
 }

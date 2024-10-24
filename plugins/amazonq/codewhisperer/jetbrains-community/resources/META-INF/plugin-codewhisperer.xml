@@ -5,7 +5,11 @@
     <applicationListeners>
         <listener class="software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererUIChangeListener"
                   topic="software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupStateChangeListener"/>
+        <listener class="software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererUIChangeListenerNew"
+                  topic="software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupStateChangeListener"/>
         <listener class="software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceActionListener"
+                  topic="software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererUserActionListener"/>
+        <listener class="software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceActionListenerNew"
                   topic="software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererUserActionListener"/>
     </applicationListeners>
 
@@ -81,9 +85,32 @@
         </group>
 
         <action class="software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererRecommendationAction"
-                text="Show Code Suggestions">
+                text="Invoke Amazon Q Inline Suggestions">
             <keyboard-shortcut keymap="$default" first-keystroke="alt C"/>
         </action>
+        <action id="codewhisperer.inline.navigate.previous"
+                class="software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererNavigatePrevAction"
+                text="Navigate to Previous Inline Suggestion" description="Navigate to previous inline suggestion">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt OPEN_BRACKET"/>
+        </action>
+        <action id="codewhisperer.inline.navigate.next"
+                class="software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererNavigateNextAction"
+                text="Navigate to Next Inline Suggestion" description="Navigate to next inline suggestion">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt CLOSE_BRACKET"/>
+        </action>
+        <action id="codewhisperer.inline.accept"
+                class="software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererAcceptAction"
+                text="Accept the Current Inline Suggestion" description="Accept the current inline suggestions">
+            <keyboard-shortcut keymap="$default" first-keystroke="TAB"/>
+        </action>
+        <action id="codewhisperer.inline.force.accept"
+                class="software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererForceAcceptAction"
+                text="Force Accept the Current Inline Suggestion" description="Force accept the current inline suggestion">
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt TAB"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt TAB"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="alt ENTER"/>
+        </action>
+
         <group id="aws.toolkit.codewhisperer.toolbar.security">
             <action
                 id="codewhisperer.toolbar.security.scan"

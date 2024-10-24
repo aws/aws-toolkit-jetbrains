@@ -5,12 +5,14 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
 import com.fasterxml.jackson.annotation.JsonValue
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
 import software.aws.toolkits.jetbrains.services.cwc.messages.RecommendationContentSpan
 
 data class SessionStateAction(
     val task: String,
     val msg: String,
+    val token: CancellationTokenSource? = null,
 )
 
 data class Interaction(

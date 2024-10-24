@@ -4,25 +4,39 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.model
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.VisualPosition
 import com.intellij.openapi.editor.markup.RangeHighlighter
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.util.concurrency.annotations.RequiresEdt
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManagerNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererIntelliSenseOnHoverListener
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatusNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererServiceNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryServiceNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.setIntelliSensePopupAlpha
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.SupplementalContextStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.UtgStrategy
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import software.aws.toolkits.telemetry.Result
+import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 
 data class Chunk(
@@ -87,6 +101,22 @@ data class RecommendationContext(
     val position: VisualPosition,
 )
 
+data class RecommendationContextNew(
+    val details: MutableList<DetailContextNew>,
+    val userInputOriginal: String,
+    val userInputSinceInvocation: String,
+    val position: VisualPosition,
+    val jobId: Int,
+    var typeahead: String = "",
+)
+
+data class PreviewContext(
+    val jobId: Int,
+    val detail: DetailContextNew,
+    val userInput: String,
+    val typeahead: String,
+)
+
 data class DetailContext(
     val requestId: String,
     val recommendation: Completion,
@@ -95,6 +125,18 @@ data class DetailContext(
     val isTruncatedOnRight: Boolean,
     val rightOverlap: String = "",
     val completionType: CodewhispererCompletionType,
+)
+
+data class DetailContextNew(
+    val requestId: String,
+    val recommendation: Completion,
+    val reformatted: Completion,
+    val isDiscarded: Boolean,
+    val isTruncatedOnRight: Boolean,
+    val rightOverlap: String = "",
+    val completionType: CodewhispererCompletionType,
+    var hasSeen: Boolean = false,
+    var isAccepted: Boolean = false,
 )
 
 data class SessionContext(
@@ -106,6 +148,55 @@ data class SessionContext(
     var toBeRemovedHighlighter: RangeHighlighter? = null,
     var insertEndOffset: Int = -1,
 )
+
+data class SessionContextNew(
+    val project: Project,
+    val editor: Editor,
+    var popup: JBPopup? = null,
+    var selectedIndex: Int = -1,
+    val seen: MutableSet<Int> = mutableSetOf(),
+    var isFirstTimeShowingPopup: Boolean = true,
+    var toBeRemovedHighlighter: RangeHighlighter? = null,
+    var insertEndOffset: Int = -1,
+    var popupOffset: Int = -1,
+    val latencyContext: LatencyContext,
+    var hasAccepted: Boolean = false,
+) : Disposable {
+    private var isDisposed = false
+    init {
+        project.messageBus.connect(this).subscribe(
+            CodeWhispererServiceNew.CODEWHISPERER_INTELLISENSE_POPUP_ON_HOVER,
+            object : CodeWhispererIntelliSenseOnHoverListener {
+                override fun onEnter() {
+                    CodeWhispererPopupManagerNew.getInstance().bringSuggestionInlayToFront(editor, popup, opposite = true)
+                }
+            }
+        )
+    }
+
+    @RequiresEdt
+    override fun dispose() {
+        CodeWhispererTelemetryServiceNew.getInstance().sendUserDecisionEventForAll(
+            this,
+            hasAccepted,
+            CodeWhispererInvocationStatusNew.getInstance().popupStartTimestamp?.let { Duration.between(it, Instant.now()) }
+        )
+        setIntelliSensePopupAlpha(editor, 0f)
+        CodeWhispererInvocationStatusNew.getInstance().setDisplaySessionActive(false)
+
+        if (hasAccepted) {
+            popup?.closeOk(null)
+        } else {
+            popup?.cancel()
+        }
+        popup?.let { Disposer.dispose(it) }
+        popup = null
+        CodeWhispererInvocationStatusNew.getInstance().finishInvocation()
+        isDisposed = true
+    }
+
+    fun isDisposed() = isDisposed
+}
 
 data class RecommendationChunk(
     val text: String,
@@ -129,11 +220,31 @@ data class InvocationContext(
     override fun dispose() {}
 }
 
+data class InvocationContextNew(
+    val requestContext: RequestContextNew,
+    val responseContext: ResponseContext,
+    val recommendationContext: RecommendationContextNew,
+) : Disposable {
+    private var isDisposed = false
+
+    @RequiresEdt
+    override fun dispose() {
+        isDisposed = true
+    }
+
+    fun isDisposed() = isDisposed
+}
 data class WorkerContext(
     val requestContext: RequestContext,
     val responseContext: ResponseContext,
     val response: GenerateCompletionsResponse,
     val popup: JBPopup,
+)
+
+data class WorkerContextNew(
+    val requestContext: RequestContextNew,
+    val responseContext: ResponseContext,
+    val response: GenerateCompletionsResponse,
 )
 
 data class CodeScanTelemetryEvent(
@@ -198,6 +309,18 @@ data class LatencyContext(
     fun getCodeWhispererPreprocessingLatency() = TimeUnit.NANOSECONDS.toMillis(
         codewhispererPreprocessingEnd - codewhispererPreprocessingStart
     ).toDouble()
+
+    // For auto-trigger it's from the time when last char typed
+    // for manual-trigger it's from the time when last trigger action happened(alt + c)
+    fun getPerceivedLatency(triggerType: CodewhispererTriggerType) =
+        if (triggerType == CodewhispererTriggerType.OnDemand) {
+            getCodeWhispererEndToEndLatency()
+        } else {
+            (
+                TimeUnit.NANOSECONDS.toMillis(codewhispererEndToEndEnd) -
+                    CodeWhispererAutoTriggerService.getInstance().timeAtLastCharTyped.toEpochMilli()
+                ).toDouble()
+        }
 }
 
 data class TryExampleRowContext(

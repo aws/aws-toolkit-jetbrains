@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.startup
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
@@ -13,6 +14,8 @@ class ToolWindowStartupActivity : ProjectActivity {
     private val runOnce = AtomicBoolean(false)
 
     override suspend fun execute(project: Project) {
+        if (ApplicationManager.getApplication().isUnitTestMode) return
+
         // initialize html contents in BGT so users don't have to wait when they open the tool window
         ToolkitWebviewPanel.getInstance(project)
 
