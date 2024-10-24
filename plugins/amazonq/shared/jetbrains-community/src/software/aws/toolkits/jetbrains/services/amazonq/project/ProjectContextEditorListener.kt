@@ -2,15 +2,23 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.amazonq.project
-import com.intellij.openapi.fileEditor.FileEditorManager
+
+import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
-import com.intellij.openapi.vfs.VirtualFile
-import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 
 class ProjectContextEditorListener : FileEditorManagerListener {
-    override fun fileClosed(source: FileEditorManager, file: VirtualFile) {
-        if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
-            ProjectContextController.getInstance(source.project).updateIndex(file.path)
+    override fun selectionChanged(event: FileEditorManagerEvent) {
+        val oldFile = event.oldFile ?: return
+
+        // TODO: should respect isIdeAutosave config
+        with(FileDocumentManager.getInstance()) {
+            this.getDocument(oldFile)?.let {
+                this.saveDocument(it)
+            }
         }
+
+        val project = event.manager.project
+        ProjectContextController.getInstance(project).updateIndex(listOf(oldFile.path), IndexUpdateMode.UPDATE)
     }
 }
