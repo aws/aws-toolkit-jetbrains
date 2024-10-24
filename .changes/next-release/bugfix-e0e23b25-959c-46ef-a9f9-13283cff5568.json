@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Update `@workspace` index when adding or deleting a file"
+}
