@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.telemetry.otel
 
+import com.intellij.openapi.application.ApplicationInfo
+import com.intellij.platform.diagnostic.telemetry.helpers.useWithoutActiveScope
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.Span
@@ -31,15 +33,24 @@ class DefaultSpanBuilder(delegate: SpanBuilder) : AbstractSpanBuilder<DefaultSpa
     override fun doStartSpan() = BaseSpan(parent, delegate.startSpan())
 }
 
-abstract class AbstractSpanBuilder<Builder : AbstractSpanBuilder<Builder, Span>, Span : AbstractBaseSpan>(protected val delegate: SpanBuilder) : SpanBuilder {
+abstract class AbstractSpanBuilder<BuilderType : AbstractSpanBuilder<BuilderType, SpanType>, SpanType : AbstractBaseSpan>(protected val delegate: SpanBuilder) : SpanBuilder {
     /**
      * Same as [com.intellij.platform.diagnostic.telemetry.helpers.use] except downcasts to specific subclass of [BaseSpan]
      *
      * @inheritdoc
      */
     inline fun<T> use(operation: (Span) -> T): T =
-        startSpan().ijUse { span ->
-            operation(span as Span)
+        // FIX_WHEN_MIN_IS_241: not worth fixing for 233
+        if (ApplicationInfo.getInstance().build.baselineVersion == 233) {
+            startSpan().useWithoutActiveScope { span ->
+                span.makeCurrent().use {
+                    operation(span as SpanType)
+                }
+            }
+        } else {
+            startSpan().ijUse { span ->
+                operation(span as SpanType)
+            }
         }
 
     /**
@@ -49,89 +60,89 @@ abstract class AbstractSpanBuilder<Builder : AbstractSpanBuilder<Builder, Span>,
      */
     suspend inline fun<T> useWithScope(
         context: CoroutineContext = EmptyCoroutineContext,
-        crossinline operation: suspend CoroutineScope.(Span) -> T,
+        crossinline operation: suspend CoroutineScope.(SpanType) -> T,
     ): T =
         ijUseWithScope(context) { span ->
-            operation(span as Span)
+            operation(span as SpanType)
         }
 
     protected var parent: Context? = null
-    override fun setParent(context: Context): Builder {
+    override fun setParent(context: Context): BuilderType {
         parent = context
         delegate.setParent(context)
-        return this as Builder
+        return this as BuilderType
     }
 
-    override fun setNoParent(): Builder {
+    override fun setNoParent(): BuilderType {
         parent = null
         delegate.setNoParent()
-        return this as Builder
+        return this as BuilderType
     }
 
-    override fun addLink(spanContext: SpanContext): Builder {
+    override fun addLink(spanContext: SpanContext): BuilderType {
         delegate.addLink(spanContext)
-        return this as Builder
+        return this as BuilderType
     }
 
     override fun addLink(
         spanContext: SpanContext,
         attributes: Attributes,
-    ): Builder {
+    ): BuilderType {
         delegate.addLink(spanContext, attributes)
-        return this as Builder
+        return this as BuilderType
     }
 
-    override fun setAttribute(key: String, value: String): Builder {
+    override fun setAttribute(key: String, value: String): BuilderType {
         delegate.setAttribute(key, value)
-        return this as Builder
+        return this as BuilderType
     }
 
-    override fun setAttribute(key: String, value: Long): Builder {
+    override fun setAttribute(key: String, value: Long): BuilderType {
         delegate.setAttribute(key, value)
-        return this as Builder
+        return this as BuilderType
     }
 
-    override fun setAttribute(key: String, value: Double): Builder {
+    override fun setAttribute(key: String, value: Double): BuilderType {
         delegate.setAttribute(key, value)
-        return this as Builder
+        return this as BuilderType
     }
 
-    override fun setAttribute(key: String, value: Boolean): Builder {
+    override fun setAttribute(key: String, value: Boolean): BuilderType {
         delegate.setAttribute(key, value)
-        return this as Builder
+        return this as BuilderType
     }
 
     override fun <V : Any?> setAttribute(
         key: AttributeKey<V?>,
         value: V & Any,
-    ): Builder {
+    ): BuilderType {
         delegate.setAttribute(key, value)
-        return this as Builder
+        return this as BuilderType
     }
 
-    override fun setAllAttributes(attributes: Attributes): Builder {
+    override fun setAllAttributes(attributes: Attributes): BuilderType {
         delegate.setAllAttributes(attributes)
-        return this as Builder
+        return this as BuilderType
     }
 
-    override fun setSpanKind(spanKind: SpanKind): Builder {
+    override fun setSpanKind(spanKind: SpanKind): BuilderType {
         delegate.setSpanKind(spanKind)
-        return this as Builder
+        return this as BuilderType
     }
 
-    override fun setStartTimestamp(startTimestamp: Long, unit: TimeUnit): Builder {
+    override fun setStartTimestamp(startTimestamp: Long, unit: TimeUnit): BuilderType {
         delegate.setStartTimestamp(startTimestamp, unit)
-        return this as Builder
+        return this as BuilderType
     }
 
-    override fun setStartTimestamp(startTimestamp: Instant): Builder {
+    override fun setStartTimestamp(startTimestamp: Instant): BuilderType {
         delegate.setStartTimestamp(startTimestamp)
-        return this as Builder
+        return this as BuilderType
     }
 
-    protected abstract fun doStartSpan(): Span
+    protected abstract fun doStartSpan(): SpanType
 
-    override fun startSpan(): Span {
+    override fun startSpan(): SpanType {
         var parent = parent
         if (parent == null) {
             parent = Context.current()
@@ -140,10 +151,9 @@ abstract class AbstractSpanBuilder<Builder : AbstractSpanBuilder<Builder, Span>,
 
         val contextValue = parent.get(AWS_PRODUCT_CONTEXT_KEY)
         if (contextValue == null) {
-            // FIX_WHEN_MIN_IS_243: Kotlin compiler can't figure out difference between class/type parameter until 2.x
-            val s = io.opentelemetry.api.trace.Span.fromContextOrNull(parent)
+            val s = Span.fromContextOrNull(parent)
             parent = if (s is AbstractBaseSpan && s.context != null) {
-                s.context.with(io.opentelemetry.api.trace.Span.fromContext(parent))
+                s.context.with(Span.fromContext(parent))
             } else {
                 parent.with(AWS_PRODUCT_CONTEXT_KEY, resolvePluginName())
             }
