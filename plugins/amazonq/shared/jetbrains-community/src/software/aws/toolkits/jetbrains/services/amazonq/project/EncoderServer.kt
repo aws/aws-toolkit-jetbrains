@@ -7,6 +7,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.KillableProcessHandler
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.process.ProcessCloseUtil
 import com.intellij.util.io.HttpRequests
@@ -56,6 +57,9 @@ class EncoderServer(val project: Project) : Disposable {
     private val mapper = jacksonObjectMapper()
 
     fun downloadArtifactsAndStartServer() {
+        if (ApplicationManager.getApplication().isUnitTestMode) {
+            return
+        }
         downloadArtifactsIfNeeded()
         start()
     }
