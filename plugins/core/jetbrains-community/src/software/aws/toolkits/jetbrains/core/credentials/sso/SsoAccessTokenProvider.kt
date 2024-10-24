@@ -399,7 +399,6 @@ class SsoAccessTokenProvider(
                     "Reauth Required: $stageName",
                     "Expired client registration"
                 )
-                // TODO: reauth
                 else -> Pair(
                     "Unable to load client registration from cache: $stageName",
                     "Null client registration"
@@ -481,16 +480,31 @@ class SsoAccessTokenProvider(
         }
 
     private fun saveClientRegistration(registration: ClientRegistration) {
-        when (registration) {
-            is DeviceAuthorizationClientRegistration -> {
-                cache.saveClientRegistration(dagClientRegistrationCacheKey, registration)
-            }
+        val credentialType = registration::class.java.name
+        try {
+            when (registration) {
+                is DeviceAuthorizationClientRegistration -> {
+                    cache.saveClientRegistration(dagClientRegistrationCacheKey, registration)
+                }
 
-            is PKCEClientRegistration -> {
-                cache.saveClientRegistration(pkceClientRegistrationCacheKey, registration)
+                is PKCEClientRegistration -> {
+                    cache.saveClientRegistration(pkceClientRegistrationCacheKey, registration)
+                }
             }
+        } catch (e: Exception) {
+            AwsTelemetry.openCredentials(
+                result = Result.Failed,
+                reason = "$credentialType failed to write to cache",
+                reasonDesc = e.message
+            )
+            throw e
         }
+        AwsTelemetry.createCredentials(
+            result = Result.Succeeded,
+            reason = "$credentialType successfully written to cache",
+        )
     }
+
 
     private fun invalidateClientRegistration() {
         cache.invalidateClientRegistration(dagClientRegistrationCacheKey)
