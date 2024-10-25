@@ -11,8 +11,11 @@ import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntime
 import software.amazon.awssdk.services.codewhispererruntime.model.FeatureValue
 import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsRequest
 import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.utils.isQExpired
 
 @Service
@@ -22,12 +25,17 @@ class CodeWhispererFeatureConfigService {
     @RequiresBackgroundThread
     fun fetchFeatureConfigs(project: Project) {
         if (isQExpired(project)) return
+        val connection = connection(project)
+        if (connection == null) {
+            LOG.error { "No connection found even after validating Q connection" }
+            return
+        }
 
         LOG.debug { "Fetching feature configs" }
         try {
-            val response = project.awsClient<CodeWhispererRuntimeClient>().listFeatureEvaluations {
+            val response = connection.getConnectionSettings().awsClient<CodeWhispererRuntimeClient>().listFeatureEvaluations {
                 it.userContext(codeWhispererUserContext())
-            }
+            } ?: return
 
             // Simply force overwrite feature configs from server response, no needed to check existing values.
             response.featureEvaluations().forEach {
@@ -51,7 +59,7 @@ class CodeWhispererFeatureConfigService {
                 val availableCustomizations =
                     calculateIfIamIdentityCenterConnection(project) {
                         try {
-                            project.awsClient<CodeWhispererRuntimeClient>().listAvailableCustomizationsPaginator(
+                            connection.getConnectionSettings().awsClient<CodeWhispererRuntimeClient>().listAvailableCustomizationsPaginator(
                                 ListAvailableCustomizationsRequest.builder().build()
                             )
                                 .stream()
@@ -115,6 +123,9 @@ class CodeWhispererFeatureConfigService {
     private fun getFeatureValueForKey(name: String): FeatureValue =
         featureConfigs[name]?.value ?: FEATURE_DEFINITIONS[name]?.value
             ?: FeatureValue.builder().boolValue(false).build()
+
+    private fun connection(project: Project) =
+        ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
 
     companion object {
         fun getInstance(): CodeWhispererFeatureConfigService = service()
