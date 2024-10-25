@@ -86,7 +86,7 @@ class CodeWhispererTelemetryServiceTest {
         mockClient = spy(CodeWhispererClientAdaptor.getInstance(projectRule.project))
         mockClient.stub {
             onGeneric {
-                sendUserTriggerDecisionTelemetry(any(), any(), any(), any(), any(), any(), any())
+                sendUserTriggerDecisionTelemetry(any(), any(), any(), any(), any(), any(), any(), any())
             }.doAnswer {
                 mock<SendTelemetryEventResponse>()
             }
@@ -468,6 +468,7 @@ class CodeWhispererTelemetryServiceTest {
                 eq(expectedSuggestionReferenceCount),
                 eq(expectedGeneratedLineCount),
                 eq(expectedRecommendationContext.details.size),
+                eq(expectedCharCount)
             )
         } else {
             verifyNoInteractions(mockClient)

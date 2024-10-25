@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.BaseProjectDirectories.Companion.getBaseDirectories
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtilCore
@@ -15,9 +16,11 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.openapi.vfs.isFile
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
@@ -41,6 +44,10 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
 
     init {
         cs.launch {
+            if (ApplicationManager.getApplication().isUnitTestMode) {
+                return@launch
+            }
+
             while (true) {
                 if (encoderServer.isNodeProcessRunning()) {
                     // TODO: need better solution for this
@@ -59,6 +66,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val fileSize: Int,
     )
 
+    // TODO: move to LspMessage.kt
     data class Usage(
         @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("memoryUsage")
@@ -67,6 +75,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val cpuUsage: Int? = null,
     )
 
+    // TODO: move to LspMessage.kt
     data class Chunk(
         @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("filePath")
@@ -100,11 +109,9 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
                     if (isInitSuccess) {
                         logger.info { "project context index starting" }
                         delay(300)
-                        if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
-                            val isIndexSuccess = index()
-                            if (isIndexSuccess) isIndexComplete.set(true)
-                            return@launch
-                        }
+                        val isIndexSuccess = index()
+                        if (isIndexSuccess) isIndexComplete.set(true)
+                        return@launch
                     }
                 } catch (e: Exception) {
                     if (e.stackTraceToString().contains("Connection refused")) {
@@ -132,7 +139,8 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         var duration = (System.currentTimeMillis() - indexStartTime).toDouble()
         logger.debug { "time elapsed to collect project context files: ${duration}ms, collected ${filesResult.files.size} files" }
 
-        val encrypted = encryptRequest(IndexRequest(filesResult.files, projectRoot, false))
+        val indexOption = if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) IndexOption.ALL else IndexOption.DEFAULT
+        val encrypted = encryptRequest(IndexRequest(filesResult.files, projectRoot, indexOption.command, ""))
         val response = sendMsgToLsp(LspMessage.Index, encrypted)
 
         duration = (System.currentTimeMillis() - indexStartTime).toDouble()
@@ -150,6 +158,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
+    // TODO: rename queryChat
     fun query(prompt: String): List<RelevantDocument> {
         val encrypted = encryptRequest(QueryChatRequest(prompt))
         val response = sendMsgToLsp(LspMessage.QueryChat, encrypted)
@@ -163,6 +172,14 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
+    suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> = withTimeout(50L) {
+        cs.async {
+            val encrypted = encryptRequest(QueryInlineCompletionRequest(query, filePath))
+            val r = sendMsgToLsp(LspMessage.QueryInlineCompletion, encrypted)
+            return@async mapper.readValue<List<InlineBm25Chunk>>(r.responseBody)
+        }.await()
+    }
+
     fun getUsage(): Usage? {
         val response = sendMsgToLsp(LspMessage.GetUsageMetrics, request = null)
         return try {
@@ -174,8 +191,8 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
-    fun updateIndex(filePath: String) {
-        val encrypted = encryptRequest(UpdateIndexRequest(filePath))
+    fun updateIndex(filePaths: List<String>, mode: IndexUpdateMode) {
+        val encrypted = encryptRequest(UpdateIndexRequest(filePaths, mode.command))
         sendMsgToLsp(LspMessage.UpdateIndex, encrypted)
     }
 

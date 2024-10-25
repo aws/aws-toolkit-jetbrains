@@ -97,6 +97,7 @@ interface CodeWhispererClientAdaptor : Disposable {
         suggestionReferenceCount: Int,
         lineCount: Int,
         numberOfRecommendations: Int,
+        acceptedCharCount: Int,
     ): SendTelemetryEventResponse
 
     fun sendUserTriggerDecisionTelemetry(
@@ -108,6 +109,7 @@ interface CodeWhispererClientAdaptor : Disposable {
         suggestionReferenceCount: Int,
         lineCount: Int,
         numberOfRecommendations: Int,
+        acceptedCharCount: Int,
     ): SendTelemetryEventResponse
 
     fun sendCodePercentageTelemetry(
@@ -308,6 +310,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         suggestionReferenceCount: Int,
         lineCount: Int,
         numberOfRecommendations: Int,
+        acceptedCharCount: Int,
     ): SendTelemetryEventResponse {
         val fileContext = requestContext.fileContextInfo
         val programmingLanguage = fileContext.programmingLanguage
@@ -339,6 +342,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     it.generatedLine(lineCount)
                     it.customizationArn(requestContext.customizationArn)
                     it.numberOfRecommendations(numberOfRecommendations)
+                    it.acceptedCharacterCount(acceptedCharCount)
                 }
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
@@ -355,6 +359,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         suggestionReferenceCount: Int,
         lineCount: Int,
         numberOfRecommendations: Int,
+        acceptedCharCount: Int,
     ): SendTelemetryEventResponse {
         val fileContext = requestContext.fileContextInfo
         val programmingLanguage = fileContext.programmingLanguage
@@ -382,6 +387,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     it.generatedLine(lineCount)
                     it.customizationArn(requestContext.customizationArn)
                     it.numberOfRecommendations(numberOfRecommendations)
+                    it.acceptedCharacterCount(acceptedCharCount)
                 }
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())

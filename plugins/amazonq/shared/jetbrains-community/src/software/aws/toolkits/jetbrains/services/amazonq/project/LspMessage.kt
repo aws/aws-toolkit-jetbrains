@@ -11,15 +11,19 @@ sealed interface LspMessage {
     }
 
     data object Index : LspMessage {
-        override val endpoint: String = "indexFiles"
+        override val endpoint: String = "buildIndex"
     }
 
     data object UpdateIndex : LspMessage {
-        override val endpoint: String = "updateIndex"
+        override val endpoint: String = "updateIndexV2"
     }
 
     data object QueryChat : LspMessage {
         override val endpoint: String = "query"
+    }
+
+    data object QueryInlineCompletion : LspMessage {
+        override val endpoint: String = "queryInlineProjectContext"
     }
 
     data object GetUsageMetrics : LspMessage {
@@ -32,18 +36,43 @@ interface LspRequest
 data class IndexRequest(
     val filePaths: List<String>,
     val projectRoot: String,
-    val refresh: Boolean,
+    val config: String,
+    val language: String = "",
 ) : LspRequest
 
 data class UpdateIndexRequest(
-    val filePath: String,
+    val filePaths: List<String>,
+    val mode: String,
 ) : LspRequest
 
 data class QueryChatRequest(
     val query: String,
 ) : LspRequest
 
+data class QueryInlineCompletionRequest(
+    val query: String,
+    val filePath: String,
+) : LspRequest
+
 data class LspResponse(
     val responseCode: Int,
     val responseBody: String,
+)
+
+enum class IndexUpdateMode(val command: String) {
+    UPDATE("update"),
+    REMOVE("remove"),
+    ADD("add"),
+}
+
+enum class IndexOption(val command: String) {
+    ALL("all"),
+    DEFAULT("default"),
+}
+
+// TODO: unify with [software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk]
+data class InlineBm25Chunk(
+    val content: String,
+    val filePath: String,
+    val score: Double,
 )
