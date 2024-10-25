@@ -480,7 +480,6 @@ class SsoAccessTokenProvider(
         }
 
     private fun saveClientRegistration(registration: ClientRegistration) {
-        val credentialType = registration::class.java.name
         when (registration) {
             is DeviceAuthorizationClientRegistration -> {
                 cache.saveClientRegistration(dagClientRegistrationCacheKey, registration)
