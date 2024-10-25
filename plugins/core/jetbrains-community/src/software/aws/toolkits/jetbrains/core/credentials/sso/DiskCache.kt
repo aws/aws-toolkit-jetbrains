@@ -111,22 +111,10 @@ class DiskCache(
 
     override fun saveClientRegistration(cacheKey: ClientRegistrationCacheKey, registration: ClientRegistration) {
         LOG.debug { "saveClientRegistration for $cacheKey" }
-        try {
-            val registrationCache = clientRegistrationCache(cacheKey)
-            writeKey(registrationCache) {
-                objectMapper.writeValue(it, registration)
-            }
-        } catch (e: Exception) {
-            AwsTelemetry.saveCredentials(
-                result = Result.Failed,
-                reason = "Failed to save ClientRegistration to cache,",
-                reasonDesc = e.message
-            )
-            throw e
+        val registrationCache = clientRegistrationCache(cacheKey)
+        writeKey(registrationCache) {
+            objectMapper.writeValue(it, registration)
         }
-        AwsTelemetry.saveCredentials(
-            result = Result.Succeeded,
-        )
     }
 
     override fun invalidateClientRegistration(cacheKey: ClientRegistrationCacheKey) {
@@ -183,22 +171,10 @@ class DiskCache(
 
     override fun saveAccessToken(cacheKey: AccessTokenCacheKey, accessToken: AccessToken) {
         LOG.debug { "saveAccessToken for $cacheKey" }
-        try {
-            val accessTokenCache = accessTokenCache(cacheKey)
-            writeKey(accessTokenCache) {
-                objectMapper.writeValue(it, accessToken)
-            }
-        } catch (e: Exception) {
-            AwsTelemetry.saveCredentials(
-                result = Result.Failed,
-                reason = "Failed to save AccessToken to cache,",
-                reasonDesc = e.message
-            )
-            throw e
+        val accessTokenCache = accessTokenCache(cacheKey)
+        writeKey(accessTokenCache) {
+            objectMapper.writeValue(it, accessToken)
         }
-        AwsTelemetry.saveCredentials(
-            result = Result.Succeeded,
-        )
     }
 
     override fun invalidateAccessToken(cacheKey: AccessTokenCacheKey) {
@@ -278,12 +254,24 @@ class DiskCache(
 
     private fun writeKey(path: Path, consumer: (OutputStream) -> Unit) {
         LOG.debug { "writing to $path" }
-        path.tryDirOp(LOG) { createParentDirectories() }
+        try {
+            path.tryDirOp(LOG) { createParentDirectories() }
 
-        path.tryFileOp(LOG) {
-            touch(restrictToOwner = true)
-            outputStream().use(consumer)
+            path.tryFileOp(LOG) {
+                touch(restrictToOwner = true)
+                outputStream().use(consumer)
+            }
+        } catch (e: Exception) {
+            AwsTelemetry.saveCredentials(
+                result = Result.Failed,
+                reason = "Failed to write to cache,",
+                reasonDesc = e.message
+            )
+            throw e
         }
+        AwsTelemetry.saveCredentials(
+            result = Result.Succeeded,
+        )
     }
 
     // If the item is going to expire in the next 15 mins, we must treat it as already expired
