@@ -55,6 +55,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.customization.Code
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
+import software.aws.toolkits.jetbrains.services.cwc.clients.chat.v1.ChatSessionFactoryV1
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.messenger.ChatPromptHandler
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.userIntent.UserIntentRecognizer
@@ -63,6 +64,7 @@ import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTri
 import software.aws.toolkits.jetbrains.services.cwc.inline.listeners.InlineChatFileListener
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
+import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionInfo
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
 import software.aws.toolkits.telemetry.FeatureId
 import java.util.UUID
@@ -601,23 +603,16 @@ class InlineChatController(
         val startTime = System.currentTimeMillis()
         var firstResponseLatency = 0.0
         val messages = mutableListOf<ChatMessage>()
-        val triggerId = UUID.randomUUID().toString()
         val intentRecognizer = UserIntentRecognizer()
-
-        val language = editor.virtualFile?.programmingLanguage()
-        var prompt = ""
-        if (selectedCode.isNotBlank()) { prompt += "<selected_code>$selectedCode</selected_code>\n" }
-        prompt += "<instruction>$message</instruction>\n"
-        prompt += "<context>${if (editor.document.text.isNotEmpty()) editor.document.text.take(8000) else "file written in $language"}</context>"
-
-        logger.debug { "Inline chat prompt: $prompt" }
 
         val contextExtractor = ActiveFileContextExtractor.create(fqnWebviewAdapter = null, project = project)
         val fileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ChatMessage)
 
+        val tabId = UUID.randomUUID().toString()
+
         val requestData = ChatRequestData(
-            tabId = "inlineChat-editor",
-            message = prompt,
+            tabId = tabId,
+            message = message,
             activeFileContext = fileContext,
             userIntent = intentRecognizer.getUserIntentFromPromptChatMessage(message, null),
             triggerType = TriggerType.Inline,
@@ -626,16 +621,15 @@ class InlineChatController(
             useRelevantDocuments = false
         )
 
-        val sessionInfo = sessionStorage.getSession("inlineChat-editor", project)
+        val sessionInfo = sessionStorage.getSession(tabId, project)
         val mutex = Mutex()
 
-        sessionInfo.history.add(requestData)
         var errorMessage = ""
         var prevMessage = ""
         val chat = sessionInfo.scope.async {
             ChatPromptHandler(telemetryHelper).handle(
-                "inlineChat-editor",
-                triggerId,
+                tabId,
+                UUID.randomUUID().toString(),
                 requestData,
                 sessionInfo,
                 shouldAddIndexInProgressMessage = false,

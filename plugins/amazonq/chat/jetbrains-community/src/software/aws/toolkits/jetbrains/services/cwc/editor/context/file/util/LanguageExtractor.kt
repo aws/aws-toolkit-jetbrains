@@ -3,18 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.editor.context.file.util
 
-import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.project.Project
-import com.intellij.psi.PsiDocumentManager
-import com.intellij.psi.PsiFile
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 
 class LanguageExtractor {
-    fun extractLanguageNameFromCurrentFile(editor: Editor, project: Project): String? =
-        runReadAction {
-            val doc: Document = editor.document
-            val psiFile: PsiFile? = PsiDocumentManager.getInstance(project).getPsiFile(doc)
-            psiFile?.fileType?.name?.lowercase()
-        }
+    fun extractLanguageNameFromCurrentFile(editor: Editor): String = editor.virtualFile.programmingLanguage().languageId
 }

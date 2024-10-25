@@ -106,7 +106,7 @@ class FocusAreaContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter
 
         // Retrieve <codeNames> from  trimmedFileText
         val fileLanguage = computeOnEdt {
-            languageExtractor.extractLanguageNameFromCurrentFile(editor, project)
+            languageExtractor.extractLanguageNameFromCurrentFile(editor)
         }
         val fileText = editor.document.text
         val fileName = FileEditorManager.getInstance(project).selectedFiles.first().name

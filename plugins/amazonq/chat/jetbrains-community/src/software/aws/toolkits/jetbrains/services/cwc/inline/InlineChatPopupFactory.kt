@@ -17,6 +17,8 @@ import com.intellij.ui.awt.RelativePoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_BUTTON_BORDER
 import software.aws.toolkits.resources.AmazonQBundle.message
 import java.awt.Point
@@ -77,7 +79,9 @@ class InlineChatPopupFactory(
                             val rejectAction = {
                                 rejectHandler.invoke()
                             }
-                            addCodeActionsPanel(acceptAction, rejectAction)
+                            withContext(EDT) {
+                                addCodeActionsPanel(acceptAction, rejectAction)
+                            }
                         }
                     }
                 }

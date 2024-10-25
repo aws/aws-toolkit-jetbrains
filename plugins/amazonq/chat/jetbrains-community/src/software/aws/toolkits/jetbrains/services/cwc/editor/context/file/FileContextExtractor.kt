@@ -22,7 +22,7 @@ class FileContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter?, pr
         } ?: return null
 
         val fileLanguage = computeOnEdt {
-            languageExtractor.extractLanguageNameFromCurrentFile(editor, project)
+            languageExtractor.extractLanguageNameFromCurrentFile(editor)
         }
         val fileText = computeOnEdt {
             editor.document.text
