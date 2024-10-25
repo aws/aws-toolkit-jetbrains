@@ -3,10 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.telemetry
 
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import org.mockito.kotlin.times
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 
 class OpenedFileTypeMetricsTest {
 
@@ -25,12 +27,12 @@ class OpenedFileTypeMetricsTest {
     @Test
     fun `test addToExistingTelemetryBatch with allowed extension`() {
         service.addToExistingTelemetryBatch("kt")
-        assert(service.getOpenedFileTypes().contains(".kt"))
+        assertTrue(service.getOpenedFileTypes().contains(".kt") )
     }
 
     @Test
     fun `test addToExistingTelemetryBatch with disallowed extension`() {
         service.addToExistingTelemetryBatch("txt")
-        assert(service.getOpenedFileTypes().isEmpty())
+        assertEquals(service.getOpenedFileTypes(), emptySet<String>())
     }
 }
