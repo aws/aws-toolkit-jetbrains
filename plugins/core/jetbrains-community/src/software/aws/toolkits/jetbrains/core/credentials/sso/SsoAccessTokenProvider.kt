@@ -167,8 +167,20 @@ class SsoAccessTokenProvider(
             pollForDAGToken()
         }
 
-        saveAccessToken(token)
-
+        try {
+            saveAccessToken(token)
+        } catch (e: Exception) {
+            getLogger<SsoAccessTokenProvider>().warn("Failed to save access token", e)
+            AwsTelemetry.saveCredentials(
+                result = Result.Failed,
+                reason = "Failed to write AccessToken to cache",
+                reasonDesc = e.message,
+            )
+            throw e
+        }
+        AwsTelemetry.saveCredentials(
+            result = Result.Succeeded
+        )
         return token
     }
 
@@ -192,7 +204,20 @@ class SsoAccessTokenProvider(
             scopes
         )
 
-        saveClientRegistration(registeredClient)
+        try {
+            saveClientRegistration(registeredClient)
+        } catch (e: Exception) {
+            getLogger<SsoAccessTokenProvider>().warn("Failed to save client registration", e)
+            AwsTelemetry.saveCredentials(
+                result = Result.Failed,
+                reason = "Failed to write PKCEClientRegistration to cache",
+                reasonDesc = e.message,
+            )
+            throw e
+        }
+        AwsTelemetry.saveCredentials(
+            result = Result.Succeeded
+        )
 
         return registeredClient
     }
@@ -227,7 +252,20 @@ class SsoAccessTokenProvider(
             redirectUris = PKCE_REDIRECT_URIS
         )
 
-        saveClientRegistration(registeredClient)
+        try {
+            saveClientRegistration(registeredClient)
+        } catch (e: Exception) {
+            getLogger<SsoAccessTokenProvider>().warn("Failed to save client registration", e)
+            AwsTelemetry.saveCredentials(
+                result = Result.Failed,
+                reason = "Failed to write PKCEClientRegistration to cache",
+                reasonDesc = e.message,
+            )
+            throw e
+        }
+        AwsTelemetry.saveCredentials(
+            result = Result.Succeeded
+        )
 
         return registeredClient
     }
