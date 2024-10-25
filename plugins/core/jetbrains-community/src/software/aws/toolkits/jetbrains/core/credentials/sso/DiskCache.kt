@@ -205,7 +205,7 @@ class DiskCache(
         LOG.debug { "invalidateAccessToken for $cacheKey" }
         try {
             accessTokenCache(cacheKey).tryDeleteIfExists()
-        } catch (e: Exception){
+        } catch (e: Exception) {
             AwsTelemetry.modifyCredentials(
                 credentialModification = CredentialModification.Delete,
                 result = Result.Failed,
