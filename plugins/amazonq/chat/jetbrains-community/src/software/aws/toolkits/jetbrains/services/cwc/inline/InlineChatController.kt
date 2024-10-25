@@ -33,12 +33,17 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.JBColor
 import com.intellij.ui.jcef.JBCefApp
 import com.jetbrains.rd.util.AtomicInteger
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.apache.commons.text.StringEscapeUtils
 import software.amazon.awssdk.services.codewhispererruntime.model.InlineChatUserDecision
 import software.aws.toolkits.core.utils.debug
@@ -52,10 +57,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AMAZON_Q_WINDOW_ID
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
-import software.aws.toolkits.jetbrains.services.cwc.clients.chat.v1.ChatSessionFactoryV1
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.messenger.ChatPromptHandler
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.userIntent.UserIntentRecognizer
@@ -64,7 +67,6 @@ import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTri
 import software.aws.toolkits.jetbrains.services.cwc.inline.listeners.InlineChatFileListener
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
-import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionInfo
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
 import software.aws.toolkits.telemetry.FeatureId
 import java.util.UUID
@@ -96,7 +98,6 @@ class InlineChatController(
         project.messageBus.connect(this).subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, listener)
     }
 
-
     data class InlineChatMetrics(
         val requestId: String,
         val inputLength: Int? = null,
@@ -123,6 +124,7 @@ class InlineChatController(
     }
 
     val popupCancelHandler: (editor: Editor) -> Unit = { editor ->
+        isAbandoned.set(true)
         if (canPopupAbort.get() && currentPopup != null) {
             undoChanges()
             restoreSelection(editor)
@@ -140,7 +142,7 @@ class InlineChatController(
             metrics?.charactersAdded = metrics?.numSuggestionAddChars
             metrics?.charactersRemoved = metrics?.numSuggestionDelChars
         }
-        if(metrics?.requestId?.isNotEmpty() == true){
+        if (metrics?.requestId?.isNotEmpty() == true) {
             telemetryHelper.recordInlineChatTelemetry(
                 metrics?.requestId!!,
                 metrics?.inputLength,
@@ -241,13 +243,13 @@ class InlineChatController(
 
     private fun highlightCodeWithBackgroundColor(editor: Editor, startOffset: Int, endOffset: Int, isGreen: Boolean) {
         val greenBackgroundAttributes = TextAttributes().apply {
-            backgroundColor = JBColor(0x66BB6A, 0x006400)
-            effectColor = JBColor(0x66BB6A, 0x006400)
+            backgroundColor = JBColor(0xAADEAA, 0x447152)
+            effectColor = JBColor(0xAADEAA, 0x447152)
         }
 
         val redBackgroundAttributes = TextAttributes().apply {
-            backgroundColor = JBColor(0xEF9A9A, 0x8B0000)
-            effectColor = JBColor(0xEF9A9A, 0x8B0000)
+            backgroundColor = JBColor(0xFFC8BD, 0x8F5247)
+            effectColor = JBColor(0xFFC8BD, 0x8F5247)
         }
         val attributes = if (isGreen) greenBackgroundAttributes else redBackgroundAttributes
         rangeHighlighter = editor.markupModel.addRangeHighlighter(
@@ -284,7 +286,7 @@ class InlineChatController(
         .replace("=&gt;", "=>")
 
     private fun processNewCode(editor: Editor, line: Int, code: String, prevMessage: String) {
-        if(isAbandoned.get()) return
+        if (isAbandoned.get()) return
         runBlocking {
             logger.debug { "received inline chat recommendation with code: \n $code" }
             var insertLine = line
@@ -336,37 +338,37 @@ class InlineChatController(
                 DiffRow.Tag.DELETE -> {
                     val startOffset = getLineStartOffset(editor.document, currentDocumentLine)
                     val endOffset = getLineEndOffset(editor.document, currentDocumentLine, true)
-                    highlightString(editor, startOffset, endOffset, false )
+                    highlightString(editor, startOffset, endOffset, false)
                     currentDocumentLine++
                 }
 
                 DiffRow.Tag.CHANGE -> {
                     val startOffset = getLineStartOffset(editor.document, currentDocumentLine)
                     val endOffset = getLineEndOffset(editor.document, currentDocumentLine, true)
-                    highlightString(editor, startOffset, endOffset, false )
-                    val insetStartOffset = getLineStartOffset(editor.document, currentDocumentLine+1)
-                    val insertEndOffset = getLineEndOffset(editor.document, currentDocumentLine+1, true)
-                    highlightString(editor, insetStartOffset, insertEndOffset, true )
-                    currentDocumentLine+=2
+                    highlightString(editor, startOffset, endOffset, false)
+                    val insetStartOffset = getLineStartOffset(editor.document, currentDocumentLine + 1)
+                    val insertEndOffset = getLineEndOffset(editor.document, currentDocumentLine + 1, true)
+                    highlightString(editor, insetStartOffset, insertEndOffset, true)
+                    currentDocumentLine += 2
                 }
 
                 DiffRow.Tag.INSERT -> {
                     val insetStartOffset = getLineStartOffset(editor.document, currentDocumentLine)
                     val insertEndOffset = getLineEndOffset(editor.document, currentDocumentLine, true)
-                    highlightString(editor, insetStartOffset, insertEndOffset, true )
+                    highlightString(editor, insetStartOffset, insertEndOffset, true)
                     currentDocumentLine++
                 }
             }
         }
     }
 
-    private fun applyChunk (recommendation: String, editor: Editor, startLine: Int, endLine: Int, diff: List<DiffRow>) {
+    private fun applyChunk(recommendation: String, editor: Editor, startLine: Int, endLine: Int) {
         val startOffset = getLineStartOffset(editor.document, startLine)
         val endOffset = getLineEndOffset(editor.document, endLine)
         replaceString(editor.document, startOffset, endOffset, recommendation)
     }
 
-    private fun constructPatch (diff: List<DiffRow>): String {
+    private fun constructPatch(diff: List<DiffRow>): String {
         var patchString = ""
         diff.forEach { row ->
             when (row.tag) {
@@ -379,7 +381,7 @@ class InlineChatController(
                 }
 
                 DiffRow.Tag.CHANGE -> {
-                   patchString += row.oldLine + "\n"
+                    patchString += row.oldLine + "\n"
                     patchString += row.newLine + "\n"
                 }
 
@@ -392,7 +394,7 @@ class InlineChatController(
     }
 
     private fun finalComputation(selectedCode: String, finalMessage: String?) {
-        if(finalMessage == null) {
+        if (finalMessage == null) {
             throw Exception("No suggestions from Q; please try a different instruction.")
         }
         var numSuggestionAddChars = 0
@@ -440,9 +442,9 @@ class InlineChatController(
     }
 
     private fun processChatDiff(selectedCode: String, event: ChatMessage, editor: Editor, selectionRange: RangeMarker) {
-        if(isAbandoned.get()) return
+        if (isAbandoned.get()) return
         if (event.message?.isNotEmpty() == true) {
-            logger.info { "inline chat recommendation: \n ${event.message}"}
+            logger.info { "inline chat recommendation: \n ${event.message}" }
             runBlocking {
                 val recommendation = unescape(event.message)
                 val selection = selectedCode.split("\n")
@@ -460,10 +462,10 @@ class InlineChatController(
                 }
                 launch(EDT) {
                     removeSelection(editor)
-                    applyChunk(patchString, editor, startLine, endLine, diff)
+                    applyChunk(patchString, editor, startLine, endLine)
                     processHighlights(diff, startLine, editor)
                 }.join()
-                acceptAction =  {
+                acceptAction = {
                     val startOffset = getLineStartOffset(editor.document, startLine)
                     val endOffset = getLineEndOffset(editor.document, endLine)
                     replaceString(editor.document, startOffset, endOffset, recommendation)
@@ -498,7 +500,7 @@ class InlineChatController(
     private fun getLineEndOffset(document: Document, row: Int, includeLastNewLine: Boolean = false): Int = ReadAction.compute<Int, Throwable> {
         if (row == document.lineCount - 1) {
             document.getLineEndOffset(row)
-        } else if (row < document.lineCount - 1){
+        } else if (row < document.lineCount - 1) {
             val lineEnd = document.getLineEndOffset(row)
             if (includeLastNewLine) lineEnd + 1 else lineEnd
         } else {
@@ -538,20 +540,17 @@ class InlineChatController(
         }
     }
 
-    private fun highlightString(editor: Editor, start: Int, end: Int, isInsert: Boolean): RangeMarker {
-        var rangeMarker: RangeMarker? = null
+    private fun highlightString(editor: Editor, start: Int, end: Int, isInsert: Boolean) {
         ApplicationManager.getApplication().invokeAndWait {
             CommandProcessor.getInstance().runUndoTransparentAction {
                 WriteCommandAction.runWriteCommandAction(project) {
-                    rangeMarker = editor.document.createRangeMarker(start, end)
-                    highlightCodeWithBackgroundColor(editor, rangeMarker!!.startOffset, rangeMarker!!.endOffset, isInsert)
+                    highlightCodeWithBackgroundColor(editor, start, end, isInsert)
                 }
             }
         }
-        return rangeMarker!!
     }
 
-    private fun removeHighlighter(editor: Editor){
+    private fun removeHighlighter(editor: Editor) {
         ApplicationManager.getApplication().invokeAndWait {
             CommandProcessor.getInstance().runUndoTransparentAction {
                 WriteCommandAction.runWriteCommandAction(project) {
@@ -674,7 +673,7 @@ class InlineChatController(
                 codeIntent = true, responseStartLatency = firstResponseLatency, responseEndLatency = lastResponseLatency
             )
         }
-        if(finalMessage != null) {
+        if (finalMessage != null) {
             try {
                 finalComputation(selectedCode, finalMessage.message)
             } catch (e: Exception) {

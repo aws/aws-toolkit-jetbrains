@@ -141,7 +141,8 @@ class FocusAreaContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter
             val requestString = ChatController.objectMapper.writeValueAsString(extractNamesRequest)
 
             codeNames = try {
-                fqnWebviewAdapter?.let { ChatController.objectMapper.readValue(it.extractNames(requestString), CodeNamesImpl::class.java)
+                fqnWebviewAdapter?.let {
+                    ChatController.objectMapper.readValue(it.extractNames(requestString), CodeNamesImpl::class.java)
                 } ?: CodeNamesImpl(simpleNames = emptyList(), fullyQualifiedNames = FullyQualifiedNames(used = emptyList()))
             } catch (e: Exception) {
                 getLogger<FocusAreaContextExtractor>().warn(e) { "Failed to extract names from file" }

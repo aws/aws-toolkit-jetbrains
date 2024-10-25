@@ -6,9 +6,6 @@ package software.aws.toolkits.jetbrains.services.cwc.inline
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.event.CaretEvent
-import com.intellij.openapi.editor.event.CaretListener
 
 class OpenChatInputAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
