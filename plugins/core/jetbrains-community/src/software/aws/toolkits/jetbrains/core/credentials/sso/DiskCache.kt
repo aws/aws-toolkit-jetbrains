@@ -32,6 +32,9 @@ import software.aws.toolkits.core.utils.touch
 import software.aws.toolkits.core.utils.tryDirOp
 import software.aws.toolkits.core.utils.tryFileOp
 import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.telemetry.AwsTelemetry
+import software.aws.toolkits.telemetry.CredentialModification
+import software.aws.toolkits.telemetry.Result
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.file.Path
@@ -108,20 +111,64 @@ class DiskCache(
 
     override fun saveClientRegistration(cacheKey: ClientRegistrationCacheKey, registration: ClientRegistration) {
         LOG.debug { "saveClientRegistration for $cacheKey" }
-        val registrationCache = clientRegistrationCache(cacheKey)
-        writeKey(registrationCache) {
-            objectMapper.writeValue(it, registration)
+        try {
+            val registrationCache = clientRegistrationCache(cacheKey)
+            writeKey(registrationCache) {
+                objectMapper.writeValue(it, registration)
+            }
+        } catch (e: Exception) {
+            AwsTelemetry.saveCredentials(
+                result = Result.Failed,
+                reason = "Failed to save ClientRegistration to cache,",
+                reasonDesc = e.message
+            )
+            throw e
         }
+        AwsTelemetry.saveCredentials(
+            result = Result.Succeeded,
+        )
     }
 
     override fun invalidateClientRegistration(cacheKey: ClientRegistrationCacheKey) {
         LOG.debug { "invalidateClientRegistration for $cacheKey" }
-        clientRegistrationCache(cacheKey).tryDeleteIfExists()
+        try {
+            clientRegistrationCache(cacheKey).tryDeleteIfExists()
+        } catch (e: Exception) {
+            AwsTelemetry.modifyCredentials(
+                credentialModification = CredentialModification.Delete,
+                result = Result.Failed,
+                reason = "Failed to invalidate ClientRegistration",
+                reasonDesc = e.message,
+                source = "DiskCache.invalidateClientRegistration"
+            )
+            throw e
+        }
+        AwsTelemetry.modifyCredentials(
+            credentialModification = CredentialModification.Delete,
+            result = Result.Succeeded,
+            source = "DiskCache.invalidateClientRegistration"
+        )
     }
 
     override fun invalidateAccessToken(ssoUrl: String) {
         LOG.debug { "invalidateAccessToken for $ssoUrl" }
-        accessTokenCache(ssoUrl).tryDeleteIfExists()
+        try {
+            accessTokenCache(ssoUrl).tryDeleteIfExists()
+        } catch (e: Exception) {
+            AwsTelemetry.modifyCredentials(
+                credentialModification = CredentialModification.Delete,
+                result = Result.Failed,
+                reason = "Failed to invalidate AccessToken",
+                reasonDesc = e.message,
+                source = "DiskCache.invalidateAccessToken"
+            )
+            throw e
+        }
+        AwsTelemetry.modifyCredentials(
+            credentialModification = CredentialModification.Delete,
+            result = Result.Succeeded,
+            source = "DiskCache.invalidateAccessToken"
+        )
     }
 
     override fun loadAccessToken(cacheKey: AccessTokenCacheKey): AccessToken? {
@@ -136,15 +183,43 @@ class DiskCache(
 
     override fun saveAccessToken(cacheKey: AccessTokenCacheKey, accessToken: AccessToken) {
         LOG.debug { "saveAccessToken for $cacheKey" }
-        val accessTokenCache = accessTokenCache(cacheKey)
-        writeKey(accessTokenCache) {
-            objectMapper.writeValue(it, accessToken)
+        try {
+            val accessTokenCache = accessTokenCache(cacheKey)
+            writeKey(accessTokenCache) {
+                objectMapper.writeValue(it, accessToken)
+            }
+        } catch (e: Exception) {
+            AwsTelemetry.saveCredentials(
+                result = Result.Failed,
+                reason = "Failed to save AccessToken to cache,",
+                reasonDesc = e.message
+            )
+            throw e
         }
+        AwsTelemetry.saveCredentials(
+            result = Result.Succeeded,
+        )
     }
 
     override fun invalidateAccessToken(cacheKey: AccessTokenCacheKey) {
         LOG.debug { "invalidateAccessToken for $cacheKey" }
-        accessTokenCache(cacheKey).tryDeleteIfExists()
+        try {
+            accessTokenCache(cacheKey).tryDeleteIfExists()
+        } catch (e: Exception){
+            AwsTelemetry.modifyCredentials(
+                credentialModification = CredentialModification.Delete,
+                result = Result.Failed,
+                reason = "Failed to invalidate AccessToken",
+                reasonDesc = e.message,
+                source = "DiskCache.invalidateAccessToken"
+            )
+            throw e
+        }
+        AwsTelemetry.modifyCredentials(
+            credentialModification = CredentialModification.Delete,
+            result = Result.Succeeded,
+            source = "DiskCache.invalidateAccessToken"
+        )
     }
 
     private fun clientRegistrationCache(ssoRegion: String): Path = cacheDir.resolve("aws-toolkit-jetbrains-client-id-$ssoRegion.json")
