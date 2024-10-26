@@ -14,6 +14,8 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererCon
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 
+fun isInternalUser(startUrl: String?): Boolean = startUrl == "https://amzn.awsapps.com/start"
+
 fun <T> calculateIfIamIdentityCenterConnection(project: Project, calculationTask: (connection: ToolkitConnection) -> T): T? =
     ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
         calculateIfIamIdentityCenterConnection(it, calculationTask)

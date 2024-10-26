@@ -14,11 +14,16 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.time.withTimeout
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.gettingstarted.emitUserState
+import software.aws.toolkits.jetbrains.services.amazonq.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindow
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import java.lang.management.ManagementFactory
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
@@ -28,6 +33,12 @@ class AmazonQStartupActivity : ProjectActivity {
 
     override suspend fun execute(project: Project) {
         if (ApplicationManager.getApplication().isUnitTestMode) return
+
+        ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let {
+            if (it is AwsBearerTokenConnection && isInternalUser(it.startUrl)) {
+                CodeWhispererSettings.getInstance().toggleProjectContextEnabled(true, passive = true)
+            }
+        }
 
         // initialize html contents in BGT so users don't have to wait when they open the tool window
         AmazonQToolWindow.getInstance(project)

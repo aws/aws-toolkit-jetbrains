@@ -36,10 +36,10 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
-import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
+import software.aws.toolkits.jetbrains.services.amazonq.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
@@ -129,8 +129,8 @@ class ChatController private constructor(
         val triggerId = UUID.randomUUID().toString()
         var shouldAddIndexInProgressMessage: Boolean = false
         var shouldUseWorkspaceContext: Boolean = false
-        val isDataCollectionGroup = CodeWhispererFeatureConfigService.getInstance().getIsDataCollectionEnabled()
         val startUrl = getStartUrl(context.project)
+        val isInternalUser = isInternalUser(startUrl)
 
         if (prompt.contains("@workspace")) {
             if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
@@ -143,7 +143,9 @@ class ChatController private constructor(
             } else {
                 sendOpenSettingsMessage(message.tabId)
             }
-        } else if (CodeWhispererSettings.getInstance().isProjectContextEnabled() && isDataCollectionGroup) {
+        } else if (CodeWhispererSettings.getInstance().isProjectContextEnabled() && isInternalUser) {
+            // if user does not have @workspace in the prompt, but user is Amazon internal
+            // add project context by default
             val projectContextController = ProjectContextController.getInstance(context.project)
             queryResult = projectContextController.query(prompt)
         }
