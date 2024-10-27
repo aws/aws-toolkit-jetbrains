@@ -30,8 +30,9 @@
     <actions>
         <action id="aws.toolkit.open.q.window" class="software.aws.toolkits.jetbrains.services.amazonq.QRefreshPanelAction"/>
         <action id="aws.toolkit.jetbrains.core.services.cwc.inline.openChat" class="software.aws.toolkits.jetbrains.services.cwc.inline.OpenChatInputAction">
-            <keyboard-shortcut first-keystroke="meta I" keymap="$default"/>
-            <keyboard-shortcut first-keystroke="control I" keymap="$default"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta I"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta I"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="control I"/>
         </action>
         <group id="aws.q.toolwindow.titleBar" popup="false" compact="true">
             <reference id="aws.toolkit.open.q.window"/>

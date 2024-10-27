@@ -54,11 +54,11 @@ class InlineChatPopupFactory(
             }
 
             val submitListener: () -> Unit = {
-                submitButton.isEnabled = false
-                cancelButton.isEnabled = false
-                textField.isEnabled = false
                 val prompt = textField.text
                 if (prompt.isNotBlank()) {
+                    submitButton.isEnabled = false
+                    cancelButton.isEnabled = false
+                    textField.isEnabled = false
                     setLabel(message("amazonqInlineChat.popup.generating"))
                     revalidate()
 

@@ -20,12 +20,13 @@ import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.Font
 import javax.swing.BorderFactory
-import javax.swing.Icon
 import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTextField
 import javax.swing.SwingConstants
+import javax.swing.event.DocumentEvent
+import javax.swing.event.DocumentListener
 
 class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() {
     private var submitClickListener: (() -> Unit)? = null
@@ -37,11 +38,23 @@ class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() 
     private val popupInputHeight = 40
     private val popupInputWidth = 500
 
-    val textField = createTextField()
+    val textField = createTextField().apply {
+        document.addDocumentListener(object : DocumentListener {
+            fun updateButtonState() {
+                submitButton.isEnabled = text.isNotEmpty()
+            }
 
-    val submitButton = createButtonWithIcon(AwsIcons.Resources.InlineChat.CONFIRM, message("amazonqInlineChat.popup.confirm"))
+            override fun insertUpdate(e: DocumentEvent) = updateButtonState()
+            override fun removeUpdate(e: DocumentEvent) = updateButtonState()
+            override fun changedUpdate(e: DocumentEvent) = updateButtonState()
+        })
+    }
 
-    val cancelButton = createButtonWithIcon(AwsIcons.Resources.InlineChat.REJECT, message("amazonqInlineChat.popup.cancel")).apply {
+    val submitButton = createButton(message("amazonqInlineChat.popup.confirm")).apply {
+        isEnabled = false
+    }
+
+    val cancelButton = createButton(message("amazonqInlineChat.popup.cancel")).apply {
         addActionListener {
             if (!Disposer.isDisposed(parentDisposable)) {
                 Disposer.dispose(parentDisposable)
@@ -55,8 +68,8 @@ class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() 
         add(cancelButton, BorderLayout.EAST)
     }
 
-    private val acceptButton = createButtonWithIcon(AwsIcons.Resources.InlineChat.CONFIRM, message("amazonqInlineChat.popup.accept"))
-    private val rejectButton = createButtonWithIcon(AwsIcons.Resources.InlineChat.REJECT, message("amazonqInlineChat.popup.reject"))
+    private val acceptButton = createButton(message("amazonqInlineChat.popup.accept"))
+    private val rejectButton = createButton(message("amazonqInlineChat.popup.reject"))
     private val textLabel = JLabel(message("amazonqInlineChat.popup.editCode"), AwsIcons.Logos.AWS_Q_GREY, SwingConstants.RIGHT).apply {
         font = font.deriveFont(popupButtonFontSize)
     }
@@ -86,10 +99,8 @@ class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() 
         font = Font(editorColorsScheme.editorFontName, Font.PLAIN, editorColorsScheme.editorFontSize)
     }
 
-    private fun createButtonWithIcon(icon: Icon, text: String): JButton = JButton(text).apply {
-        horizontalTextPosition = SwingConstants.LEFT
+    private fun createButton(text: String): JButton = JButton(text).apply {
         preferredSize = Dimension(popupButtonWidth, popupButtonHeight)
-        setIcon(icon)
         isOpaque = false
         isContentAreaFilled = false
         isBorderPainted = false

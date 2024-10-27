@@ -243,13 +243,13 @@ class InlineChatController(
 
     private fun highlightCodeWithBackgroundColor(editor: Editor, startOffset: Int, endOffset: Int, isGreen: Boolean) {
         val greenBackgroundAttributes = TextAttributes().apply {
-            backgroundColor = JBColor(0xAADEAA, 0x447152)
-            effectColor = JBColor(0xAADEAA, 0x447152)
+            backgroundColor = JBColor(0xAADEAA, 0x294436)
+            effectColor = JBColor(0xAADEAA, 0x294436)
         }
 
         val redBackgroundAttributes = TextAttributes().apply {
-            backgroundColor = JBColor(0xFFC8BD, 0x8F5247)
-            effectColor = JBColor(0xFFC8BD, 0x8F5247)
+            backgroundColor = JBColor(0xFFC8BD, 0x45302B)
+            effectColor = JBColor(0xFFC8BD, 0x45302B)
         }
         val attributes = if (isGreen) greenBackgroundAttributes else redBackgroundAttributes
         rangeHighlighter = editor.markupModel.addRangeHighlighter(
@@ -395,6 +395,7 @@ class InlineChatController(
 
     private fun finalComputation(selectedCode: String, finalMessage: String?) {
         if (finalMessage == null) {
+            canPopupAbort.set(true)
             throw Exception("No suggestions from Q; please try a different instruction.")
         }
         var numSuggestionAddChars = 0
@@ -437,6 +438,7 @@ class InlineChatController(
         metrics?.numSuggestionDelChars = numSuggestionDelChars
         metrics?.numSuggestionDelLines = numSuggestionDelLines
         if (isAllEqual) {
+            canPopupAbort.set(true)
             throw Exception("No suggestions from Q; please try a different instruction.")
         }
     }
@@ -650,6 +652,8 @@ class InlineChatController(
                                     processNewCode(editor, selectedLineStart, unescape(event.message), prevMessage)
                                 }
                             } catch (e: Exception) {
+                                canPopupAbort.set(true)
+                                undoChanges()
                                 logger.warn { "error streaming chat message to editor: ${e.stackTraceToString()}" }
                                 errorMessage = "Error processing request; please try again."
                             }
