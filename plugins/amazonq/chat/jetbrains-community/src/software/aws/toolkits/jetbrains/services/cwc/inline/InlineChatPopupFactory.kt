@@ -70,8 +70,10 @@ class InlineChatPopupFactory(
                             errorMessage = submitHandler(prompt, selectedCode, selectedLineStart, editor)
                         }
                         if (errorMessage.isNotEmpty()) {
-                            setLabel(errorMessage)
-                            revalidate()
+                            withContext(EDT) {
+                                setErrorMessage(errorMessage)
+                                revalidate()
+                            }
                         } else {
                             val acceptAction = {
                                 acceptHandler.invoke()
@@ -81,6 +83,7 @@ class InlineChatPopupFactory(
                             }
                             withContext(EDT) {
                                 addCodeActionsPanel(acceptAction, rejectAction)
+                                revalidate()
                             }
                         }
                     }

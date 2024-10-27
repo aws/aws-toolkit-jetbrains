@@ -88,6 +88,10 @@ class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() 
         add(buttonsPanel, BorderLayout.EAST)
     }
 
+    private val emptyTextField = createTextField().apply {
+        isEnabled = false
+    }
+
     override fun getPreferredSize(): Dimension = Dimension(popupWidth, popupHeight)
 
     private fun createTextField(): JTextField = JTextField().apply {
@@ -141,9 +145,7 @@ class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() 
     fun addCodeActionsPanel(acceptAction: () -> Unit, rejectAction: () -> Unit) {
         textLabel.text = message("amazonqInlineChat.popup.editCode")
         // this is a workaround somehow the textField will interfere with the enter handler
-        val emptyTextField = createTextField()
         emptyTextField.text = textField.text
-        emptyTextField.isEnabled = false
         inputPanel.remove(textField)
         inputPanel.add(emptyTextField, BorderLayout.CENTER)
 
@@ -159,6 +161,22 @@ class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() 
 
         val escapeHandler = getEditorActionHandler(rejectAction)
         addActionListener(IdeActions.ACTION_EDITOR_ESCAPE, escapeHandler)
+        revalidate()
+    }
+
+    fun setErrorMessage(message: String) {
+        setLabel(message)
+        inputPanel.remove(emptyTextField)
+        textField.text = ""
+        textField.isEnabled = true
+        inputPanel.add(textField, BorderLayout.CENTER)
+
+        buttonsPanel.remove(acceptButton)
+        buttonsPanel.remove(rejectButton)
+        buttonsPanel.add(submitButton, BorderLayout.WEST)
+        buttonsPanel.add(cancelButton, BorderLayout.EAST)
+        submitButton.isEnabled = false
+        cancelButton.isEnabled = true
         revalidate()
     }
 

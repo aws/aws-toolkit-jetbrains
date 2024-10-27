@@ -57,8 +57,10 @@ import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AMAZON_Q_WINDOW_ID
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
+import software.aws.toolkits.jetbrains.services.cwc.controller.ReferenceLogController
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.messenger.ChatPromptHandler
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.userIntent.UserIntentRecognizer
@@ -68,6 +70,7 @@ import software.aws.toolkits.jetbrains.services.cwc.inline.listeners.InlineChatF
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.FeatureId
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
@@ -285,9 +288,10 @@ class InlineChatController(
         .replace("&#39;", "'")
         .replace("=&gt;", "=>")
 
-    private fun processNewCode(editor: Editor, line: Int, code: String, prevMessage: String) {
+    private fun processNewCode(editor: Editor, line: Int, event: ChatMessage, prevMessage: String) {
         if (isAbandoned.get()) return
         runBlocking {
+            val code = event.message?.let { unescape(it) } ?: return@runBlocking
             logger.debug { "received inline chat recommendation with code: \n $code" }
             var insertLine = line
             var linesToAdd = emptyList<String>()
@@ -315,6 +319,12 @@ class InlineChatController(
             insertionLine.set(insertLine)
             acceptAction = {
                 removeHighlighter(editor)
+                try {
+                    val caretPosition = CaretPosition(offset = getLineStartOffset(editor.document, line), line = line)
+                    ReferenceLogController.addReferenceLog(code, event.codeReference, editor, project, inlineChatStartPosition = caretPosition)
+                } catch (e: Exception) {
+                    logger.warn { "error logging reference for inline chat: ${e.stackTraceToString()}" }
+                }
             }
             rejectAction = {
                 val startOffset = getLineStartOffset(editor.document, line)
@@ -469,9 +479,16 @@ class InlineChatController(
                 }.join()
                 acceptAction = {
                     val startOffset = getLineStartOffset(editor.document, startLine)
-                    val endOffset = getLineEndOffset(editor.document, endLine)
+                    val endOffset = getLineEndOffset(editor.document, max((startLine + patchString.split("\n").size - 1), endLine))
                     replaceString(editor.document, startOffset, endOffset, recommendation)
                     removeHighlighter(editor)
+                    try {
+                        val caretPosition =
+                            CaretPosition(offset = selectionRange.startOffset, line = getLineNumber(editor.document, selectionRange.startOffset))
+                        ReferenceLogController.addReferenceLog(recommendation, event.codeReference, editor, project, inlineChatStartPosition = caretPosition)
+                    } catch (e: Exception) {
+                        logger.warn { "error logging reference for inline chat: ${e.stackTraceToString()}" }
+                    }
                 }
                 rejectAction = {
                     val startOffset = getLineStartOffset(editor.document, startLine)
@@ -624,6 +641,7 @@ class InlineChatController(
 
         val sessionInfo = sessionStorage.getSession(tabId, project)
         val mutex = Mutex()
+        val isReferenceAllowed = CodeWhispererSettings.getInstance().isIncludeCodeWithReference()
 
         var errorMessage = ""
         var prevMessage = ""
@@ -645,11 +663,17 @@ class InlineChatController(
                 .onEach { event: ChatMessage ->
                     if (event.message?.isNotEmpty() == true && prevMessage != event.message) {
                         mutex.withLock {
+                            if (event.codeReference?.isNotEmpty() == true && !isReferenceAllowed) {
+                                canPopupAbort.set(true)
+                                undoChanges()
+                                errorMessage = "Suggestion had code reference; removed per setting."
+                                return@withLock
+                            }
                             try {
                                 if (selectionRange != null) {
                                     processChatDiff(selectedCode, event, editor, selectionRange!!)
                                 } else {
-                                    processNewCode(editor, selectedLineStart, unescape(event.message), prevMessage)
+                                    processNewCode(editor, selectedLineStart, event, prevMessage)
                                 }
                             } catch (e: Exception) {
                                 canPopupAbort.set(true)
