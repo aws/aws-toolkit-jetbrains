@@ -15,7 +15,7 @@ object MatchPolicyExtractor {
         isCodeSelected: Boolean = false,
         fileLanguage: String?,
         fileText: String?,
-        fqnWebviewAdapter: FqnWebviewAdapter,
+        fqnWebviewAdapter: FqnWebviewAdapter?,
     ): MatchPolicy? {
         val should = extractAdditionalLanguageMatchPolicies(fileLanguage)
 
@@ -29,7 +29,7 @@ object MatchPolicyExtractor {
         val requestString = ChatController.objectMapper.writeValueAsString(readImportsRequest)
 
         return try {
-            val importsString = fqnWebviewAdapter.readImports(requestString)
+            val importsString = fqnWebviewAdapter?.readImports(requestString) ?: "[]"
             val imports = ChatController.objectMapper.readValue<List<String>>(importsString)
 
             imports

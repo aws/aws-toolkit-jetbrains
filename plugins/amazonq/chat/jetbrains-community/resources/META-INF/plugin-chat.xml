@@ -79,6 +79,13 @@
                     class="software.aws.toolkits.jetbrains.services.cwc.commands.SendToPromptAction">
                 <keyboard-shortcut keymap="$default" first-keystroke="meta alt S" />
             </action>
+
+            <action id="aws.toolkit.jetbrains.core.services.cwc.inline.openChat"
+                    class="software.aws.toolkits.jetbrains.services.cwc.inline.OpenChatInputAction">
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta I"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta I"/>
+                <keyboard-shortcut keymap="$default" first-keystroke="control I"/>
+            </action>
         </group>
     </actions>
 </idea-plugin>
