@@ -200,8 +200,7 @@ interface CodeWhispererClientAdaptor : Disposable {
         numSuggestionAddLines: Int?,
         numSuggestionDelChars: Int?,
         numSuggestionDelLines: Int?,
-        charactersAdded: Int?,
-        charactersRemoved: Int?,
+        programmingLanguage: String?,
     ): SendTelemetryEventResponse
 
     companion object {
@@ -617,8 +616,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         numSuggestionAddLines: Int?,
         numSuggestionDelChars: Int?,
         numSuggestionDelLines: Int?,
-        charactersAdded: Int?,
-        charactersRemoved: Int?,
+        programmingLanguage: String?,
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.inlineChatEvent {
@@ -633,8 +631,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 it.numSuggestionAddLines(numSuggestionAddLines)
                 it.numSuggestionDelChars(numSuggestionDelChars)
                 it.numSuggestionDelLines(numSuggestionDelLines)
-                it.charactersRemoved(charactersRemoved)
-                it.charactersAdded(charactersAdded)
+                if (programmingLanguage != null) it.programmingLanguage { langBuilder -> langBuilder.languageName(programmingLanguage) }
                 it.timestamp(Instant.now())
             }
         }

@@ -155,13 +155,12 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
         numSuggestionAddLines: Int?,
         numSuggestionDelChars: Int?,
         numSuggestionDelLines: Int?,
-        charactersAdded: Int?,
-        charactersRemoved: Int?,
+        programmingLanguage: String?,
     ) {
         CodeWhispererClientAdaptor.getInstance(project).sendInlineChatTelemetry(
             requestId, inputLength, numSelectedLines, codeIntent, userDecision,
             responseStartLatency, responseEndLatency, numSuggestionAddChars, numSuggestionAddLines, numSuggestionDelChars, numSuggestionDelLines,
-            charactersAdded, charactersRemoved
+            programmingLanguage
         )
     }
 

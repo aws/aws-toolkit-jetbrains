@@ -113,8 +113,7 @@ class InlineChatController(
         var numSuggestionAddLines: Int? = null,
         var numSuggestionDelChars: Int? = null,
         var numSuggestionDelLines: Int? = null,
-        var charactersAdded: Int? = null,
-        var charactersRemoved: Int? = null,
+        var programmingLanguage: String? = null,
     )
 
     private val popupSubmitHandler: suspend (String, String, Int, Editor) -> String = {
@@ -141,10 +140,6 @@ class InlineChatController(
     private fun recordInlineChatTelemetry(decision: InlineChatUserDecision) {
         if (metrics == null) return
         metrics?.userDecision = decision
-        if (decision == InlineChatUserDecision.ACCEPT) {
-            metrics?.charactersAdded = metrics?.numSuggestionAddChars
-            metrics?.charactersRemoved = metrics?.numSuggestionDelChars
-        }
         if (metrics?.requestId?.isNotEmpty() == true) {
             telemetryHelper.recordInlineChatTelemetry(
                 metrics?.requestId!!,
@@ -158,8 +153,7 @@ class InlineChatController(
                 metrics?.numSuggestionAddLines,
                 metrics?.numSuggestionDelChars,
                 metrics?.numSuggestionDelLines,
-                metrics?.charactersAdded,
-                metrics?.charactersRemoved
+                metrics?.programmingLanguage
             )
         }
         metrics = null
@@ -698,7 +692,8 @@ class InlineChatController(
         requestId?.let {
             metrics = InlineChatMetrics(
                 requestId = it, inputLength = message.length, numSelectedLines = selectedCode.split("\n").size,
-                codeIntent = true, responseStartLatency = firstResponseLatency, responseEndLatency = lastResponseLatency
+                codeIntent = true, responseStartLatency = firstResponseLatency, responseEndLatency = lastResponseLatency,
+                programmingLanguage = fileContext.fileContext?.fileLanguage
             )
         }
         if (finalMessage != null) {
