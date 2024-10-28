@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.telemetry.otel
 
 import com.intellij.openapi.application.ApplicationInfo
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.platform.diagnostic.telemetry.helpers.useWithoutActiveScope
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.common.Attributes
@@ -14,12 +15,14 @@ import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.ContextKey
 import io.opentelemetry.context.Scope
+import io.opentelemetry.sdk.trace.ReadWriteSpan
 import kotlinx.coroutines.CoroutineScope
 import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.telemetry.PluginResolver
-//import software.aws.toolkits.telemetry.BaseSpan
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
@@ -29,13 +32,6 @@ import com.intellij.platform.diagnostic.telemetry.helpers.useWithScope as ijUseW
 
 val AWS_PRODUCT_CONTEXT_KEY = ContextKey.named<AWSProduct>("pluginDescriptor")
 internal val PLUGIN_ATTRIBUTE_KEY = AttributeKey.stringKey("plugin")
-
-//class DefaultSpan(context: Context?, delegate: Span) : BaseSpan<DefaultSpan>(context, delegate) {
-//    override val metricName = "?????????"
-//}
-//class DefaultSpanBuilder(delegate: SpanBuilder) : AbstractSpanBuilder<DefaultSpanBuilder, DefaultSpan>(delegate) {
-//    override fun doStartSpan() = DefaultSpan(parent, delegate.startSpan())
-//}
 
 abstract class AbstractSpanBuilder<
     BuilderType : AbstractSpanBuilder<BuilderType, SpanType>,
@@ -48,7 +44,7 @@ abstract class AbstractSpanBuilder<
      *
      * @inheritdoc
      */
-    inline fun<T> use(operation: (Span) -> T): T =
+    inline fun<T> use(operation: (SpanType) -> T): T =
         // FIX_WHEN_MIN_IS_241: not worth fixing for 233
         if (ApplicationInfo.getInstance().build.baselineVersion == 233) {
             startSpan().useWithoutActiveScope { span ->
@@ -185,21 +181,50 @@ abstract class AbstractSpanBuilder<
     }
 }
 
-abstract class AbstractBaseSpan<SpanType : AbstractBaseSpan<SpanType>>(internal val context: Context?, private val delegate: Span) : Span by delegate {
-    protected abstract val metricName: String
-
+abstract class AbstractBaseSpan<SpanType : AbstractBaseSpan<SpanType>>(internal val context: Context?, private val delegate: ReadWriteSpan) : Span by delegate {
+    protected open val requiredFields: Collection<String> = emptySet()
     /**
      * Same as [com.intellij.platform.diagnostic.telemetry.helpers.use] except downcasts to specific subclass of [BaseSpan]
      *
      * @inheritdoc
      */
-    inline fun<T> use(operation: (Span) -> T): T =
+    inline fun<T> use(operation: (SpanType) -> T): T =
         ijUse { span ->
             operation(span as SpanType)
         }
 
-    fun metadata(key: String, value: String) = setAttribute(key, value) as SpanType
+    fun metadata(key: String, value: String?): SpanType {
+        delegate.setAttribute(key, value)
+        return this as SpanType
+    }
+
+    override fun end() {
+        validateRequiredAttributes()
+        delegate.end()
+    }
+
+    override fun end(timestamp: Long, unit: TimeUnit) {
+        validateRequiredAttributes()
+        delegate.end()
+    }
+
+    private fun validateRequiredAttributes() {
+        val missingFields = requiredFields.filter { delegate.getAttribute(AttributeKey.stringKey(it)) == null }
+        val message = { "${delegate.name} is missing required fields: ${missingFields.joinToString(", ")}" }
+
+        if (missingFields.isNotEmpty()) {
+            when {
+                ApplicationManager.getApplication().isUnitTestMode -> error(message())
+                isDeveloperMode() -> LOG.error(block = message)
+                else -> LOG.error(block = message)
+            }
+        }
+    }
 
     override fun makeCurrent(): Scope =
         context?.with(this)?.makeCurrent() ?: super.makeCurrent()
+
+    private companion object {
+        val LOG = getLogger<AbstractBaseSpan<*>>()
+    }
 }
