@@ -177,7 +177,7 @@ abstract class AbstractSpanBuilder<
 
     private companion object {
         val LOG = getLogger<AbstractSpanBuilder<*, *>>()
-        fun resolvePluginName() = PluginResolver.Companion.fromStackTrace(Thread.currentThread().stackTrace).product
+        fun resolvePluginName() = PluginResolver.fromStackTrace(Thread.currentThread().stackTrace).product
     }
 }
 
