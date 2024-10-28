@@ -9,11 +9,12 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Reference
 import software.amazon.awssdk.services.codewhispererruntime.model.Span
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
 
 object ReferenceLogController {
-    fun addReferenceLog(originalCode: String, codeReferences: List<CodeReference>?, editor: Editor, project: Project) {
+    fun addReferenceLog(originalCode: String, codeReferences: List<CodeReference>?, editor: Editor, project: Project, inlineChatStartPosition: CaretPosition?) {
         codeReferences?.let { references ->
             val cwReferences = references.map { reference ->
                 Reference.builder()
@@ -36,7 +37,7 @@ object ReferenceLogController {
                 originalCode,
                 cwReferences,
                 editor,
-                CodeWhispererEditorUtil.getCaretPosition(editor),
+                inlineChatStartPosition ?: CodeWhispererEditorUtil.getCaretPosition(editor),
                 null,
             )
         }

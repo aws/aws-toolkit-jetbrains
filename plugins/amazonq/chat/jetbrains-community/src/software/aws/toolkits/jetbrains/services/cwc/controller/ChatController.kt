@@ -92,7 +92,7 @@ class ChatController private constructor(
 ) : InboundAppMessagesHandler {
 
     private val messagePublisher: MessagePublisher = context.messagesFromAppToUi
-    private val telemetryHelper = TelemetryHelper(context, chatSessionStorage)
+    private val telemetryHelper = TelemetryHelper(context.project, chatSessionStorage)
     constructor(
         context: AmazonQAppInitContext,
     ) : this(
@@ -217,7 +217,7 @@ class ChatController private constructor(
 
                     editor.document.insertString(offset, message.code)
 
-                    ReferenceLogController.addReferenceLog(message.code, message.codeReference, editor, context.project)
+                    ReferenceLogController.addReferenceLog(message.code, message.codeReference, editor, context.project, null)
 
                     CodeWhispererUserModificationTracker.getInstance(context.project).enqueue(
                         InsertedCodeModificationEntry(
