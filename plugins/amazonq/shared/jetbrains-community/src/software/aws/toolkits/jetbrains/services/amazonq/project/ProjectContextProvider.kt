@@ -23,7 +23,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
 import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
@@ -159,17 +158,15 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     // TODO: rename queryChat
-    fun query(prompt: String): List<RelevantDocument> {
-        val encrypted = encryptRequest(QueryChatRequest(prompt))
-        val response = sendMsgToLsp(LspMessage.QueryChat, encrypted)
+    // TODO: timeout window not decided
+    suspend fun query(prompt: String): List<RelevantDocument> = withTimeout(500L) {
+        cs.async {
+            val encrypted = encryptRequest(QueryChatRequest(prompt))
+            val response = sendMsgToLsp(LspMessage.QueryChat, encrypted)
 
-        return try {
             val parsedResponse = mapper.readValue<List<Chunk>>(response.responseBody)
             queryResultToRelevantDocuments(parsedResponse)
-        } catch (e: Exception) {
-            logger.error { "error parsing query response ${e.message}" }
-            throw e
-        }
+        }.await()
     }
 
     suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> = withTimeout(50L) {

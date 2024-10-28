@@ -214,8 +214,10 @@ class ProjectContextProviderTest {
     }
 
     @Test
-    fun `query should send correct encrypted request to lsp`() {
-        sut.query("foo")
+    fun `query should send correct encrypted request to lsp`() = runTest {
+        sut = ProjectContextProvider(project, encoderServer, this)
+        val r = sut.query("foo")
+        advanceUntilIdle()
 
         val request = QueryChatRequest("foo")
         val requestJson = mapper.writeValueAsString(request)
@@ -275,7 +277,9 @@ class ProjectContextProviderTest {
 
     @Test
     fun `query chat should return deserialized relevantDocument`() = runTest {
+        sut = ProjectContextProvider(project, encoderServer, this)
         val r = sut.query("foo")
+        advanceUntilIdle()
         assertThat(r).hasSize(2)
         assertThat(r[0]).isEqualTo(
             RelevantDocument(
@@ -364,13 +368,36 @@ class ProjectContextProviderTest {
                         .withResponseBody(
                             Body(validQueryInlineResponse)
                         )
-                        .withFixedDelay(51) // 10 sec
+                        .withFixedDelay(51)
                 )
             )
 
             // it won't throw if it's executed within TestDispatcher context
             withContext(getCoroutineBgContext()) {
                 sut.queryInline("foo", "bar")
+            }
+
+            advanceUntilIdle()
+        }
+    }
+
+    @Test
+    fun `queryChat should throw if time elapsed is greather than 500ms`() = runTest {
+        assertThrows<TimeoutCancellationException> {
+            sut = ProjectContextProvider(project, encoderServer, this)
+            stubFor(
+                any(urlPathEqualTo("/query")).willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withResponseBody(
+                            Body(validQueryChatResponse)
+                        )
+                        .withFixedDelay(501)
+                )
+            )
+
+            withContext(getCoroutineBgContext()) {
+                sut.query("foo")
             }
 
             advanceUntilIdle()
@@ -390,12 +417,9 @@ class ProjectContextProviderTest {
 
     @Test
     fun `test query payload is encrypted`() = runTest {
-        whenever(encoderServer.port).thenReturn(3000)
-        try {
-            sut.query("what does this project do")
-        } catch (e: ConnectException) {
-            // no-op
-        }
+        sut = ProjectContextProvider(project, encoderServer, this)
+        sut.query("what does this project do")
+        advanceUntilIdle()
         verify(encoderServer, times(1)).encrypt(any())
     }
 
