@@ -104,8 +104,17 @@ class DiskCache(
     override fun loadClientRegistration(cacheKey: ClientRegistrationCacheKey): ClientRegistration? {
         LOG.debug { "loadClientRegistration for $cacheKey" }
         val inputStream = clientRegistrationCache(cacheKey).tryInputStreamIfExists()
-            ?: return null
-
+        if (inputStream == null) {
+            val stage = LoadCredentialStage.ACCESS_FILE
+            AwsTelemetry.modifyCredentials(
+                credentialModification = CredentialModification.Unknown,
+                result = Result.Failed,
+                reason = "Failed to load ClientRegistration",
+                reasonDesc = "Load Step:$stage failed: previous error writing to file or deleted",
+                source = "loadClientRegistration"
+            )
+            return null
+        }
         return loadClientRegistration(inputStream)
     }
 
@@ -127,15 +136,10 @@ class DiskCache(
                 result = Result.Failed,
                 reason = "Failed to invalidate ClientRegistration",
                 reasonDesc = e.message,
-                source = "DiskCache.invalidateClientRegistration"
+                source = "invalidateClientRegistration"
             )
             throw e
         }
-        AwsTelemetry.modifyCredentials(
-            credentialModification = CredentialModification.Delete,
-            result = Result.Succeeded,
-            source = "DiskCache.invalidateClientRegistration"
-        )
     }
 
     override fun invalidateAccessToken(ssoUrl: String) {
@@ -152,11 +156,6 @@ class DiskCache(
             )
             throw e
         }
-        AwsTelemetry.modifyCredentials(
-            credentialModification = CredentialModification.Delete,
-            result = Result.Succeeded,
-            source = "DiskCache.invalidateAccessToken"
-        )
     }
 
     override fun loadAccessToken(cacheKey: AccessTokenCacheKey): AccessToken? {
@@ -191,11 +190,6 @@ class DiskCache(
             )
             throw e
         }
-        AwsTelemetry.modifyCredentials(
-            credentialModification = CredentialModification.Delete,
-            result = Result.Succeeded,
-            source = "DiskCache.invalidateAccessToken"
-        )
     }
 
     private fun clientRegistrationCache(ssoRegion: String): Path = cacheDir.resolve("aws-toolkit-jetbrains-client-id-$ssoRegion.json")
@@ -222,15 +216,34 @@ class DiskCache(
         return cacheDir.resolve(fileName)
     }
 
-    private fun loadClientRegistration(inputStream: InputStream) =
-        tryOrNull {
+    private fun loadClientRegistration(inputStream: InputStream): ClientRegistration? {
+        var stage = LoadCredentialStage.VALIDATE_CREDENTIALS
+        try{
             val clientRegistration = objectMapper.readValue<ClientRegistration>(inputStream)
+            stage = LoadCredentialStage.CHECK_EXPIRATION
             if (clientRegistration.expiresAt.isNotExpired()) {
-                clientRegistration
+                return clientRegistration
             } else {
-                null
+                AwsTelemetry.modifyCredentials(
+                    credentialModification = CredentialModification.Unknown,
+                    result = Result.Failed,
+                    reason = "Failed to load ClientRegistration",
+                    reasonDesc = "Load Step:$stage failed: ClientRegistration is expired",
+                    source = "loadClientRegistration"
+                )
+                return null
             }
+        } catch (e: Exception) {
+            AwsTelemetry.modifyCredentials(
+                credentialModification = CredentialModification.Unknown,
+                result = Result.Failed,
+                reason = "Failed to load ClientRegistration",
+                reasonDesc = "Load Step:$stage failed: ClientRegistration file is invalid",
+                source = "loadClientRegistration"
+            )
+            return null
         }
+    }
 
     private fun loadAccessToken(inputStream: InputStream) = tryOrNull {
         val accessToken = objectMapper.readValue<AccessToken>(inputStream)
@@ -292,6 +305,12 @@ class DiskCache(
 
             return ISO_INSTANT.parse(sanitized) { Instant.from(it) }
         }
+    }
+
+    private enum class LoadCredentialStage {
+        ACCESS_FILE,
+        VALIDATE_CREDENTIALS,
+        CHECK_EXPIRATION,
     }
 
     companion object {
