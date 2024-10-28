@@ -47,10 +47,16 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
                 return@launch
             }
 
-            while (!encoderServer.isNodeProcessRunning()) {
-                // TODO: need better solution for this
-                delay(10000)
-                initAndIndex()
+            // TODO: need better solution for this
+            @Suppress("LoopWithTooManyJumpStatements")
+            while (true) {
+                if (encoderServer.isNodeProcessRunning()) {
+                    delay(10000)
+                    initAndIndex()
+                    break
+                } else {
+                    break
+                }
             }
         }
     }
