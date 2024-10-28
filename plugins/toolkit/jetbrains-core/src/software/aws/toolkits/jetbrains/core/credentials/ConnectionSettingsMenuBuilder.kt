@@ -244,7 +244,7 @@ class ConnectionSettingsMenuBuilder private constructor() {
             addAll(
                 object : DumbAwareAction(message("credentials.individual_identity.reconnect")) {
                     override fun actionPerformed(e: AnActionEvent) {
-                        reauthConnectionIfNeeded(e.project, value, isReAuth = true)
+                        reauthConnectionIfNeeded(e.project, value, isReAuth = true, reauthSource = ReauthSource.TOOLKIT)
 
                         e.project?.let { ToolkitConnectionManager.getInstance(it).switchConnection(value) }
                     }

@@ -198,7 +198,7 @@ fun authAndUpdateConfig(
 
     val connection = try {
         ToolkitAuthManager.getInstance().tryCreateTransientSsoConnection(updatedProfile) { connection ->
-            reauthConnectionIfNeeded(project, connection, onPendingToken)
+            reauthConnectionIfNeeded(project, connection, onPendingToken, reauthSource = ReauthSource.FRESH_AUTH)
         }
     } catch (e: Exception) {
         onError(e)
