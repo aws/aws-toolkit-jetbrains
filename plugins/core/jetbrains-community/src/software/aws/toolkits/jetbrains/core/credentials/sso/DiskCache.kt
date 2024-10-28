@@ -102,7 +102,6 @@ class DiskCache(
         LOG.debug { "loadClientRegistration for $cacheKey" }
         val inputStream = clientRegistrationCache(cacheKey).tryInputStreamIfExists()
             ?: return null
-        // add log
         return loadClientRegistration(inputStream)
     }
 
