@@ -277,14 +277,11 @@ class DiskCache(
         } catch (e: Exception) {
             AwsTelemetry.saveCredentials(
                 result = Result.Failed,
-                reason = "Failed to write to cache,",
+                reason = "Failed to write to cache",
                 reasonDesc = e.message
             )
             throw e
         }
-        AwsTelemetry.saveCredentials(
-            result = Result.Succeeded,
-        )
     }
 
     // If the item is going to expire in the next 15 mins, we must treat it as already expired
