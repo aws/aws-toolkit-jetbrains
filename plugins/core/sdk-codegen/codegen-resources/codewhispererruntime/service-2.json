@@ -1099,13 +1099,21 @@
         },
         "InlineChatEvent": {
             "type": "structure",
+            "required": ["requestId", "timestamp"],
             "members": {
+                "requestId": { "shape": "UUID" },
+                "timestamp":{"shape":"Timestamp"},
                 "inputLength": { "shape": "PrimitiveInteger" },
                 "numSelectedLines": { "shape": "PrimitiveInteger" },
+                "numSuggestionAddChars": { "shape": "PrimitiveInteger" },
+                "numSuggestionAddLines": { "shape": "PrimitiveInteger" },
+                "numSuggestionDelChars": { "shape": "PrimitiveInteger" },
+                "numSuggestionDelLines": { "shape": "PrimitiveInteger" },
                 "codeIntent": { "shape": "Boolean" },
                 "userDecision": { "shape": "InlineChatUserDecision" },
                 "responseStartLatency": { "shape": "Double" },
-                "responseEndLatency": { "shape": "Double" }
+                "responseEndLatency": { "shape": "Double" },
+                "programmingLanguage": { "shape": "ProgrammingLanguage" }
             }
         },
         "InlineChatUserDecision": {

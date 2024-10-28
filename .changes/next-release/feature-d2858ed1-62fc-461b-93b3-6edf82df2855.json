@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Added inline chat support. Select some code and hit ⌘+I on Mac or Ctrl+I on Windows to start"
+}
