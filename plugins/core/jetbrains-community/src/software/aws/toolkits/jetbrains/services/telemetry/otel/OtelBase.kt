@@ -33,6 +33,15 @@ import com.intellij.platform.diagnostic.telemetry.helpers.useWithScope as ijUseW
 val AWS_PRODUCT_CONTEXT_KEY = ContextKey.named<AWSProduct>("pluginDescriptor")
 internal val PLUGIN_ATTRIBUTE_KEY = AttributeKey.stringKey("plugin")
 
+class DefaultSpan(context: Context?, delegate: Span) : BaseSpan<DefaultSpan>(context, delegate)
+
+class DefaultSpanBuilder(delegate: SpanBuilder) : AbstractSpanBuilder<DefaultSpanBuilder, DefaultSpan>(delegate) {
+    override fun doStartSpan() = DefaultSpan(parent, delegate.startSpan())
+}
+
+// temporary; will be generated
+abstract class BaseSpan<SpanType: AbstractBaseSpan<SpanType>>(context: Context?, delegate: Span) : AbstractBaseSpan<SpanType>(context, delegate as ReadWriteSpan)
+
 abstract class AbstractSpanBuilder<
     BuilderType : AbstractSpanBuilder<BuilderType, SpanType>,
     SpanType : AbstractBaseSpan<SpanType>,
@@ -183,6 +192,7 @@ abstract class AbstractSpanBuilder<
 
 abstract class AbstractBaseSpan<SpanType : AbstractBaseSpan<SpanType>>(internal val context: Context?, private val delegate: ReadWriteSpan) : Span by delegate {
     protected open val requiredFields: Collection<String> = emptySet()
+
     /**
      * Same as [com.intellij.platform.diagnostic.telemetry.helpers.use] except downcasts to specific subclass of [BaseSpan]
      *
