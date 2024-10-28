@@ -21,7 +21,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.yield
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -48,15 +47,10 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
                 return@launch
             }
 
-            while (true) {
-                if (encoderServer.isNodeProcessRunning()) {
-                    // TODO: need better solution for this
-                    delay(10000)
-                    initAndIndex()
-                    break
-                } else {
-                    break
-                }
+            while (!encoderServer.isNodeProcessRunning()) {
+                // TODO: need better solution for this
+                delay(10000)
+                initAndIndex()
             }
         }
     }
