@@ -14,13 +14,14 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapter
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.CodeNames
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.CodeNamesImpl
+import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FullyQualifiedNames
 import software.aws.toolkits.jetbrains.services.cwc.controller.ChatController
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.util.LanguageExtractor
 import software.aws.toolkits.jetbrains.utils.computeOnEdt
 import java.awt.Point
 import kotlin.math.min
 
-class FocusAreaContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter, private val project: Project) {
+class FocusAreaContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter?, private val project: Project) {
 
     private val languageExtractor: LanguageExtractor = LanguageExtractor()
     suspend fun extract(): FocusAreaContext? {
@@ -105,7 +106,7 @@ class FocusAreaContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter
 
         // Retrieve <codeNames> from  trimmedFileText
         val fileLanguage = computeOnEdt {
-            languageExtractor.extractLanguageNameFromCurrentFile(editor, project)
+            languageExtractor.extractLanguageNameFromCurrentFile(editor)
         }
         val fileText = editor.document.text
         val fileName = FileEditorManager.getInstance(project).selectedFiles.first().name
@@ -140,8 +141,9 @@ class FocusAreaContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter
             val requestString = ChatController.objectMapper.writeValueAsString(extractNamesRequest)
 
             codeNames = try {
-                val namesString = fqnWebviewAdapter.extractNames(requestString)
-                ChatController.objectMapper.readValue(namesString, CodeNamesImpl::class.java)
+                fqnWebviewAdapter?.let {
+                    ChatController.objectMapper.readValue(it.extractNames(requestString), CodeNamesImpl::class.java)
+                } ?: CodeNamesImpl(simpleNames = emptyList(), fullyQualifiedNames = FullyQualifiedNames(used = emptyList()))
             } catch (e: Exception) {
                 getLogger<FocusAreaContextExtractor>().warn(e) { "Failed to extract names from file" }
                 null

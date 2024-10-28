@@ -180,7 +180,7 @@ class TelemetryHelperTest {
         sessionStorage = mock {
             on { this.getSession(eq(tabId)) } doReturn ChatSessionInfo(session = mockSession, scope = mock(), history = mutableListOf())
         }
-        sut = TelemetryHelper(appInitContext, sessionStorage)
+        sut = TelemetryHelper(appInitContext.project, sessionStorage)
 
         // set up client
         mockClientManager.create<SsoOidcClient>()
