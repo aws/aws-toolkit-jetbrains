@@ -55,7 +55,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
                     initAndIndex()
                     break
                 } else {
-                    break
+                    delay(10000)
                 }
             }
         }
