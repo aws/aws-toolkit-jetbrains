@@ -25,12 +25,12 @@ class OpenedFileTypeMetricsTest {
     @Test
     fun `test addToExistingTelemetryBatch with allowed extension`() {
         service.addToExistingTelemetryBatch("kt")
-        assertThat(service.getOpenedFileTypes().contains(".kt"))
+        assertThat(service.getOpenedFileTypes()).contains(".kt")
     }
 
     @Test
     fun `test addToExistingTelemetryBatch with disallowed extension`() {
         service.addToExistingTelemetryBatch("txt")
-        assertThat(service.getOpenedFileTypes().isEmpty())
+        assertThat(service.getOpenedFileTypes()).isEmpty()
     }
 }
