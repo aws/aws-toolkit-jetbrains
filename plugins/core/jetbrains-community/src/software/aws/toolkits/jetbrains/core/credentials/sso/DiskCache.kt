@@ -106,12 +106,13 @@ class DiskCache(
         val inputStream = clientRegistrationCache(cacheKey).tryInputStreamIfExists()
         if (inputStream == null) {
             val stage = LoadCredentialStage.ACCESS_FILE
+            LOG.warn("Failed to load ClientRegistration for $cacheKey, previous error writing to file or deleted")
             AwsTelemetry.modifyCredentials(
                 credentialModification = CredentialModification.Unknown,
                 result = Result.Failed,
                 reason = "Failed to load ClientRegistration",
                 reasonDesc = "Load Step:$stage failed: previous error writing to file or deleted",
-                source = "loadClientRegistration"
+                source = "loadClientRegistration(ClientRegistrationCacheKey)"
             )
             return null
         }
@@ -152,7 +153,7 @@ class DiskCache(
                 result = Result.Failed,
                 reason = "Failed to invalidate AccessToken",
                 reasonDesc = e.message,
-                source = "DiskCache.invalidateAccessToken"
+                source = "invalidateAccessToken"
             )
             throw e
         }
@@ -186,7 +187,7 @@ class DiskCache(
                 result = Result.Failed,
                 reason = "Failed to invalidate AccessToken",
                 reasonDesc = e.message,
-                source = "DiskCache.invalidateAccessToken"
+                source = "invalidateAccessToken"
             )
             throw e
         }
@@ -224,22 +225,24 @@ class DiskCache(
             if (clientRegistration.expiresAt.isNotExpired()) {
                 return clientRegistration
             } else {
+                LOG.warn("ClientRegistration is expired")
                 AwsTelemetry.modifyCredentials(
                     credentialModification = CredentialModification.Unknown,
                     result = Result.Failed,
                     reason = "Failed to load ClientRegistration",
                     reasonDesc = "Load Step:$stage failed: ClientRegistration is expired",
-                    source = "loadClientRegistration"
+                    source = "loadClientRegistration(inputStream)"
                 )
                 return null
             }
         } catch (e: Exception) {
+            LOG.warn("ClientRegistraion is invalid")
             AwsTelemetry.modifyCredentials(
                 credentialModification = CredentialModification.Unknown,
                 result = Result.Failed,
                 reason = "Failed to load ClientRegistration",
                 reasonDesc = "Load Step:$stage failed: ClientRegistration file is invalid",
-                source = "loadClientRegistration"
+                source = "loadClientRegistration(inputStream)"
             )
             return null
         }
