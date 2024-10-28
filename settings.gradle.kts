@@ -164,5 +164,3 @@ file("plugins").listFiles()?.forEach root@ {
             project(projectName).projectDir = it
         }
 }
-
-includeBuild("../aws-toolkit-common/telemetry/jetbrains")
