@@ -31,8 +31,8 @@ import javax.swing.event.DocumentListener
 class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() {
     private var submitClickListener: (() -> Unit)? = null
     private val popupButtonFontSize = 14f
-    val popupWidth = 600
-    val popupHeight = 90
+    private val popupWidth = 600
+    private val popupHeight = 90
     private val popupButtonHeight = 30
     private val popupButtonWidth = 80
     private val popupInputHeight = 40

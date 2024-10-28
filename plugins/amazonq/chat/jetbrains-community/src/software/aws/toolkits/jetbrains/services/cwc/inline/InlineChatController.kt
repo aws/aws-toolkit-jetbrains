@@ -305,10 +305,10 @@ class InlineChatController(
                 recordInlineChatTelemetry(InlineChatUserDecision.DISMISS)
                 return@runBlocking
             }
-            launch(EDT) {
+            withContext(EDT) {
                 insertNewLineIfNeeded(insertLine, editor)
                 insertString(editor, getLineStartOffset(editor.document, insertLine), stringToAdd + "\n")
-            }.join()
+            }
             insertLine += linesToAdd.size
             insertionLine.set(insertLine)
             acceptAction = {
@@ -466,11 +466,11 @@ class InlineChatController(
                     recordInlineChatTelemetry(InlineChatUserDecision.DISMISS)
                     return@runBlocking
                 }
-                launch(EDT) {
+                withContext(EDT) {
                     removeSelection(editor)
                     applyChunk(patchString, editor, startLine, endLine)
                     processHighlights(diff, startLine, editor)
-                }.join()
+                }
                 acceptAction = {
                     val startOffset = getLineStartOffset(editor.document, startLine)
                     val endOffset = getLineEndOffset(editor.document, max((startLine + patchString.split("\n").size - 1), endLine))
