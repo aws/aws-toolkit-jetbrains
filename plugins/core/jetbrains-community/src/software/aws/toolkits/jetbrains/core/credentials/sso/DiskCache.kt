@@ -136,7 +136,7 @@ class DiskCache(
                 source = "invalidateClientRegistration",
                 result = Result.Failed,
                 reason = "Failed to invalidate Client Registration",
-                reasonDesc = e.message
+                reasonDesc = e.message?: e::class.java.name
             )
             throw e
         }
@@ -152,7 +152,7 @@ class DiskCache(
                 source = "invalidateAccessToken",
                 result = Result.Failed,
                 reason = "Failed to invalidate Access Token",
-                reasonDesc = e.message
+                reasonDesc = e.message?: e::class.java.name
             )
             throw e
         }
@@ -186,7 +186,7 @@ class DiskCache(
                 source = "invalidateAccessToken",
                 result = Result.Failed,
                 reason = "Failed to invalidate Access Token",
-                reasonDesc = e.message
+                reasonDesc = e.message?: e::class.java.name
             )
             throw e
         }
@@ -235,7 +235,7 @@ class DiskCache(
                 return null
             }
         } catch (e: Exception) {
-            LOG.warn("Client Registraion is invalid")
+            LOG.warn("Client Registration could not be read")
             AuthTelemetry.modifyConnection(
                 action = "Validate Credentials",
                 source = "loadClientRegistration",
@@ -282,7 +282,7 @@ class DiskCache(
                 source = "writeKey",
                 result = Result.Failed,
                 reason = "Failed to write to cache",
-                reasonDesc = e.message
+                reasonDesc = e.message?: e::class.java.name
             )
             throw e
         }
@@ -306,12 +306,6 @@ class DiskCache(
 
             return ISO_INSTANT.parse(sanitized) { Instant.from(it) }
         }
-    }
-
-    private enum class LoadCredentialStage {
-        ACCESS_FILE,
-        VALIDATE_CREDENTIALS,
-        CHECK_EXPIRATION,
     }
 
     companion object {
