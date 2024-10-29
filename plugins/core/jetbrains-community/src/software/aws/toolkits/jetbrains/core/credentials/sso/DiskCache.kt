@@ -136,7 +136,7 @@ class DiskCache(
                 source = "invalidateClientRegistration",
                 result = Result.Failed,
                 reason = "Failed to invalidate Client Registration",
-                reasonDesc = e.message?: e::class.java.name
+                reasonDesc = e.message ?: e::class.java.name
             )
             throw e
         }
@@ -152,7 +152,7 @@ class DiskCache(
                 source = "invalidateAccessToken",
                 result = Result.Failed,
                 reason = "Failed to invalidate Access Token",
-                reasonDesc = e.message?: e::class.java.name
+                reasonDesc = e.message ?: e::class.java.name
             )
             throw e
         }
@@ -186,7 +186,7 @@ class DiskCache(
                 source = "invalidateAccessToken",
                 result = Result.Failed,
                 reason = "Failed to invalidate Access Token",
-                reasonDesc = e.message?: e::class.java.name
+                reasonDesc = e.message ?: e::class.java.name
             )
             throw e
         }
@@ -282,7 +282,7 @@ class DiskCache(
                 source = "writeKey",
                 result = Result.Failed,
                 reason = "Failed to write to cache",
-                reasonDesc = e.message?: e::class.java.name
+                reasonDesc = e.message ?: e::class.java.name
             )
             throw e
         }

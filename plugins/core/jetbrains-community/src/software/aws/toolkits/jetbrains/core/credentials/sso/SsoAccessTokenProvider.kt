@@ -182,7 +182,7 @@ class SsoAccessTokenProvider(
                 source = "accessToken",
                 result = Result.Failed,
                 reason = "Failed to write AccessToken to cache",
-                reasonDesc = e.message?: e::class.java.name,
+                reasonDesc = e.message ?: e::class.java.name,
             )
             throw e
         }
@@ -224,7 +224,7 @@ class SsoAccessTokenProvider(
                 source = "registerDAGClient",
                 result = Result.Failed,
                 reason = "Failed to write DeviceAuthorizationClientRegistration to cache",
-                reasonDesc = e.message?: e::class.java.name
+                reasonDesc = e.message ?: e::class.java.name
             )
             throw e
         }
@@ -276,11 +276,10 @@ class SsoAccessTokenProvider(
                 source = "registerPkceClient",
                 result = Result.Failed,
                 reason = "Failed to write PKCEClientRegistration to cache",
-                reasonDesc = e.message?: e::class.java.name
+                reasonDesc = e.message ?: e::class.java.name
             )
             throw e
         }
-
 
         return registeredClient
     }
@@ -428,7 +427,8 @@ class SsoAccessTokenProvider(
         }
 
         stageName = RefreshCredentialStage.LOAD_REGISTRATION
-        val registration = try { when (currentToken) {
+        val registration = try {
+            when (currentToken) {
                 is DeviceAuthorizationGrantToken -> loadDagClientRegistration()
                 is PKCEAuthorizationGrantToken -> loadPkceClientRegistration()
             }
