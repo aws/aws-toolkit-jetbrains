@@ -32,6 +32,7 @@ import software.aws.toolkits.core.utils.touch
 import software.aws.toolkits.core.utils.tryDirOp
 import software.aws.toolkits.core.utils.tryFileOp
 import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialModification
 import software.aws.toolkits.telemetry.Result
@@ -106,13 +107,13 @@ class DiskCache(
         val inputStream = clientRegistrationCache(cacheKey).tryInputStreamIfExists()
         if (inputStream == null) {
             val stage = LoadCredentialStage.ACCESS_FILE
-            LOG.warn("Failed to load ClientRegistration for $cacheKey, previous error writing to file or deleted")
-            AwsTelemetry.modifyCredentials(
-                credentialModification = CredentialModification.Unknown,
+            LOG.warn("Failed to load ClientRegistration")
+            AuthTelemetry.modifyConnection(
+                action = "Load cache file",
+                source = "loadClientRegistration",
                 result = Result.Failed,
-                reason = "Failed to load ClientRegistration",
-                reasonDesc = "Load Step:$stage failed: previous error writing to file or deleted",
-                source = "loadClientRegistration(ClientRegistrationCacheKey)"
+                reason = "Failed to load Client Registration",
+                reasonDesc = "Load Step:$stage failed. Unable to load file"
             )
             return null
         }
@@ -132,12 +133,12 @@ class DiskCache(
         try {
             clientRegistrationCache(cacheKey).tryDeleteIfExists()
         } catch (e: Exception) {
-            AwsTelemetry.modifyCredentials(
-                credentialModification = CredentialModification.Delete,
+            AuthTelemetry.modifyConnection(
+                action = "Delete cache file",
+                source = "invalidateClientRegistration",
                 result = Result.Failed,
-                reason = "Failed to invalidate ClientRegistration",
-                reasonDesc = e.message,
-                source = "invalidateClientRegistration"
+                reason = "Failed to invalidate Client Registration",
+                reasonDesc = e.message
             )
             throw e
         }
@@ -148,12 +149,12 @@ class DiskCache(
         try {
             accessTokenCache(ssoUrl).tryDeleteIfExists()
         } catch (e: Exception) {
-            AwsTelemetry.modifyCredentials(
-                credentialModification = CredentialModification.Delete,
+            AuthTelemetry.modifyConnection(
+                action = "Delete cache file",
+                source =  "invalidateAccessToken",
                 result = Result.Failed,
-                reason = "Failed to invalidate AccessToken",
-                reasonDesc = e.message,
-                source = "invalidateAccessToken"
+                reason = "Failed to invalidate Access Token",
+                reasonDesc = e.message
             )
             throw e
         }
@@ -182,12 +183,12 @@ class DiskCache(
         try {
             accessTokenCache(cacheKey).tryDeleteIfExists()
         } catch (e: Exception) {
-            AwsTelemetry.modifyCredentials(
-                credentialModification = CredentialModification.Delete,
+            AuthTelemetry.modifyConnection(
+                action = "Delete cache file",
+                source = "invalidateAccessToken",
                 result = Result.Failed,
-                reason = "Failed to invalidate AccessToken",
-                reasonDesc = e.message,
-                source = "invalidateAccessToken"
+                reason = "Failed to invalidate Access Token",
+                reasonDesc = e.message
             )
             throw e
         }
@@ -226,23 +227,23 @@ class DiskCache(
                 return clientRegistration
             } else {
                 LOG.warn("ClientRegistration is expired")
-                AwsTelemetry.modifyCredentials(
-                    credentialModification = CredentialModification.Unknown,
+                AuthTelemetry.modifyConnection(
+                    action = "Validate Credentials",
+                    source = "loadClientRegistration",
                     result = Result.Failed,
                     reason = "Failed to load ClientRegistration",
-                    reasonDesc = "Load Step:$stage failed: ClientRegistration is expired",
-                    source = "loadClientRegistration(inputStream)"
+                    reasonDesc = "Load Step:$stage failed: Client Registration is expired"
                 )
                 return null
             }
         } catch (e: Exception) {
             LOG.warn("ClientRegistraion is invalid")
-            AwsTelemetry.modifyCredentials(
-                credentialModification = CredentialModification.Unknown,
+            AuthTelemetry.modifyConnection(
+                action = "Validate Credentials",
+                source = "loadClientRegistration",
                 result = Result.Failed,
                 reason = "Failed to load ClientRegistration",
-                reasonDesc = "Load Step:$stage failed: ClientRegistration file is invalid",
-                source = "loadClientRegistration(inputStream)"
+                reasonDesc = "Load Step:$stage failed: Client Registration file is invalid"
             )
             return null
         }
@@ -278,7 +279,9 @@ class DiskCache(
                 outputStream().use(consumer)
             }
         } catch (e: Exception) {
-            AwsTelemetry.saveCredentials(
+            AuthTelemetry.modifyConnection(
+                action = "Write file",
+                source = "writeKey",
                 result = Result.Failed,
                 reason = "Failed to write to cache",
                 reasonDesc = e.message
