@@ -20,14 +20,13 @@ class InlineChatActionPromoter : ActionPromoter {
         if (SystemInfo.isMac && shortCut != "⌘I") return results
         if (!SystemInfo.isMac && shortCut != "Ctrl+I") return results
 
-        results.sortWith { a, b ->
+        return actions.sortedBy { a, b ->
             when {
                 isOpenChatInputAction(a) -> -1
                 isOpenChatInputAction(b) -> 1
                 else -> 0
             }
         }
-        return results
     }
 
     private fun isOpenChatInputAction(action: AnAction): Boolean =
