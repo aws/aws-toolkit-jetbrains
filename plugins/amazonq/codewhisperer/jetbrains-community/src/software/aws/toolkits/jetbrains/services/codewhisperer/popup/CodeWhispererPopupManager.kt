@@ -235,12 +235,14 @@ class CodeWhispererPopupManager {
         // emit any events.
         // 4. User navigating through the completions or typing as the completion shows. We should not update the latency
         // end time and should not emit any events in this case.
+        if (!CodeWhispererInvocationStatus.getInstance().isPopupActive()) {
+            states.requestContext.latencyContext.codewhispererPostprocessingEnd = System.nanoTime()
+            states.requestContext.latencyContext.codewhispererEndToEndEnd = System.nanoTime()
+            states.requestContext.latencyContext.perceivedLatency =
+                states.requestContext.latencyContext.getPerceivedLatency(states.requestContext.triggerTypeInfo.triggerType)
+        }
         if (!isRecommendationAdded) {
             showPopup(states, sessionContext, states.popup, caretPoint, overlappingLinesCount)
-            if (!isScrolling) {
-                states.requestContext.latencyContext.codewhispererPostprocessingEnd = System.nanoTime()
-                states.requestContext.latencyContext.codewhispererEndToEndEnd = System.nanoTime()
-            }
         }
         if (isScrolling ||
             CodeWhispererInvocationStatus.getInstance().hasExistingServiceInvocation() ||
