@@ -22,6 +22,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifierSso
@@ -117,7 +118,7 @@ class IamAuth : DatabaseAuthProviderCompatabilityAdapter {
             )
         )
 
-        reauthConnectionIfNeeded(project, ssoConnection)
+        reauthConnectionIfNeeded(project, ssoConnection, reauthSource = ReauthSource.TOOLKIT)
         return connection
     }
 
