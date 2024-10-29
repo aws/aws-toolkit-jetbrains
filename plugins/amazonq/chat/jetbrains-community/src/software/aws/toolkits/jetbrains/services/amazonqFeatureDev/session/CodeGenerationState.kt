@@ -140,8 +140,8 @@ private suspend fun CodeGenerationState.generateCode(
     messenger: MessagePublisher,
     token: CancellationTokenSource?,
 ): CodeGenerationResult {
-    val pollCount = 180
-    val requestDelay = 10000L
+    val pollCount = 360
+    val requestDelay = 5000L
 
     repeat(pollCount) {
         if (token?.token?.isCancellationRequested() == true) {
