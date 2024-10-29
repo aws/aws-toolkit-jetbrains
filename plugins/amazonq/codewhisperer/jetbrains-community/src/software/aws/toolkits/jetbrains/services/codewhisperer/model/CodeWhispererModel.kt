@@ -155,7 +155,6 @@ data class SessionContextNew(
     var popup: JBPopup? = null,
     var selectedIndex: Int = -1,
     val seen: MutableSet<Int> = mutableSetOf(),
-    var isFirstTimeShowingPopup: Boolean = true,
     var toBeRemovedHighlighter: RangeHighlighter? = null,
     var insertEndOffset: Int = -1,
     var popupOffset: Int = -1,
@@ -278,6 +277,7 @@ data class LatencyContext(
     var codewhispererPreprocessingEnd: Long = 0L,
 
     var paginationFirstCompletionTime: Double = 0.0,
+    var perceivedLatency: Double = 0.0,
 
     var codewhispererPostprocessingStart: Long = 0L,
     var codewhispererPostprocessingEnd: Long = 0L,
@@ -316,10 +316,9 @@ data class LatencyContext(
         if (triggerType == CodewhispererTriggerType.OnDemand) {
             getCodeWhispererEndToEndLatency()
         } else {
-            (
-                TimeUnit.NANOSECONDS.toMillis(codewhispererEndToEndEnd) -
-                    CodeWhispererAutoTriggerService.getInstance().timeAtLastCharTyped.toEpochMilli()
-                ).toDouble()
+            TimeUnit.NANOSECONDS.toMillis(
+                codewhispererEndToEndEnd - CodeWhispererAutoTriggerService.getInstance().timeAtLastCharTyped
+            ).toDouble()
         }
 }
 
