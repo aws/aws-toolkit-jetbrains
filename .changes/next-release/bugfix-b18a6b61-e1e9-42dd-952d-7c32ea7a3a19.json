@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fix pointless busy loop in Amazon Q wasting CPU cycles (#5000)"
-}
