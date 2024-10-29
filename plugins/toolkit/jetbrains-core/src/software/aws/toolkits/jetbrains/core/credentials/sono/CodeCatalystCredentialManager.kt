@@ -12,6 +12,7 @@ import software.aws.toolkits.core.telemetry.DefaultMetricEvent
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.maybeReauthProviderIfNeeded
@@ -78,7 +79,7 @@ class CodeCatalystCredentialManager {
     fun promptAuth(): BearerTokenProvider? {
         connection()?.let {
             val tokenProvider = provider(it)
-            val reauthRequired = maybeReauthProviderIfNeeded(project, tokenProvider) {}
+            val reauthRequired = maybeReauthProviderIfNeeded(project, ReauthSource.CODECATALYST, tokenProvider) {}
             if (reauthRequired) {
                 val useCurrentCredentials =
                     computeOnEdt {
