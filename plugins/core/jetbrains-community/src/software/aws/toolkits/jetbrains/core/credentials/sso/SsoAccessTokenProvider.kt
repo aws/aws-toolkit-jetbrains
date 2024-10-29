@@ -171,13 +171,13 @@ class SsoAccessTokenProvider(
         try {
             saveAccessToken(token)
         } catch (e: Exception) {
-            getLogger<SsoAccessTokenProvider>().warn("Failed to save access token", e)
+            getLogger<SsoAccessTokenProvider>().warn("Failed to save access token ${e.message}")
             AuthTelemetry.modifyConnection(
                 action = "Write file",
                 source = "accessToken",
                 result = Result.Failed,
                 reason = "Failed to write AccessToken to cache",
-                reasonDesc = e.message,
+                reasonDesc = e.message?: e::class.java.name,
             )
             throw e
         }
@@ -211,18 +211,22 @@ class SsoAccessTokenProvider(
 
         try {
             saveClientRegistration(registeredClient)
+            AuthTelemetry.modifyConnection(
+                action = "Write file",
+                source = "registerDAGClient",
+                result = Result.Succeeded
+            )
         } catch (e: Exception) {
-            getLogger<SsoAccessTokenProvider>().warn("Failed to save client registration", e)
-            AwsTelemetry.saveCredentials(
+            getLogger<SsoAccessTokenProvider>().warn("Failed to save client registration ${e.message}")
+            AuthTelemetry.modifyConnection(
+                action = "Write file",
+                source = "registerDAGClient",
                 result = Result.Failed,
-                reason = "Failed to write PKCEClientRegistration to cache",
-                reasonDesc = e.message,
+                reason = "Failed to write DeviceAuthorizationClientRegistration to cache",
+                reasonDesc = e.message?: e::class.java.name
             )
             throw e
         }
-        AwsTelemetry.saveCredentials(
-            result = Result.Succeeded
-        )
 
         return registeredClient
     }
@@ -259,18 +263,23 @@ class SsoAccessTokenProvider(
 
         try {
             saveClientRegistration(registeredClient)
+            AuthTelemetry.modifyConnection(
+                action = "Write file",
+                source = "registerPkceClient",
+                result = Result.Succeeded
+            )
         } catch (e: Exception) {
-            getLogger<SsoAccessTokenProvider>().warn("Failed to save client registration", e)
-            AwsTelemetry.saveCredentials(
+            getLogger<SsoAccessTokenProvider>().warn("Failed to save client registration${e.message}")
+            AuthTelemetry.modifyConnection(
+                action = "Write file",
+                source = "registerPkceClient",
                 result = Result.Failed,
                 reason = "Failed to write PKCEClientRegistration to cache",
-                reasonDesc = e.message,
+                reasonDesc = e.message?: e::class.java.name
             )
             throw e
         }
-        AwsTelemetry.saveCredentials(
-            result = Result.Succeeded
-        )
+
 
         return registeredClient
     }
