@@ -8,7 +8,6 @@ import com.intellij.codeInsight.hint.HintUtil
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.VisualPosition
 import com.intellij.openapi.keymap.KeymapUtil
-import com.intellij.openapi.util.SystemInfo
 import com.intellij.ui.LightweightHint
 import com.intellij.ui.SimpleColoredText
 import com.intellij.ui.SimpleTextAttributes
@@ -68,7 +67,7 @@ class InlineChatEditorHint {
         coloredText.appendToComponent(component)
         val shortcutComponent = HintUtil.createInformationComponent()
         val shortCut = KeymapUtil.getShortcutText("aws.toolkit.jetbrains.core.services.cwc.inline.openChat")
-        if (!SystemInfo.isWindows && shortCut == "⌃I") {
+        if (shortCut == "⌘I") {
             val shortCutIcon = AwsIcons.Resources.InlineChat.AWS_Q_INLINECHAT_SHORTCUT
             shortcutComponent.isIconOnTheRight = true
             shortcutComponent.icon = shortCutIcon
