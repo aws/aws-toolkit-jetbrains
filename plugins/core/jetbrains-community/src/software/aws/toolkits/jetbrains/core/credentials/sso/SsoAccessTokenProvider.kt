@@ -170,6 +170,11 @@ class SsoAccessTokenProvider(
 
         try {
             saveAccessToken(token)
+            AuthTelemetry.modifyConnection(
+                action = "Write file",
+                source = "accessToken",
+                result = Result.Succeeded
+            )
         } catch (e: Exception) {
             getLogger<SsoAccessTokenProvider>().warn("Failed to save access token ${e.message}")
             AuthTelemetry.modifyConnection(
@@ -181,11 +186,7 @@ class SsoAccessTokenProvider(
             )
             throw e
         }
-        AuthTelemetry.modifyConnection(
-            action = "Write file",
-            source = "accessToken",
-            result = Result.Succeeded
-        )
+
         return token
     }
 
