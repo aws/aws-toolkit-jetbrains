@@ -308,6 +308,12 @@ class DiskCache(
         }
     }
 
+    private enum class LoadCredentialStage {
+        ACCESS_FILE,
+        VALIDATE_CREDENTIALS,
+        CHECK_EXPIRATION,
+    }
+
     companion object {
         val EXPIRATION_THRESHOLD = Duration.ofMinutes(15)
         private val LOG = getLogger<DiskCache>()
