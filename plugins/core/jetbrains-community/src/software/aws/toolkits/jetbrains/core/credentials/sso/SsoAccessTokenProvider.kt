@@ -427,8 +427,7 @@ class SsoAccessTokenProvider(
         }
 
         stageName = RefreshCredentialStage.LOAD_REGISTRATION
-        val registration: ClientRegistration?
-        try { registration = when (currentToken) {
+        val registration = try { when (currentToken) {
                 is DeviceAuthorizationGrantToken -> loadDagClientRegistration()
                 is PKCEAuthorizationGrantToken -> loadPkceClientRegistration()
             }
@@ -445,7 +444,7 @@ class SsoAccessTokenProvider(
 
         stageName = RefreshCredentialStage.VALIDATE_REGISTRATION
         if (registration == null) {
-            val message = "Null client registration: invalid or expired"
+            val message = "Unable to load client registration from cache"
             sendRefreshCredentialsMetric(
                 currentToken,
                 reason = "Refresh access token request failed: $stageName",
