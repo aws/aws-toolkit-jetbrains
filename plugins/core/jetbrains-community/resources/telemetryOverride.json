@@ -274,6 +274,11 @@
             "description": "Comma-delimited list of enabled auths."
         },
         {
+            "name": "authRefreshSource",
+            "type": "string",
+            "description": "Source triggering token refresh"
+        },
+        {
             "name": "component",
             "allowedValues": [
                 "editor",
@@ -813,6 +818,17 @@
                     "required": true
                 }
             ]
+        },
+        {
+            "name": "auth_sourceOfRefresh",
+            "description": "Source of user triggered refresh",
+            "metadata": [
+                {
+                    "type": "authRefreshSource",
+                    "required": false
+                }
+            ]
         }
+
     ]
 }

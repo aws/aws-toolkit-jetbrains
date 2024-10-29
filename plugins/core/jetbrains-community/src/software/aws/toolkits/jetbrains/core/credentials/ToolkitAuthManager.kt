@@ -27,6 +27,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.AwsCoreBundle
+import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.Result
@@ -135,6 +136,7 @@ fun loginSso(
                     onPendingToken = onPendingToken,
                     isReAuth = false,
                     source = metadata?.sourceId,
+                    reauthSource = ReauthSource.FRESH_AUTH
                 )
             }
         } catch (e: Exception) {
@@ -182,6 +184,7 @@ fun loginSso(
             onPendingToken = onPendingToken,
             isReAuth = true,
             source = metadata?.sourceId,
+            reauthSource = ReauthSource.COMMON_LOGIN
         )
         return@let connection
     }
@@ -240,6 +243,7 @@ fun reauthConnectionIfNeeded(
     onPendingToken: (InteractiveBearerTokenProvider) -> Unit = {},
     isReAuth: Boolean = false,
     source: String? = null,
+    reauthSource: ReauthSource? = ReauthSource.TOOLKIT,
 ): BearerTokenProvider {
     val tokenProvider = (connection.getConnectionSettings() as TokenConnectionSettings).tokenProvider.delegate as BearerTokenProvider
     if (tokenProvider is InteractiveBearerTokenProvider) {
@@ -248,7 +252,7 @@ fun reauthConnectionIfNeeded(
 
     val startUrl = (connection as AwsBearerTokenConnection).startUrl
     var didReauth = false
-    maybeReauthProviderIfNeeded(project, tokenProvider) {
+    maybeReauthProviderIfNeeded(project, reauthSource, tokenProvider) {
         didReauth = true
         runUnderProgressIfNeeded(project, AwsCoreBundle.message("credentials.pending.title"), true) {
             try {
@@ -301,6 +305,7 @@ fun reauthConnectionIfNeeded(
 // Return true if need to re-auth, false otherwise
 fun maybeReauthProviderIfNeeded(
     project: Project?,
+    reauthSource: ReauthSource? = ReauthSource.TOOLKIT,
     tokenProvider: BearerTokenProvider,
     onReauthRequired: (SsoOidcException?) -> Any,
 ): Boolean {
@@ -314,12 +319,14 @@ fun maybeReauthProviderIfNeeded(
 
         BearerTokenAuthState.NEEDS_REFRESH -> {
             try {
+                getLogger<ToolkitAuthManager>().warn { "Starting token refresh" }
                 return runUnderProgressIfNeeded(project, AwsCoreBundle.message("credentials.refreshing"), true) {
                     tokenProvider.resolveToken()
                     BearerTokenProviderListener.notifyCredUpdate(tokenProvider.id)
                     return@runUnderProgressIfNeeded false
                 }
             } catch (e: SsoOidcException) {
+                AuthTelemetry.sourceOfRefresh(authRefreshSource = reauthSource.toString())
                 getLogger<ToolkitAuthManager>().warn(e) { "Redriving bearer token login flow since token could not be refreshed" }
                 onReauthRequired(e)
                 return true
@@ -330,6 +337,17 @@ fun maybeReauthProviderIfNeeded(
             return false
         }
     }
+}
+
+enum class ReauthSource {
+    CODEWHISPERER,
+    TOOLKIT,
+    Q_CHAT,
+    LOGIN_BROWSER,
+    CODEWHISPERER_STATUSBAR,
+    CODECATALYST,
+    COMMON_LOGIN,
+    FRESH_AUTH,
 }
 
 fun deleteSsoConnection(connection: ProfileSsoManagedBearerSsoConnection) =

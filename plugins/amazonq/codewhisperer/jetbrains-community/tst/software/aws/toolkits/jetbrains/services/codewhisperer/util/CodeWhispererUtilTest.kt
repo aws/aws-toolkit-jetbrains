@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
@@ -51,7 +52,7 @@ class CodeWhispererUtilTest {
         CodeWhispererUtil.reconnectCodeWhisperer(projectExtension.project)
 
         verify {
-            reauthConnectionIfNeeded(projectExtension.project, mockConnection, isReAuth = true)
+            reauthConnectionIfNeeded(projectExtension.project, mockConnection, isReAuth = true, reauthSource = ReauthSource.CODEWHISPERER)
         }
     }
 }
