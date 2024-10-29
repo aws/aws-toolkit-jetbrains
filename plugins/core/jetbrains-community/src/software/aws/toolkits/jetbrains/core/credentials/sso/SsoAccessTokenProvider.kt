@@ -433,7 +433,7 @@ class SsoAccessTokenProvider(
         stageName = RefreshCredentialStage.VALIDATE_REGISTRATION
         if (registration == null) {
             val reason = "Unable to load client registration from cache: $stageName"
-            val message ="Null client registration: invalid or expired"
+            val message = "Null client registration: invalid or expired"
             sendRefreshCredentialsMetric(
                 currentToken,
                 reason = reason,

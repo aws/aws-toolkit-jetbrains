@@ -33,8 +33,6 @@ import software.aws.toolkits.core.utils.tryDirOp
 import software.aws.toolkits.core.utils.tryFileOp
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.telemetry.AuthTelemetry
-import software.aws.toolkits.telemetry.AwsTelemetry
-import software.aws.toolkits.telemetry.CredentialModification
 import software.aws.toolkits.telemetry.Result
 import java.io.InputStream
 import java.io.OutputStream
@@ -107,7 +105,7 @@ class DiskCache(
         val inputStream = clientRegistrationCache(cacheKey).tryInputStreamIfExists()
         if (inputStream == null) {
             val stage = LoadCredentialStage.ACCESS_FILE
-            LOG.warn("Failed to load ClientRegistration")
+            LOG.warn("Failed to load Client Registration")
             AuthTelemetry.modifyConnection(
                 action = "Load cache file",
                 source = "loadClientRegistration",
@@ -151,7 +149,7 @@ class DiskCache(
         } catch (e: Exception) {
             AuthTelemetry.modifyConnection(
                 action = "Delete cache file",
-                source =  "invalidateAccessToken",
+                source = "invalidateAccessToken",
                 result = Result.Failed,
                 reason = "Failed to invalidate Access Token",
                 reasonDesc = e.message
@@ -220,29 +218,29 @@ class DiskCache(
 
     private fun loadClientRegistration(inputStream: InputStream): ClientRegistration? {
         var stage = LoadCredentialStage.VALIDATE_CREDENTIALS
-        try{
+        try {
             val clientRegistration = objectMapper.readValue<ClientRegistration>(inputStream)
             stage = LoadCredentialStage.CHECK_EXPIRATION
             if (clientRegistration.expiresAt.isNotExpired()) {
                 return clientRegistration
             } else {
-                LOG.warn("ClientRegistration is expired")
+                LOG.warn("Client Registration is expired")
                 AuthTelemetry.modifyConnection(
                     action = "Validate Credentials",
                     source = "loadClientRegistration",
                     result = Result.Failed,
-                    reason = "Failed to load ClientRegistration",
+                    reason = "Failed to load Client Registration",
                     reasonDesc = "Load Step:$stage failed: Client Registration is expired"
                 )
                 return null
             }
         } catch (e: Exception) {
-            LOG.warn("ClientRegistraion is invalid")
+            LOG.warn("Client Registraion is invalid")
             AuthTelemetry.modifyConnection(
                 action = "Validate Credentials",
                 source = "loadClientRegistration",
                 result = Result.Failed,
-                reason = "Failed to load ClientRegistration",
+                reason = "Failed to load Client Registration",
                 reasonDesc = "Load Step:$stage failed: Client Registration file is invalid"
             )
             return null
