@@ -35,10 +35,6 @@ configurations {
         // IDE provides Kotlin
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.jetbrains.kotlinx")
-
-        exclude(group = "com.fasterxml.jackson.core")
-        exclude(group = "com.fasterxml.jackson.module", "jackson-module-kotlin")
-        exclude(group = "com.fasterxml.jackson.dataformat", "jackson-dataformat-yaml")
     }
 
     configureEach {

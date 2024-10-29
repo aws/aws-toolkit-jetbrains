@@ -84,11 +84,16 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
     }.orEmpty()
 
     override fun listCrossFileCandidate(target: PsiFile): List<VirtualFile> {
-        val targetFile = target.virtualFile
+        /**
+         * [PsiFile.getVirtualFile]
+         * PsiFile.virtualFile will return the virtual file, or null if the file exists only in memory
+         * If you want to get a non-null virtual file consider using FileViewProvider. getVirtualFile()
+         */
+        val targetVirtualFile = target.virtualFile ?: target.viewProvider.virtualFile
 
         val openedFiles = runReadAction {
             FileEditorManager.getInstance(target.project).openFiles.toList().filter {
-                it.name != target.virtualFile.name &&
+                it.name != targetVirtualFile.name &&
                     isSameDialect(it.extension) &&
                     !isTestFile(it, target.project)
             }
@@ -96,7 +101,7 @@ abstract class CodeWhispererFileCrawler : FileCrawler {
 
         val fileToFileDistanceList = runReadAction {
             openedFiles.map {
-                return@map it to CodeWhispererFileCrawler.getFileDistance(fileA = targetFile, fileB = it)
+                return@map it to CodeWhispererFileCrawler.getFileDistance(fileA = targetVirtualFile, fileB = it)
             }
         }
 
