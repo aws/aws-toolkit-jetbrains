@@ -655,6 +655,9 @@ class InlineChatController(
                     errorMessage = "Error processing request; please try again"
                 }
                 .onEach { event: ChatMessage ->
+                    if (event.message?.isNotEmpty() == true && prevMessage.isEmpty()) {
+                        firstResponseLatency = (System.currentTimeMillis() - startTime).toDouble()
+                    }
                     if (event.message?.isNotEmpty() == true && prevMessage != event.message) {
                         mutex.withLock {
                             if (event.codeReference?.isNotEmpty() == true && !isReferenceAllowed) {
@@ -677,9 +680,6 @@ class InlineChatController(
                             }
                             prevMessage = unescape(event.message)
                         }
-                    }
-                    if (messages.isEmpty()) {
-                        firstResponseLatency = (System.currentTimeMillis() - startTime).toDouble()
                     }
                     messages.add(event)
                 }
