@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUr
 import software.amazon.awssdk.services.codewhispererruntime.model.Dimension
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.InlineChatUserDecision
 import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEvaluationsResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventResponse
@@ -185,6 +186,21 @@ interface CodeWhispererClientAdaptor : Disposable {
         modificationPercentage: Double,
         hasProjectLevelContext: Boolean?,
         customization: CodeWhispererCustomization?,
+    ): SendTelemetryEventResponse
+
+    fun sendInlineChatTelemetry(
+        requestId: String,
+        inputLength: Int?,
+        numSelectedLines: Int?,
+        codeIntent: Boolean?,
+        userDecision: InlineChatUserDecision?,
+        responseStartLatency: Double?,
+        responseEndLatency: Double?,
+        numSuggestionAddChars: Int?,
+        numSuggestionAddLines: Int?,
+        numSuggestionDelChars: Int?,
+        numSuggestionDelLines: Int?,
+        programmingLanguage: String?,
     ): SendTelemetryEventResponse
 
     companion object {
@@ -581,6 +597,41 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 customization?.arn?.let { arn ->
                     it.customizationArn(arn)
                 }
+            }
+        }
+        requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+        requestBuilder.userContext(codeWhispererUserContext())
+    }
+
+    override fun sendInlineChatTelemetry(
+        requestId: String,
+        inputLength: Int?,
+        numSelectedLines: Int?,
+        codeIntent: Boolean?,
+        userDecision: InlineChatUserDecision?,
+        responseStartLatency: Double?,
+        responseEndLatency: Double?,
+        numSuggestionAddChars: Int?,
+        numSuggestionAddLines: Int?,
+        numSuggestionDelChars: Int?,
+        numSuggestionDelLines: Int?,
+        programmingLanguage: String?,
+    ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
+        requestBuilder.telemetryEvent { telemetryEventBuilder ->
+            telemetryEventBuilder.inlineChatEvent {
+                it.requestId(requestId)
+                it.inputLength(inputLength)
+                it.numSelectedLines(numSelectedLines)
+                it.codeIntent(codeIntent)
+                it.userDecision(userDecision)
+                it.responseStartLatency(responseStartLatency)
+                it.responseEndLatency(responseEndLatency)
+                it.numSuggestionAddChars(numSuggestionAddChars)
+                it.numSuggestionAddLines(numSuggestionAddLines)
+                it.numSuggestionDelChars(numSuggestionDelChars)
+                it.numSuggestionDelLines(numSuggestionDelLines)
+                if (programmingLanguage != null) it.programmingLanguage { langBuilder -> langBuilder.languageName(programmingLanguage) }
+                it.timestamp(Instant.now())
             }
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())

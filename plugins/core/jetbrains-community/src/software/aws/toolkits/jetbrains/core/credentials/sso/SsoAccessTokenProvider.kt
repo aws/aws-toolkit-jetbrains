@@ -26,6 +26,7 @@ import software.aws.toolkits.jetbrains.core.webview.getAuthType
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.jetbrains.utils.sleepWithCancellation
 import software.aws.toolkits.resources.AwsCoreBundle
+import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.AuthType
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
@@ -167,7 +168,24 @@ class SsoAccessTokenProvider(
             pollForDAGToken()
         }
 
-        saveAccessToken(token)
+        try {
+            saveAccessToken(token)
+            AuthTelemetry.modifyConnection(
+                action = "Write file",
+                source = "accessToken",
+                result = Result.Succeeded
+            )
+        } catch (e: Exception) {
+            getLogger<SsoAccessTokenProvider>().warn("Failed to save access token ${e.message}")
+            AuthTelemetry.modifyConnection(
+                action = "Write file",
+                source = "accessToken",
+                result = Result.Failed,
+                reason = "Failed to write AccessToken to cache",
+                reasonDesc = e.message ?: e::class.java.name,
+            )
+            throw e
+        }
 
         return token
     }
@@ -192,7 +210,24 @@ class SsoAccessTokenProvider(
             scopes
         )
 
-        saveClientRegistration(registeredClient)
+        try {
+            saveClientRegistration(registeredClient)
+            AuthTelemetry.modifyConnection(
+                action = "Write file",
+                source = "registerDAGClient",
+                result = Result.Succeeded
+            )
+        } catch (e: Exception) {
+            getLogger<SsoAccessTokenProvider>().warn("Failed to save client registration ${e.message}")
+            AuthTelemetry.modifyConnection(
+                action = "Write file",
+                source = "registerDAGClient",
+                result = Result.Failed,
+                reason = "Failed to write DeviceAuthorizationClientRegistration to cache",
+                reasonDesc = e.message ?: e::class.java.name
+            )
+            throw e
+        }
 
         return registeredClient
     }
@@ -227,7 +262,24 @@ class SsoAccessTokenProvider(
             redirectUris = PKCE_REDIRECT_URIS
         )
 
-        saveClientRegistration(registeredClient)
+        try {
+            saveClientRegistration(registeredClient)
+            AuthTelemetry.modifyConnection(
+                action = "Write file",
+                source = "registerPkceClient",
+                result = Result.Succeeded
+            )
+        } catch (e: Exception) {
+            getLogger<SsoAccessTokenProvider>().warn("Failed to save client registration${e.message}")
+            AuthTelemetry.modifyConnection(
+                action = "Write file",
+                source = "registerPkceClient",
+                result = Result.Failed,
+                reason = "Failed to write PKCEClientRegistration to cache",
+                reasonDesc = e.message ?: e::class.java.name
+            )
+            throw e
+        }
 
         return registeredClient
     }
@@ -362,33 +414,48 @@ class SsoAccessTokenProvider(
     }
 
     fun refreshToken(currentToken: AccessToken): AccessToken {
+        var stageName = RefreshCredentialStage.VALIDATE_REFRESH_TOKEN
         if (currentToken.refreshToken == null) {
             val message = "Requested token refresh, but refresh token was null"
             sendRefreshCredentialsMetric(
                 currentToken,
-                reason = "Null refresh token",
+                reason = "Refresh access token request failed: $stageName",
                 reasonDesc = message,
                 result = Result.Failed
             )
             throw InvalidRequestException.builder().message(message).build()
         }
 
-        val registration = when (currentToken) {
-            is DeviceAuthorizationGrantToken -> loadDagClientRegistration()
-            is PKCEAuthorizationGrantToken -> loadPkceClientRegistration()
+        stageName = RefreshCredentialStage.LOAD_REGISTRATION
+        val registration = try {
+            when (currentToken) {
+                is DeviceAuthorizationGrantToken -> loadDagClientRegistration()
+                is PKCEAuthorizationGrantToken -> loadPkceClientRegistration()
+            }
+        } catch (e: Exception) {
+            val message = e.message ?: "$stageName: ${e::class.java.name}"
+            sendRefreshCredentialsMetric(
+                currentToken,
+                reason = "Refresh access token request failed: $stageName",
+                reasonDesc = message,
+                result = Result.Failed
+            )
+            throw InvalidClientException.builder().message(message).cause(e).build()
         }
+
+        stageName = RefreshCredentialStage.VALIDATE_REGISTRATION
         if (registration == null) {
             val message = "Unable to load client registration from cache"
             sendRefreshCredentialsMetric(
                 currentToken,
-                reason = "Null client registration",
+                reason = "Refresh access token request failed: $stageName",
                 reasonDesc = message,
                 result = Result.Failed
             )
             throw InvalidClientException.builder().message(message).build()
         }
 
-        var stageName = RefreshCredentialStage.CREATE_TOKEN
+        stageName = RefreshCredentialStage.CREATE_TOKEN
         try {
             val newToken = client.createToken {
                 it.clientId(registration.clientId)
@@ -419,7 +486,6 @@ class SsoAccessTokenProvider(
                 is AwsServiceException -> e.requestId()
                 else -> null
             }
-
             // AwsServiceException#message will automatically pull in AwsServiceException#awsErrorDetails
             // we expect messages for SsoOidcException to be populated in e.message using execution executor added in
             // https://github.com/aws/aws-toolkit-jetbrains/commit/cc9ed87fa9391dd39ac05cbf99b4437112fa3d10
@@ -432,11 +498,15 @@ class SsoAccessTokenProvider(
                 requestId = requestId,
                 result = Result.Failed
             )
+            getLogger<SsoAccessTokenProvider>().warn("RefreshAccessTokenFailed: ${e.message}")
             throw e
         }
     }
 
     private enum class RefreshCredentialStage {
+        VALIDATE_REFRESH_TOKEN,
+        LOAD_REGISTRATION,
+        VALIDATE_REGISTRATION,
         CREATE_TOKEN,
         GET_TOKEN_DETAILS,
         SAVE_TOKEN,
@@ -457,7 +527,6 @@ class SsoAccessTokenProvider(
             is DeviceAuthorizationClientRegistration -> {
                 cache.saveClientRegistration(dagClientRegistrationCacheKey, registration)
             }
-
             is PKCEClientRegistration -> {
                 cache.saveClientRegistration(pkceClientRegistrationCacheKey, registration)
             }
@@ -474,7 +543,6 @@ class SsoAccessTokenProvider(
             is DeviceAuthorizationGrantToken -> {
                 cache.saveAccessToken(dagAccessTokenCacheKey, token)
             }
-
             is PKCEAuthorizationGrantToken -> cache.saveAccessToken(pkceAccessTokenCacheKey, token)
         }
     }

@@ -26,6 +26,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.maybeReauthProviderIfNeeded
@@ -171,7 +172,7 @@ object CodeWhispererUtil {
         if (!isQExpired(project)) return false
         val tokenProvider = tokenProvider(project) ?: return false
         return try {
-            maybeReauthProviderIfNeeded(project, tokenProvider) {
+            maybeReauthProviderIfNeeded(project, ReauthSource.CODEWHISPERER, tokenProvider) {
                 runInEdt {
                     if (!CodeWhispererService.hasReAuthPromptBeenShown()) {
                         notifyConnectionExpiredRequestReauth(project)
@@ -256,7 +257,7 @@ object CodeWhispererUtil {
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
         if (connection !is ManagedBearerSsoConnection) return
         pluginAwareExecuteOnPooledThread {
-            reauthConnectionIfNeeded(project, connection, isReAuth = true)
+            reauthConnectionIfNeeded(project, connection, isReAuth = true, reauthSource = ReauthSource.CODEWHISPERER)
         }
     }
 
