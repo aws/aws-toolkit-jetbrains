@@ -8,7 +8,6 @@ import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
 import com.intellij.diff.contents.EmptyContent
 import com.intellij.diff.requests.SimpleDiffRequest
-import com.intellij.diff.util.DiffUserDataKeys
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.WriteCommandAction
@@ -225,7 +224,6 @@ class FeatureDevController(
                     }
 
                     val request = SimpleDiffRequest(message.filePath, leftDiffContent, rightDiffContent, null, null)
-                    request.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true)
 
                     DiffManager.getInstance().showDiff(project, request)
                 }
