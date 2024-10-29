@@ -26,6 +26,7 @@ import software.aws.toolkits.jetbrains.core.webview.getAuthType
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.jetbrains.utils.sleepWithCancellation
 import software.aws.toolkits.resources.AwsCoreBundle
+import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.AuthType
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
@@ -171,14 +172,18 @@ class SsoAccessTokenProvider(
             saveAccessToken(token)
         } catch (e: Exception) {
             getLogger<SsoAccessTokenProvider>().warn("Failed to save access token", e)
-            AwsTelemetry.saveCredentials(
+            AuthTelemetry.modifyConnection(
+                action = "Save file",
+                source = "accessToken",
                 result = Result.Failed,
                 reason = "Failed to write AccessToken to cache",
                 reasonDesc = e.message,
             )
             throw e
         }
-        AwsTelemetry.saveCredentials(
+        AuthTelemetry.modifyConnection(
+            action = "Save file",
+            source = "accessToken",
             result = Result.Succeeded
         )
         return token
@@ -405,17 +410,16 @@ class SsoAccessTokenProvider(
             val message = "Requested token refresh, but refresh token was null"
             sendRefreshCredentialsMetric(
                 currentToken,
-                reason = "Null refresh token: $stageName",
-                reasonDesc = "$stageName: $message",
+                reason = "Refresh access token request failed: $stageName",
+                reasonDesc = message,
                 result = Result.Failed
             )
             throw InvalidRequestException.builder().message(message).build()
         }
 
         stageName = RefreshCredentialStage.LOAD_REGISTRATION
-        var registration: ClientRegistration? = null
-        try {
-            registration = when (currentToken) {
+        val registration: ClientRegistration?
+        try { registration = when (currentToken) {
                 is DeviceAuthorizationGrantToken -> loadDagClientRegistration()
                 is PKCEAuthorizationGrantToken -> loadPkceClientRegistration()
             }
@@ -423,7 +427,7 @@ class SsoAccessTokenProvider(
             val message = e.message ?: "$stageName: ${e::class.java.name}"
             sendRefreshCredentialsMetric(
                 currentToken,
-                reason = "Failed to load client registration: $stageName",
+                reason = "Refresh access token request failed: $stageName",
                 reasonDesc = message,
                 result = Result.Failed
             )
@@ -432,12 +436,11 @@ class SsoAccessTokenProvider(
 
         stageName = RefreshCredentialStage.VALIDATE_REGISTRATION
         if (registration == null) {
-            val reason = "Unable to load client registration from cache: $stageName"
             val message = "Null client registration: invalid or expired"
             sendRefreshCredentialsMetric(
                 currentToken,
-                reason = reason,
-                reasonDesc = "$stageName: $message",
+                reason = "Refresh access token request failed: $stageName",
+                reasonDesc = message,
                 result = Result.Failed
             )
             throw InvalidClientException.builder().message(message).build()
