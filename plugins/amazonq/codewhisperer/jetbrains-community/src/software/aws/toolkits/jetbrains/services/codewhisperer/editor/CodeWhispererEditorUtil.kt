@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.editor
 
-import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -74,7 +73,7 @@ object CodeWhispererEditorUtil {
     private fun getFileName(psiFile: PsiFile): String =
         psiFile.name.substring(0, psiFile.name.length.coerceAtMost(CodeWhispererConstants.FILENAME_CHARS_LIMIT))
 
-    fun getRelativePathToContentRoot(editor: Editor): String? = ReadAction.compute<String?, Throwable> {
+    fun getRelativePathToContentRoot(editor: Editor): String? =
         editor.project?.let { project ->
             FileDocumentManager.getInstance().getFile(editor.document)?.let { vFile ->
                 val fileIndex = ProjectFileIndex.getInstance(project)
@@ -84,7 +83,6 @@ object CodeWhispererEditorUtil {
                 }
             }
         }
-    }
 
     fun getPopupPositionAboveText(editor: Editor, popup: JBPopup, offset: Int): Point {
         val textAbsolutePosition = editor.offsetToXY(offset)
