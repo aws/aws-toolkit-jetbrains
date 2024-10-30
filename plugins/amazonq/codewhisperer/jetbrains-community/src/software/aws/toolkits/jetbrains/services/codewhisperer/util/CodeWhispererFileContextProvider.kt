@@ -379,8 +379,12 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         }
     }
 
-    // takeLast(11) will extract 10 lines (exclusing current line) of left context as the query parameter
-    fun generateQuery(fileContext: FileContextInfo) = fileContext.caretContext.leftFileContext.split("\n").takeLast(11).joinToString("\n")
+    // takeLast NUMBER_OF_LINE_IN_CHUNK of lines (exclusing current line) in left context as the query
+    fun generateQuery(fileContext: FileContextInfo) = fileContext.caretContext.leftFileContext
+        .split("\n")
+        .dropLast(1)
+        .takeLast(CodeWhispererConstants.CrossFile.NUMBER_OF_LINE_IN_CHUNK)
+        .joinToString("\n")
 
     companion object {
         private val LOG = getLogger<DefaultCodeWhispererFileContextProvider>()
