@@ -275,6 +275,7 @@ fun reauthConnectionIfNeeded(
                         source = source,
                     )
                 }
+                hasSeenFirstNetworkError = false
             } catch (e: Exception) {
                 if (isReAuth) {
                     val result = if (e is ProcessCanceledException) Result.Cancelled else Result.Failed
@@ -326,7 +327,7 @@ fun maybeReauthProviderIfNeeded(
                 return runUnderProgressIfNeeded(project, AwsCoreBundle.message("credentials.refreshing"), true) {
                     tokenProvider.resolveToken()
                     BearerTokenProviderListener.notifyCredUpdate(tokenProvider.id)
-                    hasNotifiedNetworkErrorOnce = false
+                    hasSeenFirstNetworkError = false
                     return@runUnderProgressIfNeeded false
                 }
             } catch (e: Exception) {
@@ -339,8 +340,8 @@ fun maybeReauthProviderIfNeeded(
                     }
                     e is UnknownHostException || e.message?.contains("Unable to execute HTTP request") == true -> {
                         getLogger<ToolkitAuthManager>().warn(e) { "Failed to refresh token" }
-                        if (!hasNotifiedNetworkErrorOnce) {
-                            hasNotifiedNetworkErrorOnce = true
+                        if (!hasSeenFirstNetworkError) {
+                            hasSeenFirstNetworkError = true
                             notifyInfo(
                                 message("general.auth.network.error"),
                                 message("general.auth.network.error.message"),
@@ -431,7 +432,7 @@ private fun recordAddConnection(
     }
 }
 
-private var hasNotifiedNetworkErrorOnce = false
+private var hasSeenFirstNetworkError = false
 
 data class ConnectionMetadata(
     val sourceId: String? = null,
