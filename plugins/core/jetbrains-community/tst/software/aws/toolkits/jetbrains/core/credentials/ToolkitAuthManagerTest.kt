@@ -17,6 +17,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.kotlin.doThrow
 import software.amazon.awssdk.auth.token.credentials.SdkToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
@@ -55,7 +56,9 @@ class ToolkitAuthManagerTest {
     @Test
     fun `test NEEDS_REFRESH state with network error - first occurrence`() {
         whenever(tokenProvider.state()).thenReturn(BearerTokenAuthState.NEEDS_REFRESH)
-        whenever(tokenProvider.resolveToken()).thenThrow(RuntimeException(UnknownHostException("Test network error")))
+        doThrow(RuntimeException("Unable to execute HTTP request"))
+            .`when`(tokenProvider)
+            .resolveToken()
 
         val result = maybeReauthProviderIfNeeded(
             project,
@@ -78,7 +81,9 @@ class ToolkitAuthManagerTest {
     @Test
     fun `test NEEDS_REFRESH state with network error - subsequent occurrence`() {
         whenever(tokenProvider.state()).thenReturn(BearerTokenAuthState.NEEDS_REFRESH)
-        whenever(tokenProvider.resolveToken()).thenThrow(RuntimeException(UnknownHostException("Test network error")))
+        doThrow(RuntimeException("Unable to execute HTTP request"))
+            .`when`(tokenProvider)
+            .resolveToken()
 
         // First call to set the internal flag
         maybeReauthProviderIfNeeded(
@@ -114,7 +119,10 @@ class ToolkitAuthManagerTest {
         whenever(tokenProvider.state()).thenReturn(BearerTokenAuthState.NEEDS_REFRESH)
 
         // First trigger a network error
-        whenever(tokenProvider.resolveToken()).thenThrow(RuntimeException(UnknownHostException("Test network error")))
+        doThrow(RuntimeException("Unable to execute HTTP request"))
+            .`when`(tokenProvider)
+            .resolveToken()
+
         maybeReauthProviderIfNeeded(
             project,
             ReauthSource.TOOLKIT,
@@ -141,7 +149,9 @@ class ToolkitAuthManagerTest {
         notificationShown = false
 
         // Now trigger another network error - should show notification again
-        whenever(tokenProvider.resolveToken()).thenThrow(RuntimeException(UnknownHostException("Test network error")))
+        doThrow(RuntimeException("Unable to execute HTTP request"))
+            .`when`(tokenProvider)
+            .resolveToken()
         maybeReauthProviderIfNeeded(
             project,
             ReauthSource.TOOLKIT,
