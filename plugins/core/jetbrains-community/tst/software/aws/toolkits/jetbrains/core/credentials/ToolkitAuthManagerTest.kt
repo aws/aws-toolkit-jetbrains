@@ -5,32 +5,27 @@ package software.aws.toolkits.jetbrains.core.credentials
 
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ApplicationExtension
-import io.mockk.clearAllMocks
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import io.mockk.mockkStatic
-import io.mockk.verify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockkObject
+import io.mockk.mockkStatic
 import io.mockk.runs
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import io.mockk.verify
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
-import software.amazon.awssdk.auth.token.credentials.SdkToken
+import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.AwsCoreBundle.message
-import java.net.UnknownHostException
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
@@ -47,7 +42,7 @@ class ToolkitAuthManagerTest {
         tokenProvider = mock()
         reauthCallCount = 0
         val field = Class.forName("software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManagerKt")
-            .getDeclaredField("hasNotifiedNetworkErrorOnce")
+            .getDeclaredField("hasSeenFirstNetworkError")
         field.isAccessible = true
         field.set(null, false)
 
@@ -58,7 +53,6 @@ class ToolkitAuthManagerTest {
         } just runs
         every { BearerTokenProviderListener.notifyCredUpdate(any<String>()) } just runs
     }
-
 
     @Test
     fun `test NEEDS_REFRESH state with network error - first occurrence`() {
@@ -75,7 +69,7 @@ class ToolkitAuthManagerTest {
 
         assertFalse(result)
         assertEquals(0, reauthCallCount)
-        verify(exactly = 1){
+        verify(exactly = 1) {
             notifyInfo(
                 message("general.auth.network.error"),
                 message("general.auth.network.error.message"),
