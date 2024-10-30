@@ -314,7 +314,7 @@ fun maybeReauthProviderIfNeeded(
     onReauthRequired: (SsoOidcException?) -> Any,
 ): Boolean {
     val state = tokenProvider.state()
-    return when (state) {
+    when (state) {
         BearerTokenAuthState.NOT_AUTHENTICATED -> {
             getLogger<ToolkitAuthManager>().info { "Token provider NOT_AUTHENTICATED, requesting login" }
             onReauthRequired(null)
