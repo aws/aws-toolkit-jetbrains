@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.telemetry.otel
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.ApplicationExtension
+import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.TraceId
 import io.opentelemetry.context.Context
 import io.opentelemetry.extension.kotlin.asContextElement
@@ -17,11 +18,16 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.AfterEachCallback
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.RegisterExtension
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.MethodSource
 import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -29,13 +35,29 @@ import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.jetbrains.utils.spinUntil
+import software.aws.toolkits.telemetry.MetricResult
+import software.aws.toolkits.telemetry.Telemetry
+import java.time.Instant
 import java.util.concurrent.TimeUnit
+import java.util.stream.Stream
 
 @ExtendWith(ApplicationExtension::class)
 class OtelBaseTest {
     private companion object {
         @RegisterExtension
         val otelExtension = OtelExtension()
+
+        private fun spanEndArgs() = Stream.of(
+            Arguments.of("end()", { it: Span -> it.end() }),
+            Arguments.of("end(long, TimeUnit)", { it: Span -> it.end(1, TimeUnit.SECONDS) }),
+            Arguments.of("end(Instant)", { it: Span -> it.end(Instant.now()) }),
+        )
+
+        @JvmStatic
+        fun `AbstractBaseSpan#end() throws if attributes are missing`() = spanEndArgs()
+
+        @JvmStatic
+        fun `AbstractBaseSpan#end() does not throw if all required attributes are present`() = spanEndArgs()
     }
 
     @Test
@@ -266,6 +288,23 @@ class OtelBaseTest {
             assertThat(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
             assertThat(child.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY))
         }
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource
+    fun `AbstractBaseSpan#end() throws if attributes are missing`(_name: String, block: Span.() -> Unit) {
+        val span = Telemetry.aws.openUrl.startSpan()
+        val e = assertThrows<Exception> { block(span) }
+        assertThat(e.message).contains("aws_openUrl is missing required fields: result")
+    }
+
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource
+    fun `AbstractBaseSpan#end() does not throw if all required attributes are present`(_name: String, block: Span.() -> Unit) {
+        val span = Telemetry.aws.openUrl.startSpan()
+        span.result(MetricResult.Succeeded)
+        assertDoesNotThrow { block(span) }
     }
 
     private fun spanBuilder(tracer: String, spanName: String) = DefaultSpanBuilder(otelExtension.sdk.sdk.getTracer(tracer).spanBuilder(spanName))
