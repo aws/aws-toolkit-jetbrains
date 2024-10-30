@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fix inline chat default key binding not working on windows and linux"
-}
