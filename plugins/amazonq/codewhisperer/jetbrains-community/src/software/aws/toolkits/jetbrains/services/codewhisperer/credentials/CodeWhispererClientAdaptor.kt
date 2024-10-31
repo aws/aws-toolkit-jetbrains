@@ -630,7 +630,8 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 it.numSuggestionAddLines(numSuggestionAddLines)
                 it.numSuggestionDelChars(numSuggestionDelChars)
                 it.numSuggestionDelLines(numSuggestionDelLines)
-                if (programmingLanguage != null) it.programmingLanguage { langBuilder -> langBuilder.languageName(programmingLanguage) }
+                // TODO: looks like programmingLanguage was removed from InlineChatEvent in service-2.json?
+                // if (programmingLanguage != null) it.programmingLanguage { langBuilder -> langBuilder.languageName(programmingLanguage) }
                 it.timestamp(Instant.now())
             }
         }

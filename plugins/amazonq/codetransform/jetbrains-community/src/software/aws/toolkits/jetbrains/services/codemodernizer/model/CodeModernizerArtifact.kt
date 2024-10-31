@@ -29,15 +29,17 @@ open class CodeModernizerArtifact(
     private val patches: List<VirtualFile>,
     val summary: TransformationSummary,
     val summaryMarkdownFile: File,
+    val metrics: CodeModernizerMetrics,
 ) : CodeTransformDownloadArtifact {
     val patch: VirtualFile
         get() = patches.first()
 
     companion object {
-        private const val maxSupportedVersion = 1.0
+        private const val MAX_SUPPORTED_VERSION = 1.0
         private val tempDir = createTempDirectory("codeTransformArtifacts", null)
-        private const val manifestPathInZip = "manifest.json"
-        private const val summaryNameInZip = "summary.md"
+        private const val MANIFEST_FILE_NAME = "manifest.json"
+        private const val SUMMARY_FILE_NAME = "summary.md"
+        private const val METRICS_FILE_NAME = "metrics.json"
         val LOG = getLogger<CodeModernizerArtifact>()
         private val MAPPER = jacksonObjectMapper()
 
@@ -53,28 +55,29 @@ open class CodeModernizerArtifact(
                     throw RuntimeException("Could not unzip artifact")
                 }
                 val manifest = loadManifest()
-                if (manifest.version > maxSupportedVersion) {
+                if (manifest.version > MAX_SUPPORTED_VERSION) {
                     // If not supported we can still try to use it, i.e. the versions should largely be backwards compatible
                     LOG.warn { "Unsupported version: ${manifest.version}" }
                 }
                 val patches = extractPatches(manifest)
                 val summary = extractSummary(manifest)
                 val summaryMarkdownFile = getSummaryFile(manifest)
+                val metrics = loadMetrics()
                 if (patches.size != 1) throw RuntimeException("Expected 1 patch, but found ${patches.size}")
-                return CodeModernizerArtifact(zipPath, manifest, patches, summary, summaryMarkdownFile)
+                return CodeModernizerArtifact(zipPath, manifest, patches, summary, summaryMarkdownFile, metrics)
             }
             throw RuntimeException("Could not find artifact")
         }
 
         private fun extractSummary(manifest: CodeModernizerManifest): TransformationSummary {
-            val summaryFile = tempDir.toPath().resolve(manifest.summaryRoot).resolve(summaryNameInZip).toFile()
+            val summaryFile = tempDir.toPath().resolve(manifest.summaryRoot).resolve(SUMMARY_FILE_NAME).toFile()
             if (!summaryFile.exists() || summaryFile.isDirectory) {
                 throw RuntimeException("The summary in the downloaded zip had an unknown format")
             }
             return TransformationSummary(summaryFile.readText())
         }
 
-        private fun getSummaryFile(manifest: CodeModernizerManifest) = tempDir.toPath().resolve(manifest.summaryRoot).resolve(summaryNameInZip).toFile()
+        private fun getSummaryFile(manifest: CodeModernizerManifest) = tempDir.toPath().resolve(manifest.summaryRoot).resolve(SUMMARY_FILE_NAME).toFile()
 
         /**
          * Attempts to load the manifest from the zip file. Throws an exception if the manifest is not found or cannot be serialized.
@@ -82,7 +85,7 @@ open class CodeModernizerArtifact(
         private fun loadManifest(): CodeModernizerManifest {
             val manifestFile =
                 tempDir.listFiles()
-                    ?.firstOrNull { it.name.endsWith(manifestPathInZip) }
+                    ?.firstOrNull { it.name.endsWith(MANIFEST_FILE_NAME) }
                     ?: throw RuntimeException("Could not find manifest")
             try {
                 val manifest = MAPPER.readValue(manifestFile, CodeModernizerManifest::class.java)
@@ -94,6 +97,17 @@ open class CodeModernizerArtifact(
                 return manifest
             } catch (exception: JsonProcessingException) {
                 throw RuntimeException("Unable to deserialize the manifest")
+            }
+        }
+
+        private fun loadMetrics(): CodeModernizerMetrics {
+            try {
+                val metricsFile =
+                    tempDir.listFiles()
+                        ?.firstOrNull { it.name.endsWith(METRICS_FILE_NAME) }
+                return MAPPER.readValue(metricsFile, CodeModernizerMetrics::class.java)
+            } catch (exception: JsonProcessingException) {
+                throw RuntimeException("Unable to deserialize the metrics.json file")
             }
         }
 
