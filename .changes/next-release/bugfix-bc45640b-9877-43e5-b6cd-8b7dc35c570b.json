@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix inline chat shortcut hint breaking text selection on remote editors"
+}
