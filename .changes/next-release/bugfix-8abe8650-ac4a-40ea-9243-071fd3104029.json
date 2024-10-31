@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Amazon Q /dev: Fix additional retry attempt required on entering a prompt"
+  "description" : "Amazon Q /dev: Fix the issue resulting in the first request per conversation to /dev failing"
 }
