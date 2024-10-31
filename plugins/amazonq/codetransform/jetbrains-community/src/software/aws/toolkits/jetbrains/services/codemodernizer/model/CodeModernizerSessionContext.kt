@@ -53,13 +53,14 @@ const val MAVEN_DEFAULT_BUILD_DIRECTORY_NAME = "target"
 const val IDEA_DIRECTORY_NAME = ".idea"
 const val INVALID_SUFFIX_SHA = "sha1"
 const val INVALID_SUFFIX_REPOSITORIES = "repositories"
+const val ORACLE_DB = "ORACLE"
 data class CodeModernizerSessionContext(
     val project: Project,
     var configurationFile: VirtualFile? = null, // used to ZIP module
     val sourceJavaVersion: JavaSdkVersion, // always needed for startJob API
     val targetJavaVersion: JavaSdkVersion = JavaSdkVersion.JDK_17, // only one supported
     var customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS, // run unit tests by default
-    val sourceVendor: String = "ORACLE", // only one supported
+    val sourceVendor: String = ORACLE_DB, // only one supported
     val targetVendor: String? = null,
     val sourceServerName: String? = null,
     var schema: String? = null,

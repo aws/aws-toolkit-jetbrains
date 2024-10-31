@@ -123,7 +123,7 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
                 haveProgressUpdates(plan)
             )
 
-        fun maybeAdd(stepId: ProgressStepId, string: String) {
+        fun maybeAddTransformationStep(stepId: ProgressStepId, string: String) {
             // don't show building or generate plan message for SQL conversions since we don't build or generate plan
             if (transformType == CodeTransformType.SQL_CONVERSION && (
                     string == message("codemodernizer.toolwindow.progress.building") ||
@@ -143,37 +143,37 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
                 TransformationStatus.PREPARING,
             )
         ) {
-            maybeAdd(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
-            maybeAdd(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
+            maybeAddTransformationStep(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
+            maybeAddTransformationStep(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
         }
         if (newState in setOf(TransformationStatus.PREPARED, newState == TransformationStatus.PLANNING)) {
-            maybeAdd(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
-            maybeAdd(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
-            maybeAdd(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
+            maybeAddTransformationStep(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
+            maybeAddTransformationStep(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
+            maybeAddTransformationStep(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
         }
         if (newState in setOf(
                 TransformationStatus.PLANNED,
                 TransformationStatus.TRANSFORMING,
             )
         ) {
-            maybeAdd(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
-            maybeAdd(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
-            maybeAdd(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
-            maybeAdd(ProgressStepId.TRANSFORMING, message("codemodernizer.toolwindow.progress.transforming"))
+            maybeAddTransformationStep(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
+            maybeAddTransformationStep(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
+            maybeAddTransformationStep(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
+            maybeAddTransformationStep(ProgressStepId.TRANSFORMING, message("codemodernizer.toolwindow.progress.transforming"))
         }
 
         if (newState == TransformationStatus.PAUSED) {
-            maybeAdd(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
-            maybeAdd(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
-            maybeAdd(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
-            maybeAdd(ProgressStepId.TRANSFORMING, message("codemodernizer.toolwindow.progress.transforming"))
+            maybeAddTransformationStep(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
+            maybeAddTransformationStep(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
+            maybeAddTransformationStep(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
+            maybeAddTransformationStep(ProgressStepId.TRANSFORMING, message("codemodernizer.toolwindow.progress.transforming"))
         }
 
         if (newState == TransformationStatus.RESUMED) {
-            maybeAdd(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
-            maybeAdd(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
-            maybeAdd(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
-            maybeAdd(ProgressStepId.TRANSFORMING, message("codemodernizer.toolwindow.progress.transforming"))
+            maybeAddTransformationStep(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
+            maybeAddTransformationStep(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
+            maybeAddTransformationStep(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
+            maybeAddTransformationStep(ProgressStepId.TRANSFORMING, message("codemodernizer.toolwindow.progress.transforming"))
         }
 
         if (newState in setOf(
@@ -181,10 +181,10 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
                 TransformationStatus.PARTIALLY_COMPLETED,
             )
         ) {
-            maybeAdd(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
-            maybeAdd(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
-            maybeAdd(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
-            maybeAdd(ProgressStepId.TRANSFORMING, message("codemodernizer.toolwindow.progress.transforming"))
+            maybeAddTransformationStep(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
+            maybeAddTransformationStep(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
+            maybeAddTransformationStep(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
+            maybeAddTransformationStep(ProgressStepId.TRANSFORMING, message("codemodernizer.toolwindow.progress.transforming"))
         }
 
         // Figure out if we should add plan steps

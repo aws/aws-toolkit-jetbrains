@@ -135,7 +135,7 @@ fun parseXmlDependenciesReport(pathToXmlDependency: Path): DependencyUpdatesRepo
 
 fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {
     if (sctFile == null) {
-        return SqlMetadataValidationResult(false, "No .sct metadata file found in the provided ZIP.")
+        return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.missing_sct_file"))
     }
     val fileContent = sctFile.readBytes().toString(Charsets.UTF_8)
     val xmlDeserializer = XmlMapper(JacksonXmlModule())
@@ -144,7 +144,7 @@ fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {
         sctMetadata = xmlDeserializer.readValue(fileContent, Any::class.java) as Map<*, *>
     } catch (e: Exception) {
         getLogger<CodeTransformChatController>().error { "Error parsing .sct metadata file; invalid XML encountered." }
-        return SqlMetadataValidationResult(false, "Invalid XML encountered.")
+        return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.invalid_sct"))
     }
 
     try {
@@ -190,7 +190,7 @@ fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {
         return SqlMetadataValidationResult(true, "", sourceVendor, targetVendor, sourceServerName, schemaNames)
     } catch (e: Exception) {
         getLogger<CodeTransformChatController>().error { "Error parsing .sct metadata file: $e" }
-        return SqlMetadataValidationResult(false, "Sorry, the .sct metadata file you provided appears to be invalid.")
+        return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.invalid_sct"))
     }
 }
 
