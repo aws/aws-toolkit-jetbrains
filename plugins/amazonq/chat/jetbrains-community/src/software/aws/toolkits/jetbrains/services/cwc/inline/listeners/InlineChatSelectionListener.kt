@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.inline.listeners
 
+import com.intellij.idea.AppMode
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.event.SelectionEvent
 import com.intellij.openapi.editor.event.SelectionListener
@@ -14,7 +15,7 @@ class InlineChatSelectionListener : SelectionListener, Disposable {
         val editor = e.editor
         val selectionModel = editor.selectionModel
 
-        if (selectionModel.hasSelection()) {
+        if (selectionModel.hasSelection() && !AppMode.isRemoteDevHost()) {
             inlineChatEditorHint.show(editor)
         } else {
             inlineChatEditorHint.hide()
