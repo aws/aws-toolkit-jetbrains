@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ApplicationExtension
 import io.mockk.every
@@ -41,10 +42,7 @@ class ToolkitAuthManagerTest {
         project = mock()
         tokenProvider = mock()
         reauthCallCount = 0
-        val field = Class.forName("software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManagerKt")
-            .getDeclaredField("hasSeenFirstNetworkError")
-        field.isAccessible = true
-        field.set(null, false)
+        PropertiesComponent.getInstance().setValue("aws.toolkit.hasSeenFirstNetworkError", false)
 
         mockkObject(BearerTokenProviderListener)
         mockkStatic("software.aws.toolkits.jetbrains.utils.NotificationUtilsKt")
