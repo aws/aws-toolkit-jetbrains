@@ -40,7 +40,10 @@ class DefaultSpanBuilder(delegate: SpanBuilder) : AbstractSpanBuilder<DefaultSpa
 }
 
 // temporary; will be generated
-abstract class BaseSpan<SpanType: AbstractBaseSpan<SpanType>>(context: Context?, delegate: Span) : AbstractBaseSpan<SpanType>(context, delegate as ReadWriteSpan)
+abstract class BaseSpan<SpanType : AbstractBaseSpan<SpanType>>(
+    context: Context?,
+    delegate: Span,
+) : AbstractBaseSpan<SpanType>(context, delegate as ReadWriteSpan)
 
 abstract class AbstractSpanBuilder<
     BuilderType : AbstractSpanBuilder<BuilderType, SpanType>,
