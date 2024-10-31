@@ -88,7 +88,7 @@ suspend fun FeatureDevController.onCodeGeneration(
         }
 
         // Atm this is the only possible path as codegen is mocked to return empty.
-        if (filePaths.size or deletedFiles.size == 0) {
+        if (filePaths.size == 0 && deletedFiles.size == 0) {
             messenger.sendAnswer(
                 tabId = tabId,
                 messageType = FeatureDevMessageType.Answer,

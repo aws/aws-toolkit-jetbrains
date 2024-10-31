@@ -18,4 +18,5 @@ interface InboundAppMessagesHandler {
     suspend fun processOpenDiff(message: IncomingFeatureDevMessage.OpenDiff)
     suspend fun processFileClicked(message: IncomingFeatureDevMessage.FileClicked)
     suspend fun processStopMessage(message: IncomingFeatureDevMessage.StopResponse)
+    suspend fun processStoreCodeResultMessageId(message: IncomingFeatureDevMessage.StoreMessageIdMessage)
 }

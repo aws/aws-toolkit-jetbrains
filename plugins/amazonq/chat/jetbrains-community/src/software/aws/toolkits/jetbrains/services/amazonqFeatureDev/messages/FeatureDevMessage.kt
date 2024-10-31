@@ -24,6 +24,11 @@ sealed interface IncomingFeatureDevMessage : FeatureDevBaseMessage {
         @JsonProperty("tabID") val tabId: String,
     ) : IncomingFeatureDevMessage
 
+    data class StoreMessageIdMessage(
+        val tabID: String,
+        val messageId: String,
+    ) : IncomingFeatureDevMessage
+
     data class NewTabCreated(
         val command: String,
         @JsonProperty("tabID") val tabId: String,

@@ -7,18 +7,22 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
+import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATION_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ConversationIdNotFoundException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MAX_PROJECT_SIZE_BYTES
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.IncomingFeatureDevMessage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAsyncEventProgress
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.updateFileComponent
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.resolveAndCreateOrUpdateFile
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.resolveAndDeleteFile
 import software.aws.toolkits.jetbrains.services.cwc.controller.ReferenceLogController
+import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
 
 class Session(val tabID: String, val project: Project) {
     var context: FeatureDevSessionContext
@@ -31,6 +35,7 @@ class Session(val tabID: String, val project: Project) {
     private var task: String = ""
     private val proxyClient: FeatureDevClient
     private val featureDevService: FeatureDevService
+    private var _codeResultMessageId: String? = null
 
     // retry session state vars
     private var codegenRetries: Int
@@ -86,20 +91,39 @@ class Session(val tabID: String, val project: Project) {
         )
     }
 
+    private fun storeCodeResultMessageId(message: IncomingFeatureDevMessage.StoreMessageIdMessage) {
+        val messageId = message.messageId
+        this.updateCodeResultMessageId(messageId)
+    }
+
+    private fun updateCodeResultMessageId(messageId: String) {
+        this._codeResultMessageId = messageId
+    }
+
+
     /**
      * Triggered by the Insert code follow-up button to apply code changes.
      */
-    fun insertChanges(filePaths: List<NewFileZipInfo>, deletedFiles: List<DeletedFileInfo>, references: List<CodeReferenceGenerated>) {
+    suspend fun insertChanges(filePaths: List<NewFileZipInfo>, deletedFiles: List<DeletedFileInfo>, references: List<CodeReferenceGenerated>, messenger: MessagePublisher) {
         val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
+        val newFilePaths = filePaths.filter { !it.rejected && !it.changeApplied }
+        val newDeletedFiles = deletedFiles.filter { !it.rejected && !it.changeApplied }
+        newFilePaths.forEach {
+            resolveAndCreateOrUpdateFile(selectedSourceFolder, it.zipFilePath, it.fileContent)
+            it.changeApplied = true
+        }
 
-        filePaths.forEach { resolveAndCreateOrUpdateFile(selectedSourceFolder, it.zipFilePath, it.fileContent) }
-
-        deletedFiles.forEach { resolveAndDeleteFile(selectedSourceFolder, it.zipFilePath) }
+        newDeletedFiles.forEach {
+            resolveAndDeleteFile(selectedSourceFolder, it.zipFilePath)
+            it.changeApplied = true
+        }
 
         ReferenceLogController.addReferenceLog(references, project)
-
         // Taken from https://intellij-support.jetbrains.com/hc/en-us/community/posts/206118439-Refresh-after-external-changes-to-project-structure-and-sources
         VfsUtil.markDirtyAndRefresh(true, true, true, context.selectedSourceFolder)
+        if (this._codeResultMessageId != null) {
+            messenger.updateFileComponent(this.tabID, filePaths, deletedFiles, this._codeResultMessageId!!)
+        }
     }
 
     suspend fun send(msg: String): Interaction {

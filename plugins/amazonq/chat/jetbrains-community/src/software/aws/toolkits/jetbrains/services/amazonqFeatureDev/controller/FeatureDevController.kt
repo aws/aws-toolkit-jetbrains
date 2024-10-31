@@ -93,6 +93,10 @@ class FeatureDevController(
         )
     }
 
+    override suspend fun processStoreCodeResultMessageId(message: IncomingFeatureDevMessage.StoreMessageIdMessage) {
+        storeCodeResultMessageId(message)
+    }
+
     override suspend fun processStopMessage(message: IncomingFeatureDevMessage.StopResponse) {
         handleStopMessage(message)
     }
@@ -244,6 +248,7 @@ class FeatureDevController(
         val fileToUpdate = message.filePath
         val session = getSessionInfo(message.tabId)
         val messageId = message.messageId
+        val action = message.actionName
 
         var filePaths: List<NewFileZipInfo> = emptyList()
         var deletedFiles: List<DeletedFileInfo> = emptyList()
@@ -253,10 +258,18 @@ class FeatureDevController(
                 deletedFiles = state.deletedFiles
             }
         }
-
-        // Mark the file as rejected or not depending on the previous state
-        filePaths.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
-        deletedFiles.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
+        if (action == "accept-change") {
+            session.insertChanges(
+                filePaths = filePaths.filter { it.zipFilePath == fileToUpdate },
+                deletedFiles = deletedFiles.filter { it.zipFilePath == fileToUpdate },
+                references = emptyList(),
+                messenger
+            )
+        } else {
+            // Mark the file as rejected or not depending on the previous state
+            filePaths.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
+            deletedFiles.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
+        }
 
         messenger.updateFileComponent(message.tabId, filePaths, deletedFiles, messageId)
     }
@@ -335,7 +348,8 @@ class FeatureDevController(
             session.insertChanges(
                 filePaths = filePaths.filterNot { it.rejected },
                 deletedFiles = deletedFiles.filterNot { it.rejected },
-                references = references
+                references = references,
+                messenger
             )
 
             messenger.sendAnswer(
@@ -544,6 +558,10 @@ class FeatureDevController(
                 }
             }
         }
+    }
+
+    private fun storeCodeResultMessageId(message: IncomingFeatureDevMessage.StoreMessageIdMessage) {
+        this.storeCodeResultMessageId(message)
     }
 
     private suspend fun handleChat(

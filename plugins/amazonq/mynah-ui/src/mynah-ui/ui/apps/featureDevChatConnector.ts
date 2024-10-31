@@ -28,7 +28,7 @@ export interface ConnectorProps {
     onUpdateAuthentication: (featureDevEnabled: boolean, codeTransformEnabled: boolean, authenticatingTabIDs: string[]) => void
     onNewTab: (tabType: TabType) => void
     tabsStorage: TabsStorage
-    onFileComponentUpdate: (tabID: string, filePaths: DiffTreeFileInfo[], deletedFiles: DiffTreeFileInfo[], messageId: string) => void
+    onFileComponentUpdate: (tabID: string, filePaths: DiffTreeFileInfo[], deletedFiles: DiffTreeFileInfo[], messageId: string, disableFileActions: boolean) => void
 }
 
 export class Connector {
@@ -154,6 +154,8 @@ export class Connector {
 
     private processCodeResultMessage = async (messageData: any): Promise<void> => {
         if (this.onChatAnswerReceived !== undefined) {
+            const messageId = messageData.messageID ?? messageData.triggerID ?? messageData.conversationID
+            // this.sendMessageToExtension({ command: 'store-code-result-message-id', tabID: messageData.tabID, messageId, tabType: 'featuredev' })
             const actions = getActions([
                 ...messageData.filePaths,
                 ...messageData.deletedFiles,
@@ -165,7 +167,7 @@ export class Connector {
                 canBeVoted: true,
                 codeReference: messageData.references,
                 // TODO get the backend to store a message id in addition to conversationID
-                messageId: messageData.messageID ?? messageData.triggerID ?? messageData.conversationID,
+                messageId,
                 fileList: {
                     rootFolderTitle: 'Changes',
                     filePaths: (messageData.filePaths as DiffTreeFileInfo[]).map(path => path.zipFilePath),
@@ -202,7 +204,7 @@ export class Connector {
 
     handleMessageReceive = async (messageData: any): Promise<void> => {
         if (messageData.type === 'updateFileComponent') {
-            this.onFileComponentUpdate(messageData.tabID, messageData.filePaths, messageData.deletedFiles, messageData.messageId)
+            this.onFileComponentUpdate(messageData.tabID, messageData.filePaths, messageData.deletedFiles, messageData.messageId, messageData.disableFileActions)
             return
         }
         if (messageData.type === 'errorMessage') {

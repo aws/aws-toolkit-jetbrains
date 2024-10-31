@@ -296,7 +296,8 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
             tabID: string,
             filePaths: DiffTreeFileInfo[],
             deletedFiles: DiffTreeFileInfo[],
-            messageId: string
+            messageId: string,
+            disableFileActions: boolean = false
         ) => {
             const updateWith: Partial<ChatItem> = {
                 type: ChatItemType.ANSWER,
@@ -304,8 +305,8 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
                     rootFolderTitle: 'Changes',
                     filePaths: filePaths.map(i => i.zipFilePath),
                     deletedFiles: deletedFiles.map(i => i.zipFilePath),
-                    details: getDetails(filePaths),
-                    actions: getActions([...filePaths, ...deletedFiles]),
+                    details: getDetails([...filePaths, ...deletedFiles]),
+                    actions: disableFileActions ? undefined : getActions([...filePaths, ...deletedFiles]),
                 },
             }
             mynahUI.updateChatAnswerWithMessageId(tabID, messageId, updateWith)

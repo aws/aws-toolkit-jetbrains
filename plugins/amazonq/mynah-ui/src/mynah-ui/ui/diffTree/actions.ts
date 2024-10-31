@@ -7,7 +7,13 @@ import { DiffTreeFileInfo } from './types'
 
 export function getDetails(filePaths: DiffTreeFileInfo[]): Record<string, TreeNodeDetails> {
     return filePaths.reduce((details, filePath) => {
-        if (filePath.rejected) {
+        if (filePath.changeApplied) {
+            details[filePath.zipFilePath] = {
+                status: 'success',
+                label: 'File accepted',
+                icon: MynahIcons.OK,
+            }
+        } else if (filePath.rejected) {
             details[filePath.zipFilePath] = {
                 status: 'error',
                 label: 'File rejected',
@@ -20,16 +26,37 @@ export function getDetails(filePaths: DiffTreeFileInfo[]): Record<string, TreeNo
 
 export function getActions(filePaths: DiffTreeFileInfo[]): Record<string, FileNodeAction[]> {
     return filePaths.reduce((actions, filePath) => {
-        actions[filePath.zipFilePath] = [filePath.rejected ? {
-            icon: MynahIcons.REVERT,
-            name: 'revert-rejection',
-            description: 'Revert rejection',
-        } : {
-            icon: MynahIcons.CANCEL_CIRCLE,
-            status: 'error',
-            name: 'reject-change',
-            description: 'Reject change',
-        }]
+        if (filePath.changeApplied) {
+            return actions
+        }
+
+        actions[filePath.zipFilePath] = [
+            {
+                icon: MynahIcons.OK,
+                status: 'success',
+                name: 'accept-change',
+                description: 'Accept file change',
+            }
+        ]
+
+        switch (filePath.rejected) {
+            case true:
+                actions[filePath.zipFilePath].push({
+                    icon: MynahIcons.REVERT,
+                    name: 'revert-rejection',
+                    description: 'Revert rejection',
+                })
+                break
+            case false:
+                actions[filePath.zipFilePath].push({
+                    icon: MynahIcons.CANCEL_CIRCLE,
+                    status: 'error',
+                    name: 'reject-change',
+                    description: 'Reject change',
+                })
+                break
+        }
+
         return actions
     }, {} as Record<string, FileNodeAction[]>)
 }
