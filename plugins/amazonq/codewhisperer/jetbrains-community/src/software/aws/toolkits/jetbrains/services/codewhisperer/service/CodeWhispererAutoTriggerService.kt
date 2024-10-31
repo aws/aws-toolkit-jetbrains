@@ -40,7 +40,7 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
 
     private var lastInvocationTime: Instant? = null
     private var lastInvocationLineNum: Int? = null
-    var timeAtLastCharTyped: Instant = Instant.now()
+    var timeAtLastCharTyped: Long = System.nanoTime()
         private set
 
     init {
@@ -54,7 +54,7 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
     // a util wrapper
     fun tryInvokeAutoTrigger(editor: Editor, triggerType: CodeWhispererAutomatedTriggerType): Job? {
         // only needed for Classifier group, thus calculate it lazily
-        timeAtLastCharTyped = Instant.now()
+        timeAtLastCharTyped = System.nanoTime()
         val classifierResult: ClassifierResult by lazy { shouldTriggerClassifier(editor, triggerType.telemetryType) }
 
         // we need classifier result for any type of triggering for classifier group for supported languages

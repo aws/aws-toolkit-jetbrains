@@ -332,9 +332,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     it.sessionId(responseContext.sessionId)
                     it.recommendationLatencyMilliseconds(e2eLatency)
                     it.triggerToResponseLatencyMilliseconds(requestContext.latencyContext.paginationFirstCompletionTime)
-                    it.perceivedLatencyMilliseconds(
-                        requestContext.latencyContext.getPerceivedLatency(requestContext.triggerTypeInfo.triggerType)
-                    )
+                    it.perceivedLatencyMilliseconds(requestContext.latencyContext.perceivedLatency)
                     it.suggestionState(suggestionState.toCodeWhispererSdkType())
                     it.timestamp(Instant.now())
                     it.suggestionReferenceCount(suggestionReferenceCount)
@@ -380,6 +378,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     it.sessionId(responseContext.sessionId)
                     it.recommendationLatencyMilliseconds(e2eLatency)
                     it.triggerToResponseLatencyMilliseconds(sessionContext.latencyContext.paginationFirstCompletionTime)
+                    it.perceivedLatencyMilliseconds(sessionContext.latencyContext.perceivedLatency)
                     it.suggestionState(suggestionState.toCodeWhispererSdkType())
                     it.timestamp(Instant.now())
                     it.suggestionReferenceCount(suggestionReferenceCount)

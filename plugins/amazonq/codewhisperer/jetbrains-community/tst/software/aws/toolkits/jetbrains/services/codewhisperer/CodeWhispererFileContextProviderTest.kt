@@ -31,6 +31,7 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import software.aws.toolkits.core.utils.test.aStringWithLineCount
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.project.EncoderServer
 import software.aws.toolkits.jetbrains.services.amazonq.project.InlineBm25Chunk
@@ -47,6 +48,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererRuby
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTsx
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTypeScript
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.DefaultCodeWhispererFileContextProvider
@@ -92,6 +95,44 @@ class CodeWhispererFileContextProviderTest {
 
         mockProjectContext = mock()
         project.replaceService(ProjectContextController::class.java, mockProjectContext, disposableRule.disposable)
+    }
+
+    @Test
+    fun `generateQuery should use last 50 lines (excluding the current line) of left context`() {
+        val fileContext = FileContextInfo(
+            CaretContext(
+                leftFileContext = aStringWithLineCount(100),
+                rightFileContext = "",
+                leftContextOnCurrentLine = ""
+            ),
+            "Foo.java",
+            CodeWhispererJava.INSTANCE,
+            ""
+        )
+
+        val actual = sut.generateQuery(fileContext)
+        val expected = aStringWithLineCount(lineCount = 50, start = 49)
+        assertThat(actual).isEqualTo(expected)
+        assertThat(actual.split("\n").size).isEqualTo(expected.split("\n").size)
+    }
+
+    @Test
+    fun `generateQuery should use last 50 lines (excluding the current line) of left context if current caret is at the beginning of the line`() {
+        val fileContext = FileContextInfo(
+            CaretContext(
+                leftFileContext = aStringWithLineCount(100) + "\n",
+                rightFileContext = "",
+                leftContextOnCurrentLine = ""
+            ),
+            "Foo.java",
+            CodeWhispererJava.INSTANCE,
+            ""
+        )
+
+        val actual = sut.generateQuery(fileContext)
+        val expected = aStringWithLineCount(lineCount = 50, start = 50)
+        assertThat(actual).isEqualTo(expected)
+        assertThat(actual.split("\n").size).isEqualTo(expected.split("\n").size)
     }
 
     @Test
