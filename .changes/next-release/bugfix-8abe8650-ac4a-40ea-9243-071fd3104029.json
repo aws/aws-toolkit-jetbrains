@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Amazon Q /dev: Fix additional retry attempt required on entering a prompt"
+}
