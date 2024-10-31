@@ -453,54 +453,31 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
                 content: 'Thanks for your feedback.',
             })
         },
-        onCodeBlockActionClicked: (
-            tabId: string,
-            messageId: string,
-            actionId: string,
-            data?: string,
-            code?: string,
-            type?: CodeSelectionType,
-            referenceTrackerInformation?: ReferenceTrackerInformation[],
-            eventId?: string,
-            codeBlockIndex?: number,
-            totalCodeBlocks?: number
+        onCodeInsertToCursorPosition: connector.onCodeInsertToCursorPosition,
+        onCopyCodeToClipboard: (
+            tabId,
+            messageId,
+            code,
+            type,
+            referenceTrackerInfo,
+            eventId,
+            codeBlockIndex,
+            totalCodeBlocks
         ) => {
-            switch (actionId) {
-                case 'insert-to-cursor':
-                    connector.onCodeInsertToCursorPosition(
-                        tabId,
-                        messageId,
-                        code,
-                        type,
-                        referenceTrackerInformation,
-                        eventId,
-                        codeBlockIndex,
-                        totalCodeBlocks,
-                        responseMetadata.get(messageId)?.[0] ?? undefined,
-                        responseMetadata.get(messageId)?.[1] ?? undefined
-                    )
-                    break
-                case 'copy':
-                    connector.onCopyCodeToClipboard(
-                        tabId,
-                        messageId,
-                        code,
-                        type,
-                        referenceTrackerInformation,
-                        eventId,
-                        codeBlockIndex,
-                        totalCodeBlocks,
-                        responseMetadata.get(messageId)?.[0] ?? undefined,
-                        responseMetadata.get(messageId)?.[1] ?? undefined
-                    )
-                    mynahUI.notify({
-                        type: NotificationType.SUCCESS,
-                        content: 'Selected code is copied to clipboard',
-                    })
-                    break
-                default:
-                    break
-            }
+            connector.onCopyCodeToClipboard(
+                tabId,
+                messageId,
+                code,
+                type,
+                referenceTrackerInfo,
+                eventId,
+                codeBlockIndex,
+                totalCodeBlocks
+            )
+            mynahUI.notify({
+                type: NotificationType.SUCCESS,
+                content: 'Selected code is copied to clipboard',
+            })
         },
         onChatItemEngagement: connector.triggerSuggestionEngagement,
         onSourceLinkClick: (tabId, messageId, link, mouseEvent) => {
