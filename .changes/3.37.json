@@ -1,0 +1,11 @@
+{
+  "date" : "2024-10-31",
+  "version" : "3.37",
+  "entries" : [ {
+    "type" : "bugfix",
+    "description" : "Amazon Q /dev: Fix the issue resulting in the first request per conversation to /dev failing"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix inline chat shortcut hint breaking text selection on remote editors"
+  } ]
+}
