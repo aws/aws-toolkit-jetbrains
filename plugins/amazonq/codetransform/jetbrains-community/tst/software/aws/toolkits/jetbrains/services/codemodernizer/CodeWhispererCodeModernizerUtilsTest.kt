@@ -403,6 +403,8 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
 
         val isValidMetadata = validateSctMetadata(tempFile)
         assertThat(isValidMetadata.valid).isFalse()
-        assertThat(isValidMetadata.errorReason.contains("I can only convert SQL for migrations to Aurora PostgreSQL or Amazon RDS for PostgreSQL target databases")).isTrue()
+        assertThat(
+            isValidMetadata.errorReason.contains("I can only convert SQL for migrations to Aurora PostgreSQL or Amazon RDS for PostgreSQL target databases")
+        ).isTrue()
     }
 }
