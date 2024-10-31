@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
@@ -340,13 +341,15 @@ fun maybeReauthProviderIfNeeded(
                     }
                     e is UnknownHostException || e.message?.contains("Unable to execute HTTP request") == true -> {
                         getLogger<ToolkitAuthManager>().warn(e) { "Failed to refresh token" }
-                        if (!hasSeenFirstNetworkError) {
-                            hasSeenFirstNetworkError = true
-                            notifyInfo(
-                                message("general.auth.network.error"),
-                                message("general.auth.network.error.message"),
-                                project
-                            )
+                        synchronized(networkErrorLock) {
+                            if (!hasSeenFirstNetworkError) {
+                                hasSeenFirstNetworkError = true
+                                notifyInfo(
+                                    message("general.auth.network.error"),
+                                    message("general.auth.network.error.message"),
+                                    project
+                                )
+                            }
                         }
                         return false
                     }
@@ -432,7 +435,11 @@ private fun recordAddConnection(
     }
 }
 
-private var hasSeenFirstNetworkError = false
+// Store network error state in IDE persistent storage to maintain across restarts
+private var hasSeenFirstNetworkError: Boolean
+    get() = PropertiesComponent.getInstance().getBoolean("aws.toolkit.hasSeenFirstNetworkError", false)
+    set(value) = PropertiesComponent.getInstance().setValue("aws.toolkit.hasSeenFirstNetworkError", value)
+private val networkErrorLock = Object()
 
 data class ConnectionMetadata(
     val sourceId: String? = null,
