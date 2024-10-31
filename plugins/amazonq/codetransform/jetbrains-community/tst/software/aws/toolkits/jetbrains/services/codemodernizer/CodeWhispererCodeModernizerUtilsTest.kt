@@ -348,7 +348,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
 
         val isValidMetadata = validateSctMetadata(tempFile)
         assertThat(isValidMetadata.valid).isFalse()
-        assertThat(isValidMetadata.errorReason.contains("the source DB must be Oracle")).isTrue()
+        assertThat(isValidMetadata.errorReason.contains("I can only convert SQL for migrations from an Oracle source database")).isTrue()
     }
 
     @Test
@@ -403,6 +403,6 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
 
         val isValidMetadata = validateSctMetadata(tempFile)
         assertThat(isValidMetadata.valid).isFalse()
-        assertThat(isValidMetadata.errorReason.contains("the target DB must be Aurora PostgreSQL or Amazon RDS for PostgreSQL")).isTrue()
+        assertThat(isValidMetadata.errorReason.contains("I can only convert SQL for migrations to Aurora PostgreSQL or Amazon RDS for PostgreSQL target databases")).isTrue()
     }
 }
