@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Amazon Q /dev: fix bug for first patch empty by reassign state"
+}
