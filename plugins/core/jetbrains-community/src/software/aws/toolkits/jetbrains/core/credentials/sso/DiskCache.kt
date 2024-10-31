@@ -106,7 +106,7 @@ class DiskCache(
         val inputStream = clientRegistrationCache(cacheKey).tryInputStreamIfExists()
         if (inputStream == null) {
             val stage = LoadCredentialStage.ACCESS_FILE
-            LOG.warn {./ grad"Failed to load Client Registration: cache file does not exist" }
+            LOG.warn { "Failed to load Client Registration: cache file does not exist" }
             AuthTelemetry.modifyConnection(
                 action = "Load cache file",
                 source = "loadClientRegistration",
