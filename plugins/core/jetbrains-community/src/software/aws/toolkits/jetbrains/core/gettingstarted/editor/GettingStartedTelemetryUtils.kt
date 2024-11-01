@@ -23,49 +23,36 @@ fun getConnectionCount(): Long {
 
 fun getEnabledConnectionsForTelemetry(project: Project?): Set<AuthFormId> {
     project ?: return emptySet()
-    val enabledConnections = mutableSetOf<AuthFormId>()
+    val enabledConnections = mutableSetOf<Any>()
 
-    val explorerConnection = checkIamConnectionValidity(project)
-    if (explorerConnection !is ActiveConnection.NotConnected) {
-        if (explorerConnection.connectionType == ActiveConnectionType.IAM_IDC) {
-            enabledConnections.add(AuthFormId.IDENTITYCENTER_EXPLORER)
-        } else {
-            enabledConnections.add(
-                AuthFormId.IAMCREDENTIALS_EXPLORER
-            )
-        }
-    }
-    val codeCatalystConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST)
-    if (codeCatalystConnection !is ActiveConnection.NotConnected) {
-        if (codeCatalystConnection.connectionType == ActiveConnectionType.IAM_IDC) {
-            enabledConnections.add(AuthFormId.IDENTITYCENTER_CODECATALYST)
-        } else {
-            enabledConnections.add(AuthFormId.BUILDERID_CODECATALYST)
-        }
-    }
+    addConnectionInfoToSet(
+        checkIamConnectionValidity(project),
+        enabledConnections,
+        AuthFormId.IDENTITYCENTER_EXPLORER,
+        AuthFormId.IAMCREDENTIALS_EXPLORER
+    )
 
-    val codeWhispererConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER)
-    if (codeWhispererConnection !is ActiveConnection.NotConnected) {
-        if (codeWhispererConnection.connectionType == ActiveConnectionType.IAM_IDC) {
-            enabledConnections.add(AuthFormId.IDENTITYCENTER_CODEWHISPERER)
-        } else {
-            enabledConnections.add(
-                AuthFormId.BUILDERID_CODEWHISPERER
-            )
-        }
-    }
+    addConnectionInfoToSet(
+        checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST),
+        enabledConnections,
+        AuthFormId.IDENTITYCENTER_CODECATALYST,
+        AuthFormId.BUILDERID_CODECATALYST
+    )
 
-    val qConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
-    if (qConnection !is ActiveConnection.NotConnected) {
-        if (qConnection.connectionType == ActiveConnectionType.IAM_IDC) {
-            enabledConnections.add(AuthFormId.IDENTITYCENTER_Q)
-        } else {
-            enabledConnections.add(
-                AuthFormId.BUILDERID_Q
-            )
-        }
-    }
-    return enabledConnections
+    addConnectionInfoToSet(
+        checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODEWHISPERER),
+        enabledConnections,
+        AuthFormId.IDENTITYCENTER_CODEWHISPERER,
+        AuthFormId.BUILDERID_CODEWHISPERER
+    )
+
+    addConnectionInfoToSet(
+        checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q),
+        enabledConnections,
+        AuthFormId.IDENTITYCENTER_Q,
+        AuthFormId.BUILDERID_Q
+    )
+    return enabledConnections.mapTo(mutableSetOf()) { it as AuthFormId }
 }
 
 fun getEnabledConnections(project: Project?): String =
@@ -73,29 +60,24 @@ fun getEnabledConnections(project: Project?): String =
 
 fun getAuthScopesForTelemetry(project: Project?): Set<String> {
     project ?: return emptySet()
-    val scopes = mutableSetOf<String>()
-
-    fun addScopes(connection: ActiveConnection) {
-        if (connection !is ActiveConnection.NotConnected) {
-            val connectionScopes = connection.activeConnectionBearer?.scopes
-            if (connectionScopes != null) {
-                scopes.addAll(connectionScopes)
-            }
-        }
-    }
+    val scopes = mutableSetOf<Any>()
 
     val explorerConnection = checkIamProfileByCredentialType(project)
     if (explorerConnection !is ActiveConnection.NotConnected && explorerConnection.connectionType == ActiveConnectionType.IAM_IDC) {
         scopes.add(IDENTITY_CENTER_ROLE_ACCESS_SCOPE)
     }
 
-    val codeCatalystConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST)
-    addScopes(codeCatalystConnection)
+    addConnectionInfoToSet(
+        checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST),
+        dataSet = scopes
+    )
 
-    val qConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
-    addScopes(qConnection)
+    addConnectionInfoToSet(
+        checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q),
+        dataSet = scopes
+    )
 
-    return scopes
+    return scopes.mapTo(mutableSetOf()) { it as String }
 }
 
 fun getAuthScopes(project: Project?): String =
@@ -116,6 +98,38 @@ fun getAuthStatus(project: Project) = when (checkConnectionValidity(project)) {
     is ActiveConnection.ValidBearer,
     -> AuthStatus.Connected
     else -> AuthStatus.NotConnected
+}
+
+fun addConnectionInfoToSet(
+    activeConnection: ActiveConnection,
+    dataSet: MutableSet<Any>,
+    idcConnection: AuthFormId? = null,
+    defaultConnection: AuthFormId? = null,
+) {
+    if (activeConnection is ActiveConnection.NotConnected) {
+        return
+    }
+
+    // add enabled connections
+    when (activeConnection.connectionType) {
+        ActiveConnectionType.IAM_IDC -> {
+            idcConnection ?.let {
+                dataSet.add(idcConnection)
+                return
+            }
+        } else -> {
+            defaultConnection?.let {
+                dataSet.add(defaultConnection)
+                return
+            }
+        }
+    }
+
+    // add scopes
+    val connectionScopes = activeConnection.activeConnectionBearer?.scopes
+    if (!connectionScopes.isNullOrEmpty()) {
+        dataSet.addAll(connectionScopes)
+    }
 }
 
 enum class AuthFormId {
