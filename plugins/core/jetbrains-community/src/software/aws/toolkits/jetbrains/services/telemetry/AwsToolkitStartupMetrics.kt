@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import software.aws.toolkits.telemetry.SessionTelemetry
 
-class AwsToolkitStartupMetrics : ProjectActivity {
+internal class AwsToolkitStartupMetrics : ProjectActivity {
     override suspend fun execute(project: Project) {
         RunOnceUtil.runOnceForApp(this::class.qualifiedName.toString()) {
             SessionTelemetry.start(project)
