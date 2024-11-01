@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Amazon Q /dev: Fix the issue resulting in the first request per conversation to /dev failing"
-}

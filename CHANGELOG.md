@@ -1,3 +1,7 @@
+# _3.37_ (2024-10-31)
+- **(Bug Fix)** Amazon Q /dev: Fix the issue resulting in the first request per conversation to /dev failing
+- **(Bug Fix)** Fix inline chat shortcut hint breaking text selection on remote editors
+
 # _3.36_ (2024-10-30)
 - **(Bug Fix)** Fix inline chat default key binding not working on windows and linux
 
