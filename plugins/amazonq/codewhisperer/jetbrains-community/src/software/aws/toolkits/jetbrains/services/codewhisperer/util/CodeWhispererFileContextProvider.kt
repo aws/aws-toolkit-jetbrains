@@ -144,9 +144,10 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
             }
 
             return supplementalContext?.let {
+                val latency = System.currentTimeMillis() - startFetchingTimestamp
                 if (it.contents.isNotEmpty()) {
                     val logStr = buildString {
-                        append("Successfully fetched supplemental context with strategy ${it.strategy} with ${it.latency} ms")
+                        append("Successfully fetched supplemental context with strategy ${it.strategy} with $latency ms")
                         it.contents.forEachIndexed { index, chunk ->
                             append(
                                 """
@@ -166,8 +167,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                     LOG.warn { "Failed to fetch supplemental context, empty list." }
                 }
 
-                // TODO: fix this latency
-                it.copy(latency = System.currentTimeMillis() - startFetchingTimestamp)
+                it.copy(latency = latency)
             }
         } catch (e: TimeoutCancellationException) {
             LOG.debug {
