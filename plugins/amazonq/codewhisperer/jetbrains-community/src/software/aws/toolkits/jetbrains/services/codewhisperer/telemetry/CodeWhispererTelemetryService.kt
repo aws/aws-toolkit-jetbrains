@@ -44,10 +44,10 @@ import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import software.aws.toolkits.telemetry.CodewhispererPreviousSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
-import software.aws.toolkits.telemetry.CodewhispererTelemetry
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import software.aws.toolkits.telemetry.Component
-import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.MetricResult
+import software.aws.toolkits.telemetry.Telemetry
 import java.time.Duration
 import java.time.Instant
 import java.util.Queue
@@ -72,23 +72,27 @@ class CodeWhispererTelemetryService {
     companion object {
         fun getInstance(): CodeWhispererTelemetryService = service()
         val LOG = getLogger<CodeWhispererTelemetryService>()
-        const val NO_ACCEPTED_INDEX = -1
     }
 
-    fun sendFailedServiceInvocationEvent(project: Project, exceptionType: String?) {
-        CodewhispererTelemetry.serviceInvocation(
-            project = project,
-            codewhispererCursorOffset = 0,
-            codewhispererLanguage = CodewhispererLanguage.Unknown,
-            codewhispererLastSuggestionIndex = -1,
-            codewhispererLineNumber = 0,
-            codewhispererTriggerType = CodewhispererTriggerType.Unknown,
-            duration = 0.0,
-            reason = exceptionType,
-            success = false,
-        )
+    @Deprecated(
+        "Does not capture entire context of method call",
+        ReplaceWith("Telemetry.codewhisperer.serviceInvocation", "software.aws.toolkits.telemetry.Telemetry")
+    )
+    fun sendFailedServiceInvocationEvent(e: Exception): Unit = Telemetry.codewhisperer.serviceInvocation.use {
+        it.codewhispererCursorOffset(0)
+            .codewhispererLanguage(CodewhispererLanguage.Unknown)
+            .codewhispererLastSuggestionIndex(-1L)
+            .codewhispererLineNumber(0)
+            .codewhispererTriggerType(CodewhispererTriggerType.Unknown)
+            .duration(0.0)
+            .recordException(e)
+            .success(false)
     }
 
+    @Deprecated(
+        "Does not capture entire context of method call",
+        ReplaceWith("Telemetry.codewhisperer.serviceInvocation", "software.aws.toolkits.telemetry.Telemetry")
+    )
     fun sendServiceInvocationEvent(
         requestId: String,
         requestContext: RequestContext,
@@ -97,7 +101,7 @@ class CodeWhispererTelemetryService {
         invocationSuccess: Boolean,
         latency: Double,
         exceptionType: String?,
-    ) {
+    ): Unit = Telemetry.codewhisperer.serviceInvocation.use {
         val (triggerType, automatedTriggerType) = requestContext.triggerTypeInfo
         val (offset, line) = requestContext.caretPosition
 
@@ -114,33 +118,32 @@ class CodeWhispererTelemetryService {
             null
         }
 
-        val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toTelemetryType()
-        val startUrl = getConnectionStartUrl(requestContext.connection)
-        CodewhispererTelemetry.serviceInvocation(
-            project = requestContext.project,
-            codewhispererAutomatedTriggerType = automatedTriggerType.telemetryType,
-            codewhispererCompletionType = CodewhispererCompletionType.Line,
-            codewhispererCursorOffset = offset.toLong(),
-            codewhispererGettingStartedTask = getGettingStartedTaskType(requestContext.editor),
-            codewhispererLanguage = codewhispererLanguage,
-            codewhispererLastSuggestionIndex = lastRecommendationIndex.toLong(),
-            codewhispererLineNumber = line.toLong(),
-            codewhispererRequestId = requestId,
-            codewhispererSessionId = responseContext.sessionId,
-            codewhispererTriggerType = triggerType,
-            duration = latency,
-            reason = exceptionType,
-            success = invocationSuccess,
-            credentialStartUrl = startUrl,
-            codewhispererImportRecommendationEnabled = CodeWhispererSettings.getInstance().isImportAdderEnabled(),
-            codewhispererSupplementalContextTimeout = supContext?.isProcessTimeout,
-            codewhispererSupplementalContextIsUtg = supContext?.isUtg,
-            codewhispererSupplementalContextLatency = supContext?.latency?.toDouble(),
-            codewhispererSupplementalContextLength = supContext?.contentLength?.toLong(),
-            codewhispererCustomizationArn = requestContext.customizationArn,
-        )
+        it.codewhispererAutomatedTriggerType(automatedTriggerType.telemetryType)
+            .codewhispererCompletionType(CodewhispererCompletionType.Line)
+            .codewhispererCursorOffset(offset)
+            .codewhispererGettingStartedTask(getGettingStartedTaskType(requestContext.editor))
+            .codewhispererLanguage(requestContext.fileContextInfo.programmingLanguage.toTelemetryType())
+            .codewhispererLastSuggestionIndex(lastRecommendationIndex)
+            .codewhispererLineNumber(line)
+            .codewhispererRequestId(requestId)
+            .codewhispererSessionId(responseContext.sessionId)
+            .codewhispererTriggerType(triggerType)
+            .duration(latency)
+            .reason(exceptionType)
+            .success(invocationSuccess)
+            .credentialStartUrl(getConnectionStartUrl(requestContext.connection))
+            .codewhispererImportRecommendationEnabled(CodeWhispererSettings.getInstance().isImportAdderEnabled())
+            .codewhispererSupplementalContextTimeout(supContext?.isProcessTimeout)
+            .codewhispererSupplementalContextIsUtg(supContext?.isUtg)
+            .codewhispererSupplementalContextLatency(supContext?.latency?.toDouble())
+            .codewhispererSupplementalContextLength(supContext?.contentLength?.toLong())
+            .codewhispererCustomizationArn(requestContext.customizationArn)
     }
 
+    @Deprecated(
+        "Does not capture entire context of method call",
+        ReplaceWith("Telemetry.codewhisperer.userDecision", "software.aws.toolkits.telemetry.Telemetry")
+    )
     fun sendUserDecisionEvent(
         requestContext: RequestContext,
         responseContext: ResponseContext,
@@ -148,10 +151,9 @@ class CodeWhispererTelemetryService {
         index: Int,
         suggestionState: CodewhispererSuggestionState,
         numOfRecommendations: Int,
-    ) {
+    ): Unit = Telemetry.codewhisperer.userDecision.use {
         val requestId = detailContext.requestId
         val recommendation = detailContext.recommendation
-        val (project, _, triggerTypeInfo) = requestContext
         val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toTelemetryType()
         val supplementalContext = requestContext.supplementalContext
 
@@ -164,27 +166,28 @@ class CodeWhispererTelemetryService {
         }
         val startUrl = getConnectionStartUrl(requestContext.connection)
         val importEnabled = CodeWhispererSettings.getInstance().isImportAdderEnabled()
-        CodewhispererTelemetry.userDecision(
-            project = project,
-            codewhispererCompletionType = detailContext.completionType,
-            codewhispererGettingStartedTask = getGettingStartedTaskType(requestContext.editor),
-            codewhispererLanguage = codewhispererLanguage,
-            codewhispererPaginationProgress = numOfRecommendations.toLong(),
-            codewhispererRequestId = requestId,
-            codewhispererSessionId = responseContext.sessionId,
-            codewhispererSuggestionIndex = index.toLong(),
-            codewhispererSuggestionReferenceCount = recommendation.references().size.toLong(),
-            codewhispererSuggestionReferences = jacksonObjectMapper().writeValueAsString(recommendation.references().map { it.licenseName() }.toSet().toList()),
-            codewhispererSuggestionImportCount = if (importEnabled) recommendation.mostRelevantMissingImports().size.toLong() else null,
-            codewhispererSuggestionState = suggestionState,
-            codewhispererTriggerType = triggerTypeInfo.triggerType,
-            credentialStartUrl = startUrl,
-            codewhispererSupplementalContextIsUtg = supplementalContext?.isUtg,
-            codewhispererSupplementalContextLength = supplementalContext?.contentLength?.toLong(),
-            codewhispererSupplementalContextTimeout = supplementalContext?.isProcessTimeout,
-        )
+        it.codewhispererCompletionType(detailContext.completionType)
+            .codewhispererGettingStartedTask(getGettingStartedTaskType(requestContext.editor))
+            .codewhispererLanguage(codewhispererLanguage)
+            .codewhispererPaginationProgress(numOfRecommendations)
+            .codewhispererRequestId(requestId)
+            .codewhispererSessionId(responseContext.sessionId)
+            .codewhispererSuggestionIndex(index)
+            .codewhispererSuggestionReferenceCount(recommendation.references().size)
+            .codewhispererSuggestionReferences(jacksonObjectMapper().writeValueAsString(recommendation.references().map { it.licenseName() }.toSet().toList()))
+            .codewhispererSuggestionImportCount(if (importEnabled) recommendation.mostRelevantMissingImports().size else null)
+            .codewhispererSuggestionState(suggestionState)
+            .codewhispererTriggerType(requestContext.triggerTypeInfo.triggerType)
+            .credentialStartUrl(startUrl)
+            .codewhispererSupplementalContextIsUtg(supplementalContext?.isUtg)
+            .codewhispererSupplementalContextLength(supplementalContext?.contentLength?.toLong())
+            .codewhispererSupplementalContextTimeout(supplementalContext?.isProcessTimeout)
     }
 
+    @Deprecated(
+        "Does not capture entire context of method call",
+        ReplaceWith("Telemetry.codewhisperer.userTriggerDecision", "software.aws.toolkits.telemetry.Telemetry")
+    )
     fun sendUserTriggerDecisionEvent(
         requestContext: RequestContext,
         responseContext: ResponseContext,
@@ -243,44 +246,47 @@ class CodeWhispererTelemetryService {
             }
         }
 
-        CodewhispererTelemetry.userTriggerDecision(
-            project = project,
-            codewhispererSessionId = responseContext.sessionId,
-            codewhispererFirstRequestId = requestContext.latencyContext.firstRequestId,
-            credentialStartUrl = getConnectionStartUrl(requestContext.connection),
-            codewhispererIsPartialAcceptance = null,
-            codewhispererPartialAcceptanceCount = null,
-            codewhispererCharactersAccepted = acceptedCharCount.toLong(),
-            codewhispererCharactersRecommended = null,
-            codewhispererCompletionType = completionType,
-            codewhispererLanguage = language.toTelemetryType(),
-            codewhispererTriggerType = requestContext.triggerTypeInfo.triggerType,
-            codewhispererAutomatedTriggerType = automatedTriggerType.telemetryType,
-            codewhispererLineNumber = requestContext.caretPosition.line.toLong(),
-            codewhispererCursorOffset = requestContext.caretPosition.offset.toLong(),
-            codewhispererSuggestionCount = recommendationContext.details.size.toLong(),
-            codewhispererSuggestionImportCount = totalImportCount.toLong(),
-            codewhispererTotalShownTime = popupShownTime?.toMillis()?.toDouble(),
-            codewhispererTriggerCharacter = triggerChar,
-            codewhispererTypeaheadLength = recommendationContext.userInputSinceInvocation.length.toLong(),
-            codewhispererTimeSinceLastDocumentChange = CodeWhispererInvocationStatus.getInstance().getTimeSinceDocumentChanged(),
-            codewhispererTimeSinceLastUserDecision = codewhispererTimeSinceLastUserDecision,
-            codewhispererTimeToFirstRecommendation = requestContext.latencyContext.paginationFirstCompletionTime,
-            codewhispererPreviousSuggestionState = previousUserTriggerDecision,
-            codewhispererSuggestionState = suggestionState,
-            codewhispererClassifierResult = classifierResult,
-            codewhispererClassifierThreshold = classifierThreshold,
-            codewhispererCustomizationArn = requestContext.customizationArn,
-            codewhispererSupplementalContextIsUtg = supplementalContext?.isUtg,
-            codewhispererSupplementalContextLength = supplementalContext?.contentLength?.toLong(),
-            codewhispererSupplementalContextTimeout = supplementalContext?.isProcessTimeout,
-            codewhispererSupplementalContextStrategyId = supplementalContext?.strategy.toString(),
-            codewhispererGettingStartedTask = getGettingStartedTaskType(requestContext.editor),
-            codewhispererFeatureEvaluations = CodeWhispererFeatureConfigService.getInstance().getFeatureConfigsTelemetry()
-        )
+        Telemetry.codewhisperer.userTriggerDecision.use {
+            it.codewhispererSessionId(responseContext.sessionId)
+                .codewhispererFirstRequestId(requestContext.latencyContext.firstRequestId)
+                .credentialStartUrl(getConnectionStartUrl(requestContext.connection))
+                .codewhispererIsPartialAcceptance(null)
+                .codewhispererPartialAcceptanceCount(null as Long?)
+                .codewhispererCharactersAccepted(acceptedCharCount)
+                .codewhispererCharactersRecommended(null as Long?)
+                .codewhispererCompletionType(completionType)
+                .codewhispererLanguage(language.toTelemetryType())
+                .codewhispererTriggerType(requestContext.triggerTypeInfo.triggerType)
+                .codewhispererAutomatedTriggerType(automatedTriggerType.telemetryType)
+                .codewhispererLineNumber(requestContext.caretPosition.line)
+                .codewhispererCursorOffset(requestContext.caretPosition.offset)
+                .codewhispererSuggestionCount(recommendationContext.details.size)
+                .codewhispererSuggestionImportCount(totalImportCount)
+                .codewhispererTotalShownTime(popupShownTime?.toMillis()?.toDouble())
+                .codewhispererTriggerCharacter(triggerChar)
+                .codewhispererTypeaheadLength(recommendationContext.userInputSinceInvocation.length)
+                .codewhispererTimeSinceLastDocumentChange(CodeWhispererInvocationStatus.getInstance().getTimeSinceDocumentChanged())
+                .codewhispererTimeSinceLastUserDecision(codewhispererTimeSinceLastUserDecision)
+                .codewhispererTimeToFirstRecommendation(requestContext.latencyContext.paginationFirstCompletionTime)
+                .codewhispererPreviousSuggestionState(previousUserTriggerDecision)
+                .codewhispererSuggestionState(suggestionState)
+                .codewhispererClassifierResult(classifierResult)
+                .codewhispererClassifierThreshold(classifierThreshold)
+                .codewhispererCustomizationArn(requestContext.customizationArn)
+                .codewhispererSupplementalContextIsUtg(supplementalContext?.isUtg)
+                .codewhispererSupplementalContextLength(supplementalContext?.contentLength?.toLong())
+                .codewhispererSupplementalContextTimeout(supplementalContext?.isProcessTimeout)
+                .codewhispererSupplementalContextStrategyId(supplementalContext?.strategy.toString())
+                .codewhispererGettingStartedTask(getGettingStartedTaskType(requestContext.editor))
+                .codewhispererFeatureEvaluations(CodeWhispererFeatureConfigService.getInstance().getFeatureConfigsTelemetry())
+        }
     }
 
-    fun sendSecurityScanEvent(codeScanEvent: CodeScanTelemetryEvent, project: Project? = null) {
+    @Deprecated(
+        "Does not capture entire context of method call",
+        ReplaceWith("Telemetry.codewhisperer.securityScan", "software.aws.toolkits.telemetry.Telemetry")
+    )
+    fun sendSecurityScanEvent(codeScanEvent: CodeScanTelemetryEvent): Unit = Telemetry.codewhisperer.securityScan.use {
         val payloadContext = codeScanEvent.codeScanResponseContext.payloadContext
         val serviceInvocationContext = codeScanEvent.codeScanResponseContext.serviceInvocationContext
         val codeScanJobId = codeScanEvent.codeScanResponseContext.codeScanJobId
@@ -309,49 +315,55 @@ class CodeWhispererTelemetryService {
                 "Scope: ${codeAnalysisScope.value} \n" +
                 "Passive: $passive \n"
         }
-        CodewhispererTelemetry.securityScan(
-            project = project,
-            codewhispererCodeScanLines = payloadContext.totalLines,
-            codewhispererCodeScanJobId = codeScanJobId,
-            codewhispererCodeScanProjectBytes = codeScanEvent.totalProjectSizeInBytes,
-            codewhispererCodeScanSrcPayloadBytes = payloadContext.srcPayloadSize,
-            codewhispererCodeScanBuildPayloadBytes = payloadContext.buildPayloadSize,
-            codewhispererCodeScanSrcZipFileBytes = payloadContext.srcZipFileSize,
-            codewhispererCodeScanTotalIssues = totalIssues.toLong(),
-            codewhispererCodeScanIssuesWithFixes = issuesWithFixes.toLong(),
-            codewhispererLanguage = payloadContext.language,
-            duration = codeScanEvent.duration,
-            contextTruncationDuration = payloadContext.totalTimeInMilliseconds,
-            artifactsUploadDuration = serviceInvocationContext.artifactsUploadDuration,
-            codeScanServiceInvocationsDuration = serviceInvocationContext.serviceInvocationDuration,
-            reason = reason,
-            result = codeScanEvent.result,
-            credentialStartUrl = startUrl,
-            codewhispererCodeScanScope = CodewhispererCodeScanScope.from(codeAnalysisScope.value),
-            passive = passive
-        )
+
+        it.codewhispererCodeScanLines(payloadContext.totalLines)
+            .codewhispererCodeScanJobId(codeScanJobId)
+            .codewhispererCodeScanProjectBytes(codeScanEvent.totalProjectSizeInBytes)
+            .codewhispererCodeScanSrcPayloadBytes(payloadContext.srcPayloadSize)
+            .codewhispererCodeScanBuildPayloadBytes(payloadContext.buildPayloadSize)
+            .codewhispererCodeScanSrcZipFileBytes(payloadContext.srcZipFileSize)
+            .codewhispererCodeScanTotalIssues(totalIssues)
+            .codewhispererCodeScanIssuesWithFixes(issuesWithFixes)
+            .codewhispererLanguage(payloadContext.language)
+            .duration(codeScanEvent.duration)
+            .contextTruncationDuration(payloadContext.totalTimeInMilliseconds)
+            .artifactsUploadDuration(serviceInvocationContext.artifactsUploadDuration)
+            .codeScanServiceInvocationsDuration(serviceInvocationContext.serviceInvocationDuration)
+            .reason(reason)
+            .result(codeScanEvent.result)
+            .credentialStartUrl(startUrl)
+            .codewhispererCodeScanScope(CodewhispererCodeScanScope.from(codeAnalysisScope.value))
+            .passive(passive)
     }
 
-    fun sendCodeScanIssueHoverEvent(issue: CodeWhispererCodeScanIssue) {
-        CodewhispererTelemetry.codeScanIssueHover(
-            findingId = issue.findingId,
-            detectorId = issue.detectorId,
-            ruleId = issue.ruleId,
-            includesFix = issue.suggestedFixes.isNotEmpty(),
-            credentialStartUrl = getCodeWhispererStartUrl(issue.project)
-        )
+    @Deprecated(
+        "Does not capture entire context of method call",
+        ReplaceWith("Telemetry.codewhisperer.codeScanIssueHover", "software.aws.toolkits.telemetry.Telemetry")
+    )
+    fun sendCodeScanIssueHoverEvent(issue: CodeWhispererCodeScanIssue): Unit = Telemetry.codewhisperer.codeScanIssueHover.use {
+        it.findingId(issue.findingId)
+            .detectorId(issue.detectorId)
+            .ruleId(issue.ruleId)
+            .includesFix(issue.suggestedFixes.isNotEmpty())
+            .credentialStartUrl(getCodeWhispererStartUrl(issue.project))
     }
 
-    fun sendCodeScanIssueApplyFixEvent(issue: CodeWhispererCodeScanIssue, result: Result, reason: String? = null) {
-        CodewhispererTelemetry.codeScanIssueApplyFix(
-            findingId = issue.findingId,
-            detectorId = issue.detectorId,
-            ruleId = issue.ruleId,
-            component = Component.Hover,
-            result = result,
-            reason = reason,
-            credentialStartUrl = getCodeWhispererStartUrl(issue.project)
-        )
+    @Deprecated(
+        "Does not capture entire context of method call",
+        ReplaceWith("Telemetry.codewhisperer.codeScanIssueApplyFix", "software.aws.toolkits.telemetry.Telemetry")
+    )
+    fun sendCodeScanIssueApplyFixEvent(
+        issue: CodeWhispererCodeScanIssue,
+        result: MetricResult,
+        reason: String? = null,
+    ): Unit = Telemetry.codewhisperer.codeScanIssueApplyFix.use {
+        it.findingId(issue.findingId)
+            .detectorId(issue.detectorId)
+            .ruleId(issue.ruleId)
+            .component(Component.Hover)
+            .result(result)
+            .reason(reason)
+            .credentialStartUrl(getCodeWhispererStartUrl(issue.project))
     }
 
     fun enqueueAcceptedSuggestionEntry(
@@ -470,55 +482,65 @@ class CodeWhispererTelemetryService {
         }
     }
 
+    @Deprecated(
+        "Does not capture entire context of method call",
+        ReplaceWith("Telemetry.codewhisperer.perceivedLatency", "software.aws.toolkits.telemetry.Telemetry")
+    )
     fun sendPerceivedLatencyEvent(
         requestId: String,
         requestContext: RequestContext,
         responseContext: ResponseContext,
         latency: Double,
-    ) {
-        val (project, _, triggerTypeInfo) = requestContext
+    ): Unit = Telemetry.codewhisperer.perceivedLatency.use {
         val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toTelemetryType()
         val startUrl = getConnectionStartUrl(requestContext.connection)
-        CodewhispererTelemetry.perceivedLatency(
-            project = project,
-            codewhispererCompletionType = CodewhispererCompletionType.Line,
-            codewhispererLanguage = codewhispererLanguage,
-            codewhispererRequestId = requestId,
-            codewhispererSessionId = responseContext.sessionId,
-            codewhispererTriggerType = triggerTypeInfo.triggerType,
-            duration = latency,
-            passive = true,
-            credentialStartUrl = startUrl,
-            codewhispererCustomizationArn = requestContext.customizationArn,
-        )
+
+        it.codewhispererCompletionType(CodewhispererCompletionType.Line)
+            .codewhispererLanguage(codewhispererLanguage)
+            .codewhispererRequestId(requestId)
+            .codewhispererSessionId(responseContext.sessionId)
+            .codewhispererTriggerType(requestContext.triggerTypeInfo.triggerType)
+            .duration(latency)
+            .passive(true)
+            .credentialStartUrl(startUrl)
+            .codewhispererCustomizationArn(requestContext.customizationArn)
     }
 
-    fun sendClientComponentLatencyEvent(states: InvocationContext) {
+    @Deprecated(
+        "Does not capture entire context of method call",
+        ReplaceWith("Telemetry.codewhisperer.clientComponentLatency", "software.aws.toolkits.telemetry.Telemetry")
+    )
+    fun sendClientComponentLatencyEvent(states: InvocationContext): Unit = Telemetry.codewhisperer.clientComponentLatency.use {
         val requestContext = states.requestContext
         val responseContext = states.responseContext
         val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toTelemetryType()
         val startUrl = getConnectionStartUrl(requestContext.connection)
-        CodewhispererTelemetry.clientComponentLatency(
-            project = requestContext.project,
-            codewhispererSessionId = responseContext.sessionId,
-            codewhispererRequestId = requestContext.latencyContext.firstRequestId,
-            codewhispererFirstCompletionLatency = requestContext.latencyContext.paginationFirstCompletionTime,
-            codewhispererPreprocessingLatency = requestContext.latencyContext.getCodeWhispererPreprocessingLatency(),
-            codewhispererEndToEndLatency = requestContext.latencyContext.getCodeWhispererEndToEndLatency(),
-            codewhispererAllCompletionsLatency = requestContext.latencyContext.getCodeWhispererAllCompletionsLatency(),
-            codewhispererPostprocessingLatency = requestContext.latencyContext.getCodeWhispererPostprocessingLatency(),
-            codewhispererCredentialFetchingLatency = requestContext.latencyContext.getCodeWhispererCredentialFetchingLatency(),
-            codewhispererTriggerType = requestContext.triggerTypeInfo.triggerType,
-            codewhispererCompletionType = CodewhispererCompletionType.Line,
-            codewhispererLanguage = codewhispererLanguage,
-            credentialStartUrl = startUrl,
-            codewhispererCustomizationArn = requestContext.customizationArn,
-        )
+
+        it.codewhispererSessionId(responseContext.sessionId)
+            .codewhispererRequestId(requestContext.latencyContext.firstRequestId)
+            .codewhispererFirstCompletionLatency(requestContext.latencyContext.paginationFirstCompletionTime)
+            .codewhispererPreprocessingLatency(requestContext.latencyContext.getCodeWhispererPreprocessingLatency())
+            .codewhispererEndToEndLatency(requestContext.latencyContext.getCodeWhispererEndToEndLatency())
+            .codewhispererAllCompletionsLatency(requestContext.latencyContext.getCodeWhispererAllCompletionsLatency())
+            .codewhispererPostprocessingLatency(requestContext.latencyContext.getCodeWhispererPostprocessingLatency())
+            .codewhispererCredentialFetchingLatency(requestContext.latencyContext.getCodeWhispererCredentialFetchingLatency())
+            .codewhispererTriggerType(requestContext.triggerTypeInfo.triggerType)
+            .codewhispererCompletionType(CodewhispererCompletionType.Line)
+            .codewhispererLanguage(codewhispererLanguage)
+            .credentialStartUrl(startUrl)
+            .codewhispererCustomizationArn(requestContext.customizationArn)
     }
 
-    fun sendOnboardingClickEvent(language: CodeWhispererProgrammingLanguage, taskType: CodewhispererGettingStartedTask) {
-        // Project instance is not needed. We look at these metrics for each clientId.
-        CodewhispererTelemetry.onboardingClick(project = null, codewhispererLanguage = language.toTelemetryType(), codewhispererGettingStartedTask = taskType)
+    @Deprecated(
+        "Does not capture entire context of method call",
+        ReplaceWith("Telemetry.codewhisperer.onboardingClick", "software.aws.toolkits.telemetry.Telemetry")
+    )
+    fun sendOnboardingClickEvent(
+        language: CodeWhispererProgrammingLanguage,
+        taskType: CodewhispererGettingStartedTask,
+    ): Unit = Telemetry.codewhisperer.onboardingClick.use {
+        it.codewhispererLanguage(language.toTelemetryType())
+            .codewhispererGettingStartedTask(taskType)
     }
 
     fun recordSuggestionState(

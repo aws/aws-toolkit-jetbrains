@@ -174,7 +174,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
             getRequestContext(triggerTypeInfo, editor, project, psiFile)
         } catch (e: Exception) {
             LOG.debug { e.message.toString() }
-            CodeWhispererTelemetryServiceNew.getInstance().sendFailedServiceInvocationEvent(project, e::class.simpleName)
+            CodeWhispererTelemetryServiceNew.getInstance().sendFailedServiceInvocationEvent(e)
             return
         }
         val caretContext = requestContext.fileContextInfo.caretContext
