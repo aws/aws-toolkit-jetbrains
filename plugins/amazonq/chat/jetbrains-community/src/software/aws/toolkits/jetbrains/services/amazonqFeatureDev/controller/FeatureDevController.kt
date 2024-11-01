@@ -130,6 +130,7 @@ class FeatureDevController(
 
     override suspend fun processChatItemVotedMessage(message: IncomingFeatureDevMessage.ChatItemVotedMessage) {
         logger.debug { "$FEATURE_NAME: Processing ChatItemVotedMessage: $message" }
+        this.disablePreviousFileList(message.tabId)
 
         val session = chatSessionStorage.getSession(message.tabId, context.project)
         when (message.vote) {
@@ -393,6 +394,8 @@ class FeatureDevController(
     private suspend fun newTask(tabId: String, isException: Boolean? = false) {
         val session = getSessionInfo(tabId)
         val sessionLatency = System.currentTimeMillis() - session.sessionStartTime
+
+        this.disablePreviousFileList(tabId)
         AmazonqTelemetry.endChat(
             amazonqConversationId = session.conversationId,
             amazonqEndOfTheConversationLatency = sessionLatency.toDouble(),
@@ -413,6 +416,7 @@ class FeatureDevController(
     }
 
     private suspend fun closeSession(tabId: String) {
+        this.disablePreviousFileList(tabId)
         messenger.sendAnswer(
             tabId = tabId,
             messageType = FeatureDevMessageType.Answer,
@@ -560,8 +564,19 @@ class FeatureDevController(
         }
     }
 
+    private suspend fun disablePreviousFileList(tabId: String) {
+        val session = getSessionInfo(tabId)
+        when (val sessionState = session.sessionState) {
+            is PrepareCodeGenerationState -> {
+                session.disableFileList(sessionState.filePaths, sessionState.deletedFiles, messenger)
+            }
+        }
+    }
+
     private fun storeCodeResultMessageId(message: IncomingFeatureDevMessage.StoreMessageIdMessage) {
-        this.storeCodeResultMessageId(message)
+        val tabId = message.tabId
+        val session = getSessionInfo(tabId)
+        session.storeCodeResultMessageId(message)
     }
 
     private suspend fun handleChat(

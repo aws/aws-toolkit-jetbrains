@@ -7,7 +7,6 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
-import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATION_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ConversationIdNotFoundException
@@ -22,9 +21,11 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDe
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.resolveAndCreateOrUpdateFile
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.resolveAndDeleteFile
 import software.aws.toolkits.jetbrains.services.cwc.controller.ReferenceLogController
-import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
 
-class Session(val tabID: String, val project: Project) {
+class Session(
+    val tabID: String,
+    val project: Project,
+) {
     var context: FeatureDevSessionContext
     val sessionStartTime = System.currentTimeMillis()
 
@@ -57,7 +58,10 @@ class Session(val tabID: String, val project: Project) {
     /**
      * Preload any events that have to run before a chat message can be sent
      */
-    suspend fun preloader(msg: String, messenger: MessagePublisher) {
+    suspend fun preloader(
+        msg: String,
+        messenger: MessagePublisher,
+    ) {
         if (!preloaderFinished) {
             setupConversation(msg, messenger)
             preloaderFinished = true
@@ -69,7 +73,10 @@ class Session(val tabID: String, val project: Project) {
     /**
      * Starts a conversation with the backend and uploads the repo for the LLMs to be able to use it.
      */
-    private fun setupConversation(msg: String, messenger: MessagePublisher) {
+    private fun setupConversation(
+        msg: String,
+        messenger: MessagePublisher,
+    ) {
         // Store the initial message when setting up the conversation so that if it fails we can retry with this message
         _latestMessage = msg
 
@@ -77,34 +84,39 @@ class Session(val tabID: String, val project: Project) {
         logger<Session>().info(conversationIDLog(this.conversationId))
 
         val sessionStateConfig = getSessionStateConfig().copy(conversationId = this.conversationId)
-        _state = PrepareCodeGenerationState(
-            tabID = sessionState.tabID,
-            approach = sessionState.approach,
-            config = sessionStateConfig,
-            filePaths = emptyList(),
-            deletedFiles = emptyList(),
-            references = emptyList(),
-            currentIteration = 1, // first code gen iteration
-            uploadId = "", // There is no code gen uploadId so far
-            messenger = messenger,
-            token = CancellationTokenSource()
-        )
+        _state =
+            PrepareCodeGenerationState(
+                tabID = sessionState.tabID,
+                approach = sessionState.approach,
+                config = sessionStateConfig,
+                filePaths = emptyList(),
+                deletedFiles = emptyList(),
+                references = emptyList(),
+                currentIteration = 1, // first code gen iteration
+                uploadId = "", // There is no code gen uploadId so far
+                messenger = messenger,
+                token = CancellationTokenSource(),
+            )
     }
 
-    private fun storeCodeResultMessageId(message: IncomingFeatureDevMessage.StoreMessageIdMessage) {
+    fun storeCodeResultMessageId(message: IncomingFeatureDevMessage.StoreMessageIdMessage) {
         val messageId = message.messageId
         this.updateCodeResultMessageId(messageId)
     }
 
-    private fun updateCodeResultMessageId(messageId: String) {
+    private fun updateCodeResultMessageId(messageId: String?) {
         this._codeResultMessageId = messageId
     }
-
 
     /**
      * Triggered by the Insert code follow-up button to apply code changes.
      */
-    suspend fun insertChanges(filePaths: List<NewFileZipInfo>, deletedFiles: List<DeletedFileInfo>, references: List<CodeReferenceGenerated>, messenger: MessagePublisher) {
+    suspend fun insertChanges(
+        filePaths: List<NewFileZipInfo>,
+        deletedFiles: List<DeletedFileInfo>,
+        references: List<CodeReferenceGenerated>,
+        messenger: MessagePublisher,
+    ) {
         val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
         val newFilePaths = filePaths.filter { !it.rejected && !it.changeApplied }
         val newDeletedFiles = deletedFiles.filter { !it.rejected && !it.changeApplied }
@@ -126,6 +138,21 @@ class Session(val tabID: String, val project: Project) {
         }
     }
 
+    suspend fun disableFileList(
+        filePaths: List<NewFileZipInfo>,
+        deletedFiles: List<DeletedFileInfo>,
+        messenger: MessagePublisher,
+    ) {
+        if (this._codeResultMessageId.isNullOrEmpty()) {
+            return
+        }
+
+        if (this._codeResultMessageId != null) {
+            messenger.updateFileComponent(this.tabID, filePaths, deletedFiles, this._codeResultMessageId!!, true)
+        }
+        this._codeResultMessageId = null
+    }
+
     suspend fun send(msg: String): Interaction {
         // When the task/"thing to do" hasn't been set yet, we want it to be the incoming message
         if (task.isEmpty() && msg.isNotEmpty()) {
@@ -137,11 +164,12 @@ class Session(val tabID: String, val project: Project) {
     }
 
     private suspend fun nextInteraction(msg: String): Interaction {
-        var action = SessionStateAction(
-            task = task,
-            msg = msg,
-            token = sessionState.token
-        )
+        var action =
+            SessionStateAction(
+                task = task,
+                msg = msg,
+                token = sessionState.token,
+            )
         val resp = sessionState.interact(action)
         if (resp.nextState != null) {
             // Approach may have been changed after the interaction
@@ -156,11 +184,12 @@ class Session(val tabID: String, val project: Project) {
         return resp.interaction
     }
 
-    private fun getSessionStateConfig(): SessionStateConfig = SessionStateConfig(
-        conversationId = this.conversationId,
-        repoContext = this.context,
-        featureDevService = this.featureDevService,
-    )
+    private fun getSessionStateConfig(): SessionStateConfig =
+        SessionStateConfig(
+            conversationId = this.conversationId,
+            repoContext = this.context,
+            featureDevService = this.featureDevService,
+        )
 
     val conversationId: String
         get() {

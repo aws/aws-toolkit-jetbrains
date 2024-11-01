@@ -155,7 +155,7 @@ export class Connector {
     private processCodeResultMessage = async (messageData: any): Promise<void> => {
         if (this.onChatAnswerReceived !== undefined) {
             const messageId = messageData.messageID ?? messageData.triggerID ?? messageData.conversationID
-            // this.sendMessageToExtension({ command: 'store-code-result-message-id', tabID: messageData.tabID, messageId, tabType: 'featuredev' })
+            this.sendMessageToExtension({ command: 'store-code-result-message-id', tabID: messageData.tabID, messageId, tabType: 'featuredev' })
             const actions = getActions([
                 ...messageData.filePaths,
                 ...messageData.deletedFiles,

@@ -42,13 +42,13 @@ data class NewFileZipInfo(
     val zipFilePath: String,
     val fileContent: String,
     var rejected: Boolean,
-    var changeApplied: Boolean
+    var changeApplied: Boolean,
 )
 
 data class DeletedFileInfo(
     val zipFilePath: String, // The string is the path of the file to be deleted
     var rejected: Boolean,
-    var changeApplied: Boolean
+    var changeApplied: Boolean,
 )
 
 data class CodeGenerationResult(

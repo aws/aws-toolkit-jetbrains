@@ -30,7 +30,7 @@ suspend fun MessagePublisher.sendAnswer(
             message = message,
             followUps = followUp,
             canBeVoted = canBeVoted ?: false,
-            snapToTop = snapToTop ?: false
+            snapToTop = snapToTop ?: false,
         )
     this.publish(chatMessage)
 }
@@ -44,7 +44,7 @@ suspend fun MessagePublisher.sendAnswerPart(
         tabId = tabId,
         message = message,
         messageType = FeatureDevMessageType.AnswerPart,
-        canBeVoted = canBeVoted
+        canBeVoted = canBeVoted,
     )
 }
 
@@ -55,44 +55,66 @@ suspend fun MessagePublisher.sendSystemPrompt(
     this.sendAnswer(
         tabId = tabId,
         messageType = FeatureDevMessageType.SystemPrompt,
-        followUp = followUp
+        followUp = followUp,
     )
 }
 
-suspend fun MessagePublisher.updateFileComponent(tabId: String, filePaths: List<NewFileZipInfo>, deletedFiles: List<DeletedFileInfo>, messageId: String) {
-    val fileComponentMessage = FileComponent(
-        tabId = tabId,
-        filePaths = filePaths,
-        deletedFiles = deletedFiles,
-        messageId = messageId,
-    )
+suspend fun MessagePublisher.updateFileComponent(
+    tabId: String,
+    filePaths: List<NewFileZipInfo>,
+    deletedFiles: List<DeletedFileInfo>,
+    messageId: String,
+    disableFileActions: Boolean = false,
+) {
+    val fileComponentMessage =
+        FileComponent(
+            tabId = tabId,
+            filePaths = filePaths,
+            deletedFiles = deletedFiles,
+            messageId = messageId,
+            disableFileActions = disableFileActions,
+        )
     this.publish(fileComponentMessage)
 }
 
-suspend fun MessagePublisher.sendAsyncEventProgress(tabId: String, inProgress: Boolean, message: String? = null) {
-    val asyncEventProgressMessage = AsyncEventProgressMessage(
-        tabId = tabId,
-        message = message,
-        inProgress = inProgress,
-    )
+suspend fun MessagePublisher.sendAsyncEventProgress(
+    tabId: String,
+    inProgress: Boolean,
+    message: String? = null,
+) {
+    val asyncEventProgressMessage =
+        AsyncEventProgressMessage(
+            tabId = tabId,
+            message = message,
+            inProgress = inProgress,
+        )
     this.publish(asyncEventProgressMessage)
 }
 
-suspend fun MessagePublisher.sendUpdatePlaceholder(tabId: String, newPlaceholder: String) {
-    val updatePlaceholderMessage = UpdatePlaceholderMessage(
-        tabId = tabId,
-        newPlaceholder = newPlaceholder
-    )
+suspend fun MessagePublisher.sendUpdatePlaceholder(
+    tabId: String,
+    newPlaceholder: String,
+) {
+    val updatePlaceholderMessage =
+        UpdatePlaceholderMessage(
+            tabId = tabId,
+            newPlaceholder = newPlaceholder,
+        )
     this.publish(updatePlaceholderMessage)
 }
 
-suspend fun MessagePublisher.sendAuthNeededException(tabId: String, triggerId: String, credentialState: AuthNeededState) {
-    val message = AuthNeededException(
-        tabId = tabId,
-        triggerId = triggerId,
-        authType = credentialState.authType,
-        message = credentialState.message,
-    )
+suspend fun MessagePublisher.sendAuthNeededException(
+    tabId: String,
+    triggerId: String,
+    credentialState: AuthNeededState,
+) {
+    val message =
+        AuthNeededException(
+            tabId = tabId,
+            triggerId = triggerId,
+            authType = credentialState.authType,
+            message = credentialState.message,
+        )
     this.publish(message)
 }
 
@@ -103,15 +125,26 @@ suspend fun MessagePublisher.sendAuthenticationInProgressMessage(tabId: String) 
         message = message("amazonqFeatureDev.follow_instructions_for_authentication"),
     )
 }
-suspend fun MessagePublisher.sendChatInputEnabledMessage(tabId: String, enabled: Boolean) {
-    val chatInputEnabledMessage = ChatInputEnabledMessage(
-        tabId,
-        enabled,
-    )
+
+suspend fun MessagePublisher.sendChatInputEnabledMessage(
+    tabId: String,
+    enabled: Boolean,
+) {
+    val chatInputEnabledMessage =
+        ChatInputEnabledMessage(
+            tabId,
+            enabled,
+        )
     this.publish(chatInputEnabledMessage)
 }
 
-suspend fun MessagePublisher.sendError(tabId: String, errMessage: String?, retries: Int, conversationId: String? = null, showDefaultMessage: Boolean? = false) {
+suspend fun MessagePublisher.sendError(
+    tabId: String,
+    errMessage: String?,
+    retries: Int,
+    conversationId: String? = null,
+    showDefaultMessage: Boolean? = false,
+) {
     val conversationIdText = if (conversationId == null) "" else "\n\nConversation ID: **$conversationId**"
 
     if (retries == 0) {
@@ -124,12 +157,13 @@ suspend fun MessagePublisher.sendError(tabId: String, errMessage: String?, retri
         this.sendAnswer(
             tabId = tabId,
             messageType = FeatureDevMessageType.SystemPrompt,
-            followUp = listOf(
+            followUp =
+            listOf(
                 FollowUp(
                     pillText = message("amazonqFeatureDev.follow_up.send_feedback"),
                     type = FollowUpTypes.SEND_FEEDBACK,
-                    status = FollowUpStatusType.Info
-                )
+                    status = FollowUpStatusType.Info,
+                ),
             ),
         )
         return
@@ -144,12 +178,13 @@ suspend fun MessagePublisher.sendError(tabId: String, errMessage: String?, retri
     this.sendAnswer(
         tabId = tabId,
         messageType = FeatureDevMessageType.SystemPrompt,
-        followUp = listOf(
+        followUp =
+        listOf(
             FollowUp(
                 pillText = message("amazonqFeatureDev.follow_up.retry"),
                 type = FollowUpTypes.RETRY,
-                status = FollowUpStatusType.Warning
-            )
+                status = FollowUpStatusType.Warning,
+            ),
         ),
     )
 }
@@ -158,7 +193,7 @@ suspend fun MessagePublisher.sendMonthlyLimitError(tabId: String) {
     this.sendAnswer(
         tabId = tabId,
         messageType = FeatureDevMessageType.Answer,
-        message = message("amazonqFeatureDev.exception.monthly_limit_error")
+        message = message("amazonqFeatureDev.exception.monthly_limit_error"),
     )
     this.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_monthly_limit"))
 }
@@ -178,18 +213,20 @@ suspend fun MessagePublisher.sendCodeResult(
     deletedFiles: List<DeletedFileInfo>,
     references: List<CodeReferenceGenerated>,
 ) {
-    val refs = references.map { ref ->
-        CodeReference(
-            licenseName = ref.licenseName,
-            repository = ref.repository,
-            url = ref.url,
-            recommendationContentSpan = RecommendationContentSpan(
-                ref.recommendationContentSpan?.start ?: 0,
-                ref.recommendationContentSpan?.end ?: 0,
-            ),
-            information = "Reference code under **${ref.licenseName}** license from repository [${ref.repository}](${ref.url})"
-        )
-    }
+    val refs =
+        references.map { ref ->
+            CodeReference(
+                licenseName = ref.licenseName,
+                repository = ref.repository,
+                url = ref.url,
+                recommendationContentSpan =
+                RecommendationContentSpan(
+                    ref.recommendationContentSpan?.start ?: 0,
+                    ref.recommendationContentSpan?.end ?: 0,
+                ),
+                information = "Reference code under **${ref.licenseName}** license from repository [${ref.repository}](${ref.url})",
+            )
+        }
 
     this.publish(
         CodeResultMessage(
@@ -197,7 +234,7 @@ suspend fun MessagePublisher.sendCodeResult(
             conversationId = uploadId,
             filePaths = filePaths,
             deletedFiles = deletedFiles,
-            references = refs
-        )
+            references = refs,
+        ),
     )
 }
