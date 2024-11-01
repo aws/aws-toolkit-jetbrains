@@ -42,7 +42,11 @@ class ToolkitAuthManagerTest {
         project = mock()
         tokenProvider = mock()
         reauthCallCount = 0
-        PropertiesComponent.getInstance().setValue("aws.toolkit.hasSeenFirstNetworkError", false)
+
+        val field = Class.forName("software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManagerKt")
+            .getDeclaredField("hasSeenFirstNetworkError")
+        field.isAccessible = true
+        field.set(null, false)
 
         mockkObject(BearerTokenProviderListener)
         mockkStatic("software.aws.toolkits.jetbrains.utils.NotificationUtilsKt")

@@ -435,10 +435,7 @@ private fun recordAddConnection(
     }
 }
 
-// Store network error state in IDE persistent storage to maintain across restarts
-private var hasSeenFirstNetworkError: Boolean
-    get() = PropertiesComponent.getInstance().getBoolean("aws.toolkit.hasSeenFirstNetworkError", false)
-    set(value) = PropertiesComponent.getInstance().setValue("aws.toolkit.hasSeenFirstNetworkError", value)
+private var hasSeenFirstNetworkError = false
 private val networkErrorLock = Object()
 
 data class ConnectionMetadata(
