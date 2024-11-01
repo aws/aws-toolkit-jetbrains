@@ -12,6 +12,9 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobHistoryItem
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getTableMapping
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseTableMapping
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getLinesOfCodeSubmitted
 import java.time.Duration
 import java.time.Instant
 import kotlin.io.path.Path
@@ -55,4 +58,11 @@ class CodeModernizerSessionState {
     }
 
     fun getJobHistory(): Array<JobHistoryItem> = previousJobHistory.values.toTypedArray()
+
+    // used to emit a TransformEvent metric at end of transformation
+    fun getLinesOfCodeSubmitted(): Int? {
+        val tableMapping = transformationPlan?.transformationSteps()?.get(0)?.let { getTableMapping(it.progressUpdates()) }
+        val planTable = tableMapping?.let { parseTableMapping(it) }
+        return planTable?.let { getLinesOfCodeSubmitted(it) }
+    }
 }

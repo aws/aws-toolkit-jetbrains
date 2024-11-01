@@ -226,7 +226,7 @@ class GumbyClient(private val project: Project) {
                     }
                     it.linesOfCodeChanged(metrics.linesOfCodeChanged)
                     it.charsOfCodeChanged(metrics.charsOfCodeChanged)
-                    it.linesOfCodeSubmitted(0) // TODO: figure out how to get lines of code submitted from plan stage
+                    it.linesOfCodeSubmitted(metrics.linesOfCodeSubmitted)
                 }
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())

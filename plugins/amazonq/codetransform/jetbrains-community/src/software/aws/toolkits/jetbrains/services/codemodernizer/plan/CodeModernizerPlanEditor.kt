@@ -26,7 +26,9 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.PlanTable
 import software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModernizerPlanEditorProvider.Companion.MIGRATION_PLAN_KEY
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getAuthType
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getBillingText
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getLinesOfCodeSubmitted
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getTableMapping
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseTableMapping
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addHorizontalGlue
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CredentialSourceId
@@ -59,12 +61,7 @@ import javax.swing.table.DefaultTableModel
 
 class CodeModernizerPlanEditor(val project: Project, private val virtualFile: VirtualFile) : UserDataHolderBase(), FileEditor {
     val plan = virtualFile.getUserData(MIGRATION_PLAN_KEY) ?: throw RuntimeException("Migration plan not found")
-    private val tableMapping =
-        if (!plan.transformationSteps()[0].progressUpdates().isNullOrEmpty()) {
-            getTableMapping(plan.transformationSteps()[0].progressUpdates())
-        } else {
-            throw RuntimeException("GetPlan response missing step 0 progress updates with table data")
-        }
+    private val tableMapping = getTableMapping(plan.transformationSteps()[0].progressUpdates())
     private val mapper = jacksonObjectMapper()
 
     // to-do: convert to UI DSL
@@ -79,8 +76,8 @@ class CodeModernizerPlanEditor(val project: Project, private val virtualFile: Vi
                     // key "0" reserved for job statistics table
                     // comes from "name" field of each progressUpdate in step zero of plan
                     if (JOB_STATISTICS_TABLE_KEY in tableMapping) {
-                        val planTable = mapper.readValue(tableMapping[JOB_STATISTICS_TABLE_KEY], PlanTable::class.java)
-                        val linesOfCode = planTable.rows.find { it.name == "linesOfCode" }?.value?.toInt()
+                        val planTable = parseTableMapping(tableMapping)
+                        val linesOfCode = getLinesOfCodeSubmitted(planTable)
                         if (linesOfCode != null && linesOfCode > LOC_THRESHOLD && getAuthType(project) == CredentialSourceId.IamIdentityCenter) {
                             val billingText = getBillingText(linesOfCode)
                             val billingTextComponent =

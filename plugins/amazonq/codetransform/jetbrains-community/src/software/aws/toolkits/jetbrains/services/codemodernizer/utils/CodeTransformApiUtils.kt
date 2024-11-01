@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.project.Project
 import com.intellij.serviceContainer.AlreadyDisposedException
 import kotlinx.coroutines.delay
@@ -23,7 +24,9 @@ import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.BILLING_RATE
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.JOB_STATISTICS_TABLE_KEY
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.PlanTable
 import software.aws.toolkits.resources.message
 import java.time.Duration
 import java.util.Locale
@@ -128,11 +131,23 @@ suspend fun JobId.pollTransformationStatusAndPlan(
 }
 
 // "name" holds the ID of the corresponding plan step (where table will go) and "description" holds the plan data
-fun getTableMapping(stepZeroProgressUpdates: List<TransformationProgressUpdate>) = stepZeroProgressUpdates.associate {
-    it.name() to it.description()
+fun getTableMapping(stepZeroProgressUpdates: List<TransformationProgressUpdate>): Map<String, String> {
+    if (stepZeroProgressUpdates.isNotEmpty()) {
+        return stepZeroProgressUpdates.associate {
+            it.name() to it.description()
+        }
+    } else {
+        throw RuntimeException("GetPlan response missing step 0 progress updates with table data")
+    }
 }
+
+fun parseTableMapping(tableMapping: Map<String, String>): PlanTable =
+    jacksonObjectMapper().readValue(tableMapping[JOB_STATISTICS_TABLE_KEY], PlanTable::class.java)
 
 fun getBillingText(linesOfCode: Int): String {
     val estimatedCost = String.format(Locale.US, "%.2f", linesOfCode.times(BILLING_RATE))
     return message("codemodernizer.migration_plan.header.billing_text", linesOfCode, BILLING_RATE, estimatedCost)
 }
+
+fun getLinesOfCodeSubmitted(planTable: PlanTable) =
+    planTable.rows.find { it.name == "linesOfCode" }?.value?.toInt()

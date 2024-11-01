@@ -39,6 +39,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFai
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ParseZipFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.UnzipFailureReason
+import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isValidCodeTransformConnection
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
@@ -70,6 +71,8 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             is DownloadArtifactResult.Success -> {
                 if (result.artifact !is CodeModernizerArtifact) return notifyUnableToApplyPatch("")
                 displayDiffUsingPatch(result.artifact.patch, job, source)
+                val linesOfCodeSubmitted = CodeModernizerSessionState.getInstance(project).getLinesOfCodeSubmitted()
+                result.artifact.metrics.linesOfCodeSubmitted = linesOfCodeSubmitted
                 clientAdaptor.sendTransformTelemetryEvent(job, result.artifact.metrics)
             }
             is DownloadArtifactResult.ParseZipFailure -> notifyUnableToApplyPatch(result.failureReason.errorMessage)
