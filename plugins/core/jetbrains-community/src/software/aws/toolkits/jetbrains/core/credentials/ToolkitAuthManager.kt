@@ -10,6 +10,7 @@ import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import migration.software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import org.jetbrains.annotations.VisibleForTesting
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.ConnectionSettings
@@ -36,6 +37,7 @@ import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.Result
 import java.net.UnknownHostException
 import java.time.Instant
+import java.util.concurrent.atomic.AtomicBoolean
 
 sealed interface ToolkitConnection {
     val id: String
@@ -276,7 +278,7 @@ fun reauthConnectionIfNeeded(
                         source = source,
                     )
                 }
-                hasSeenFirstNetworkError = false
+                hasSeenFirstNetworkError.set(false)
             } catch (e: Exception) {
                 if (isReAuth) {
                     val result = if (e is ProcessCanceledException) Result.Cancelled else Result.Failed
@@ -328,7 +330,7 @@ fun maybeReauthProviderIfNeeded(
                 return runUnderProgressIfNeeded(project, AwsCoreBundle.message("credentials.refreshing"), true) {
                     tokenProvider.resolveToken()
                     BearerTokenProviderListener.notifyCredUpdate(tokenProvider.id)
-                    hasSeenFirstNetworkError = false
+                    hasSeenFirstNetworkError.set(false)
                     return@runUnderProgressIfNeeded false
                 }
             } catch (e: Exception) {
@@ -339,17 +341,14 @@ fun maybeReauthProviderIfNeeded(
                         onReauthRequired(e)
                         return true
                     }
-                    e is UnknownHostException || e.message?.contains("Unable to execute HTTP request") == true -> {
+                    e is UnknownHostException || e is RuntimeException -> {
                         getLogger<ToolkitAuthManager>().warn(e) { "Failed to refresh token" }
-                        synchronized(networkErrorLock) {
-                            if (!hasSeenFirstNetworkError) {
-                                hasSeenFirstNetworkError = true
-                                notifyInfo(
-                                    message("general.auth.network.error"),
-                                    message("general.auth.network.error.message"),
-                                    project
-                                )
-                            }
+                        if (hasSeenFirstNetworkError.compareAndSet(false, true)) {
+                            notifyInfo(
+                                message("general.auth.network.error"),
+                                message("general.auth.network.error.message"),
+                                project
+                            )
                         }
                         return false
                     }
@@ -435,8 +434,12 @@ private fun recordAddConnection(
     }
 }
 
-private var hasSeenFirstNetworkError = false
-private val networkErrorLock = Object()
+private var hasSeenFirstNetworkError: AtomicBoolean = AtomicBoolean(false)
+
+@VisibleForTesting
+internal fun resetNetworkErrorState() {
+    hasSeenFirstNetworkError.set(false)
+}
 
 data class ConnectionMetadata(
     val sourceId: String? = null,

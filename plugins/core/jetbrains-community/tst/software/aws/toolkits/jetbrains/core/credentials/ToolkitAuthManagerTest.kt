@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
-import com.intellij.ide.util.PropertiesComponent
+
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ApplicationExtension
 import io.mockk.every
@@ -12,7 +12,11 @@ import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.runs
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.*
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.clearAllMocks
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -43,10 +47,6 @@ class ToolkitAuthManagerTest {
         tokenProvider = mock()
         reauthCallCount = 0
 
-        val field = Class.forName("software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManagerKt")
-            .getDeclaredField("hasSeenFirstNetworkError")
-        field.isAccessible = true
-        field.set(null, false)
 
         mockkObject(BearerTokenProviderListener)
         mockkStatic("software.aws.toolkits.jetbrains.utils.NotificationUtilsKt")
@@ -54,13 +54,14 @@ class ToolkitAuthManagerTest {
             notifyInfo(any(), any(), any())
         } just runs
         every { BearerTokenProviderListener.notifyCredUpdate(any<String>()) } just runs
+        resetNetworkErrorState()
     }
 
     @Test
     fun `test NEEDS_REFRESH state with network error - first occurrence`() {
         whenever(tokenProvider.state()).thenReturn(BearerTokenAuthState.NEEDS_REFRESH)
         doThrow(RuntimeException("Unable to execute HTTP request"))
-            .`when`(tokenProvider)
+            .whenever(tokenProvider)
             .resolveToken()
 
         val result = maybeReauthProviderIfNeeded(
