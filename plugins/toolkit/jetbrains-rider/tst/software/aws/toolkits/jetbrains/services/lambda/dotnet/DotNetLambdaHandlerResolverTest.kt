@@ -17,7 +17,7 @@ import software.aws.toolkits.jetbrains.utils.OPEN_SOLUTION_DIR_NAME
  */
 class DotNetLambdaHandlerResolverTest : AwsReuseSolutionTestBase() {
 
-    override fun getSolutionDirectoryName(): String = OPEN_SOLUTION_DIR_NAME
+    override fun solutionDirectoryName(): String = OPEN_SOLUTION_DIR_NAME
 
     @Test
     fun testHandler_SingleValidHandler() {

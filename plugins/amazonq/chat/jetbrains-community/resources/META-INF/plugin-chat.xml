@@ -8,7 +8,7 @@
     <projectListeners>
         <listener class="software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowListener"
                   topic="com.intellij.openapi.wm.ex.ToolWindowManagerListener"/>
-        <listener class="software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextEditorListener"
+        <listener class="software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextEditorListener"
                   topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
     </projectListeners>
 
@@ -20,6 +20,7 @@
                     factoryClass="software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory" icon="AwsIcons.Logos.AWS_Q" />
 
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.amazonq.startup.AmazonQStartupActivity"/>
+        <actionPromoter order="last" implementation="software.aws.toolkits.jetbrains.services.cwc.inline.InlineChatActionPromoter"/>
     </extensions>
 
     <extensions defaultExtensionNs="amazon.q">
@@ -78,6 +79,13 @@
             <action id="aws.toolkit.jetbrains.core.services.cwc.commands.SendToPromptAction"
                     class="software.aws.toolkits.jetbrains.services.cwc.commands.SendToPromptAction">
                 <keyboard-shortcut keymap="$default" first-keystroke="meta alt S" />
+            </action>
+
+            <action id="aws.toolkit.jetbrains.core.services.cwc.inline.openChat"
+                    class="software.aws.toolkits.jetbrains.services.cwc.inline.OpenChatInputAction">
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta I"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta I"/>
+                <keyboard-shortcut keymap="$default" first-keystroke="control I"/>
             </action>
         </group>
     </actions>

@@ -2,8 +2,8 @@
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-import { Connector } from './connector'
-import { ChatItem, ChatItemType, MynahIcons, MynahUI, MynahUIDataModel, NotificationType } from '@aws/mynah-ui-chat'
+import { Connector, CWCChatItem } from './connector'
+import {ChatItem, ChatItemType, MynahIcons, MynahUI, MynahUIDataModel, NotificationType, ReferenceTrackerInformation} from '@aws/mynah-ui-chat'
 import './styles/dark.scss'
 import { TabsStorage, TabType } from './storages/tabsStorage'
 import { WelcomeFollowupType } from './apps/amazonqCommonsConnector'
@@ -17,12 +17,15 @@ import { MessageController } from './messages/controller'
 import { getActions, getDetails } from './diffTree/actions'
 import { DiffTreeFileInfo } from './diffTree/types'
 import './styles.css'
+import {CodeSelectionType} from "@aws/mynah-ui-chat/dist/static";
 
 export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeTransformInitEnabled: boolean) => {
     // eslint-disable-next-line prefer-const
     let mynahUI: MynahUI
     // eslint-disable-next-line prefer-const
     let connector: Connector
+    const responseMetadata = new Map<string, string[]>()
+
     const tabsStorage = new TabsStorage({
         onTabTimeout: tabID => {
             mynahUI.addChatItem(tabID, {
@@ -127,6 +130,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
                 mynahUI.updateStore(tabID, {
                     loadingChat: true,
                     promptInputDisabledState: true,
+                    cancelButtonWhenLoading: true,
                 })
                 if (message) {
                     mynahUI.updateLastChatAnswer(tabID, {
@@ -196,6 +200,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
 
                 mynahUI.addChatItem(tabID, chatItem)
                 mynahUI.updateStore(tabID, {
+                    cancelButtonWhenLoading: false,
                     loadingChat: chatItem.type !== ChatItemType.ANSWER,
                 })
 
@@ -239,7 +244,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
         sendMessageToExtension: message => {
             ideApi.postMessage(message)
         },
-        onChatAnswerReceived: (tabID: string, item: ChatItem) => {
+        onChatAnswerReceived: (tabID: string, item: CWCChatItem) => {
             if (item.type === ChatItemType.ANSWER_PART || item.type === ChatItemType.CODE_RESULT) {
                 mynahUI.updateLastChatAnswer(tabID, {
                     ...(item.messageId !== undefined ? { messageId: item.messageId } : {}),
@@ -251,6 +256,9 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
                         ? { type: ChatItemType.CODE_RESULT, fileList: item.fileList }
                         : {}),
                 })
+                if (item.messageId !== undefined && item.userIntent !== undefined && item.codeBlockLanguage !== undefined) {
+                    responseMetadata.set(item.messageId, [item.userIntent, item.codeBlockLanguage])
+                }
                 return
             }
 
@@ -265,6 +273,7 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
             ) {
                 mynahUI.updateStore(tabID, {
                     loadingChat: true,
+                    cancelButtonWhenLoading: false,
                     promptInputDisabledState: true,
                 })
 
@@ -407,6 +416,13 @@ export const createMynahUI = (ideApi: any, featureDevInitEnabled: boolean, codeT
                 quickActionCommands: tabDataGenerator.quickActionsGenerator.generateForTab('unknown'),
             })
             connector.onTabAdd(tabID)
+        },
+        onStopChatResponse: (tabID: string) => {
+            mynahUI.updateStore(tabID, {
+                loadingChat: false,
+                promptInputDisabledState: false,
+            })
+            connector.onStopChatResponse(tabID)
         },
         onTabRemove: connector.onTabRemove,
         onTabChange: connector.onTabChange,

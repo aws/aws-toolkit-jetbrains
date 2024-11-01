@@ -55,10 +55,11 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererCon
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.checkLeftContextKeywordsForJsonAndYaml
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getCaretPosition
+import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.isSupportedJsonFormat
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJson
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
@@ -70,7 +71,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.Supplemental
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.WorkerContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeInsightsSettingsFacade
@@ -81,6 +81,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.notifyErrorCodeWhispererUsageLimit
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.utils.isInjectedText
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.notifyWarn
@@ -171,7 +172,13 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
 
         val language = requestContext.fileContextInfo.programmingLanguage
         val leftContext = requestContext.fileContextInfo.caretContext.leftFileContext
-        if (!language.isCodeCompletionSupported() || (checkLeftContextKeywordsForJsonAndYaml(leftContext, language.languageId))) {
+        if (!language.isCodeCompletionSupported() || (
+                language is CodeWhispererJson && !isSupportedJsonFormat(
+                    requestContext.fileContextInfo.filename,
+                    leftContext
+                )
+                )
+        ) {
             LOG.debug { "Programming language $language is not supported by CodeWhisperer" }
             if (triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
                 showCodeWhispererInfoHint(
@@ -237,7 +244,8 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     val sessionId = response.sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
                     if (requestCount == 1) {
                         requestContext.latencyContext.codewhispererPostprocessingStart = System.nanoTime()
-                        requestContext.latencyContext.paginationFirstCompletionTime = latency
+                        requestContext.latencyContext.paginationFirstCompletionTime =
+                            (endTime - requestContext.latencyContext.codewhispererEndToEndStart).toDouble()
                         requestContext.latencyContext.firstRequestId = requestId
                         CodeWhispererInvocationStatus.getInstance().setInvocationSessionId(sessionId)
                     }
@@ -409,10 +417,8 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     if (requestContext.triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
                         // We should only show error hint when CodeWhisperer popup is not visible,
                         // and make it silent if CodeWhisperer popup is showing.
-                        runInEdt {
-                            if (!CodeWhispererInvocationStatus.getInstance().isPopupActive()) {
-                                showCodeWhispererErrorHint(requestContext.editor, displayMessage)
-                            }
+                        if (!CodeWhispererInvocationStatus.getInstance().isPopupActive()) {
+                            showCodeWhispererErrorHint(requestContext.editor, displayMessage)
                         }
                     }
                 }
@@ -754,12 +760,16 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         return true
     }
 
-    fun showCodeWhispererInfoHint(editor: Editor, message: String) {
-        HintManager.getInstance().showInformationHint(editor, message, HintManager.UNDER)
+    private fun showCodeWhispererInfoHint(editor: Editor, message: String) {
+        runInEdt {
+            HintManager.getInstance().showInformationHint(editor, message, HintManager.UNDER)
+        }
     }
 
-    fun showCodeWhispererErrorHint(editor: Editor, message: String) {
-        HintManager.getInstance().showErrorHint(editor, message, HintManager.UNDER)
+    private fun showCodeWhispererErrorHint(editor: Editor, message: String) {
+        runInEdt {
+            HintManager.getInstance().showErrorHint(editor, message, HintManager.UNDER)
+        }
     }
 
     override fun dispose() {}

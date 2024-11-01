@@ -1,0 +1,14 @@
+{
+  "date" : "2024-10-17",
+  "version" : "3.33",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Add support for 2024.3"
+  }, {
+    "type" : "bugfix",
+    "description" : "`@workspace` cannot properly locate certain folders for certain project setup"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix an IDE deadlock that may occur while attempting to initialize Amazon Q UI elements (#4966)"
+  } ]
+}

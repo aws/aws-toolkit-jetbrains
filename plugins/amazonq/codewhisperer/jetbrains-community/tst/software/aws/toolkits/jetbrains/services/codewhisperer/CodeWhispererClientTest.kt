@@ -31,8 +31,8 @@ import software.aws.toolkits.jetbrains.core.MockClientManager
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererEndpointCustomizer
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 
 /**
  * If this test class failed, highly likely because the endpoint is overwritten by [CodeWhispererEndpointCustomizer]

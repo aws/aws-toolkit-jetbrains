@@ -11,6 +11,12 @@ import kotlin.random.Random
 
 fun aString(length: Int = Random.nextInt(5, 30)): String = UUID.randomUUID().toString().substring(length)
 
+fun aStringWithLineCount(lineCount: Int, start: Int = 0): String = buildString {
+    for (i in start until start + lineCount) {
+        append("line$i\n")
+    }
+}.trimEnd()
+
 fun retryableAssert(
     timeout: Duration? = null,
     maxAttempts: Int? = null,
