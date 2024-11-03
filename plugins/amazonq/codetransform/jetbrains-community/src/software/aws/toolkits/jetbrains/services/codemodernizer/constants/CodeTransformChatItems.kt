@@ -79,7 +79,15 @@ private val viewDiffButton = Button(
     keepCardAfterClick = true,
 )
 
-private val viewSummaryButton = Button(
+fun createViewDiffButton(buttonLabel: String): Button {
+    return Button(
+        id = CodeTransformButtonId.ViewDiff.id,
+        text = buttonLabel,
+        keepCardAfterClick = true
+    )
+}
+
+val viewSummaryButton = Button(
     id = CodeTransformButtonId.ViewSummary.id,
     text = message("codemodernizer.chat.message.button.view_summary"),
     keepCardAfterClick = true,
@@ -367,7 +375,7 @@ fun buildTransformResumingChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
 )
 
-fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): CodeTransformChatMessageContent {
+fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult, totalPatchFiles: Int): CodeTransformChatMessageContent {
     val resultMessage = when (result) {
         is CodeModernizerJobCompletedResult.JobAbortedZipTooLarge -> {
             "${message(
@@ -411,7 +419,7 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
         type = CodeTransformChatMessageType.FinalizedAnswer,
         message = resultMessage,
         buttons = if (result is CodeModernizerJobCompletedResult.JobPartiallySucceeded || result is CodeModernizerJobCompletedResult.JobCompletedSuccessfully) {
-            listOf(viewDiffButton, viewSummaryButton)
+            listOf(createViewDiffButton(if (totalPatchFiles == 1) "View diff" else "View diff 1/${totalPatchFiles}"), viewSummaryButton)
         } else if (result is CodeModernizerJobCompletedResult.JobFailedInitialBuild && result.hasBuildLog) {
             listOf(viewBuildLog)
         } else {

@@ -20,6 +20,8 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.codemodernizer.ArtifactHandler
+import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.CodeModernizerBanner
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.CodeModernizerJobHistoryTablePanel

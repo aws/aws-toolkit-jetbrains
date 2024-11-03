@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
@@ -15,8 +16,11 @@ import com.intellij.openapi.vcs.changes.patch.ApplyPatchMode
 import com.intellij.openapi.vcs.changes.patch.ImportToShelfExecutor
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
+import com.jetbrains.rd.generator.nova.PredefinedType
+import com.squareup.wire.get
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.core.utils.error
@@ -28,9 +32,18 @@ import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.NoTokenInitializedException
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_DOWNLOAD_ERROR_OVERVIEW
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_DOWNLOAD_EXPIRED
+import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformResultChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.getDownloadedArtifactTextFromType
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.createViewDiffButton
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.viewSummaryButton
+import software.aws.toolkits.jetbrains.services.codemodernizer.controller.CodeTransformChatHelper
+import software.aws.toolkits.jetbrains.services.codemodernizer.messages.Button
+import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformButtonId
+import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessageContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessageType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformFailureBuildLog
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
@@ -38,7 +51,9 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArt
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ParseZipFailureReason
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.PatchInfo
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.UnzipFailureReason
+import software.aws.toolkits.jetbrains.services.codemodernizer.session.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isValidCodeTransformConnection
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
@@ -52,24 +67,36 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildStartNewTransformFollowup
 
 const val DOWNLOAD_PROXY_WILDCARD_ERROR: String = "Dangling meta character '*' near index 0"
 const val DOWNLOAD_SSL_HANDSHAKE_ERROR: String = "Unable to execute HTTP request: javax.net.ssl.SSLHandshakeException"
 const val INVALID_ARTIFACT_ERROR: String = "Invalid artifact"
 
-class ArtifactHandler(private val project: Project, private val clientAdaptor: GumbyClient) {
+class ArtifactHandler(private val project: Project, private val clientAdaptor: GumbyClient, private val codeTransformChatHelper: CodeTransformChatHelper? = null) {
     private val telemetry = CodeTransformTelemetryManager.getInstance(project)
     private val downloadedArtifacts = mutableMapOf<JobId, Path>()
     private val downloadedSummaries = mutableMapOf<JobId, TransformationSummary>()
     private val downloadedBuildLogPath = mutableMapOf<JobId, Path>()
     private var isCurrentlyDownloading = AtomicBoolean(false)
+//    private var currentPatchIndex: Int = 0
+    private val scope = CoroutineScope(Dispatchers.Default)
+    private var totalPatchFiles: Int = 0
+
 
     internal suspend fun displayDiff(job: JobId, source: CodeTransformVCSViewerSrcComponents) {
         if (isCurrentlyDownloading.get()) return
         when (val result = downloadArtifact(job, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS)) {
             is DownloadArtifactResult.Success -> {
                 if (result.artifact !is CodeModernizerArtifact) return notifyUnableToApplyPatch("")
-                displayDiffUsingPatch(result.artifact.patch, job, source)
+//                notifyStickyInfo("chosen diff", result.artifact.patches[currentPatchIndex].name)
+//                notifyStickyInfo("chosen description", result.artifact.description[currentPatchIndex].name)
+                totalPatchFiles = result.artifact.patches.size
+                val diffDescription = result.artifact.description?.getOrNull(getCurrentPatchIndex())
+                displayDiffUsingPatch(result.artifact.patches[getCurrentPatchIndex()], totalPatchFiles, diffDescription, job, source)
             }
             is DownloadArtifactResult.ParseZipFailure -> notifyUnableToApplyPatch(result.failureReason.errorMessage)
             is DownloadArtifactResult.UnzipFailure -> notifyUnableToApplyPatch(result.failureReason.errorMessage)
@@ -165,11 +192,11 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             if (artifactType == TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS) {
                 notifyDownloadStart()
             }
-            val downloadResultsResponse = if (artifactType == TransformationDownloadArtifactType.LOGS) {
-                clientAdaptor.downloadExportResultArchive(job, null, TransformationDownloadArtifactType.LOGS)
-            } else {
-                clientAdaptor.downloadExportResultArchive(job)
-            }
+//            val downloadResultsResponse = if (artifactType == TransformationDownloadArtifactType.LOGS) {
+//                clientAdaptor.downloadExportResultArchive(job, null, TransformationDownloadArtifactType.LOGS)
+//            } else {
+//                clientAdaptor.downloadExportResultArchive(job)
+//            }
 
             // 3. Convert to zip
             LOG.info { "Downloaded the export result archive, about to transform to zip" }
@@ -177,10 +204,11 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             val totalDownloadBytes: Int
             val zipPath: String
             try {
-                val result = unzipToPath(downloadResultsResponse)
-                path = result.first
-                totalDownloadBytes = result.second
-                zipPath = path.toAbsolutePath().toString()
+//                val result = unzipToPath(downloadResultsResponse)
+//                path = result.first
+//                totalDownloadBytes = result.second
+//                zipPath = path.toAbsolutePath().toString()
+                zipPath = "/Users/ntarakad/Desktop/SampleArtifact.zip"
                 LOG.info { "Successfully converted the download to a zip at $zipPath." }
             } catch (e: Exception) {
                 LOG.error { e.message.toString() }
@@ -195,11 +223,11 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 } else {
                     DownloadArtifactResult.Success(CodeModernizerArtifact.create(zipPath), zipPath)
                 }
-                if (artifactType == TransformationDownloadArtifactType.LOGS) {
-                    downloadedBuildLogPath[job] = path
-                } else {
-                    downloadedArtifacts[job] = path
-                }
+//                if (artifactType == TransformationDownloadArtifactType.LOGS) {
+//                    downloadedBuildLogPath[job] = path
+//                } else {
+//                    downloadedArtifacts[job] = path
+//                }
                 output
             } catch (e: RuntimeException) {
                 LOG.error { e.message.toString() }
@@ -207,7 +235,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 telemetryErrorMessage = "Unexpected error when downloading result ${e.localizedMessage}"
                 DownloadArtifactResult.ParseZipFailure(ParseZipFailureReason(artifactType, e.message.orEmpty()))
             } finally {
-                telemetry.downloadArtifact(mapArtifactTypes(artifactType), downloadStartTime, job, totalDownloadBytes, telemetryErrorMessage)
+//                telemetry.downloadArtifact(mapArtifactTypes(artifactType), downloadStartTime, job, totalDownloadBytes, telemetryErrorMessage)
             }
         } catch (e: Exception) {
             if (isPreFetch) return DownloadArtifactResult.Skipped
@@ -234,7 +262,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
     /**
      * Opens the built-in patch dialog to display the diff and allowing users to apply the changes locally.
      */
-    internal fun displayDiffUsingPatch(patchFile: VirtualFile, jobId: JobId, source: CodeTransformVCSViewerSrcComponents) {
+    internal suspend fun displayDiffUsingPatch(patchFile: VirtualFile, totalPatchFiles: Int, diffDescription: PatchInfo?, jobId: JobId, source: CodeTransformVCSViewerSrcComponents) {
         runInEdt {
             val dialog = ApplyPatchDifferentiatedDialog(
                 project,
@@ -244,7 +272,9 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 patchFile,
                 null,
                 ChangeListManager.getInstance(project)
-                    .addChangeList(message("codemodernizer.patch.name"), ""),
+                    .addChangeList(
+                        diffDescription?.name ?: patchFile.name,
+                        ""),
                 null,
                 null,
                 null,
@@ -253,7 +283,21 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             dialog.isModal = true
 
             if (dialog.showAndGet()) {
-                telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Submit", source)
+                scope.launch {
+                    notifyStickyInfo("diff accepted", if (codeTransformChatHelper == null) "null" else "not null")
+                    telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Submit", source)
+                    setCurrentPatchIndex(getCurrentPatchIndex() + 1)
+                    if (getCurrentPatchIndex() < totalPatchFiles){
+                        val resultContent = CodeTransformChatMessageContent(
+                            type = CodeTransformChatMessageType.PendingAnswer,
+                            message = message("codemodernizer.chat.message.result.success"),
+                            buttons = listOf(createViewDiffButton("View diff ${getCurrentPatchIndex() + 1}/${totalPatchFiles}"), viewSummaryButton),
+                        )
+                        codeTransformChatHelper?.updateLastPendingMessage(resultContent)
+                    } else {
+                        codeTransformChatHelper?.addNewMessage(buildStartNewTransformFollowup())
+                    }
+                }
             } else {
                 telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Cancel", source)
             }
@@ -434,5 +478,10 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
 
     companion object {
         val LOG = getLogger<ArtifactHandler>()
+        private var sharedPatchIndex: Int = 0
+        fun getCurrentPatchIndex() = sharedPatchIndex
+        fun setCurrentPatchIndex(index: Int) {
+            sharedPatchIndex = index
+        }
     }
 }
