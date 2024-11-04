@@ -31,6 +31,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.AwsCoreBundle.message
+import java.net.UnknownHostException
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
@@ -60,7 +61,7 @@ class ToolkitAuthManagerTest {
     @Test
     fun `test NEEDS_REFRESH state with network error - first occurrence`() {
         whenever(tokenProvider.state()).thenReturn(BearerTokenAuthState.NEEDS_REFRESH)
-        doThrow(RuntimeException("Unable to execute HTTP request"))
+        doThrow(UnknownHostException("Unable to execute HTTP request"))
             .whenever(tokenProvider)
             .resolveToken()
 
@@ -84,7 +85,7 @@ class ToolkitAuthManagerTest {
     @Test
     fun `test NEEDS_REFRESH state with network error - subsequent occurrence`() {
         whenever(tokenProvider.state()).thenReturn(BearerTokenAuthState.NEEDS_REFRESH)
-        doThrow(RuntimeException("Unable to execute HTTP request"))
+        doThrow(UnknownHostException("Unable to execute HTTP request"))
             .`when`(tokenProvider)
             .resolveToken()
 
@@ -118,7 +119,7 @@ class ToolkitAuthManagerTest {
         whenever(tokenProvider.state()).thenReturn(BearerTokenAuthState.NEEDS_REFRESH)
 
         // First trigger a network error
-        doThrow(RuntimeException("Unable to execute HTTP request"))
+        doThrow(UnknownHostException("Unable to execute HTTP request"))
             .`when`(tokenProvider)
             .resolveToken()
 
@@ -150,7 +151,7 @@ class ToolkitAuthManagerTest {
         reset(tokenProvider)
         // Now trigger another network error - should show notification again
         whenever(tokenProvider.state()).thenReturn(BearerTokenAuthState.NEEDS_REFRESH)
-        doThrow(RuntimeException("Unable to execute HTTP request"))
+        doThrow(UnknownHostException("Unable to execute HTTP request"))
             .`when`(tokenProvider)
             .resolveToken()
         maybeReauthProviderIfNeeded(

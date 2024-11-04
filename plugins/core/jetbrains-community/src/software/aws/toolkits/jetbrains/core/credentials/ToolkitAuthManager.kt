@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
-import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
@@ -11,6 +10,7 @@ import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import migration.software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import org.jetbrains.annotations.VisibleForTesting
+import software.amazon.awssdk.core.exception.SdkClientException
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.ConnectionSettings
@@ -341,7 +341,7 @@ fun maybeReauthProviderIfNeeded(
                         onReauthRequired(e)
                         return true
                     }
-                    e is UnknownHostException || e is RuntimeException -> {
+                    e is UnknownHostException || e is SdkClientException -> {
                         getLogger<ToolkitAuthManager>().warn(e) { "Failed to refresh token" }
                         if (hasSeenFirstNetworkError.compareAndSet(false, true)) {
                             notifyInfo(
@@ -350,7 +350,7 @@ fun maybeReauthProviderIfNeeded(
                                 project
                             )
                         }
-                        return false
+                        return false// throw here?
                     }
                     else -> { return false }
                 }
