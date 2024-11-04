@@ -36,7 +36,7 @@ class Session(
     private var task: String = ""
     private val proxyClient: FeatureDevClient
     private val featureDevService: FeatureDevService
-    var _codeResultMessageId: String? = null
+    private var _codeResultMessageId: String? = null
 
     // retry session state vars
     private var codegenRetries: Int

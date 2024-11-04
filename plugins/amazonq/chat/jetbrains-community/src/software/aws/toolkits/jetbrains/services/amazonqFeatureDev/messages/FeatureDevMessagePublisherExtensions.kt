@@ -222,6 +222,7 @@ suspend fun MessagePublisher.sendCodeResult(
     deletedFiles: List<DeletedFileInfo>,
     references: List<CodeReferenceGenerated>,
 ) {
+    val messageId = UUID.randomUUID()
     val refs =
         references.map { ref ->
             CodeReference(
@@ -244,6 +245,7 @@ suspend fun MessagePublisher.sendCodeResult(
             filePaths = filePaths,
             deletedFiles = deletedFiles,
             references = refs,
+            messageId = messageId.toString(),
         ),
     )
 }

@@ -26,6 +26,7 @@ sealed interface IncomingFeatureDevMessage : FeatureDevBaseMessage {
 
     data class StoreMessageIdMessage(
         @JsonProperty("tabID") val tabId: String,
+        val command: String,
         val messageId: String?,
     ) : IncomingFeatureDevMessage
 
@@ -204,6 +205,7 @@ data class CodeResultMessage(
     val filePaths: List<NewFileZipInfo>,
     val deletedFiles: List<DeletedFileInfo>,
     val references: List<CodeReference>,
+    val messageId: String?
 ) : UiMessage(
     tabId = tabId,
     type = "codeResultMessage"
