@@ -289,7 +289,6 @@ class OtelExtension : AfterEachCallback, AfterAllCallback {
                 }
 
                 override fun onEnd(span: ReadableSpan) {
-                    println(span)
                     _completedSpans.add(span)
 
                     if (!openSpans.contains(span)) {
