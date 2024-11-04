@@ -176,7 +176,7 @@ class SsoAccessTokenProvider(
                 result = Result.Succeeded
             )
         } catch (e: Exception) {
-            getLogger<SsoAccessTokenProvider>().warn("Failed to save access token ${e.message}")
+            LOG.warn { "Failed to save access token ${e.message}" }
             AuthTelemetry.modifyConnection(
                 action = "Write file",
                 source = "accessToken",
@@ -218,7 +218,7 @@ class SsoAccessTokenProvider(
                 result = Result.Succeeded
             )
         } catch (e: Exception) {
-            getLogger<SsoAccessTokenProvider>().warn("Failed to save client registration ${e.message}")
+            LOG.warn { "Failed to save client registration ${e.message}" }
             AuthTelemetry.modifyConnection(
                 action = "Write file",
                 source = "registerDAGClient",
@@ -238,7 +238,7 @@ class SsoAccessTokenProvider(
         }
 
         if (!ssoUrl.contains("identitycenter")) {
-            getLogger<SsoAccessTokenProvider>().warn { "$ssoUrl does not appear to be a valid issuer URL" }
+            LOG.warn { "$ssoUrl does not appear to be a valid issuer URL" }
         }
 
         val registerResponse = client.registerClient {
@@ -270,7 +270,7 @@ class SsoAccessTokenProvider(
                 result = Result.Succeeded
             )
         } catch (e: Exception) {
-            getLogger<SsoAccessTokenProvider>().warn("Failed to save client registration${e.message}")
+            LOG.warn { "Failed to save client registration${e.message}" }
             AuthTelemetry.modifyConnection(
                 action = "Write file",
                 source = "registerPkceClient",
@@ -498,7 +498,7 @@ class SsoAccessTokenProvider(
                 requestId = requestId,
                 result = Result.Failed
             )
-            getLogger<SsoAccessTokenProvider>().warn("RefreshAccessTokenFailed: ${e.message}")
+            LOG.warn { "RefreshAccessTokenFailed: ${e.message}" }
             throw e
         }
     }
@@ -577,5 +577,6 @@ class SsoAccessTokenProvider(
         // Default number of seconds to poll for token, https://tools.ietf.org/html/draft-ietf-oauth-device-flow-15#section-3.5
         const val DEFAULT_INTERVAL_SECS = 5L
         const val SLOW_DOWN_DELAY_SECS = 5L
+        private val LOG = getLogger<SsoAccessTokenProvider>()
     }
 }
