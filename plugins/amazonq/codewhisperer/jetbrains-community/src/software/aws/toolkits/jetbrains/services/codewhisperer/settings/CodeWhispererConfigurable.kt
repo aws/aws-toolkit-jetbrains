@@ -4,20 +4,27 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.settings
 
 import com.intellij.icons.AllIcons
+import com.intellij.ide.DataManager
 import com.intellij.openapi.options.BoundConfigurable
+import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.SearchableConfigurable
+import com.intellij.openapi.options.ex.Settings
 import com.intellij.openapi.project.Project
-import com.intellij.ui.dsl.builder.AlignX
+import com.intellij.ui.components.ActionLink
 import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
+import com.intellij.util.concurrency.EdtExecutorService
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.resources.message
 import java.awt.Font
+import java.util.concurrent.TimeUnit
 
 //  As the connection is project-level, we need to make this project-level too (we have different config for Sono vs SSO users)
 class CodeWhispererConfigurable(private val project: Project) :
@@ -87,6 +94,23 @@ class CodeWhispererConfigurable(private val project: Project) :
                     bindSelected(codeWhispererSettings::isImportAdderEnabled, codeWhispererSettings::toggleImportAdder)
                 }.comment(message("aws.settings.codewhisperer.automatic_import_adder.tooltip"))
             }
+
+            if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
+                row {
+                    link("Configure inline suggestion keybindings") { e ->
+                        // TODO: user needs feedback if these are null
+                        val settings = DataManager.getInstance().getDataContext(e.source as ActionLink).getData(Settings.KEY) ?: return@link
+                        val configurable: Configurable = settings.find("preferences.keymap") ?: return@link
+
+                        settings.select(configurable, Q_INLINE_KEYBINDING_SEARCH_TEXT)
+
+                        // workaround for certain cases for sometimes the string is not input there
+                        EdtExecutorService.getScheduledExecutorInstance().schedule({
+                            settings.select(configurable, Q_INLINE_KEYBINDING_SEARCH_TEXT)
+                        }, 500, TimeUnit.MILLISECONDS)
+                    }
+                }
+            }
         }
 
         group(message("aws.settings.codewhisperer.group.q_chat")) {
@@ -109,7 +133,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                 intTextField(
                     range = IntRange(0, 50)
                 ).bindIntText(codeWhispererSettings::getProjectContextIndexThreadCount, codeWhispererSettings::setProjectContextIndexThreadCount)
-                    .align(AlignX.FILL).apply {
+                    .apply {
                         connect.subscribe(
                             ToolkitConnectionManagerListener.TOPIC,
                             object : ToolkitConnectionManagerListener {
@@ -126,7 +150,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                 intTextField(
                     range = IntRange(1, 250)
                 ).bindIntText(codeWhispererSettings::getProjectContextIndexMaxSize, codeWhispererSettings::setProjectContextIndexMaxSize)
-                    .align(AlignX.FILL).apply {
+                    .apply {
                         connect.subscribe(
                             ToolkitConnectionManagerListener.TOPIC,
                             object : ToolkitConnectionManagerListener {
@@ -182,5 +206,9 @@ class CodeWhispererConfigurable(private val project: Project) :
                 }
             }
         }
+    }
+
+    companion object {
+        private const val Q_INLINE_KEYBINDING_SEARCH_TEXT = "inline suggestion"
     }
 }

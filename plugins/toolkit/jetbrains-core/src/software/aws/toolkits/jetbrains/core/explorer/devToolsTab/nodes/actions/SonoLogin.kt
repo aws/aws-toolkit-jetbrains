@@ -7,6 +7,7 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAwareAction
+import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
@@ -23,7 +24,7 @@ class SonoLogin : DumbAwareAction(AllIcons.Actions.Execute) {
         pluginAwareExecuteOnPooledThread {
             val connectionManager = ToolkitConnectionManager.getInstance(project)
             connectionManager.activeConnectionForFeature(CodeCatalystConnection.getInstance())?.let {
-                reauthConnectionIfNeeded(project, it, isReAuth = true)
+                reauthConnectionIfNeeded(project, it, isReAuth = true, reauthSource = ReauthSource.CODECATALYST)
                 project.refreshDevToolTree()
             } ?: run {
                 runInEdt {

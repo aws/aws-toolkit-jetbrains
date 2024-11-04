@@ -19,18 +19,23 @@ import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContextNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.PreviewContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererUserActionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererCodeCompletionServiceListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_SECONDS_IN_MINUTE
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCodeWhispererStartUrl
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getUnmodifiedAcceptedCharsCount
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.telemetry.CodewhispererTelemetry
 import java.time.Duration
@@ -40,6 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.roundToLong
 
 // TODO: reset code coverage calculator on logging out connection?
+// TODO: rename "Tokens" to "Characters", and many more renames in this file
 abstract class CodeWhispererCodeCoverageTracker(
     private val project: Project,
     private val timeWindowInSec: Long,
@@ -49,22 +55,22 @@ abstract class CodeWhispererCodeCoverageTracker(
     private val myServiceInvocationCount: AtomicInteger,
 ) : Disposable {
     val percentage: Long?
-        get() = if (totalTokensSize != 0L) calculatePercentage(rawAcceptedTokenSize, totalTokensSize) else null
-    val acceptedTokensSize: Long
+        get() = if (totalCharsCount != 0L) calculatePercentage(acceptedCharsCount, totalCharsCount) else null
+    val unmodifiedAcceptedCharsCount: Long
         get() = fileToTokens.map {
-            it.value.acceptedTokens.get()
+            it.value.unmodifiedAcceptedChars.get()
         }.fold(0) { acc, next ->
             acc + next
         }
-    val totalTokensSize: Long
+    val totalCharsCount: Long
         get() = fileToTokens.map {
-            it.value.totalTokens.get()
+            it.value.totalChars.get()
         }.fold(0) { acc, next ->
             acc + next
         }
-    private val rawAcceptedTokenSize: Long
+    private val acceptedCharsCount: Long
         get() = fileToTokens.map {
-            it.value.rawAcceptedTokens.get()
+            it.value.acceptedChars.get()
         }.fold(0) { acc, next ->
             acc + next
         }
@@ -83,25 +89,52 @@ abstract class CodeWhispererCodeCoverageTracker(
         if (!isTelemetryEnabled() || isActive.getAndSet(true)) return
 
         val conn = ApplicationManager.getApplication().messageBus.connect()
-        conn.subscribe(
-            CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
-            object : CodeWhispererUserActionListener {
-                override fun afterAccept(states: InvocationContext, sessionContext: SessionContext, rangeMarker: RangeMarker) {
-                    if (states.requestContext.fileContextInfo.programmingLanguage != language) return
-                    rangeMarkers.add(rangeMarker)
-                    val originalRecommendation = extractRangeMarkerString(rangeMarker) ?: return
-                    rangeMarker.putUserData(KEY_REMAINING_RECOMMENDATION, originalRecommendation)
-                    runReadAction {
-                        // also increment total tokens because accepted tokens are part of it
-                        incrementTotalTokens(rangeMarker.document, originalRecommendation.length)
-                        // avoid counting CodeWhisperer inserted suggestion twice in total tokens
-                        if (rangeMarker.textRange.length in 2..49 && originalRecommendation.trim().isNotEmpty()) {
-                            incrementTotalTokens(rangeMarker.document, -rangeMarker.textRange.length)
+        if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
+            conn.subscribe(
+                CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
+                object : CodeWhispererUserActionListener {
+                    override fun afterAccept(
+                        states: InvocationContextNew,
+                        previews: List<PreviewContext>,
+                        sessionContext: SessionContextNew,
+                        rangeMarker: RangeMarker,
+                    ) {
+                        if (states.requestContext.fileContextInfo.programmingLanguage != language) return
+                        rangeMarkers.add(rangeMarker)
+                        val originalRecommendation = extractRangeMarkerString(rangeMarker) ?: return
+                        rangeMarker.putUserData(KEY_REMAINING_RECOMMENDATION, originalRecommendation)
+                        runReadAction {
+                            // also increment total tokens because accepted tokens are part of it
+                            incrementTotalCharsCount(rangeMarker.document, originalRecommendation.length)
+                            // avoid counting CodeWhisperer inserted suggestion twice in total tokens
+                            if (rangeMarker.textRange.length in 2..49 && originalRecommendation.trim().isNotEmpty()) {
+                                incrementTotalCharsCount(rangeMarker.document, -rangeMarker.textRange.length)
+                            }
                         }
                     }
                 }
-            }
-        )
+            )
+        } else {
+            conn.subscribe(
+                CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
+                object : CodeWhispererUserActionListener {
+                    override fun afterAccept(states: InvocationContext, sessionContext: SessionContext, rangeMarker: RangeMarker) {
+                        if (states.requestContext.fileContextInfo.programmingLanguage != language) return
+                        rangeMarkers.add(rangeMarker)
+                        val originalRecommendation = extractRangeMarkerString(rangeMarker) ?: return
+                        rangeMarker.putUserData(KEY_REMAINING_RECOMMENDATION, originalRecommendation)
+                        runReadAction {
+                            // also increment total tokens because accepted tokens are part of it
+                            incrementTotalCharsCount(rangeMarker.document, originalRecommendation.length)
+                            // avoid counting CodeWhisperer inserted suggestion twice in total tokens
+                            if (rangeMarker.textRange.length in 2..49 && originalRecommendation.trim().isNotEmpty()) {
+                                incrementTotalCharsCount(rangeMarker.document, -rangeMarker.textRange.length)
+                            }
+                        }
+                    }
+                }
+            )
+        }
 
         conn.subscribe(
             CodeWhispererService.CODEWHISPERER_CODE_COMPLETION_PERFORMED,
@@ -133,31 +166,18 @@ abstract class CodeWhispererCodeCoverageTracker(
         // when event is auto closing [{(', there will be 2 separated events, both count as 1 char increase in total chars
         val text = event.newFragment.toString()
         if ((event.newLength == 1 && event.oldLength == 0) || (text.startsWith('\n') && text.trim().isEmpty())) {
-            incrementTotalTokens(event.document, 1)
+            incrementTotalCharsCount(event.document, 1)
             return
         } else if (event.newLength < 50 && text.trim().isNotEmpty()) {
             // count doc changes from <50 multi character input as total user written code
             // ignore all white space changes, this usually comes from IntelliJ formatting
-            incrementTotalTokens(event.document, event.newLength)
+            incrementTotalCharsCount(event.document, event.newLength)
         }
     }
 
     internal fun extractRangeMarkerString(rangeMarker: RangeMarker): String? = runReadAction {
         rangeMarker.range?.let { myRange -> rangeMarker.document.getText(myRange) }
     }
-
-    // With edit distance, complicate usermodification can be considered as simple edit(add, delete, replace),
-    // and thus the unmodified part of recommendation length can be deducted/approximated
-    // ex. (modified > original): originalRecom: foo -> modifiedRecom: fobarbarbaro, distance = 9, delta = 12 - 9 = 3
-    // ex. (modified == original): originalRecom: helloworld -> modifiedRecom: HelloWorld, distance = 2, delta = 10 - 2 = 8
-    // ex. (modified < original): originalRecom: CodeWhisperer -> modifiedRecom: CODE, distance = 12, delta = 13 - 12 = 1
-    internal fun getAcceptedTokensDelta(originalRecommendation: String, modifiedRecommendation: String): Int {
-        val editDistance = getEditDistance(modifiedRecommendation, originalRecommendation).toInt()
-        return maxOf(originalRecommendation.length, modifiedRecommendation.length) - editDistance
-    }
-
-    protected open fun getEditDistance(modifiedString: String, originalString: String): Double =
-        levenshteinChecker.distance(modifiedString, originalString)
 
     private fun flush() {
         try {
@@ -174,21 +194,21 @@ abstract class CodeWhispererCodeCoverageTracker(
         }
     }
 
-    private fun incrementAcceptedTokens(document: Document, delta: Int) {
+    private fun incrementUnmodifiedAcceptedCharsCount(document: Document, delta: Int) {
         val tokens = fileToTokens.getOrPut(document) { CodeCoverageTokens() }
-        tokens.acceptedTokens.addAndGet(delta)
+        tokens.unmodifiedAcceptedChars.addAndGet(delta)
     }
 
-    private fun incrementRawAcceptedTokens(document: Document, delta: Int) {
+    private fun incrementAcceptedCharsCount(document: Document, delta: Int) {
         val tokens = fileToTokens.getOrPut(document) { CodeCoverageTokens() }
-        tokens.rawAcceptedTokens.addAndGet(delta)
+        tokens.acceptedChars.addAndGet(delta)
     }
 
-    private fun incrementTotalTokens(document: Document, delta: Int) {
+    private fun incrementTotalCharsCount(document: Document, delta: Int) {
         val tokens = fileToTokens.getOrPut(document) { CodeCoverageTokens() }
         tokens.apply {
-            totalTokens.addAndGet(delta)
-            if (totalTokens.get() < 0) totalTokens.set(0)
+            totalChars.addAndGet(delta)
+            if (totalChars.get() < 0) totalChars.set(0)
         }
     }
 
@@ -217,10 +237,10 @@ abstract class CodeWhispererCodeCoverageTracker(
                 }
                 return@forEach
             }
-            val delta = getAcceptedTokensDelta(originalRecommendation, modifiedRecommendation)
+            val unmodifiedRecommendationLength = getUnmodifiedAcceptedCharsCount(originalRecommendation, modifiedRecommendation)
             runReadAction {
-                incrementRawAcceptedTokens(rangeMarker.document, originalRecommendation.length)
-                incrementAcceptedTokens(rangeMarker.document, delta)
+                incrementAcceptedCharsCount(rangeMarker.document, originalRecommendation.length)
+                incrementUnmodifiedAcceptedCharsCount(rangeMarker.document, unmodifiedRecommendationLength)
             }
         }
         val customizationArn: String? = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn
@@ -231,9 +251,9 @@ abstract class CodeWhispererCodeCoverageTracker(
                 val response = CodeWhispererClientAdaptor.getInstance(project).sendCodePercentageTelemetry(
                     language,
                     customizationArn,
-                    rawAcceptedTokenSize,
-                    totalTokensSize,
-                    acceptedTokensSize
+                    acceptedCharsCount,
+                    totalCharsCount,
+                    unmodifiedAcceptedCharsCount
                 )
                 LOG.debug { "Successfully sent code percentage telemetry. RequestId: ${response.responseMetadata().requestId()}" }
             } catch (e: Exception) {
@@ -248,11 +268,11 @@ abstract class CodeWhispererCodeCoverageTracker(
         percentage?.let { percentage ->
             CodewhispererTelemetry.codePercentage(
                 project = null,
-                codewhispererAcceptedTokens = acceptedTokensSize,
-                codewhispererSuggestedTokens = rawAcceptedTokenSize,
+                codewhispererAcceptedTokens = unmodifiedAcceptedCharsCount,
+                codewhispererSuggestedTokens = acceptedCharsCount,
                 codewhispererLanguage = language.toTelemetryType(),
                 codewhispererPercentage = percentage,
-                codewhispererTotalTokens = totalTokensSize,
+                codewhispererTotalTokens = totalCharsCount,
                 successCount = myServiceInvocationCount.get().toLong(),
                 codewhispererCustomizationArn = customizationArn,
                 credentialStartUrl = getCodeWhispererStartUrl(project)
@@ -277,7 +297,7 @@ abstract class CodeWhispererCodeCoverageTracker(
 
     companion object {
         @JvmStatic
-        protected val levenshteinChecker = Levenshtein()
+        val levenshteinChecker = Levenshtein()
         private const val REMAINING_RECOMMENDATION = "remainingRecommendation"
         private val KEY_REMAINING_RECOMMENDATION = Key<String>(REMAINING_RECOMMENDATION)
         private val LOG = getLogger<CodeWhispererCodeCoverageTracker>()
@@ -311,14 +331,8 @@ class DefaultCodeWhispererCodeCoverageTracker(project: Project, language: CodeWh
     AtomicInteger(0)
 )
 
-class CodeCoverageTokens(totalTokens: Int = 0, acceptedTokens: Int = 0, rawAcceptedTokens: Int = 0) {
-    val totalTokens: AtomicInteger
-    val acceptedTokens: AtomicInteger
-    val rawAcceptedTokens: AtomicInteger
-
-    init {
-        this.totalTokens = AtomicInteger(totalTokens)
-        this.acceptedTokens = AtomicInteger(acceptedTokens)
-        this.rawAcceptedTokens = AtomicInteger(rawAcceptedTokens)
-    }
+class CodeCoverageTokens(totalChars: Int = 0, unmodifiedAcceptedChars: Int = 0, acceptedChars: Int = 0) {
+    val totalChars = AtomicInteger(totalChars)
+    val unmodifiedAcceptedChars = AtomicInteger(unmodifiedAcceptedChars)
+    val acceptedChars = AtomicInteger(acceptedChars)
 }

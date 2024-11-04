@@ -17,7 +17,7 @@ import com.intellij.ui.dsl.builder.BottomGap
 import com.intellij.ui.dsl.builder.Panel
 import com.intellij.ui.dsl.builder.TopGap
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.dsl.gridLayout.Gaps
+import com.intellij.ui.dsl.gridLayout.UnscaledGaps
 import icons.AwsIcons
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererUIComponents.examplesDescriptionPanel
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererUIComponents.tryExamplePanel
@@ -29,7 +29,7 @@ class LearnCodeWhispererEditor(val project: Project, val virtualFile: VirtualFil
     private val contentPanel = panel {
         row {
             panel {
-                customize(Gaps(20, 50, 0, 0))
+                customize(UnscaledGaps(20, 50, 0, 0))
                 row {
                     icon(AwsIcons.Logos.AWS_Q_GRADIENT)
 
@@ -46,7 +46,7 @@ class LearnCodeWhispererEditor(val project: Project, val virtualFile: VirtualFil
         row {
             // Single panel
             panel {
-                customize(Gaps(0, 50, 0, 0))
+                customize(UnscaledGaps(0, 50, 0, 0))
                 align(AlignY.TOP)
 
                 subtitle(message("codewhisperer.learn_page.examples.title")).bottomGap(BottomGap.MEDIUM)

@@ -9,11 +9,12 @@ import com.intellij.openapi.vfs.VfsUtil
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATION_RETRY_LIMIT
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ConversationIdNotFoundException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MAX_PROJECT_SIZE_BYTES
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.conversationIdNotFound
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAsyncEventProgress
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.resolveAndCreateOrUpdateFile
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.resolveAndDeleteFile
@@ -41,7 +42,7 @@ class Session(val tabID: String, val project: Project) {
         context = FeatureDevSessionContext(project, MAX_PROJECT_SIZE_BYTES)
         proxyClient = FeatureDevClient.getInstance(project)
         featureDevService = FeatureDevService(proxyClient, project)
-        _state = ConversationNotStartedState("", tabID)
+        _state = ConversationNotStartedState("", tabID, null, 0, CODE_GENERATION_RETRY_LIMIT, 0)
         isAuthenticating = false
         codegenRetries = CODE_GENERATION_RETRY_LIMIT
     }
@@ -78,9 +79,10 @@ class Session(val tabID: String, val project: Project) {
             filePaths = emptyList(),
             deletedFiles = emptyList(),
             references = emptyList(),
-            currentIteration = 0, // first code gen iteration
+            currentIteration = 1, // first code gen iteration
             uploadId = "", // There is no code gen uploadId so far
             messenger = messenger,
+            token = CancellationTokenSource()
         )
     }
 
@@ -114,6 +116,7 @@ class Session(val tabID: String, val project: Project) {
         var action = SessionStateAction(
             task = task,
             msg = msg,
+            token = sessionState.token
         )
         val resp = sessionState.interact(action)
         if (resp.nextState != null) {
@@ -138,7 +141,7 @@ class Session(val tabID: String, val project: Project) {
     val conversationId: String
         get() {
             if (_conversationId == null) {
-                conversationIdNotFound()
+                throw ConversationIdNotFoundException(operation = "Session", desc = "Conversation ID not found")
             } else {
                 return _conversationId as String
             }

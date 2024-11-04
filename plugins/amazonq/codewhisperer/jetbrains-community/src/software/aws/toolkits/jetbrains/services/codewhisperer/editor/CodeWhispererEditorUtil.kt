@@ -12,13 +12,14 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.psi.PsiFile
 import com.intellij.ui.popup.AbstractPopup
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJson
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererYaml
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.AWSTemplateCaseInsensitiveKeyWordsRegex
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.AWSTemplateKeyWordsRegex
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.JsonConfigFileNamingConvention
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.LEFT_CONTEXT_ON_CURRENT_LINE
 import java.awt.Point
 import java.util.Locale
@@ -95,7 +96,7 @@ object CodeWhispererEditorUtil {
     }
 
     fun shouldSkipInvokingBasedOnRightContext(editor: Editor): Boolean {
-        val caretContext = runReadAction { CodeWhispererEditorUtil.extractCaretContext(editor) }
+        val caretContext = runReadAction { extractCaretContext(editor) }
         val rightContextLines = caretContext.rightFileContext.split(Regex("\r?\n"))
         val rightContextCurrentLine = if (rightContextLines.isEmpty()) "" else rightContextLines[0]
 
@@ -106,16 +107,12 @@ object CodeWhispererEditorUtil {
     }
 
     /**
-     * Checks if the language is json or yaml and checks if left context contains keywords
+     * Check if left context contains keywords or file name follow config json file naming pattern
      */
-    fun checkLeftContextKeywordsForJsonAndYaml(leftContext: String, language: String): Boolean = (
-        (language == CodeWhispererJson.INSTANCE.languageId) ||
-            (language == CodeWhispererYaml.INSTANCE.languageId)
-        ) &&
-        (
-            (!CodeWhispererConstants.AWSTemplateKeyWordsRegex.containsMatchIn(leftContext)) &&
-                (!CodeWhispererConstants.AWSTemplateCaseInsensitiveKeyWordsRegex.containsMatchIn(leftContext.lowercase(Locale.getDefault())))
-            )
+    fun isSupportedJsonFormat(fileName: String, leftContext: String): Boolean =
+        JsonConfigFileNamingConvention.contains(fileName.lowercase()) ||
+            AWSTemplateKeyWordsRegex.containsMatchIn(leftContext) ||
+            AWSTemplateCaseInsensitiveKeyWordsRegex.containsMatchIn(leftContext.lowercase(Locale.getDefault()))
 
     /**
      * Checks if the [otherRange] overlaps this TextRange. Note that the comparison is `<` because the endOffset of TextRange is exclusive.

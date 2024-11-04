@@ -8,6 +8,7 @@ import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ProfileSsoManagedBearerSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
@@ -37,6 +38,7 @@ fun requestCredentialsForCodeWhisperer(
     ),
     isFirstInstance: Boolean = false,
     connectionInitiatedFromExplorer: Boolean = false,
+    isReauth: Boolean = false,
 ): Boolean {
     val authenticationDialog = SetupAuthenticationDialog(
         project,
@@ -88,7 +90,8 @@ fun requestCredentialsForCodeWhisperer(
             credentialSourceId = authenticationDialog.authType,
             isAggregated = true,
             attempts = authenticationDialog.attempts + 1,
-            result = Result.Succeeded
+            result = Result.Succeeded,
+            isReAuth = isReauth
         )
         AuthTelemetry.addedConnections(
             project,
@@ -109,6 +112,7 @@ fun requestCredentialsForCodeWhisperer(
             isAggregated = false,
             attempts = authenticationDialog.attempts + 1,
             result = Result.Cancelled,
+            isReAuth = isReauth
         )
     }
     return isAuthenticationSuccessful
@@ -124,6 +128,7 @@ fun requestCredentialsForQ(
     isFirstInstance: Boolean = false,
     connectionInitiatedFromExplorer: Boolean = false,
     connectionInitiatedFromQChatPanel: Boolean = false,
+    isReauth: Boolean,
 ): Boolean {
     // try to scope upgrade if we have a codewhisperer connection
     val codeWhispererConnection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
@@ -195,7 +200,8 @@ fun requestCredentialsForQ(
             credentialSourceId = authenticationDialog.authType,
             isAggregated = true,
             attempts = authenticationDialog.attempts + 1,
-            result = Result.Succeeded
+            result = Result.Succeeded,
+            isReAuth = isReauth
         )
         AuthTelemetry.addedConnections(
             project,
@@ -216,6 +222,7 @@ fun requestCredentialsForQ(
             isAggregated = false,
             attempts = authenticationDialog.attempts + 1,
             result = Result.Cancelled,
+            isReAuth = isReauth
         )
     }
     return isAuthenticationSuccessful
@@ -225,7 +232,7 @@ fun reauthenticateWithQ(project: Project) {
     val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
     if (connection !is ManagedBearerSsoConnection) return
     pluginAwareExecuteOnPooledThread {
-        reauthConnectionIfNeeded(project, connection, isReAuth = true)
+        reauthConnectionIfNeeded(project, connection, isReAuth = true, reauthSource = ReauthSource.Q_CHAT)
     }
 }
 

@@ -31,10 +31,24 @@ object CodeWhispererConstants {
     const val POPUP_DELAY_CHECK_INTERVAL: Long = 25
     const val IDLE_TIME_CHECK_INTERVAL: Long = 25
     const val SUPPLEMENTAL_CONTEXT_TIMEOUT = 50L
-    const val FEATURE_EVALUATION_PRODUCT_NAME = "CodeWhisperer"
+    const val SUPPLEMETAL_CONTEXT_BUFFER = 10L
 
     val AWSTemplateKeyWordsRegex = Regex("(AWSTemplateFormatVersion|Resources|AWS::|Description)")
     val AWSTemplateCaseInsensitiveKeyWordsRegex = Regex("(cloudformation|cfn|template|description)")
+
+    val JsonConfigFileNamingConvention = setOf(
+        "app.json",
+        "appsettings.json",
+        "bower.json",
+        "composer.json",
+        "db.json",
+        "manifest.json",
+        "package.json",
+        "schema.json",
+        "settings.json",
+        "tsconfig.json",
+        "vcpkg.json"
+    )
 
     // TODO: this is currently set to 2050 to account for the server side 0.5 TPS and and extra 50 ms buffer to
     // avoid ThrottlingException as much as possible.
@@ -131,9 +145,10 @@ object CodeWhispererConstants {
             }
         }
     }
+
     object CrossFile {
         const val CHUNK_SIZE = 60
-        const val NUMBER_OF_LINE_IN_CHUNK = 10
+        const val NUMBER_OF_LINE_IN_CHUNK = 50
         const val NUMBER_OF_CHUNK_TO_FETCH = 3
     }
 
@@ -145,7 +160,7 @@ object CodeWhispererConstants {
     object TryExampleFileContent {
 
         private const val AUTO_TRIGGER_CONTENT_JAVA =
-"""import java.util.ArrayList;
+            """import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -167,7 +182,7 @@ public class Main {
 }"""
 
         private const val MANUAL_TRIGGER_CONTENT_JAVA =
-"""// TODO: Press either Option + C on MacOS or Alt + C on Windows on a new line.
+            """// TODO: Press either Option + C on MacOS or Alt + C on Windows on a new line.
 
 public class S3Uploader {
     
@@ -178,7 +193,7 @@ public class S3Uploader {
 }"""
 
         private const val UNIT_TEST_CONTENT_JAVA =
-"""// TODO: Ask Amazon Q to write unit tests.
+            """// TODO: Ask Amazon Q to write unit tests.
 
 // Write a test case for the sum function.
 

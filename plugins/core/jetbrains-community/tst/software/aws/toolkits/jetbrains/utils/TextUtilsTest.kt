@@ -11,11 +11,14 @@ import org.intellij.lang.annotations.Language
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.core.utils.convertMarkdownToHTML
+import software.aws.toolkits.core.utils.extractCodeBlockLanguage
 
 class TextUtilsTest {
     @Rule
     @JvmField
     val projectRule = ProjectRule()
+
+    private val defaultTestGenResponseLanguage = "plaintext"
 
     @Test
     fun textGetsFormatted() {
@@ -154,5 +157,47 @@ class TextUtilsTest {
         val fileContent = "dummy\ndummy\ndummy\ndummy\nfirst line\nsecond line\nforth line"
         val actual = applyPatch(inputPatch, fileContent, inputFilePath)
         assertThat(actual).isEqualTo("dummy\ndummy\ndummy\ndummy\nfirst line\nthird line\nforth line")
+    }
+
+    @Test
+    fun `extractCodeBlockLanguage returns default when no code block is present`() {
+        val message = "This is a message without a code block"
+        assertThat(defaultTestGenResponseLanguage).isEqualTo(extractCodeBlockLanguage(message))
+    }
+
+    @Test
+    fun `extractCodeBlockLanguage returns language when code block with language is present`() {
+        val message = "Here's a code block:\n```kotlin\nval x = 5\n```"
+        assertThat("kotlin").isEqualTo(extractCodeBlockLanguage(message))
+    }
+
+    @Test
+    fun `extractCodeBlockLanguage returns default when code block has no language specified`() {
+        val message = "Here's a code block:\n```\nval x = 5\n```"
+        assertThat(defaultTestGenResponseLanguage).isEqualTo(extractCodeBlockLanguage(message))
+    }
+
+    @Test
+    fun `extractCodeBlockLanguage returns language when multiple code blocks are present`() {
+        val message = "First block:\n```java\nint x = 5;\n```\nSecond block:\n```python\nx = 5\n```"
+        assertThat("java").isEqualTo(extractCodeBlockLanguage(message))
+    }
+
+    @Test
+    fun `extractCodeBlockLanguage returns default when code block is not closed`() {
+        val message = "Incomplete code block:\n```kotlin\nval x = 5"
+        assertThat("kotlin").isEqualTo(extractCodeBlockLanguage(message))
+    }
+
+    @Test
+    fun `extractCodeBlockLanguage trims whitespace from language`() {
+        val message = "Code block with spaces:\n```  kotlin  \nval x = 5\n```"
+        assertThat("kotlin").isEqualTo(extractCodeBlockLanguage(message))
+    }
+
+    @Test
+    fun `extractCodeBlockLanguage handles empty message`() {
+        val message = ""
+        assertThat(defaultTestGenResponseLanguage).isEqualTo(extractCodeBlockLanguage(message))
     }
 }

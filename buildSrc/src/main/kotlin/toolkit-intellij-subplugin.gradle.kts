@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
@@ -95,6 +96,10 @@ dependencies {
 
         bundledPlugins(toolkitIntelliJ.productProfile().map { it.bundledPlugins })
         plugins(toolkitIntelliJ.productProfile().map { it.marketplacePlugins })
+
+        testFramework(TestFrameworkType.Plugin.Java)
+        testFramework(TestFrameworkType.Platform)
+        testFramework(TestFrameworkType.JUnit5)
     }
 }
 

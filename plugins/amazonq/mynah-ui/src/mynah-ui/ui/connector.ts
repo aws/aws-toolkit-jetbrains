@@ -30,6 +30,11 @@ export interface ChatPayload {
     chatCommand?: string
 }
 
+export interface CWCChatItem extends ChatItem {
+    userIntent?: string,
+    codeBlockLanguage?: string,
+}
+
 export interface ConnectorProps {
     sendMessageToExtension: (message: ExtensionMessage) => void
     onMessageReceived?: (tabID: string, messageData: any, needToShowAPIDocsTab: boolean) => void
@@ -230,7 +235,9 @@ export class Connector {
         codeReference?: CodeReference[],
         eventId?: string,
         codeBlockIndex?: number,
-        totalCodeBlocks?: number
+        totalCodeBlocks?: number,
+        userIntent?: string,
+        codeBlockLanguage?: string
     ): void => {
         switch (this.tabsStorage.getTab(tabID)?.type) {
             case 'cwc':
@@ -242,7 +249,9 @@ export class Connector {
                     codeReference,
                     eventId,
                     codeBlockIndex,
-                    totalCodeBlocks
+                    totalCodeBlocks,
+                    userIntent,
+                    codeBlockLanguage
                 )
                 break
             case 'featuredev':
@@ -259,7 +268,9 @@ export class Connector {
         codeReference?: CodeReference[],
         eventId?: string,
         codeBlockIndex?: number,
-        totalCodeBlocks?: number
+        totalCodeBlocks?: number,
+        userIntent?: string,
+        codeBlockLanguage?: string
     ): void => {
         switch (this.tabsStorage.getTab(tabID)?.type) {
             case 'cwc':
@@ -271,7 +282,9 @@ export class Connector {
                     codeReference,
                     eventId,
                     codeBlockIndex,
-                    totalCodeBlocks
+                    totalCodeBlocks,
+                    userIntent,
+                    codeBlockLanguage
                 )
                 break
             case 'featuredev':

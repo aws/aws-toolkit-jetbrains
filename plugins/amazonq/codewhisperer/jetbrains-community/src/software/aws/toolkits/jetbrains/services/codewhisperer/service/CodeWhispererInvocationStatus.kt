@@ -36,7 +36,7 @@ class CodeWhispererInvocationStatus {
             false
         }
 
-    fun hasExistingInvocation(): Boolean = isInvokingCodeWhisperer.get()
+    fun hasExistingServiceInvocation(): Boolean = isInvokingCodeWhisperer.get()
 
     fun finishInvocation() {
         if (isInvokingCodeWhisperer.compareAndSet(true, false)) {

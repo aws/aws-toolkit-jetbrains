@@ -8,6 +8,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.wm.ToolWindowManager
+import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
@@ -24,7 +25,7 @@ class SignInToQAction : SignInToQActionBase(message("q.sign.in")) {
         UiTelemetry.click(project, "auth_start_Q")
 
         if (!isQWebviewsAvailable()) {
-            requestCredentialsForQ(project)
+            requestCredentialsForQ(project, isReauth = false)
         } else {
             ToolWindowManager.getInstance(project).getToolWindow(AmazonQToolWindowFactory.WINDOW_ID)?.show()
         }
@@ -39,10 +40,10 @@ abstract class SignInToQActionBase(actionName: String) : DumbAwareAction(actionN
         UiTelemetry.click(project, "auth_start_Q")
         val connectionManager = ToolkitConnectionManager.getInstance(project)
         connectionManager.activeConnectionForFeature(QConnection.getInstance())?.let {
-            reauthConnectionIfNeeded(project, it, isReAuth = true)
+            reauthConnectionIfNeeded(project, it, isReAuth = true, reauthSource = ReauthSource.CODEWHISPERER_STATUSBAR)
         } ?: run {
             runInEdt {
-                if (requestCredentialsForQ(project)) {
+                if (requestCredentialsForQ(project, isReauth = false)) {
                     if (!openMeetQPage(project)) {
                         return@runInEdt
                     }

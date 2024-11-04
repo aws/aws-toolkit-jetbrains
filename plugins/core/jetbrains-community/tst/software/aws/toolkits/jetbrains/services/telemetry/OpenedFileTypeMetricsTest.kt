@@ -3,21 +3,21 @@
 
 package software.aws.toolkits.jetbrains.services.telemetry
 
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
-import org.mockito.kotlin.times
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class OpenedFileTypeMetricsTest {
 
     private lateinit var service: OpenedFileTypesMetricsService
 
-    @Before
+    @BeforeEach
     fun setup() {
         service = OpenedFileTypesMetricsService()
     }
 
-    @After
+    @AfterEach
     fun teardown() {
         service.dispose()
     }
@@ -25,12 +25,12 @@ class OpenedFileTypeMetricsTest {
     @Test
     fun `test addToExistingTelemetryBatch with allowed extension`() {
         service.addToExistingTelemetryBatch("kt")
-        assert(service.getOpenedFileTypes().contains("kt"))
+        assertThat(service.getOpenedFileTypes()).contains(".kt")
     }
 
     @Test
     fun `test addToExistingTelemetryBatch with disallowed extension`() {
         service.addToExistingTelemetryBatch("txt")
-        assert(service.getOpenedFileTypes().isEmpty())
+        assertThat(service.getOpenedFileTypes()).isEmpty()
     }
 }

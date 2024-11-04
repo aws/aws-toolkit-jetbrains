@@ -41,6 +41,7 @@ import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.InteractiveCredential
 import software.aws.toolkits.jetbrains.core.credentials.MfaRequiredInteractiveCredentials
 import software.aws.toolkits.jetbrains.core.credentials.PostValidateInteractiveCredential
+import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.RefreshConnectionAction
 import software.aws.toolkits.jetbrains.core.credentials.SsoRequiredInteractiveCredentials
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
@@ -133,7 +134,7 @@ class ProfileCredentialsIdentifierSso @TestOnly constructor(
                                     scopes = session.scopes.toList()
                                 )
                             )
-                            reauthConnectionIfNeeded(e.project, connection)
+                            reauthConnectionIfNeeded(e.project, connection, reauthSource = ReauthSource.TOOLKIT)
                             RefreshConnectionAction().actionPerformed(e)
                         }
                     }
