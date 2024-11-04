@@ -20,6 +20,7 @@ export interface ConnectorProps {
     onMessageReceived?: (tabID: string, messageData: any, needToShowAPIDocsTab: boolean) => void
     onAsyncEventProgress: (tabID: string, inProgress: boolean, message: string) => void
     onChatAnswerReceived?: (tabID: string, message: ChatItem) => void
+    onChatAnswerUpdated?: (tabID: string, message: ChatItem) => void
     sendFeedback?: (tabId: string, feedbackPayload: FeedbackPayload) => void | undefined
     onError: (tabID: string, message: string, title: string) => void
     onWarning: (tabID: string, message: string, title: string) => void
@@ -36,6 +37,7 @@ export class Connector {
     private readonly onError
     private readonly onWarning
     private readonly onChatAnswerReceived
+    private readonly onChatAnswerUpdated
     private readonly onAsyncEventProgress
     private readonly updatePlaceholder
     private readonly chatInputEnabled
@@ -47,6 +49,7 @@ export class Connector {
     constructor(props: ConnectorProps) {
         this.sendMessageToExtension = props.sendMessageToExtension
         this.onChatAnswerReceived = props.onChatAnswerReceived
+        this.onChatAnswerUpdated = props.onChatAnswerUpdated
         this.onWarning = props.onWarning
         this.onError = props.onError
         this.onAsyncEventProgress = props.onAsyncEventProgress
@@ -130,24 +133,7 @@ export class Connector {
 
     private processChatMessage = async (messageData: any): Promise<void> => {
         if (this.onChatAnswerReceived !== undefined) {
-            const answer: ChatItem = {
-                type: messageData.messageType,
-                body: messageData.message ?? undefined,
-                messageId: messageData.messageID ?? messageData.triggerID ?? '',
-                relatedContent: undefined,
-                canBeVoted: messageData.canBeVoted,
-                snapToTop: messageData.snapToTop,
-                followUp:
-                    messageData.followUps !== undefined && messageData.followUps.length > 0
-                        ? {
-                              text:
-                                  messageData.messageType === ChatItemType.SYSTEM_PROMPT
-                                      ? ''
-                                      : 'Please follow up with one of these',
-                              options: messageData.followUps,
-                          }
-                        : undefined,
-            }
+            const answer: ChatItem = this.createAnswer(messageData)
             this.onChatAnswerReceived(messageData.tabID, answer)
         }
     }
@@ -202,9 +188,36 @@ export class Connector {
         return
     }
 
+    private createAnswer = (messageData: any): ChatItem => {
+        return {
+            type: messageData.messageType,
+            body: messageData.message ?? undefined,
+            messageId: messageData.messageId ?? messageData.messageID ?? messageData.triggerID ?? '',
+            relatedContent: undefined,
+            canBeVoted: messageData.canBeVoted ?? undefined,
+            snapToTop: messageData.snapToTop ?? undefined,
+            followUp:
+                messageData.followUps !== undefined && Array.isArray(messageData.followUps)
+                    ? {
+                        text:
+                            messageData.messageType === ChatItemType.SYSTEM_PROMPT ||
+                            messageData.followUps.length === 0
+                                ? ''
+                                : 'Please follow up with one of these',
+                        options: messageData.followUps,
+                    }
+                    : undefined,
+        }
+    }
+
     handleMessageReceive = async (messageData: any): Promise<void> => {
         if (messageData.type === 'updateFileComponent') {
             this.onFileComponentUpdate(messageData.tabID, messageData.filePaths, messageData.deletedFiles, messageData.messageId, messageData.disableFileActions)
+            return
+        }
+        if (messageData.type === 'updateChatAnswer') {
+            const answer = this.createAnswer(messageData)
+            this.onChatAnswerUpdated?.(messageData.tabID, answer)
             return
         }
         if (messageData.type === 'errorMessage') {

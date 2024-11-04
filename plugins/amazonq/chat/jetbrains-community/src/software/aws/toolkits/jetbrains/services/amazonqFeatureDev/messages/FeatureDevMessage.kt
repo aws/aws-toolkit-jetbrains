@@ -154,7 +154,7 @@ data class FileComponent(
     val filePaths: List<NewFileZipInfo>,
     val deletedFiles: List<DeletedFileInfo>,
     val messageId: String,
-    val disableFileActions: Boolean,
+    val disableFileActions: Boolean = false,
 ) : UiMessage(
     tabId = tabId,
     type = "updateFileComponent"

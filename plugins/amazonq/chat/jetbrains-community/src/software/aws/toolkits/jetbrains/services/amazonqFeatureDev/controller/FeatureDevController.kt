@@ -273,6 +273,8 @@ class FeatureDevController(
         }
 
         messenger.updateFileComponent(message.tabId, filePaths, deletedFiles, messageId)
+
+        //TODO: session.acceptCodeMessageId
     }
 
     private suspend fun newTabOpened(tabId: String) {
@@ -353,6 +355,9 @@ class FeatureDevController(
                 messenger
             )
 
+            //TODO: if (session.acceptCodeMessageId) {
+
+
             messenger.sendAnswer(
                 tabId = tabId,
                 message = message("amazonqFeatureDev.code_generation.updated_code"),
@@ -392,10 +397,11 @@ class FeatureDevController(
     }
 
     private suspend fun newTask(tabId: String, isException: Boolean? = false) {
+        this.disablePreviousFileList(tabId)
+
         val session = getSessionInfo(tabId)
         val sessionLatency = System.currentTimeMillis() - session.sessionStartTime
 
-        this.disablePreviousFileList(tabId)
         AmazonqTelemetry.endChat(
             amazonqConversationId = session.conversationId,
             amazonqEndOfTheConversationLatency = sessionLatency.toDouble(),
@@ -584,6 +590,8 @@ class FeatureDevController(
         message: String,
     ) {
         var session: Session? = null
+
+        this.disablePreviousFileList(tabId)
         try {
             logger.debug { "$FEATURE_NAME: Processing message: $message" }
             session = getSessionInfo(tabId)

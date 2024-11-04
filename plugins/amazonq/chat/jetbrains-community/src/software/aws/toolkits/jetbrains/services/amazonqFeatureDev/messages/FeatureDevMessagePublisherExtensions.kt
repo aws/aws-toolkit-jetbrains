@@ -59,6 +59,15 @@ suspend fun MessagePublisher.sendSystemPrompt(
     )
 }
 
+suspend fun MessagePublisher.updateChatAnswer(tabId: String, messageId: String, message: String?, followUps: List<FollowUp>) {
+    this.updateChatAnswer(
+        tabId,
+        messageId,
+        message,
+        followUps,
+    )
+}
+
 suspend fun MessagePublisher.updateFileComponent(
     tabId: String,
     filePaths: List<NewFileZipInfo>,

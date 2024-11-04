@@ -81,13 +81,13 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
 
     private val newFileContents =
         listOf(
-            NewFileZipInfo("test.ts", "This is a comment", false),
-            NewFileZipInfo("test2.ts", "This is a rejected file", true),
+            NewFileZipInfo("test.ts", "This is a comment", false, false),
+            NewFileZipInfo("test2.ts", "This is a rejected file", true, false),
         )
     private val deletedFiles =
         listOf(
-            DeletedFileInfo("delete.ts", false),
-            DeletedFileInfo("delete2.ts", true),
+            DeletedFileInfo("delete.ts", false, false),
+            DeletedFileInfo("delete2.ts", true, false),
         )
 
     @Before
@@ -238,7 +238,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                 ),
             )
 
-            doNothing().`when`(spySession).insertChanges(any(), any(), any())
+            doNothing().`when`(spySession).insertChanges(any(), any(), any(), any())
 
             spySession.preloader(userMessage, messenger)
             controller.processFollowupClickedMessage(message)
@@ -246,7 +246,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             mockitoVerify(
                 spySession,
                 times(1),
-            ).insertChanges(listOf(newFileContents[0]), listOf(deletedFiles[0]), testReferences) // insert changes for only non rejected files
+            ).insertChanges(listOf(newFileContents[0]), listOf(deletedFiles[0]), testReferences, messenger) // insert changes for only non rejected files
             coVerifyOrder {
                 AmazonqTelemetry.isAcceptedCodeChanges(
                     amazonqNumberOfFilesAccepted = 2.0, // it should be 2 files per test setup
@@ -304,7 +304,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                 messenger.sendAnswer(testTabId, message("amazonqFeatureDev.chat_message.requesting_changes"), FeatureDevMessageType.AnswerStream)
                 messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.generating_code"))
                 messenger.sendCodeResult(testTabId, testUploadId, newFileContents, deletedFiles, testReferences)
-                messenger.sendSystemPrompt(testTabId, getFollowUpOptions(SessionStatePhase.CODEGEN))
+                messenger.sendSystemPrompt(testTabId, getFollowUpOptions(SessionStatePhase.CODEGEN, null))
                 messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.after_code_generation"))
                 messenger.sendAsyncEventProgress(testTabId, false)
                 messenger.sendChatInputEnabledMessage(testTabId, false)

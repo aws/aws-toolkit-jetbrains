@@ -10,12 +10,13 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.Follo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStatePhase
 import software.aws.toolkits.resources.message
 
-fun getFollowUpOptions(phase: SessionStatePhase?): List<FollowUp> {
+fun getFollowUpOptions(phase: SessionStatePhase?, insertCodePillText: String?): List<FollowUp> {
     when (phase) {
         SessionStatePhase.CODEGEN -> {
+            val messageText = insertCodePillText ?: message("amazonqFeatureDev.follow_up.insert_code")
             return listOf(
                 FollowUp(
-                    pillText = message("amazonqFeatureDev.follow_up.insert_code"),
+                    pillText = messageText,
                     type = FollowUpTypes.INSERT_CODE,
                     icon = FollowUpIcons.Ok,
                     status = FollowUpStatusType.Success

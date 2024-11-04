@@ -10,13 +10,13 @@ export function getDetails(filePaths: DiffTreeFileInfo[]): Record<string, TreeNo
         if (filePath.changeApplied) {
             details[filePath.zipFilePath] = {
                 status: 'success',
-                label: 'File accepted',
+                label: 'Change accepted',
                 icon: MynahIcons.OK,
             }
         } else if (filePath.rejected) {
             details[filePath.zipFilePath] = {
                 status: 'error',
-                label: 'File rejected',
+                label: 'Change rejected',
                 icon: MynahIcons.CANCEL_CIRCLE,
             }
         }
@@ -30,14 +30,7 @@ export function getActions(filePaths: DiffTreeFileInfo[]): Record<string, FileNo
             return actions
         }
 
-        actions[filePath.zipFilePath] = [
-            {
-                icon: MynahIcons.OK,
-                status: 'success',
-                name: 'accept-change',
-                description: 'Accept file change',
-            }
-        ]
+        actions[filePath.zipFilePath] = []
 
         switch (filePath.rejected) {
             case true:
@@ -48,6 +41,12 @@ export function getActions(filePaths: DiffTreeFileInfo[]): Record<string, FileNo
                 })
                 break
             case false:
+                actions[filePath.zipFilePath].push({
+                    icon: MynahIcons.OK,
+                    status: 'success',
+                    name: 'accept-change',
+                    description: 'Accept change',
+                })
                 actions[filePath.zipFilePath].push({
                     icon: MynahIcons.CANCEL_CIRCLE,
                     status: 'error',
