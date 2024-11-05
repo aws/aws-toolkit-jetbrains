@@ -95,7 +95,9 @@ import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import java.util.concurrent.TimeUnit
 
 @Service
-class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
+class CodeWhispererServiceNew(
+    private val cs: CoroutineScope,
+) : Disposable {
     private val codeInsightSettingsFacade = CodeInsightsSettingsFacade()
     private var refreshFailure: Int = 0
     private val ongoingRequests = mutableMapOf<Int, InvocationContextNew?>()
@@ -108,15 +110,17 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
     }
 
     private var job: Job? = null
+
     fun showRecommendationsInPopup(
         editor: Editor,
         triggerTypeInfo: TriggerTypeInfo,
         latencyContext: LatencyContext,
     ): Job? {
         if (job == null || job?.isCompleted == true) {
-            job = cs.launch(getCoroutineBgContext()) {
-                doShowRecommendationsInPopup(editor, triggerTypeInfo, latencyContext)
-            }
+            job =
+                cs.launch(getCoroutineBgContext()) {
+                    doShowRecommendationsInPopup(editor, triggerTypeInfo, latencyContext)
+                }
         }
 
         // did some wrangling, but compiler didn't believe this can't be null
@@ -137,19 +141,21 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         if (isQExpired(project)) {
             // consider changing to only running once a ~minute since this is relatively expensive
             // say the connection is un-refreshable if refresh fails for 3 times
-            val shouldReauth = if (refreshFailure < MAX_REFRESH_ATTEMPT) {
-                val attempt = withContext(getCoroutineBgContext()) {
-                    promptReAuth(project)
-                }
+            val shouldReauth =
+                if (refreshFailure < MAX_REFRESH_ATTEMPT) {
+                    val attempt =
+                        withContext(getCoroutineBgContext()) {
+                            promptReAuth(project)
+                        }
 
-                if (!attempt) {
-                    refreshFailure++
-                }
+                    if (!attempt) {
+                        refreshFailure++
+                    }
 
-                attempt
-            } else {
-                true
-            }
+                    attempt
+                } else {
+                    true
+                }
 
             if (shouldReauth) {
                 return
@@ -170,13 +176,14 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         if (isInjectedFile) return
 
         val currentJobId = jobId++
-        val requestContext = try {
-            getRequestContext(triggerTypeInfo, editor, project, psiFile)
-        } catch (e: Exception) {
-            LOG.debug { e.message.toString() }
-            CodeWhispererTelemetryServiceNew.getInstance().sendFailedServiceInvocationEvent(project, e::class.simpleName)
-            return
-        }
+        val requestContext =
+            try {
+                getRequestContext(triggerTypeInfo, editor, project, psiFile)
+            } catch (e: Exception) {
+                LOG.debug { e.message.toString() }
+                CodeWhispererTelemetryServiceNew.getInstance().sendFailedServiceInvocationEvent(project, e::class.simpleName)
+                return
+            }
         val caretContext = requestContext.fileContextInfo.caretContext
         ongoingRequestsContext.forEach { (k, v) ->
             val vCaretContext = v.fileContextInfo.caretContext
@@ -188,18 +195,20 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
 
         val language = requestContext.fileContextInfo.programmingLanguage
         val leftContext = requestContext.fileContextInfo.caretContext.leftFileContext
-        if (!language.isCodeCompletionSupported() || (
-                language is CodeWhispererJson && !isSupportedJsonFormat(
-                    requestContext.fileContextInfo.filename,
-                    leftContext
-                )
+        if (!language.isCodeCompletionSupported() ||
+            (
+                language is CodeWhispererJson &&
+                    !isSupportedJsonFormat(
+                        requestContext.fileContextInfo.filename,
+                        leftContext,
+                    )
                 )
         ) {
             LOG.debug { "Programming language $language is not supported by CodeWhisperer" }
             if (triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
                 showCodeWhispererInfoHint(
                     requestContext.editor,
-                    message("codewhisperer.language.error", psiFile.fileType.name)
+                    message("codewhisperer.language.error", psiFile.fileType.name),
                 )
             }
             return
@@ -219,7 +228,11 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         invokeCodeWhispererInBackground(requestContext, currentJobId, latencyContext)
     }
 
-    internal suspend fun invokeCodeWhispererInBackground(requestContext: RequestContextNew, currentJobId: Int, latencyContext: LatencyContext) {
+    internal suspend fun invokeCodeWhispererInBackground(
+        requestContext: RequestContextNew,
+        currentJobId: Int,
+        latencyContext: LatencyContext,
+    ) {
         ongoingRequestsContext[currentJobId] = requestContext
         val sessionContext = sessionContext ?: SessionContextNew(requestContext.project, requestContext.editor, latencyContext = latencyContext)
 
@@ -240,13 +253,14 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         var lastRecommendationIndex = -1
 
         try {
-            val responseIterable = CodeWhispererClientAdaptor.getInstance(requestContext.project).generateCompletionsPaginator(
-                buildCodeWhispererRequest(
-                    requestContext.fileContextInfo,
-                    requestContext.awaitSupplementalContext(),
-                    requestContext.customizationArn
+            val responseIterable =
+                CodeWhispererClientAdaptor.getInstance(requestContext.project).generateCompletionsPaginator(
+                    buildCodeWhispererRequest(
+                        requestContext.fileContextInfo,
+                        requestContext.awaitSupplementalContext(),
+                        requestContext.customizationArn,
+                    ),
                 )
-            )
 
             var startTime = System.nanoTime()
             latencyContext.codewhispererPreprocessingEnd = System.nanoTime()
@@ -272,7 +286,10 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                 val responseContext = ResponseContext(sessionId)
                 logServiceInvocation(requestId, requestContext, responseContext, response.completions(), latency, null)
                 lastRecommendationIndex += response.completions().size
-                ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_CODE_COMPLETION_PERFORMED)
+                ApplicationManager
+                    .getApplication()
+                    .messageBus
+                    .syncPublisher(CODEWHISPERER_CODE_COMPLETION_PERFORMED)
                     .onSuccess(requestContext.fileContextInfo)
                 CodeWhispererTelemetryServiceNew.getInstance().sendServiceInvocationEvent(
                     currentJobId,
@@ -282,7 +299,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                     lastRecommendationIndex,
                     true,
                     latency,
-                    null
+                    null,
                 )
 
                 val validatedResponse = validateResponse(response)
@@ -316,7 +333,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                                             it,
                                             ongoingRequests[currentJobId],
                                             cs,
-                                            currentJobId
+                                            currentJobId,
                                         )
                                         if (!ongoingRequests.contains(currentJobId)) {
                                             job?.cancel()
@@ -333,7 +350,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                                 workerContext,
                                 ongoingRequests[currentJobId],
                                 cs,
-                                currentJobId
+                                currentJobId,
                             )
                             if (!ongoingRequests.contains(currentJobId)) {
                                 job?.cancel()
@@ -365,7 +382,12 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                 (e as CodeWhispererRuntimeException)
 
                 requestId = e.requestId() ?: ""
-                sessionId = e.awsErrorDetails().sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
+                sessionId =
+                    e
+                        .awsErrorDetails()
+                        .sdkHttpResponse()
+                        .headers()
+                        .getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
                 val exceptionType = e::class.simpleName
                 val responseContext = ResponseContext(sessionId)
 
@@ -377,7 +399,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                     lastRecommendationIndex,
                     false,
                     0.0,
-                    exceptionType
+                    exceptionType,
                 )
 
                 LOG.debug {
@@ -390,14 +412,15 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                     title = "",
                     content = message("codewhisperer.notification.custom.not_available"),
                     project = requestContext.project,
-                    notificationActions = listOf(
+                    notificationActions =
+                    listOf(
                         NotificationAction.create(
-                            message("codewhisperer.notification.custom.simple.button.select_another_customization")
+                            message("codewhisperer.notification.custom.simple.button.select_another_customization"),
                         ) { _, notification ->
                             CodeWhispererModelConfigurator.getInstance().showConfigDialog(requestContext.project)
                             notification.expire()
-                        }
-                    )
+                        },
+                    ),
                 )
                 CodeWhispererInvocationStatusNew.getInstance().finishInvocation()
 
@@ -406,16 +429,26 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                 showRecommendationsInPopup(
                     requestContext.editor,
                     requestContext.triggerTypeInfo,
-                    latencyContext
+                    latencyContext,
                 )
                 return
             } else if (e is CodeWhispererException) {
                 requestId = e.requestId() ?: ""
-                sessionId = e.awsErrorDetails().sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
+                sessionId =
+                    e
+                        .awsErrorDetails()
+                        .sdkHttpResponse()
+                        .headers()
+                        .getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
                 displayMessage = e.awsErrorDetails().errorMessage() ?: message("codewhisperer.trigger.error.server_side")
             } else if (e is CodeWhispererRuntimeException) {
                 requestId = e.requestId() ?: ""
-                sessionId = e.awsErrorDetails().sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
+                sessionId =
+                    e
+                        .awsErrorDetails()
+                        .sdkHttpResponse()
+                        .headers()
+                        .getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
                 displayMessage = e.awsErrorDetails().errorMessage() ?: message("codewhisperer.trigger.error.server_side")
             } else {
                 requestId = ""
@@ -443,7 +476,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                 lastRecommendationIndex,
                 false,
                 0.0,
-                exceptionType
+                exceptionType,
             )
 
             if (e is ThrottlingException &&
@@ -501,10 +534,11 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
 
         CodeWhispererInvocationStatusNew.getInstance().finishInvocation()
 
-        val caretMovement = CodeWhispererEditorManagerNew.getInstance().getCaretMovement(
-            requestContext.editor,
-            requestContext.caretPosition
-        )
+        val caretMovement =
+            CodeWhispererEditorManagerNew.getInstance().getCaretMovement(
+                requestContext.editor,
+                requestContext.caretPosition,
+            )
         val isPopupShowing = checkRecommendationsValidity(currStates, false)
         val nextStates: InvocationContextNew?
         if (currStates == null) {
@@ -543,11 +577,11 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                     false,
                     false,
                     "",
-                    CodewhispererCompletionType.Line
+                    CodewhispererCompletionType.Line,
                 ),
                 -1,
                 CodewhispererSuggestionState.Empty,
-                nextStates.recommendationContext.details.size
+                nextStates.recommendationContext.details.size,
             )
         }
         if (!hasAtLeastOneValid) {
@@ -577,19 +611,22 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
 
         if (caretMovement == CaretMovement.MOVE_BACKWARD) {
             LOG.debug { "Caret moved backward, discarding all of the recommendations and exiting the session. Request ID: $requestId, jobId: $jobId" }
-            val detailContexts = recommendations.map {
-                DetailContextNew("", it, it, true, false, "", getCompletionType(it))
-            }.toMutableList()
+            val detailContexts =
+                recommendations
+                    .map {
+                        DetailContextNew("", it, it, true, false, "", getCompletionType(it))
+                    }.toMutableList()
             val recommendationContext = RecommendationContextNew(detailContexts, "", "", VisualPosition(0, 0), jobId)
             ongoingRequests[jobId] = buildInvocationContext(requestContext, responseContext, recommendationContext)
             disposeDisplaySession(false)
             return null
         }
 
-        val userInputOriginal = CodeWhispererEditorManagerNew.getInstance().getUserInputSinceInvocation(
-            requestContext.editor,
-            requestContext.caretPosition.offset
-        )
+        val userInputOriginal =
+            CodeWhispererEditorManagerNew.getInstance().getUserInputSinceInvocation(
+                requestContext.editor,
+                requestContext.caretPosition.offset,
+            )
         val userInput =
             if (caretMovement == CaretMovement.NO_CHANGE) {
                 LOG.debug { "Caret position not changed since invocation. Request ID: $requestId" }
@@ -603,12 +640,13 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                     }
                 }
             }
-        val detailContexts = CodeWhispererRecommendationManager.getInstance().buildDetailContext(
-            requestContext,
-            userInput,
-            recommendations,
-            requestId
-        )
+        val detailContexts =
+            CodeWhispererRecommendationManager.getInstance().buildDetailContext(
+                requestContext,
+                userInput,
+                recommendations,
+                requestId,
+            )
         val recommendationContext = RecommendationContextNew(detailContexts, userInputOriginal, userInput, visualPosition, jobId)
         ongoingRequests[jobId] = buildInvocationContext(requestContext, responseContext, recommendationContext)
         return ongoingRequests[jobId]
@@ -619,18 +657,22 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         response: GenerateCompletionsResponse,
     ): InvocationContextNew {
         val recommendationContext = states.recommendationContext
-        val newDetailContexts = CodeWhispererRecommendationManager.getInstance().buildDetailContext(
-            states.requestContext,
-            recommendationContext.userInputSinceInvocation,
-            response.completions(),
-            response.responseMetadata().requestId()
-        )
+        val newDetailContexts =
+            CodeWhispererRecommendationManager.getInstance().buildDetailContext(
+                states.requestContext,
+                recommendationContext.userInputSinceInvocation,
+                response.completions(),
+                response.responseMetadata().requestId(),
+            )
 
         recommendationContext.details.addAll(newDetailContexts)
         return states
     }
 
-    private fun checkRecommendationsValidity(states: InvocationContextNew?, showHint: Boolean): Boolean {
+    private fun checkRecommendationsValidity(
+        states: InvocationContextNew?,
+        showHint: Boolean,
+    ): Boolean {
         if (states == null) return false
         val details = states.recommendationContext.details
 
@@ -640,13 +682,17 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         if (!hasAtLeastOneValid && showHint && states.requestContext.triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
             showCodeWhispererInfoHint(
                 states.requestContext.editor,
-                message("codewhisperer.popup.no_recommendations")
+                message("codewhisperer.popup.no_recommendations"),
             )
         }
         return hasAtLeastOneValid
     }
 
-    private fun updateCodeWhisperer(sessionContext: SessionContextNew, states: InvocationContextNew, recommendationAdded: Boolean) {
+    private fun updateCodeWhisperer(
+        sessionContext: SessionContextNew,
+        states: InvocationContextNew,
+        recommendationAdded: Boolean,
+    ) {
         CodeWhispererPopupManagerNew.getInstance().changeStatesForShowing(sessionContext, states, recommendationAdded)
     }
 
@@ -694,14 +740,15 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
 
         // the upper bound for supplemental context duration is 50ms
         // 2. supplemental context
-        val supplementalContext = cs.async {
-            try {
-                FileContextProvider.getInstance(project).extractSupplementalFileContext(psiFile, fileContext, timeout = SUPPLEMENTAL_CONTEXT_TIMEOUT)
-            } catch (e: Exception) {
-                LOG.warn { "Run into unexpected error when fetching supplemental context, error: ${e.message}" }
-                null
+        val supplementalContext =
+            cs.async {
+                try {
+                    FileContextProvider.getInstance(project).extractSupplementalFileContext(psiFile, fileContext, timeout = SUPPLEMENTAL_CONTEXT_TIMEOUT)
+                } catch (e: Exception) {
+                    LOG.warn { "Run into unexpected error when fetching supplemental context, error: ${e.message}" }
+                    null
+                }
             }
-        }
 
         // 3. caret position
         val caretPosition = runReadAction { getCaretPosition(editor) }
@@ -718,18 +765,21 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
     fun validateResponse(response: GenerateCompletionsResponse): GenerateCompletionsResponse {
         // If contentSpans in reference are not consistent with content(recommendations),
         // remove the incorrect references.
-        val validatedRecommendations = response.completions().map {
-            val validReferences = it.hasReferences() && it.references().isNotEmpty() &&
-                it.references().none { reference ->
-                    val span = reference.recommendationContentSpan()
-                    span.start() > span.end() || span.start() < 0 || span.end() > it.content().length
+        val validatedRecommendations =
+            response.completions().map {
+                val validReferences =
+                    it.hasReferences() &&
+                        it.references().isNotEmpty() &&
+                        it.references().none { reference ->
+                            val span = reference.recommendationContentSpan()
+                            span.start() > span.end() || span.start() < 0 || span.end() > it.content().length
+                        }
+                if (validReferences) {
+                    it
+                } else {
+                    it.toBuilder().references(DefaultSdkAutoConstructList.getInstance()).build()
                 }
-            if (validReferences) {
-                it
-            } else {
-                it.toBuilder().references(DefaultSdkAutoConstructList.getInstance()).build()
             }
-        }
 
         return response.toBuilder().completions(validatedRecommendations).build()
     }
@@ -759,8 +809,10 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         latency: Double?,
         exceptionType: String?,
     ) {
-        val recommendationLogs = recommendations.map { it.content().trimEnd() }
-            .reduceIndexedOrNull { index, acc, recommendation -> "$acc\n[${index + 1}]\n$recommendation" }
+        val recommendationLogs =
+            recommendations
+                .map { it.content().trimEnd() }
+                .reduceIndexedOrNull { index, acc, recommendation -> "$acc\n[${index + 1}]\n$recommendation" }
         LOG.info {
             "SessionId: ${responseContext.sessionId}, " +
                 "RequestId: $requestId, " +
@@ -776,7 +828,10 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         }
     }
 
-    fun canDoInvocation(editor: Editor, type: CodewhispererTriggerType): Boolean {
+    fun canDoInvocation(
+        editor: Editor,
+        type: CodewhispererTriggerType,
+    ): Boolean {
         editor.project?.let {
             if (!isCodeWhispererEnabled(it)) {
                 return false
@@ -795,11 +850,17 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         return true
     }
 
-    fun showCodeWhispererInfoHint(editor: Editor, message: String) {
+    fun showCodeWhispererInfoHint(
+        editor: Editor,
+        message: String,
+    ) {
         HintManager.getInstance().showInformationHint(editor, message, HintManager.UNDER)
     }
 
-    fun showCodeWhispererErrorHint(editor: Editor, message: String) {
+    fun showCodeWhispererErrorHint(
+        editor: Editor,
+        message: String,
+    ) {
         HintManager.getInstance().showErrorHint(editor, message, HintManager.UNDER)
     }
 
@@ -810,13 +871,15 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         private const val MAX_REFRESH_ATTEMPT = 3
         private const val PAGINATION_REQUEST_COUNT_ALLOWED = 1
 
-        val CODEWHISPERER_INTELLISENSE_POPUP_ON_HOVER: Topic<CodeWhispererIntelliSenseOnHoverListener> = Topic.create(
-            "CodeWhisperer intelliSense popup on hover",
-            CodeWhispererIntelliSenseOnHoverListener::class.java
-        )
+        val CODEWHISPERER_INTELLISENSE_POPUP_ON_HOVER: Topic<CodeWhispererIntelliSenseOnHoverListener> =
+            Topic.create(
+                "CodeWhisperer intelliSense popup on hover",
+                CodeWhispererIntelliSenseOnHoverListener::class.java,
+            )
         val KEY_SESSION_CONTEXT = Key.create<SessionContextNew>("codewhisperer.session")
 
         fun getInstance(): CodeWhispererServiceNew = service()
+
         const val KET_SESSION_ID = "x-amzn-SessionId"
         private var reAuthPromptShown = false
 
@@ -831,28 +894,38 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
             supplementalContext: SupplementalContextInfo?,
             customizationArn: String?,
         ): GenerateCompletionsRequest {
-            val programmingLanguage = ProgrammingLanguage.builder()
-                .languageName(fileContextInfo.programmingLanguage.toCodeWhispererRuntimeLanguage().languageId)
-                .build()
-            val fileContext = FileContext.builder()
-                .leftFileContent(fileContextInfo.caretContext.leftFileContext)
-                .rightFileContent(fileContextInfo.caretContext.rightFileContext)
-                .filename(fileContextInfo.fileRelativePath ?: fileContextInfo.filename)
-                .programmingLanguage(programmingLanguage)
-                .build()
-            val supplementalContexts = supplementalContext?.contents?.map {
-                SupplementalContext.builder()
-                    .content(it.content)
-                    .filePath(it.path)
+            val programmingLanguage =
+                ProgrammingLanguage
+                    .builder()
+                    .languageName(fileContextInfo.programmingLanguage.toCodeWhispererRuntimeLanguage().languageId)
                     .build()
-            }.orEmpty()
-            val includeCodeWithReference = if (CodeWhispererSettings.getInstance().isIncludeCodeWithReference()) {
-                RecommendationsWithReferencesPreference.ALLOW
-            } else {
-                RecommendationsWithReferencesPreference.BLOCK
-            }
+            val fileContext =
+                FileContext
+                    .builder()
+                    .leftFileContent(fileContextInfo.caretContext.leftFileContext)
+                    .rightFileContent(fileContextInfo.caretContext.rightFileContext)
+                    .filename(fileContextInfo.fileRelativePath ?: fileContextInfo.filename)
+                    .programmingLanguage(programmingLanguage)
+                    .build()
+            val supplementalContexts =
+                supplementalContext
+                    ?.contents
+                    ?.map {
+                        SupplementalContext
+                            .builder()
+                            .content(it.content)
+                            .filePath(it.path)
+                            .build()
+                    }.orEmpty()
+            val includeCodeWithReference =
+                if (CodeWhispererSettings.getInstance().isIncludeCodeWithReference()) {
+                    RecommendationsWithReferencesPreference.ALLOW
+                } else {
+                    RecommendationsWithReferencesPreference.BLOCK
+                }
 
-            return GenerateCompletionsRequest.builder()
+            return GenerateCompletionsRequest
+                .builder()
                 .fileContext(fileContext)
                 .supplementalContexts(supplementalContexts)
                 .referenceTrackerConfiguration { it.recommendationsWithReferences(includeCodeWithReference) }
@@ -876,16 +949,17 @@ data class RequestContextNew(
     // TODO: should make the entire getRequestContext() suspend function instead of making supplemental context only
     var supplementalContext: SupplementalContextInfo? = null
         private set
-        get() = when (field) {
-            null -> {
-                if (!supplementalContextDeferred.isCompleted) {
-                    error("attempt to access supplemental context before awaiting the deferred")
-                } else {
-                    null
+        get() =
+            when (field) {
+                null -> {
+                    if (!supplementalContextDeferred.isCompleted) {
+                        error("attempt to access supplemental context before awaiting the deferred")
+                    } else {
+                        null
+                    }
                 }
+                else -> field
             }
-            else -> field
-        }
 
     suspend fun awaitSupplementalContext(): SupplementalContextInfo? {
         supplementalContext = supplementalContextDeferred.await()

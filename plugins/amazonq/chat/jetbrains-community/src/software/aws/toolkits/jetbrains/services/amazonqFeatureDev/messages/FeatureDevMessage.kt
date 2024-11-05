@@ -24,6 +24,12 @@ sealed interface IncomingFeatureDevMessage : FeatureDevBaseMessage {
         @JsonProperty("tabID") val tabId: String,
     ) : IncomingFeatureDevMessage
 
+    data class StoreMessageIdMessage(
+        @JsonProperty("tabID") val tabId: String,
+        val command: String,
+        val messageId: String?,
+    ) : IncomingFeatureDevMessage
+
     data class NewTabCreated(
         val command: String,
         @JsonProperty("tabID") val tabId: String,
@@ -149,6 +155,7 @@ data class FileComponent(
     val filePaths: List<NewFileZipInfo>,
     val deletedFiles: List<DeletedFileInfo>,
     val messageId: String,
+    val disableFileActions: Boolean = false,
 ) : UiMessage(
     tabId = tabId,
     type = "updateFileComponent"
@@ -198,6 +205,7 @@ data class CodeResultMessage(
     val filePaths: List<NewFileZipInfo>,
     val deletedFiles: List<DeletedFileInfo>,
     val references: List<CodeReference>,
+    val messageId: String?
 ) : UiMessage(
     tabId = tabId,
     type = "codeResultMessage"

@@ -13,14 +13,19 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ConversationId
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MAX_PROJECT_SIZE_BYTES
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.IncomingFeatureDevMessage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAsyncEventProgress
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.updateFileComponent
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.resolveAndCreateOrUpdateFile
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.resolveAndDeleteFile
 import software.aws.toolkits.jetbrains.services.cwc.controller.ReferenceLogController
 
-class Session(val tabID: String, val project: Project) {
+class Session(
+    val tabID: String,
+    val project: Project,
+) {
     var context: FeatureDevSessionContext
     val sessionStartTime = System.currentTimeMillis()
 
@@ -31,6 +36,7 @@ class Session(val tabID: String, val project: Project) {
     private var task: String = ""
     private val proxyClient: FeatureDevClient
     private val featureDevService: FeatureDevService
+    private var _codeResultMessageId: String? = null
 
     // retry session state vars
     private var codegenRetries: Int
@@ -52,7 +58,10 @@ class Session(val tabID: String, val project: Project) {
     /**
      * Preload any events that have to run before a chat message can be sent
      */
-    suspend fun preloader(msg: String, messenger: MessagePublisher) {
+    suspend fun preloader(
+        msg: String,
+        messenger: MessagePublisher,
+    ) {
         if (!preloaderFinished) {
             setupConversation(msg, messenger)
             preloaderFinished = true
@@ -64,7 +73,10 @@ class Session(val tabID: String, val project: Project) {
     /**
      * Starts a conversation with the backend and uploads the repo for the LLMs to be able to use it.
      */
-    private fun setupConversation(msg: String, messenger: MessagePublisher) {
+    private fun setupConversation(
+        msg: String,
+        messenger: MessagePublisher,
+    ) {
         // Store the initial message when setting up the conversation so that if it fails we can retry with this message
         _latestMessage = msg
 
@@ -72,34 +84,73 @@ class Session(val tabID: String, val project: Project) {
         logger<Session>().info(conversationIDLog(this.conversationId))
 
         val sessionStateConfig = getSessionStateConfig().copy(conversationId = this.conversationId)
-        _state = PrepareCodeGenerationState(
-            tabID = sessionState.tabID,
-            approach = sessionState.approach,
-            config = sessionStateConfig,
-            filePaths = emptyList(),
-            deletedFiles = emptyList(),
-            references = emptyList(),
-            currentIteration = 1, // first code gen iteration
-            uploadId = "", // There is no code gen uploadId so far
-            messenger = messenger,
-            token = CancellationTokenSource()
-        )
+        _state =
+            PrepareCodeGenerationState(
+                tabID = sessionState.tabID,
+                approach = sessionState.approach,
+                config = sessionStateConfig,
+                filePaths = emptyList(),
+                deletedFiles = emptyList(),
+                references = emptyList(),
+                currentIteration = 1, // first code gen iteration
+                uploadId = "", // There is no code gen uploadId so far
+                messenger = messenger,
+                token = CancellationTokenSource(),
+            )
+    }
+
+    fun storeCodeResultMessageId(message: IncomingFeatureDevMessage.StoreMessageIdMessage) {
+        val messageId = message.messageId
+        this.updateCodeResultMessageId(messageId)
+    }
+
+    private fun updateCodeResultMessageId(messageId: String?) {
+        this._codeResultMessageId = messageId
     }
 
     /**
      * Triggered by the Insert code follow-up button to apply code changes.
      */
-    fun insertChanges(filePaths: List<NewFileZipInfo>, deletedFiles: List<DeletedFileInfo>, references: List<CodeReferenceGenerated>) {
+    suspend fun insertChanges(
+        filePaths: List<NewFileZipInfo>,
+        deletedFiles: List<DeletedFileInfo>,
+        references: List<CodeReferenceGenerated>,
+        messenger: MessagePublisher,
+    ) {
         val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
+        val newFilePaths = filePaths.filter { !it.rejected && !it.changeApplied }
+        val newDeletedFiles = deletedFiles.filter { !it.rejected && !it.changeApplied }
+        newFilePaths.forEach {
+            resolveAndCreateOrUpdateFile(selectedSourceFolder, it.zipFilePath, it.fileContent)
+            it.changeApplied = true
+        }
 
-        filePaths.forEach { resolveAndCreateOrUpdateFile(selectedSourceFolder, it.zipFilePath, it.fileContent) }
-
-        deletedFiles.forEach { resolveAndDeleteFile(selectedSourceFolder, it.zipFilePath) }
+        newDeletedFiles.forEach {
+            resolveAndDeleteFile(selectedSourceFolder, it.zipFilePath)
+            it.changeApplied = true
+        }
 
         ReferenceLogController.addReferenceLog(references, project)
-
         // Taken from https://intellij-support.jetbrains.com/hc/en-us/community/posts/206118439-Refresh-after-external-changes-to-project-structure-and-sources
         VfsUtil.markDirtyAndRefresh(true, true, true, context.selectedSourceFolder)
+        if (this._codeResultMessageId != null) {
+            messenger.updateFileComponent(this.tabID, filePaths, deletedFiles, this._codeResultMessageId!!)
+        }
+    }
+
+    suspend fun disableFileList(
+        filePaths: List<NewFileZipInfo>,
+        deletedFiles: List<DeletedFileInfo>,
+        messenger: MessagePublisher,
+    ) {
+        if (this._codeResultMessageId.isNullOrEmpty()) {
+            return
+        }
+
+        if (this._codeResultMessageId != null) {
+            messenger.updateFileComponent(this.tabID, filePaths, deletedFiles, this._codeResultMessageId!!, true)
+        }
+        this._codeResultMessageId = null
     }
 
     suspend fun send(msg: String): Interaction {
@@ -113,11 +164,12 @@ class Session(val tabID: String, val project: Project) {
     }
 
     private suspend fun nextInteraction(msg: String): Interaction {
-        var action = SessionStateAction(
-            task = task,
-            msg = msg,
-            token = sessionState.token
-        )
+        var action =
+            SessionStateAction(
+                task = task,
+                msg = msg,
+                token = sessionState.token,
+            )
         val resp = sessionState.interact(action)
         if (resp.nextState != null) {
             // Approach may have been changed after the interaction
@@ -132,11 +184,12 @@ class Session(val tabID: String, val project: Project) {
         return resp.interaction
     }
 
-    private fun getSessionStateConfig(): SessionStateConfig = SessionStateConfig(
-        conversationId = this.conversationId,
-        repoContext = this.context,
-        featureDevService = this.featureDevService,
-    )
+    private fun getSessionStateConfig(): SessionStateConfig =
+        SessionStateConfig(
+            conversationId = this.conversationId,
+            repoContext = this.context,
+            featureDevService = this.featureDevService,
+        )
 
     val conversationId: String
         get() {

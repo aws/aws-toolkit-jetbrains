@@ -93,6 +93,10 @@ class FeatureDevController(
         )
     }
 
+    override suspend fun processStoreCodeResultMessageId(message: IncomingFeatureDevMessage.StoreMessageIdMessage) {
+        storeCodeResultMessageId(message)
+    }
+
     override suspend fun processStopMessage(message: IncomingFeatureDevMessage.StopResponse) {
         handleStopMessage(message)
     }
@@ -126,6 +130,7 @@ class FeatureDevController(
 
     override suspend fun processChatItemVotedMessage(message: IncomingFeatureDevMessage.ChatItemVotedMessage) {
         logger.debug { "$FEATURE_NAME: Processing ChatItemVotedMessage: $message" }
+        this.disablePreviousFileList(message.tabId)
 
         val session = chatSessionStorage.getSession(message.tabId, context.project)
         when (message.vote) {
@@ -244,6 +249,7 @@ class FeatureDevController(
         val fileToUpdate = message.filePath
         val session = getSessionInfo(message.tabId)
         val messageId = message.messageId
+        val action = message.actionName
 
         var filePaths: List<NewFileZipInfo> = emptyList()
         var deletedFiles: List<DeletedFileInfo> = emptyList()
@@ -253,12 +259,22 @@ class FeatureDevController(
                 deletedFiles = state.deletedFiles
             }
         }
-
-        // Mark the file as rejected or not depending on the previous state
-        filePaths.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
-        deletedFiles.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
+        if (action == "accept-change") {
+            session.insertChanges(
+                filePaths = filePaths.filter { it.zipFilePath == fileToUpdate },
+                deletedFiles = deletedFiles.filter { it.zipFilePath == fileToUpdate },
+                references = emptyList(),
+                messenger
+            )
+        } else {
+            // Mark the file as rejected or not depending on the previous state
+            filePaths.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
+            deletedFiles.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
+        }
 
         messenger.updateFileComponent(message.tabId, filePaths, deletedFiles, messageId)
+
+        //TODO: session.acceptCodeMessageId
     }
 
     private suspend fun newTabOpened(tabId: String) {
@@ -335,8 +351,12 @@ class FeatureDevController(
             session.insertChanges(
                 filePaths = filePaths.filterNot { it.rejected },
                 deletedFiles = deletedFiles.filterNot { it.rejected },
-                references = references
+                references = references,
+                messenger
             )
+
+            //TODO: if (session.acceptCodeMessageId) {
+
 
             messenger.sendAnswer(
                 tabId = tabId,
@@ -377,8 +397,11 @@ class FeatureDevController(
     }
 
     private suspend fun newTask(tabId: String, isException: Boolean? = false) {
+        this.disablePreviousFileList(tabId)
+
         val session = getSessionInfo(tabId)
         val sessionLatency = System.currentTimeMillis() - session.sessionStartTime
+
         AmazonqTelemetry.endChat(
             amazonqConversationId = session.conversationId,
             amazonqEndOfTheConversationLatency = sessionLatency.toDouble(),
@@ -399,6 +422,7 @@ class FeatureDevController(
     }
 
     private suspend fun closeSession(tabId: String) {
+        this.disablePreviousFileList(tabId)
         messenger.sendAnswer(
             tabId = tabId,
             messageType = FeatureDevMessageType.Answer,
@@ -546,11 +570,28 @@ class FeatureDevController(
         }
     }
 
+    private suspend fun disablePreviousFileList(tabId: String) {
+        val session = getSessionInfo(tabId)
+        when (val sessionState = session.sessionState) {
+            is PrepareCodeGenerationState -> {
+                session.disableFileList(sessionState.filePaths, sessionState.deletedFiles, messenger)
+            }
+        }
+    }
+
+    private fun storeCodeResultMessageId(message: IncomingFeatureDevMessage.StoreMessageIdMessage) {
+        val tabId = message.tabId
+        val session = getSessionInfo(tabId)
+        session.storeCodeResultMessageId(message)
+    }
+
     private suspend fun handleChat(
         tabId: String,
         message: String,
     ) {
         var session: Session? = null
+
+        this.disablePreviousFileList(tabId)
         try {
             logger.debug { "$FEATURE_NAME: Processing message: $message" }
             session = getSessionInfo(tabId)
