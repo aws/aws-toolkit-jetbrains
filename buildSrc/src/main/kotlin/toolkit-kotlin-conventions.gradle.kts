@@ -59,3 +59,20 @@ project.afterEvaluate {
         }
     }
 }
+
+// detekt applies sources directly from source sets in this scenario
+// can't figure out why source is empty in the detekt conventions
+project.extensions.getByType(KotlinJvmProjectExtension::class.java).target.compilations.configureEach {
+    // can't figure out why exclude("build/**") doesn't work
+    fun FileTree.withoutBuild() = filter { f -> f.path.split(File.separatorChar).none { it == "build" } }.asFileTree
+
+    tasks.named<Detekt>(DetektPlugin.DETEKT_TASK_NAME + name.capitalize()).configure {
+        source.forEach { it.walkBottomUp().onEnter { c -> println(c); !c.name.startsWith("build") } }
+        source = source.withoutBuild()
+        println(source.files)
+    }
+
+    tasks.named<DetektCreateBaselineTask>(DetektPlugin.BASELINE_TASK_NAME + name.capitalize()).configure {
+        source = source.withoutBuild()
+    }
+}

@@ -16,6 +16,7 @@ dependencies {
     detektPlugins(project(":detekt-rules"))
 }
 
+// detekt with type introspection configured in kotlin conventions
 private val detektFiles = fileTree(projectDir).matching {
     include("**/*.kt", "**/*.kts")
     exclude("**/build")
@@ -34,8 +35,6 @@ detekt {
 val javaVersion = project.jvmTarget().get()
 
 tasks.withType<Detekt>().configureEach {
-    setSource(source.filter { it.walkBottomUp().none { c -> c.name == "build" } })
-
     jvmTarget = javaVersion.majorVersion
     dependsOn(":detekt-rules:assemble")
 
