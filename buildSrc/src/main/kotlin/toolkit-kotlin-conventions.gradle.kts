@@ -59,18 +59,3 @@ project.afterEvaluate {
         }
     }
 }
-
-// can't figure out why exclude() doesn't work on the generated source tree, so copy logic from detekt
-project.extensions.getByType(KotlinJvmProjectExtension::class.java).target.compilations.configureEach {
-    val inputSource = kotlinSourceSets
-        .map { it.kotlin.sourceDirectories.filter { !it.path.contains("build") } }
-        .fold(project.files() as FileCollection) { collection, next -> collection.plus(next) }
-
-    tasks.named<Detekt>(DetektPlugin.DETEKT_TASK_NAME + name.capitalize()).configure {
-        setSource(inputSource)
-    }
-
-    tasks.named<DetektCreateBaselineTask>(DetektPlugin.BASELINE_TASK_NAME + name.capitalize()).configure {
-        setSource(inputSource)
-    }
-}

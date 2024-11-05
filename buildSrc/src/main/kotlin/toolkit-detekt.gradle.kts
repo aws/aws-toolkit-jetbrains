@@ -36,9 +36,7 @@ detekt {
 val javaVersion = project.jvmTarget().get()
 
 tasks.withType<Detekt>().configureEach {
-    doFirst {
-        detektFiles.forEach { println(it) }
-    }
+    setSource(source.filter { it.walkBottomUp().none { c -> c.name == "build" } })
 
     jvmTarget = javaVersion.majorVersion
     dependsOn(":detekt-rules:assemble")
@@ -83,6 +81,5 @@ tasks.create("aaaa") {
         tasks.named<Detekt>("detektMain").get().source.forEach { println(it) }
         println("files / ======")
         println(tasks.named<Detekt>("detektMain").get().source.files)
-
     }
 }
