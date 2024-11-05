@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.given
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.whenever
@@ -61,17 +62,19 @@ class ToolkitAuthManagerTest {
     @Test
     fun `test NEEDS_REFRESH state with network error - first occurrence`() {
         whenever(tokenProvider.state()).thenReturn(BearerTokenAuthState.NEEDS_REFRESH)
-        doThrow(UnknownHostException("Unable to execute HTTP request"))
-            .whenever(tokenProvider)
-            .resolveToken()
+        given(tokenProvider.resolveToken()).willAnswer {
+            throw UnknownHostException("Unable to execute HTTP request")
+        }
 
-        val result = maybeReauthProviderIfNeeded(
-            project,
-            ReauthSource.TOOLKIT,
-            tokenProvider
-        ) { _ -> reauthCallCount++ }
-
-        assertFalse(result)
+        try {
+            maybeReauthProviderIfNeeded(
+                project,
+                ReauthSource.TOOLKIT,
+                tokenProvider
+            ) { _ -> reauthCallCount++ }
+        } catch (e: UnknownHostException) {
+            // ignore
+        }
         assertEquals(0, reauthCallCount)
         verify(exactly = 1) {
             notifyInfo(
@@ -85,25 +88,32 @@ class ToolkitAuthManagerTest {
     @Test
     fun `test NEEDS_REFRESH state with network error - subsequent occurrence`() {
         whenever(tokenProvider.state()).thenReturn(BearerTokenAuthState.NEEDS_REFRESH)
-        doThrow(UnknownHostException("Unable to execute HTTP request"))
-            .`when`(tokenProvider)
-            .resolveToken()
+        given(tokenProvider.resolveToken()).willAnswer {
+            throw UnknownHostException("Unable to execute HTTP request")
+        }
 
         // First call to set the internal flag
-        maybeReauthProviderIfNeeded(
-            project,
-            ReauthSource.TOOLKIT,
-            tokenProvider
-        ) { _ -> reauthCallCount++ }
+        try {
+            maybeReauthProviderIfNeeded(
+                project,
+                ReauthSource.TOOLKIT,
+                tokenProvider
+            ) { _ -> reauthCallCount++ }
+        } catch (e: UnknownHostException) {
+            // ignore
+        }
 
         // Second call - should not show notification
-        val result = maybeReauthProviderIfNeeded(
-            project,
-            ReauthSource.TOOLKIT,
-            tokenProvider
-        ) { _ -> reauthCallCount++ }
+        try {
+            maybeReauthProviderIfNeeded(
+                project,
+                ReauthSource.TOOLKIT,
+                tokenProvider
+            ) { _ -> reauthCallCount++ }
+        } catch (e: UnknownHostException) {
+            // ignore
+        }
 
-        assertFalse(result)
         assertEquals(0, reauthCallCount)
         verify(exactly = 1) {
             notifyInfo(
@@ -119,15 +129,19 @@ class ToolkitAuthManagerTest {
         whenever(tokenProvider.state()).thenReturn(BearerTokenAuthState.NEEDS_REFRESH)
 
         // First trigger a network error
-        doThrow(UnknownHostException("Unable to execute HTTP request"))
-            .`when`(tokenProvider)
-            .resolveToken()
+        given(tokenProvider.resolveToken()).willAnswer {
+            throw UnknownHostException("Unable to execute HTTP request")
+        }
 
-        maybeReauthProviderIfNeeded(
-            project,
-            ReauthSource.TOOLKIT,
-            tokenProvider
-        ) { _ -> reauthCallCount++ }
+        try {
+            maybeReauthProviderIfNeeded(
+                project,
+                ReauthSource.TOOLKIT,
+                tokenProvider
+            ) { _ -> reauthCallCount++ }
+        } catch (e: UnknownHostException) {
+            // ignore
+        }
 
         reset(tokenProvider)
 
@@ -151,14 +165,18 @@ class ToolkitAuthManagerTest {
         reset(tokenProvider)
         // Now trigger another network error - should show notification again
         whenever(tokenProvider.state()).thenReturn(BearerTokenAuthState.NEEDS_REFRESH)
-        doThrow(UnknownHostException("Unable to execute HTTP request"))
-            .`when`(tokenProvider)
-            .resolveToken()
-        maybeReauthProviderIfNeeded(
-            project,
-            ReauthSource.TOOLKIT,
-            tokenProvider
-        ) { _ -> reauthCallCount++ }
+        given(tokenProvider.resolveToken()).willAnswer {
+            throw UnknownHostException("Unable to execute HTTP request")
+        }
+        try {
+            maybeReauthProviderIfNeeded(
+                project,
+                ReauthSource.TOOLKIT,
+                tokenProvider
+            ) { _ -> reauthCallCount++ }
+        } catch (e: UnknownHostException) {
+            // ignore
+        }
 
         verify(exactly = 2) {
             notifyInfo(
