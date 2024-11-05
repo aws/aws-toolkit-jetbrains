@@ -50,7 +50,7 @@ suspend fun FeatureDevController.onCodeGeneration(
             message = message("amazonqFeatureDev.chat_message.requesting_changes"),
             messageType = FeatureDevMessageType.AnswerStream,
         )
-        val state = session.sessionState
+        var state = session.sessionState
 
         var remainingIterations: Int? = state.codeGenerationRemainingIterationCount
         var totalIterations: Int? = state.codeGenerationTotalIterationCount
@@ -63,6 +63,8 @@ suspend fun FeatureDevController.onCodeGeneration(
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.generating_code"))
 
         session.send(message) // Trigger code generation
+
+        state = session.sessionState
 
         var filePaths: List<NewFileZipInfo> = emptyList()
         var deletedFiles: List<DeletedFileInfo> = emptyList()

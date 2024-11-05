@@ -32,6 +32,7 @@ import software.aws.toolkits.core.utils.touch
 import software.aws.toolkits.core.utils.tryDirOp
 import software.aws.toolkits.core.utils.tryFileOp
 import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.Result
 import java.io.InputStream
@@ -105,7 +106,7 @@ class DiskCache(
         val inputStream = clientRegistrationCache(cacheKey).tryInputStreamIfExists()
         if (inputStream == null) {
             val stage = LoadCredentialStage.ACCESS_FILE
-            LOG.warn("Failed to load Client Registration: cache file does not exist")
+            LOG.warn { "Failed to load Client Registration: cache file does not exist" }
             AuthTelemetry.modifyConnection(
                 action = "Load cache file",
                 source = "loadClientRegistration",
@@ -224,7 +225,7 @@ class DiskCache(
             if (clientRegistration.expiresAt.isNotExpired()) {
                 return clientRegistration
             } else {
-                LOG.warn("Client Registration is expired")
+                LOG.warn { "Client Registration is expired" }
                 AuthTelemetry.modifyConnection(
                     action = "Validate Credentials",
                     source = "loadClientRegistration",
@@ -235,7 +236,7 @@ class DiskCache(
                 return null
             }
         } catch (e: Exception) {
-            LOG.warn("Client Registration could not be read")
+            LOG.warn { "Client Registration could not be read" }
             AuthTelemetry.modifyConnection(
                 action = "Validate Credentials",
                 source = "loadClientRegistration",
