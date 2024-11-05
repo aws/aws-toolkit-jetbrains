@@ -67,5 +67,8 @@ tasks.create("aaaa") {
 
             true
         }
+
+        println("======")
+        tasks.named<Detekt>("detektMain").get().source.forEach { println(it) }
     }
 }
