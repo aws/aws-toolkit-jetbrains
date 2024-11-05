@@ -69,6 +69,13 @@ tasks.create("aaaa") {
             println("1 / ======")
             println(ss.files)
 
+            println("pp / ======")
+            ss.forEach { t ->
+                println("pp / $t / ======")
+                exec {
+                    commandLine("ls", "-la", t.absolutePath).isIgnoreExitValue = true
+                }
+            }
             true
         }
 
