@@ -35,11 +35,11 @@
             <separator/>
             <action
                 id="codemodernizer.toolbar.showactivejob"
-                class="software.aws.toolkits.jetbrains.services.codemodernizer.actions.CodeModernizerShowActiveJobDetailsAction"/>
+                class="software.aws.toolkits.jetbrains.services.codemodernizer.actions.CodeModernizerShowTransformationStatusAction"/>
             <separator/>
             <action
                 id="codemodernizer.toolbar.showpreviousjobs"
-                class="software.aws.toolkits.jetbrains.services.codemodernizer.actions.CodeModernizerShowJobHistoryAction"/>
+                class="software.aws.toolkits.jetbrains.services.codemodernizer.actions.CodeModernizerShowJobStatusAction"/>
         </group>
 
         <action

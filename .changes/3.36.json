@@ -1,0 +1,8 @@
+{
+  "date" : "2024-10-30",
+  "version" : "3.36",
+  "entries" : [ {
+    "type" : "bugfix",
+    "description" : "Fix inline chat default key binding not working on windows and linux"
+  } ]
+}

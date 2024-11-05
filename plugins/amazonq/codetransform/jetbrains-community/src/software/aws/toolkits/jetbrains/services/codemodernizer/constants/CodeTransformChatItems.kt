@@ -48,6 +48,13 @@ private val confirmUserSelectionButton = Button(
     id = CodeTransformButtonId.StartTransformation.id,
 )
 
+private val confirmSkipTestsSelectionButton = Button(
+    keepCardAfterClick = false,
+    waitMandatoryFormItems = true,
+    text = message("codemodernizer.chat.message.button.confirm"),
+    id = CodeTransformButtonId.ConfirmSkipTests.id,
+)
+
 private val openMvnBuildButton = Button(
     id = CodeTransformButtonId.OpenMvnBuild.id,
     text = message("codemodernizer.chat.message.button.view_build"),
@@ -134,6 +141,22 @@ private val selectTargetVersionFormItem = FormItem(
     )
 )
 
+private val selectSkipTestsFlagFormItem = FormItem(
+    id = CodeTransformFormItemId.SelectSkipTestsFlag.id,
+    title = message("codemodernizer.chat.form.user_selection.item.choose_skip_tests_option"),
+    mandatory = true,
+    options = listOf(
+        FormItemOption(
+            label = message("codemodernizer.chat.message.skip_tests_form.run_tests"),
+            value = message("codemodernizer.chat.message.skip_tests_form.run_tests"),
+        ),
+        FormItemOption(
+            label = message("codemodernizer.chat.message.skip_tests_form.skip"),
+            value = message("codemodernizer.chat.message.skip_tests_form.skip"),
+        )
+    )
+)
+
 private fun getUserSelectionFormattedMarkdown(moduleName: String): String = """
         ### ${message("codemodernizer.chat.prompt.title.details")}
         -------------
@@ -160,8 +183,8 @@ fun buildCheckingValidProjectChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
 )
 
-fun buildProjectValidChatContent(validationResult: ValidationResult) = CodeTransformChatMessageContent(
-    message = message("codemodernizer.chat.message.validation.check_passed", validationResult.validatedProjectJdkName),
+fun buildProjectValidChatContent() = CodeTransformChatMessageContent(
+    message = message("codemodernizer.chat.message.validation.check_passed"),
     type = CodeTransformChatMessageType.FinalizedAnswer,
 )
 fun buildProjectInvalidChatContent(validationResult: ValidationResult): CodeTransformChatMessageContent {
@@ -184,11 +207,26 @@ fun buildStartNewTransformFollowup(): CodeTransformChatMessageContent = CodeTran
     )
 )
 
-fun buildAuthRestoredFollowup(): CodeTransformChatMessageContent = CodeTransformChatMessageContent(
-    type = CodeTransformChatMessageType.FinalizedAnswer,
-    followUps = listOf(
-        startNewTransformFollowUp
+fun buildUserInputSkipTestsFlagChatIntroContent(): CodeTransformChatMessageContent =
+    CodeTransformChatMessageContent(
+        message = message("codemodernizer.chat.message.skip_tests"),
+        type = CodeTransformChatMessageType.FinalizedAnswer,
     )
+
+fun buildUserInputSkipTestsFlagChatContent(): CodeTransformChatMessageContent =
+    CodeTransformChatMessageContent(
+        message = message("codemodernizer.chat.form.user_selection.title"),
+        buttons = listOf(
+            confirmSkipTestsSelectionButton,
+            cancelUserSelectionButton,
+        ),
+        formItems = listOf(selectSkipTestsFlagFormItem),
+        type = CodeTransformChatMessageType.FinalizedAnswer,
+    )
+
+fun buildUserSkipTestsFlagSelectionChatContent(skipTestsSelection: String) = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = message("codemodernizer.chat.message.skip_tests_form.response", skipTestsSelection.lowercase())
 )
 
 fun buildUserInputChatContent(project: Project, validationResult: ValidationResult): CodeTransformChatMessageContent {
@@ -245,6 +283,16 @@ fun buildCompileLocalFailedChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
     message = "${message(
         "codemodernizer.chat.message.local_build_failed"
+    )}\n\n${message(
+        "codemodernizer.chat.message.validation.error.more_info",
+        CODE_TRANSFORM_TROUBLESHOOT_DOC_MVN_FAILURE
+    )}",
+)
+
+fun buildCompileLocalFailedNoJdkChatContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = "${message(
+        "codemodernizer.chat.message.validation.no_jdk"
     )}\n\n${message(
         "codemodernizer.chat.message.validation.error.more_info",
         CODE_TRANSFORM_TROUBLESHOOT_DOC_MVN_FAILURE
@@ -409,7 +457,7 @@ fun buildTransformAwaitUserInputChatContent(dependency: Dependency): CodeTransfo
 
 fun buildTransformDependencyErrorChatContent(
     hilDownloadArtifact: CodeTransformHilDownloadArtifact,
-    showButton: Boolean = true
+    showButton: Boolean = true,
 ) = CodeTransformChatMessageContent(
     message = message("codemodernizer.chat.message.hil.pom_snippet_title") +
         "\n\n```xml" +

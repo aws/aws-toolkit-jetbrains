@@ -32,6 +32,7 @@ type MessageCommand =
     | 'codetransform-start'
     | 'codetransform-cancel'
     | 'codetransform-stop'
+    | 'codetransform-confirm-skip-tests'
     | 'codetransform-new'
     | 'codetransform-open-transform-hub'
     | 'codetransform-open-mvn-build'

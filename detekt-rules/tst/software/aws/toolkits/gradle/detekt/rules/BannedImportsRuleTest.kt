@@ -52,6 +52,15 @@ class BannedImportsRuleTest {
     }
 
     @Test
+    fun `Importing Gradle internal implementation classes fails`() {
+        assertThat(rule.lint("import org.gradle.internal.impldep"))
+            .singleElement()
+            .matches {
+                it.id == "BannedImports" && it.message == "Avoid using Gradle's internal implementation classes: not public API and may change without notice."
+            }
+    }
+
+    @Test
     fun `Importing Dispatchers fails`() {
         assertThat(rule.lint("import kotlinx.coroutines.Dispatchers"))
             .singleElement()

@@ -24,7 +24,7 @@ interface View {
  */
 enum class Page(val icon: Icon) {
     PREVIOUS(AllIcons.Actions.Back),
-    NEXT(AllIcons.Actions.Forward)
+    NEXT(AllIcons.Actions.Forward),
 }
 
 enum class StatusType(val icon: Icon, val color: JBColor, private val animatedIconStrategy: (() -> AnimatedIcon)? = null) {
@@ -32,7 +32,8 @@ enum class StatusType(val icon: Icon, val color: JBColor, private val animatedIc
     PROGRESS(AllIcons.Process.ProgressResume, JBColor.ORANGE, { AnimatedIcon.FS() }),
     COMPLETED(AllIcons.RunConfigurations.ToolbarPassed, BETTER_GREEN),
     DELETED(AllIcons.RunConfigurations.ToolbarSkipped, JBColor.GRAY),
-    FAILED(AllIcons.RunConfigurations.ToolbarFailed, JBColor.RED);
+    FAILED(AllIcons.RunConfigurations.ToolbarFailed, JBColor.RED),
+    ;
 
     val animatedIconIfPossible: Icon get() = animatedIconStrategy?.let { it() } ?: icon
 
@@ -53,14 +54,16 @@ internal val StackStatus.type: StatusType
         StackStatus.DELETE_IN_PROGRESS,
         StackStatus.REVIEW_IN_PROGRESS,
         StackStatus.UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS,
-        StackStatus.UPDATE_COMPLETE_CLEANUP_IN_PROGRESS -> StatusType.PROGRESS
+        StackStatus.UPDATE_COMPLETE_CLEANUP_IN_PROGRESS,
+        -> StatusType.PROGRESS
         StackStatus.DELETE_COMPLETE -> StatusType.DELETED
         StackStatus.ROLLBACK_COMPLETE,
         StackStatus.DELETE_FAILED,
         StackStatus.UPDATE_ROLLBACK_FAILED,
         StackStatus.ROLLBACK_FAILED,
         StackStatus.UPDATE_ROLLBACK_COMPLETE,
-        StackStatus.CREATE_FAILED -> StatusType.FAILED
+        StackStatus.CREATE_FAILED,
+        -> StatusType.FAILED
         else -> StatusType.UNKNOWN
     }
 

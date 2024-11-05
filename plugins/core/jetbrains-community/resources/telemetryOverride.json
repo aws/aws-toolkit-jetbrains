@@ -59,9 +59,15 @@
                 "showExample",
                 "citeSources",
                 "explainLineByLine",
-                "explainCodeSelection"
+                "explainCodeSelection",
+                "generateUnitTests"
             ],
             "description": "Explict user intent associated with a chat message"
+        },
+        {
+            "name": "connectionState",
+            "type": "string",
+            "description": "A detailed state of a specific auth connection. Use `authStatus` for a higher level view of an extension's general connection."
         },
         {
             "name": "cwsprChatHasCodeSnippet",
@@ -97,11 +103,6 @@
             "name": "amazonqIndexCpuUsagePercentage",
             "type": "int",
             "description": "Cpu usage of LSP server"
-        },
-        {
-            "name": "cwsprChatProgrammingLanguage",
-            "type": "string",
-            "description": "Programming language associated with the message"
         },
         {
             "name": "cwsprChatConversationType",
@@ -278,6 +279,11 @@
             "description": "Comma-delimited list of enabled auths."
         },
         {
+            "name": "authRefreshSource",
+            "type": "string",
+            "description": "Source triggering token refresh"
+        },
+        {
             "name": "component",
             "allowedValues": [
                 "editor",
@@ -317,6 +323,11 @@
                 "IAM"
             ],
             "description": "Login is with Legacy device code or newer PKCE flow"
+        },
+        {
+            "name": "tabId",
+            "type": "string",
+            "description": "The unique identifier of a tab"
         }
     ],
     "metrics": [
@@ -644,53 +655,6 @@
             ]
         },
         {
-            "name": "amazonq_interactWithMessage",
-            "description": "When a user interacts with a message in the conversation",
-            "metadata": [
-                {
-                    "type": "cwsprChatConversationId"
-                },
-                {
-                    "type": "cwsprChatMessageId"
-                },
-                {
-                    "type": "cwsprChatInteractionType"
-                },
-                {
-                    "type": "cwsprChatInteractionTarget",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatCodeBlockIndex",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatTotalCodeBlocks",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatAcceptedCharactersLength",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatAcceptedNumberOfLines",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatHasReference",
-                    "required": false
-                },
-                {
-                    "type": "credentialStartUrl",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatHasProjectContext",
-                    "required": false
-                }
-            ]
-        },
-        {
             "name": "amazonq_modifyCode",
             "description": "Percentage of code modified by the user after copying/inserting code from a message",
             "metadata": [
@@ -743,6 +707,53 @@
                     "required": false
                 }
             ]
+        },
+        {
+            "name": "auth_modifyConnection",
+            "description": "An auth connection was modified in some way, e.g. deleted, updated",
+            "metadata": [
+                {
+                    "type": "action",
+                    "required": true
+                },
+                {
+                    "type": "authScopes",
+                    "required": false
+                },
+                {
+                    "type": "authStatus",
+                    "required": false
+                },
+                {
+                    "type": "connectionState",
+                    "required": false
+                },
+                {
+                    "type": "credentialStartUrl",
+                    "required": false
+                },
+                {
+                    "type": "sessionDuration",
+                    "required": false
+                },
+                {
+                    "type": "source",
+                    "required": true
+                },
+                {
+                    "type": "ssoRegistrationClientId",
+                    "required": false
+                },
+                {
+                    "type": "ssoRegistrationExpiresAt",
+                    "required": false
+                },
+                {
+                    "type": "id",
+                    "required": false
+                }
+            ],
+            "passive": true
         },
         {
             "name": "auth_userState",
@@ -849,6 +860,27 @@
                     "required": false
                 }
             ]
+        },
+        {
+            "name": "amazonq_stopCodeGeneration",
+            "description": "User stopped the code generation",
+            "metadata": [
+                {
+                    "type": "tabId",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "name": "auth_sourceOfRefresh",
+            "description": "Source of user triggered refresh",
+            "metadata": [
+                {
+                    "type": "authRefreshSource",
+                    "required": false
+                }
+            ]
         }
+
     ]
 }

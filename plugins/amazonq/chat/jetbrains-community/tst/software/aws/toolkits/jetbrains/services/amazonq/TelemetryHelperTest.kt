@@ -43,7 +43,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitConte
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.ChatSession
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.CodeNamesImpl
@@ -63,6 +62,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.LinkType
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionInfo
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryServiceExtension
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.CwsprChatConversationType
 import software.aws.toolkits.telemetry.CwsprChatInteractionType
 import software.aws.toolkits.telemetry.CwsprChatTriggerInteraction
@@ -106,6 +106,7 @@ class TelemetryHelperTest {
         private const val mockRegion = "us-east-1"
         private const val tabId = "tabId"
         private const val messageId = "messageId"
+        private val userIntent = UserIntent.SHOW_EXAMPLES
         private const val conversationId = "conversationId"
         private const val triggerId = "triggerId"
         private const val customizationArn = "customizationArn"
@@ -179,7 +180,7 @@ class TelemetryHelperTest {
         sessionStorage = mock {
             on { this.getSession(eq(tabId)) } doReturn ChatSessionInfo(session = mockSession, scope = mock(), history = mutableListOf())
         }
-        sut = TelemetryHelper(appInitContext, sessionStorage)
+        sut = TelemetryHelper(appInitContext.project, sessionStorage)
 
         // set up client
         mockClientManager.create<SsoOidcClient>()
@@ -414,11 +415,13 @@ class TelemetryHelperTest {
                 "command",
                 tabId,
                 messageId,
+                userIntent,
                 "println()",
                 "insertionTargetType",
                 "eventId",
                 codeBlockIndex,
-                totalCodeBlocks
+                totalCodeBlocks,
+                lang
             )
         )
 
@@ -476,12 +479,14 @@ class TelemetryHelperTest {
             IncomingCwcMessage.InsertCodeAtCursorPosition(
                 tabId,
                 messageId,
+                userIntent,
                 code,
                 inserTionTargetType,
                 emptyList(),
                 eventId,
                 codeBlockIndex,
-                totalCodeBlocks
+                totalCodeBlocks,
+                lang
             )
         )
 

@@ -27,7 +27,7 @@ class EcrServiceNode(project: Project, service: AwsExplorerServiceNode) : AwsExp
 
 class EcrRepositoryNode(
     project: Project,
-    val repository: Repository
+    val repository: Repository,
 ) :
     AwsExplorerResourceNode<String>(
         project,

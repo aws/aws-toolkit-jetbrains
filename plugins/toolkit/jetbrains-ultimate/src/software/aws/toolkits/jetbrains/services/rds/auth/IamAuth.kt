@@ -22,6 +22,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
+import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifierSso
@@ -45,7 +46,7 @@ data class RdsAuth(
     val address: String,
     val port: Int,
     val user: String,
-    val connectionSettings: ConnectionSettings
+    val connectionSettings: ConnectionSettings,
 )
 
 // [DatabaseAuthProvider] is marked as internal, but JetBrains advised this was a correct usage
@@ -72,7 +73,7 @@ class IamAuth : DatabaseAuthProviderCompatabilityAdapter {
 
     override fun intercept(
         connection: ProtoConnection,
-        silent: Boolean
+        silent: Boolean,
     ): CompletionStage<ProtoConnection>? {
         LOG.info { "Intercepting db connection [$connection]" }
         val project = connection.project()
@@ -117,7 +118,7 @@ class IamAuth : DatabaseAuthProviderCompatabilityAdapter {
             )
         )
 
-        reauthConnectionIfNeeded(project, ssoConnection)
+        reauthConnectionIfNeeded(project, ssoConnection, reauthSource = ReauthSource.TOOLKIT)
         return connection
     }
 

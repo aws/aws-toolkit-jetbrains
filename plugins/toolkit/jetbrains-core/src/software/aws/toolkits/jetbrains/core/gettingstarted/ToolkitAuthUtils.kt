@@ -9,6 +9,7 @@ import com.intellij.openapi.ui.Messages
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ConfigFilesFacade
 import software.aws.toolkits.jetbrains.core.credentials.DefaultConfigFilesFacade
+import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
 import software.aws.toolkits.jetbrains.core.credentials.authAndUpdateConfig
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
@@ -20,7 +21,7 @@ fun rolePopupFromConnection(
     project: Project,
     connection: AwsBearerTokenConnection,
     configFilesFacade: ConfigFilesFacade = DefaultConfigFilesFacade(),
-    isFirstInstance: Boolean = false
+    isFirstInstance: Boolean = false,
 ) {
     runInEdt {
         if (!connection.id.startsWith(SsoSessionConstants.SSO_SESSION_SECTION_NAME)) {
@@ -42,7 +43,7 @@ fun rolePopupFromConnection(
                     Messages.showErrorDialog(project, e.message, message("gettingstarted.explorer.iam.add"))
                 } ?: return@runInEdt
             } else {
-                reauthConnectionIfNeeded(project, connection)
+                reauthConnectionIfNeeded(project, connection, reauthSource = ReauthSource.TOOLKIT)
                 connection
             }.getConnectionSettings().tokenProvider
 

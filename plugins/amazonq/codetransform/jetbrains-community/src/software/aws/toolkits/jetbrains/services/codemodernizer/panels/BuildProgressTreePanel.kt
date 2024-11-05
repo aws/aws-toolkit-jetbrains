@@ -144,7 +144,7 @@ class BuildProgressTreePanel : JPanel(BorderLayout()) {
             expanded: Boolean,
             leaf: Boolean,
             row: Int,
-            hasFocus: Boolean
+            hasFocus: Boolean,
         ): Component {
             val treeRenderer = super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus)
             if (value is DefaultMutableTreeNode) {

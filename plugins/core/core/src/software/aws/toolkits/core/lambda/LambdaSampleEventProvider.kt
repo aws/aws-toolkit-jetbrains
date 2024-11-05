@@ -57,12 +57,12 @@ open class LambdaSampleEvent(val name: String, private val contentProvider: () -
 data class LambdaSampleEventManifest(
     @JsonProperty(value = "request")
     @JacksonXmlElementWrapper(useWrapping = false)
-    val requests: List<LambdaSampleEventRequest>
+    val requests: List<LambdaSampleEventRequest>,
 )
 
 data class LambdaSampleEventRequest(
     val filename: String,
-    val name: String
+    val name: String,
 )
 
 internal val LambdaSampleEventManifestResource = LambdaSampleEventResource("manifest.xml")
@@ -91,7 +91,6 @@ object LambdaSampleEventJsonValidator : RemoteResolveParser {
     private val LOG = LoggerFactory.getLogger(LambdaSampleEventJsonValidator::class.java)
 
     private val mapper = jacksonObjectMapper()
-        .disable(MapperFeature.CAN_OVERRIDE_ACCESS_MODIFIERS)
         .disable(MapperFeature.ALLOW_FINAL_FIELDS_AS_MUTATORS)
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
         .enable(JsonParser.Feature.ALLOW_COMMENTS)

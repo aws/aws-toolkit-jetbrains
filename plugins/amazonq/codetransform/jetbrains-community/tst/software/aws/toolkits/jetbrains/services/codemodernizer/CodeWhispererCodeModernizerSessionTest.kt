@@ -57,6 +57,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerStartJobResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_SKIP_UNIT_TESTS
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.UploadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ZipCreationResult
@@ -143,7 +144,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         assertFalse(roots.isEmpty() || roots.size > 1)
         assert(rootManager.dependencies.isEmpty())
         val root = roots[0]
-        val context = CodeModernizerSessionContext(project, root.children[0], JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
+        val context = CodeModernizerSessionContext(project, root.children[0], JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11, MAVEN_BUILD_SKIP_UNIT_TESTS)
         val mockFile = mock(File::class.java)
         val mockStringBuilder = mock(StringBuilder::class.java)
         val file = runInEdtAndGet {
@@ -156,7 +157,10 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
                 numEntries += 1
                 val fileContent = zipFile.getInputStream(entry).bufferedReader().readLine()
                 when (Path(entry.name)) {
-                    Path("manifest.json") -> assertNotNull(fileContent)
+                    Path("manifest.json") -> {
+                        assertNotNull(fileContent)
+                        assertTrue(fileContent.contains(MAVEN_BUILD_SKIP_UNIT_TESTS))
+                    }
                     Path("sources/src/tmp.txt") -> assertEquals(fileText, fileContent)
                     Path("build-logs.txt") -> assertNotNull(fileContent)
                     else -> fail("Unexpected entry in zip file: $entry")

@@ -35,6 +35,7 @@ private enum class CodeTransformMessageTypes(val type: String) {
     CodeTransformStart("codetransform-start"),
     CodeTransformStop("codetransform-stop"),
     CodeTransformCancel("codetransform-cancel"),
+    CodeTransformConfirmSkipTests("codetransform-confirm-skip-tests"),
     CodeTransformNew("codetransform-new"),
     CodeTransformOpenTransformHub("codetransform-open-transform-hub"),
     CodeTransformOpenMvnBuild("codetransform-open-mvn-build"),
@@ -64,6 +65,7 @@ class CodeTransformChatApp : AmazonQApp {
             CodeTransformMessageTypes.CodeTransformStart.type to IncomingCodeTransformMessage.CodeTransformStart::class,
             CodeTransformMessageTypes.CodeTransformStop.type to IncomingCodeTransformMessage.CodeTransformStop::class,
             CodeTransformMessageTypes.CodeTransformCancel.type to IncomingCodeTransformMessage.CodeTransformCancel::class,
+            CodeTransformMessageTypes.CodeTransformConfirmSkipTests.type to IncomingCodeTransformMessage.CodeTransformConfirmSkipTests::class,
             CodeTransformMessageTypes.CodeTransformNew.type to IncomingCodeTransformMessage.CodeTransformNew::class,
             CodeTransformMessageTypes.CodeTransformOpenTransformHub.type to IncomingCodeTransformMessage.CodeTransformOpenTransformHub::class,
             CodeTransformMessageTypes.CodeTransformOpenMvnBuild.type to IncomingCodeTransformMessage.CodeTransformOpenMvnBuild::class,
@@ -153,6 +155,7 @@ class CodeTransformChatApp : AmazonQApp {
             is IncomingCodeTransformMessage.CodeTransformStart -> inboundAppMessagesHandler.processCodeTransformStartAction(message)
             is IncomingCodeTransformMessage.CodeTransformCancel -> inboundAppMessagesHandler.processCodeTransformCancelAction(message)
             is IncomingCodeTransformMessage.CodeTransformStop -> inboundAppMessagesHandler.processCodeTransformStopAction(message.tabId)
+            is IncomingCodeTransformMessage.CodeTransformConfirmSkipTests -> inboundAppMessagesHandler.processCodeTransformConfirmSkipTests(message)
             is IncomingCodeTransformMessage.CodeTransformNew -> inboundAppMessagesHandler.processCodeTransformNewAction(message)
             is IncomingCodeTransformMessage.CodeTransformOpenTransformHub -> inboundAppMessagesHandler.processCodeTransformOpenTransformHub(message)
             is IncomingCodeTransformMessage.CodeTransformOpenMvnBuild -> inboundAppMessagesHandler.processCodeTransformOpenMvnBuild(message)

@@ -227,7 +227,7 @@ class CreateConfigurationActionTest {
         port: Int = RuleUtils.randomNumber(),
         dbName: String = RuleUtils.randomName(),
         iamAuthEnabled: Boolean = true,
-        engineType: String = MYSQL_ENGINE_TYPE
+        engineType: String = MYSQL_ENGINE_TYPE,
     ): RdsNode = mock {
         on { nodeProject } doAnswer { projectRule.project }
         on { database } doAnswer {
@@ -240,7 +240,7 @@ class CreateConfigurationActionTest {
         port: Int = RuleUtils.randomNumber(),
         dbName: String = RuleUtils.randomName(),
         iamAuthEnabled: Boolean = true,
-        engineType: String = POSTGRES_ENGINE_TYPE
+        engineType: String = POSTGRES_ENGINE_TYPE,
     ): RdsDatabase = RdsDatabase(
         identifier = dbName,
         engine = engineType,

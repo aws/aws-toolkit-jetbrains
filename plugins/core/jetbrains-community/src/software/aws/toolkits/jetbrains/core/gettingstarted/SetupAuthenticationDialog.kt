@@ -75,7 +75,7 @@ data class SetupAuthenticationDialogState(
         var profileName: String = "",
         var startUrl: String = "",
         var region: AwsRegion = AwsRegionProvider.getInstance().defaultRegion(),
-        var rolePopupState: IdcRolePopupState = IdcRolePopupState()
+        var rolePopupState: IdcRolePopupState = IdcRolePopupState(),
     )
 
     // has no state yet
@@ -92,27 +92,27 @@ data class SetupAuthenticationDialogState(
 enum class SetupAuthenticationTabs {
     IDENTITY_CENTER,
     BUILDER_ID,
-    IAM_LONG_LIVED
+    IAM_LONG_LIVED,
 }
 
 data class AuthenticationTabSettings(
     val disabled: Boolean = false,
-    val notice: SetupAuthenticationNotice
+    val notice: SetupAuthenticationNotice,
 )
 
 data class SetupAuthenticationNotice(
     val type: NoticeType,
     val message: String,
-    val learnMore: String
+    val learnMore: String,
 ) {
     enum class NoticeType {
         WARNING,
-        ERROR
+        ERROR,
     }
 }
 
 interface AuthenticationDialog {
-    val attempts: Int
+    val attempts: Long
     val authType: CredentialSourceId
 }
 
@@ -127,7 +127,7 @@ class SetupAuthenticationDialog(
     private val featureId: FeatureId,
     private val isFirstInstance: Boolean = false,
     private val connectionInitiatedFromExplorer: Boolean = false,
-    private val connectionInitiatedFromQChatPanel: Boolean = false
+    private val connectionInitiatedFromQChatPanel: Boolean = false,
 ) : DialogWrapper(project), AuthenticationDialog {
     private val rootTabPane = JBTabbedPane()
     private val idcTab = IdcTabPanelBuilder(
@@ -138,7 +138,7 @@ class SetupAuthenticationDialog(
     private val builderIdTab = BuilderIdTabPanelBuilder().build()
     private val iamTab = iamTab()
     private val wrappers = SetupAuthenticationTabs.values().associateWith { BorderLayoutPanel() }
-    override var attempts = 0
+    override var attempts = 0L
         private set
     override var authType = CredentialSourceId.IamIdentityCenter
         private set
@@ -287,7 +287,8 @@ class SetupAuthenticationDialog(
                         isAggregated = false,
                         attempts = ++attempts,
                         result = Result.Failed,
-                        reason = "ConnectionUnsuccessful"
+                        reason = "ConnectionUnsuccessful",
+                        isReAuth = false
                     )
                 } ?: return
 
@@ -339,7 +340,8 @@ class SetupAuthenticationDialog(
                         isAggregated = false,
                         attempts = ++attempts,
                         result = Result.Failed,
-                        reason = "DuplicateProfileName"
+                        reason = "DuplicateProfileName",
+                        isReAuth = false
                     )
                     return
                 }
@@ -365,7 +367,8 @@ class SetupAuthenticationDialog(
                         isAggregated = false,
                         attempts = ++attempts,
                         result = Result.Failed,
-                        reason = "InvalidCredentials"
+                        reason = "InvalidCredentials",
+                        isReAuth = false
                     )
                     return
                 }
@@ -438,7 +441,8 @@ class SetupAuthenticationDialog(
             isAggregated = false,
             attempts = ++attempts,
             result = Result.Failed,
-            reason = errorType
+            reason = errorType,
+            isReAuth = false
         )
 
         LOG.error(e) { errorMessage }
@@ -468,7 +472,7 @@ class BuilderIdTabPanelBuilder {
 class IdcTabPanelBuilder(
     private val startUrl: KMutableProperty0<String>,
     private val region: KMutableProperty0<AwsRegion>,
-    private var profileName: Optional<KMutableProperty0<String>> = Optional.empty()
+    private var profileName: Optional<KMutableProperty0<String>> = Optional.empty(),
 ) {
     fun build() = panel {
         profileName.ifPresent {

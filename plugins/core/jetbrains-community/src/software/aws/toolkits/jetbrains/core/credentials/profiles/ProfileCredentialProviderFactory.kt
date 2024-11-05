@@ -41,6 +41,7 @@ import software.aws.toolkits.jetbrains.core.credentials.CredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.InteractiveCredential
 import software.aws.toolkits.jetbrains.core.credentials.MfaRequiredInteractiveCredentials
 import software.aws.toolkits.jetbrains.core.credentials.PostValidateInteractiveCredential
+import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.RefreshConnectionAction
 import software.aws.toolkits.jetbrains.core.credentials.SsoRequiredInteractiveCredentials
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
@@ -82,7 +83,7 @@ private class ProfileCredentialsIdentifierLegacySso(
     override val ssoCache: SsoCache,
     override val ssoUrl: String,
     override val ssoRegion: String,
-    credentialType: CredentialType?
+    credentialType: CredentialType?,
 ) : ProfileCredentialsIdentifier(profileName, defaultRegionId, credentialType),
     SsoRequiredInteractiveCredentials,
     PostValidateInteractiveCredential {
@@ -110,7 +111,7 @@ class ProfileCredentialsIdentifierSso @TestOnly constructor(
     profileName: String,
     val ssoSessionName: String,
     defaultRegionId: String?,
-    credentialType: CredentialType?
+    credentialType: CredentialType?,
 ) : ProfileCredentialsIdentifier(profileName, defaultRegionId, credentialType), PostValidateInteractiveCredential, SsoSessionBackedCredentialIdentifier {
     override val sessionIdentifier = "$SSO_SESSION_SECTION_NAME:$ssoSessionName"
 
@@ -133,7 +134,7 @@ class ProfileCredentialsIdentifierSso @TestOnly constructor(
                                     scopes = session.scopes.toList()
                                 )
                             )
-                            reauthConnectionIfNeeded(e.project, connection)
+                            reauthConnectionIfNeeded(e.project, connection, reauthSource = ReauthSource.TOOLKIT)
                             RefreshConnectionAction().actionPerformed(e)
                         }
                     }
@@ -497,7 +498,7 @@ private fun Profile.toCredentialType(): CredentialType? = when {
 
 private data class ProfileHolder(
     val profiles: MutableMap<String, Profile> = mutableMapOf(),
-    val ssoSessions: MutableMap<String, Profile> = mutableMapOf()
+    val ssoSessions: MutableMap<String, Profile> = mutableMapOf(),
 ) {
     fun snapshot() = copy(
         profiles = profiles.toMutableMap(),

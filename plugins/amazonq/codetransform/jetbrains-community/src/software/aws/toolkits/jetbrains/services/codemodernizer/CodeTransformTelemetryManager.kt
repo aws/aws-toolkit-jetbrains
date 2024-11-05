@@ -89,9 +89,9 @@ class CodeTransformTelemetryManager(private val project: Project) {
 
     fun uploadProject(payloadSize: Int, startTime: Instant, dependenciesCopied: Boolean = false, telemetryErrorMessage: String? = null) {
         CodetransformTelemetry.uploadProject(
-            codeTransformRunTimeLatency = calculateTotalLatency(startTime, Instant.now()),
+            codeTransformRunTimeLatency = calculateTotalLatency(startTime, Instant.now()).toLong(),
             codeTransformSessionId = sessionId,
-            codeTransformTotalByteSize = payloadSize,
+            codeTransformTotalByteSize = payloadSize.toLong(),
             codeTransformDependenciesCopied = dependenciesCopied,
             result = if (telemetryErrorMessage.isNullOrEmpty()) Result.Succeeded else Result.Failed,
             reason = telemetryErrorMessage,
@@ -101,7 +101,7 @@ class CodeTransformTelemetryManager(private val project: Project) {
     fun jobStart(transformStartTime: Instant, jobId: JobId?, telemetryErrorMessage: String? = null) = CodetransformTelemetry.jobStart(
         codeTransformSessionId = sessionId,
         codeTransformJobId = jobId?.id.orEmpty(),
-        codeTransformRunTimeLatency = calculateTotalLatency(transformStartTime, Instant.now()), // subtract current time by project start time
+        codeTransformRunTimeLatency = calculateTotalLatency(transformStartTime, Instant.now()).toLong(), // subtract current time by project start time
         result = if (telemetryErrorMessage.isNullOrEmpty()) Result.Succeeded else Result.Failed,
         reason = telemetryErrorMessage,
     )
@@ -111,15 +111,15 @@ class CodeTransformTelemetryManager(private val project: Project) {
         downloadStartTime: Instant,
         jobId: JobId,
         totalDownloadBytes: Int,
-        telemetryErrorMessage: String?
+        telemetryErrorMessage: String?,
     ) {
         CodetransformTelemetry.downloadArtifact(
             codeTransformArtifactType = artifactType,
             codeTransformJobId = jobId.id,
             codeTransformRuntimeError = telemetryErrorMessage,
-            codeTransformRunTimeLatency = calculateTotalLatency(downloadStartTime, Instant.now()),
+            codeTransformRunTimeLatency = calculateTotalLatency(downloadStartTime, Instant.now()).toLong(),
             codeTransformSessionId = sessionId,
-            codeTransformTotalByteSize = totalDownloadBytes,
+            codeTransformTotalByteSize = totalDownloadBytes.toLong(),
             result = if (telemetryErrorMessage.isNullOrEmpty()) Result.Succeeded else Result.Failed,
             reason = telemetryErrorMessage,
         )
@@ -130,7 +130,7 @@ class CodeTransformTelemetryManager(private val project: Project) {
         jobId: JobId,
         userChoice: String,
         source: CodeTransformVCSViewerSrcComponents,
-        telemetryErrorMessage: String? = null
+        telemetryErrorMessage: String? = null,
     ) {
         CodetransformTelemetry.viewArtifact(
             codeTransformArtifactType = artifactType,
@@ -175,7 +175,7 @@ class CodeTransformTelemetryManager(private val project: Project) {
         codeTransformRunTimeLatency = calculateTotalLatency(
             CodeTransformTelemetryState.instance.getStartTime(),
             Instant.now()
-        ),
+        ).toLong(),
         codeTransformLocalJavaVersion = getJavaVersionFromProjectSetting(project),
     )
 

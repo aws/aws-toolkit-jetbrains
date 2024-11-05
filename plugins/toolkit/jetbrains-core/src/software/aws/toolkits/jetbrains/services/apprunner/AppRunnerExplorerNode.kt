@@ -23,7 +23,7 @@ class AppRunnerNode(project: Project, service: AwsExplorerServiceNode) :
 
 class AppRunnerServiceNode(
     project: Project,
-    val service: ServiceSummary
+    val service: ServiceSummary,
 ) : AwsExplorerResourceNode<String>(
     project,
     AppRunnerClient.SERVICE_NAME,

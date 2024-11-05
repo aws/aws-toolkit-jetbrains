@@ -39,7 +39,7 @@ data class GatewaySetupAuthenticationDialogState(
     data class IdentityCenterTabState(
         var startUrl: String = "",
         var region: AwsRegion = AwsRegionProvider.getInstance().defaultRegion(),
-        var rolePopupState: IdcRolePopupState = IdcRolePopupState()
+        var rolePopupState: IdcRolePopupState = IdcRolePopupState(),
     )
 
     // has no state yet
@@ -48,7 +48,7 @@ data class GatewaySetupAuthenticationDialogState(
 
 enum class GatewaySetupAuthenticationTabs {
     IDENTITY_CENTER,
-    BUILDER_ID
+    BUILDER_ID,
 }
 
 class GatewaySetupAuthenticationDialog(
@@ -56,13 +56,13 @@ class GatewaySetupAuthenticationDialog(
     private val scopes: List<String> = emptyList(),
     private val state: GatewaySetupAuthenticationDialogState = GatewaySetupAuthenticationDialogState(),
     private val tabSettings: Map<GatewaySetupAuthenticationTabs, AuthenticationTabSettings> = emptyMap(),
-    private val promptForIdcPermissionSet: Boolean = false
+    private val promptForIdcPermissionSet: Boolean = false,
 ) : DialogWrapper(project), AuthenticationDialog {
     private val rootTabPane = JBTabbedPane()
     private val idcTab = IdcTabPanelBuilder(state.idcTabState::startUrl, state.idcTabState::region).build()
     private val builderIdTab = BuilderIdTabPanelBuilder().build()
     private val wrappers = GatewaySetupAuthenticationTabs.values().associateWith { BorderLayoutPanel() }
-    override var attempts = 0
+    override var attempts = 0L
         private set
     override var authType = CredentialSourceId.IamIdentityCenter
         private set

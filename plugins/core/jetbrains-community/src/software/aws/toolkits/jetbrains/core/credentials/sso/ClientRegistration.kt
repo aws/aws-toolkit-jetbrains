@@ -73,5 +73,5 @@ data class PKCEClientRegistrationCacheKey(
     // assume clientType, grantTypes, redirectUris are static, but throw them in just in case
     val clientType: String,
     val grantTypes: List<String>,
-    val redirectUris: List<String>
+    val redirectUris: List<String>,
 ) : ClientRegistrationCacheKey

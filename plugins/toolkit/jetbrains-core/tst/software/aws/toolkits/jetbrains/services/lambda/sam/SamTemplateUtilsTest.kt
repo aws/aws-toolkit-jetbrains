@@ -574,7 +574,7 @@ Resources:
         logicalName: String,
         codeLocation: String,
         handler: String,
-        runtime: String
+        runtime: String,
     ) {
         runInEdtAndWait {
             assertThat(function.logicalName).isEqualTo(logicalName)

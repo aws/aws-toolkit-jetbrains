@@ -7,8 +7,16 @@ import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 
-
-enum class IdeFlavor { GW, IC, IU, RD }
+/** The subset of [org.jetbrains.intellij.platform.gradle.IntelliJPlatformType] that are relevant to us **/
+enum class IdeFlavor {
+    GW,
+    /* free */
+    AI, IC, PC,
+    /* paid */
+    /* RR is 'non-commerical free' but treat as paid */
+    DB, CL, GO, IU, PS, PY, RM, RR, WS,
+    RD,
+}
 
 object IdeVersions {
     private val commonPlugins = listOf(
@@ -21,7 +29,6 @@ object IdeVersions {
         Profile(
             name = "2023.3",
             community = ProductProfile(
-                sdkFlavor = IdeFlavor.IC,
                 sdkVersion = "2023.3",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
@@ -34,7 +41,6 @@ object IdeVersions {
                 )
             ),
             ultimate = ProductProfile(
-                sdkFlavor = IdeFlavor.IU,
                 sdkVersion = "2023.3",
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
@@ -58,7 +64,6 @@ object IdeVersions {
         Profile(
             name = "2024.1",
             community = ProductProfile(
-                sdkFlavor = IdeFlavor.IC,
                 sdkVersion = "2024.1",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
@@ -72,7 +77,6 @@ object IdeVersions {
                 )
             ),
             ultimate = ProductProfile(
-                sdkFlavor = IdeFlavor.IU,
                 sdkVersion = "2024.1",
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
@@ -97,12 +101,10 @@ object IdeVersions {
         Profile(
             name = "2024.2",
             gateway = ProductProfile(
-                sdkFlavor = IdeFlavor.GW,
-                sdkVersion = "242.20224-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "242.23726-EAP-CANDIDATE-SNAPSHOT",
                 bundledPlugins = listOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
-                sdkFlavor = IdeFlavor.IC,
                 sdkVersion = "2024.2",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
@@ -116,7 +118,6 @@ object IdeVersions {
                 )
             ),
             ultimate = ProductProfile(
-                sdkFlavor = IdeFlavor.IU,
                 sdkVersion = "2024.2",
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
@@ -131,11 +132,52 @@ object IdeVersions {
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2024.2-EAP7-SNAPSHOT",
+                sdkVersion = "2024.2",
                 bundledPlugins = commonPlugins,
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2024.1.1",
-                nugetVersion = " 2024.2.0-eap07"
+                nugetVersion = " 2024.2.0"
+            )
+        ),
+        Profile(
+            name = "2024.3",
+            gateway = ProductProfile(
+                sdkVersion = "243.19420-EAP-CANDIDATE-SNAPSHOT",
+                bundledPlugins = listOf("org.jetbrains.plugins.terminal")
+            ),
+            community = ProductProfile(
+                sdkVersion = "243.19420-EAP-CANDIDATE-SNAPSHOT",
+                bundledPlugins = commonPlugins + listOf(
+                    "com.intellij.java",
+                    "com.intellij.gradle",
+                    "org.jetbrains.idea.maven",
+                ),
+                marketplacePlugins = listOf(
+                    "org.toml.lang:243.19420.27",
+                    "PythonCore:243.19420.21",
+                    "Docker:243.19420.27"
+                )
+            ),
+            ultimate = ProductProfile(
+                sdkVersion = "243.19420-EAP-CANDIDATE-SNAPSHOT",
+                bundledPlugins = commonPlugins + listOf(
+                    "JavaScript",
+                    "JavaScriptDebugger",
+                    "com.intellij.database",
+                    "com.jetbrains.codeWithMe",
+                ),
+                marketplacePlugins = listOf(
+                    "org.toml.lang:243.18137.23",
+                    "Pythonid:243.19420.21",
+                    "org.jetbrains.plugins.go:243.19420.21",
+                )
+            ),
+            rider = RiderProfile(
+                sdkVersion = "2024.3-SNAPSHOT",
+                bundledPlugins = commonPlugins,
+                netFrameworkTarget = "net472",
+                rdGenVersion = "2024.3.0",
+                nugetVersion = " 2024.3.0-eap03"
             )
         ),
 
@@ -151,7 +193,6 @@ object IdeVersions {
 }
 
 open class ProductProfile(
-    val sdkFlavor: IdeFlavor,
     val sdkVersion: String,
     val bundledPlugins: List<String> = emptyList(),
     val marketplacePlugins: List<String> = emptyList()
@@ -164,7 +205,7 @@ class RiderProfile(
     val nugetVersion: String, // https://www.nuget.org/packages/JetBrains.Rider.SDK/
     bundledPlugins: List<String> = emptyList(),
     marketplacePlugins: List<String> = emptyList(),
-) : ProductProfile(IdeFlavor.RD, sdkVersion, bundledPlugins, marketplacePlugins)
+) : ProductProfile(sdkVersion, bundledPlugins, marketplacePlugins)
 
 class Profile(
     val name: String,

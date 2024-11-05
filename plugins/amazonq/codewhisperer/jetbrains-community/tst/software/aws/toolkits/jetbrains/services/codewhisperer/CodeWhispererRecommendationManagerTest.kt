@@ -75,7 +75,7 @@ class CodeWhispererRecommendationManagerTest {
         val userInput = ""
         sut.stub {
             onGeneric { findRightContextOverlap(any<RequestContext>(), any<Completion>()) } doReturn "}"
-            onGeneric { reformatReference(any(), any()) } doReturn aCompletion("def")
+            onGeneric { reformatReference(any<RequestContext>(), any()) } doReturn aCompletion("def")
         }
         val detail = sut.buildDetailContext(
             aRequestContext(project),

@@ -389,7 +389,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
 
     private fun validateEnvironmentIsRunning(
         indicator: ProgressIndicator,
-        environmentActions: WorkspaceActions
+        environmentActions: WorkspaceActions,
     ) {
         when (val status = environmentActions.getEnvironmentDetails().status()) {
             DevEnvironmentStatus.PENDING, DevEnvironmentStatus.STARTING -> environmentActions.waitForTaskReady(indicator)
@@ -437,7 +437,8 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                 }
 
                 is GitSettings.CawsOwnedRepoSettings,
-                is GitSettings.NoRepo -> {
+                is GitSettings.NoRepo,
+                -> {
                 }
             }
 
@@ -538,7 +539,7 @@ data class CawsConnectionParameters(
     val envId: String,
     val gitSettings: GitSettings,
     val toolkitInstallSettings: ToolkitInstallSettings,
-    val ssoSettings: SsoSettings?
+    val ssoSettings: SsoSettings?,
 ) {
     companion object {
         const val CAWS_SPACE = "aws.codecatalyst.space"
@@ -604,7 +605,7 @@ data class CawsConnectionParameters(
 
 data class SsoSettings(
     val startUrl: String,
-    val region: String
+    val region: String,
 ) {
     companion object {
         fun fromUrlParameters(startUrl: String, region: String) = SsoSettings(URLDecoder.decode(startUrl, "UTF-8"), region)

@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners
 
 import com.intellij.openapi.application.ApplicationManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import java.awt.event.ActionEvent
 
@@ -13,5 +14,13 @@ class CodeWhispererPrevButtonActionListener(states: InvocationContext) : CodeWhi
         ApplicationManager.getApplication().messageBus.syncPublisher(
             CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED
         ).navigatePrevious(states)
+    }
+}
+
+class CodeWhispererPrevButtonActionListenerNew(sessionContext: SessionContextNew) : CodeWhispererActionListenerNew(sessionContext) {
+    override fun actionPerformed(e: ActionEvent?) {
+        ApplicationManager.getApplication().messageBus.syncPublisher(
+            CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED
+        ).navigatePrevious(sessionContext)
     }
 }

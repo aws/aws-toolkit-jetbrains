@@ -15,7 +15,6 @@ import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.LightVirtualFile
 import com.intellij.testFramework.replaceService
 import kotlinx.coroutines.Job
-import org.gradle.internal.impldep.com.amazonaws.ResponseMetadata
 import org.junit.Before
 import org.junit.Rule
 import org.mockito.Mockito
@@ -26,6 +25,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.awscore.DefaultAwsResponseMetadata
+import software.amazon.awssdk.awscore.util.AwsHeader
 import software.amazon.awssdk.http.SdkHttpResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationPlanResponse
@@ -133,14 +133,14 @@ open class CodeWhispererCodeModernizerTestBase(
             .uploadUrl("https://smth.com")
             .uploadId("1234")
             .kmsKeyArn("0000000000000000000000000000000000:key/1234abcd")
-            .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to testRequestId)))
+            .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
             .sdkHttpResponse(SdkHttpResponse.builder().headers(mapOf(CodeWhispererService.KET_SESSION_ID to listOf(testSessionId))).build())
             .build() as CreateUploadUrlResponse
 
     internal val exampleStartCodeMigrationResponse =
         StartTransformationResponse.builder()
             .transformationJobId(jobId.id)
-            .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to testRequestId)))
+            .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
             .sdkHttpResponse(SdkHttpResponse.builder().headers(mapOf(CodeWhispererService.KET_SESSION_ID to listOf(testSessionId))).build())
             .build() as StartTransformationResponse
 
@@ -164,7 +164,7 @@ open class CodeWhispererCodeModernizerTestBase(
                         ),
                     ).build(),
             )
-            .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to testRequestId)))
+            .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
             .sdkHttpResponse(SdkHttpResponse.builder().headers(mapOf(CodeWhispererService.KET_SESSION_ID to listOf(testSessionId))).build())
             .build() as GetTransformationPlanResponse
 
@@ -198,7 +198,7 @@ open class CodeWhispererCodeModernizerTestBase(
                     )
                     .build(),
             )
-            .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to testRequestId)))
+            .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
             .sdkHttpResponse(SdkHttpResponse.builder().headers(mapOf(CodeWhispererService.KET_SESSION_ID to listOf(testSessionId))).build())
             .build() as GetTransformationResponse
 
@@ -207,7 +207,7 @@ open class CodeWhispererCodeModernizerTestBase(
     fun GetTransformationResponse.replace(status: TransformationStatus) =
         this.copy { response ->
             response.transformationJob(this.transformationJob().copy { it.status(status) })
-                .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to testRequestId)))
+                .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
                 .sdkHttpResponse(
                     SdkHttpResponse.builder().headers(mapOf(CodeWhispererService.KET_SESSION_ID to listOf(testSessionId))).build(),
                 )
@@ -268,11 +268,10 @@ open class CodeWhispererCodeModernizerTestBase(
         val summaryFileMock = Mockito.mock(File::class.java)
         val logFileMock = Mockito.mock(File::class.java)
         doReturn("dummy/path").whenever(virtualFileMock).path
-        testSessionContextSpy = spy(CodeModernizerSessionContext(project, virtualFileMock, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11))
+        testSessionContextSpy = spy(CodeModernizerSessionContext(project, virtualFileMock, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11, "test"))
         testSessionSpy = spy(CodeModernizerSession(testSessionContextSpy, 0, 0))
         doNothing().whenever(testSessionSpy).deleteUploadArtifact(any())
         doReturn(Job()).whenever(codeModernizerManagerSpy).launchModernizationJob(any(), any())
-        doReturn(testSessionSpy).whenever(codeModernizerManagerSpy).createCodeModernizerSession(any(), any())
         testCodeModernizerArtifact =
             spy(
                 CodeModernizerArtifact(

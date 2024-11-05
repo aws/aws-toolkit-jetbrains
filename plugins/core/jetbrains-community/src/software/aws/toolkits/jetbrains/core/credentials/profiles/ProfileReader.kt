@@ -14,7 +14,7 @@ data class Profiles(
     val validProfiles: Map<String, Profile>,
     val invalidProfiles: Map<String, Exception>,
     val validSsoSessions: Map<String, Profile>,
-    val invalidSsoSessions: Map<String, Exception>
+    val invalidSsoSessions: Map<String, Exception>,
 )
 
 /**

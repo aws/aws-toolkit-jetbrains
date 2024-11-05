@@ -43,7 +43,8 @@ class GettingStartedOnStartup : StartupActivity {
                     featureId = FeatureId.Unknown,
                     credentialSourceId = CredentialSourceId.Unknown,
                     isAggregated = true,
-                    result = Result.Succeeded
+                    result = Result.Succeeded,
+                    isReAuth = false
                 )
                 AuthTelemetry.addedConnections(
                     project,
@@ -66,7 +67,8 @@ class GettingStartedOnStartup : StartupActivity {
                 credentialSourceId = CredentialSourceId.Unknown,
                 isAggregated = false,
                 result = Result.Failed,
-                reason = "Error opening getting started panel"
+                reason = "Error opening getting started panel",
+                isReAuth = false
             )
             AuthTelemetry.addedConnections(
                 project,

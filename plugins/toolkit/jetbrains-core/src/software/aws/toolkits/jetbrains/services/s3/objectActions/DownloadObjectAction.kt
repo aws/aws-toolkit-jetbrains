@@ -51,7 +51,8 @@ class DownloadObjectAction :
         SKIP(message("s3.download.object.conflict.skip")),
         OVERWRITE(message("s3.download.object.conflict.overwrite")),
         SKIP_ALL(message("s3.download.object.conflict.skip_rest")),
-        OVERWRITE_ALL(message("s3.download.object.conflict.overwrite_rest"));
+        OVERWRITE_ALL(message("s3.download.object.conflict.overwrite_rest")),
+        ;
 
         companion object {
             val SINGLE_FILE_RESOLUTIONS by lazy {
@@ -164,7 +165,7 @@ class DownloadObjectAction :
         project: Project,
         targetDirectory: Path,
         download: DownloadInfo,
-        files: List<DownloadInfo>
+        files: List<DownloadInfo>,
     ): ConflictResolution {
         val description = message(
             "s3.download.object.conflict.description",

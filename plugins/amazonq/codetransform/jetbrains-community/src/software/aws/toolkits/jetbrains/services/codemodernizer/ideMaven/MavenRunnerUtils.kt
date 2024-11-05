@@ -4,7 +4,11 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven
 
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.ModuleRootManager
+import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.vfs.LocalFileSystem
 import org.jetbrains.idea.maven.execution.MavenRunner
 import org.jetbrains.idea.maven.execution.MavenRunnerParameters
 import org.jetbrains.idea.maven.execution.MavenRunnerSettings
@@ -25,7 +29,7 @@ fun runHilMavenCopyDependency(
     destinationDir: File,
     buildlogBuilder: StringBuilder,
     logger: Logger,
-    project: Project
+    project: Project,
 ): MavenCopyCommandsResult {
     logger.info { "Executing IntelliJ bundled Maven" }
     try {
@@ -65,6 +69,13 @@ fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, log
         // Create shared parameters
         val transformMvnRunner = TransformMavenRunner(project)
         val mvnSettings = MavenRunner.getInstance(project).settings.clone() // clone required to avoid editing user settings
+
+        val sourceVirtualFile = LocalFileSystem.getInstance().findFileByIoFile(sourceFolder)
+        val module = sourceVirtualFile?.let { ModuleUtilCore.findModuleForFile(it, project) }
+        val moduleSdk = module?.let { ModuleRootManager.getInstance(it).sdk }
+        val sdk = moduleSdk ?: ProjectRootManager.getInstance(project).projectSdk
+        // edge case: module SDK and project SDK are null, and Maven Runner Settings is using the null project SDK, so Maven Runner will definitely fail
+        if (sdk == null && mvnSettings.jreName == "#USE_PROJECT_JDK") return MavenCopyCommandsResult.NoJdk
 
         // run copy dependencies
         val copyDependenciesRunnable =
@@ -175,7 +186,7 @@ private fun runMavenClean(
     mvnSettings: MavenRunnerSettings,
     transformMavenRunner: TransformMavenRunner,
     logger: Logger,
-    destinationDir: Path
+    destinationDir: Path,
 ): TransformRunnable {
     buildlogBuilder.appendLine("Command Run: IntelliJ IDEA bundled Maven clean")
     val cleanParams = MavenRunnerParameters(
@@ -205,7 +216,7 @@ private fun runMavenInstall(
     mvnSettings: MavenRunnerSettings,
     transformMavenRunner: TransformMavenRunner,
     logger: Logger,
-    destinationDir: Path
+    destinationDir: Path,
 ): TransformRunnable {
     buildlogBuilder.appendLine("Command Run: IntelliJ IDEA bundled Maven install")
     val installParams = MavenRunnerParameters(

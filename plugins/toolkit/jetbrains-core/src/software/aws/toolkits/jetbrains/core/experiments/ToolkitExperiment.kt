@@ -54,7 +54,7 @@ abstract class ToolkitExperiment(
     internal val description: () -> String,
     internal val hidden: Boolean = false,
     internal val default: Boolean = false,
-    internal val suggestionSnooze: Duration = Duration.ofDays(7)
+    internal val suggestionSnooze: Duration = Duration.ofDays(7),
 ) {
     override fun equals(other: Any?) = (other as? ToolkitExperiment)?.id?.equals(id) == true
     override fun hashCode() = id.hashCode()

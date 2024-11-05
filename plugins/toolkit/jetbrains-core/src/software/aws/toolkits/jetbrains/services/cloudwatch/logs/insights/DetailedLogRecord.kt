@@ -30,7 +30,7 @@ import javax.swing.JPanel
 class DetailedLogRecord(
     private val project: Project,
     private val client: CloudWatchLogsClient,
-    private val logRecordPointer: String
+    private val logRecordPointer: String,
 ) : Disposable {
     private val coroutineScope = disposableCoroutineScope(this)
     val title = message("cloudwatch.logs.log_record", logRecordPointer)

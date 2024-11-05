@@ -29,7 +29,7 @@ class SchemaViewer(
     private val project: Project,
     private val schemaDownloader: SchemaDownloader = SchemaDownloader(),
     private val schemaFormatter: SchemaFormatter = SchemaFormatter(),
-    private val schemaPreviewer: SchemaPreviewer = SchemaPreviewer()
+    private val schemaPreviewer: SchemaPreviewer = SchemaPreviewer(),
 ) {
     fun downloadAndViewSchema(schemaName: String, registryName: String, connectionSettings: ConnectionSettings): CompletionStage<Void> =
         schemaDownloader.getSchemaContent(registryName, schemaName, connectionSettings = connectionSettings)
@@ -57,7 +57,7 @@ class SchemaViewer(
         schemaName: String,
         registryName: String,
         version: String?,
-        connectionSettings: ConnectionSettings
+        connectionSettings: ConnectionSettings,
     ): CompletionStage<String> = schemaDownloader.getSchemaContent(registryName, schemaName, version, connectionSettings)
         .thenCompose { schemaContent ->
             schemaFormatter.prettySchemaContent(schemaContent.content())
@@ -73,7 +73,7 @@ class SchemaDownloader {
         registryName: String,
         schemaName: String,
         version: String? = null,
-        connectionSettings: ConnectionSettings
+        connectionSettings: ConnectionSettings,
     ): CompletionStage<DescribeSchemaResponse> {
         val resource = SchemasResources.getSchema(registryName, schemaName, version)
         return AwsResourceCache.getInstance().getResource(resource, connectionSettings)
@@ -105,7 +105,7 @@ class SchemaPreviewer {
         schemaContent: String,
         version: String,
         project: Project,
-        connectionSettings: ConnectionSettings
+        connectionSettings: ConnectionSettings,
     ): CompletionStage<Void> {
         val credentialIdentifier = connectionSettings.credentials.id
         val region = connectionSettings.region.id

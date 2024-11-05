@@ -32,7 +32,7 @@ import javax.swing.JComponent
 class QueryEditorDialog internal constructor(
     // TODO: Exposed for testing only, should be refactored to be private
     private val project: Project,
-    private val initialQueryDetails: QueryDetails
+    private val initialQueryDetails: QueryDetails,
 ) : DialogWrapper(project) {
     private val coroutineScope = projectCoroutineScope(project)
     constructor(project: Project, connectionSettings: ConnectionSettings, logGroupName: String) :

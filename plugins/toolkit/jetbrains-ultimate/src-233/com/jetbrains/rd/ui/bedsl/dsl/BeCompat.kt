@@ -3,7 +3,7 @@
 package com.jetbrains.rd.ui.bedsl.dsl
 
 public fun com.jetbrains.ide.model.uiautomation.BeControl.withMargin(
-    margin: com.jetbrains.ide.model.uiautomation.BeMargin
+    margin: com.jetbrains.ide.model.uiautomation.BeMargin,
 ): com.jetbrains.ide.model.uiautomation.BeControl =
     this.withMargin {
         margin

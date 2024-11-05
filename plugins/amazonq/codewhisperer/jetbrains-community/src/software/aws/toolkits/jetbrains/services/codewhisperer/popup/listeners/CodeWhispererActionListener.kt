@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners
 
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
 import java.awt.event.ActionListener
 
 abstract class CodeWhispererActionListener(val states: InvocationContext) : ActionListener
+abstract class CodeWhispererActionListenerNew(val sessionContext: SessionContextNew) : ActionListener

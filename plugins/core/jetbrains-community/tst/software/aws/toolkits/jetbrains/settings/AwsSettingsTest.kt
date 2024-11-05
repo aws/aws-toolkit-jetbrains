@@ -26,7 +26,7 @@ import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 class AwsSettingsTest {
     private class TestTelemetryService(
         publisher: TelemetryPublisher = NoOpPublisher(),
-        batcher: TelemetryBatcher
+        batcher: TelemetryBatcher,
     ) : TelemetryService(publisher, batcher)
 
     private lateinit var telemetryService: TelemetryService

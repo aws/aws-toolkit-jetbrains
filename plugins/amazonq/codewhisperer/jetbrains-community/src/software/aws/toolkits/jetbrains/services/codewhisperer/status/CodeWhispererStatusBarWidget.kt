@@ -19,13 +19,16 @@ import com.intellij.ui.AnimatedIcon
 import com.intellij.util.Consumer
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileWatcher
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.QActionGroups.Q_SIGNED_OUT_ACTION_GROUP
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomizationListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.QStatusBarLoggedInActionGroup
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStateChangeListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatusNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.reconnectCodeWhisperer
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
@@ -104,11 +107,16 @@ class CodeWhispererStatusBarWidget(project: Project) :
             )
         }
 
-    override fun getSelectedValue(): String = CodeWhispererModelConfigurator.getInstance().activeCustomization(project).let {
-        if (it == null) {
-            message("codewhisperer.statusbar.display_name")
-        } else {
-            "${message("codewhisperer.statusbar.display_name")} | ${it.name}"
+    override fun getSelectedValue(): String {
+        // HACK: Force ProfileWatcher to load under EDT so that ToolkitConnectionManager#activeConnectionForFeature does not deadlock while ProfileWatcher#<init>
+        // is waiting for VFS events to propagate on EDT
+        ProfileWatcher.getInstance()
+        return CodeWhispererModelConfigurator.getInstance().activeCustomization(project).let {
+            if (it == null) {
+                message("codewhisperer.statusbar.display_name")
+            } else {
+                "${message("codewhisperer.statusbar.display_name")} | ${it.name}"
+            }
         }
     }
 
@@ -117,7 +125,13 @@ class CodeWhispererStatusBarWidget(project: Project) :
             AllIcons.General.BalloonWarning
         } else if (!isQConnected(project)) {
             AllIcons.RunConfigurations.TestState.Run
-        } else if (CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
+        } else if (
+            if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
+                CodeWhispererInvocationStatusNew.getInstance().hasExistingServiceInvocation()
+            } else {
+                CodeWhispererInvocationStatus.getInstance().hasExistingServiceInvocation()
+            }
+        ) {
             // AnimatedIcon can't serialize over remote host
             if (!AppMode.isRemoteDevHost()) {
                 AnimatedIcon.Default()

@@ -7,7 +7,6 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.SystemInfo
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
 import software.amazon.awssdk.services.codewhisperer.CodeWhispererClient
 import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanRequest
@@ -25,13 +24,11 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUr
 import software.amazon.awssdk.services.codewhispererruntime.model.Dimension
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
-import software.amazon.awssdk.services.codewhispererruntime.model.IdeCategory
+import software.amazon.awssdk.services.codewhispererruntime.model.InlineChatUserDecision
 import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEvaluationsResponse
-import software.amazon.awssdk.services.codewhispererruntime.model.OperatingSystem
 import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.SuggestionState
-import software.amazon.awssdk.services.codewhispererruntime.model.UserContext
 import software.amazon.awssdk.services.codewhispererruntime.model.UserIntent
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -43,16 +40,17 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FEATURE_EVALUATION_PRODUCT_NAME
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.transform
-import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import java.time.Instant
@@ -71,22 +69,22 @@ interface CodeWhispererClientAdaptor : Disposable {
     ): Sequence<GenerateCompletionsResponse>
 
     fun createUploadUrl(
-        request: CreateUploadUrlRequest
+        request: CreateUploadUrlRequest,
     ): CreateUploadUrlResponse
 
     fun createCodeScan(
         request: CreateCodeScanRequest,
-        isSigv4: Boolean = shouldUseSigv4Client(project)
+        isSigv4: Boolean = shouldUseSigv4Client(project),
     ): CreateCodeScanResponse
 
     fun getCodeScan(
         request: GetCodeScanRequest,
-        isSigv4: Boolean = shouldUseSigv4Client(project)
+        isSigv4: Boolean = shouldUseSigv4Client(project),
     ): GetCodeScanResponse
 
     fun listCodeScanFindings(
         request: ListCodeScanFindingsRequest,
-        isSigv4: Boolean = shouldUseSigv4Client(project)
+        isSigv4: Boolean = shouldUseSigv4Client(project),
     ): ListCodeScanFindingsResponse
 
     fun listAvailableCustomizations(): List<CodeWhispererCustomization>
@@ -98,15 +96,28 @@ interface CodeWhispererClientAdaptor : Disposable {
         suggestionState: CodewhispererSuggestionState,
         suggestionReferenceCount: Int,
         lineCount: Int,
-        numberOfRecommendations: Int
+        numberOfRecommendations: Int,
+        acceptedCharCount: Int,
+    ): SendTelemetryEventResponse
+
+    fun sendUserTriggerDecisionTelemetry(
+        sessionContext: SessionContextNew,
+        requestContext: RequestContextNew,
+        responseContext: ResponseContext,
+        completionType: CodewhispererCompletionType,
+        suggestionState: CodewhispererSuggestionState,
+        suggestionReferenceCount: Int,
+        lineCount: Int,
+        numberOfRecommendations: Int,
+        acceptedCharCount: Int,
     ): SendTelemetryEventResponse
 
     fun sendCodePercentageTelemetry(
         language: CodeWhispererProgrammingLanguage,
         customizationArn: String?,
-        acceptedTokenCount: Int,
-        totalTokenCount: Int,
-        unmodifiedAcceptedTokenCount: Int?
+        acceptedTokenCount: Long,
+        totalTokenCount: Long,
+        unmodifiedAcceptedTokenCount: Long?,
     ): SendTelemetryEventResponse
 
     fun sendUserModificationTelemetry(
@@ -114,13 +125,14 @@ interface CodeWhispererClientAdaptor : Disposable {
         requestId: String,
         language: CodeWhispererProgrammingLanguage,
         customizationArn: String,
-        modificationPercentage: Double
+        acceptedCharacterCount: Int,
+        unmodifiedAcceptedTokenCount: Int,
     ): SendTelemetryEventResponse
 
     fun sendCodeScanTelemetry(
         language: CodeWhispererProgrammingLanguage,
         codeScanJobId: String?,
-        scope: CodeWhispererConstants.CodeAnalysisScope
+        scope: CodeWhispererConstants.CodeAnalysisScope,
     ): SendTelemetryEventResponse
 
     fun sendCodeScanRemediationTelemetry(
@@ -132,7 +144,7 @@ interface CodeWhispererClientAdaptor : Disposable {
         component: String?,
         reason: String?,
         result: String?,
-        includesFix: Boolean?
+        includesFix: Boolean?,
     ): SendTelemetryEventResponse
     fun listFeatureEvaluations(): ListFeatureEvaluationsResponse
 
@@ -152,7 +164,7 @@ interface CodeWhispererClientAdaptor : Disposable {
         responseLength: Int?,
         numberOfCodeBlocks: Int?,
         hasProjectLevelContext: Boolean?,
-        customization: CodeWhispererCustomization?
+        customization: CodeWhispererCustomization?,
     ): SendTelemetryEventResponse
 
     fun sendChatInteractWithMessageTelemetry(
@@ -173,7 +185,22 @@ interface CodeWhispererClientAdaptor : Disposable {
         language: CodeWhispererProgrammingLanguage,
         modificationPercentage: Double,
         hasProjectLevelContext: Boolean?,
-        customization: CodeWhispererCustomization?
+        customization: CodeWhispererCustomization?,
+    ): SendTelemetryEventResponse
+
+    fun sendInlineChatTelemetry(
+        requestId: String,
+        inputLength: Int?,
+        numSelectedLines: Int?,
+        codeIntent: Boolean?,
+        userDecision: InlineChatUserDecision?,
+        responseStartLatency: Double?,
+        responseEndLatency: Double?,
+        numSuggestionAddChars: Int?,
+        numSuggestionAddLines: Int?,
+        numSuggestionDelChars: Int?,
+        numSuggestionDelLines: Int?,
+        programmingLanguage: String?,
     ): SendTelemetryEventResponse
 
     companion object {
@@ -187,24 +214,6 @@ interface CodeWhispererClientAdaptor : Disposable {
 }
 
 open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispererClientAdaptor {
-    private val codeWhispererUserContext = ClientMetadata.getDefault().let {
-        val osForCodeWhisperer: OperatingSystem =
-            when {
-                SystemInfo.isWindows -> OperatingSystem.WINDOWS
-                SystemInfo.isMac -> OperatingSystem.MAC
-                // For now, categorize everything else as "Linux" (Linux/FreeBSD/Solaris/etc)
-                else -> OperatingSystem.LINUX
-            }
-
-        UserContext.builder()
-            .ideCategory(IdeCategory.JETBRAINS)
-            .operatingSystem(osForCodeWhisperer)
-            .product(FEATURE_EVALUATION_PRODUCT_NAME)
-            .clientId(it.clientId)
-            .ideVersion(it.awsVersion)
-            .build()
-    }
-
     private val mySigv4Client by lazy { createUnmanagedSigv4Client() }
 
     @Volatile
@@ -299,19 +308,21 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         suggestionState: CodewhispererSuggestionState,
         suggestionReferenceCount: Int,
         lineCount: Int,
-        numberOfRecommendations: Int
+        numberOfRecommendations: Int,
+        acceptedCharCount: Int,
     ): SendTelemetryEventResponse {
         val fileContext = requestContext.fileContextInfo
         val programmingLanguage = fileContext.programmingLanguage
         var e2eLatency = requestContext.latencyContext.getCodeWhispererEndToEndLatency()
 
-        // When we send a userTriggerDecision of Empty or Discard, we set the time users see the first
-        // suggestion to be now.
-        if (e2eLatency < 0) {
-            e2eLatency = TimeUnit.NANOSECONDS.toMillis(
-                System.nanoTime() - requestContext.latencyContext.codewhispererEndToEndStart
-            ).toDouble()
+        // When we send a userTriggerDecision for neither Accept nor Reject, service side should not use this value
+        // and client side will set this value to 0.0.
+        if (suggestionState != CodewhispererSuggestionState.Accept &&
+            suggestionState != CodewhispererSuggestionState.Reject
+        ) {
+            e2eLatency = 0.0
         }
+
         return bearerClient().sendTelemetryEvent { requestBuilder ->
             requestBuilder.telemetryEvent { telemetryEventBuilder ->
                 telemetryEventBuilder.userTriggerDecisionEvent {
@@ -321,38 +332,86 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     it.sessionId(responseContext.sessionId)
                     it.recommendationLatencyMilliseconds(e2eLatency)
                     it.triggerToResponseLatencyMilliseconds(requestContext.latencyContext.paginationFirstCompletionTime)
+                    it.perceivedLatencyMilliseconds(requestContext.latencyContext.perceivedLatency)
                     it.suggestionState(suggestionState.toCodeWhispererSdkType())
                     it.timestamp(Instant.now())
                     it.suggestionReferenceCount(suggestionReferenceCount)
                     it.generatedLine(lineCount)
                     it.customizationArn(requestContext.customizationArn)
                     it.numberOfRecommendations(numberOfRecommendations)
+                    it.acceptedCharacterCount(acceptedCharCount)
                 }
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
-            requestBuilder.userContext(codeWhispererUserContext)
+            requestBuilder.userContext(codeWhispererUserContext())
+        }
+    }
+
+    override fun sendUserTriggerDecisionTelemetry(
+        sessionContext: SessionContextNew,
+        requestContext: RequestContextNew,
+        responseContext: ResponseContext,
+        completionType: CodewhispererCompletionType,
+        suggestionState: CodewhispererSuggestionState,
+        suggestionReferenceCount: Int,
+        lineCount: Int,
+        numberOfRecommendations: Int,
+        acceptedCharCount: Int,
+    ): SendTelemetryEventResponse {
+        val fileContext = requestContext.fileContextInfo
+        val programmingLanguage = fileContext.programmingLanguage
+        var e2eLatency = sessionContext.latencyContext.getCodeWhispererEndToEndLatency()
+
+        // When we send a userTriggerDecision of Empty or Discard, we set the time users see the first
+        // suggestion to be now.
+        if (e2eLatency < 0) {
+            e2eLatency = TimeUnit.NANOSECONDS.toMillis(
+                System.nanoTime() - sessionContext.latencyContext.codewhispererEndToEndStart
+            ).toDouble()
+        }
+        return bearerClient().sendTelemetryEvent { requestBuilder ->
+            requestBuilder.telemetryEvent { telemetryEventBuilder ->
+                telemetryEventBuilder.userTriggerDecisionEvent {
+                    it.requestId(sessionContext.latencyContext.firstRequestId)
+                    it.completionType(completionType.toCodeWhispererSdkType())
+                    it.programmingLanguage { builder -> builder.languageName(programmingLanguage.toCodeWhispererRuntimeLanguage().languageId) }
+                    it.sessionId(responseContext.sessionId)
+                    it.recommendationLatencyMilliseconds(e2eLatency)
+                    it.triggerToResponseLatencyMilliseconds(sessionContext.latencyContext.paginationFirstCompletionTime)
+                    it.perceivedLatencyMilliseconds(sessionContext.latencyContext.perceivedLatency)
+                    it.suggestionState(suggestionState.toCodeWhispererSdkType())
+                    it.timestamp(Instant.now())
+                    it.suggestionReferenceCount(suggestionReferenceCount)
+                    it.generatedLine(lineCount)
+                    it.customizationArn(requestContext.customizationArn)
+                    it.numberOfRecommendations(numberOfRecommendations)
+                    it.acceptedCharacterCount(acceptedCharCount)
+                }
+            }
+            requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+            requestBuilder.userContext(codeWhispererUserContext())
         }
     }
 
     override fun sendCodePercentageTelemetry(
         language: CodeWhispererProgrammingLanguage,
         customizationArn: String?,
-        acceptedTokenCount: Int,
-        totalTokenCount: Int,
-        unmodifiedAcceptedTokenCount: Int?
+        acceptedTokenCount: Long,
+        totalTokenCount: Long,
+        unmodifiedAcceptedTokenCount: Long?,
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.codeCoverageEvent {
                 it.programmingLanguage { languageBuilder -> languageBuilder.languageName(language.toCodeWhispererRuntimeLanguage().languageId) }
                 it.customizationArn(customizationArn)
-                it.acceptedCharacterCount(acceptedTokenCount)
-                it.totalCharacterCount(totalTokenCount)
+                it.acceptedCharacterCount(acceptedTokenCount.toInt())
+                it.totalCharacterCount(totalTokenCount.toInt())
                 it.timestamp(Instant.now())
-                it.unmodifiedAcceptedCharacterCount(unmodifiedAcceptedTokenCount)
+                it.unmodifiedAcceptedCharacterCount(unmodifiedAcceptedTokenCount?.toInt())
             }
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
-        requestBuilder.userContext(codeWhispererUserContext)
+        requestBuilder.userContext(codeWhispererUserContext())
     }
 
     override fun sendUserModificationTelemetry(
@@ -360,7 +419,8 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         requestId: String,
         language: CodeWhispererProgrammingLanguage,
         customizationArn: String,
-        modificationPercentage: Double
+        acceptedCharacterCount: Int,
+        unmodifiedAcceptedTokenCount: Int,
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.userModificationEvent {
@@ -370,18 +430,21 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     languageBuilder.languageName(language.toCodeWhispererRuntimeLanguage().languageId)
                 }
                 it.customizationArn(customizationArn)
-                it.modificationPercentage(modificationPercentage)
+                // deprecated field, service side should not use this % anymore
+                it.modificationPercentage(0.0)
                 it.timestamp(Instant.now())
+                it.acceptedCharacterCount(acceptedCharacterCount)
+                it.unmodifiedAcceptedCharacterCount(unmodifiedAcceptedTokenCount)
             }
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
-        requestBuilder.userContext(codeWhispererUserContext)
+        requestBuilder.userContext(codeWhispererUserContext())
     }
 
     override fun sendCodeScanTelemetry(
         language: CodeWhispererProgrammingLanguage,
         codeScanJobId: String?,
-        scope: CodeWhispererConstants.CodeAnalysisScope
+        scope: CodeWhispererConstants.CodeAnalysisScope,
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.codeScanEvent {
@@ -394,7 +457,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             }
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
-        requestBuilder.userContext(codeWhispererUserContext)
+        requestBuilder.userContext(codeWhispererUserContext())
     }
     override fun sendCodeScanRemediationTelemetry(
         language: CodeWhispererProgrammingLanguage?,
@@ -405,7 +468,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         component: String?,
         reason: String?,
         result: String?,
-        includesFix: Boolean?
+        includesFix: Boolean?,
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.codeScanRemediationsEvent {
@@ -424,11 +487,11 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             }
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
-        requestBuilder.userContext(codeWhispererUserContext)
+        requestBuilder.userContext(codeWhispererUserContext())
     }
 
     override fun listFeatureEvaluations(): ListFeatureEvaluationsResponse = bearerClient().listFeatureEvaluations {
-        it.userContext(codeWhispererUserContext)
+        it.userContext(codeWhispererUserContext())
     }
 
     override fun sendMetricDataTelemetry(eventName: String, metadata: Map<String, Any?>): SendTelemetryEventResponse =
@@ -442,7 +505,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 }
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
-            requestBuilder.userContext(codeWhispererUserContext)
+            requestBuilder.userContext(codeWhispererUserContext())
         }
 
     override fun sendChatAddMessageTelemetry(
@@ -459,7 +522,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         responseLength: Int?,
         numberOfCodeBlocks: Int?,
         hasProjectLevelContext: Boolean?,
-        customization: CodeWhispererCustomization?
+        customization: CodeWhispererCustomization?,
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.chatAddMessageEvent {
@@ -482,7 +545,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             }
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
-        requestBuilder.userContext(codeWhispererUserContext)
+        requestBuilder.userContext(codeWhispererUserContext())
     }
 
     override fun sendChatInteractWithMessageTelemetry(
@@ -492,7 +555,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         interactionTarget: String?,
         acceptedCharacterCount: Int?,
         acceptedSnippetHasReference: Boolean?,
-        hasProjectLevelContext: Boolean?
+        hasProjectLevelContext: Boolean?,
     ): SendTelemetryEventResponse = sendChatInteractWithMessageTelemetry(
         ChatInteractWithMessageEvent.builder().apply {
             conversationId(sessionId)
@@ -511,7 +574,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 telemetryEventBuilder.chatInteractWithMessageEvent(event)
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
-            requestBuilder.userContext(codeWhispererUserContext)
+            requestBuilder.userContext(codeWhispererUserContext())
         }
 
     override fun sendChatUserModificationTelemetry(
@@ -520,7 +583,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         language: CodeWhispererProgrammingLanguage,
         modificationPercentage: Double,
         hasProjectLevelContext: Boolean?,
-        customization: CodeWhispererCustomization?
+        customization: CodeWhispererCustomization?,
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.chatUserModificationEvent {
@@ -537,7 +600,42 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             }
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
-        requestBuilder.userContext(codeWhispererUserContext)
+        requestBuilder.userContext(codeWhispererUserContext())
+    }
+
+    override fun sendInlineChatTelemetry(
+        requestId: String,
+        inputLength: Int?,
+        numSelectedLines: Int?,
+        codeIntent: Boolean?,
+        userDecision: InlineChatUserDecision?,
+        responseStartLatency: Double?,
+        responseEndLatency: Double?,
+        numSuggestionAddChars: Int?,
+        numSuggestionAddLines: Int?,
+        numSuggestionDelChars: Int?,
+        numSuggestionDelLines: Int?,
+        programmingLanguage: String?,
+    ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
+        requestBuilder.telemetryEvent { telemetryEventBuilder ->
+            telemetryEventBuilder.inlineChatEvent {
+                it.requestId(requestId)
+                it.inputLength(inputLength)
+                it.numSelectedLines(numSelectedLines)
+                it.codeIntent(codeIntent)
+                it.userDecision(userDecision)
+                it.responseStartLatency(responseStartLatency)
+                it.responseEndLatency(responseEndLatency)
+                it.numSuggestionAddChars(numSuggestionAddChars)
+                it.numSuggestionAddLines(numSuggestionAddLines)
+                it.numSuggestionDelChars(numSuggestionDelChars)
+                it.numSuggestionDelLines(numSuggestionDelLines)
+                if (programmingLanguage != null) it.programmingLanguage { langBuilder -> langBuilder.languageName(programmingLanguage) }
+                it.timestamp(Instant.now())
+            }
+        }
+        requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+        requestBuilder.userContext(codeWhispererUserContext())
     }
 
     override fun dispose() {

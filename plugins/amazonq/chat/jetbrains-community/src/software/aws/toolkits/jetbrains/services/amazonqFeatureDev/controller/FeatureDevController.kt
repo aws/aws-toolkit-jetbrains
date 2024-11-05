@@ -8,13 +8,13 @@ import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
 import com.intellij.diff.contents.EmptyContent
 import com.intellij.diff.requests.SimpleDiffRequest
-import com.intellij.diff.util.DiffUserDataKeys
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.wm.ToolWindowManager
 import kotlinx.coroutines.withContext
@@ -29,14 +29,16 @@ import software.aws.toolkits.jetbrains.services.amazonq.RepoSizeError
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitError
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.DEFAULT_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ModifySourceFolderErrorReason
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileError
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.UploadURLExpired
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileCorruptedException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.createUserFacingErrorMessage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.denyListedErrors
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
@@ -72,12 +74,13 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.UiTelemetry
 import java.util.UUID
 
 class FeatureDevController(
     private val context: AmazonQAppInitContext,
     private val chatSessionStorage: ChatSessionStorage,
-    private val authController: AuthController = AuthController()
+    private val authController: AuthController = AuthController(),
 ) : InboundAppMessagesHandler {
 
     val messenger = context.messagesFromAppToUi
@@ -88,6 +91,10 @@ class FeatureDevController(
             tabId = message.tabId,
             message = message.chatMessage
         )
+    }
+
+    override suspend fun processStopMessage(message: IncomingFeatureDevMessage.StopResponse) {
+        handleStopMessage(message)
     }
 
     override suspend fun processNewTabCreatedMessage(message: IncomingFeatureDevMessage.NewTabCreated) {
@@ -217,7 +224,6 @@ class FeatureDevController(
                     }
 
                     val request = SimpleDiffRequest(message.filePath, leftDiffContent, rightDiffContent, null, null)
-                    request.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true)
 
                     DiffManager.getInstance().showDiff(project, request)
                 }
@@ -282,6 +288,26 @@ class FeatureDevController(
         }
     }
 
+    private suspend fun handleStopMessage(message: IncomingFeatureDevMessage.StopResponse) {
+        val session: Session?
+        UiTelemetry.click(null as Project?, "amazonq_stopCodeGeneration")
+        messenger.sendAnswer(
+            tabId = message.tabId,
+            message("amazonqFeatureDev.code_generation.stopping_code_generation"),
+            messageType = FeatureDevMessageType.Answer,
+            canBeVoted = false
+        )
+        messenger.sendUpdatePlaceholder(
+            tabId = message.tabId,
+            newPlaceholder = message("amazonqFeatureDev.code_generation.stopping_code_generation")
+        )
+        messenger.sendChatInputEnabledMessage(tabId = message.tabId, enabled = false)
+        session = getSessionInfo(message.tabId)
+
+        if (session.sessionState.token?.token !== null) {
+            session.sessionState.token?.cancel()
+        }
+    }
     private suspend fun insertCode(tabId: String) {
         var session: Session? = null
         try {
@@ -350,7 +376,7 @@ class FeatureDevController(
         }
     }
 
-    private suspend fun newTask(tabId: String) {
+    private suspend fun newTask(tabId: String, isException: Boolean? = false) {
         val session = getSessionInfo(tabId)
         val sessionLatency = System.currentTimeMillis() - session.sessionStartTime
         AmazonqTelemetry.endChat(
@@ -361,9 +387,15 @@ class FeatureDevController(
         chatSessionStorage.deleteSession(tabId)
 
         newTabOpened(tabId)
-
-        messenger.sendAnswer(tabId = tabId, messageType = FeatureDevMessageType.Answer, message = message("amazonqFeatureDev.chat_message.ask_for_new_task"))
+        if (isException != null && !isException) {
+            messenger.sendAnswer(
+                tabId = tabId,
+                messageType = FeatureDevMessageType.Answer,
+                message = message("amazonqFeatureDev.chat_message.ask_for_new_task")
+            )
+        }
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.new_plan"))
+        messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = true)
     }
 
     private suspend fun closeSession(tabId: String) {
@@ -432,7 +464,17 @@ class FeatureDevController(
                     ),
                 )
             }
-            is ZipFileError -> {
+            is NoChangeRequiredException -> {
+                val isException = true
+                messenger.sendAnswer(
+                    tabId = tabId,
+                    message = err.message,
+                    messageType = FeatureDevMessageType.Answer,
+                    canBeVoted = true
+                )
+                return this.newTask(message, isException)
+            }
+            is ZipFileCorruptedException -> {
                 messenger.sendError(
                     tabId = tabId,
                     errMessage = err.message,
@@ -444,15 +486,13 @@ class FeatureDevController(
                 messenger.sendMonthlyLimitError(tabId = tabId)
                 messenger.sendChatInputEnabledMessage(tabId, enabled = false)
             }
-            is FeatureDevException -> {
-                messenger.sendError(
-                    tabId = tabId,
-                    errMessage = err.message,
-                    retries = retriesRemaining(session),
-                    conversationId = session?.conversationIdUnsafe
-                )
-            }
-            is CodeIterationLimitError -> {
+            is UploadURLExpired -> messenger.sendAnswer(
+                tabId = tabId,
+                message = err.message,
+                messageType = FeatureDevMessageType.Answer,
+                canBeVoted = true
+            )
+            is CodeIterationLimitException -> {
                 messenger.sendError(
                     tabId = tabId,
                     errMessage = err.message,
@@ -471,26 +511,37 @@ class FeatureDevController(
                     ),
                 )
             }
-
             else -> {
-                var msg = createUserFacingErrorMessage("$FEATURE_NAME request failed: ${err.message ?: err.cause?.message}")
-                val isDenyListedError = denyListedErrors.any { msg?.contains(it) ?: false }
-                val defaultMessage: String = when (session?.sessionState?.phase) {
-                    SessionStatePhase.CODEGEN -> {
-                        if (isDenyListedError || retriesRemaining(session) > 0) {
-                            message("amazonqFeatureDev.code_generation.error_message")
-                        } else {
-                            message("amazonqFeatureDev.code_generation.no_retries.error_message")
-                        }
+                when (err) {
+                    is FeatureDevException -> {
+                        messenger.sendError(
+                            tabId = tabId,
+                            errMessage = err.message,
+                            retries = retriesRemaining(session),
+                            conversationId = session?.conversationIdUnsafe
+                        )
                     }
-                    else -> message("amazonqFeatureDev.error_text")
+                    else -> {
+                        val msg = createUserFacingErrorMessage("$FEATURE_NAME request failed: ${err.message ?: err.cause?.message}")
+                        val isDenyListedError = denyListedErrors.any { msg?.contains(it) ?: false }
+                        val defaultMessage: String = when (session?.sessionState?.phase) {
+                            SessionStatePhase.CODEGEN -> {
+                                if (isDenyListedError || retriesRemaining(session) > 0) {
+                                    message("amazonqFeatureDev.code_generation.error_message")
+                                } else {
+                                    message("amazonqFeatureDev.code_generation.no_retries.error_message")
+                                }
+                            }
+                            else -> message("amazonqFeatureDev.error_text")
+                        }
+                        messenger.sendError(
+                            tabId = tabId,
+                            errMessage = defaultMessage,
+                            retries = retriesRemaining(session),
+                            conversationId = session?.conversationIdUnsafe
+                        )
+                    }
                 }
-                messenger.sendError(
-                    tabId = tabId,
-                    errMessage = defaultMessage,
-                    retries = retriesRemaining(session),
-                    conversationId = session?.conversationIdUnsafe
-                )
             }
         }
     }
