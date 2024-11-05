@@ -72,7 +72,7 @@ class OtelBaseTest {
 
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(parent.spanContext.traceId)
-            assertThat(child.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY))
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY))
         }
     }
 
@@ -88,7 +88,7 @@ class OtelBaseTest {
 
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(parent.spanContext.traceId)
-            assertThat(child.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY))
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY))
         }
     }
 
@@ -104,8 +104,8 @@ class OtelBaseTest {
 
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(parent.spanContext.traceId)
-            assertThat(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
-            assertThat(child.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY))
+            assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY))
         }
     }
 
@@ -122,8 +122,8 @@ class OtelBaseTest {
 
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(parent.spanContext.traceId)
-            assertThat(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isNotEqualTo(child.getAttribute(PLUGIN_ATTRIBUTE_KEY))
-            assertThat(child.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
+            assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isNotEqualTo(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY))
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
         }
     }
 
@@ -141,8 +141,8 @@ class OtelBaseTest {
 
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
-            assertThat(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
-            assertThat(child.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isNotEqualTo(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY))
+            assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isNotEqualTo(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY))
         }
     }
 
@@ -160,8 +160,8 @@ class OtelBaseTest {
 
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(parent.spanContext.traceId)
-            assertThat(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
-            assertThat(child.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY))
+            assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY))
         }
     }
 
@@ -181,8 +181,8 @@ class OtelBaseTest {
 
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(parent.spanContext.traceId)
-            assertThat(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
-            assertThat(child.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY))
+            assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY))
         }
     }
 
@@ -198,8 +198,8 @@ class OtelBaseTest {
 
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(parent.spanContext.traceId)
-            assertThat(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
-            assertThat(child.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY))
+            assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY))
         }
     }
 
@@ -215,8 +215,8 @@ class OtelBaseTest {
 
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(parent.spanContext.traceId)
-            assertThat(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
-            assertThat(child.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY))
+            assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY))
         }
     }
 
@@ -234,8 +234,8 @@ class OtelBaseTest {
 
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
-            assertThat(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
-            assertThat(child.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isNotEqualTo(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY))
+            assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isNotEqualTo(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY))
         }
     }
 
@@ -253,8 +253,8 @@ class OtelBaseTest {
 
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(parent.spanContext.traceId)
-            assertThat(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
-            assertThat(child.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY))
+            assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY))
         }
     }
 
@@ -285,23 +285,22 @@ class OtelBaseTest {
 
             assertThat(parent.parentSpanContext.traceId).isEqualTo(TraceId.getInvalid())
             assertThat(child.parentSpanContext.traceId).isEqualTo(parent.spanContext.traceId)
-            assertThat(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
-            assertThat(child.getAttribute(PLUGIN_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(PLUGIN_ATTRIBUTE_KEY))
+            assertThat(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo("Amazon Q For VS Code")
+            assertThat(child.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY)).isEqualTo(parent.getAttribute(PLUGIN_NAME_ATTRIBUTE_KEY))
         }
     }
 
     @ParameterizedTest(name = "{0}")
     @MethodSource
-    fun `AbstractBaseSpan#end() throws if attributes are missing`(_name: String, block: Span.() -> Unit) {
+    fun `AbstractBaseSpan#end() throws if attributes are missing`(name: String, block: Span.() -> Unit) {
         val span = Telemetry.aws.openUrl.startSpan()
         val e = assertThrows<Exception> { block(span) }
         assertThat(e.message).contains("aws_openUrl is missing required fields: result")
     }
 
-
     @ParameterizedTest(name = "{0}")
     @MethodSource
-    fun `AbstractBaseSpan#end() does not throw if all required attributes are present`(_name: String, block: Span.() -> Unit) {
+    fun `AbstractBaseSpan#end() does not throw if all required attributes are present`(name: String, block: Span.() -> Unit) {
         val span = Telemetry.aws.openUrl.startSpan()
         span.result(MetricResult.Succeeded)
         assertDoesNotThrow { block(span) }
@@ -340,7 +339,8 @@ class OtelExtension : AfterEachCallback, AfterAllCallback {
                     assert(openSpans.isEmpty()) { "Not all open spans were closed: ${openSpans.joinToString(", ")}" }
                     return CompletableResultCode.ofSuccess()
                 }
-            }
+            },
+            ToolkitTelemetryOTelSpanProcessor()
         )
     )
 
