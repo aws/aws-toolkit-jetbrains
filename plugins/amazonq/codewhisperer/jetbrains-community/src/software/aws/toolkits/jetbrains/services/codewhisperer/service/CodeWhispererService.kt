@@ -209,9 +209,9 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
 
     internal suspend fun invokeCodeWhispererInBackground(requestContext: RequestContext): Job {
         val popup = withContext(EDT) {
-            val it = CodeWhispererPopupManager.getInstance().initPopup()
-            Disposer.register(it) { CodeWhispererInvocationStatus.getInstance().finishInvocation() }
-            it
+            CodeWhispererPopupManager.getInstance().initPopup().also {
+                Disposer.register(it) { CodeWhispererInvocationStatus.getInstance().finishInvocation() }
+            }
         }
 
         val workerContexts = mutableListOf<WorkerContext>()
