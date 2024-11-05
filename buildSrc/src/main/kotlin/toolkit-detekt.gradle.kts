@@ -60,15 +60,22 @@ tasks.withType<DetektCreateBaselineTask>().configureEach {
 tasks.create("aaaa") {
     doLast {
         project.extensions.getByType(KotlinJvmProjectExtension::class.java).target.compilations.all { compilation ->
-            compilation.kotlinSourceSets
+            val ss = compilation.kotlinSourceSets
                 .map { it.kotlin.sourceDirectories }
                 .fold(project.files() as FileCollection) { collection, next -> collection.plus(next) }
+            ss
                 .forEach { println(it) }
+
+            println("1 / ======")
+            println(ss.files)
 
             true
         }
 
-        println("======")
+        println("source / ======")
         tasks.named<Detekt>("detektMain").get().source.forEach { println(it) }
+        println("files / ======")
+        println(tasks.named<Detekt>("detektMain").get().source.files)
+
     }
 }
