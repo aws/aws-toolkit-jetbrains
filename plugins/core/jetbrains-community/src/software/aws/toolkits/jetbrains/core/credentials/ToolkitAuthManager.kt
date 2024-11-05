@@ -350,7 +350,7 @@ fun maybeReauthProviderIfNeeded(
                                 project
                             )
                         }
-                        return false// throw here?
+                        throw e
                     }
                     else -> { return false }
                 }
