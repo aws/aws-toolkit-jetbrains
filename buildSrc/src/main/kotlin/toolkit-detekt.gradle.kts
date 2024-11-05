@@ -73,7 +73,7 @@ tasks.create("aaaa") {
             ss.forEach { t ->
                 println("pp / $t / ======")
                 exec {
-                    commandLine("ls", "-la", t.absolutePath).isIgnoreExitValue = true
+                    commandLine("ls", "-laR", t.absolutePath).isIgnoreExitValue = true
                 }
             }
             true
