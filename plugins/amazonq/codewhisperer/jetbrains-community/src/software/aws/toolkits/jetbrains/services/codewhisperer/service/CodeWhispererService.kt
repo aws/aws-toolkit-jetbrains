@@ -46,6 +46,7 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
@@ -206,9 +207,12 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         invokeCodeWhispererInBackground(requestContext)
     }
 
-    internal fun invokeCodeWhispererInBackground(requestContext: RequestContext): Job {
-        val popup = CodeWhispererPopupManager.getInstance().initPopup()
-        Disposer.register(popup) { CodeWhispererInvocationStatus.getInstance().finishInvocation() }
+    internal suspend fun invokeCodeWhispererInBackground(requestContext: RequestContext): Job {
+        val popup = withContext(EDT) {
+            val it = CodeWhispererPopupManager.getInstance().initPopup()
+            Disposer.register(it) { CodeWhispererInvocationStatus.getInstance().finishInvocation() }
+            it
+        }
 
         val workerContexts = mutableListOf<WorkerContext>()
         // When popup is disposed we will cancel this coroutine. The only places popup can get disposed should be
