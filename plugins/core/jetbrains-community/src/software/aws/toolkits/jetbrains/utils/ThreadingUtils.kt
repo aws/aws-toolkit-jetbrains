@@ -14,6 +14,7 @@ import com.intellij.openapi.util.ThrowableComputable
 import com.intellij.util.ExceptionUtil
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.util.concurrency.Semaphore
+import io.opentelemetry.context.Context
 import software.aws.toolkits.jetbrains.services.telemetry.PluginResolver
 import java.time.Duration
 import java.util.concurrent.Future
@@ -81,8 +82,9 @@ fun <T> pluginAwareExecuteOnPooledThread(action: () -> T): Future<T> {
      * worker thread will not contain original call stack. Necessary for telemetry.
      */
     val pluginResolver = PluginResolver.fromCurrentThread()
+    val context = Context.current()
     return ApplicationManager.getApplication().executeOnPooledThread<T> {
         PluginResolver.setThreadLocal(pluginResolver)
-        action()
+        context.wrap(action).call()
     }
 }
