@@ -334,14 +334,14 @@ fun maybeReauthProviderIfNeeded(
                     return@runUnderProgressIfNeeded false
                 }
             } catch (e: Exception) {
-                when {
-                    e is SsoOidcException -> {
+                when (e){
+                    is SsoOidcException -> {
                         AuthTelemetry.sourceOfRefresh(authRefreshSource = reauthSource.toString())
                         getLogger<ToolkitAuthManager>().warn(e) { "Redriving bearer token login flow since token could not be refreshed" }
                         onReauthRequired(e)
                         return true
                     }
-                    e is UnknownHostException || e is SdkClientException -> {
+                    is UnknownHostException, is SdkClientException -> {
                         getLogger<ToolkitAuthManager>().warn(e) { "Failed to refresh token" }
                         if (hasSeenFirstNetworkError.compareAndSet(false, true)) {
                             notifyInfo(
