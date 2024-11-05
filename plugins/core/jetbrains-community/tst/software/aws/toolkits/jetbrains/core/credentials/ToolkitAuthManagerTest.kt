@@ -4,28 +4,22 @@
 package software.aws.toolkits.jetbrains.core.credentials
 
 
+import com.intellij.notification.Notifications
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ApplicationExtension
+import com.intellij.util.messages.MessageBus
 import io.mockk.every
 import io.mockk.just
+import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.runs
 import io.mockk.verify
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.clearAllMocks
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.kotlin.doThrow
-import org.mockito.kotlin.given
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.reset
-import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
@@ -45,11 +39,22 @@ class ToolkitAuthManagerTest {
 
     @BeforeEach
     fun setUp() {
-        project = mock()
-        tokenProvider = mock()
+        project = mockk()
+        tokenProvider = mockk()
         reauthCallCount = 0
 
+        // Mock MessageBus and Notifications
+        val messageBus = mockk<MessageBus>(relaxed = true)
+        val notificationsPublisher = mockk<Notifications>(relaxed = true)
 
+        every { project.messageBus } returns messageBus
+        every { messageBus.syncPublisher(Notifications.TOPIC) } returns notificationsPublisher
+        every { notificationsPublisher.notify(any()) } just runs
+
+        // Mock BearerTokenProvider methods
+        every { tokenProvider.id } returns "mockProviderId"
+
+        // Mock static method
         mockkObject(BearerTokenProviderListener)
         mockkStatic("software.aws.toolkits.jetbrains.utils.NotificationUtilsKt")
         every {
@@ -61,10 +66,8 @@ class ToolkitAuthManagerTest {
 
     @Test
     fun `test NEEDS_REFRESH state with network error - first occurrence`() {
-        whenever(tokenProvider.state()).thenReturn(BearerTokenAuthState.NEEDS_REFRESH)
-        given(tokenProvider.resolveToken()).willAnswer {
-            throw UnknownHostException("Unable to execute HTTP request")
-        }
+        every { tokenProvider.state() } returns BearerTokenAuthState.NEEDS_REFRESH
+        every { tokenProvider.resolveToken() } throws UnknownHostException("Unable to execute HTTP request")
 
         try {
             maybeReauthProviderIfNeeded(
@@ -87,10 +90,8 @@ class ToolkitAuthManagerTest {
 
     @Test
     fun `test NEEDS_REFRESH state with network error - subsequent occurrence`() {
-        whenever(tokenProvider.state()).thenReturn(BearerTokenAuthState.NEEDS_REFRESH)
-        given(tokenProvider.resolveToken()).willAnswer {
-            throw UnknownHostException("Unable to execute HTTP request")
-        }
+        every { tokenProvider.state() } returns BearerTokenAuthState.NEEDS_REFRESH
+        every { tokenProvider.resolveToken() } throws UnknownHostException("Unable to execute HTTP request")
 
         // First call to set the internal flag
         try {
@@ -126,12 +127,10 @@ class ToolkitAuthManagerTest {
 
     @Test
     fun `test successful refresh clears notification flag`() {
-        whenever(tokenProvider.state()).thenReturn(BearerTokenAuthState.NEEDS_REFRESH)
+        every { tokenProvider.state() } returns BearerTokenAuthState.NEEDS_REFRESH
 
         // First trigger a network error
-        given(tokenProvider.resolveToken()).willAnswer {
-            throw UnknownHostException("Unable to execute HTTP request")
-        }
+        every { tokenProvider.resolveToken() } throws UnknownHostException("Unable to execute HTTP request")
 
         try {
             maybeReauthProviderIfNeeded(
@@ -143,18 +142,14 @@ class ToolkitAuthManagerTest {
             // ignore
         }
 
-        reset(tokenProvider)
-
         // Now simulate successful refresh
-        whenever(tokenProvider.state()).thenReturn(BearerTokenAuthState.NEEDS_REFRESH)
-        whenever(tokenProvider.resolveToken()).thenReturn(
-            DeviceAuthorizationGrantToken(
-                startUrl = "https://example.com",
-                region = "us-east-1",
-                accessToken = "testAccessToken",
-                refreshToken = "testRefreshToken",
-                expiresAt = Instant.now().plus(1, ChronoUnit.HOURS),
-            )
+        every { tokenProvider.state() } returns BearerTokenAuthState.NEEDS_REFRESH
+        every { tokenProvider.resolveToken() } returns DeviceAuthorizationGrantToken(
+            startUrl = "https://example.com",
+            region = "us-east-1",
+            accessToken = "testAccessToken",
+            refreshToken = "testRefreshToken",
+            expiresAt = Instant.now().plus(1, ChronoUnit.HOURS),
         )
         maybeReauthProviderIfNeeded(
             project,
@@ -162,12 +157,9 @@ class ToolkitAuthManagerTest {
             tokenProvider
         ) { _ -> reauthCallCount++ }
 
-        reset(tokenProvider)
         // Now trigger another network error - should show notification again
-        whenever(tokenProvider.state()).thenReturn(BearerTokenAuthState.NEEDS_REFRESH)
-        given(tokenProvider.resolveToken()).willAnswer {
-            throw UnknownHostException("Unable to execute HTTP request")
-        }
+        every { tokenProvider.state() } returns BearerTokenAuthState.NEEDS_REFRESH
+        every { tokenProvider.resolveToken() } throws UnknownHostException("Unable to execute HTTP request")
         try {
             maybeReauthProviderIfNeeded(
                 project,
