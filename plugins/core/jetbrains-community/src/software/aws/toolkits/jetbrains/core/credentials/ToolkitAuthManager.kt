@@ -334,7 +334,7 @@ fun maybeReauthProviderIfNeeded(
                     return@runUnderProgressIfNeeded false
                 }
             } catch (e: Exception) {
-                when (e){
+                when (e) {
                     is SsoOidcException -> {
                         AuthTelemetry.sourceOfRefresh(authRefreshSource = reauthSource.toString())
                         getLogger<ToolkitAuthManager>().warn(e) { "Redriving bearer token login flow since token could not be refreshed" }

@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
-
 import com.intellij.notification.Notifications
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ApplicationExtension
