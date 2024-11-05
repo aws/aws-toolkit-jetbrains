@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import software.aws.toolkits.gradle.jvmTarget
+import kotlin.jvm.java
 
 plugins {
     id("io.gitlab.arturbosch.detekt")
@@ -53,4 +55,17 @@ tasks.withType<DetektCreateBaselineTask>().configureEach {
 
     // weird issue where the baseline tasks can't find the source code
     source.plus(detektFiles)
+}
+
+tasks.create("aaaa") {
+    doLast {
+        project.extensions.getByType(KotlinJvmProjectExtension::class.java).target.compilations.all { compilation ->
+            compilation.kotlinSourceSets
+                .map { it.kotlin.sourceDirectories }
+                .fold(project.files() as FileCollection) { collection, next -> collection.plus(next) }
+                .forEach { println(it) }
+
+            true
+        }
+    }
 }
