@@ -92,11 +92,15 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         when (val result = downloadArtifact(job, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS)) {
             is DownloadArtifactResult.Success -> {
                 if (result.artifact !is CodeModernizerArtifact) return notifyUnableToApplyPatch("")
-//                notifyStickyInfo("chosen diff", result.artifact.patches[currentPatchIndex].name)
-//                notifyStickyInfo("chosen description", result.artifact.description[currentPatchIndex].name)
+//                notifyStickyInfo("chosen diff", result.artifact.patches[getCurrentPatchIndex()].name)
+//                notifyStickyInfo("chosen description", result.artifact.description[getCurrentPatchIndex()].name)
                 totalPatchFiles = result.artifact.patches.size
-                val diffDescription = result.artifact.description?.getOrNull(getCurrentPatchIndex())
-                displayDiffUsingPatch(result.artifact.patches[getCurrentPatchIndex()], totalPatchFiles, diffDescription, job, source)
+                if (result.artifact.description == null){
+                    displayDiffUsingPatch(result.artifact.patches.first(), totalPatchFiles, null, job, source)
+                } else {
+                    val diffDescription = result.artifact.description[getCurrentPatchIndex()]
+                    displayDiffUsingPatch(result.artifact.patches[getCurrentPatchIndex()], totalPatchFiles, diffDescription, job, source)
+                }
             }
             is DownloadArtifactResult.ParseZipFailure -> notifyUnableToApplyPatch(result.failureReason.errorMessage)
             is DownloadArtifactResult.UnzipFailure -> notifyUnableToApplyPatch(result.failureReason.errorMessage)
@@ -284,7 +288,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
 
             if (dialog.showAndGet()) {
                 scope.launch {
-                    notifyStickyInfo("diff accepted", if (codeTransformChatHelper == null) "null" else "not null")
+//                    notifyStickyInfo("diff accepted", if (codeTransformChatHelper == null) "null" else "not null")
                     telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Submit", source)
                     setCurrentPatchIndex(getCurrentPatchIndex() + 1)
                     if (getCurrentPatchIndex() < totalPatchFiles){

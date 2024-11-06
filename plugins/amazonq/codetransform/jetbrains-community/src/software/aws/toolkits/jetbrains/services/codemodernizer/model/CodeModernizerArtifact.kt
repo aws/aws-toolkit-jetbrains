@@ -9,6 +9,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.util.io.FileUtil.createTempDirectory
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
+import org.gradle.internal.impldep.jcifs.util.DES
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
@@ -22,6 +23,10 @@ import kotlin.io.path.Path
 import kotlin.io.path.isDirectory
 import kotlin.io.path.name
 import kotlin.io.path.walk
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class DescriptionContent (val content: List<PatchInfo>)
+
 
 /**
  * Represents a CodeModernizer artifact. Essentially a wrapper around the manifest file in the downloaded artifact zip.
@@ -62,8 +67,8 @@ open class CodeModernizerArtifact(
                     // If not supported we can still try to use it, i.e. the versions should largely be backwards compatible
                     LOG.warn { "Unsupported version: ${manifest.version}" }
                 }
-                val patches = extractPatches(manifest)
                 val description = loadDescription(manifest)
+                val patches = extractPatches(manifest, description)
                 val summary = extractSummary(manifest)
                 val summaryMarkdownFile = getSummaryFile(manifest)
 //                if (patches.size != 1) throw RuntimeException("Expected 1 patch, but found ${patches.size}")
@@ -104,22 +109,40 @@ open class CodeModernizerArtifact(
         }
 
         @OptIn(ExperimentalPathApi::class)
-        private fun extractPatches(manifest: CodeModernizerManifest): List<VirtualFile> {
+        private fun extractPatches(manifest: CodeModernizerManifest, description: List<PatchInfo>?): List<VirtualFile> {
+            if (description == null) {
+                return listOf(extractSinglePatch(manifest))
+            }
             val fileSystem = LocalFileSystem.getInstance()
             val patchesDir = tempDir.toPath().resolve(manifest.patchesRoot)
             if (!patchesDir.isDirectory()) {
                 throw RuntimeException("Expected root for patches was not a directory.")
             }
-            return patchesDir.walk()
-                .filter { it.toString().endsWith(".patch") }
-                .map { fileSystem.findFileByNioFile(it) ?: throw RuntimeException("Could not find patch") }
-                .sortedWith(compareBy { it.name })
-                .toList()
+            return description.map { patchInfo ->
+                val patchFile = patchesDir.resolve(patchInfo.filename)
+                if (patchFile.toFile().exists()) {
+                    fileSystem.findFileByNioFile(patchFile)
+                        ?: throw RuntimeException("Could not find patch: ${patchInfo.filename}")
+                } else {
+                    throw RuntimeException("Patch file not found: ${patchInfo.filename}")
+                }
+            }
+        }
+        @OptIn(ExperimentalPathApi::class)
+        private fun extractSinglePatch(manifest: CodeModernizerManifest): VirtualFile {
+            val fileSystem = LocalFileSystem.getInstance()
+            val patchesDir = tempDir.toPath().resolve(manifest.patchesRoot)
+
+            if (!patchesDir.isDirectory()) {
+                throw RuntimeException("Expected root for patches was not a directory.")
+            }
+
+            val diffPatchFile = patchesDir.resolve("diff.patch")
+            return fileSystem.findFileByNioFile(diffPatchFile)!!
         }
 
         @OptIn(ExperimentalPathApi::class)
         private fun loadDescription(manifest: CodeModernizerManifest): List<PatchInfo>? {
-            val fileSystem = LocalFileSystem.getInstance()
             val patchesDir = tempDir.toPath().resolve(manifest.patchesRoot).toFile()
             if (!patchesDir.isDirectory) {
                 throw RuntimeException("Expected root for patches was not a directory.")
@@ -132,13 +155,8 @@ open class CodeModernizerArtifact(
                 // No JSON description file found, return null
                 return null
             }
-
-            val patchInfoList: List<PatchInfo> = MAPPER.readValue(
-                descriptionFile,
-                MAPPER.typeFactory.constructCollectionType(List::class.java, PatchInfo::class.java)
-            )
-
-            return patchInfoList
+            val descriptionContent: DescriptionContent = MAPPER.readValue(descriptionFile, DescriptionContent::class.java)
+            return descriptionContent.content
         }
     }
 }
