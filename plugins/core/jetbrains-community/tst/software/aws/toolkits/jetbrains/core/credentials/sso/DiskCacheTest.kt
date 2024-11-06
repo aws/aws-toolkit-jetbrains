@@ -829,4 +829,106 @@ class DiskCacheTest {
         val loadedRegistration = sut.loadClientRegistration(key)
         assertNull(loadedRegistration)
     }
+
+    @Test
+    fun `test client registration update with disk error falls back to memory cache`() {
+        // Create a cache key and initial registration
+        val key = PKCEClientRegistrationCacheKey(
+            issuerUrl = ssoUrl,
+            scopes = scopes,
+            region = ssoRegion,
+            clientType = "public",
+            grantTypes = listOf("authorization_code", "refresh_token"),
+            redirectUris = listOf("http://127.0.0.1/oauth/callback")
+        )
+        val initialRegistration = PKCEClientRegistration(
+            "stale_id",
+            "stale_client_secret",
+            Instant.now().plusSeconds(3600),
+            scopes,
+            ssoUrl,
+            ssoRegion,
+            "public",
+            listOf("authorization_code", "refresh_token"),
+            listOf("http://127.0.0.1/oauth/callback")
+        )
+
+        // Save initial registration (should save to disk)
+        sut.saveClientRegistration(key, initialRegistration)
+
+        // Verify initial save
+        val loadedInitial = sut.loadClientRegistration(key)
+        assertNotNull(loadedInitial)
+        assertEquals(initialRegistration, loadedInitial)
+
+        // Setup mock to throw IOException for future disk writes
+        setupMockOutputStreamThrowingIOException()
+
+        // Create updated registration
+        val updatedRegistration = PKCEClientRegistration(
+    "fresh_ID",
+ "fresh_client_secret",
+            Instant.now().plusSeconds(3600),
+            scopes,
+            ssoUrl,
+            ssoRegion,
+            "public",
+            listOf("authorization_code", "refresh_token"),
+            listOf("http://127.0.0.1/oauth/callback")
+        )
+
+        // Try to save updated registration (should fall back to in-memory cache)
+        sut.saveClientRegistration(key, updatedRegistration)
+
+        // Load registration again
+        val loadedUpdated = sut.loadClientRegistration(key)
+
+        // Verify that we get the updated registration, not the initial one
+        assertNotNull(loadedUpdated)
+        assertEquals(updatedRegistration, loadedUpdated)
+    }
+    
+    @Test
+    fun `test access token update with disk error falls back to memory cache`() {
+        val key = PKCEAccessTokenCacheKey(ssoUrl, ssoRegion, scopes)
+        val initialToken = PKCEAuthorizationGrantToken(
+            ssoUrl,
+            ssoRegion,
+            "stale_access_token",
+            "stale_refresh_token",
+            Instant.now().plusSeconds(3600),
+            Instant.now()
+        )
+
+        // Save initial token (should save to disk)
+        sut.saveAccessToken(key, initialToken)
+
+        // Verify initial save
+        val loadedInitial = sut.loadAccessToken(key)
+        assertNotNull(loadedInitial)
+        assertEquals(initialToken, loadedInitial)
+
+        // Setup mock to throw IOException for future disk writes
+        setupMockOutputStreamThrowingIOException()
+
+        // Create updated token
+        val updatedToken = PKCEAuthorizationGrantToken(
+            ssoUrl,
+            ssoRegion,
+            "fresh_access_token",
+            "fresh_refresh_token",
+            Instant.now().plusSeconds(3600),
+            Instant.now()
+        )
+
+        // Try to save updated token (should fall back to in-memory cache)
+        sut.saveAccessToken(key, updatedToken)
+
+        // Load token again
+        val loadedUpdated = sut.loadAccessToken(key)
+
+        // Verify that we get the updated token, not the initial one
+        assertNotNull(loadedUpdated)
+        assertEquals(updatedToken, loadedUpdated)
+    }
 }

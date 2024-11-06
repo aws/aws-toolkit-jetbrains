@@ -109,24 +109,27 @@ class DiskCache(
 
     override fun loadClientRegistration(cacheKey: ClientRegistrationCacheKey): ClientRegistration? {
         LOG.debug { "loadClientRegistration for $cacheKey" }
-        val inputStream = clientRegistrationCache(cacheKey).tryInputStreamIfExists()
-            ?: // try to load from in memory cache
-            return InMemoryCache.get(clientRegistrationCache(cacheKey).toString())?.let { data ->
-                ByteArrayInputStream(data).use { memoryStream ->
-                    loadClientRegistration(memoryStream)
-                }
-            } ?: run {
-                val stage = LoadCredentialStage.ACCESS_FILE
-                LOG.warn { "Failed to load Client Registration: cache file does not exist" }
-                AuthTelemetry.modifyConnection(
-                    action = "Load cache file",
-                    source = "loadClientRegistration",
-                    result = Result.Failed,
-                    reason = "Failed to load Client Registration",
-                    reasonDesc = "Load Step:$stage failed. Unable to load file"
-                )
-                null
+        val cacheFile = clientRegistrationCache(cacheKey)
+        // try InMemoryCacheFirst in case of stale registration on full disk
+        InMemoryCache.get(cacheFile.toString())?.let { data ->
+            ByteArrayInputStream(data).use { memoryStream ->
+                return loadClientRegistration(memoryStream)
             }
+        }
+
+        val inputStream = cacheFile.tryInputStreamIfExists()
+        if (inputStream == null) {
+            val stage = LoadCredentialStage.ACCESS_FILE
+            LOG.warn { "Failed to load Client Registration: cache file does not exist" }
+            AuthTelemetry.modifyConnection(
+                action = "Load cache file",
+                source = "loadClientRegistration",
+                result = Result.Failed,
+                reason = "Failed to load Client Registration",
+                reasonDesc = "Load Step:$stage failed. Unable to load file"
+            )
+            return null
+        }
         return loadClientRegistration(inputStream)
     }
 
@@ -172,21 +175,22 @@ class DiskCache(
         }
     }
 
+
     override fun loadAccessToken(cacheKey: AccessTokenCacheKey): AccessToken? {
         LOG.debug { "loadAccessToken for $cacheKey" }
         val cacheFile = accessTokenCache(cacheKey)
-        // If file exists, returns InputStream, if not returns null
-        return cacheFile.tryInputStreamIfExists()
-            // try to load and parse access token, returns AccessToken or null if expired
-            ?.let { loadAccessToken(it) }
-            // If file doesn't exist or loadAccessToken failed, try in-memory cache
-            ?: InMemoryCache.get(cacheFile.toString())?.let { data ->
-                // If in-memory cache has data, create stream and try to load token
-                ByteArrayInputStream(data).use { memoryStream ->
-                    loadAccessToken(memoryStream)
-                }
-                // If both file system and in-memory cache attempts fail, returns null
+        // try InMemoryCacheFirst in case of stale token on full disk
+        InMemoryCache.get(cacheFile.toString())?.let { data ->
+            ByteArrayInputStream(data).use { memoryStream ->
+                return loadAccessToken(memoryStream)
             }
+        }
+
+        val inputStream = cacheFile.tryInputStreamIfExists() ?: return null
+
+        val token = loadAccessToken(inputStream)
+
+        return token
     }
 
     override fun saveAccessToken(cacheKey: AccessTokenCacheKey, accessToken: AccessToken) {
