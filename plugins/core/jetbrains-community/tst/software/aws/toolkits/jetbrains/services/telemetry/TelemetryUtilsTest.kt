@@ -44,12 +44,7 @@ class TelemetryUtilsTest {
             scrubNames("/Users/user1/foo.looooooooongextension", fakeUser)
         )
         assertEquals("/Users/x/x.ext3", scrubNames("/Users/user1/multipleExts.ext1.ext2.ext3", fakeUser))
-
         assertEquals("c:/xß/x/x.txt", scrubNames("c:\\fooß\\bar\\baz.txt", fakeUser))
-        //     assertEquals(
-        //          "uhh c:/x x/ spaces /x hmm...",
-        //          scrubNames("uhh c:\\path with\\ spaces \\baz.. hmm...", fakeUser)
-        //      )
         assertEquals(
             "unc path: //x$/x/x END",
             scrubNames("unc path: \\\\server$\\pipename\\etc END", fakeUser)
