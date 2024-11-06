@@ -242,8 +242,8 @@ abstract class AbstractBaseSpan<SpanType : AbstractBaseSpan<SpanType>>(internal 
         if (missingFields.isNotEmpty()) {
             when {
                 ApplicationManager.getApplication().isUnitTestMode -> error(message())
-                isDeveloperMode() -> LOG.error(block = message)
-                else -> LOG.error(block = message)
+                isDeveloperMode() -> LOG.error { message() }
+                else -> LOG.error { message() }
             }
         }
     }
