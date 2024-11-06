@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.extension.ExtendWith
+import software.amazon.awssdk.core.exception.SdkClientException
 import software.aws.toolkits.jetbrains.core.credentials.sso.DeviceAuthorizationGrantToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
@@ -73,7 +74,7 @@ class ToolkitAuthManagerTest {
     @Test
     fun `test NEEDS_REFRESH state with network error - first occurrence`() {
         every { tokenProvider.state() } returns BearerTokenAuthState.NEEDS_REFRESH
-        every { tokenProvider.resolveToken() } throws UnknownHostException("Unable to execute HTTP request")
+        every { tokenProvider.resolveToken() } throws SdkClientException.create("UnknownHostException thrown")
 
         try {
             maybeReauthProviderIfNeeded(
@@ -81,7 +82,7 @@ class ToolkitAuthManagerTest {
                 ReauthSource.TOOLKIT,
                 tokenProvider
             ) { _ -> reauthCallCount++ }
-        } catch (e: UnknownHostException) {
+        } catch (e: SdkClientException) {
             // ignore
         }
         assertEquals(0, reauthCallCount)
@@ -97,7 +98,7 @@ class ToolkitAuthManagerTest {
     @Test
     fun `test NEEDS_REFRESH state with network error - subsequent occurrence`() {
         every { tokenProvider.state() } returns BearerTokenAuthState.NEEDS_REFRESH
-        every { tokenProvider.resolveToken() } throws UnknownHostException("Unable to execute HTTP request")
+        every { tokenProvider.resolveToken() } throws SdkClientException.create("UnknownHostException thrown")
 
         // First call to set the internal flag
         try {
@@ -106,7 +107,7 @@ class ToolkitAuthManagerTest {
                 ReauthSource.TOOLKIT,
                 tokenProvider
             ) { _ -> reauthCallCount++ }
-        } catch (e: UnknownHostException) {
+        } catch (e: SdkClientException) {
             // ignore
         }
 
@@ -117,7 +118,7 @@ class ToolkitAuthManagerTest {
                 ReauthSource.TOOLKIT,
                 tokenProvider
             ) { _ -> reauthCallCount++ }
-        } catch (e: UnknownHostException) {
+        } catch (e: SdkClientException) {
             // ignore
         }
 
@@ -136,7 +137,7 @@ class ToolkitAuthManagerTest {
         every { tokenProvider.state() } returns BearerTokenAuthState.NEEDS_REFRESH
 
         // First trigger a network error
-        every { tokenProvider.resolveToken() } throws UnknownHostException("Unable to execute HTTP request")
+        every { tokenProvider.resolveToken() } throws SdkClientException.create("UnknownHostException thrown")
 
         try {
             maybeReauthProviderIfNeeded(
@@ -144,7 +145,7 @@ class ToolkitAuthManagerTest {
                 ReauthSource.TOOLKIT,
                 tokenProvider
             ) { _ -> reauthCallCount++ }
-        } catch (e: UnknownHostException) {
+        } catch (e: SdkClientException) {
             // ignore
         }
 
@@ -165,14 +166,14 @@ class ToolkitAuthManagerTest {
 
         // Now trigger another network error - should show notification again
         every { tokenProvider.state() } returns BearerTokenAuthState.NEEDS_REFRESH
-        every { tokenProvider.resolveToken() } throws UnknownHostException("Unable to execute HTTP request")
+        every { tokenProvider.resolveToken() } throws SdkClientException.create("UnknownHostException thrown")
         try {
             maybeReauthProviderIfNeeded(
                 project,
                 ReauthSource.TOOLKIT,
                 tokenProvider
             ) { _ -> reauthCallCount++ }
-        } catch (e: UnknownHostException) {
+        } catch (e: SdkClientException) {
             // ignore
         }
 

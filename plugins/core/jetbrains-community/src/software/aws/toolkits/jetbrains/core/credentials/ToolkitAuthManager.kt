@@ -341,7 +341,7 @@ fun maybeReauthProviderIfNeeded(
                         onReauthRequired(e)
                         return true
                     }
-                    is UnknownHostException, is SdkClientException -> {
+                    is SdkClientException -> {
                         getLogger<ToolkitAuthManager>().warn(e) { "Failed to refresh token" }
                         if (hasSeenFirstNetworkError.compareAndSet(false, true)) {
                             notifyInfo(
