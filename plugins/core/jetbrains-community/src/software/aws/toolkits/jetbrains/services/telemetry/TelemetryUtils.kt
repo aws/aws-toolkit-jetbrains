@@ -200,3 +200,66 @@ val ALLOWED_CODE_EXTENSIONS = setOf(
     "yml",
     "zig"
 )
+
+fun scrubNames(messageToBeScrubbed: String, username: String? = null): String {
+    var scrubbedMessage = ""
+    val fileExtRegex = Regex("""\.[^./]+$""")
+    val slashdot = Regex("""^[~.]*[/\\]*""")
+
+    /** Allowlisted filepath segments. */
+    val keep = setOf(
+        "~", ".", "..", ".aws", "aws", "sso", "cache", "credentials", "config",
+        "Users", "users", "home", "tmp", "aws-toolkit-jetbrains"
+    )
+
+    var processedMessage = messageToBeScrubbed
+    if (!username.isNullOrEmpty() && username.length > 2) {
+        processedMessage = processedMessage.replace(username, "x")
+    }
+
+    // Replace contiguous whitespace with 1 space.
+    processedMessage = processedMessage.replace(Regex("""\s+"""), " ")
+
+    // 1. split on whitespace.
+    // 2. scrub words that match username or look like filepaths.
+    val words = processedMessage.split(Regex("""\s+"""))
+    for (word in words) {
+        val pathSegments = word.split(Regex("""[/\\]""")).filter { it != "" }
+        if (pathSegments.size < 2) {
+            // Not a filepath.
+            scrubbedMessage += " $word"
+            continue
+        }
+
+        // Replace all (non-allowlisted) ASCII filepath segments with "x".
+        // "/foo/bar/aws/sso/" => "/x/x/aws/sso/"
+        var scrubbed = ""
+        // Get the frontmatter ("/", "../", "~/", or "./").
+        val start = slashdot.find(word.trimStart())?.value ?: ""
+        val firstVal = pathSegments[0].trimStart().replace(slashdot, "")
+
+        val ps = pathSegments.filterIndexed { i, _ -> i != 0 }.toMutableList()
+        ps.add(0, firstVal)
+        val driveLetterRegex = Regex("""^[a-zA-Z]:""")
+        for (seg in ps) {
+            when {
+                driveLetterRegex.matches(seg) -> scrubbed += seg
+                keep.contains(seg) -> scrubbed += "/$seg"
+                else -> {
+                    // Save the first non-ASCII (unicode) char, if any.
+                    val nonAscii = Regex("""[^\p{ASCII}]""").find(seg)?.value ?: ""
+                    // Replace all chars (except [^…]) with "x" .
+                    val ascii = seg.replace(Regex("""[^$\[\](){}:;'" ]+"""), "x")
+                    scrubbed += "/${ascii}$nonAscii"
+                }
+            }
+        }
+
+        // includes leading '.', eg: '.json'
+        val fileExt = fileExtRegex.find(pathSegments.last())?.value ?: ""
+        val newString = " ${start.replace(Regex("""\\"""), "/")}${scrubbed.removePrefix("//").removePrefix("/").removePrefix("\\")}$fileExt"
+        scrubbedMessage += newString
+    }
+
+    return scrubbedMessage.trim()
+}

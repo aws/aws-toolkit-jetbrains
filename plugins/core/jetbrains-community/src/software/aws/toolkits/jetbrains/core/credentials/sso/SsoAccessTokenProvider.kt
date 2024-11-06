@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.credentials.sso
 
+import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProcessCanceledException
@@ -23,6 +24,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.pkce.PKCE_CLIENT_NAME
 import software.aws.toolkits.jetbrains.core.credentials.sso.pkce.ToolkitOAuthService
 import software.aws.toolkits.jetbrains.core.webview.getAuthType
+import software.aws.toolkits.jetbrains.services.telemetry.scrubNames
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.jetbrains.utils.sleepWithCancellation
 import software.aws.toolkits.resources.AwsCoreBundle
@@ -182,7 +184,7 @@ class SsoAccessTokenProvider(
                 source = "accessToken",
                 result = Result.Failed,
                 reason = "Failed to write AccessToken to cache",
-                reasonDesc = e.message ?: e::class.java.name,
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name,
             )
             throw e
         }
@@ -224,7 +226,7 @@ class SsoAccessTokenProvider(
                 source = "registerDAGClient",
                 result = Result.Failed,
                 reason = "Failed to write DeviceAuthorizationClientRegistration to cache",
-                reasonDesc = e.message ?: e::class.java.name
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name
             )
             throw e
         }
@@ -276,7 +278,7 @@ class SsoAccessTokenProvider(
                 source = "registerPkceClient",
                 result = Result.Failed,
                 reason = "Failed to write PKCEClientRegistration to cache",
-                reasonDesc = e.message ?: e::class.java.name
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name
             )
             throw e
         }
@@ -345,6 +347,7 @@ class SsoAccessTokenProvider(
 
                 onPendingToken.tokenRetrieved()
                 _authorization.set(null)
+                ApplicationInfo.getInstance().build.baselineVersion
 
                 return tokenResponse.toDAGAccessToken(authorization.createdAt)
             } catch (e: SlowDownException) {

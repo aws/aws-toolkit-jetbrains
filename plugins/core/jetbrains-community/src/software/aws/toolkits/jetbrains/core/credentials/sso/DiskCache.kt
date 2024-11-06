@@ -32,6 +32,7 @@ import software.aws.toolkits.core.utils.touch
 import software.aws.toolkits.core.utils.tryDirOp
 import software.aws.toolkits.core.utils.tryFileOp
 import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.jetbrains.services.telemetry.scrubNames
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.Result
 import java.io.InputStream
@@ -111,7 +112,7 @@ class DiskCache(
                 source = "loadClientRegistration",
                 result = Result.Failed,
                 reason = "Failed to load Client Registration",
-                reasonDesc = "Load Step:$stage failed. Unable to load file"
+                reasonDesc = "Load Step:$stage failed. Cache file does not exist"
             )
             return null
         }
@@ -136,7 +137,7 @@ class DiskCache(
                 source = "invalidateClientRegistration",
                 result = Result.Failed,
                 reason = "Failed to invalidate Client Registration",
-                reasonDesc = e.message ?: e::class.java.name
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name
             )
             throw e
         }
@@ -152,7 +153,7 @@ class DiskCache(
                 source = "invalidateAccessToken",
                 result = Result.Failed,
                 reason = "Failed to invalidate Access Token",
-                reasonDesc = e.message ?: e::class.java.name
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name
             )
             throw e
         }
@@ -186,7 +187,7 @@ class DiskCache(
                 source = "invalidateAccessToken",
                 result = Result.Failed,
                 reason = "Failed to invalidate Access Token",
-                reasonDesc = e.message ?: e::class.java.name
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name
             )
             throw e
         }
@@ -282,7 +283,7 @@ class DiskCache(
                 source = "writeKey",
                 result = Result.Failed,
                 reason = "Failed to write to cache",
-                reasonDesc = e.message ?: e::class.java.name
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name
             )
             throw e
         }
