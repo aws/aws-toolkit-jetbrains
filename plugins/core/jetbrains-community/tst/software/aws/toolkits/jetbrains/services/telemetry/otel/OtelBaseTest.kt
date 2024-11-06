@@ -48,9 +48,9 @@ class OtelBaseTest {
         val otelExtension = OtelExtension()
 
         private fun spanEndArgs() = Stream.of(
-            Arguments.of("end()", { it: Span -> it.end() }),
-            Arguments.of("end(long, TimeUnit)", { it: Span -> it.end(1, TimeUnit.SECONDS) }),
-            Arguments.of("end(Instant)", { it: Span -> it.end(Instant.now()) }),
+            Arguments.of("end()", { span: Span -> span.end() }),
+            Arguments.of("end(long, TimeUnit)", { span: Span -> span.end(1, TimeUnit.SECONDS) }),
+            Arguments.of("end(Instant)", { span: Span -> span.end(Instant.now()) }),
         )
 
         @JvmStatic
@@ -292,7 +292,7 @@ class OtelBaseTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource
-    fun `AbstractBaseSpan#end() throws if attributes are missing`(name: String, block: Span.() -> Unit) {
+    fun `AbstractBaseSpan#end() throws if attributes are missing`(ignored: String, block: Span.() -> Unit) {
         val span = Telemetry.aws.openUrl.startSpan()
         val e = assertThrows<Exception> { block(span) }
         assertThat(e.message).contains("aws_openUrl is missing required fields: result")
@@ -300,7 +300,7 @@ class OtelBaseTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource
-    fun `AbstractBaseSpan#end() does not throw if all required attributes are present`(name: String, block: Span.() -> Unit) {
+    fun `AbstractBaseSpan#end() does not throw if all required attributes are present`(ignored: String, block: Span.() -> Unit) {
         val span = Telemetry.aws.openUrl.startSpan()
         span.result(MetricResult.Succeeded)
         assertDoesNotThrow { block(span) }

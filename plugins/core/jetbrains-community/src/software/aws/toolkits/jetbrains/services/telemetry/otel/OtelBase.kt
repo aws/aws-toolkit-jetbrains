@@ -191,9 +191,9 @@ abstract class AbstractSpanBuilder<
 
 abstract class AbstractBaseSpan<SpanType : AbstractBaseSpan<SpanType>>(internal val context: Context?, private val delegate: ReadWriteSpan) : Span by delegate {
     protected open val requiredFields: Collection<String> = emptySet()
-    protected var _passive: Boolean = false
-    protected var _unit: MetricUnit = MetricUnit.NONE
-    protected var _value: Double = 1.0
+    private var passive: Boolean = false
+    private var unit: MetricUnit = MetricUnit.NONE
+    private var value: Double = 1.0
 
     /**
      * Same as [com.intellij.platform.diagnostic.telemetry.helpers.use] except downcasts to specific subclass of [BaseSpan]
@@ -228,24 +228,24 @@ abstract class AbstractBaseSpan<SpanType : AbstractBaseSpan<SpanType>>(internal 
     }
 
     fun passive(passive: Boolean): SpanType {
-        this._passive = passive
+        this.passive = passive
         return this as SpanType
     }
 
     fun unit(unit: MetricUnit): SpanType {
-        this._unit = unit
+        this.unit = unit
         return this as SpanType
     }
 
     fun value(value: Number): SpanType {
-        this._value = value.toDouble()
+        this.value = value.toDouble()
         return this as SpanType
     }
 
     private fun finalize() {
-        setAttribute("passive", _passive)
-        setAttribute("unit", _unit.toString())
-        setAttribute("value", _value)
+        setAttribute("passive", passive)
+        setAttribute("unit", unit.toString())
+        setAttribute("value", value)
     }
 
     private fun validateRequiredAttributes() {
@@ -255,8 +255,8 @@ abstract class AbstractBaseSpan<SpanType : AbstractBaseSpan<SpanType>>(internal 
         if (missingFields.isNotEmpty()) {
             when {
                 ApplicationManager.getApplication().isUnitTestMode -> error(message())
-                isDeveloperMode() -> LOG.error(block = message)
-                else -> LOG.error(block = message)
+                isDeveloperMode() -> LOG.error { message() }
+                else -> LOG.error { message() }
             }
         }
     }
