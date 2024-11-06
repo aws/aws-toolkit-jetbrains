@@ -133,8 +133,10 @@ open class CodeWhispererCodeModernizerTestBase(
 
     internal val validMetrics =
         CodeModernizerMetrics(
-            charsOfCodeChanged = 1234,
-            linesOfCodeChanged = 567
+            charactersOfCodeChanged = 1234,
+            linesOfCodeChanged = 567,
+            linesOfCodeSubmitted = 8910,
+            programmingLanguage = "JAVA",
         )
 
     internal val exampleCreateUploadUrlResponse =

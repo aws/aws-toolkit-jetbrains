@@ -222,11 +222,11 @@ class GumbyClient(private val project: Project) {
                     it.timestamp(Instant.now())
                     it.ideCategory(IdeCategory.JETBRAINS)
                     it.programmingLanguage { language ->
-                        language.languageName("JAVA") // TODO: figure out when/how to make this SQL
+                        language.languageName(metrics.programmingLanguage)
                     }
                     it.linesOfCodeChanged(metrics.linesOfCodeChanged)
-                    it.charsOfCodeChanged(metrics.charsOfCodeChanged)
-                    it.linesOfCodeSubmitted(metrics.linesOfCodeSubmitted)
+                    it.charsOfCodeChanged(metrics.charactersOfCodeChanged)
+                    it.linesOfCodeSubmitted(metrics.linesOfCodeSubmitted) // currently unavailable for SQL conversions
                 }
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())

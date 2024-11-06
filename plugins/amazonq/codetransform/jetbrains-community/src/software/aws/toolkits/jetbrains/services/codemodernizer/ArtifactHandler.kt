@@ -71,9 +71,6 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             is DownloadArtifactResult.Success -> {
                 if (result.artifact !is CodeModernizerArtifact) return notifyUnableToApplyPatch("")
                 displayDiffUsingPatch(result.artifact.patch, job, source)
-                val linesOfCodeSubmitted = CodeModernizerSessionState.getInstance(project).getLinesOfCodeSubmitted()
-                result.artifact.metrics.linesOfCodeSubmitted = linesOfCodeSubmitted
-                clientAdaptor.sendTransformTelemetryEvent(job, result.artifact.metrics)
             }
             is DownloadArtifactResult.ParseZipFailure -> notifyUnableToApplyPatch(result.failureReason.errorMessage)
             is DownloadArtifactResult.UnzipFailure -> notifyUnableToApplyPatch(result.failureReason.errorMessage)
@@ -203,6 +200,11 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                     downloadedBuildLogPath[job] = path
                 } else {
                     downloadedArtifacts[job] = path
+                    if (output.artifact is CodeModernizerArtifact) {
+                        output.artifact.metrics.linesOfCodeSubmitted = CodeModernizerSessionState.getInstance(project).getLinesOfCodeSubmitted()
+                        output.artifact.metrics.programmingLanguage = CodeModernizerSessionState.getInstance(project).getTransformationLanguage()
+                        clientAdaptor.sendTransformTelemetryEvent(job, output.artifact.metrics)
+                    }
                 }
                 output
             } catch (e: RuntimeException) {

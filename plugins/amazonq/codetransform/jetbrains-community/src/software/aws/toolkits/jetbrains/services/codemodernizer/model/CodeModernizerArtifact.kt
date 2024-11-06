@@ -62,7 +62,7 @@ open class CodeModernizerArtifact(
                 val patches = extractPatches(manifest)
                 val summary = extractSummary(manifest)
                 val summaryMarkdownFile = getSummaryFile(manifest)
-                val metrics = loadMetrics()
+                val metrics = loadMetrics(manifest)
                 if (patches.size != 1) throw RuntimeException("Expected 1 patch, but found ${patches.size}")
                 return CodeModernizerArtifact(zipPath, manifest, patches, summary, summaryMarkdownFile, metrics)
             }
@@ -100,10 +100,10 @@ open class CodeModernizerArtifact(
             }
         }
 
-        private fun loadMetrics(): CodeModernizerMetrics {
+        private fun loadMetrics(manifest: CodeModernizerManifest): CodeModernizerMetrics {
             try {
                 val metricsFile =
-                    tempDir.listFiles()
+                    tempDir.resolve(manifest.metricsRoot).listFiles()
                         ?.firstOrNull { it.name.endsWith(METRICS_FILE_NAME) }
                 return MAPPER.readValue(metricsFile, CodeModernizerMetrics::class.java)
             } catch (exception: JsonProcessingException) {
