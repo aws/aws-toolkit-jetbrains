@@ -23,20 +23,25 @@ class ToolkitTelemetryOTelSpanProcessor : SpanProcessor {
     override fun onEnd(span: ReadableSpan) {
         val data = span.toSpanData()
 
-        TelemetryService.getInstance().record(MetricEventMetadata(
-            awsProduct = AWSProduct.fromValue(data.attributes.get(PLUGIN_NAME_ATTRIBUTE_KEY)) ?: AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS,
-            awsVersion = "unknown"
-        )) {
+        TelemetryService.getInstance().record(
+            MetricEventMetadata(
+                awsProduct = AWSProduct.fromValue(data.attributes.get(PLUGIN_NAME_ATTRIBUTE_KEY)) ?: AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS,
+                awsVersion = "unknown"
+            )
+        ) {
             createTime(Instant.ofEpochSecond(0L, data.startEpochNanos))
 
             datum(data.name) {
                 val attributes = data.attributes.asMap().entries.associate { it.key.key to it.value }.toMutableMap()
+                // goes on root of payload
                 attributes.remove(PLUGIN_NAME_ATTRIBUTE_KEY.key)
 
+                // special handling attributes
                 passive(attributes.remove("passive") as Boolean)
                 unit(MetricUnit.fromValue(attributes.remove("unit") as String))
                 value(attributes.remove("value") as Double)
 
+                // everything else
                 attributes.forEach { t, u ->
                     metadata(t, u.toString())
                 }
@@ -45,6 +50,11 @@ class ToolkitTelemetryOTelSpanProcessor : SpanProcessor {
                 if (attributes["duration"] == null && data.endEpochNanos != 0L) {
                     metadata("duration", (data.endEpochNanos - data.startEpochNanos).nanoseconds.inWholeMilliseconds.toString())
                 }
+
+                // the reason why we used opentelemetry
+                metadata("traceId", data.traceId)
+                metadata("metricId", data.spanId)
+                metadata("parentId", data.parentSpanId)
             }
         }
     }
