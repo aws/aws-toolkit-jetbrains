@@ -7,15 +7,22 @@ import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.io.NioFiles
 import com.intellij.testFramework.ApplicationExtension
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledOnOs
 import org.junit.jupiter.api.condition.OS
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.io.TempDir
+import org.mockito.Mockito.mockStatic
+import org.mockito.kotlin.any
+import org.mockito.kotlin.whenever
 import software.aws.toolkits.core.utils.readText
 import software.aws.toolkits.core.utils.test.assertPosixPermissions
 import software.aws.toolkits.core.utils.writeText
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -47,6 +54,14 @@ class DiskCacheTest {
         cacheLocation = Paths.get(cacheRoot.toString(), "fakehome", ".aws", "sso", "cache")
         Files.createDirectories(cacheLocation)
         sut = DiskCache(cacheLocation, clock)
+    }
+
+    fun setupMockOutputStreamThrowingIOException() {
+        mockStatic(Files::class.java).use { mockedFiles ->
+            whenever(Files.newOutputStream(any<Path>())).thenThrow(
+                IOException("No space left on device")
+            )
+        }
     }
 
     @Test
@@ -712,5 +727,106 @@ class DiskCacheTest {
         assertThat(sut.loadAccessToken(key1))
             .usingRecursiveComparison()
             .isEqualTo(sut.loadAccessToken(key2))
+    }
+
+    @Test
+    fun `saveAccessToken falls back to InMemoryCache when disk is full`() {
+        setupMockOutputStreamThrowingIOException()
+        // Mock the writeKey method to simulate a disk full scenario
+        val key = PKCEAccessTokenCacheKey(ssoUrl, ssoRegion, scopes)
+        val testToken = PKCEAuthorizationGrantToken(
+            ssoUrl,
+            ssoRegion,
+            "test_access_token",
+            "test_refresh_token",
+            Instant.now().plusSeconds(3600),
+            Instant.now()
+        )
+
+        sut.saveAccessToken(key, testToken)
+
+        val loadedToken = sut.loadAccessToken(key)
+        assertNotNull(loadedToken)
+        assertEquals(testToken, loadedToken)
+    }
+
+    @Test
+    fun `saveClientRegistration falls back to InMemoryCache when disk is full`() {
+        setupMockOutputStreamThrowingIOException()
+        val key = PKCEClientRegistrationCacheKey(
+            issuerUrl = ssoUrl,
+            scopes = scopes,
+            region = ssoRegion,
+            clientType = "public",
+            grantTypes = listOf("authorization_code", "refresh_token"),
+            redirectUris = listOf("http://127.0.0.1/oauth/callback")
+        )
+        val testRegistration = PKCEClientRegistration(
+            "test_client_id",
+            "test_client_secret",
+            Instant.now().plusSeconds(3600),
+            scopes,
+            ssoUrl,
+            ssoRegion,
+            "public",
+            listOf("authorization_code", "refresh_token"),
+            listOf("http://127.0.0.1/oauth/callback")
+        )
+
+        sut.saveClientRegistration(key, testRegistration)
+
+        val loadedRegistration = sut.loadClientRegistration(key)
+        assertNotNull(loadedRegistration)
+        assertEquals(testRegistration, loadedRegistration)
+    }
+
+    @Test
+    fun `invalidateAccessToken removes token from InMemoryCache when disk is full`() {
+        setupMockOutputStreamThrowingIOException()
+        val key = PKCEAccessTokenCacheKey(ssoUrl, ssoRegion, scopes)
+        val testToken = PKCEAuthorizationGrantToken(
+            ssoUrl,
+            ssoRegion,
+            "test_access_token",
+            "test_refresh_token",
+            Instant.now().plusSeconds(3600),
+            Instant.now()
+        )
+
+        sut.saveAccessToken(key, testToken)
+        sut.invalidateAccessToken(key)
+
+        val loadedToken = sut.loadAccessToken(key)
+        assertNull(loadedToken)
+    }
+
+    @Test
+    fun `invalidateClientRegistration removes registration from InMemoryCache when disk is full`() {
+        setupMockOutputStreamThrowingIOException()
+        val key = PKCEClientRegistrationCacheKey(
+            issuerUrl = ssoUrl,
+            scopes = scopes,
+            region = ssoRegion,
+            clientType = "public",
+            grantTypes = listOf("authorization_code", "refresh_token"),
+            redirectUris = listOf("http://127.0.0.1/oauth/callback")
+        )
+        val testRegistration = PKCEClientRegistration(
+            "test_client_id",
+            "test_client_secret",
+            Instant.now().plusSeconds(3600),
+            scopes,
+            ssoUrl,
+            ssoRegion,
+            "public",
+            listOf("authorization_code", "refresh_token"),
+            listOf("http://127.0.0.1/oauth/callback")
+        )
+
+        sut.saveClientRegistration(key, testRegistration)
+        sut.invalidateClientRegistration(key)
+
+        val loadedRegistration = sut.loadClientRegistration(key)
+        assertNull(loadedRegistration)
     }
 }

@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.util.StdDateFormat
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.deleteIfExists
@@ -329,7 +330,8 @@ class DiskCache(
         InMemoryCache.put(path.toString(), data)
     }
 
-    private object InMemoryCache {
+    @VisibleForTesting
+    internal object InMemoryCache {
         private val cache = ConcurrentHashMap<String, ByteArray>()
 
         fun put(key: String, value: ByteArray) {
