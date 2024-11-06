@@ -109,7 +109,7 @@ class DiskCache(
     override fun loadClientRegistration(cacheKey: ClientRegistrationCacheKey): ClientRegistration? {
         LOG.debug { "loadClientRegistration for $cacheKey" }
         val inputStream = clientRegistrationCache(cacheKey).tryInputStreamIfExists()
-            ?: //try to load from in memory cache
+            ?: // try to load from in memory cache
             return InMemoryCache.get(clientRegistrationCache(cacheKey).toString())?.let { data ->
                 ByteArrayInputStream(data).use { memoryStream ->
                     loadClientRegistration(memoryStream)
@@ -176,7 +176,7 @@ class DiskCache(
         val cacheFile = accessTokenCache(cacheKey)
         // If file exists, returns InputStream, if not returns null
         return cacheFile.tryInputStreamIfExists()
-            //try to load and parse access token, returns AccessToken or null if expired
+            // try to load and parse access token, returns AccessToken or null if expired
             ?.let { loadAccessToken(it) }
             // If file doesn't exist or loadAccessToken failed, try in-memory cache
             ?: InMemoryCache.get(cacheFile.toString())?.let { data ->
