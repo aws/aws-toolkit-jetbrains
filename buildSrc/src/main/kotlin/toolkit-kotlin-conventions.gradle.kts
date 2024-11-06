@@ -60,17 +60,17 @@ project.afterEvaluate {
     }
 }
 
-// can't figure out why exclude() doesn't work on the generated source tree, so copy logic from detekt
+// detekt applies sources directly from source sets in this scenario
+// can't figure out why source is empty in the detekt conventions
 project.extensions.getByType(KotlinJvmProjectExtension::class.java).target.compilations.configureEach {
-    val inputSource = kotlinSourceSets
-        .map { it.kotlin.sourceDirectories.filter { !it.path.contains("build") } }
-        .fold(project.files() as FileCollection) { collection, next -> collection.plus(next) }
+    // can't figure out why exclude("build/**") doesn't work
+    fun FileTree.withoutBuild() = filter { f -> f.path.split(File.separatorChar).none { it == "build" } }.asFileTree
 
     tasks.named<Detekt>(DetektPlugin.DETEKT_TASK_NAME + name.capitalize()).configure {
-        setSource(inputSource)
+        source = source.withoutBuild()
     }
 
     tasks.named<DetektCreateBaselineTask>(DetektPlugin.BASELINE_TASK_NAME + name.capitalize()).configure {
-        setSource(inputSource)
+        source = source.withoutBuild()
     }
 }

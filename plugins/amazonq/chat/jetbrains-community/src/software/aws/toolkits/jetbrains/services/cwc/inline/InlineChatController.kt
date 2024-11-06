@@ -138,25 +138,26 @@ class InlineChatController(
     }
 
     private fun recordInlineChatTelemetry(decision: InlineChatUserDecision) {
-        if (metrics == null) return
-        metrics?.userDecision = decision
-        if (metrics?.requestId?.isNotEmpty() == true) {
+        val metrics = metrics ?: return
+        metrics.userDecision = decision
+
+        if (metrics.requestId.isNotEmpty()) {
             telemetryHelper.recordInlineChatTelemetry(
-                metrics?.requestId!!,
-                metrics?.inputLength,
-                metrics?.numSelectedLines,
-                metrics?.codeIntent,
-                metrics?.userDecision,
-                metrics?.responseStartLatency,
-                metrics?.responseEndLatency,
-                metrics?.numSuggestionAddChars,
-                metrics?.numSuggestionAddLines,
-                metrics?.numSuggestionDelChars,
-                metrics?.numSuggestionDelLines,
-                metrics?.programmingLanguage
+                metrics.requestId,
+                metrics.inputLength,
+                metrics.numSelectedLines,
+                metrics.codeIntent,
+                metrics.userDecision,
+                metrics.responseStartLatency,
+                metrics.responseEndLatency,
+                metrics.numSuggestionAddChars,
+                metrics.numSuggestionAddLines,
+                metrics.numSuggestionDelChars,
+                metrics.numSuggestionDelLines,
+                metrics.programmingLanguage
             )
         }
-        metrics = null
+        this.metrics = null
     }
 
     private fun undoChanges() {
@@ -202,12 +203,17 @@ class InlineChatController(
 
     fun initPopup(editor: Editor) {
         currentPopup?.let { Disposer.dispose(it) }
-        currentPopup = InlineChatPopupFactory(
-            acceptHandler = diffAcceptHandler, rejectHandler = { diffRejectHandler(editor) },
-            submitHandler = popupSubmitHandler, cancelHandler = { popupCancelHandler(editor) }
-        ).createPopup(editor, scope)
-        addPopupListeners(currentPopup!!, editor)
-        Disposer.register(this, currentPopup!!)
+        val popup = InlineChatPopupFactory(
+            acceptHandler = diffAcceptHandler,
+            rejectHandler = { diffRejectHandler(editor) },
+            submitHandler = popupSubmitHandler,
+            cancelHandler = { popupCancelHandler(editor) }
+        ).createPopup(editor, scope).also {
+            currentPopup = it
+        }
+
+        addPopupListeners(popup, editor)
+        Disposer.register(this, popup)
         canPopupAbort.set(true)
         val caretListener = createCaretListener(editor)
         editor.caretModel.addCaretListener(caretListener)
@@ -526,7 +532,7 @@ class InlineChatController(
     }
 
     private fun insertString(editor: Editor, offset: Int, text: String): RangeMarker {
-        var rangeMarker: RangeMarker? = null
+        lateinit var rangeMarker: RangeMarker
 
         ApplicationManager.getApplication().invokeAndWait {
             CommandProcessor.getInstance().runUndoTransparentAction {
@@ -534,13 +540,11 @@ class InlineChatController(
                     editor.document.insertString(offset, text)
                     rangeMarker = editor.document.createRangeMarker(offset, offset + text.length)
                 }
-                rangeMarker?.let { marker ->
-                    highlightCodeWithBackgroundColor(editor, marker.startOffset, marker.endOffset, true)
-                }
+                highlightCodeWithBackgroundColor(editor, rangeMarker.startOffset, rangeMarker.endOffset, true)
             }
         }
 
-        return rangeMarker!!
+        return rangeMarker
     }
 
     private fun replaceString(document: Document, start: Int, end: Int, text: String) {
@@ -667,9 +671,9 @@ class InlineChatController(
                                 return@withLock
                             }
                             try {
-                                if (selectionRange != null) {
-                                    processChatDiff(selectedCode, event, editor, selectionRange!!)
-                                } else {
+                                selectionRange?.let {
+                                    processChatDiff(selectedCode, event, editor, it)
+                                } ?: run {
                                     processNewCode(editor, selectedLineStart, event, prevMessage)
                                 }
                             } catch (e: Exception) {

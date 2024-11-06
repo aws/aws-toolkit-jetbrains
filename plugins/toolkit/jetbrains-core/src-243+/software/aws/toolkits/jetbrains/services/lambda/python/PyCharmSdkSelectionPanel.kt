@@ -30,7 +30,7 @@ class PyCharmSdkSelectionPanel(private val projectLocation: TextFieldWithBrowseB
                     NewProjectWizardBaseData.KEY,
                     object : NewProjectWizardBaseData {
                         override val nameProperty = graph.property("")
-                        override val pathProperty = graph.property(projectLocation?.text?.trim() ?: "")
+                        override val pathProperty = graph.property(projectLocation?.text?.trim().orEmpty())
 
                         override var name by nameProperty
                         override var path by pathProperty
