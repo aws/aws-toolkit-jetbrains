@@ -67,9 +67,7 @@ project.extensions.getByType(KotlinJvmProjectExtension::class.java).target.compi
     fun FileTree.withoutBuild() = filter { f -> f.path.split(File.separatorChar).none { it == "build" } }.asFileTree
 
     tasks.named<Detekt>(DetektPlugin.DETEKT_TASK_NAME + name.capitalize()).configure {
-        source.forEach { it.walkBottomUp().onEnter { c -> println(c); !c.name.startsWith("build") } }
         source = source.withoutBuild()
-        println(source.files)
     }
 
     tasks.named<DetektCreateBaselineTask>(DetektPlugin.BASELINE_TASK_NAME + name.capitalize()).configure {

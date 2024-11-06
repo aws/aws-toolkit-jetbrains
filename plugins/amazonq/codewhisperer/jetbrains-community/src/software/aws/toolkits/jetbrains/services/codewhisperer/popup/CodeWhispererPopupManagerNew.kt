@@ -601,7 +601,7 @@ class CodeWhispererPopupManagerNew {
     }
 
     private fun getValidCount(): Int =
-        CodeWhispererServiceNew.getInstance().getAllSuggestionsPreviewInfo().filter { isValidRecommendation(it) }.size
+        CodeWhispererServiceNew.getInstance().getAllSuggestionsPreviewInfo().count { isValidRecommendation(it) }
 
     private fun getValidSelectedIndex(selectedIndex: Int): Int {
         var curr = 0
