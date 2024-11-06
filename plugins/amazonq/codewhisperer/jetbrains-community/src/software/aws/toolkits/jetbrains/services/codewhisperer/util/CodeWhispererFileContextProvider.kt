@@ -144,9 +144,10 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
             }
 
             return supplementalContext?.let {
+                val latency = System.currentTimeMillis() - startFetchingTimestamp
                 if (it.contents.isNotEmpty()) {
                     val logStr = buildString {
-                        append("Successfully fetched supplemental context with strategy ${it.strategy} with ${it.latency} ms")
+                        append("Successfully fetched supplemental context with strategy ${it.strategy} with $latency ms")
                         it.contents.forEachIndexed { index, chunk ->
                             append(
                                 """
@@ -166,8 +167,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                     LOG.warn { "Failed to fetch supplemental context, empty list." }
                 }
 
-                // TODO: fix this latency
-                it.copy(latency = System.currentTimeMillis() - startFetchingTimestamp)
+                it.copy(latency = latency)
             }
         } catch (e: TimeoutCancellationException) {
             LOG.debug {
@@ -272,7 +272,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
     @VisibleForTesting
     suspend fun fetchProjectContext(query: String, psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo {
-        val response = ProjectContextController.getInstance(project).queryInline(query, psiFile.virtualFile?.path ?: "")
+        val response = ProjectContextController.getInstance(project).queryInline(query, psiFile.virtualFile?.path.orEmpty())
 
         return SupplementalContextInfo(
             isUtg = false,
@@ -379,8 +379,12 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         }
     }
 
-    // takeLast(11) will extract 10 lines (exclusing current line) of left context as the query parameter
-    fun generateQuery(fileContext: FileContextInfo) = fileContext.caretContext.leftFileContext.split("\n").takeLast(11).joinToString("\n")
+    // takeLast NUMBER_OF_LINE_IN_CHUNK of lines (exclusing current line) in left context as the query
+    fun generateQuery(fileContext: FileContextInfo) = fileContext.caretContext.leftFileContext
+        .split("\n")
+        .dropLast(1)
+        .takeLast(CodeWhispererConstants.CrossFile.NUMBER_OF_LINE_IN_CHUNK)
+        .joinToString("\n")
 
     companion object {
         private val LOG = getLogger<DefaultCodeWhispererFileContextProvider>()

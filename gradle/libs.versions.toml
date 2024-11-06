@@ -1,6 +1,7 @@
 [versions]
 apache-commons-collections = "4.4"
 apache-commons-io = "2.16.0"
+apache-commons-text = "1.12.0"
 assertJ = "3.26.3"
 # match with <root>/settings.gradle.kts
 awsSdk = "2.26.25"
@@ -26,7 +27,7 @@ mockitoKotlin = "5.4.0"
 mockk = "1.13.10"
 nimbus-jose-jwt = "9.40"
 node-gradle = "7.0.2"
-telemetryGenerator = "1.0.272"
+telemetryGenerator = "1.0.278"
 testLogger = "4.0.0"
 testRetry = "1.5.10"
 # test-only; platform provides slf4j transitively at runtime
@@ -70,6 +71,7 @@ aws-sts = { module = "software.amazon.awssdk:sts", version.ref = "awsSdk" }
 commonmark = { module = "org.commonmark:commonmark", version.ref = "commonmark" }
 commons-collections = { module = "org.apache.commons:commons-collections4", version.ref = "apache-commons-collections" }
 commons-io = { module = "commons-io:commons-io", version.ref = "apache-commons-io" }
+commons-text = {module = "org.apache.commons:commons-text", version.ref = "apache-commons-text"}
 detekt-api = { module = "io.gitlab.arturbosch.detekt:detekt-api", version.ref = "detekt" }
 detekt-formattingRules = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 diff-util = { module = "io.github.java-diff-utils:java-diff-utils", version.ref = "diff-util" }

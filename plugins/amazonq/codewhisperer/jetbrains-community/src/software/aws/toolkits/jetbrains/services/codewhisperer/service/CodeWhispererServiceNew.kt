@@ -364,7 +364,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
             ) {
                 (e as CodeWhispererRuntimeException)
 
-                requestId = e.requestId() ?: ""
+                requestId = e.requestId().orEmpty()
                 sessionId = e.awsErrorDetails().sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
                 val exceptionType = e::class.simpleName
                 val responseContext = ResponseContext(sessionId)
@@ -410,11 +410,11 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                 )
                 return
             } else if (e is CodeWhispererException) {
-                requestId = e.requestId() ?: ""
+                requestId = e.requestId().orEmpty()
                 sessionId = e.awsErrorDetails().sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
                 displayMessage = e.awsErrorDetails().errorMessage() ?: message("codewhisperer.trigger.error.server_side")
             } else if (e is CodeWhispererRuntimeException) {
-                requestId = e.requestId() ?: ""
+                requestId = e.requestId().orEmpty()
                 sessionId = e.awsErrorDetails().sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
                 displayMessage = e.awsErrorDetails().errorMessage() ?: message("codewhisperer.trigger.error.server_side")
             } else {
@@ -525,7 +525,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         // TODO: may have bug when it's a mix of auto-trigger + manual trigger
         val hasAtLeastOneValid = checkRecommendationsValidity(nextStates, true)
         val allSuggestions = ongoingRequests.values.filterNotNull().flatMap { it.recommendationContext.details }
-        val valid = allSuggestions.filter { !it.isDiscarded }.size
+        val valid = allSuggestions.count { !it.isDiscarded }
         LOG.debug { "Suggestions status: valid: $valid, discarded: ${allSuggestions.size - valid}" }
 
         // If there are no recommendations at all in this session, we need to manually send the user decision event here
@@ -770,8 +770,8 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                 "Left context of current line: ${requestContext.fileContextInfo.caretContext.leftContextOnCurrentLine}, " +
                 "Cursor line: ${requestContext.caretPosition.line}, " +
                 "Caret offset: ${requestContext.caretPosition.offset}, " +
-                (latency?.let { "Latency: $latency, " } ?: "") +
-                (exceptionType?.let { "Exception Type: $it, " } ?: "") +
+                latency?.let { "Latency: $latency, " }.orEmpty() +
+                exceptionType?.let { "Exception Type: $it, " }.orEmpty() +
                 "Recommendations: \n${recommendationLogs ?: "None"}"
         }
     }
