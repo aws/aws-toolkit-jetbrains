@@ -33,7 +33,7 @@ import com.intellij.platform.diagnostic.telemetry.helpers.use as ijUse
 import com.intellij.platform.diagnostic.telemetry.helpers.useWithScope as ijUseWithScope
 
 val AWS_PRODUCT_CONTEXT_KEY = ContextKey.named<AWSProduct>("pluginDescriptor")
-internal val PLUGIN_ATTRIBUTE_KEY = AttributeKey.stringKey("plugin")
+internal val PLUGIN_NAME_ATTRIBUTE_KEY = AttributeKey.stringKey("pluginName")
 
 class DefaultSpan(context: Context?, delegate: Span) : BaseSpan<DefaultSpan>(context, delegate)
 
@@ -175,7 +175,7 @@ abstract class AbstractSpanBuilder<
         requireNotNull(parent)
 
         parent.get(AWS_PRODUCT_CONTEXT_KEY)?.toString()?.let {
-            setAttribute(PLUGIN_ATTRIBUTE_KEY, it)
+            setAttribute(PLUGIN_NAME_ATTRIBUTE_KEY, it)
         } ?: run {
             LOG.warn { "Reached setAttribute with null AWS_PRODUCT_CONTEXT_KEY, but should not be possible" }
         }
@@ -191,9 +191,9 @@ abstract class AbstractSpanBuilder<
 
 abstract class AbstractBaseSpan<SpanType : AbstractBaseSpan<SpanType>>(internal val context: Context?, private val delegate: ReadWriteSpan) : Span by delegate {
     protected open val requiredFields: Collection<String> = emptySet()
-    protected var _passive: Boolean = false
-    protected var _unit: MetricUnit = MetricUnit.NONE
-    protected var _value: Double = 0.0
+    private var passive: Boolean = false
+    private var unit: MetricUnit = MetricUnit.NONE
+    private var value: Double = 1.0
 
     /**
      * Same as [com.intellij.platform.diagnostic.telemetry.helpers.use] except downcasts to specific subclass of [BaseSpan]
@@ -210,14 +210,42 @@ abstract class AbstractBaseSpan<SpanType : AbstractBaseSpan<SpanType>>(internal 
         return this as SpanType
     }
 
+    override fun recordException(exception: Throwable): SpanType {
+        delegate.recordException(exception)
+        return this as SpanType
+    }
+
     override fun end() {
+        finalize()
         validateRequiredAttributes()
         delegate.end()
     }
 
     override fun end(timestamp: Long, unit: TimeUnit) {
+        finalize()
         validateRequiredAttributes()
         delegate.end()
+    }
+
+    fun passive(passive: Boolean): SpanType {
+        this.passive = passive
+        return this as SpanType
+    }
+
+    fun unit(unit: MetricUnit): SpanType {
+        this.unit = unit
+        return this as SpanType
+    }
+
+    fun value(value: Number): SpanType {
+        this.value = value.toDouble()
+        return this as SpanType
+    }
+
+    private fun finalize() {
+        setAttribute("passive", passive)
+        setAttribute("unit", unit.toString())
+        setAttribute("value", value)
     }
 
     private fun validateRequiredAttributes() {
@@ -227,8 +255,8 @@ abstract class AbstractBaseSpan<SpanType : AbstractBaseSpan<SpanType>>(internal 
         if (missingFields.isNotEmpty()) {
             when {
                 ApplicationManager.getApplication().isUnitTestMode -> error(message())
-                isDeveloperMode() -> LOG.error(block = message)
-                else -> LOG.error(block = message)
+                isDeveloperMode() -> LOG.error { message() }
+                else -> LOG.error { message() }
             }
         }
     }
