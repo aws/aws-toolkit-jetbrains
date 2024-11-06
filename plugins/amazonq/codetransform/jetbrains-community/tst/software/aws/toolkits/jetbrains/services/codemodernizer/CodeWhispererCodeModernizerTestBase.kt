@@ -134,8 +134,8 @@ open class CodeWhispererCodeModernizerTestBase(
     internal val validMetrics =
         CodeModernizerMetrics(
             charactersOfCodeChanged = 1234,
-            linesOfCodeChanged = 567,
-            linesOfCodeSubmitted = 8910,
+            linesOfCodeChanged = 119,
+            linesOfCodeSubmitted = 567,
             programmingLanguage = "JAVA",
         )
 

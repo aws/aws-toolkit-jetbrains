@@ -105,9 +105,10 @@ open class CodeModernizerArtifact(
                 val metricsFile =
                     tempDir.resolve(manifest.metricsRoot).listFiles()
                         ?.firstOrNull { it.name.endsWith(METRICS_FILE_NAME) }
+                        ?: throw RuntimeException("Could not find metrics.json")
                 return MAPPER.readValue(metricsFile, CodeModernizerMetrics::class.java)
             } catch (exception: JsonProcessingException) {
-                throw RuntimeException("Unable to deserialize the metrics.json file")
+                throw RuntimeException("Unable to deserialize the metrics.json")
             }
         }
 

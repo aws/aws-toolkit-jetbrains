@@ -155,7 +155,7 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
     fun `CodeModernizerArtifact can process a valid zip file`() {
         val artifact = CodeModernizerArtifact.create(exampleZipPath.toAbsolutePath().toString())
         assertEquals(validManifest, artifact.manifest)
-        assertEquals(validTransformationSummary, artifact.summary)
+        assertEquals(validMetrics.linesOfCodeChanged, artifact.metrics.linesOfCodeChanged)
     }
 
     @Test
