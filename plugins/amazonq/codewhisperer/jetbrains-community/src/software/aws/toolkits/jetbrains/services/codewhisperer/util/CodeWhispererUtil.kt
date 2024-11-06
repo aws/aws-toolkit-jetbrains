@@ -16,10 +16,16 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.ui.ComponentUtil
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlin.math.min
+import software.amazon.awssdk.core.exception.SdkClientException
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.OptOutPreference
 import software.aws.toolkits.core.utils.getLogger
@@ -47,6 +53,7 @@ import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
+import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
@@ -137,6 +144,9 @@ fun VirtualFile.toCodeChunk(path: String): Sequence<Chunk> = sequence {
 }
 
 object CodeWhispererUtil {
+    private const val MAX_RETRY_DELAY_MS = 300000 // 5 minutes in milliseconds
+    private const val INITIAL_RETRY_DELAY_MS = 1000 // 1 second
+
     fun getCompletionType(completion: Completion): CodewhispererCompletionType {
         val content = completion.content()
         val nonBlankLines = content.split("\n").count { it.isNotBlank() }
@@ -161,32 +171,60 @@ object CodeWhispererUtil {
     }
 
     // This will be called only when there's a CW connection, but it has expired(either accessToken or refreshToken)
-    // 1. If connection is expired, try to refresh
-    // 2. If not able to refresh, requesting re-login by showing a notification
-    // 3. The notification will be shown
-    //   3.1 At most once per IDE restarts.
-    //   3.2 At most once after IDE restarts,
-    //   for example, when user performs security scan or fetch code completion for the first time
-    // Return true if need to re-auth, false otherwise
+    // 1. Attempt to refresh the connection
+    // 2. If refresh fails due to network issues (SdkClientException), it will:
+    //    2.1 Retry the refresh with exponential backoff
+    //    2.2 Continue retrying indefinitely until successful or a non-network error occurs
+    // 3. If refresh is successful at any point, it will:
+    //    3.1 Show a re-authentication prompt if it hasn't been shown yet in this IDE session
+    //    3.2 Mark the re-auth prompt as shown (if not during plugin startup)
+    //    3.3 Notify about session configuration if not using Sono
+    // 4. If a non-network error occurs (not SdkClientException), it will stop retrying and return true
+    // - Returns false if re-authentication was successful (no further action needed)
+    // - Returns true if re-authentication failed and manual re-auth is required
     fun promptReAuth(project: Project, isPluginStarting: Boolean = false): Boolean {
+        // Check if re-authentication is needed
         if (!isQExpired(project)) return false
         val tokenProvider = tokenProvider(project) ?: return false
+
         return try {
-            maybeReauthProviderIfNeeded(project, ReauthSource.CODEWHISPERER, tokenProvider) {
-                runInEdt {
-                    if (!CodeWhispererService.hasReAuthPromptBeenShown()) {
-                        notifyConnectionExpiredRequestReauth(project)
-                    }
-                    if (!isPluginStarting) {
-                        CodeWhispererService.markReAuthPromptShown()
-                    }
-                    if (!tokenConnection(project).isSono()) {
-                        notifySessionConfiguration(project)
+            runUnderProgressIfNeeded(project, "Refreshing Connection", true) {
+                var currentDelay = INITIAL_RETRY_DELAY_MS.toLong()
+                var attempt = 1
+
+                while (true) {
+                    try {
+                        // Attempt to re-authenticate
+                        val result = maybeReauthProviderIfNeeded(project, ReauthSource.CODEWHISPERER, tokenProvider) {
+                            runInEdt {
+                                // Show re-auth prompt if it hasn't been shown yet
+                                if (!CodeWhispererService.hasReAuthPromptBeenShown()) {
+                                    notifyConnectionExpiredRequestReauth(project)
+                                }
+                                // Mark re-auth prompt as shown if not during plugin startup
+                                if (!isPluginStarting) {
+                                    CodeWhispererService.markReAuthPromptShown()
+                                }
+                                // Notify about session configuration if not using Sono
+                                if (!tokenConnection(project).isSono()) {
+                                    notifySessionConfiguration(project)
+                                }
+                            }
+                        }
+                        return@runUnderProgressIfNeeded !result // Assuming maybeReauthProviderIfNeeded returns true if reauth is needed
+                    } catch (e: SdkClientException) {
+                        getLogger<CodeWhispererService>().warn(e) { "Attempt $attempt failed. Retrying in $currentDelay ms" }
+                        Thread.sleep(currentDelay)
+                        currentDelay = minOf(MAX_RETRY_DELAY_MS.toLong(), (currentDelay * 2).toLong())
+                        attempt++
                     }
                 }
+                // This line should never be reached due to the infinite loop, but it's needed to satisfy the compiler
+                false
             }
         } catch (e: Exception) {
-            getLogger<CodeWhispererService>().warn(e) { "prompt reauth failed with unexpected error" }
+            // Log any unexpected errors and return true to indicate re-auth is needed
+            getLogger<CodeWhispererService>().warn(e) { "Prompt reauth failed with unexpected error" }
             true
         }
     }
