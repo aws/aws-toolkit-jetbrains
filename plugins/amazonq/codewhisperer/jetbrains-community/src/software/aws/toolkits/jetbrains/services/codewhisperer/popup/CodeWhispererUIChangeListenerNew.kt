@@ -94,18 +94,15 @@ class CodeWhispererUIChangeListenerNew : CodeWhispererPopupStateChangeListener {
         CodeWhispererInlayManagerNew.getInstance().updateInlays(sessionContext, inlayChunks)
         CodeWhispererPopupManagerNew.getInstance().render(
             sessionContext,
-            isRecommendationAdded = false,
-            isScrolling = false
+            isRecommendationAdded = false
         )
     }
 
     override fun scrolled(sessionContext: SessionContextNew) {
-        sessionContext.isFirstTimeShowingPopup = false
-        CodeWhispererPopupManagerNew.getInstance().render(sessionContext, isRecommendationAdded = false, isScrolling = true)
+        CodeWhispererPopupManagerNew.getInstance().render(sessionContext, isRecommendationAdded = false)
     }
 
     override fun recommendationAdded(states: InvocationContextNew, sessionContext: SessionContextNew) {
-        sessionContext.isFirstTimeShowingPopup = false
-        CodeWhispererPopupManagerNew.getInstance().render(sessionContext, isRecommendationAdded = true, isScrolling = false)
+        CodeWhispererPopupManagerNew.getInstance().render(sessionContext, isRecommendationAdded = true)
     }
 }

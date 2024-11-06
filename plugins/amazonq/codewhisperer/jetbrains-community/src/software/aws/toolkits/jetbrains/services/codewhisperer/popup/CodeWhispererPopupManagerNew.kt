@@ -122,7 +122,6 @@ class CodeWhispererPopupManagerNew {
         val selectedIndex = findNewSelectedIndex(isReverse, sessionContext.selectedIndex + indexChange)
 
         sessionContext.selectedIndex = selectedIndex
-        sessionContext.isFirstTimeShowingPopup = false
 
         ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_POPUP_STATE_CHANGED).stateChanged(
             sessionContext
@@ -137,7 +136,6 @@ class CodeWhispererPopupManagerNew {
     ) {
         if (!updateTypeahead(typeaheadChange, typeaheadAdded)) return
         if (!updateSessionSelectedIndex(sessionContext)) return
-        sessionContext.isFirstTimeShowingPopup = false
 
         ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_POPUP_STATE_CHANGED).stateChanged(
             sessionContext
@@ -146,7 +144,6 @@ class CodeWhispererPopupManagerNew {
 
     @RequiresEdt
     fun changeStatesForShowing(sessionContext: SessionContextNew, states: InvocationContextNew, recommendationAdded: Boolean = false) {
-        sessionContext.isFirstTimeShowingPopup = !recommendationAdded
         if (recommendationAdded) {
             ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_POPUP_STATE_CHANGED)
                 .recommendationAdded(states, sessionContext)
@@ -210,7 +207,7 @@ class CodeWhispererPopupManagerNew {
         updateCodeReferencePanel(sessionContext.project, previews[selectedIndex].detail.recommendation.references())
     }
 
-    fun render(sessionContext: SessionContextNew, isRecommendationAdded: Boolean, isScrolling: Boolean) {
+    fun render(sessionContext: SessionContextNew, isRecommendationAdded: Boolean) {
         updatePopupPanel(sessionContext)
 
         // There are four cases that render() is called:
@@ -222,11 +219,16 @@ class CodeWhispererPopupManagerNew {
         // emit any events.
         // 4. User navigating through the completions or typing as the completion shows. We should not update the latency
         // end time and should not emit any events in this case.
+        if (!CodeWhispererInvocationStatusNew.getInstance().isDisplaySessionActive()) {
+            sessionContext.latencyContext.codewhispererPostprocessingEnd = System.nanoTime()
+            sessionContext.latencyContext.codewhispererEndToEndEnd = System.nanoTime()
+            val triggerTypeOfLastTrigger = CodeWhispererServiceNew.getInstance().getAllPaginationSessions()
+                .values.filterNotNull().last().requestContext.triggerTypeInfo.triggerType
+            sessionContext.latencyContext.perceivedLatency =
+                sessionContext.latencyContext.getPerceivedLatency(triggerTypeOfLastTrigger)
+        }
         if (isRecommendationAdded) return
         showPopup(sessionContext)
-        if (isScrolling) return
-        sessionContext.latencyContext.codewhispererPostprocessingEnd = System.nanoTime()
-        sessionContext.latencyContext.codewhispererEndToEndEnd = System.nanoTime()
     }
 
     fun dontClosePopupAndRun(runnable: () -> Unit) {
@@ -599,7 +601,7 @@ class CodeWhispererPopupManagerNew {
     }
 
     private fun getValidCount(): Int =
-        CodeWhispererServiceNew.getInstance().getAllSuggestionsPreviewInfo().filter { isValidRecommendation(it) }.size
+        CodeWhispererServiceNew.getInstance().getAllSuggestionsPreviewInfo().count { isValidRecommendation(it) }
 
     private fun getValidSelectedIndex(selectedIndex: Int): Int {
         var curr = 0

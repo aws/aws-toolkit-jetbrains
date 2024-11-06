@@ -125,10 +125,6 @@ object AwsIcons {
 
             @JvmField val SEVERITY_CRITICAL = load("/icons/resources/codewhisperer/severity-critical.svg")
         }
-
-        object InlineChat {
-            @JvmField val AWS_Q_INLINECHAT_SHORTCUT = load("/icons/resources/inlinechat/amazonq_inline_chat_shortcut.svg")
-        }
     }
 
     object Actions {
