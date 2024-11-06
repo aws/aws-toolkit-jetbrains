@@ -9,6 +9,9 @@ import io.opentelemetry.sdk.trace.ReadableSpan
 import io.opentelemetry.sdk.trace.SpanProcessor
 import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
 import software.amazon.awssdk.services.toolkittelemetry.model.MetricUnit
+import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.jetbrains.AwsPlugin
+import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.services.telemetry.MetricEventMetadata
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import java.time.Instant
@@ -22,11 +25,19 @@ class ToolkitTelemetryOTelSpanProcessor : SpanProcessor {
 
     override fun onEnd(span: ReadableSpan) {
         val data = span.toSpanData()
+        val product = data.attributes.get(PLUGIN_NAME_ATTRIBUTE_KEY)?.let { AWSProduct.fromValue(it) } ?: AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS
+        val version = tryOrNull {
+            when (product) {
+                AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS -> AwsToolkit.PLUGINS_INFO[AwsPlugin.TOOLKIT]?.version
+                AWSProduct.AMAZON_Q_FOR_JET_BRAINS -> AwsToolkit.PLUGINS_INFO[AwsPlugin.Q]?.version
+                else -> null
+            }
+        } ?: "unknown"
 
         TelemetryService.getInstance().record(
             MetricEventMetadata(
-                awsProduct = AWSProduct.fromValue(data.attributes.get(PLUGIN_NAME_ATTRIBUTE_KEY)) ?: AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS,
-                awsVersion = "unknown"
+                awsProduct = product,
+                awsVersion = version,
             )
         ) {
             createTime(Instant.ofEpochSecond(0L, data.startEpochNanos))
