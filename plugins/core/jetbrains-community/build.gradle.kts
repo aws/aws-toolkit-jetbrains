@@ -32,11 +32,11 @@ idea {
 }
 
 val generateTelemetry = tasks.register<GenerateTelemetry>("generateTelemetry") {
-    inputFiles = listOf(file("${project.projectDir}/resources/telemetryOverride.json"))
-    outputDirectory = generatedSrcDir.get().asFile
+    inputFiles.setFrom(file("${project.projectDir}/resources/telemetryOverride.json"))
+    outputDirectory.set(generatedSrcDir)
 
     doFirst {
-        outputDirectory.deleteRecursively()
+        outputDirectory.get().asFile.deleteRecursively()
     }
 }
 
