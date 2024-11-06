@@ -18,11 +18,13 @@ import io.opentelemetry.context.Scope
 import io.opentelemetry.sdk.trace.ReadWriteSpan
 import kotlinx.coroutines.CoroutineScope
 import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
+import software.amazon.awssdk.services.toolkittelemetry.model.MetricUnit
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.telemetry.PluginResolver
+import software.aws.toolkits.telemetry.impl.BaseSpan
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
@@ -38,12 +40,6 @@ class DefaultSpan(context: Context?, delegate: Span) : BaseSpan<DefaultSpan>(con
 class DefaultSpanBuilder(delegate: SpanBuilder) : AbstractSpanBuilder<DefaultSpanBuilder, DefaultSpan>(delegate) {
     override fun doStartSpan() = DefaultSpan(parent, delegate.startSpan())
 }
-
-// temporary; will be generated
-abstract class BaseSpan<SpanType : AbstractBaseSpan<SpanType>>(
-    context: Context?,
-    delegate: Span,
-) : AbstractBaseSpan<SpanType>(context, delegate as ReadWriteSpan)
 
 abstract class AbstractSpanBuilder<
     BuilderType : AbstractSpanBuilder<BuilderType, SpanType>,
@@ -195,6 +191,9 @@ abstract class AbstractSpanBuilder<
 
 abstract class AbstractBaseSpan<SpanType : AbstractBaseSpan<SpanType>>(internal val context: Context?, private val delegate: ReadWriteSpan) : Span by delegate {
     protected open val requiredFields: Collection<String> = emptySet()
+    private var passive: Boolean = false
+    private var unit: MetricUnit = MetricUnit.NONE
+    private var value: Double = 0.0
 
     /**
      * Same as [com.intellij.platform.diagnostic.telemetry.helpers.use] except downcasts to specific subclass of [BaseSpan]
@@ -219,6 +218,21 @@ abstract class AbstractBaseSpan<SpanType : AbstractBaseSpan<SpanType>>(internal 
     override fun end(timestamp: Long, unit: TimeUnit) {
         validateRequiredAttributes()
         delegate.end()
+    }
+
+    fun passive(passive: Boolean): SpanType {
+        this.passive = passive
+        return this as SpanType
+    }
+
+    fun unit(unit: MetricUnit): SpanType {
+        this.unit = unit
+        return this as SpanType
+    }
+
+    fun value(value: Number): SpanType {
+        this.value = value.toDouble()
+        return this as SpanType
     }
 
     private fun validateRequiredAttributes() {
