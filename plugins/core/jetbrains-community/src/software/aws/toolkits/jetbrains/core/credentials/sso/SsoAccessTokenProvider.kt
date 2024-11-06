@@ -498,7 +498,7 @@ class SsoAccessTokenProvider(
                 requestId = requestId,
                 result = Result.Failed
             )
-            LOG.warn { "RefreshAccessTokenFailed: ${e.message}" }
+            LOG.info("RefreshAccessTokenFailed: ${e.message}")
             throw e
         }
     }
