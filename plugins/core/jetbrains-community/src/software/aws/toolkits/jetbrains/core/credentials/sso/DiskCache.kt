@@ -34,9 +34,9 @@ import software.aws.toolkits.core.utils.tryDirOp
 import software.aws.toolkits.core.utils.tryFileOp
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.telemetry.scrubNames
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.AwsCoreBundle.message
-import software.aws.toolkits.jetbrains.services.telemetry.scrubNames
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.Result
 import java.io.ByteArrayInputStream
@@ -118,6 +118,7 @@ class DiskCache(
 <<<<<<< HEAD
         LOG.debug { "loadClientRegistration for $cacheKey" }
         val cacheFile = clientRegistrationCache(cacheKey)
+
         // try InMemoryCacheFirst in case of stale registration on full disk
         InMemoryCache.get(cacheFile.toString())?.let { data ->
             ByteArrayInputStream(data).use { memoryStream ->
@@ -186,7 +187,6 @@ class DiskCache(
             throw e
         }
     }
-
 
     override fun loadAccessToken(cacheKey: AccessTokenCacheKey): AccessToken? {
         LOG.info { "loadAccessToken for $cacheKey" }

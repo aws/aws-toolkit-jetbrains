@@ -866,8 +866,8 @@ class DiskCacheTest {
 
         // Create updated registration
         val updatedRegistration = PKCEClientRegistration(
-    "fresh_ID",
- "fresh_client_secret",
+            "fresh_ID",
+            "fresh_client_secret",
             Instant.now().plusSeconds(3600),
             scopes,
             ssoUrl,
@@ -887,7 +887,7 @@ class DiskCacheTest {
         assertNotNull(loadedUpdated)
         assertEquals(updatedRegistration, loadedUpdated)
     }
-    
+
     @Test
     fun `test access token update with disk error falls back to memory cache`() {
         val key = PKCEAccessTokenCacheKey(ssoUrl, ssoRegion, scopes)
