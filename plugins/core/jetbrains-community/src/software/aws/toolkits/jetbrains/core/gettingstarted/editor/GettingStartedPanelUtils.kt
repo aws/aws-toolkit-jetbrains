@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.core.gettingstarted.editor
 import com.intellij.openapi.project.Project
 import com.intellij.ui.dsl.builder.Panel
 import software.aws.toolkits.core.credentials.CredentialIdentifier
+import software.aws.toolkits.core.credentials.CredentialType
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
@@ -115,6 +116,20 @@ fun checkIamConnectionValidity(project: Project): ActiveConnection {
     }
 }
 
+fun checkIamProfileByCredentialType(project: Project): ActiveConnection {
+    val currConn = AwsConnectionManager.getInstance(project).selectedCredentialIdentifier ?: return ActiveConnection.NotConnected
+    val invalidConnection = AwsConnectionManager.getInstance(project).connectionState.let { it.isTerminal && it !is ConnectionState.ValidConnection }
+    val connectionType = when (currConn.credentialType) {
+        CredentialType.SsoProfile -> ActiveConnectionType.IAM_IDC
+        else -> ActiveConnectionType.IAM
+    }
+    return if (invalidConnection) {
+        ActiveConnection.ExpiredIam(connectionType = connectionType, activeConnectionIam = currConn)
+    } else {
+        ActiveConnection.ValidIam(connectionType = connectionType, activeConnectionIam = currConn)
+    }
+}
+
 /**
  * Finds the first valid [ActiveConnection] and returns it.
  *
@@ -146,6 +161,7 @@ fun checkConnectionValidity(project: Project): ActiveConnection {
     return result
 }
 
+@Deprecated("Does not work for current config file setup. Old versions still utilize this logic.")
 fun isCredentialSso(providerId: String): ActiveConnectionType {
     val profileName = providerId.split("-").first()
     val ssoSessionIds = CredentialManager.getInstance().getSsoSessionIdentifiers().map {
