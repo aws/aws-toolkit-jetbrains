@@ -34,6 +34,8 @@ import software.aws.toolkits.core.utils.tryDirOp
 import software.aws.toolkits.core.utils.tryFileOp
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.resources.AwsCoreBundle.message
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.Result
 import java.io.ByteArrayInputStream
@@ -308,6 +310,10 @@ class DiskCache(
                     if (e.message?.contains("No space left on device") == true) {
                         LOG.warn { "Disk space full. Storing credentials in memory for this session" }
                         storeInMemory(path, consumer)
+                        notifyInfo(
+                            title = message("disk.full.notification.title"),
+                            content = message("disk.full.notification.body")
+                        )
                     }
                 }
             }
