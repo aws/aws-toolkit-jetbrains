@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix a bug when Amazon Q responds with still indexing message even when `@workspace` index is done"
+}
