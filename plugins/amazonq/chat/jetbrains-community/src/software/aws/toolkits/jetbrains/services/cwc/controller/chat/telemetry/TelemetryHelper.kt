@@ -72,7 +72,6 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
     // When chat panel is focused
     fun recordEnterFocusChat() {
         Telemetry.amazonq.enterFocusChat.use { it.passive(true) }
-
     }
 
     // When chat panel is unfocused
@@ -178,7 +177,6 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
                 .cwsprChatRequestLength(data.message.length.toLong())
                 .cwsprChatConversationType(CwsprChatConversationType.Chat)
                 .credentialStartUrl(getStartUrl(project))
-
         }
     }
 
@@ -297,11 +295,16 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
             }
 
             is IncomingCwcMessage.ChatItemFeedback -> {
+                span.cwsprChatInteractionType(CwsprChatInteractionType.Unknown)
                 recordFeedback(message)
                 null
             }
 
-            else -> null
+            else -> {
+                span.cwsprChatInteractionType(CwsprChatInteractionType.Unknown)
+
+                null
+            }
         }?.let {
             // override request and add customizationArn if it's not null, else return itself
             customization?.let { myCustomization ->
@@ -409,7 +412,6 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
 
         fun recordOpenChat() {
             Telemetry.amazonq.openChat.use { it.passive(true) }
-
         }
 
         fun recordCloseChat() {
