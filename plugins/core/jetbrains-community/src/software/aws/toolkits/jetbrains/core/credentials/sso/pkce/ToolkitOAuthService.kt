@@ -70,8 +70,6 @@ class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
     override fun handleOAuthServerCallback(path: String, parameters: Map<String, List<String>>): OAuthService.OAuthResult<AccessToken>? {
         val request = currentRequest.get() ?: return OAuthService.OAuthResult(null, false)
         val toolkitRequest = request.request as? ToolkitOAuthRequest ?: return OAuthService.OAuthResult(request.request, false)
-        toolkitRequest.error = OAuthError(error = "error", errorDescription = "errorDescription")
-        return OAuthService.OAuthResult(toolkitRequest, false)
 
         val callbackState = parameters["state"]?.firstOrNull()
         if (toolkitRequest.csrfToken != callbackState) {
