@@ -53,6 +53,7 @@ class AmazonQStartupActivity : ProjectActivity {
         // In the future we will decouple LSP start and indexing start to let LSP perform other tasks.
         val startLspIndexingDuration = Duration.ofMinutes(30)
         project.waitForSmartMode()
+        delay(30_000) // Wait for 30 seconds for systemLoadAverage to be more accurate
         try {
             withTimeout(startLspIndexingDuration) {
                 while (true) {
