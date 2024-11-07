@@ -22,6 +22,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import software.amazon.awssdk.awscore.DefaultAwsResponseMetadata
 import software.amazon.awssdk.awscore.util.AwsHeader.AWS_REQUEST_ID
@@ -608,7 +609,7 @@ class TelemetryHelperTest {
 
         // Toolkit telemetry
         argumentCaptor<MetricEvent> {
-            verify(mockBatcher).enqueue(capture())
+            verify(mockBatcher, times(2)).enqueue(capture())
             val event = firstValue.data.find { it.name == "feedback_result" }
             assertNotNull(event)
             assertThat(event).matches { it.metadata["result"] == "Succeeded" }
