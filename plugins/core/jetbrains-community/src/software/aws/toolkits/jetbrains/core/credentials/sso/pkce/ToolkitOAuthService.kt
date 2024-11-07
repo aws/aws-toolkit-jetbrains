@@ -32,6 +32,9 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.PKCEAuthorizationGra
 import software.aws.toolkits.jetbrains.core.credentials.sso.PKCEClientRegistration
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.buildUnmanagedSsoOidcClient
 import software.aws.toolkits.resources.AwsCoreBundle
+import software.aws.toolkits.telemetry.AuthType
+import software.aws.toolkits.telemetry.AwsTelemetry
+import software.aws.toolkits.telemetry.MetricResult
 import java.math.BigInteger
 import java.time.Instant
 import java.util.Base64
@@ -67,6 +70,8 @@ class ToolkitOAuthService : OAuthServiceBase<AccessToken>() {
     override fun handleOAuthServerCallback(path: String, parameters: Map<String, List<String>>): OAuthService.OAuthResult<AccessToken>? {
         val request = currentRequest.get() ?: return OAuthService.OAuthResult(null, false)
         val toolkitRequest = request.request as? ToolkitOAuthRequest ?: return OAuthService.OAuthResult(request.request, false)
+        toolkitRequest.error = OAuthError(error = "error", errorDescription = "errorDescription")
+        return OAuthService.OAuthResult(toolkitRequest, false)
 
         val callbackState = parameters["state"]?.firstOrNull()
         if (toolkitRequest.csrfToken != callbackState) {
@@ -189,12 +194,22 @@ internal class ToolkitOAuthCallbackHandler : OAuthCallbackHandlerBase() {
                 "scopes" to ApplicationNamesInfo.getInstance().fullProductName
             )
         } else {
-            val (error, errorDescription) = (oAuthResult.request as? ToolkitOAuthRequest)?.error ?: OAuthError(null, null)
+            val toolkitRequest = (oAuthResult.request as? ToolkitOAuthRequest)
+            val (error, errorDescription) = toolkitRequest?.error ?: OAuthError(null, null)
             val errorString = if (error != null && errorDescription != null) {
                 "$error: $errorDescription"
             } else {
                 errorDescription ?: error ?: AwsCoreBundle.message("general.unknown_error")
             }
+
+            AwsTelemetry.loginWithBrowser(
+                project = null,
+                credentialStartUrl = toolkitRequest?.registration?.issuerUrl,
+                result = MetricResult.Failed,
+                reason = error,
+                reasonDesc = errorDescription,
+                authType = AuthType.PKCE
+            )
 
             mapOf(
                 "error" to errorString
