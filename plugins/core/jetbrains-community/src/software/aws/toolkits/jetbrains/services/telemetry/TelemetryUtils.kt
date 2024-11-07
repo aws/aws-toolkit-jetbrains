@@ -226,7 +226,7 @@ fun scrubNames(messageToBeScrubbed: String, username: String? = getSystemUserNam
         // "/foo/bar/aws/sso/" => "/x/x/aws/sso/"
         var scrubbed = ""
         // Get the frontmatter ("/", "../", "~/", or "./").
-        val start = slashdot.find(word.trimStart())?.value ?: ""
+        val start = slashdot.find(word.trimStart())?.value.orEmpty()
         val firstVal = pathSegments[0].trimStart().replace(slashdot, "")
 
         val ps = pathSegments.filterIndexed { i, _ -> i != 0 }.toMutableList()
@@ -238,7 +238,7 @@ fun scrubNames(messageToBeScrubbed: String, username: String? = getSystemUserNam
                 commonFilePathPatterns.contains(seg) -> scrubbed += "/$seg"
                 else -> {
                     // Save the first non-ASCII (unicode) char, if any.
-                    val nonAscii = Regex("""[^\p{ASCII}]""").find(seg)?.value ?: ""
+                    val nonAscii = Regex("""[^\p{ASCII}]""").find(seg)?.value.orEmpty()
                     // Replace all chars (except [^…]) with "x" .
                     val ascii = seg.replace(Regex("""[^$\[\](){}:;'" ]+"""), "x")
                     scrubbed += "/${ascii}$nonAscii"
@@ -247,7 +247,7 @@ fun scrubNames(messageToBeScrubbed: String, username: String? = getSystemUserNam
         }
 
         // includes leading '.', eg: '.json'
-        val fileExt = fileExtRegex.find(pathSegments.last())?.value ?: ""
+        val fileExt = fileExtRegex.find(pathSegments.last())?.value.orEmpty()
         val newString = " ${start.replace(Regex("""\\"""), "/")}${scrubbed.removePrefix("//").removePrefix("/").removePrefix("\\")}$fileExt"
         scrubbedMessage += newString
     }
