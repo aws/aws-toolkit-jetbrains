@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Improve `@workspace` index start stop strategy"
+}

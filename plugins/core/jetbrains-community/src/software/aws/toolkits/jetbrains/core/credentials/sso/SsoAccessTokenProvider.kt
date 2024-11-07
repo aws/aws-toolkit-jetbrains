@@ -18,6 +18,7 @@ import software.amazon.awssdk.services.ssooidc.model.InvalidClientException
 import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SlowDownException
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.pkce.PKCE_CLIENT_NAME
@@ -499,7 +500,7 @@ class SsoAccessTokenProvider(
                 requestId = requestId,
                 result = Result.Failed
             )
-            LOG.warn { "RefreshAccessTokenFailed: ${e.message}" }
+            LOG.info { "RefreshAccessTokenFailed: ${e.message}" }
             throw e
         }
     }
