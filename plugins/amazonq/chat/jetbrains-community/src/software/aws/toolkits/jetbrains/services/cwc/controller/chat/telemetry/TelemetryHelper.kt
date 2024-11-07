@@ -415,7 +415,6 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
     companion object {
         private val logger = getLogger<TelemetryHelper>()
 
-
         fun getQConnection(): ToolkitConnection? = ToolkitConnectionManager.getInstance(
             ProjectManager.getInstance().openProjects.first()
         ).activeConnectionForFeature(QConnection.getInstance())
