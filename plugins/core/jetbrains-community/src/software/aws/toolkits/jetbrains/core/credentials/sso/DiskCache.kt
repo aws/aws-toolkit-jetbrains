@@ -105,18 +105,13 @@ class DiskCache(
         }
 
     override fun invalidateClientRegistration(ssoRegion: String) {
-<<<<<<< HEAD
-        LOG.debug { "invalidateClientRegistration for $ssoRegion" }
-        InMemoryCache.remove(clientRegistrationCache(ssoRegion).toString())
-=======
         LOG.info { "invalidateClientRegistration for $ssoRegion" }
->>>>>>> main
+        InMemoryCache.remove(clientRegistrationCache(ssoRegion).toString())
         clientRegistrationCache(ssoRegion).tryDeleteIfExists()
     }
 
     override fun loadClientRegistration(cacheKey: ClientRegistrationCacheKey): ClientRegistration? {
-<<<<<<< HEAD
-        LOG.debug { "loadClientRegistration for $cacheKey" }
+        LOG.info { "loadClientRegistration for $cacheKey" }
         val cacheFile = clientRegistrationCache(cacheKey)
 
         // try InMemoryCacheFirst in case of stale registration on full disk
@@ -127,10 +122,6 @@ class DiskCache(
         }
 
         val inputStream = cacheFile.tryInputStreamIfExists()
-=======
-        LOG.info { "loadClientRegistration for $cacheKey" }
-        val inputStream = clientRegistrationCache(cacheKey).tryInputStreamIfExists()
->>>>>>> main
         if (inputStream == null) {
             val stage = LoadCredentialStage.ACCESS_FILE
             LOG.info { "Failed to load Client Registration: cache file does not exist" }
