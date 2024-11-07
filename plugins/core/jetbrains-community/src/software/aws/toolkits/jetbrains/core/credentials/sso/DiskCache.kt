@@ -23,9 +23,9 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.createParentDirectories
-import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.deleteIfExists
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.inputStreamIfExists
 import software.aws.toolkits.core.utils.outputStream
 import software.aws.toolkits.core.utils.toHexString
@@ -36,6 +36,7 @@ import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.AwsCoreBundle.message
+import software.aws.toolkits.jetbrains.services.telemetry.scrubNames
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.Result
 import java.io.ByteArrayInputStream
@@ -104,12 +105,17 @@ class DiskCache(
         }
 
     override fun invalidateClientRegistration(ssoRegion: String) {
+<<<<<<< HEAD
         LOG.debug { "invalidateClientRegistration for $ssoRegion" }
         InMemoryCache.remove(clientRegistrationCache(ssoRegion).toString())
+=======
+        LOG.info { "invalidateClientRegistration for $ssoRegion" }
+>>>>>>> main
         clientRegistrationCache(ssoRegion).tryDeleteIfExists()
     }
 
     override fun loadClientRegistration(cacheKey: ClientRegistrationCacheKey): ClientRegistration? {
+<<<<<<< HEAD
         LOG.debug { "loadClientRegistration for $cacheKey" }
         val cacheFile = clientRegistrationCache(cacheKey)
         // try InMemoryCacheFirst in case of stale registration on full disk
@@ -120,15 +126,19 @@ class DiskCache(
         }
 
         val inputStream = cacheFile.tryInputStreamIfExists()
+=======
+        LOG.info { "loadClientRegistration for $cacheKey" }
+        val inputStream = clientRegistrationCache(cacheKey).tryInputStreamIfExists()
+>>>>>>> main
         if (inputStream == null) {
             val stage = LoadCredentialStage.ACCESS_FILE
-            LOG.warn { "Failed to load Client Registration: cache file does not exist" }
+            LOG.info { "Failed to load Client Registration: cache file does not exist" }
             AuthTelemetry.modifyConnection(
                 action = "Load cache file",
                 source = "loadClientRegistration",
                 result = Result.Failed,
                 reason = "Failed to load Client Registration",
-                reasonDesc = "Load Step:$stage failed. Unable to load file"
+                reasonDesc = "Load Step:$stage failed. Cache file does not exist"
             )
             return null
         }
@@ -136,7 +146,7 @@ class DiskCache(
     }
 
     override fun saveClientRegistration(cacheKey: ClientRegistrationCacheKey, registration: ClientRegistration) {
-        LOG.debug { "saveClientRegistration for $cacheKey" }
+        LOG.info { "saveClientRegistration for $cacheKey" }
         val registrationCache = clientRegistrationCache(cacheKey)
         writeKey(registrationCache) {
             objectMapper.writeValue(it, registration)
@@ -144,7 +154,7 @@ class DiskCache(
     }
 
     override fun invalidateClientRegistration(cacheKey: ClientRegistrationCacheKey) {
-        LOG.debug { "invalidateClientRegistration for $cacheKey" }
+        LOG.info { "invalidateClientRegistration for $cacheKey" }
         try {
             InMemoryCache.remove(clientRegistrationCache(cacheKey).toString())
             clientRegistrationCache(cacheKey).tryDeleteIfExists()
@@ -154,14 +164,14 @@ class DiskCache(
                 source = "invalidateClientRegistration",
                 result = Result.Failed,
                 reason = "Failed to invalidate Client Registration",
-                reasonDesc = e.message ?: e::class.java.name
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name
             )
             throw e
         }
     }
 
     override fun invalidateAccessToken(ssoUrl: String) {
-        LOG.debug { "invalidateAccessToken for $ssoUrl" }
+        LOG.info { "invalidateAccessToken for $ssoUrl" }
         try {
             InMemoryCache.remove(accessTokenCache(ssoUrl).toString())
             accessTokenCache(ssoUrl).tryDeleteIfExists()
@@ -171,7 +181,7 @@ class DiskCache(
                 source = "invalidateAccessToken",
                 result = Result.Failed,
                 reason = "Failed to invalidate Access Token",
-                reasonDesc = e.message ?: e::class.java.name
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name
             )
             throw e
         }
@@ -179,7 +189,7 @@ class DiskCache(
 
 
     override fun loadAccessToken(cacheKey: AccessTokenCacheKey): AccessToken? {
-        LOG.debug { "loadAccessToken for $cacheKey" }
+        LOG.info { "loadAccessToken for $cacheKey" }
         val cacheFile = accessTokenCache(cacheKey)
         // try InMemoryCacheFirst in case of stale token on full disk
         InMemoryCache.get(cacheFile.toString())?.let { data ->
@@ -196,7 +206,7 @@ class DiskCache(
     }
 
     override fun saveAccessToken(cacheKey: AccessTokenCacheKey, accessToken: AccessToken) {
-        LOG.debug { "saveAccessToken for $cacheKey" }
+        LOG.info { "saveAccessToken for $cacheKey" }
         val accessTokenCache = accessTokenCache(cacheKey)
         writeKey(accessTokenCache) {
             objectMapper.writeValue(it, accessToken)
@@ -204,7 +214,7 @@ class DiskCache(
     }
 
     override fun invalidateAccessToken(cacheKey: AccessTokenCacheKey) {
-        LOG.debug { "invalidateAccessToken for $cacheKey" }
+        LOG.info { "invalidateAccessToken for $cacheKey" }
         try {
             InMemoryCache.remove(accessTokenCache(cacheKey).toString())
             accessTokenCache(cacheKey).tryDeleteIfExists()
@@ -214,7 +224,7 @@ class DiskCache(
                 source = "invalidateAccessToken",
                 result = Result.Failed,
                 reason = "Failed to invalidate Access Token",
-                reasonDesc = e.message ?: e::class.java.name
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name
             )
             throw e
         }
@@ -230,7 +240,7 @@ class DiskCache(
             val sha = sha1(cacheNameMapper.writeValueAsString(it))
 
             cacheDir.resolve("$sha.json").also {
-                LOG.debug { "$cacheKey resolves to $it" }
+                LOG.info { "$cacheKey resolves to $it" }
             }
         }
 
@@ -252,7 +262,7 @@ class DiskCache(
             if (clientRegistration.expiresAt.isNotExpired()) {
                 return clientRegistration
             } else {
-                LOG.warn { "Client Registration is expired" }
+                LOG.info { "Client Registration is expired" }
                 AuthTelemetry.modifyConnection(
                     action = "Validate Credentials",
                     source = "loadClientRegistration",
@@ -263,7 +273,7 @@ class DiskCache(
                 return null
             }
         } catch (e: Exception) {
-            LOG.warn { "Client Registration could not be read" }
+            LOG.info { "Client Registration could not be read" }
             AuthTelemetry.modifyConnection(
                 action = "Validate Credentials",
                 source = "loadClientRegistration",
@@ -296,7 +306,7 @@ class DiskCache(
     }
 
     private fun writeKey(path: Path, consumer: (OutputStream) -> Unit) {
-        LOG.debug { "writing to $path" }
+        LOG.info { "writing to $path" }
         try {
             path.tryDirOp(LOG) { createParentDirectories() }
 
@@ -322,7 +332,7 @@ class DiskCache(
                 source = "writeKey",
                 result = Result.Failed,
                 reason = "Failed to write to cache",
-                reasonDesc = e.message ?: e::class.java.name
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name
             )
             throw e
         }
