@@ -755,6 +755,7 @@
             ],
             "passive": true
         },
+        {
             "name": "webview_amazonqSignInOpened",
             "description": "Called when a Amazon Q sign in webview is opened.",
             "metadata": [
