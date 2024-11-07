@@ -36,7 +36,6 @@ import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.Result
-import java.net.UnknownHostException
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 

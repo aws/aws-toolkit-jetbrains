@@ -28,7 +28,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.AwsCoreBundle.message
-import java.net.UnknownHostException
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
