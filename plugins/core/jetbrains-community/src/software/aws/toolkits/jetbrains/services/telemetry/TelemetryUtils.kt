@@ -201,17 +201,8 @@ val ALLOWED_CODE_EXTENSIONS = setOf(
     "zig"
 )
 
-fun scrubNames(messageToBeScrubbed: String, username: String? = null): String {
+fun scrubNames(messageToBeScrubbed: String, username: String? = getSystemUserName()): String {
     var scrubbedMessage = ""
-    val fileExtRegex = Regex("""\.[^./]+$""")
-    val slashdot = Regex("""^[~.]*[/\\]*""")
-
-    /** Allowlisted filepath segments. */
-    val keep = setOf(
-        "~", ".", "..", ".aws", "aws", "sso", "cache", "credentials", "config",
-        "Users", "users", "home", "tmp", "aws-toolkit-jetbrains"
-    )
-
     var processedMessage = messageToBeScrubbed
     if (!username.isNullOrEmpty() && username.length > 2) {
         processedMessage = processedMessage.replace(username, "x")
@@ -240,11 +231,11 @@ fun scrubNames(messageToBeScrubbed: String, username: String? = null): String {
 
         val ps = pathSegments.filterIndexed { i, _ -> i != 0 }.toMutableList()
         ps.add(0, firstVal)
-        val driveLetterRegex = Regex("""^[a-zA-Z]:""")
+
         for (seg in ps) {
             when {
                 driveLetterRegex.matches(seg) -> scrubbed += seg
-                keep.contains(seg) -> scrubbed += "/$seg"
+                commonFilePathPatterns.contains(seg) -> scrubbed += "/$seg"
                 else -> {
                     // Save the first non-ASCII (unicode) char, if any.
                     val nonAscii = Regex("""[^\p{ASCII}]""").find(seg)?.value ?: ""
@@ -263,3 +254,15 @@ fun scrubNames(messageToBeScrubbed: String, username: String? = null): String {
 
     return scrubbedMessage.trim()
 }
+
+val fileExtRegex = Regex("""\.[^./]+$""")
+val slashdot = Regex("""^[~.]*[/\\]*""")
+
+/** Allowlisted filepath segments. */
+val commonFilePathPatterns = setOf(
+    "~", ".", "..", ".aws", "aws", "sso", "cache", "credentials", "config",
+    "Users", "users", "home", "tmp", "aws-toolkit-jetbrains"
+)
+val driveLetterRegex = Regex("""^[a-zA-Z]:""")
+
+fun getSystemUserName(): String? = System.getProperty("user.name") ?: null

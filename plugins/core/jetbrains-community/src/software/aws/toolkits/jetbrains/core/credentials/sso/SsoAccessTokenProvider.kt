@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.core.credentials.sso
 
-import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProcessCanceledException
@@ -347,7 +346,6 @@ class SsoAccessTokenProvider(
 
                 onPendingToken.tokenRetrieved()
                 _authorization.set(null)
-                ApplicationInfo.getInstance().build.baselineVersion
 
                 return tokenResponse.toDAGAccessToken(authorization.createdAt)
             } catch (e: SlowDownException) {
