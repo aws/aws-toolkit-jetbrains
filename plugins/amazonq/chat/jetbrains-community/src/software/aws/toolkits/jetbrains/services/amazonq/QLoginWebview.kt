@@ -17,6 +17,7 @@ import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
+import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -27,6 +28,8 @@ import software.aws.toolkits.jetbrains.core.credentials.actions.SsoLogoutAction
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.core.webview.BrowserMessage
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
@@ -243,12 +246,27 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
             writeValueAsString(it)
         }
 
-        // TODO: pass "REAUTH" if connection expires
-        val stage = if (isQExpired(project)) {
-            "REAUTH"
+        val stage = if(isQExpired(project)) {
+            try {
+                val conn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
+                val provider = conn?.getConnectionSettings()?.tokenProvider
+                val p = provider?.delegate as? BearerTokenProvider
+                p?.resolveToken()
+                provider?.id?.let { BearerTokenProviderListener.notifyCredUpdate(it) }
+                return
+            } catch (e: SsoOidcException) {
+                "REAUTH"
+            }
+
         } else {
             "START"
         }
+        // TODO: pass "REAUTH" if connection expires
+//        val stage = if (isQExpired(project)) {
+//            "REAUTH"
+//        } else {
+//            "START"
+//        }
 
         val jsonData = """
             {
