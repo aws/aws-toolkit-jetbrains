@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry
 
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectManager
 import org.jetbrains.annotations.VisibleForTesting
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatInteractWithMessageEvent
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatMessageInteractionType
@@ -415,20 +414,21 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
     companion object {
         private val logger = getLogger<TelemetryHelper>()
 
-        fun getQConnection(): ToolkitConnection? = ToolkitConnectionManager.getInstance(
-            ProjectManager.getInstance().openProjects.first()
-        ).activeConnectionForFeature(QConnection.getInstance())
+        fun getQConnection(project: Project): ToolkitConnection? {
+            return ToolkitConnectionManager.getInstance(project)
+                .activeConnectionForFeature(QConnection.getInstance())
+        }
 
-        fun recordOpenChat() {
+        fun recordOpenChat(project: Project) {
             Telemetry.amazonq.openChat.use { it.passive(true) }
-            if (getQConnection() == null) {
+            if (getQConnection(project) == null) {
                 AuthTelemetry.signInPageOpened()
             }
         }
 
-        fun recordCloseChat() {
+        fun recordCloseChat(project: Project) {
             Telemetry.amazonq.closeChat.use { it.passive(true) }
-            if (getQConnection() == null) {
+            if (getQConnection(project) == null) {
                 AuthTelemetry.signInPageClosed()
             }
         }
