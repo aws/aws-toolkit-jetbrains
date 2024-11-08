@@ -8,7 +8,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.RangeMarker
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.launch
 import org.apache.commons.collections4.queue.CircularFifoQueue
@@ -151,7 +150,7 @@ class CodeWhispererTelemetryService {
         index: Int,
         suggestionState: CodewhispererSuggestionState,
         numOfRecommendations: Int,
-    ): Unit = Telemetry.codewhisperer.userDecision.use {
+    ): Unit = Telemetry.codewhisperer.userDecision.use { span ->
         val requestId = detailContext.requestId
         val recommendation = detailContext.recommendation
         val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toTelemetryType()
@@ -166,7 +165,7 @@ class CodeWhispererTelemetryService {
         }
         val startUrl = getConnectionStartUrl(requestContext.connection)
         val importEnabled = CodeWhispererSettings.getInstance().isImportAdderEnabled()
-        it.codewhispererCompletionType(detailContext.completionType)
+        span.codewhispererCompletionType(detailContext.completionType)
             .codewhispererGettingStartedTask(getGettingStartedTaskType(requestContext.editor))
             .codewhispererLanguage(codewhispererLanguage)
             .codewhispererPaginationProgress(numOfRecommendations)
