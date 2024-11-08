@@ -34,7 +34,9 @@
             <reference id="aws.toolkit.open.q.window"/>
         </group>
         <!-- TODO: q.openchat will eventually be in amazonq, aws.toolkit.q.sign.in will eventually be in core. -->
-        <action id="q.openchat" class="software.aws.toolkits.jetbrains.services.amazonq.QOpenPanelAction"/>
+        <action id="q.openchat" class="software.aws.toolkits.jetbrains.services.amazonq.QOpenPanelAction">
+            <keyboard-shortcut keymap="$default" first-keystroke="meta alt Q" />
+        </action>
 
         <group id="aws.toolkit.q.sign.in">
             <action id="q.sign.in" class="software.aws.toolkits.jetbrains.services.amazonq.explorerActions.SignInToQAction"/>
