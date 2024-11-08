@@ -113,29 +113,47 @@ class DiskCache(
     override fun loadClientRegistration(cacheKey: ClientRegistrationCacheKey): ClientRegistration? {
         LOG.info { "loadClientRegistration for $cacheKey" }
         val cacheFile = clientRegistrationCache(cacheKey)
+        val diskData = cacheFile.tryInputStreamIfExists()?.use { it.readBytes() }
+        val memoryData = InMemoryCache.get(cacheFile.toString())
 
-        // try InMemoryCacheFirst in case of stale registration on full disk
-        InMemoryCache.get(cacheFile.toString())?.let { data ->
-            ByteArrayInputStream(data).use { memoryStream ->
-                return loadClientRegistration(memoryStream)
+        when {
+            diskData != null && memoryData != null -> {
+                // Both disk and memory have data, compare them
+                if (!diskData.contentEquals(memoryData)) {
+                    LOG.info { "Inconsistency detected between disk and memory cache" }
+                    // Prefer disk data as it's considered more up-to-date
+                    InMemoryCache.put(cacheFile.toString(), diskData)
+                    return loadClientRegistration(ByteArrayInputStream(diskData))
+                }
+                // If they're the same, use memory data for performance
+                return loadClientRegistration(ByteArrayInputStream(memoryData))
+            }
+            diskData != null -> {
+                // Only disk has data, update memory and use disk data
+                InMemoryCache.put(cacheFile.toString(), diskData)
+                return loadClientRegistration(ByteArrayInputStream(diskData))
+            }
+            memoryData != null -> {
+                // Only memory has data, unusual case, log warning and use memory data
+                LOG.info { "Client registration found in memory but not on disk" }
+                return loadClientRegistration(ByteArrayInputStream(memoryData))
+            }
+            else -> {
+                // Neither disk nor memory has data
+                LOG.info { "Failed to load Client Registration: not found in disk or memory cache" }
+                val stage = LoadCredentialStage.ACCESS_FILE
+                AuthTelemetry.modifyConnection(
+                    action = "Load cache file",
+                    source = "loadClientRegistration",
+                    result = Result.Failed,
+                    reason = "Failed to load Client Registration",
+                    reasonDesc = "Load Step:$stage failed. Cache file does not exist"
+                )
+                return null
             }
         }
-
-        val inputStream = cacheFile.tryInputStreamIfExists()
-        if (inputStream == null) {
-            val stage = LoadCredentialStage.ACCESS_FILE
-            LOG.info { "Failed to load Client Registration: cache file does not exist" }
-            AuthTelemetry.modifyConnection(
-                action = "Load cache file",
-                source = "loadClientRegistration",
-                result = Result.Failed,
-                reason = "Failed to load Client Registration",
-                reasonDesc = "Load Step:$stage failed. Cache file does not exist"
-            )
-            return null
-        }
-        return loadClientRegistration(inputStream)
     }
+
 
     override fun saveClientRegistration(cacheKey: ClientRegistrationCacheKey, registration: ClientRegistration) {
         LOG.info { "saveClientRegistration for $cacheKey" }
@@ -182,18 +200,45 @@ class DiskCache(
     override fun loadAccessToken(cacheKey: AccessTokenCacheKey): AccessToken? {
         LOG.info { "loadAccessToken for $cacheKey" }
         val cacheFile = accessTokenCache(cacheKey)
-        // try InMemoryCacheFirst in case of stale token on full disk
-        InMemoryCache.get(cacheFile.toString())?.let { data ->
-            ByteArrayInputStream(data).use { memoryStream ->
-                return loadAccessToken(memoryStream)
+        val diskData = cacheFile.tryInputStreamIfExists()?.use { it.readBytes() }
+        val memoryData = InMemoryCache.get(cacheFile.toString())
+
+        when {
+            diskData != null && memoryData != null -> {
+                // Both disk and memory have data, compare them
+                if (!diskData.contentEquals(memoryData)) {
+                    LOG.info { "Inconsistency detected between disk and memory cache" }
+                    // Prefer disk data as it's considered more up-to-date
+                    InMemoryCache.put(cacheFile.toString(), diskData)
+                    return loadAccessToken(ByteArrayInputStream(diskData))
+                }
+                // If they're the same, use memory data for performance
+                return loadAccessToken(ByteArrayInputStream(memoryData))
+            }
+            diskData != null -> {
+                // Only disk has data, update memory and use disk data
+                InMemoryCache.put(cacheFile.toString(), diskData)
+                return loadAccessToken(ByteArrayInputStream(diskData))
+            }
+            memoryData != null -> {
+                // Only memory has data, unusual case, log warning and use memory data
+                LOG.info { "Access Token found in memory but not on disk" }
+                return loadAccessToken(ByteArrayInputStream(memoryData))
+            }
+            else -> {
+                // Neither disk nor memory has data
+                LOG.info { "Failed to load Access Token: not found in disk or memory cache" }
+                val stage = LoadCredentialStage.ACCESS_FILE
+                AuthTelemetry.modifyConnection(
+                    action = "Load cache file",
+                    source = "loadAccessToken",
+                    result = Result.Failed,
+                    reason = "Failed to load Access Token",
+                    reasonDesc = "Load Step:$stage failed. Cache file does not exist"
+                )
+                return null
             }
         }
-
-        val inputStream = cacheFile.tryInputStreamIfExists() ?: return null
-
-        val token = loadAccessToken(inputStream)
-
-        return token
     }
 
     override fun saveAccessToken(cacheKey: AccessTokenCacheKey, accessToken: AccessToken) {
