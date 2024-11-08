@@ -52,6 +52,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
+import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import java.io.File
 import java.net.HttpURLConnection
 import java.time.Instant
@@ -215,7 +216,8 @@ class GumbyClient(private val project: Project) {
     }
 
     fun sendTransformTelemetryEvent(job: JobId, metrics: CodeModernizerMetrics) {
-        bearerClient().sendTelemetryEvent { requestBuilder ->
+        notifyStickyInfo("in sendTransformTelemetryEvent!")
+        val resp = bearerClient().sendTelemetryEvent { requestBuilder ->
             requestBuilder.telemetryEvent { telemetryEventBuilder ->
                 telemetryEventBuilder.transformEvent {
                     it.jobId(job.id)
@@ -229,9 +231,13 @@ class GumbyClient(private val project: Project) {
                     it.linesOfCodeSubmitted(metrics.linesOfCodeSubmitted) // currently unavailable for SQL conversions
                 }
             }
+            notifyStickyInfo("sendTelemetryEvent requestBuilder", requestBuilder.toString())
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+            notifyStickyInfo("sendTelemetryEvent optOutPreference", getTelemetryOptOutPreference().toString())
             requestBuilder.userContext(codeWhispererUserContext())
+            notifyStickyInfo("sendTelemetryEvent userContext", codeWhispererUserContext().toString())
         }
+        notifyStickyInfo("sendTelemetryEvent resp", resp.toString())
     }
 
     companion object {
