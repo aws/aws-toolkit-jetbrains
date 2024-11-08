@@ -418,7 +418,6 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
             project
         ).activeConnectionForFeature(QConnection.getInstance())
 
-
         fun recordOpenChat(project: Project) {
             Telemetry.amazonq.openChat.use { it.passive(true) }
             if (getQConnection(project) == null) {
