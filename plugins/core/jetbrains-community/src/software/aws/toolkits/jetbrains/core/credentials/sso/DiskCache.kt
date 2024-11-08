@@ -154,7 +154,6 @@ class DiskCache(
         }
     }
 
-
     override fun saveClientRegistration(cacheKey: ClientRegistrationCacheKey, registration: ClientRegistration) {
         LOG.info { "saveClientRegistration for $cacheKey" }
         val registrationCache = clientRegistrationCache(cacheKey)
