@@ -200,7 +200,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                     downloadedBuildLogPath[job] = path
                 } else {
                     downloadedArtifacts[job] = path
-                    if (output.artifact is CodeModernizerArtifact) {
+                    if (output.artifact is CodeModernizerArtifact && output.artifact.metrics != null) {
                         output.artifact.metrics.linesOfCodeSubmitted = CodeModernizerSessionState.getInstance(project).getLinesOfCodeSubmitted()
                         output.artifact.metrics.programmingLanguage = CodeModernizerSessionState.getInstance(project).getTransformationLanguage()
                         clientAdaptor.sendTransformTelemetryEvent(job, output.artifact.metrics)

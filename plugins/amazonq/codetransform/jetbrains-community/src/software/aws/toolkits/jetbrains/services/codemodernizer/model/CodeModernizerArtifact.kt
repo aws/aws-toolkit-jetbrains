@@ -29,7 +29,7 @@ open class CodeModernizerArtifact(
     private val patches: List<VirtualFile>,
     val summary: TransformationSummary,
     val summaryMarkdownFile: File,
-    val metrics: CodeModernizerMetrics,
+    val metrics: CodeModernizerMetrics?,
 ) : CodeTransformDownloadArtifact {
     val patch: VirtualFile
         get() = patches.first()
@@ -100,15 +100,16 @@ open class CodeModernizerArtifact(
             }
         }
 
-        private fun loadMetrics(manifest: CodeModernizerManifest): CodeModernizerMetrics {
+        private fun loadMetrics(manifest: CodeModernizerManifest): CodeModernizerMetrics? {
             try {
                 val metricsFile =
                     tempDir.resolve(manifest.metricsRoot).listFiles()
                         ?.firstOrNull { it.name.endsWith(METRICS_FILE_NAME) }
                         ?: throw RuntimeException("Could not find metrics.json")
                 return MAPPER.readValue(metricsFile, CodeModernizerMetrics::class.java)
-            } catch (exception: JsonProcessingException) {
-                throw RuntimeException("Unable to deserialize the metrics.json")
+            } catch (exception: Exception) {
+                // if metrics.json not present or parsing fails, can still show diff.patch and summary.md
+                return null
             }
         }
 
