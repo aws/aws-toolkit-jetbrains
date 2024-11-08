@@ -417,27 +417,28 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
         private fun getQConnection(project: Project): ToolkitConnection? = ToolkitConnectionManager.getInstance(
             project
         ).activeConnectionForFeature(QConnection.getInstance())
-    }
 
-    fun recordOpenChat(project: Project) {
-        Telemetry.amazonq.openChat.use { it.passive(true) }
-        if (getQConnection(project) == null) {
-            AuthTelemetry.signInPageOpened()
+
+        fun recordOpenChat(project: Project) {
+            Telemetry.amazonq.openChat.use { it.passive(true) }
+            if (getQConnection(project) == null) {
+                AuthTelemetry.signInPageOpened()
+            }
         }
-    }
 
-    fun recordCloseChat(project: Project) {
-        Telemetry.amazonq.closeChat.use { it.passive(true) }
-        if (getQConnection(project) == null) {
-            AuthTelemetry.signInPageClosed()
+        fun recordCloseChat(project: Project) {
+            Telemetry.amazonq.closeChat.use { it.passive(true) }
+            if (getQConnection(project) == null) {
+                AuthTelemetry.signInPageClosed()
+            }
         }
-    }
 
-    fun recordTelemetryChatRunCommand(type: CwsprChatCommandType, name: String? = null, startUrl: String? = null) {
-        Telemetry.amazonq.runCommand.use {
-            it.cwsprChatCommandType(type)
-                .cwsprChatCommandName(name)
-                .credentialStartUrl(startUrl)
+        fun recordTelemetryChatRunCommand(type: CwsprChatCommandType, name: String? = null, startUrl: String? = null) {
+            Telemetry.amazonq.runCommand.use {
+                it.cwsprChatCommandType(type)
+                    .cwsprChatCommandName(name)
+                    .credentialStartUrl(startUrl)
+            }
         }
     }
 }
