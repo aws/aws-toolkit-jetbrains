@@ -1,9 +1,0 @@
-{
-  "dependencies": {
-    "node": "^22.9.0",
-    "vue-select": "^3.20.3"
-  },
-  "devDependencies": {
-    "@types/vue-select": "^3.16.8"
-  }
-}
