@@ -18,11 +18,13 @@ import software.amazon.awssdk.services.ssooidc.model.InvalidClientException
 import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SlowDownException
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.pkce.PKCE_CLIENT_NAME
 import software.aws.toolkits.jetbrains.core.credentials.sso.pkce.ToolkitOAuthService
 import software.aws.toolkits.jetbrains.core.webview.getAuthType
+import software.aws.toolkits.jetbrains.services.telemetry.scrubNames
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.jetbrains.utils.sleepWithCancellation
 import software.aws.toolkits.resources.AwsCoreBundle
@@ -182,7 +184,7 @@ class SsoAccessTokenProvider(
                 source = "accessToken",
                 result = Result.Failed,
                 reason = "Failed to write AccessToken to cache",
-                reasonDesc = e.message ?: e::class.java.name,
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name,
             )
             throw e
         }
@@ -224,7 +226,7 @@ class SsoAccessTokenProvider(
                 source = "registerDAGClient",
                 result = Result.Failed,
                 reason = "Failed to write DeviceAuthorizationClientRegistration to cache",
-                reasonDesc = e.message ?: e::class.java.name
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name
             )
             throw e
         }
@@ -276,7 +278,7 @@ class SsoAccessTokenProvider(
                 source = "registerPkceClient",
                 result = Result.Failed,
                 reason = "Failed to write PKCEClientRegistration to cache",
-                reasonDesc = e.message ?: e::class.java.name
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name
             )
             throw e
         }
@@ -498,7 +500,7 @@ class SsoAccessTokenProvider(
                 requestId = requestId,
                 result = Result.Failed
             )
-            LOG.warn { "RefreshAccessTokenFailed: ${e.message}" }
+            LOG.info { "RefreshAccessTokenFailed: ${e.message}" }
             throw e
         }
     }
