@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "fix wrongly formatted supplemental context for inline suggestion"
+}
