@@ -203,7 +203,6 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                     if (output.artifact is CodeModernizerArtifact && output.artifact.metrics != null) {
                         output.artifact.metrics.linesOfCodeSubmitted = CodeModernizerSessionState.getInstance(project).getLinesOfCodeSubmitted()
                         output.artifact.metrics.programmingLanguage = CodeModernizerSessionState.getInstance(project).getTransformationLanguage()
-                        notifyStickyInfo("metrics.json", output.artifact.metrics.toString())
                         try {
                             clientAdaptor.sendTransformTelemetryEvent(job, output.artifact.metrics)
                         } catch (e: Exception) {

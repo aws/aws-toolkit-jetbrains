@@ -216,8 +216,7 @@ class GumbyClient(private val project: Project) {
     }
 
     fun sendTransformTelemetryEvent(job: JobId, metrics: CodeModernizerMetrics) {
-        notifyStickyInfo("in sendTransformTelemetryEvent!")
-        val resp = bearerClient().sendTelemetryEvent { requestBuilder ->
+        bearerClient().sendTelemetryEvent { requestBuilder ->
             requestBuilder.telemetryEvent { telemetryEventBuilder ->
                 telemetryEventBuilder.transformEvent {
                     it.jobId(job.id)
@@ -234,7 +233,6 @@ class GumbyClient(private val project: Project) {
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
             requestBuilder.userContext(codeWhispererUserContext())
         }
-        notifyStickyInfo("sendTelemetryEvent resp", resp.toString())
     }
 
     companion object {
