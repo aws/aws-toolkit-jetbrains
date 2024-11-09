@@ -57,7 +57,7 @@ open class CodeModernizerArtifact(
                 val manifest = loadManifest()
                 if (manifest.version > MAX_SUPPORTED_VERSION) {
                     // If not supported we can still try to use it, i.e. the versions should largely be backwards compatible
-                    LOG.warn { "Unsupported version: ${manifest.version}" }
+                    LOG.warn { "Unsupported manifest.json version: ${manifest.version}" }
                 }
                 val patches = extractPatches(manifest)
                 val summary = extractSummary(manifest)

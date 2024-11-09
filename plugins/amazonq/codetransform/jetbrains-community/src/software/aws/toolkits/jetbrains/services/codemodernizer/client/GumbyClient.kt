@@ -231,11 +231,8 @@ class GumbyClient(private val project: Project) {
                     it.linesOfCodeSubmitted(metrics.linesOfCodeSubmitted) // currently unavailable for SQL conversions
                 }
             }
-            notifyStickyInfo("sendTelemetryEvent requestBuilder", requestBuilder.toString())
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
-            notifyStickyInfo("sendTelemetryEvent optOutPreference", getTelemetryOptOutPreference().toString())
             requestBuilder.userContext(codeWhispererUserContext())
-            notifyStickyInfo("sendTelemetryEvent userContext", codeWhispererUserContext().toString())
         }
         notifyStickyInfo("sendTelemetryEvent resp", resp.toString())
     }
