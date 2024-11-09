@@ -26,6 +26,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeMo
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactPomFolder
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilDependenciesRootDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilUploadZip
+import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.IOException
@@ -51,6 +52,8 @@ const val MAVEN_BUILD_RUN_UNIT_TESTS = "clean test"
 const val MAVEN_BUILD_SKIP_UNIT_TESTS = "clean test-compile"
 const val MAVEN_DEFAULT_BUILD_DIRECTORY_NAME = "target"
 const val IDEA_DIRECTORY_NAME = ".idea"
+const val GIT_DIRECTORY_NAME = ".git"
+const val DS_STORE_FILE_NAME = ".DS_Store"
 const val INVALID_SUFFIX_SHA = "sha1"
 const val INVALID_SUFFIX_REPOSITORIES = "repositories"
 const val ORACLE_DB = "ORACLE"
@@ -69,26 +72,25 @@ data class CodeModernizerSessionContext(
     private val mapper = jacksonObjectMapper()
     private val ignoredDependencyFileExtensions = setOf(INVALID_SUFFIX_SHA, INVALID_SUFFIX_REPOSITORIES)
 
-    fun File.isMavenTargetFolder(): Boolean {
+    private fun File.isMavenTargetFolder(): Boolean {
         val hasPomSibling = this.resolveSibling(MAVEN_CONFIGURATION_FILE_NAME).exists()
         val isMavenTargetDirName = this.isDirectory && this.name == MAVEN_DEFAULT_BUILD_DIRECTORY_NAME
         return isMavenTargetDirName && hasPomSibling
     }
 
-    fun File.isIdeaFolder(): Boolean {
-        val isIdea = this.isDirectory && this.name == IDEA_DIRECTORY_NAME
-        return isIdea
-    }
+    private fun File.isIdeaFolder(): Boolean = this.isDirectory && this.name == IDEA_DIRECTORY_NAME
+
+    private fun File.isGitFolder(): Boolean = this.isDirectory && this.name == GIT_DIRECTORY_NAME
 
     private fun findDirectoriesToExclude(sourceFolder: File): List<File> {
         val excluded = mutableListOf<File>()
         sourceFolder.walkTopDown().onEnter {
-            if (it.isMavenTargetFolder() || it.isIdeaFolder()) {
+            if (it.isMavenTargetFolder() || it.isIdeaFolder() || it.isGitFolder()) {
                 excluded.add(it)
                 return@onEnter false
             }
             return@onEnter true
-        }.forEach {
+        }.forEach { _ ->
             // noop, collects the sequence
         }
         return excluded
@@ -202,7 +204,7 @@ data class CodeModernizerSessionContext(
                 val files = root?.let {
                     VfsUtil.collectChildrenRecursively(it).filter { child ->
                         val childPath = Path(child.path)
-                        !child.isDirectory && directoriesToExclude.none { dir -> childPath.startsWith(dir.toPath()) }
+                        !child.isDirectory && !child.name.endsWith(DS_STORE_FILE_NAME) && directoriesToExclude.none { dir -> childPath.startsWith(dir.toPath()) }
                     }
                 }
                 val dependencyFiles = if (depDirectory != null) {

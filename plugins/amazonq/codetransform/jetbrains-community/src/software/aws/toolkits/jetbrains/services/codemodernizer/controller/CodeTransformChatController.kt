@@ -162,7 +162,7 @@ class CodeTransformChatController(
     private suspend fun getUserObjective(tabId: String) {
         codeTransformChatHelper.addNewMessage(buildChooseTransformationObjectiveChatContent())
         codeTransformChatHelper.sendChatInputEnabledMessage(tabId, true)
-        codeTransformChatHelper.sendUpdatePlaceholderMessage(tabId, "Enter 'language upgrade' or 'SQL conversion'")
+        codeTransformChatHelper.sendUpdatePlaceholderMessage(tabId, message("codemodernizer.chat.message.choose_objective"))
     }
 
     private suspend fun validateAndReplyOnError(transformationType: CodeTransformType): ValidationResult? {
@@ -310,12 +310,13 @@ class CodeTransformChatController(
     override suspend fun processCodeTransformSelectSQLMetadataAction(message: IncomingCodeTransformMessage.CodeTransformSelectSQLMetadata) {
         runInEdt {
             val descriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
-                .withDescription("Select metadata ZIP file")
+                .withDescription("Upload metadata file")
                 .withFileFilter { it.extension == "zip" }
 
             val selectedZipFile = FileChooser.chooseFile(descriptor, null, null) ?: return@runInEdt
-            val extractedZip = createTempDirectory("codeTransformSQLMetadata", null) // .path.toVirtualFile()
-            unzipFile(selectedZipFile.toNioPath(), extractedZip.toPath())
+            val extractedZip = createTempDirectory("codeTransformSQLMetadata", null)
+
+            unzipFile(selectedZipFile.toNioPath(), extractedZip.toPath(), true)
 
             val sctFile = extractedZip.listFiles { file -> file.name.endsWith(".sct") }.firstOrNull()
 

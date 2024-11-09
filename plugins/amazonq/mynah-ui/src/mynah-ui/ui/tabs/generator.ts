@@ -31,7 +31,7 @@ export class TabDataGenerator {
     ])
 
     // feature flag for SQL transformations
-    private isSQLTransformReady: boolean = false
+    private isSQLTransformReady: boolean = true
 
     private tabWelcomeMessage: Map<TabType, string> = new Map([
         [

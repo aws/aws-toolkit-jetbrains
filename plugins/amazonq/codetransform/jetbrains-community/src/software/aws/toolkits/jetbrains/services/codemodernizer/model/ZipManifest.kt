@@ -11,7 +11,7 @@ data class ZipManifest(
     val hilCapabilities: List<String> = listOf(HIL_1P_UPGRADE_CAPABILITY),
     val transformCapabilities: List<String> = listOf(EXPLAINABILITY_V1),
     val customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS,
-    val requestedConversions: RequestedConversions = RequestedConversions(sqlConversion = null),
+    val requestedConversions: RequestedConversions? = null, // only used for SQL conversions for now
 )
 
 data class RequestedConversions(

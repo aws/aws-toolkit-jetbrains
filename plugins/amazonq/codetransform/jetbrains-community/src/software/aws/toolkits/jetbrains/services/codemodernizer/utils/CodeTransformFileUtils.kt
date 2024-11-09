@@ -3,8 +3,10 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
-import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import com.fasterxml.jackson.module.kotlin.readValue
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.io.FileUtil
@@ -26,8 +28,10 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_UPL
 import software.aws.toolkits.jetbrains.services.codemodernizer.controller.CodeTransformChatController
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DependencyUpdatesReport
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_CONFIGURATION_FILE_NAME
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.SctMetadata
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.SqlMetadataValidationResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.content
+import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.FileOutputStream
@@ -109,14 +113,20 @@ fun parseBuildFile(buildFile: VirtualFile?): String? {
 /**
  * Unzips a zip into a dir. Returns the true when successfully unzips the file pointed to by [zipFilePath] to [destDir]
  */
-fun unzipFile(zipFilePath: Path, destDir: Path): Boolean {
+fun unzipFile(zipFilePath: Path, destDir: Path, isSqlMetadata: Boolean = false): Boolean {
     if (!zipFilePath.exists()) return false
     val zipFile = ZipFile(zipFilePath.toFile())
     zipFile.use { file ->
         file.entries().asSequence()
             .filterNot { it.isDirectory }
             .map { zipEntry ->
-                val destPath = destDir.resolve(zipEntry.name)
+                var fileName = zipEntry.name
+                if (isSqlMetadata) {
+                    // when manually compressing ZIP files, the files get unzipped under a subdirectory where we extract them to,
+                    // this change puts the files directly under the root of the target directory, which is what we want
+                    fileName = zipEntry.name.substringAfterLast(File.separatorChar)
+                }
+                val destPath = destDir.resolve(fileName)
                 destPath.createParentDirectories()
                 FileOutputStream(destPath.toFile()).use { targetFile ->
                     zipFile.getInputStream(zipEntry).copyTo(targetFile)
@@ -137,57 +147,44 @@ fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {
     if (sctFile == null) {
         return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.missing_sct_file"))
     }
-    val fileContent = sctFile.readBytes().toString(Charsets.UTF_8)
-    val xmlDeserializer = XmlMapper(JacksonXmlModule())
-    var sctMetadata: Map<*, *>? = null
+
+    val xmlMapper = XmlMapper().registerKotlinModule().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+
+    val sctMetadata: SctMetadata
     try {
-        sctMetadata = xmlDeserializer.readValue(fileContent, Any::class.java) as Map<*, *>
+        sctMetadata = xmlMapper.readValue<SctMetadata>(sctFile)
     } catch (e: Exception) {
         getLogger<CodeTransformChatController>().error { "Error parsing .sct metadata file; invalid XML encountered." }
         return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.invalid_sct"))
     }
 
     try {
-        val instances = sctMetadata["instances"] as Map<*, *>
-        val projectModel = instances["ProjectModel"] as Map<*, *>
-        val entities = projectModel["entities"] as Map<*, *>
-
-        val sources = entities["sources"] as Map<*, *>
-        val sourceDbServer = sources["DbServer"] as Map<*, *>
-        val sourceVendor = (sourceDbServer["vendor"] as String).trim().uppercase()
+        val projectModel = sctMetadata.instances.projectModel
+        val sourceDbServer = projectModel.entities.sources.dbServer
+        val sourceVendor = sourceDbServer.vendor.trim().uppercase()
         if (sourceVendor != "ORACLE") {
             return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.invalid_source_db"))
         }
 
-        val sourceServerName = (sourceDbServer["name"] as String).trim()
+        val sourceServerName = sourceDbServer.name.trim()
 
-        val targets = entities["targets"] as Map<*, *>
-        val targetDbServer = targets["DbServer"] as Map<*, *>
-        val targetVendor = (targetDbServer["vendor"] as String).trim().uppercase()
+        val targetDbServer = projectModel.entities.targets.dbServer
+        val targetVendor = targetDbServer.vendor.trim().uppercase()
         if (targetVendor != "AURORA_POSTGRESQL" && targetVendor != "RDS_POSTGRESQL") {
             return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.invalid_target_db"))
         }
 
-        val relations = projectModel["relations"] as Map<*, *>
-        val serverNodeLocations = relations["server-node-location"] as List<Map<*, *>>
         val schemaNames = mutableSetOf<String>()
-        for (serverNodeLocation in serverNodeLocations) {
-            val fullNameNodeInfoList = serverNodeLocation["FullNameNodeInfoList"] as Map<*, *>
-            val nameParts = fullNameNodeInfoList["nameParts"] as Map<*, *>
-            var fullNameNodeInfo = nameParts["FullNameNodeInfo"]
-            if (fullNameNodeInfo is Map<*, *>) {
-                continue
-            } else {
-                fullNameNodeInfo = fullNameNodeInfo as List<Map<*, *>>
-            }
-            fullNameNodeInfo.forEach { node ->
-                if ((node["typeNode"] as String).lowercase() == "schema") {
-                    schemaNames.add((node["nameNode"] as String).uppercase()) // user will choose one later
+        projectModel.relations.serverNodeLocation.forEach { serverNodeLocation ->
+            val fullNameNodeInfoList = serverNodeLocation.fullNameNodeInfoList.nameParts.fullNameNodeInfo
+            fullNameNodeInfoList.forEach { node ->
+                if (node.typeNode.lowercase() == "schema") {
+                    schemaNames.add(node.nameNode.uppercase())
                 }
             }
         }
-        // .sct metadata file is valid, return SqlMetadataValidationResult with all data we parsed
-        return SqlMetadataValidationResult(true, "", sourceVendor, targetVendor, sourceServerName, schemaNames)
+        notifyStickyInfo("successfully parsed .sct file", "$sourceVendor, $targetVendor, $sourceServerName, $schemaNames")
+        return SqlMetadataValidationResult(true, "", sourceVendor, targetVendor, sourceServerName!!, schemaNames)
     } catch (e: Exception) {
         getLogger<CodeTransformChatController>().error { "Error parsing .sct metadata file: $e" }
         return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.invalid_sct"))
