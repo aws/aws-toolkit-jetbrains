@@ -26,7 +26,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeMo
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactPomFolder
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilDependenciesRootDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilUploadZip
-import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.IOException
@@ -57,6 +56,8 @@ const val DS_STORE_FILE_NAME = ".DS_Store"
 const val INVALID_SUFFIX_SHA = "sha1"
 const val INVALID_SUFFIX_REPOSITORIES = "repositories"
 const val ORACLE_DB = "ORACLE"
+const val AURORA_DB = "AURORA_POSTGRESQL"
+const val RDS_DB = "RDS_POSTGRESQL"
 data class CodeModernizerSessionContext(
     val project: Project,
     var configurationFile: VirtualFile? = null, // used to ZIP module

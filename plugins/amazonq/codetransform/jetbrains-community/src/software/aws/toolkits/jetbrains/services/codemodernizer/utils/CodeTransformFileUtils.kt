@@ -26,12 +26,14 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_POM
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_POM_VERSION_PLACEHOLDER
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_UPLOAD_ZIP_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.controller.CodeTransformChatController
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.AURORA_DB
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DependencyUpdatesReport
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_CONFIGURATION_FILE_NAME
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.ORACLE_DB
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.RDS_DB
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.SctMetadata
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.SqlMetadataValidationResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.content
-import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.FileOutputStream
@@ -154,7 +156,7 @@ fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {
     try {
         sctMetadata = xmlMapper.readValue<SctMetadata>(sctFile)
     } catch (e: Exception) {
-        getLogger<CodeTransformChatController>().error { "Error parsing .sct metadata file; invalid XML encountered." }
+        getLogger<CodeTransformChatController>().error { "Error parsing .sct metadata file; invalid XML encountered. $e" }
         return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.invalid_sct"))
     }
 
@@ -162,7 +164,7 @@ fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {
         val projectModel = sctMetadata.instances.projectModel
         val sourceDbServer = projectModel.entities.sources.dbServer
         val sourceVendor = sourceDbServer.vendor.trim().uppercase()
-        if (sourceVendor != "ORACLE") {
+        if (sourceVendor != ORACLE_DB) {
             return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.invalid_source_db"))
         }
 
@@ -170,7 +172,7 @@ fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {
 
         val targetDbServer = projectModel.entities.targets.dbServer
         val targetVendor = targetDbServer.vendor.trim().uppercase()
-        if (targetVendor != "AURORA_POSTGRESQL" && targetVendor != "RDS_POSTGRESQL") {
+        if (targetVendor != AURORA_DB && targetVendor != RDS_DB) {
             return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.invalid_target_db"))
         }
 
@@ -183,8 +185,7 @@ fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {
                 }
             }
         }
-        notifyStickyInfo("successfully parsed .sct file", "$sourceVendor, $targetVendor, $sourceServerName, $schemaNames")
-        return SqlMetadataValidationResult(true, "", sourceVendor, targetVendor, sourceServerName!!, schemaNames)
+        return SqlMetadataValidationResult(true, "", sourceVendor, targetVendor, sourceServerName, schemaNames)
     } catch (e: Exception) {
         getLogger<CodeTransformChatController>().error { "Error parsing .sct metadata file: $e" }
         return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.invalid_sct"))
