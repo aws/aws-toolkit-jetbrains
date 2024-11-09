@@ -239,7 +239,7 @@ fun buildObjectiveChosenChatContent(objective: String) = CodeTransformChatMessag
 )
 
 fun buildCheckingValidProjectChatContent() = CodeTransformChatMessageContent(
-    message = message("codemodernizer.chat.message.validation.check_eligible_projects"),
+    message = message("codemodernizer.chat.message.validation.check_eligible_modules"),
     type = CodeTransformChatMessageType.PendingAnswer,
 )
 

@@ -150,9 +150,9 @@ class CodeTransformChatController(
         // Publish a metric when transform is first initiated from chat prompt.
         telemetry.initiateTransform()
 
-        val isSqlTransformReady = true // feature flag for SQL conversions
+        val anyModuleContainsOracleSQL = true // TODO: implement, and make sure to say "Checking for eligible modules..." here too
 
-        if (isSqlTransformReady) {
+        if (anyModuleContainsOracleSQL) {
             this.getUserObjective(message.tabId)
         } else {
             this.handleLanguageUpgrade()
@@ -310,7 +310,7 @@ class CodeTransformChatController(
     override suspend fun processCodeTransformSelectSQLMetadataAction(message: IncomingCodeTransformMessage.CodeTransformSelectSQLMetadata) {
         runInEdt {
             val descriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
-                .withDescription("Upload metadata file")
+                .withDescription("Select metadata file")
                 .withFileFilter { it.extension == "zip" }
 
             val selectedZipFile = FileChooser.chooseFile(descriptor, null, null) ?: return@runInEdt

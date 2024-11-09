@@ -250,7 +250,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
                 </DbServer>
                 </sources>
                 <targets>
-                <DbServer vendor="aurora_postgresql" />
+                <DbServer vendor="aurora_postgresql" name="sample.aurora.amazonaws.com" />
                 </targets>
             </entities>
             <relations>
@@ -309,7 +309,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
                 </DbServer>
                 </sources>
                 <targets>
-                <DbServer vendor="aurora_postgresql" />
+                <DbServer vendor="aurora_postgresql" name="sample.aurora.amazonaws.com" />
                 </targets>
             </entities>
             <relations>
@@ -364,7 +364,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
                 </DbServer>
                 </sources>
                 <targets>
-                <DbServer vendor="aurora_postgresql-invalid" />
+                <DbServer vendor="aurora_postgresql-invalid" name="sample.aurora.amazonaws.com" />
                 </targets>
             </entities>
             <relations>
