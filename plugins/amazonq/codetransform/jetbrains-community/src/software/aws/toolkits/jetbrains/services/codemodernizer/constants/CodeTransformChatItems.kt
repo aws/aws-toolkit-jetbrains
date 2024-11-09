@@ -60,7 +60,7 @@ private val confirmUserSelectionSQLConversionModuleSchemaButton = Button(
 private val confirmUserSelectionSQLConversionMetadataButton = Button(
     keepCardAfterClick = true,
     waitMandatoryFormItems = true,
-    text = message("codemodernizer.chat.message.button.select"),
+    text = message("codemodernizer.chat.message.button.select_sql_metadata"),
     id = CodeTransformButtonId.SelectSQLMetadata.id,
 )
 
@@ -229,7 +229,7 @@ private fun getUserHilSelectionMarkdown(dependencyName: String, currentVersion: 
 """.trimIndent()
 
 fun buildChooseTransformationObjectiveChatContent() = CodeTransformChatMessageContent(
-    message = "Choose your transformation objective",
+    message = message("codemodernizer.chat.message.choose_objective"),
     type = CodeTransformChatMessageType.FinalizedAnswer,
 )
 
@@ -334,12 +334,12 @@ fun buildModuleSchemaFormChatContent(project: Project, javaModules: List<Virtual
 
 fun buildModuleSchemaFormIntroChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
-    message = "I can convert your embedded SQL, but I need some more info from you first.",
+    message = message("codemodernizer.chat.message.sql_module_schema_prompt"),
 )
 
 fun buildSQLMetadataValidationSuccessIntroChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
-    message = "I detected the following in your .sct metadata file.",
+    message = message("codemodernizer.chat.message.sql_metadata_success"),
 )
 
 fun buildSQLMetadataValidationSuccessDetailsChatContent(validationResult: SqlMetadataValidationResult) = CodeTransformChatMessageContent(
