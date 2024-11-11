@@ -65,6 +65,11 @@
             "description": "Explict user intent associated with a chat message"
         },
         {
+            "name": "connectionState",
+            "type": "string",
+            "description": "A detailed state of a specific auth connection. Use `authStatus` for a higher level view of an extension's general connection."
+        },
+        {
             "name": "cwsprChatHasCodeSnippet",
             "type": "boolean",
             "description": "true if user has selected code snippet, false otherwise."
@@ -272,6 +277,11 @@
             "name": "authEnabledConnections",
             "type": "string",
             "description": "Comma-delimited list of enabled auths."
+        },
+        {
+            "name": "authRefreshSource",
+            "type": "string",
+            "description": "Source triggering token refresh"
         },
         {
             "name": "component",
@@ -699,20 +709,48 @@
             ]
         },
         {
-            "name": "auth_userState",
-            "description": "The state of the user's authentication.",
+            "name": "auth_modifyConnection",
+            "description": "An auth connection was modified in some way, e.g. deleted, updated",
             "metadata": [
+                {
+                    "type": "action",
+                    "required": true
+                },
+                {
+                    "type": "authScopes",
+                    "required": false
+                },
+                {
+                    "type": "authStatus",
+                    "required": false
+                },
+                {
+                    "type": "connectionState",
+                    "required": false
+                },
+                {
+                    "type": "credentialStartUrl",
+                    "required": false
+                },
+                {
+                    "type": "sessionDuration",
+                    "required": false
+                },
                 {
                     "type": "source",
                     "required": true
                 },
                 {
-                    "type": "authStatus",
-                    "required": true
+                    "type": "ssoRegistrationClientId",
+                    "required": false
                 },
                 {
-                    "type": "authEnabledConnections",
-                    "required": true
+                    "type": "ssoRegistrationExpiresAt",
+                    "required": false
+                },
+                {
+                    "type": "id",
+                    "required": false
                 }
             ],
             "passive": true
@@ -813,6 +851,17 @@
                     "required": true
                 }
             ]
+        },
+        {
+            "name": "auth_sourceOfRefresh",
+            "description": "Source of user triggered refresh",
+            "metadata": [
+                {
+                    "type": "authRefreshSource",
+                    "required": false
+                }
+            ]
         }
+
     ]
 }

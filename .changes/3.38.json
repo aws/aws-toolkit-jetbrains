@@ -1,0 +1,14 @@
+{
+  "date" : "2024-11-07",
+  "version" : "3.38",
+  "entries" : [ {
+    "type" : "bugfix",
+    "description" : "Improve the position that inline chat shortcut hint is shown in editor"
+  }, {
+    "type" : "bugfix",
+    "description" : "Improve `@workspace` index start stop strategy"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fixed an issue where Q inline won't appear in JetBrains remote 2024.2+"
+  } ]
+}

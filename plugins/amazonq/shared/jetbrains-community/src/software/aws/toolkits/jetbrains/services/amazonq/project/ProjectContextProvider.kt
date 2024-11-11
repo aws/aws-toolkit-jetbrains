@@ -21,13 +21,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.yield
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
+import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.AmazonqTelemetry
@@ -48,14 +48,15 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
                 return@launch
             }
 
+            // TODO: need better solution for this
+            @Suppress("LoopWithTooManyJumpStatements")
             while (true) {
                 if (encoderServer.isNodeProcessRunning()) {
-                    // TODO: need better solution for this
                     delay(10000)
                     initAndIndex()
                     break
                 } else {
-                    yield()
+                    delay(10000)
                 }
             }
         }
@@ -172,7 +173,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
-    suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> = withTimeout(50L) {
+    suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> = withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
         cs.async {
             val encrypted = encryptRequest(QueryInlineCompletionRequest(query, filePath))
             val r = sendMsgToLsp(LspMessage.QueryInlineCompletion, encrypted)
