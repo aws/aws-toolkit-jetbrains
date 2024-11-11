@@ -194,7 +194,7 @@ class SsoAccessTokenProvider(
 
     @Deprecated("Device authorization grant flow is deprecated")
     private fun registerDAGClient(): ClientRegistration {
-        loadDagClientRegistration()?.let {
+        loadDagClientRegistration(SourceOf)?.let {
             return it
         }
 
@@ -505,6 +505,11 @@ class SsoAccessTokenProvider(
         }
     }
 
+    enum class SourceOfLoadRegistration{
+        REGISTER_CLIENT,
+        REFRESH_TOKEN,
+    }
+
     private enum class RefreshCredentialStage {
         VALIDATE_REFRESH_TOKEN,
         LOAD_REGISTRATION,
@@ -514,13 +519,13 @@ class SsoAccessTokenProvider(
         SAVE_TOKEN,
     }
 
-    private fun loadDagClientRegistration(): ClientRegistration? =
-        cache.loadClientRegistration(dagClientRegistrationCacheKey)?.let {
+    private fun loadDagClientRegistration(source: String): ClientRegistration? =
+        cache.loadClientRegistration(dagClientRegistrationCacheKey, source)?.let {
             return it
         }
 
-    private fun loadPkceClientRegistration(): PKCEClientRegistration? =
-        cache.loadClientRegistration(pkceClientRegistrationCacheKey)?.let {
+    private fun loadPkceClientRegistration(source: String): PKCEClientRegistration? =
+        cache.loadClientRegistration(pkceClientRegistrationCacheKey, source)?.let {
             return it as PKCEClientRegistration
         }
 

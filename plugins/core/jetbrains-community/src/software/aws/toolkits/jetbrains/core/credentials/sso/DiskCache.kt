@@ -101,7 +101,7 @@ class DiskCache(
         clientRegistrationCache(ssoRegion).tryDeleteIfExists()
     }
 
-    override fun loadClientRegistration(cacheKey: ClientRegistrationCacheKey): ClientRegistration? {
+    override fun loadClientRegistration(cacheKey: ClientRegistrationCacheKey, source: String): ClientRegistration? {
         LOG.info { "loadClientRegistration for $cacheKey" }
         val inputStream = clientRegistrationCache(cacheKey).tryInputStreamIfExists()
         if (inputStream == null) {
