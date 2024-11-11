@@ -19,6 +19,7 @@ import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
@@ -35,6 +36,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.customization.Code
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
@@ -91,6 +93,33 @@ class CodeWhispererServiceTest {
 
         projectRule.project.replaceService(CodeWhispererClientAdaptor::class.java, clientFacade, disposableRule.disposable)
         projectRule.project.replaceService(AwsConnectionManager::class.java, mock(), disposableRule.disposable)
+    }
+
+    @Test
+    fun `getRequestContext should use correct fileContext and timeout to fetch supplementalContext`() = runTest {
+        val fileContextProvider = FileContextProvider.getInstance(projectRule.project)
+        val fileContextProviderSpy = spy(fileContextProvider)
+        projectRule.project.replaceService(FileContextProvider::class.java, fileContextProviderSpy, disposableRule.disposable)
+
+        val requestContext = sut.getRequestContext(
+            TriggerTypeInfo(CodewhispererTriggerType.AutoTrigger, CodeWhispererAutomatedTriggerType.Enter()),
+            editor = projectRule.fixture.editor,
+            project = projectRule.project,
+            file,
+            LatencyContext()
+        )
+
+        requestContext.awaitSupplementalContext()
+        val fileContextCaptor = argumentCaptor<FileContextInfo>()
+        verify(fileContextProviderSpy, times(1)).extractSupplementalFileContext(eq(file), fileContextCaptor.capture(), eq(100))
+        assertThat(fileContextCaptor.firstValue).isEqualTo(
+            FileContextInfo(
+                CaretContext(leftFileContext = "", rightFileContext = "public class Main {}", leftContextOnCurrentLine = ""),
+                "main.java",
+                CodeWhispererJava.INSTANCE,
+                "main.java"
+            )
+        )
     }
 
     @Test
