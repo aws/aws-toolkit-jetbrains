@@ -16,6 +16,7 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.SourceOfEntry
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getAuthScopes
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getAuthStatus
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionCount
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getEnabledConnections
@@ -238,10 +239,10 @@ fun reauthenticateWithQ(project: Project) {
 fun emitUserState(project: Project) {
     AuthTelemetry.userState(
         project,
-        source = getStartupState().toString(),
         authEnabledConnections = getEnabledConnections(project),
+        authScopes = getAuthScopes(project),
         authStatus = getAuthStatus(project),
-        passive = true
+        source = getStartupState().toString()
     )
 }
 
