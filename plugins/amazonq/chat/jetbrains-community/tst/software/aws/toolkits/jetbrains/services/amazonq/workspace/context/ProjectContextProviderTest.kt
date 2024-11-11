@@ -364,7 +364,7 @@ class ProjectContextProviderTest {
                         .withResponseBody(
                             Body(validQueryInlineResponse)
                         )
-                        .withFixedDelay(51) // 10 sec
+                        .withFixedDelay(101) // 100 ms
                 )
             )
 

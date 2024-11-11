@@ -172,7 +172,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
-    suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> = withTimeout(50L) {
+    suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> = withTimeout(100L) {
         cs.async {
             val encrypted = encryptRequest(QueryInlineCompletionRequest(query, filePath))
             val r = sendMsgToLsp(LspMessage.QueryInlineCompletion, encrypted)
