@@ -46,12 +46,14 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
@@ -75,7 +77,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhis
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeInsightsSettingsFacade
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.SUPPLEMENTAL_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCompletionType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.notifyErrorCodeWhispererUsageLimit
@@ -206,9 +207,12 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         invokeCodeWhispererInBackground(requestContext)
     }
 
-    internal fun invokeCodeWhispererInBackground(requestContext: RequestContext): Job {
-        val popup = CodeWhispererPopupManager.getInstance().initPopup()
-        Disposer.register(popup) { CodeWhispererInvocationStatus.getInstance().finishInvocation() }
+    internal suspend fun invokeCodeWhispererInBackground(requestContext: RequestContext): Job {
+        val popup = withContext(EDT) {
+            CodeWhispererPopupManager.getInstance().initPopup().also {
+                Disposer.register(it) { CodeWhispererInvocationStatus.getInstance().finishInvocation() }
+            }
+        }
 
         val workerContexts = mutableListOf<WorkerContext>()
         // When popup is disposed we will cancel this coroutine. The only places popup can get disposed should be
