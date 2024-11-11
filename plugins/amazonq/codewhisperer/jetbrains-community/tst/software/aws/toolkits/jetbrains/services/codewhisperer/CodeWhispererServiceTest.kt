@@ -112,12 +112,14 @@ class CodeWhispererServiceTest {
         requestContext.awaitSupplementalContext()
         val fileContextCaptor = argumentCaptor<FileContextInfo>()
         verify(fileContextProviderSpy, times(1)).extractSupplementalFileContext(eq(file), fileContextCaptor.capture(), eq(100))
-        assertThat(fileContextCaptor.firstValue).isEqualTo(FileContextInfo(
-            CaretContext(leftFileContext = "", rightFileContext = "public class Main {}", leftContextOnCurrentLine = ""),
-            "main.java",
-            CodeWhispererJava.INSTANCE,
-            "main.java"
-        ))
+        assertThat(fileContextCaptor.firstValue).isEqualTo(
+            FileContextInfo(
+                CaretContext(leftFileContext = "", rightFileContext = "public class Main {}", leftContextOnCurrentLine = ""),
+                "main.java",
+                CodeWhispererJava.INSTANCE,
+                "main.java"
+            )
+        )
     }
 
     @Test
