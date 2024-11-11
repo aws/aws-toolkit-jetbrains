@@ -18,18 +18,25 @@ buildscript {
     }
 }
 
+private val generatedSrcDir = project.layout.buildDirectory.dir("generated-src")
 sourceSets {
     main {
-        java.srcDir(project.layout.buildDirectory.dir("generated-src"))
+        java.srcDir(generatedSrcDir)
+    }
+}
+
+idea {
+    module {
+        generatedSourceDirs = generatedSourceDirs.toMutableSet() + generatedSrcDir.get().asFile
     }
 }
 
 val generateTelemetry = tasks.register<GenerateTelemetry>("generateTelemetry") {
-    inputFiles = listOf(file("${project.projectDir}/resources/telemetryOverride.json"))
-    outputDirectory = project.layout.buildDirectory.dir("generated-src").get().asFile
+    inputFiles.setFrom(file("${project.projectDir}/resources/telemetryOverride.json"))
+    outputDirectory.set(generatedSrcDir)
 
     doFirst {
-        outputDirectory.deleteRecursively()
+        outputDirectory.get().asFile.deleteRecursively()
     }
 }
 

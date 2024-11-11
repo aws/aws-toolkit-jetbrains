@@ -19,6 +19,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextCo
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindow
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
+import software.aws.toolkits.jetbrains.services.cwc.inline.InlineChatController
 import java.lang.management.ManagementFactory
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
@@ -31,6 +32,7 @@ class AmazonQStartupActivity : ProjectActivity {
 
         // initialize html contents in BGT so users don't have to wait when they open the tool window
         AmazonQToolWindow.getInstance(project)
+        InlineChatController.getInstance(project)
 
         if (CodeWhispererExplorerActionManager.getInstance().getIsFirstRestartAfterQInstall()) {
             runInEdt {
@@ -51,6 +53,7 @@ class AmazonQStartupActivity : ProjectActivity {
         // In the future we will decouple LSP start and indexing start to let LSP perform other tasks.
         val startLspIndexingDuration = Duration.ofMinutes(30)
         project.waitForSmartMode()
+        delay(30_000) // Wait for 30 seconds for systemLoadAverage to be more accurate
         try {
             withTimeout(startLspIndexingDuration) {
                 while (true) {

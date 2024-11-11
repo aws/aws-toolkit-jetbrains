@@ -15,6 +15,7 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManagerNew
@@ -73,7 +74,7 @@ data class SupplementalContextInfo(
         }
 
     val isProcessTimeout: Boolean
-        get() = latency > CodeWhispererConstants.SUPPLEMENTAL_CONTEXT_TIMEOUT
+        get() = latency > SUPPLEMENTAL_CONTEXT_TIMEOUT
 
     companion object {
         fun emptyCrossFileContextInfo(targetFileName: String): SupplementalContextInfo = SupplementalContextInfo(
@@ -155,7 +156,6 @@ data class SessionContextNew(
     var popup: JBPopup? = null,
     var selectedIndex: Int = -1,
     val seen: MutableSet<Int> = mutableSetOf(),
-    var isFirstTimeShowingPopup: Boolean = true,
     var toBeRemovedHighlighter: RangeHighlighter? = null,
     var insertEndOffset: Int = -1,
     var popupOffset: Int = -1,
@@ -278,6 +278,7 @@ data class LatencyContext(
     var codewhispererPreprocessingEnd: Long = 0L,
 
     var paginationFirstCompletionTime: Double = 0.0,
+    var perceivedLatency: Double = 0.0,
 
     var codewhispererPostprocessingStart: Long = 0L,
     var codewhispererPostprocessingEnd: Long = 0L,
@@ -316,10 +317,9 @@ data class LatencyContext(
         if (triggerType == CodewhispererTriggerType.OnDemand) {
             getCodeWhispererEndToEndLatency()
         } else {
-            (
-                TimeUnit.NANOSECONDS.toMillis(codewhispererEndToEndEnd) -
-                    CodeWhispererAutoTriggerService.getInstance().timeAtLastCharTyped.toEpochMilli()
-                ).toDouble()
+            TimeUnit.NANOSECONDS.toMillis(
+                codewhispererEndToEndEnd - CodeWhispererAutoTriggerService.getInstance().timeAtLastCharTyped
+            ).toDouble()
         }
 }
 

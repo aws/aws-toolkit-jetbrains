@@ -27,6 +27,7 @@ import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.Login
+import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
@@ -35,6 +36,7 @@ import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
+import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
@@ -196,7 +198,7 @@ abstract class LoginBrowser(
                 reason = e.message,
                 credentialSourceId = CredentialSourceId.AwsId,
                 isReAuth = isReauth,
-                authType = getAuthType()
+                authType = getAuthType(SONO_REGION)
             )
             AuthTelemetry.addConnection(
                 result = Result.Failed,
@@ -216,7 +218,7 @@ abstract class LoginBrowser(
                 result = Result.Succeeded,
                 credentialSourceId = CredentialSourceId.AwsId,
                 isReAuth = isReauth,
-                authType = getAuthType()
+                authType = getAuthType(SONO_REGION)
             )
             AuthTelemetry.addConnection(
                 result = Result.Succeeded,
@@ -380,7 +382,7 @@ abstract class LoginBrowser(
     protected fun reauth(connection: ToolkitConnection?) {
         if (connection is AwsBearerTokenConnection) {
             loginWithBackgroundContext {
-                reauthConnectionIfNeeded(project, connection, onPendingToken, isReAuth = true)
+                reauthConnectionIfNeeded(project, connection, onPendingToken, isReAuth = true, reauthSource = ReauthSource.LOGIN_BROWSER)
             }
             stopAndClearBrowserOpenTimer()
         }

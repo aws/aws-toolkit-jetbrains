@@ -22,9 +22,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import software.aws.toolkits.core.utils.createParentDirectories
-import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.deleteIfExists
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.inputStreamIfExists
 import software.aws.toolkits.core.utils.outputStream
 import software.aws.toolkits.core.utils.toHexString
@@ -32,6 +32,9 @@ import software.aws.toolkits.core.utils.touch
 import software.aws.toolkits.core.utils.tryDirOp
 import software.aws.toolkits.core.utils.tryFileOp
 import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.jetbrains.services.telemetry.scrubNames
+import software.aws.toolkits.telemetry.AuthTelemetry
+import software.aws.toolkits.telemetry.Result
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.file.Path
@@ -94,20 +97,30 @@ class DiskCache(
         }
 
     override fun invalidateClientRegistration(ssoRegion: String) {
-        LOG.debug { "invalidateClientRegistration for $ssoRegion" }
+        LOG.info { "invalidateClientRegistration for $ssoRegion" }
         clientRegistrationCache(ssoRegion).tryDeleteIfExists()
     }
 
     override fun loadClientRegistration(cacheKey: ClientRegistrationCacheKey): ClientRegistration? {
-        LOG.debug { "loadClientRegistration for $cacheKey" }
+        LOG.info { "loadClientRegistration for $cacheKey" }
         val inputStream = clientRegistrationCache(cacheKey).tryInputStreamIfExists()
-            ?: return null
-
+        if (inputStream == null) {
+            val stage = LoadCredentialStage.ACCESS_FILE
+            LOG.info { "Failed to load Client Registration: cache file does not exist" }
+            AuthTelemetry.modifyConnection(
+                action = "Load cache file",
+                source = "loadClientRegistration",
+                result = Result.Failed,
+                reason = "Failed to load Client Registration",
+                reasonDesc = "Load Step:$stage failed. Cache file does not exist"
+            )
+            return null
+        }
         return loadClientRegistration(inputStream)
     }
 
     override fun saveClientRegistration(cacheKey: ClientRegistrationCacheKey, registration: ClientRegistration) {
-        LOG.debug { "saveClientRegistration for $cacheKey" }
+        LOG.info { "saveClientRegistration for $cacheKey" }
         val registrationCache = clientRegistrationCache(cacheKey)
         writeKey(registrationCache) {
             objectMapper.writeValue(it, registration)
@@ -115,17 +128,39 @@ class DiskCache(
     }
 
     override fun invalidateClientRegistration(cacheKey: ClientRegistrationCacheKey) {
-        LOG.debug { "invalidateClientRegistration for $cacheKey" }
-        clientRegistrationCache(cacheKey).tryDeleteIfExists()
+        LOG.info { "invalidateClientRegistration for $cacheKey" }
+        try {
+            clientRegistrationCache(cacheKey).tryDeleteIfExists()
+        } catch (e: Exception) {
+            AuthTelemetry.modifyConnection(
+                action = "Delete cache file",
+                source = "invalidateClientRegistration",
+                result = Result.Failed,
+                reason = "Failed to invalidate Client Registration",
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name
+            )
+            throw e
+        }
     }
 
     override fun invalidateAccessToken(ssoUrl: String) {
-        LOG.debug { "invalidateAccessToken for $ssoUrl" }
-        accessTokenCache(ssoUrl).tryDeleteIfExists()
+        LOG.info { "invalidateAccessToken for $ssoUrl" }
+        try {
+            accessTokenCache(ssoUrl).tryDeleteIfExists()
+        } catch (e: Exception) {
+            AuthTelemetry.modifyConnection(
+                action = "Delete cache file",
+                source = "invalidateAccessToken",
+                result = Result.Failed,
+                reason = "Failed to invalidate Access Token",
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name
+            )
+            throw e
+        }
     }
 
     override fun loadAccessToken(cacheKey: AccessTokenCacheKey): AccessToken? {
-        LOG.debug { "loadAccessToken for $cacheKey" }
+        LOG.info { "loadAccessToken for $cacheKey" }
         val cacheFile = accessTokenCache(cacheKey)
         val inputStream = cacheFile.tryInputStreamIfExists() ?: return null
 
@@ -135,7 +170,7 @@ class DiskCache(
     }
 
     override fun saveAccessToken(cacheKey: AccessTokenCacheKey, accessToken: AccessToken) {
-        LOG.debug { "saveAccessToken for $cacheKey" }
+        LOG.info { "saveAccessToken for $cacheKey" }
         val accessTokenCache = accessTokenCache(cacheKey)
         writeKey(accessTokenCache) {
             objectMapper.writeValue(it, accessToken)
@@ -143,8 +178,19 @@ class DiskCache(
     }
 
     override fun invalidateAccessToken(cacheKey: AccessTokenCacheKey) {
-        LOG.debug { "invalidateAccessToken for $cacheKey" }
-        accessTokenCache(cacheKey).tryDeleteIfExists()
+        LOG.info { "invalidateAccessToken for $cacheKey" }
+        try {
+            accessTokenCache(cacheKey).tryDeleteIfExists()
+        } catch (e: Exception) {
+            AuthTelemetry.modifyConnection(
+                action = "Delete cache file",
+                source = "invalidateAccessToken",
+                result = Result.Failed,
+                reason = "Failed to invalidate Access Token",
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name
+            )
+            throw e
+        }
     }
 
     private fun clientRegistrationCache(ssoRegion: String): Path = cacheDir.resolve("aws-toolkit-jetbrains-client-id-$ssoRegion.json")
@@ -157,7 +203,7 @@ class DiskCache(
             val sha = sha1(cacheNameMapper.writeValueAsString(it))
 
             cacheDir.resolve("$sha.json").also {
-                LOG.debug { "$cacheKey resolves to $it" }
+                LOG.info { "$cacheKey resolves to $it" }
             }
         }
 
@@ -171,15 +217,36 @@ class DiskCache(
         return cacheDir.resolve(fileName)
     }
 
-    private fun loadClientRegistration(inputStream: InputStream) =
-        tryOrNull {
+    private fun loadClientRegistration(inputStream: InputStream): ClientRegistration? {
+        var stage = LoadCredentialStage.VALIDATE_CREDENTIALS
+        try {
             val clientRegistration = objectMapper.readValue<ClientRegistration>(inputStream)
+            stage = LoadCredentialStage.CHECK_EXPIRATION
             if (clientRegistration.expiresAt.isNotExpired()) {
-                clientRegistration
+                return clientRegistration
             } else {
-                null
+                LOG.info { "Client Registration is expired" }
+                AuthTelemetry.modifyConnection(
+                    action = "Validate Credentials",
+                    source = "loadClientRegistration",
+                    result = Result.Failed,
+                    reason = "Failed to load Client Registration",
+                    reasonDesc = "Load Step:$stage failed: Client Registration is expired"
+                )
+                return null
             }
+        } catch (e: Exception) {
+            LOG.info { "Client Registration could not be read" }
+            AuthTelemetry.modifyConnection(
+                action = "Validate Credentials",
+                source = "loadClientRegistration",
+                result = Result.Failed,
+                reason = "Failed to load Client Registration",
+                reasonDesc = "Load Step:$stage failed: File could not be read"
+            )
+            return null
         }
+    }
 
     private fun loadAccessToken(inputStream: InputStream) = tryOrNull {
         val accessToken = objectMapper.readValue<AccessToken>(inputStream)
@@ -202,12 +269,23 @@ class DiskCache(
     }
 
     private fun writeKey(path: Path, consumer: (OutputStream) -> Unit) {
-        LOG.debug { "writing to $path" }
-        path.tryDirOp(LOG) { createParentDirectories() }
+        LOG.info { "writing to $path" }
+        try {
+            path.tryDirOp(LOG) { createParentDirectories() }
 
-        path.tryFileOp(LOG) {
-            touch(restrictToOwner = true)
-            outputStream().use(consumer)
+            path.tryFileOp(LOG) {
+                touch(restrictToOwner = true)
+                outputStream().use(consumer)
+            }
+        } catch (e: Exception) {
+            AuthTelemetry.modifyConnection(
+                action = "Write file",
+                source = "writeKey",
+                result = Result.Failed,
+                reason = "Failed to write to cache",
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name
+            )
+            throw e
         }
     }
 
@@ -229,6 +307,12 @@ class DiskCache(
 
             return ISO_INSTANT.parse(sanitized) { Instant.from(it) }
         }
+    }
+
+    private enum class LoadCredentialStage {
+        ACCESS_FILE,
+        VALIDATE_CREDENTIALS,
+        CHECK_EXPIRATION,
     }
 
     companion object {
