@@ -15,6 +15,7 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManagerNew
@@ -73,7 +74,7 @@ data class SupplementalContextInfo(
         }
 
     val isProcessTimeout: Boolean
-        get() = latency > CodeWhispererConstants.SUPPLEMENTAL_CONTEXT_TIMEOUT
+        get() = latency > SUPPLEMENTAL_CONTEXT_TIMEOUT
 
     companion object {
         fun emptyCrossFileContextInfo(targetFileName: String): SupplementalContextInfo = SupplementalContextInfo(
