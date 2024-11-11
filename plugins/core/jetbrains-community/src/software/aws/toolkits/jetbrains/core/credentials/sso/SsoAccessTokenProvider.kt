@@ -505,7 +505,7 @@ class SsoAccessTokenProvider(
         }
     }
 
-    enum class SourceOfLoadRegistration{
+    enum class SourceOfLoadRegistration {
         REGISTER_CLIENT,
         REFRESH_TOKEN,
     }
