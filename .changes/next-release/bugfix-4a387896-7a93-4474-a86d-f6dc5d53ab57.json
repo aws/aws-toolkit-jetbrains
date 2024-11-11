@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix inline chat can be invoked in non-editor windows"
+}
