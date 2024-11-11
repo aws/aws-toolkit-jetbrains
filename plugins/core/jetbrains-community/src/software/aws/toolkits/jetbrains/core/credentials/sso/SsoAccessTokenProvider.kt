@@ -194,7 +194,7 @@ class SsoAccessTokenProvider(
 
     @Deprecated("Device authorization grant flow is deprecated")
     private fun registerDAGClient(): ClientRegistration {
-        loadDagClientRegistration(SourceOf)?.let {
+        loadDagClientRegistration(SourceOfLoadRegistration.REGISTER_CLIENT.toString())?.let {
             return it
         }
 
@@ -235,7 +235,7 @@ class SsoAccessTokenProvider(
     }
 
     private fun registerPkceClient(): PKCEClientRegistration {
-        loadPkceClientRegistration()?.let {
+        loadPkceClientRegistration(SourceOfLoadRegistration.REGISTER_CLIENT.toString())?.let {
             return it
         }
 
@@ -431,8 +431,8 @@ class SsoAccessTokenProvider(
         stageName = RefreshCredentialStage.LOAD_REGISTRATION
         val registration = try {
             when (currentToken) {
-                is DeviceAuthorizationGrantToken -> loadDagClientRegistration()
-                is PKCEAuthorizationGrantToken -> loadPkceClientRegistration()
+                is DeviceAuthorizationGrantToken -> loadDagClientRegistration(SourceOfLoadRegistration.REFRESH_TOKEN.toString())
+                is PKCEAuthorizationGrantToken -> loadPkceClientRegistration(SourceOfLoadRegistration.REFRESH_TOKEN.toString())
             }
         } catch (e: Exception) {
             val message = e.message ?: "$stageName: ${e::class.java.name}"

@@ -102,14 +102,14 @@ class DiskCache(
     }
 
     override fun loadClientRegistration(cacheKey: ClientRegistrationCacheKey, source: String): ClientRegistration? {
-        LOG.info { "loadClientRegistration for $cacheKey" }
+        LOG.info { "loadClientRegistration:$source for $cacheKey" }
         val inputStream = clientRegistrationCache(cacheKey).tryInputStreamIfExists()
         if (inputStream == null) {
             val stage = LoadCredentialStage.ACCESS_FILE
             LOG.info { "Failed to load Client Registration: cache file does not exist" }
             AuthTelemetry.modifyConnection(
                 action = "Load cache file",
-                source = "loadClientRegistration",
+                source = "loadClientRegistration:$source",
                 result = Result.Failed,
                 reason = "Failed to load Client Registration",
                 reasonDesc = "Load Step:$stage failed. Cache file does not exist"
