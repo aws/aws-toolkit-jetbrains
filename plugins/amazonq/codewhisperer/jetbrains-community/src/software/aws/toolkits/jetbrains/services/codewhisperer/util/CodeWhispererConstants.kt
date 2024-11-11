@@ -30,7 +30,6 @@ object CodeWhispererConstants {
     const val POPUP_DELAY: Long = 250
     const val POPUP_DELAY_CHECK_INTERVAL: Long = 25
     const val IDLE_TIME_CHECK_INTERVAL: Long = 25
-    const val SUPPLEMENTAL_CONTEXT_TIMEOUT = 100L
     const val SUPPLEMETAL_CONTEXT_BUFFER = 10L
 
     val AWSTemplateKeyWordsRegex = Regex("(AWSTemplateFormatVersion|Resources|AWS::|Description)")

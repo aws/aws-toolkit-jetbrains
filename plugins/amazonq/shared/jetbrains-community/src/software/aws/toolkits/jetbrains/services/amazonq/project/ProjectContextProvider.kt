@@ -27,6 +27,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
+import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.AmazonqTelemetry
@@ -172,7 +173,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
-    suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> = withTimeout(100L) {
+    suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> = withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
         cs.async {
             val encrypted = encryptRequest(QueryInlineCompletionRequest(query, filePath))
             val r = sendMsgToLsp(LspMessage.QueryInlineCompletion, encrypted)
