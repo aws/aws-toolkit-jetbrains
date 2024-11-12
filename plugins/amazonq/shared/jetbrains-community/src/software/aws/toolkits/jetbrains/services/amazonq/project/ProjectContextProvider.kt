@@ -36,6 +36,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.minutes
 
 class ProjectContextProvider(val project: Project, private val encoderServer: EncoderServer, private val cs: CoroutineScope) : Disposable {
     private val retryCount = AtomicInteger(0)
@@ -216,9 +217,9 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         )
     }
 
-    private fun setConnectionTimeout(connection: HttpURLConnection) {
-        connection.connectTimeout = 5000 // 5 seconds
-        connection.readTimeout = 5000 // 5 second
+    private fun setConnectionTimeout(connection: HttpURLConnection, timeout: Int) {
+        connection.connectTimeout = timeout
+        connection.readTimeout = timeout
     }
 
     private fun setConnectionProperties(connection: HttpURLConnection) {
@@ -309,10 +310,11 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     private fun sendMsgToLsp(msgType: LspMessage, request: String?): LspResponse {
         logger.info { "sending message: ${msgType.endpoint} to lsp on port ${encoderServer.port}" }
         val url = URL("http://localhost:${encoderServer.port}/${msgType.endpoint}")
-
+        // use 1h as timeout for index, 5 seconds for other APIs
+        val timeoutMs = if (msgType is LspMessage.Index) 60.minutes.inWholeMilliseconds.toInt() else 5000
         return with(url.openConnection() as HttpURLConnection) {
             setConnectionProperties(this)
-            setConnectionTimeout(this)
+            setConnectionTimeout(this, timeoutMs)
             request?.let { r ->
                 setConnectionRequest(this, r)
             }
