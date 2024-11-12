@@ -110,7 +110,7 @@ class DiskCache(
         clientRegistrationCache(ssoRegion).tryDeleteIfExists()
     }
 
-    override fun loadClientRegistration(cacheKey: ClientRegistrationCacheKey): ClientRegistration? {
+    override fun loadClientRegistration(cacheKey: ClientRegistrationCacheKey, source: String): ClientRegistration? {
         LOG.info { "loadClientRegistration for $cacheKey" }
         val cacheFile = clientRegistrationCache(cacheKey)
         val diskData = cacheFile.tryInputStreamIfExists()?.use { it.readBytes() }
@@ -144,7 +144,7 @@ class DiskCache(
                 val stage = LoadCredentialStage.ACCESS_FILE
                 AuthTelemetry.modifyConnection(
                     action = "Load cache file",
-                    source = "loadClientRegistration",
+                    source = "loadClientRegistration:$source",
                     result = Result.Failed,
                     reason = "Failed to load Client Registration",
                     reasonDesc = "Load Step:$stage failed. Cache file does not exist"
