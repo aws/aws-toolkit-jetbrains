@@ -1952,7 +1952,7 @@
         },
         "SuggestionState": {
             "type": "string",
-            "enum": ["ACCEPT", "REJECT", "DISCARD", "EMPTY"]
+            "enum": ["ACCEPT", "REJECT", "DISCARD", "EMPTY", "MERGE"]
         },
         "SupplementalContext": {
             "type": "structure",

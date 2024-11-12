@@ -34,58 +34,14 @@ class CodeWhispererTypeaheadTest : CodeWhispererTestBase() {
         testTypingTypeaheadMatchingRecommendationShouldMatchRightContext(testRightContext)
     }
 
-    @Test
-    fun `test typing blank typeahead should correctly update typeahead state`() {
-        val testTypeaheadOriginal = "     "
-        testTypingTypeaheadWithLeadingSpaceShouldMatchTypeaheadStateCorrectly(testTypeaheadOriginal, 5, 1)
-    }
-
-    @Test
-    fun `test typing typeahead with leading spaces and matching suffix should correctly update typeahead state`() {
-        val testTypeaheadOriginal = "   test"
-        testTypingTypeaheadWithLeadingSpaceShouldMatchTypeaheadStateCorrectly(testTypeaheadOriginal, 3, 3)
-    }
-
-    private fun testTypingTypeaheadWithLeadingSpaceShouldMatchTypeaheadStateCorrectly(
-        expectedTypeaheadOriginal: String,
-        expectedNumOfValidRecommendation: Int,
-        expectedSelectedAfterBackspace: Int,
-    ) {
-        withCodeWhispererServiceInvokedAndWait { states ->
-            val editor = projectRule.fixture.editor
-            val startOffset = editor.caretModel.offset
-            expectedTypeaheadOriginal.forEach { char ->
-                projectRule.fixture.type(char)
-                val caretOffset = editor.caretModel.offset
-                val actualTypeaheadOriginal = editor.document.charsSequence.subSequence(startOffset, caretOffset).toString()
-                val actualTypeahead = actualTypeaheadOriginal.trimStart()
-                assertThat(popupManagerSpy.sessionContext.typeaheadOriginal).isEqualTo(actualTypeaheadOriginal)
-                assertThat(popupManagerSpy.sessionContext.typeahead).isEqualTo(actualTypeahead)
-                assertThat(states.popup.isDisposed).isFalse
-            }
-            checkRecommendationInfoLabelText(1, expectedNumOfValidRecommendation)
-
-            // Backspacing for the same amount of times
-            expectedTypeaheadOriginal.forEach { _ ->
-                projectRule.fixture.type('\b')
-                val caretOffset = editor.caretModel.offset
-                val actualTypeaheadOriginal = editor.document.charsSequence.subSequence(startOffset, caretOffset).toString()
-                val actualTypeahead = actualTypeaheadOriginal.trimStart()
-                assertThat(popupManagerSpy.sessionContext.typeaheadOriginal).isEqualTo(actualTypeaheadOriginal)
-                assertThat(popupManagerSpy.sessionContext.typeahead).isEqualTo(actualTypeahead)
-                assertThat(states.popup.isDisposed).isFalse
-            }
-            checkRecommendationInfoLabelText(expectedSelectedAfterBackspace, 5)
-        }
-    }
-
     private fun testTypingTypeaheadMatchingRecommendationShouldMatchRightContext(rightContext: String) {
         projectRule.fixture.configureByText(pythonFileName, pythonTestLeftContext + rightContext)
         runInEdtAndWait {
             projectRule.fixture.editor.caretModel.moveToOffset(pythonTestLeftContext.length)
         }
-        withCodeWhispererServiceInvokedAndWait { states ->
-            val recommendation = states.recommendationContext.details[0].reformatted.content()
+        withCodeWhispererServiceInvokedAndWait { session ->
+            var preview = codewhispererService.getAllSuggestionsPreviewInfo()[0]
+            val recommendation = preview.detail.reformatted.content()
             val editor = projectRule.fixture.editor
             val startOffset = editor.caretModel.offset
             recommendation.forEachIndexed { index, char ->
@@ -93,7 +49,8 @@ class CodeWhispererTypeaheadTest : CodeWhispererTestBase() {
                 projectRule.fixture.type(char)
                 val caretOffset = editor.caretModel.offset
                 val typeahead = editor.document.charsSequence.subSequence(startOffset, caretOffset).toString()
-                assertThat(popupManagerSpy.sessionContext.typeahead).isEqualTo(typeahead)
+                preview = codewhispererService.getAllSuggestionsPreviewInfo()[0]
+                assertThat(preview.typeahead).isEqualTo(typeahead)
             }
         }
     }
