@@ -3,9 +3,9 @@ name: Qodana
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ main, feature/** ]
   pull_request:
-    branches: [ main, feature/* ]
+    branches: [ '**' ]
 
 concurrency:
   group: ${{ github.workflow }}${{ github.event.pull_request.number || github.ref }}
