@@ -1,3 +1,6 @@
+# _3.39_ (2024-11-12)
+- **(Bug Fix)** Fix poor inline suggestions from Amazon Q caused by improperly formatted supplemental context
+
 # _3.38_ (2024-11-07)
 - **(Bug Fix)** Improve the position that inline chat shortcut hint is shown in editor
 - **(Bug Fix)** Improve `@workspace` index start stop strategy
