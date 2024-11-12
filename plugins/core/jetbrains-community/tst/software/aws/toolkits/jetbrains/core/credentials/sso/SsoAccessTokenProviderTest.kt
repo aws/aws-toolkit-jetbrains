@@ -124,7 +124,7 @@ class SsoAccessTokenProviderTest {
         verify(ssoOidcClient).startDeviceAuthorization(any<StartDeviceAuthorizationRequest>())
         verify(ssoOidcClient).createToken(any<CreateTokenRequest>())
         verify(ssoCache).loadAccessToken(argThat<DeviceGrantAccessTokenCacheKey> { startUrl == ssoUrl })
-        verify(ssoCache).loadClientRegistration(argThat { region == ssoRegion })
+        verify(ssoCache).loadClientRegistration(argThat { region == ssoRegion }, any<String>())
         verify(ssoCache).saveAccessToken(argThat<DeviceGrantAccessTokenCacheKey> { startUrl == ssoUrl }, eq(accessToken))
     }
 
@@ -170,7 +170,7 @@ class SsoAccessTokenProviderTest {
         verify(ssoOidcClient).startDeviceAuthorization(any<StartDeviceAuthorizationRequest>())
         verify(ssoOidcClient).createToken(any<CreateTokenRequest>())
         verify(ssoCache).loadAccessToken(argThat<DeviceGrantAccessTokenCacheKey> { startUrl == ssoUrl })
-        verify(ssoCache).loadClientRegistration(argThat<DeviceAuthorizationClientRegistrationCacheKey> { region == ssoRegion })
+        verify(ssoCache).loadClientRegistration(argThat<DeviceAuthorizationClientRegistrationCacheKey> { region == ssoRegion }, any<String>())
         verify(ssoCache).saveClientRegistration(argThat<DeviceAuthorizationClientRegistrationCacheKey> { region == ssoRegion }, any())
         verify(ssoCache).saveAccessToken(argThat<DeviceGrantAccessTokenCacheKey> { startUrl == ssoUrl }, eq(accessToken))
     }
@@ -267,7 +267,7 @@ class SsoAccessTokenProviderTest {
         verify(ssoOidcClient).startDeviceAuthorization(any<StartDeviceAuthorizationRequest>())
         verify(ssoOidcClient, times(2)).createToken(any<CreateTokenRequest>())
         verify(ssoCache).loadAccessToken(argThat<DeviceGrantAccessTokenCacheKey> { startUrl == ssoUrl })
-        verify(ssoCache).loadClientRegistration(argThat<DeviceAuthorizationClientRegistrationCacheKey> { region == ssoRegion })
+        verify(ssoCache).loadClientRegistration(argThat<DeviceAuthorizationClientRegistrationCacheKey> { region == ssoRegion }, any<String>())
         verify(ssoCache).saveAccessToken(argThat<DeviceGrantAccessTokenCacheKey> { startUrl == ssoUrl }, eq(accessToken))
     }
 
@@ -296,7 +296,7 @@ class SsoAccessTokenProviderTest {
         val refreshedToken = runBlocking { sut.refreshToken(sut.accessToken()) }
 
         verify(ssoCache).loadAccessToken(argThat<DeviceGrantAccessTokenCacheKey> { startUrl == ssoUrl })
-        verify(ssoCache).loadClientRegistration(argThat { region == ssoRegion })
+        verify(ssoCache).loadClientRegistration(argThat { region == ssoRegion }, any<String>())
         verify(ssoOidcClient).createToken(any<CreateTokenRequest>())
         verify(ssoCache).saveAccessToken(argThat<DeviceGrantAccessTokenCacheKey> { startUrl == ssoUrl }, eq(refreshedToken))
     }
@@ -342,7 +342,7 @@ class SsoAccessTokenProviderTest {
             )
 
             on(
-                ssoCache.loadClientRegistration(any<PKCEClientRegistrationCacheKey>())
+                ssoCache.loadClientRegistration(any<PKCEClientRegistrationCacheKey>(), any<String>())
             ).thenReturn(
                 PKCEClientRegistration(
                     clientType = "public",
@@ -369,7 +369,7 @@ class SsoAccessTokenProviderTest {
         val refreshedToken = runBlocking { sut.refreshToken(sut.accessToken()) }
 
         verify(ssoCache).loadAccessToken(any<PKCEAccessTokenCacheKey>())
-        verify(ssoCache).loadClientRegistration(any<PKCEClientRegistrationCacheKey>())
+        verify(ssoCache).loadClientRegistration(any<PKCEClientRegistrationCacheKey>(), any<String>())
         verify(ssoOidcClient).createToken(any<CreateTokenRequest>())
         verify(ssoCache).saveAccessToken(any<PKCEAccessTokenCacheKey>(), eq(refreshedToken))
     }
@@ -390,7 +390,7 @@ class SsoAccessTokenProviderTest {
         verify(ssoOidcClient).startDeviceAuthorization(any<StartDeviceAuthorizationRequest>())
         verify(ssoOidcClient).createToken(any<CreateTokenRequest>())
         verify(ssoCache).loadAccessToken(argThat<DeviceGrantAccessTokenCacheKey> { startUrl == ssoUrl })
-        verify(ssoCache).loadClientRegistration(argThat<DeviceAuthorizationClientRegistrationCacheKey> { region == ssoRegion })
+        verify(ssoCache).loadClientRegistration(argThat<DeviceAuthorizationClientRegistrationCacheKey> { region == ssoRegion }, any<String>())
     }
 
     @Test
@@ -432,7 +432,7 @@ class SsoAccessTokenProviderTest {
         verify(ssoOidcClient).startDeviceAuthorization(any<StartDeviceAuthorizationRequest>())
         verify(ssoOidcClient, times(2)).createToken(any<CreateTokenRequest>())
         verify(ssoCache).loadAccessToken(argThat<DeviceGrantAccessTokenCacheKey> { startUrl == ssoUrl })
-        verify(ssoCache).loadClientRegistration(argThat<DeviceAuthorizationClientRegistrationCacheKey> { region == ssoRegion })
+        verify(ssoCache).loadClientRegistration(argThat<DeviceAuthorizationClientRegistrationCacheKey> { region == ssoRegion }, any<String>())
         verify(ssoCache).saveAccessToken(argThat<DeviceGrantAccessTokenCacheKey> { startUrl == ssoUrl }, eq(accessToken))
     }
 
@@ -452,7 +452,7 @@ class SsoAccessTokenProviderTest {
 
         verify(ssoOidcClient).registerClient(any<RegisterClientRequest>())
         verify(ssoCache).loadAccessToken(any())
-        verify(ssoCache).loadClientRegistration(argThat { region == ssoRegion })
+        verify(ssoCache).loadClientRegistration(argThat { region == ssoRegion }, any<String>())
     }
 
     @Test
@@ -492,7 +492,7 @@ class SsoAccessTokenProviderTest {
             )
 
             on(
-                ssoCache.loadClientRegistration(argThat { region == ssoRegion })
+                ssoCache.loadClientRegistration(argThat { region == ssoRegion }, any<String>())
             ).thenReturn(
                 returnValue
             )
