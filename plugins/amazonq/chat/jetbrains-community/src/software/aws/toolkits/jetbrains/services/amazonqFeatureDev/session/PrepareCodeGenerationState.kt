@@ -13,6 +13,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.Cancellat
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.deleteUploadArtifact
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.uploadArtifactToS3
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.AmazonqUploadIntent
@@ -47,7 +48,8 @@ class PrepareCodeGenerationState(
             messenger.sendAnswerPart(tabId = this.tabID, message = message("amazonqFeatureDev.chat_message.uploading_code"))
             messenger.sendUpdatePlaceholder(tabId = this.tabID, newPlaceholder = message("amazonqFeatureDev.chat_message.uploading_code"))
 
-            val repoZipResult = config.repoContext.getProjectZip()
+            val isAutoBuildFeatureEnabled = CodeWhispererSettings.getInstance().isAutoBuildFeatureEnabled(this.config.repoContext.getWorkspaceRoot())
+            val repoZipResult = config.repoContext.getProjectZip(isAutoBuildFeatureEnabled = isAutoBuildFeatureEnabled)
             val zipFileChecksum = repoZipResult.checksum
             zipFileLength = repoZipResult.contentLength
             val fileToUpload = repoZipResult.payload

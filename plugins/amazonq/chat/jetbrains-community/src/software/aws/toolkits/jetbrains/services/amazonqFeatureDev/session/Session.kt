@@ -52,9 +52,9 @@ class Session(val tabID: String, val project: Project) {
     /**
      * Preload any events that have to run before a chat message can be sent
      */
-    suspend fun preloader(msg: String, messenger: MessagePublisher) {
+    suspend fun preloader(messenger: MessagePublisher) {
         if (!preloaderFinished) {
-            setupConversation(msg, messenger)
+            setupConversation(messenger)
             preloaderFinished = true
             messenger.sendAsyncEventProgress(tabId = this.tabID, inProgress = true)
             featureDevService.sendFeatureDevEvent(this.conversationId)
@@ -64,10 +64,7 @@ class Session(val tabID: String, val project: Project) {
     /**
      * Starts a conversation with the backend and uploads the repo for the LLMs to be able to use it.
      */
-    private fun setupConversation(msg: String, messenger: MessagePublisher) {
-        // Store the initial message when setting up the conversation so that if it fails we can retry with this message
-        _latestMessage = msg
-
+    private fun setupConversation(messenger: MessagePublisher) {
         _conversationId = featureDevService.createConversation()
         logger<Session>().info(conversationIDLog(this.conversationId))
 
@@ -159,8 +156,11 @@ class Session(val tabID: String, val project: Project) {
             }
         }
 
-    val latestMessage: String
+    var latestMessage: String
         get() = this._latestMessage
+        set(value) {
+            this._latestMessage = value
+        }
 
     val retries: Int
         get() = codegenRetries

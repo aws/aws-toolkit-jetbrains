@@ -113,6 +113,29 @@ class CodeWhispererConfigurable(private val project: Project) :
             }
         }
 
+        group("Amazon Q: Allow Q /dev to run code and test commands") {
+            row {
+                val settings = codeWhispererSettings.getAutoBuildFeatureConfiguration()
+                for ((key) in settings) {
+                    checkBox(key).apply {
+                        connect.subscribe(
+                            ToolkitConnectionManagerListener.TOPIC,
+                            object : ToolkitConnectionManagerListener {
+                                override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+                                    enabled(isCodeWhispererEnabled(project))
+                                }
+                            }
+                        )
+
+                        bindSelected(
+                            getter = { codeWhispererSettings.isAutoBuildFeatureEnabled(key) },
+                            setter = { newValue -> codeWhispererSettings.toggleAutoBuildFeature(key, newValue) }
+                        )
+                    }
+                }
+            }
+        }
+
         group(message("aws.settings.codewhisperer.group.q_chat")) {
             row {
                 checkBox(message("aws.settings.codewhisperer.project_context")).apply {

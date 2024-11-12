@@ -57,7 +57,7 @@ class SessionTest : FeatureDevTestBase() {
     fun `test preloader`() = runTest {
         whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
 
-        session.preloader(userMessage, messenger)
+        session.preloader(messenger)
         assertThat(session.conversationId).isEqualTo(testConversationId)
         assertThat(session.sessionState).isInstanceOf(PrepareCodeGenerationState::class.java)
         verify(featureDevClient, times(1)).createTaskAssistConversation()

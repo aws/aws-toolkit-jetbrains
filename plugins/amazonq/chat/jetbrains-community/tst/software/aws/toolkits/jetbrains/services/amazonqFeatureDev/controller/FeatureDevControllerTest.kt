@@ -159,7 +159,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         every { AmazonqTelemetry.endChat(amazonqConversationId = any(), amazonqEndOfTheConversationLatency = any()) } just runs
 
         runTest {
-            spySession.preloader(userMessage, messenger)
+            spySession.preloader(messenger)
             controller.processFollowupClickedMessage(message)
         }
 
@@ -188,7 +188,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             mockkObject(AmazonqTelemetry)
             every { AmazonqTelemetry.isProvideFeedbackForCodeGen(amazonqConversationId = any(), enabled = any()) } just runs
 
-            spySession.preloader(userMessage, messenger)
+            spySession.preloader(messenger)
             controller.processFollowupClickedMessage(message)
 
             coVerifyOrder {
@@ -240,7 +240,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
 
             doNothing().`when`(spySession).insertChanges(any(), any(), any())
 
-            spySession.preloader(userMessage, messenger)
+            spySession.preloader(messenger)
             controller.processFollowupClickedMessage(message)
 
             mockitoVerify(
@@ -265,6 +265,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     listOf(
                         FollowUp(FollowUpTypes.NEW_TASK, message("amazonqFeatureDev.follow_up.new_task"), status = FollowUpStatusType.Info),
                         FollowUp(FollowUpTypes.CLOSE_SESSION, message("amazonqFeatureDev.follow_up.close_session"), status = FollowUpStatusType.Info),
+                        FollowUp(FollowUpTypes.GENERATE_DEV_FILE, message("amazonqFeatureDev.follow_up.generate_dev_file"), status = FollowUpStatusType.Info)
                     ),
                 )
                 messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.additional_improvements"))
@@ -447,7 +448,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FileUtilsKt")
             every { selectFolder(any(), any()) } returns null
 
-            spySession.preloader(userMessage, messenger)
+            spySession.preloader(messenger)
             controller.processFollowupClickedMessage(message)
 
             coVerifyOrder {
@@ -478,7 +479,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FileUtilsKt")
             every { selectFolder(any(), any()) } returns LightVirtualFile("/path")
 
-            spySession.preloader(userMessage, messenger)
+            spySession.preloader(messenger)
             controller.processFollowupClickedMessage(message)
 
             coVerifyOrder {
@@ -515,7 +516,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FileUtilsKt")
             every { selectFolder(any(), any()) } returns folder
 
-            spySession.preloader(userMessage, messenger)
+            spySession.preloader(messenger)
             controller.processFollowupClickedMessage(message)
 
             coVerify {
