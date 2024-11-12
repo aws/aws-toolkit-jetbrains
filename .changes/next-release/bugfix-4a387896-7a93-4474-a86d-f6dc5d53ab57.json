@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix issue where Amazon Q inline chat can be invoked from non-editor windows"
+}
