@@ -216,7 +216,7 @@ class ProjectContextProviderTest {
     @Test
     fun `query should send correct encrypted request to lsp`() = runTest {
         sut = ProjectContextProvider(project, encoderServer, this)
-        val r = sut.query("foo")
+        val r = sut.query("foo", null)
         advanceUntilIdle()
 
         val request = QueryChatRequest("foo")
@@ -271,14 +271,14 @@ class ProjectContextProviderTest {
         )
 
         assertThrows<Exception> {
-            sut.query("foo")
+            sut.query("foo", null)
         }
     }
 
     @Test
     fun `query chat should return deserialized relevantDocument`() = runTest {
         sut = ProjectContextProvider(project, encoderServer, this)
-        val r = sut.query("foo")
+        val r = sut.query("foo", null)
         advanceUntilIdle()
         assertThat(r).hasSize(2)
         assertThat(r[0]).isEqualTo(
@@ -397,7 +397,7 @@ class ProjectContextProviderTest {
             )
 
             withContext(getCoroutineBgContext()) {
-                sut.query("foo")
+                sut.query("foo", timeout = 500L)
             }
 
             advanceUntilIdle()
@@ -418,7 +418,7 @@ class ProjectContextProviderTest {
     @Test
     fun `test query payload is encrypted`() = runTest {
         sut = ProjectContextProvider(project, encoderServer, this)
-        sut.query("what does this project do")
+        sut.query("what does this project do", null)
         advanceUntilIdle()
         verify(encoderServer, times(1)).encrypt(any())
     }
