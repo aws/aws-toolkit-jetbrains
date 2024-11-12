@@ -36,7 +36,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
-import software.aws.toolkits.jetbrains.services.amazonq.CHAT_INPLICIT_PROJECT_CONTEXT_TIMEOUT
+import software.aws.toolkits.jetbrains.services.amazonq.CHAT_IMPLICIT_PROJECT_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
@@ -146,7 +146,7 @@ class ChatController private constructor(
             }
         } else if (CodeWhispererSettings.getInstance().isProjectContextEnabled() && isDataCollectionGroup) {
             val projectContextController = ProjectContextController.getInstance(context.project)
-            queryResult = projectContextController.query(prompt, timeout = CHAT_INPLICIT_PROJECT_CONTEXT_TIMEOUT)
+            queryResult = projectContextController.query(prompt, timeout = CHAT_IMPLICIT_PROJECT_CONTEXT_TIMEOUT)
         }
 
         handleChat(
