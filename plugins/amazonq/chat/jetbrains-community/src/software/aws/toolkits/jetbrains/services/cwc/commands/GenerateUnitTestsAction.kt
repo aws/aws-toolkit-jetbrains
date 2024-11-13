@@ -9,7 +9,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import software.aws.toolkits.jetbrains.services.amazonq.isInternalUser
+import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 
 class GenerateUnitTestsAction : CustomAction(EditorContextCommand.GenerateUnitTests) {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT

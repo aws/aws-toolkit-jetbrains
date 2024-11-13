@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.cwc.controller.chat.userIntent
 
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
-import software.aws.toolkits.jetbrains.services.amazonq.isInternalUser
+import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FollowUpType
