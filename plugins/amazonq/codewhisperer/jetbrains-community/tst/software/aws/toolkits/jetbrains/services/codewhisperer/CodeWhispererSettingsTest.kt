@@ -140,3 +140,43 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
         }
     }
 }
+
+class CodeWhispererSettingUnitTest {
+    private lateinit var sut: CodeWhispererSettings
+
+    @Before
+    fun setUp() {
+        sut = CodeWhispererSettings()
+        sut.loadState(CodeWhispererConfiguration())
+    }
+
+    @Test
+    fun `projectContext is disabled by default`() {
+        assertThat(sut.isProjectContextEnabled()).isFalse
+    }
+
+    @Test
+    fun `toggleProjectContext should set the value correct`() {
+        assertThat(sut.isProjectContextEnabled()).isFalse
+
+        sut.toggleProjectContextEnabled(true)
+        assertThat(sut.isProjectContextEnabled()).isTrue
+
+        sut.toggleProjectContextEnabled(false)
+        assertThat(sut.isProjectContextEnabled()).isFalse
+    }
+
+    @Test
+    fun `toggleProjectContext should only set once on users behalf if passive is true`() {
+        assertThat(sut.isProjectContextEnabled()).isFalse
+
+        sut.toggleProjectContextEnabled(true, passive = true)
+        assertThat(sut.isProjectContextEnabled()).isTrue
+
+        sut.toggleProjectContextEnabled(false, passive = true)
+        assertThat(sut.isProjectContextEnabled()).isTrue
+
+        sut.toggleProjectContextEnabled(false, passive = false)
+        assertThat(sut.isProjectContextEnabled()).isFalse
+    }
+}
