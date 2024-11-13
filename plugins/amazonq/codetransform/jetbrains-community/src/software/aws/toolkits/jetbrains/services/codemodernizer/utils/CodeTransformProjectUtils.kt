@@ -79,15 +79,15 @@ fun Project.getSupportedModules(supportedJavaMappings: Map<JavaSdkVersion, Set<J
     moduleJdk in supportedJavaMappings
 }
 
-// return the first file or directory found inside each open Java module, so that user can select a Module for us to ZIP
-fun Project.getJavaModules() = this.modules.flatMap { module ->
+// return the first file or directory found inside each open Java module that contains SQL statements, so that user can select a Module for us to ZIP
+fun Project.getJavaModulesWithSQL() = this.modules.flatMap { module ->
     val rootManager = ModuleRootManager.getInstance(module)
     if (rootManager.sdk?.sdkType?.name?.lowercase()?.contains("java") == true) {
         val contentRoots = rootManager.contentRoots
         if (contentRoots.isNotEmpty()) {
-            val firstContentRoot = contentRoots.first()
-            val children = firstContentRoot.children
-            if (children.isNotEmpty()) {
+            val contentRoot = contentRoots.first()
+            val children = contentRoot.children
+            if (children.isNotEmpty() && containsSQL(contentRoot)) {
                 listOf(children.first())
             } else {
                 emptyList()

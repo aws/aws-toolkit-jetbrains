@@ -95,7 +95,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.C
 import software.aws.toolkits.jetbrains.services.codemodernizer.session.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.codemodernizer.session.Session
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getJavaModules
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getJavaModulesWithSQL
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toVirtualFile
@@ -150,13 +150,22 @@ class CodeTransformChatController(
         // Publish a metric when transform is first initiated from chat prompt.
         telemetry.initiateTransform()
 
-        val anyModuleContainsOracleSQL = true // TODO: implement, and make sure to say "Checking for eligible modules..." here too
+        val anyModuleContainsOracleSQL = codeModernizerManager.validate(context.project, CodeTransformType.SQL_CONVERSION).valid
 
-        if (anyModuleContainsOracleSQL) {
-            this.getUserObjective(message.tabId)
-        } else {
+        if (!anyModuleContainsOracleSQL) {
             this.handleLanguageUpgrade()
+            return
         }
+
+        val eligibleForLanguageUpgrade = codeModernizerManager.validate(context.project, CodeTransformType.LANGUAGE_UPGRADE).valid
+
+        if (!eligibleForLanguageUpgrade) {
+            this.handleSQLConversion()
+            return
+        }
+
+        // eligible for both language upgrade and sql conversion, so ask user what they want to do
+        this.getUserObjective(message.tabId)
     }
 
     private suspend fun getUserObjective(tabId: String) {
@@ -170,7 +179,7 @@ class CodeTransformChatController(
             buildCheckingValidProjectChatContent()
         )
 
-        codeTransformChatHelper.chatDelayLong()
+        codeTransformChatHelper.chatDelayShort()
 
         val validationResult = codeModernizerManager.validate(context.project, transformationType)
 
@@ -337,8 +346,7 @@ class CodeTransformChatController(
                     addNewMessage(buildSQLMetadataValidationSuccessIntroChatContent())
                     addNewMessage(buildSQLMetadataValidationSuccessDetailsChatContent(metadataValidationResult))
                     addNewMessage(buildModuleSchemaFormIntroChatContent())
-                    // already validated that there are open Java modules at this point
-                    addNewMessage(buildModuleSchemaFormChatContent(context.project, context.project.getJavaModules(), metadataValidationResult.schemaOptions))
+                    addNewMessage(buildModuleSchemaFormChatContent(context.project, context.project.getJavaModulesWithSQL(), metadataValidationResult.schemaOptions))
                 }
                 val selection = CustomerSelection(
                     // for SQL conversions (no sourceJavaVersion), use dummy value of Java 8 so that startJob API can be called
