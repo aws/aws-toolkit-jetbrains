@@ -161,7 +161,6 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     // TODO: rename queryChat
-    // TODO: timeout window not decided
     suspend fun query(prompt: String, timeout: Long?): List<RelevantDocument> = withTimeout(timeout ?: CHAT_EXPLICIT_PROJECT_CONTEXT_TIMEOUT) {
         cs.async {
             val encrypted = encryptRequest(QueryChatRequest(prompt))
