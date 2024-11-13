@@ -10,12 +10,12 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 @JacksonXmlRootElement(localName = "tree")
 data class SctMetadata(
     @JsonProperty("instances")
-    val instances: Instances
+    val instances: Instances,
 )
 
 data class Instances(
     @JsonProperty("ProjectModel")
-    val projectModel: ProjectModel
+    val projectModel: ProjectModel,
 )
 
 data class ProjectModel(

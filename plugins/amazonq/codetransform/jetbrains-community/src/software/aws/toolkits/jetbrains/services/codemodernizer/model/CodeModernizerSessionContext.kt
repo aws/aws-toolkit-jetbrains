@@ -201,11 +201,11 @@ data class CodeModernizerSessionContext(
 
         return runReadAction {
             try {
-                val directoriesToExclude = findDirectoriesToExclude(sourceFolder)
+                val dirsToExclude = findDirectoriesToExclude(sourceFolder)
                 val files = root?.let {
                     VfsUtil.collectChildrenRecursively(it).filter { child ->
                         val childPath = Path(child.path)
-                        !child.isDirectory && !child.name.endsWith(DS_STORE_FILE_NAME) && directoriesToExclude.none { dir -> childPath.startsWith(dir.toPath()) }
+                        !child.isDirectory && !child.name.endsWith(DS_STORE_FILE_NAME) && dirsToExclude.none { dir -> childPath.startsWith(dir.toPath()) }
                     }
                 }
                 val dependencyFiles = if (depDirectory != null) {
