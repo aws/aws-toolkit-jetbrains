@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.plan
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.fileEditor.FileEditor
@@ -22,6 +21,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.APPENDI
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.CodeModernizerUIConstants
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.JOB_STATISTICS_TABLE_KEY
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.LOC_THRESHOLD
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact.Companion.MAPPER
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.PlanTable
 import software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModernizerPlanEditorProvider.Companion.MIGRATION_PLAN_KEY
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getAuthType
@@ -62,7 +62,6 @@ import javax.swing.table.DefaultTableModel
 class CodeModernizerPlanEditor(val project: Project, private val virtualFile: VirtualFile) : UserDataHolderBase(), FileEditor {
     val plan = virtualFile.getUserData(MIGRATION_PLAN_KEY) ?: throw RuntimeException("Migration plan not found")
     private val tableMapping = getTableMapping(plan.transformationSteps()[0].progressUpdates())
-    private val mapper = jacksonObjectMapper()
 
     // to-do: convert to UI DSL
     private val contentPanel =
@@ -77,7 +76,7 @@ class CodeModernizerPlanEditor(val project: Project, private val virtualFile: Vi
                     // comes from "name" field of each progressUpdate in step zero of plan
                     if (JOB_STATISTICS_TABLE_KEY in tableMapping) {
                         val planTable = parseTableMapping(tableMapping)
-                        val linesOfCode = getLinesOfCodeSubmitted(planTable)
+                        val linesOfCode = planTable?.let { getLinesOfCodeSubmitted(it) }
                         if (linesOfCode != null && linesOfCode > LOC_THRESHOLD && getAuthType(project) == CredentialSourceId.IamIdentityCenter) {
                             val billingText = getBillingText(linesOfCode)
                             val billingTextComponent =
@@ -99,7 +98,7 @@ class CodeModernizerPlanEditor(val project: Project, private val virtualFile: Vi
                             add(billingTextComponent, CodeModernizerUIConstants.transformationPlanPlaneConstraint)
                         }
                         add(
-                            transformationPlanInfo(planTable),
+                            planTable?.let { transformationPlanInfo(it) },
                             CodeModernizerUIConstants.transformationPlanPlaneConstraint,
                         )
                     }
@@ -107,7 +106,7 @@ class CodeModernizerPlanEditor(val project: Project, private val virtualFile: Vi
                     // key "-1" reserved for appendix table
                     if (APPENDIX_TABLE_KEY in tableMapping) {
                         add(
-                            transformationPlanAppendix(mapper.readValue(tableMapping[APPENDIX_TABLE_KEY], PlanTable::class.java)),
+                            tableMapping[APPENDIX_TABLE_KEY]?.let { MAPPER.readValue<PlanTable>(it) }?.let { transformationPlanAppendix(it) },
                             CodeModernizerUIConstants.transformationPlanPlaneConstraint,
                         )
                     }
@@ -397,7 +396,7 @@ class CodeModernizerPlanEditor(val project: Project, private val virtualFile: Vi
         val table = tableMapping[step.id()]
 
         val parsedTable = table?.let {
-            mapper.readValue<PlanTable>(it)
+            MAPPER.readValue<PlanTable>(it)
         }
 
         val renderedStepTable = parsedTable?.let {

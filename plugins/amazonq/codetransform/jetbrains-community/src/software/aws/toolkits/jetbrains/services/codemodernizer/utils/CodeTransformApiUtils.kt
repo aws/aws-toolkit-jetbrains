@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.project.Project
 import com.intellij.serviceContainer.AlreadyDisposedException
 import kotlinx.coroutines.delay
@@ -25,6 +25,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTele
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.BILLING_RATE
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.JOB_STATISTICS_TABLE_KEY
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact.Companion.MAPPER
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.PlanTable
 import software.aws.toolkits.resources.message
@@ -137,12 +138,12 @@ fun getTableMapping(stepZeroProgressUpdates: List<TransformationProgressUpdate>)
             it.name() to it.description()
         }
     } else {
-        throw RuntimeException("GetPlan response missing step 0 progress updates with table data")
+        error("GetPlan response missing step 0 progress updates with table data")
     }
 }
 
-fun parseTableMapping(tableMapping: Map<String, String>): PlanTable =
-    jacksonObjectMapper().readValue(tableMapping[JOB_STATISTICS_TABLE_KEY], PlanTable::class.java)
+fun parseTableMapping(tableMapping: Map<String, String>): PlanTable? =
+    tableMapping[JOB_STATISTICS_TABLE_KEY]?.let { MAPPER.readValue<PlanTable>(it) }
 
 fun getBillingText(linesOfCode: Int): String {
     val estimatedCost = String.format(Locale.US, "%.2f", linesOfCode.times(BILLING_RATE))

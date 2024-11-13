@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.util.io.FileUtil.createTempDirectory
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
@@ -41,7 +42,7 @@ open class CodeModernizerArtifact(
         private const val SUMMARY_FILE_NAME = "summary.md"
         private const val METRICS_FILE_NAME = "metrics.json"
         val LOG = getLogger<CodeModernizerArtifact>()
-        private val MAPPER = jacksonObjectMapper()
+        val MAPPER = jacksonObjectMapper()
 
         /**
          * Extracts the file at [zipPath] and uses its contents to produce a [CodeModernizerArtifact].
@@ -88,7 +89,7 @@ open class CodeModernizerArtifact(
                     ?.firstOrNull { it.name.endsWith(MANIFEST_FILE_NAME) }
                     ?: throw RuntimeException("Could not find manifest")
             try {
-                val manifest = MAPPER.readValue(manifestFile, CodeModernizerManifest::class.java)
+                val manifest = MAPPER.readValue<CodeModernizerManifest>(manifestFile)
                 if (manifest.version == 0.0F) {
                     throw RuntimeException(
                         "Unable to deserialize the manifest",
@@ -106,7 +107,7 @@ open class CodeModernizerArtifact(
                     tempDir.resolve(manifest.metricsRoot).listFiles()
                         ?.firstOrNull { it.name.endsWith(METRICS_FILE_NAME) }
                         ?: throw RuntimeException("Could not find metrics.json")
-                return MAPPER.readValue(metricsFile, CodeModernizerMetrics::class.java)
+                return MAPPER.readValue<CodeModernizerMetrics>(metricsFile)
             } catch (exception: Exception) {
                 // if metrics.json not present or parsing fails, can still show diff.patch and summary.md
                 return null
