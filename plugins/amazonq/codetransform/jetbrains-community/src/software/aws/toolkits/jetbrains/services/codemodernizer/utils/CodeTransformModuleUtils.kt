@@ -10,6 +10,8 @@ import com.intellij.openapi.projectRoots.impl.JavaSdkImpl
 import com.intellij.openapi.roots.LanguageLevelModuleExtensionImpl
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.vfs.VirtualFile
+import java.io.File
 
 /**
  * @description Try to get the module SDK version and/or Language level from the project settings > modules > source field.
@@ -35,5 +37,29 @@ fun Module.tryGetJdkLanguageLevelJdk(): JavaSdkVersion? {
     val moduleRootManager = ModuleRootManager.getInstance(this)
     val languageLevelModuleExtension = moduleRootManager.getModuleExtension(LanguageLevelModuleExtensionImpl::class.java)
     val languageLevel = languageLevelModuleExtension?.languageLevel
-    return languageLevel?.let { JavaSdkVersion.fromLanguageLevel(it) } ?: null
+    return languageLevel?.let { JavaSdkVersion.fromLanguageLevel(it) }
+}
+
+// search for Strings that indicate embedded Oracle SQL statements are present
+fun containsSQL(contentRoot: VirtualFile): Boolean {
+    val patterns = listOf(
+        "oracle.jdbc.OracleDriver",
+        "jdbc:oracle:thin:@//",
+        "jdbc:oracle:oci:@//"
+    )
+
+    val isWindows = System.getProperty("os.name").lowercase().startsWith("Windows")
+    val searchCommand = if (isWindows) "findstr" else "grep"
+    val searchOptions = if (isWindows) listOf("/i", "/s") else listOf("-i", "-r")
+
+    for (pattern in patterns) {
+        val command = listOf(searchCommand, *searchOptions.toTypedArray(), pattern)
+        val processBuilder = ProcessBuilder(command)
+        processBuilder.directory(File(contentRoot.path))
+        val process = processBuilder.start()
+        if (process.waitFor() == 0) {
+            return true
+        }
+    }
+    return false
 }

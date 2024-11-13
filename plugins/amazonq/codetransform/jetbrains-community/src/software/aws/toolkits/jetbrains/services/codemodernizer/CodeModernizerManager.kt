@@ -60,7 +60,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeMo
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_WHERE_PLAN_EXIST
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.createFileCopy
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.findLineNumberByString
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getJavaModules
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getJavaModulesWithSQL
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getMavenVersion
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactPomFile
@@ -160,7 +160,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             }
 
             if (transformationType == CodeTransformType.SQL_CONVERSION) {
-                val javaModules = project.getJavaModules()
+                val javaModules = project.getJavaModulesWithSQL()
                 return if (javaModules.isNotEmpty()) {
                     ValidationResult(
                         true,
