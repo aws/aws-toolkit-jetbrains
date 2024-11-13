@@ -22,10 +22,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.amazonq.CHAT_EXPLICIT_PROJECT_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
@@ -161,17 +161,14 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     // TODO: rename queryChat
-    fun query(prompt: String): List<RelevantDocument> {
-        val encrypted = encryptRequest(QueryChatRequest(prompt))
-        val response = sendMsgToLsp(LspMessage.QueryChat, encrypted)
+    suspend fun query(prompt: String, timeout: Long?): List<RelevantDocument> = withTimeout(timeout ?: CHAT_EXPLICIT_PROJECT_CONTEXT_TIMEOUT) {
+        cs.async {
+            val encrypted = encryptRequest(QueryChatRequest(prompt))
+            val response = sendMsgToLsp(LspMessage.QueryChat, encrypted)
 
-        return try {
             val parsedResponse = mapper.readValue<List<Chunk>>(response.responseBody)
             queryResultToRelevantDocuments(parsedResponse)
-        } catch (e: Exception) {
-            logger.error { "error parsing query response ${e.message}" }
-            throw e
-        }
+        }.await()
     }
 
     suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> = withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {

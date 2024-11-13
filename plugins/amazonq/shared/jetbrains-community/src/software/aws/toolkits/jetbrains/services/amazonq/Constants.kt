@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq
 
+import kotlin.time.Duration.Companion.minutes
+
 const val APPLICATION_ZIP = "application/zip"
 const val SERVER_SIDE_ENCRYPTION = "x-amz-server-side-encryption"
 const val AWS_KMS = "aws:kms"
@@ -39,3 +41,7 @@ const val CODE_TRANSFORM_PREREQUISITES =
 const val FEATURE_EVALUATION_PRODUCT_NAME = "CodeWhisperer"
 
 const val SUPPLEMENTAL_CONTEXT_TIMEOUT = 100L
+
+val CHAT_EXPLICIT_PROJECT_CONTEXT_TIMEOUT = 5.minutes.inWholeMilliseconds
+
+const val CHAT_IMPLICIT_PROJECT_CONTEXT_TIMEOUT = 500L // 500ms
