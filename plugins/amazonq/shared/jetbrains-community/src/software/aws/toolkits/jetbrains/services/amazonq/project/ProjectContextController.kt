@@ -47,9 +47,9 @@ class ProjectContextController(private val project: Project, private val cs: Cor
 
     fun getProjectContextIndexComplete() = projectContextProvider.isIndexComplete.get()
 
-    fun query(prompt: String): List<RelevantDocument> {
+    suspend fun query(prompt: String, timeout: Long?): List<RelevantDocument> {
         try {
-            return projectContextProvider.query(prompt)
+            return projectContextProvider.query(prompt, timeout)
         } catch (e: Exception) {
             logger.warn { "error while querying for project context $e.message" }
             return emptyList()
