@@ -45,6 +45,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ParseZipFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.PatchInfo
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.UnzipFailureReason
+import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isValidCodeTransformConnection
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
@@ -229,6 +230,17 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                     downloadedBuildLogPath[job] = path
                 } else {
                     downloadedArtifacts[job] = path
+                    if (output.artifact is CodeModernizerArtifact && output.artifact.metrics != null) {
+                        output.artifact.metrics.linesOfCodeSubmitted = CodeModernizerSessionState.getInstance(project).getLinesOfCodeSubmitted()
+                        output.artifact.metrics.programmingLanguage = CodeModernizerSessionState.getInstance(project).getTransformationLanguage()
+                        try {
+                            clientAdaptor.sendTransformTelemetryEvent(job, output.artifact.metrics)
+                        } catch (e: Exception) {
+                            // log error, but can still show diff.patch and summary.md
+                            LOG.error { e.message.toString() }
+                            telemetryErrorMessage = "Unexpected error when sending telemetry with metrics ${e.localizedMessage}"
+                        }
+                    }
                 }
                 output
             } catch (e: RuntimeException) {
