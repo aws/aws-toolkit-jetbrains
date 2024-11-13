@@ -48,7 +48,7 @@ private fun notify(type: NotificationType, title: String, content: String = "", 
     notify(notification, project)
 }
 
-private fun notifySticky(type: NotificationType, title: String, content: String = "", project: Project? = null, notificationActions: Collection<AnAction>) {
+fun notifySticky(type: NotificationType, title: String, content: String = "", project: Project? = null, notificationActions: Collection<AnAction>) {
     val notification = Notification(GROUP_DISPLAY_ID_STICKY, title, content, type)
     notificationActions.forEach {
         notification.addAction(if (it !is NotificationAction) createNotificationExpiringAction(it) else it)
