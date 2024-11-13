@@ -11,8 +11,7 @@ import com.intellij.openapi.util.Key
 class OpenChatInputAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
-        // this is a hack since this key does not exist in 233
-        // TODO: change below to use ConsoleViewImpl.IS_CONSOLE_DOCUMENT after 233 support is removed
+        // FIX_WHEN_MIN_IS_241: change below to use ConsoleViewImpl.IS_CONSOLE_DOCUMENT
         var isConsole: Any? = null
         val key: Key<*>? = Key.findKeyByName("IS_CONSOLE_DOCUMENT")
         if (key != null) {
