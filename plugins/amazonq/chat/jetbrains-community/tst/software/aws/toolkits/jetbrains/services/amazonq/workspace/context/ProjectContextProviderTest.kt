@@ -214,8 +214,10 @@ class ProjectContextProviderTest {
     }
 
     @Test
-    fun `query should send correct encrypted request to lsp`() {
-        sut.query("foo")
+    fun `query should send correct encrypted request to lsp`() = runTest {
+        sut = ProjectContextProvider(project, encoderServer, this)
+        val r = sut.query("foo", null)
+        advanceUntilIdle()
 
         val request = QueryChatRequest("foo")
         val requestJson = mapper.writeValueAsString(request)
@@ -269,13 +271,15 @@ class ProjectContextProviderTest {
         )
 
         assertThrows<Exception> {
-            sut.query("foo")
+            sut.query("foo", null)
         }
     }
 
     @Test
     fun `query chat should return deserialized relevantDocument`() = runTest {
-        val r = sut.query("foo")
+        sut = ProjectContextProvider(project, encoderServer, this)
+        val r = sut.query("foo", null)
+        advanceUntilIdle()
         assertThat(r).hasSize(2)
         assertThat(r[0]).isEqualTo(
             RelevantDocument(
@@ -378,6 +382,29 @@ class ProjectContextProviderTest {
     }
 
     @Test
+    fun `queryChat should throw if time elapsed is greather than 500ms`() = runTest {
+        assertThrows<TimeoutCancellationException> {
+            sut = ProjectContextProvider(project, encoderServer, this)
+            stubFor(
+                any(urlPathEqualTo("/query")).willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withResponseBody(
+                            Body(validQueryChatResponse)
+                        )
+                        .withFixedDelay(501)
+                )
+            )
+
+            withContext(getCoroutineBgContext()) {
+                sut.query("foo", timeout = 500L)
+            }
+
+            advanceUntilIdle()
+        }
+    }
+
+    @Test
     fun `test index payload is encrypted`() = runTest {
         whenever(encoderServer.port).thenReturn(3000)
         try {
@@ -390,12 +417,9 @@ class ProjectContextProviderTest {
 
     @Test
     fun `test query payload is encrypted`() = runTest {
-        whenever(encoderServer.port).thenReturn(3000)
-        try {
-            sut.query("what does this project do")
-        } catch (e: ConnectException) {
-            // no-op
-        }
+        sut = ProjectContextProvider(project, encoderServer, this)
+        sut.query("what does this project do", null)
+        advanceUntilIdle()
         verify(encoderServer, times(1)).encrypt(any())
     }
 
