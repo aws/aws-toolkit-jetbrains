@@ -37,7 +37,7 @@ class AmazonQStartupActivity : ProjectActivity {
 
         ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let {
             if (it is AwsBearerTokenConnection && isInternalUser(it.startUrl)) {
-                CodeWhispererSettings.getInstance().toggleProjectContextEnabled(true, passive = true)
+                CodeWhispererSettings.getInstance().toggleProjectContextEnabled(value = true, passive = true)
             }
         }
 
