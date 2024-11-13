@@ -23,6 +23,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Prepar
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Session
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionState
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.InsertAction
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
@@ -88,7 +89,7 @@ suspend fun FeatureDevController.onCodeGeneration(
         }
 
         // Atm this is the only possible path as codegen is mocked to return empty.
-        if (filePaths.size or deletedFiles.size == 0) {
+        if (filePaths.isEmpty() && deletedFiles.isEmpty()) {
             messenger.sendAnswer(
                 tabId = tabId,
                 messageType = FeatureDevMessageType.Answer,
@@ -132,7 +133,7 @@ suspend fun FeatureDevController.onCodeGeneration(
             )
         }
 
-        messenger.sendSystemPrompt(tabId = tabId, followUp = getFollowUpOptions(session.sessionState.phase))
+        messenger.sendSystemPrompt(tabId = tabId, followUp = getFollowUpOptions(session.sessionState.phase, InsertAction.ALL))
 
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
     } finally {

@@ -13,6 +13,7 @@ import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.runs
 import io.mockk.verify
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -75,13 +76,15 @@ class SessionTest : FeatureDevTestBase() {
         every { resolveAndDeleteFile(any(), any()) } just runs
         every { resolveAndCreateOrUpdateFile(any(), any(), any()) } just runs
 
-        val mockNewFile = listOf(NewFileZipInfo("test.ts", "testContent", false))
-        val mockDeletedFile = listOf(DeletedFileInfo("deletedTest.ts", false))
+        val mockNewFile = listOf(NewFileZipInfo("test.ts", "testContent", rejected = false, changeApplied = false))
+        val mockDeletedFile = listOf(DeletedFileInfo("deletedTest.ts", rejected = false, changeApplied = false))
 
         session.context.selectedSourceFolder = mock()
         whenever(session.context.selectedSourceFolder.toNioPath()).thenReturn(Path(""))
 
-        session.insertChanges(mockNewFile, mockDeletedFile, emptyList())
+        runBlocking {
+            session.insertChanges(mockNewFile, mockDeletedFile, emptyList(), messenger)
+        }
 
         verify(exactly = 1) { resolveAndDeleteFile(any(), "deletedTest.ts") }
         verify(exactly = 1) { resolveAndCreateOrUpdateFile(any(), "test.ts", "testContent") }

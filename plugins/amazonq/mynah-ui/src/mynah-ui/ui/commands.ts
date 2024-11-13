@@ -45,5 +45,6 @@ type MessageCommand =
     | 'codetransform-pom-file-open-click'
     | 'file-click'
     | 'open-settings'
+    | 'store-code-result-message-id'
 
 export type ExtensionMessage = Record<string, any> & { command: MessageCommand }
