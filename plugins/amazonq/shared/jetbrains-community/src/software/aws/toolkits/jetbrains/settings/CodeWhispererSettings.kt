@@ -11,7 +11,6 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.util.xmlb.annotations.Property
-import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 
 @Service
 @State(name = "codewhispererSettings", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
@@ -45,24 +44,18 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         true
     )
 
-    fun toggleProjectContextEnabled(value: Boolean) {
-        state.value[CodeWhispererConfigurationType.IsProjectContextEnabled] = value
-    }
-
-    fun isProjectContextEnabled() = getIsProjectContextEnabled()
-
-    private fun getIsProjectContextEnabled(): Boolean {
-        val value = state.value.getOrDefault(CodeWhispererConfigurationType.IsProjectContextEnabled, false)
-        val isDataCollectionGroup = CodeWhispererFeatureConfigService.getInstance().getIsDataCollectionEnabled()
-        if (!value) {
-            if (isDataCollectionGroup && !hasEnabledProjectContextOnce()) {
-                toggleProjectContextEnabled(true)
+    fun toggleProjectContextEnabled(value: Boolean, passive: Boolean = false) {
+        if (passive) {
+            if (!hasEnabledProjectContextOnce()) {
                 toggleEnabledProjectContextOnce(true)
-                return true
+                state.value[CodeWhispererConfigurationType.IsProjectContextEnabled] = value
             }
+        } else {
+            state.value[CodeWhispererConfigurationType.IsProjectContextEnabled] = value
         }
-        return value
     }
+
+    fun isProjectContextEnabled() = state.value.getOrDefault(CodeWhispererConfigurationType.IsProjectContextEnabled, false)
 
     private fun hasEnabledProjectContextOnce() = state.value.getOrDefault(CodeWhispererConfigurationType.HasEnabledProjectContextOnce, false)
 
