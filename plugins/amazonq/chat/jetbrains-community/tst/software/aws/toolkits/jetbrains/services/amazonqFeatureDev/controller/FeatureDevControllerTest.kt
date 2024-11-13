@@ -59,6 +59,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Sessio
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.storage.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.InsertAction
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.selectFolder
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.uploadArtifactToS3
@@ -81,13 +82,13 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
 
     private val newFileContents =
         listOf(
-            NewFileZipInfo("test.ts", "This is a comment", false),
-            NewFileZipInfo("test2.ts", "This is a rejected file", true),
+            NewFileZipInfo("test.ts", "This is a comment", false, false),
+            NewFileZipInfo("test2.ts", "This is a rejected file", true, false),
         )
     private val deletedFiles =
         listOf(
-            DeletedFileInfo("delete.ts", false),
-            DeletedFileInfo("delete2.ts", true),
+            DeletedFileInfo("delete.ts", false, false),
+            DeletedFileInfo("delete2.ts", true, false),
         )
 
     @Before
@@ -119,7 +120,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.UploadArtifactKt")
         every { uploadArtifactToS3(any(), any(), any(), any(), any()) } just runs
 
-        controller = FeatureDevController(appContext, chatSessionStorage, authController)
+        controller = spy(FeatureDevController(appContext, chatSessionStorage, authController))
     }
 
     @After
@@ -166,7 +167,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         mockitoVerify(chatSessionStorage, times(1)).deleteSession(testTabId)
 
         coVerifyOrder {
-            messenger.sendAnswer(testTabId, message("amazonqFeatureDev.chat_message.ask_for_new_task"), FeatureDevMessageType.Answer)
+            messenger.sendAnswer(testTabId, message("amazonqFeatureDev.chat_message.ask_for_new_task"), messageType = FeatureDevMessageType.Answer)
             messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.new_plan"))
         }
 
@@ -238,7 +239,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                 ),
             )
 
-            doNothing().`when`(spySession).insertChanges(any(), any(), any())
+            doReturn(Unit).`when`(spySession).insertChanges(any(), any(), any(), any())
 
             spySession.preloader(userMessage, messenger)
             controller.processFollowupClickedMessage(message)
@@ -246,7 +247,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             mockitoVerify(
                 spySession,
                 times(1),
-            ).insertChanges(listOf(newFileContents[0]), listOf(deletedFiles[0]), testReferences) // insert changes for only non rejected files
+            ).insertChanges(listOf(newFileContents[0]), listOf(deletedFiles[0]), testReferences, messenger) // insert changes for only non rejected files
             coVerifyOrder {
                 AmazonqTelemetry.isAcceptedCodeChanges(
                     amazonqNumberOfFilesAccepted = 2.0, // it should be 2 files per test setup
@@ -275,7 +276,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
     fun `test handleChat onCodeGeneration succeeds to create files`() =
         runTest {
             val mockInteraction = mock<Interaction>()
-            var featureDevService = mockk<FeatureDevService>()
+            val featureDevService = mockk<FeatureDevService>()
             val repoContext = mock<FeatureDevSessionContext>()
             val sessionStateConfig = SessionStateConfig(testConversationId, repoContext, featureDevService)
             mockkObject(AmazonqTelemetry)
@@ -301,10 +302,10 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
 
             coVerifyOrder {
                 messenger.sendAsyncEventProgress(testTabId, true, message("amazonqFeatureDev.chat_message.start_code_generation_retry"))
-                messenger.sendAnswer(testTabId, message("amazonqFeatureDev.chat_message.requesting_changes"), FeatureDevMessageType.AnswerStream)
+                messenger.sendAnswer(testTabId, message("amazonqFeatureDev.chat_message.requesting_changes"), messageType = FeatureDevMessageType.AnswerStream)
                 messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.generating_code"))
                 messenger.sendCodeResult(testTabId, testUploadId, newFileContents, deletedFiles, testReferences)
-                messenger.sendSystemPrompt(testTabId, getFollowUpOptions(SessionStatePhase.CODEGEN))
+                messenger.sendSystemPrompt(testTabId, getFollowUpOptions(SessionStatePhase.CODEGEN, InsertAction.ALL))
                 messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.after_code_generation"))
                 messenger.sendAsyncEventProgress(testTabId, false)
                 messenger.sendChatInputEnabledMessage(testTabId, false)
@@ -323,7 +324,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
 
             coVerifyOrder {
                 messenger.sendAsyncEventProgress(testTabId, true, message("amazonqFeatureDev.chat_message.start_code_generation"))
-                messenger.sendAnswer(testTabId, message("amazonqFeatureDev.chat_message.requesting_changes"), FeatureDevMessageType.AnswerStream)
+                messenger.sendAnswer(testTabId, message("amazonqFeatureDev.chat_message.requesting_changes"), messageType = FeatureDevMessageType.AnswerStream)
                 messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.generating_code"))
                 messenger.sendAsyncEventProgress(testTabId, false)
                 messenger.sendChatInputEnabledMessage(testTabId, false)
@@ -360,7 +361,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             controller.onCodeGeneration(mockSession, userMessage, testTabId)
 
             coVerifyOrder {
-                messenger.sendAnswer(testTabId, message("amazonqFeatureDev.code_generation.no_file_changes"), FeatureDevMessageType.Answer)
+                messenger.sendAnswer(testTabId, message("amazonqFeatureDev.code_generation.no_file_changes"), messageType = FeatureDevMessageType.Answer)
                 messenger.sendSystemPrompt(
                     testTabId,
                     listOf(FollowUp(FollowUpTypes.RETRY, message("amazonqFeatureDev.follow_up.retry"), status = FollowUpStatusType.Warning)),
@@ -399,16 +400,16 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             controller.onCodeGeneration(mockSession, userMessage, testTabId)
 
             coVerifyOrder {
-                messenger.sendAnswer(testTabId, message("amazonqFeatureDev.code_generation.no_file_changes"), FeatureDevMessageType.Answer)
+                messenger.sendAnswer(testTabId, message("amazonqFeatureDev.code_generation.no_file_changes"), messageType = FeatureDevMessageType.Answer)
                 messenger.sendSystemPrompt(testTabId, emptyList())
                 messenger.sendChatInputEnabledMessage(testTabId, false)
             }
         }
 
     @Test
-    fun `test processFileClicked changes the state of the clicked file`() =
+    fun `test processFileClicked handles file rejection`() =
         runTest {
-            val message = IncomingFeatureDevMessage.FileClicked(testTabId, newFileContents[0].zipFilePath, "", "")
+            val message = IncomingFeatureDevMessage.FileClicked(testTabId, newFileContents[0].zipFilePath, "", "reject-change")
 
             whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
             whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
@@ -429,9 +430,126 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
 
             controller.processFileClicked(message)
 
-            val newFileContentsCopy = newFileContents.toList()
-            newFileContentsCopy[0].rejected = !newFileContentsCopy[0].rejected
+            val newFileContentsCopy = newFileContents.toMutableList()
+            newFileContentsCopy[0] = newFileContentsCopy[0].copy()
+            newFileContentsCopy[0].rejected = true
+            newFileContentsCopy[0].changeApplied = false
             coVerify { messenger.updateFileComponent(testTabId, newFileContentsCopy, deletedFiles, "") }
+        }
+
+    @Test
+    fun `test processFileClicked handles file acceptance`() =
+        runTest {
+            val featureDevService = mockk<FeatureDevService>()
+            val repoContext = mock<FeatureDevSessionContext>()
+            val sessionStateConfig = SessionStateConfig(testConversationId, repoContext, featureDevService)
+
+            whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
+            whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
+            whenever(spySession.sessionState).thenReturn(
+                PrepareCodeGenerationState(
+                    testTabId,
+                    CancellationTokenSource(),
+                    "",
+                    sessionStateConfig,
+                    newFileContents,
+                    deletedFiles,
+                    testReferences,
+                    testUploadId,
+                    0,
+                    messenger,
+                ),
+            )
+            doReturn(testConversationId).`when`(spySession).conversationId
+            doReturn(Unit).`when`(spySession).insertChanges(any(), any(), any(), any())
+
+            mockkObject(AmazonqTelemetry)
+            every {
+                AmazonqTelemetry.isAcceptedCodeChanges(
+                    amazonqNumberOfFilesAccepted = 1.0,
+                    amazonqConversationId = testConversationId,
+                    enabled = true,
+                    credentialStartUrl = any()
+                )
+            } just runs
+
+            // Accept first file:
+            controller.processFileClicked(IncomingFeatureDevMessage.FileClicked(testTabId, newFileContents[0].zipFilePath, "", "accept-change"))
+
+            val newFileContentsCopy = newFileContents.toList()
+            newFileContentsCopy[0].rejected = false
+            newFileContentsCopy[0].changeApplied = true
+            coVerify { messenger.updateFileComponent(testTabId, newFileContents, deletedFiles, "") }
+
+            mockitoVerify(
+                spySession,
+                times(1),
+            ).insertChanges(listOf(newFileContents[0]), listOf(), testReferences, messenger)
+
+            // Does not continue automatically, because files are remaining:
+            mockitoVerify(
+                controller,
+                times(0),
+            ).insertCode(testTabId)
+        }
+
+    @Test
+    fun `test processFileClicked automatically continues when last file is accepted`() =
+        runTest {
+            val featureDevService = mockk<FeatureDevService>()
+            val repoContext = mock<FeatureDevSessionContext>()
+            val sessionStateConfig = SessionStateConfig(testConversationId, repoContext, featureDevService)
+
+            whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
+            whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
+            whenever(spySession.sessionState).thenReturn(
+                PrepareCodeGenerationState(
+                    testTabId,
+                    CancellationTokenSource(),
+                    "",
+                    sessionStateConfig,
+                    newFileContents,
+                    deletedFiles,
+                    testReferences,
+                    testUploadId,
+                    0,
+                    messenger,
+                ),
+            )
+            doReturn(testConversationId).`when`(spySession).conversationId
+            doReturn(Unit).`when`(spySession).insertChanges(any(), any(), any(), any())
+
+            mockkObject(AmazonqTelemetry)
+            every {
+                AmazonqTelemetry.isAcceptedCodeChanges(
+                    amazonqNumberOfFilesAccepted = 1.0,
+                    amazonqConversationId = testConversationId,
+                    enabled = true,
+                    credentialStartUrl = any()
+                )
+            } just runs
+
+            val newFileContentsCopy = newFileContents.toList()
+            newFileContentsCopy[0].rejected = false
+            newFileContentsCopy[0].changeApplied = true
+            newFileContentsCopy[1].rejected = false
+            newFileContentsCopy[1].changeApplied = true
+            deletedFiles[0].rejected = false
+            deletedFiles[0].changeApplied = true
+
+            // This is simulating the file already being an accepted state, and accept-change being called redundantly. This is necessary because of the test
+            // setup, which should be fixed to avoid heavy-handed mocking of the session state (so that we can see the session state be incrementally updated).
+            deletedFiles[1].rejected = false
+            deletedFiles[1].changeApplied = true
+
+            // When the last file is accepted:
+            controller.processFileClicked(IncomingFeatureDevMessage.FileClicked(testTabId, deletedFiles[1].zipFilePath, "", "accept-change"))
+
+            // We auto-continue to the next step with a noop insertCode call:
+            mockitoVerify(
+                controller,
+                times(1),
+            ).insertCode(testTabId)
         }
 
     @Test
