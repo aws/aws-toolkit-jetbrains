@@ -128,12 +128,12 @@ class DiskCache(
                 result = Result.Failed,
                 reason = "Failed to load Client Registration",
                 reasonDesc = buildString {
-                        append("Load Step:$stage failed. ")
-                        append("Cache file exists:$fileExists, ")
-                        append("Parent exists:$parentExists, ")
-                        append("Parent perms:$parentPerms, ")
-                        append("Is owner:$isOwner")
-                    }
+                    append("Load Step:$stage failed. ")
+                    append("Cache file exists:$fileExists, ")
+                    append("Parent exists:$parentExists, ")
+                    append("Parent perms:$parentPerms, ")
+                    append("Is owner:$isOwner")
+                }
             )
             return null
         }
