@@ -75,6 +75,13 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildSt
 const val DOWNLOAD_PROXY_WILDCARD_ERROR: String = "Dangling meta character '*' near index 0"
 const val DOWNLOAD_SSL_HANDSHAKE_ERROR: String = "Unable to execute HTTP request: javax.net.ssl.SSLHandshakeException"
 const val INVALID_ARTIFACT_ERROR: String = "Invalid artifact"
+val patchDescriptions: Map<String, String> = mapOf(
+    "Minimal Compatible Library Upgrade to Java 17" to "This diff patch covers the set of upgrades for Springboot, JUnit, and PowerMockito frameworks.",
+    "Popular Enterprise Specifications and Application Frameworks" to "This diff patch covers the set of upgrades for Jakarta EE 10, Hibernate 6.2, and Micronaut 3.",
+    "HTTP Client Utilities, Apache Commons Utilities, and Web Frameworks" to "This diff patch covers the set of upgrades for Apache HTTP Client 5, Apache Commons utilities (Collections, IO, Lang, Math), Struts 6.0.",
+    "Testing Tools and Frameworks" to "This diff patch covers the set of upgrades for ArchUnit, Mockito, TestContainers, Cucumber, and additionally, Jenkins plugins and the Maven Wrapper.",
+    "Miscellaneous Processing Documentation" to "This diff patch covers a diverse set of upgrades spanning ORMs, XML processing, API documentation, and more."
+)
 
 class ArtifactHandler(private val project: Project, private val clientAdaptor: GumbyClient, private val codeTransformChatHelper: CodeTransformChatHelper? = null) {
     private val telemetry = CodeTransformTelemetryManager.getInstance(project)
@@ -212,7 +219,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
 //                path = result.first
 //                totalDownloadBytes = result.second
 //                zipPath = path.toAbsolutePath().toString()
-                zipPath = "/Users/ntarakad/Desktop/SampleArtifact.zip"
+                zipPath = "/Users/ntarakad/Desktop/SampleArtifactOneDiffNoJson.zip"
                 LOG.info { "Successfully converted the download to a zip at $zipPath." }
             } catch (e: Exception) {
                 LOG.error { e.message.toString() }
@@ -277,7 +284,11 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 null,
                 ChangeListManager.getInstance(project)
                     .addChangeList(
-                        diffDescription?.name ?: patchFile.name,
+                        if (diffDescription != null) {
+                            "${diffDescription.name} (${if (diffDescription.isSuccessful) "Success" else "Failure"})"
+                        } else {
+                            patchFile.name
+                        },
                         ""),
                 null,
                 null,
@@ -292,9 +303,14 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                     telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Submit", source)
                     setCurrentPatchIndex(getCurrentPatchIndex() + 1)
                     if (getCurrentPatchIndex() < totalPatchFiles){
+                        val message = if (diffDescription != null) {
+                            "I applied the changes in diff patch ${getCurrentPatchIndex()} of $totalPatchFiles. ${patchDescriptions[diffDescription.name]} You can make a commit if the diff shows success. If the diff shows partial success, apply and fix the errors, and start a new transformation."
+                        } else {
+                            "I applied the changes to your project."
+                        }
                         val resultContent = CodeTransformChatMessageContent(
                             type = CodeTransformChatMessageType.PendingAnswer,
-                            message = message("codemodernizer.chat.message.result.success"),
+                            message = message,
                             buttons = listOf(createViewDiffButton("View diff ${getCurrentPatchIndex() + 1}/${totalPatchFiles}"), viewSummaryButton),
                         )
                         codeTransformChatHelper?.updateLastPendingMessage(resultContent)

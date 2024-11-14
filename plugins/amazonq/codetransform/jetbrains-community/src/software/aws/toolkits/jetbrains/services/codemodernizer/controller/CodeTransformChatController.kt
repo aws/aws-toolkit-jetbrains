@@ -42,6 +42,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHi
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilRejectContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilResumeWithErrorContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilResumedContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildMultipleDiffsChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildProjectInvalidChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildProjectValidChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildStartNewTransformFollowup
@@ -173,6 +174,7 @@ class CodeTransformChatController(
                 codeTransformChatHelper.addNewMessage(buildTransformInProgressChatContent())
             } else {
                 codeTransformChatHelper.addNewMessage(buildTransformBeginChatContent())
+                codeTransformChatHelper.addNewMessage(buildMultipleDiffsChatContent())
                 codeTransformChatHelper.addNewMessage(buildTransformInProgressChatContent())
             }
             return true
@@ -503,6 +505,7 @@ class CodeTransformChatController(
 
     private suspend fun handleCodeTransformUploadCompleted() {
         codeTransformChatHelper.addNewMessage(buildTransformBeginChatContent())
+        codeTransformChatHelper.addNewMessage(buildMultipleDiffsChatContent())
         codeTransformChatHelper.addNewMessage(buildTransformInProgressChatContent())
     }
 

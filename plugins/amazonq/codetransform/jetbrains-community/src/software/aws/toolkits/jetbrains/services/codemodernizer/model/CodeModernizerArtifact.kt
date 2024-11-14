@@ -61,7 +61,7 @@ open class CodeModernizerArtifact(
                 }
 //                notifyStickyInfo("Zip", path.name)
 //                notifyStickyInfo("Zip", tempDir.path)
-                tempDir = tempDir.resolve("SampleArtifact")
+                tempDir = tempDir.resolve("SampleArtifactOneDiffNoJson")
                 val manifest = loadManifest()
                 if (manifest.version > maxSupportedVersion) {
                     // If not supported we can still try to use it, i.e. the versions should largely be backwards compatible

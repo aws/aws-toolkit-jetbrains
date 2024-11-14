@@ -560,11 +560,11 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             resumeJob(session, lastJobId, currentJobResult)
         }
 
-    private fun displayDiffNotificationAction(jobId: JobId): NotificationAction = NotificationAction.createSimple(
-        message("codemodernizer.notification.info.modernize_complete.view_diff")
-    ) {
-        artifactHandler.displayDiffAction(jobId, CodeTransformVCSViewerSrcComponents.ToastNotification)
-    }
+//    private fun displayDiffNotificationAction(jobId: JobId): NotificationAction = NotificationAction.createSimple(
+//        message("codemodernizer.notification.info.modernize_complete.view_diff")
+//    ) {
+//        artifactHandler.displayDiffAction(jobId, CodeTransformVCSViewerSrcComponents.ToastNotification)
+//    }
 
     private fun displaySummaryNotificationAction(jobId: JobId) =
         NotificationAction.createSimple(message("codemodernizer.notification.info.modernize_complete.view_summary")) {
@@ -622,7 +622,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                     message("codemodernizer.notification.info.modernize_partial_complete.title"),
                     message("codemodernizer.notification.info.modernize_partial_complete.content", result.targetJavaVersion.description),
                     project,
-                    listOf(displayDiffNotificationAction(result.jobId), displaySummaryNotificationAction(result.jobId), displayFeedbackNotificationAction()),
+                    listOf(displaySummaryNotificationAction(result.jobId), displayFeedbackNotificationAction()),
                 )
                 jobId = result.jobId
             }
@@ -632,7 +632,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                     message("codemodernizer.notification.info.modernize_complete.title"),
                     message("codemodernizer.notification.info.modernize_complete.content"),
                     project,
-                    listOf(displayDiffNotificationAction(result.jobId), displaySummaryNotificationAction(result.jobId)),
+                    listOf(displaySummaryNotificationAction(result.jobId)),
                 )
                 jobId = result.jobId
             }

@@ -361,6 +361,11 @@ fun buildTransformBeginChatContent() = CodeTransformChatMessageContent(
     message = message("codemodernizer.chat.message.transform_begin"),
 )
 
+fun buildMultipleDiffsChatContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.PendingAnswer,
+    message = message("codemodernizer.chat.message.multiple_patch_descriptions")
+)
+
 fun buildTransformInProgressChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
     message = message("codemodernizer.chat.message.transform_in_progress"),

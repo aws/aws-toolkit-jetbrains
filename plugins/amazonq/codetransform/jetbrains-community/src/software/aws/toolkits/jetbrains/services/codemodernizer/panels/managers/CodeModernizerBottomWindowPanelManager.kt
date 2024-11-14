@@ -209,7 +209,7 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
     private fun setJobCompletedSuccessfullyUI() {
         add(BorderLayout.CENTER, buildProgressSplitterPanelManager)
         buildProgressSplitterPanelManager.apply {
-            addViewDiffToBanner()
+//            addViewDiffToBanner()
             addViewSummaryToBanner()
             banner.updateContent(message("codemodernizer.toolwindow.banner.run_scan_complete"), AllIcons.Actions.Commit)
             setSplitPanelStopView()
