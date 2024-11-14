@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Amazon Q chat: @workspace command shown in all tab types"
+  "description" : "Amazon Q chat: `@workspace` command shown in all tab types"
 }
