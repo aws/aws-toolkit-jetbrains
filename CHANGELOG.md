@@ -1,3 +1,8 @@
+# _3.40_ (2024-11-14)
+- **(Feature)** Amazon Q /dev: Add an action to accept individual files
+- **(Bug Fix)** Fix a bug when Amazon Q responds with still indexing message even when `@workspace` index is done
+- **(Bug Fix)** Fix issue where Amazon Q inline chat can be invoked from non-editor windows
+
 # _3.39_ (2024-11-12)
 - **(Bug Fix)** Fix poor inline suggestions from Amazon Q caused by improperly formatted supplemental context
 
