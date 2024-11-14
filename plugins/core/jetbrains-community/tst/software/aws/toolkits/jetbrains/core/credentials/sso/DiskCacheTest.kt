@@ -776,7 +776,7 @@ class DiskCacheTest {
 
         sut.saveClientRegistration(key, testRegistration)
 
-        val loadedRegistration = sut.loadClientRegistration(key)
+        val loadedRegistration = sut.loadClientRegistration(key, "testSource")
         assertNotNull(loadedRegistration)
         assertEquals(testRegistration, loadedRegistration)
     }
@@ -827,7 +827,7 @@ class DiskCacheTest {
         sut.saveClientRegistration(key, testRegistration)
         sut.invalidateClientRegistration(key)
 
-        val loadedRegistration = sut.loadClientRegistration(key)
+        val loadedRegistration = sut.loadClientRegistration(key, "testSource")
         assertNull(loadedRegistration)
     }
 
@@ -858,7 +858,7 @@ class DiskCacheTest {
         sut.saveClientRegistration(key, initialRegistration)
 
         // Verify initial save
-        val loadedInitial = sut.loadClientRegistration(key)
+        val loadedInitial = sut.loadClientRegistration(key, "testSource")
         assertNotNull(loadedInitial)
         assertEquals(initialRegistration, loadedInitial)
 
@@ -882,7 +882,7 @@ class DiskCacheTest {
         sut.saveClientRegistration(key, updatedRegistration)
 
         // Load registration again
-        val loadedUpdated = sut.loadClientRegistration(key)
+        val loadedUpdated = sut.loadClientRegistration(key, "testSource")
 
         // Verify that we get the updated registration, not the initial one
         assertNotNull(loadedUpdated)
