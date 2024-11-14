@@ -23,6 +23,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.deleteIfExists
+import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.inputStreamIfExists
@@ -37,6 +38,7 @@ import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.Result
 import java.io.InputStream
 import java.io.OutputStream
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.security.MessageDigest
@@ -107,12 +109,31 @@ class DiskCache(
         if (inputStream == null) {
             val stage = LoadCredentialStage.ACCESS_FILE
             LOG.info { "Failed to load Client Registration: cache file does not exist" }
+
+            val path = clientRegistrationCache(cacheKey)
+            val fileExists = path.exists()
+            val parentExists = path.parent?.exists() ?: false
+            val parentPerms = tryOrNull { path.parent?.let { Files.getPosixFilePermissions(it).toString() } }
+            val isOwner = tryOrNull {
+                path.parent?.let {
+                    val owner = Files.getOwner(it)
+                    val currentUser = System.getProperty("user.name")
+                    owner.name == currentUser
+                }
+            } ?: false
+
             AuthTelemetry.modifyConnection(
                 action = "Load cache file",
                 source = "loadClientRegistration:$source",
                 result = Result.Failed,
                 reason = "Failed to load Client Registration",
-                reasonDesc = "Load Step:$stage failed. Cache file does not exist"
+                reasonDesc = buildString {
+                        append("Load Step:$stage failed. ")
+                        append("Cache file exists:$fileExists, ")
+                        append("Parent exists:$parentExists, ")
+                        append("Parent perms:$parentPerms, ")
+                        append("Is owner:$isOwner")
+                    }
             )
             return null
         }
