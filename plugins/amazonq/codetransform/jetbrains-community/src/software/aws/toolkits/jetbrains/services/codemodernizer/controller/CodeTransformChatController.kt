@@ -125,7 +125,7 @@ class CodeTransformChatController(
         codeTransformChatHelper.sendUpdatePlaceholderMessage(message.tabId, "Open a new tab to chat with Q")
 
         // since we're prompting the user, their module(s) must be eligible for both types of transformations, so track how often this happens here
-        if (objective === "language upgrade" || objective === "sql conversion") {
+        if (objective == "language upgrade" || objective == "sql conversion") {
             telemetry.submitSelection(objective)
         }
 
