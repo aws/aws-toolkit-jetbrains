@@ -14,6 +14,9 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
@@ -29,6 +32,7 @@ import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.CwsprChatCommandType
 import software.aws.toolkits.telemetry.CwsprChatConversationType
 import software.aws.toolkits.telemetry.CwsprChatInteractionType
@@ -410,12 +414,22 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
     companion object {
         private val logger = getLogger<TelemetryHelper>()
 
-        fun recordOpenChat() {
+        private fun getQConnection(project: Project): ToolkitConnection? = ToolkitConnectionManager.getInstance(
+            project
+        ).activeConnectionForFeature(QConnection.getInstance())
+
+        fun recordOpenChat(project: Project) {
             Telemetry.amazonq.openChat.use { it.passive(true) }
+            if (getQConnection(project) == null) {
+                AuthTelemetry.signInPageOpened()
+            }
         }
 
-        fun recordCloseChat() {
+        fun recordCloseChat(project: Project) {
             Telemetry.amazonq.closeChat.use { it.passive(true) }
+            if (getQConnection(project) == null) {
+                AuthTelemetry.signInPageClosed()
+            }
         }
 
         fun recordTelemetryChatRunCommand(type: CwsprChatCommandType, name: String? = null, startUrl: String? = null) {
