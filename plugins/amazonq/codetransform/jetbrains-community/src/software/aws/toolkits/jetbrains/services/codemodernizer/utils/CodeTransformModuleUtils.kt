@@ -10,8 +10,9 @@ import com.intellij.openapi.projectRoots.impl.JavaSdkImpl
 import com.intellij.openapi.roots.LanguageLevelModuleExtensionImpl
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
-import java.io.File
+import com.intellij.util.text.StringSearcher
 
 /**
  * @description Try to get the module SDK version and/or Language level from the project settings > modules > source field.
@@ -48,18 +49,15 @@ fun containsSQL(contentRoot: VirtualFile): Boolean {
         "jdbc:oracle:oci:@//"
     )
 
-    val isWindows = System.getProperty("os.name").lowercase().startsWith("Windows")
-    val searchCommand = if (isWindows) "findstr" else "grep"
-    val searchOptions = if (isWindows) listOf("/i", "/s") else listOf("-i", "-r")
+    val searchers = patterns.map { StringSearcher(it, false, true) }
 
-    for (pattern in patterns) {
-        val command = listOf(searchCommand, *searchOptions.toTypedArray(), pattern)
-        val processBuilder = ProcessBuilder(command)
-        processBuilder.directory(File(contentRoot.path))
-        val process = processBuilder.start()
-        if (process.waitFor() == 0) {
-            return true
+    return VfsUtilCore.iterateChildrenRecursively(contentRoot, null) { file ->
+        if (!file.isDirectory && !file.fileType.isBinary) {
+            val content = file.contentsToByteArray().toString(Charsets.UTF_8)
+            if (searchers.any { it.scan(content) != -1 }) {
+                return@iterateChildrenRecursively false // found a match; stop searching
+            }
         }
-    }
-    return false
+        true // no match found; continue searching
+    }.not() // invert result because iterateChildrenRecursively returns false when match found
 }

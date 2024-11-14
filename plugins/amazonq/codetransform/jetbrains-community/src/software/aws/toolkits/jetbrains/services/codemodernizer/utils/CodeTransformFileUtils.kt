@@ -3,10 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.io.FileUtil
@@ -27,6 +24,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_POM
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_UPLOAD_ZIP_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.controller.CodeTransformChatController
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.AURORA_DB
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact.Companion.XML_MAPPER
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DependencyUpdatesReport
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_CONFIGURATION_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ORACLE_DB
@@ -140,8 +138,7 @@ fun unzipFile(zipFilePath: Path, destDir: Path, isSqlMetadata: Boolean = false):
 
 fun parseXmlDependenciesReport(pathToXmlDependency: Path): DependencyUpdatesReport {
     val reportFile = pathToXmlDependency.toFile()
-    val xmlMapper = XmlMapper()
-    val report = xmlMapper.readValue(reportFile, DependencyUpdatesReport::class.java)
+    val report = XML_MAPPER.readValue(reportFile, DependencyUpdatesReport::class.java)
     return report
 }
 
@@ -150,11 +147,9 @@ fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {
         return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.missing_sct_file"))
     }
 
-    val xmlMapper = XmlMapper().registerKotlinModule().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-
     val sctMetadata: SctMetadata
     try {
-        sctMetadata = xmlMapper.readValue<SctMetadata>(sctFile)
+        sctMetadata = XML_MAPPER.readValue<SctMetadata>(sctFile)
     } catch (e: Exception) {
         getLogger<CodeTransformChatController>().error { "Error parsing .sct metadata file; invalid XML encountered. $e" }
         return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.invalid_sct"))
