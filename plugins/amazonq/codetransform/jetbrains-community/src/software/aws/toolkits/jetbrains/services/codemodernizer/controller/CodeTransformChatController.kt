@@ -124,6 +124,11 @@ class CodeTransformChatController(
         codeTransformChatHelper.sendChatInputEnabledMessage(message.tabId, false)
         codeTransformChatHelper.sendUpdatePlaceholderMessage(message.tabId, "Open a new tab to chat with Q")
 
+        // since we're prompting the user, their module(s) must be eligible for both types of transformations, so track how often this happens here
+        if (objective === "language upgrade" || objective === "sql conversion") {
+            telemetry.submitSelection(objective)
+        }
+
         when (objective) {
             "language upgrade" -> this.handleLanguageUpgrade()
             "sql conversion" -> this.handleSQLConversion()
@@ -346,7 +351,9 @@ class CodeTransformChatController(
                     addNewMessage(buildSQLMetadataValidationSuccessIntroChatContent())
                     addNewMessage(buildSQLMetadataValidationSuccessDetailsChatContent(metadataValidationResult))
                     addNewMessage(buildModuleSchemaFormIntroChatContent())
-                    addNewMessage(buildModuleSchemaFormChatContent(context.project, context.project.getJavaModulesWithSQL(), metadataValidationResult.schemaOptions))
+                    addNewMessage(
+                        buildModuleSchemaFormChatContent(context.project, context.project.getJavaModulesWithSQL(), metadataValidationResult.schemaOptions)
+                    )
                 }
                 val selection = CustomerSelection(
                     // for SQL conversions (no sourceJavaVersion), use dummy value of Java 8 so that startJob API can be called
