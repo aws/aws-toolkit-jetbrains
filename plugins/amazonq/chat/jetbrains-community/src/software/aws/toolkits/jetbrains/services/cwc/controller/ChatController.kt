@@ -148,7 +148,7 @@ class ChatController private constructor(
         } else if (
             CodeWhispererSettings.getInstance().isProjectContextEnabled() &&
             isInternalUser &&
-            ProjectContextController.getInstance(project = context.project).getProjectContextIndexComplete()
+            ProjectContextController.getInstance(context.project).getProjectContextIndexComplete()
         ) {
             // if user does not have @workspace in the prompt, but user is Amazon internal
             // add project context by default
