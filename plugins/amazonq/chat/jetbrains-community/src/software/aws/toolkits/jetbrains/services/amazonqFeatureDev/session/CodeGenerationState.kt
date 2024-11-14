@@ -221,6 +221,7 @@ fun registerNewFiles(newFileContents: Map<String, String>): List<NewFileZipInfo>
             zipFilePath = it.key,
             fileContent = it.value,
             rejected = false,
+            changeApplied = false
         )
     }
 
@@ -229,5 +230,6 @@ fun registerDeletedFiles(deletedFiles: List<String>): List<DeletedFileInfo> =
         DeletedFileInfo(
             zipFilePath = it,
             rejected = false,
+            changeApplied = false
         )
     }

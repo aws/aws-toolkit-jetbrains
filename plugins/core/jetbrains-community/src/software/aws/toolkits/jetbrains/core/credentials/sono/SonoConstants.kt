@@ -34,3 +34,5 @@ fun ToolkitConnection?.isSono() = if (this == null) {
 } else {
     this is AwsBearerTokenConnection && this.startUrl == SONO_URL
 }
+
+fun isInternalUser(startUrl: String?): Boolean = startUrl == "https://amzn.awsapps.com/start"
