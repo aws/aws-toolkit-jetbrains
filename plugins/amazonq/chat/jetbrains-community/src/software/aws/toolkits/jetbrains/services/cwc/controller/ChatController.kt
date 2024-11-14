@@ -94,6 +94,7 @@ class ChatController private constructor(
 
     private val messagePublisher: MessagePublisher = context.messagesFromAppToUi
     private val telemetryHelper = TelemetryHelper(context.project, chatSessionStorage)
+
     constructor(
         context: AmazonQAppInitContext,
     ) : this(
@@ -144,7 +145,11 @@ class ChatController private constructor(
             } else {
                 sendOpenSettingsMessage(message.tabId)
             }
-        } else if (CodeWhispererSettings.getInstance().isProjectContextEnabled() && isInternalUser) {
+        } else if (
+            CodeWhispererSettings.getInstance().isProjectContextEnabled() &&
+            isInternalUser &&
+            ProjectContextController.getInstance(context.project).getProjectContextIndexComplete()
+        ) {
             // if user does not have @workspace in the prompt, but user is Amazon internal
             // add project context by default
             val projectContextController = ProjectContextController.getInstance(context.project)
