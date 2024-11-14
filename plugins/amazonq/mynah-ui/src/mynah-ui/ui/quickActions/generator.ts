@@ -37,7 +37,7 @@ export class QuickActionGenerator {
                         ? [
                               {
                                   command: '/transform',
-                                  description: 'Transform your Java Project',
+                                  description: 'Transform your Java project',
                               },
                           ]
                         : []),
