@@ -3,10 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ChatItemType, MynahUIDataModel } from '@aws/mynah-ui-chat'
+import { ChatItemType, MynahUIDataModel, QuickActionCommandGroup } from '@aws/mynah-ui-chat'
 import { TabType } from '../storages/tabsStorage'
 import { FollowUpGenerator } from '../followUps/generator'
 import { QuickActionGenerator } from '../quickActions/generator'
+import { workspaceCommand } from '../commands'
 
 export interface TabDataGeneratorProps {
     isFeatureDevEnabled: boolean
@@ -60,6 +61,10 @@ I can help you upgrade your Java 8 and 11 codebases to Java 17.
         ],
     ])
 
+    private tabContextCommand: Map<TabType, QuickActionCommandGroup[]> = new Map([
+        ['cwc', [workspaceCommand]],
+    ])
+
     constructor(props: TabDataGeneratorProps) {
         this.followUpsGenerator = new FollowUpGenerator()
         this.quickActionsGenerator = new QuickActionGenerator({
@@ -75,17 +80,7 @@ I can help you upgrade your Java 8 and 11 codebases to Java 17.
                 'Amazon Q Developer uses generative AI. You may need to verify responses. See the [AWS Responsible AI Policy](https://aws.amazon.com/machine-learning/responsible-ai/policy/).',
             quickActionCommands: this.quickActionsGenerator.generateForTab(tabType),
             promptInputPlaceholder: this.tabInputPlaceholder.get(tabType),
-            contextCommands: [
-                {
-                    groupName: 'Mention code',
-                    commands: [
-                        {
-                            command: '@workspace',
-                            description: '(BETA) Reference all code in workspace.',
-                        },
-                    ],
-                },
-            ],
+            contextCommands: this.tabContextCommand.get(tabType),
             chatItems: needWelcomeMessages
                 ? [
                       {
