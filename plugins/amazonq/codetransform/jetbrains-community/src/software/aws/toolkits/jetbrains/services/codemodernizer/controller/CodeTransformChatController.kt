@@ -179,7 +179,7 @@ class CodeTransformChatController(
                 codeTransformChatHelper.addNewMessage(buildTransformInProgressChatContent())
             } else {
                 codeTransformChatHelper.addNewMessage(buildTransformBeginChatContent())
-                codeTransformChatHelper.addNewMessage(buildMultipleDiffsChatContent())
+//                codeTransformChatHelper.addNewMessage(buildMultipleDiffsChatContent())
                 codeTransformChatHelper.addNewMessage(buildTransformInProgressChatContent())
             }
             return true
@@ -529,7 +529,7 @@ class CodeTransformChatController(
 
     private suspend fun handleCodeTransformUploadCompleted() {
         codeTransformChatHelper.addNewMessage(buildTransformBeginChatContent())
-        codeTransformChatHelper.addNewMessage(buildMultipleDiffsChatContent())
+//        codeTransformChatHelper.addNewMessage(buildMultipleDiffsChatContent())
         codeTransformChatHelper.addNewMessage(buildTransformInProgressChatContent())
     }
 
