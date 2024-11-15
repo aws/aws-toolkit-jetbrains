@@ -5,21 +5,24 @@ package software.aws.toolkits.jetbrains.core.notifications
 
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.utils.notifySticky
 
 object DisplayToastNotifications {
-    fun show(title: String, message: String, action: List<AnAction>, notificationType: ToastNotificationType) {
+    fun show(title: String, message: String, action: List<AnAction>, notificationType: NotificationSeverity) {
         val notifyType = when (notificationType) {
-            ToastNotificationType.CRITICAL -> NotificationType.ERROR
-            ToastNotificationType.WARNING -> NotificationType.WARNING
-            ToastNotificationType.PRODUCT_UPDATE -> NotificationType.INFORMATION
+            NotificationSeverity.CRITICAL -> NotificationType.ERROR
+            NotificationSeverity.WARNING -> NotificationType.WARNING
+            NotificationSeverity.INFO -> NotificationType.INFORMATION
         }
         notifySticky(notifyType, title, message, null, action)
     }
-}
 
-enum class ToastNotificationType {
-    CRITICAL,
-    WARNING,
-    PRODUCT_UPDATE,
+    fun shouldShow(project: Project, notificationData: NotificationData) {
+        if (RulesEngine.displayNotification(notificationData, project)) {
+            val notificationContent = notificationData.content.locale
+            val severity = notificationData.severity
+            show(notificationContent.title, notificationContent.description, emptyList(), checkSeverity(severity))
+        }
+    }
 }
