@@ -54,10 +54,7 @@ What would you like to work on?`,
         ],
         [
             'codetransform',
-            `Welcome to Code Transformation!
-
-I can help you upgrade your Java 8 and 11 codebases to Java 17.
-`,
+            `Welcome to Code Transformation!`,
         ],
     ])
 
