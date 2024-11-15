@@ -189,7 +189,7 @@ fun buildProjectValidChatContent() = CodeTransformChatMessageContent(
 )
 fun buildProjectInvalidChatContent(validationResult: ValidationResult): CodeTransformChatMessageContent {
     val errorMessage = when (validationResult.invalidTelemetryReason.category) {
-        CodeTransformPreValidationError.NoPom -> message("codemodernizer.chat.message.validation.error.no_pom")
+        CodeTransformPreValidationError.NoPom -> message("codemodernizer.chat.message.validation.error.no_pom", CODE_TRANSFORM_PREREQUISITES)
         CodeTransformPreValidationError.UnsupportedJavaVersion -> message("codemodernizer.chat.message.validation.error.unsupported_java_version")
         else -> message("codemodernizer.chat.message.validation.error.other")
     }
