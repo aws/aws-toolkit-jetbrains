@@ -167,7 +167,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             getRequestContext(triggerTypeInfo, editor, project, psiFile, latencyContext)
         } catch (e: Exception) {
             LOG.debug { e.message.toString() }
-            CodeWhispererTelemetryService.getInstance().sendFailedServiceInvocationEvent(project, e::class.simpleName)
+            CodeWhispererTelemetryService.getInstance().sendFailedServiceInvocationEvent(e)
             return
         }
 
