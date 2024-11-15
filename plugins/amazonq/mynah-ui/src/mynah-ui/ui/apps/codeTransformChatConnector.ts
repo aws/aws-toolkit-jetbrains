@@ -232,6 +232,13 @@ export class CodeTransformChatConnector {
                 tabType: 'codetransform',
                 skipTestsSelection: action.formItemValues?.skipTestsSelection
             })
+        }  else if (action.id === FormButtonIds.CodeTransformInputOneOrMultipleDiffs) {
+            this.sendMessageToExtension({
+                command: 'codetransform-confirm-one-or-multiple-diffs',
+                tabID,
+                tabType: 'codetransform',
+                oneOrMultipleDiffsSelection: action.formItemValues?.oneOrMultipleDiffsSelection
+            })
         } else if (action.id === FormButtonIds.OpenTransformationHub) {
             this.sendMessageToExtension({
                 command: 'codetransform-open-transform-hub',

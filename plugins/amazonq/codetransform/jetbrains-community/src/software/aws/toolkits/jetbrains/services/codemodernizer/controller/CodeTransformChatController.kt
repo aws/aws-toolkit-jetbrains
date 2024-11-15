@@ -22,8 +22,10 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthFollowUpType
 import software.aws.toolkits.jetbrains.services.codemodernizer.ArtifactHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.EXPLAINABILITY_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.HilTelemetryMetaData
 import software.aws.toolkits.jetbrains.services.codemodernizer.InboundAppMessagesHandler
+import software.aws.toolkits.jetbrains.services.codemodernizer.SELECTIVE_TRANSFORMATION_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformActionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformCommand
@@ -58,8 +60,11 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTr
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserCancelledChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserHilSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputOneOrMultipleDiffsChatIntroContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputOneOrMultipleDiffsFlagChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputSkipTestsFlagChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputSkipTestsFlagChatIntroContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserOneOrMultipleDiffsSelectionChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserSelectionSummaryChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserSkipTestsFlagSelectionChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserStopTransformChatContent
@@ -251,9 +256,28 @@ class CodeTransformChatController(
             else -> MAVEN_BUILD_RUN_UNIT_TESTS
         }
         codeTransformChatHelper.addNewMessage(buildUserSkipTestsFlagSelectionChatContent(message.skipTestsSelection))
-        codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
+//        codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
         codeModernizerManager.codeTransformationSession?.let {
             it.sessionContext.customBuildCommand = customBuildCommand
+//            codeModernizerManager.runLocalMavenBuild(context.project, it)
+        }
+        codeTransformChatHelper.run {
+            addNewMessage(buildUserInputOneOrMultipleDiffsChatIntroContent())
+            addNewMessage(buildUserInputOneOrMultipleDiffsFlagChatContent())
+        }
+    }
+
+    override suspend fun processCodeTransformOneOrMultipleDiffs(message: IncomingCodeTransformMessage.CodeTransformConfirmOneOrMultipleDiffs) {
+        val transformCapabilities = when (message.oneOrMultipleDiffsSelection) {
+            message("codemodernizer.chat.message.one_or_multiple_diffs_form.multiple_diffs") -> listOf(
+                EXPLAINABILITY_V1, SELECTIVE_TRANSFORMATION_V1)
+            else -> listOf(
+                EXPLAINABILITY_V1)
+        }
+        codeTransformChatHelper.addNewMessage(buildUserOneOrMultipleDiffsSelectionChatContent(message.oneOrMultipleDiffsSelection))
+        codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
+        codeModernizerManager.codeTransformationSession?.let {
+            it.sessionContext.transformCapabilities = transformCapabilities
             codeModernizerManager.runLocalMavenBuild(context.project, it)
         }
     }

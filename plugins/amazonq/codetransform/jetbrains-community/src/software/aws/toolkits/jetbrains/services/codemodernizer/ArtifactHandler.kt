@@ -80,7 +80,9 @@ val patchDescriptions: Map<String, String> = mapOf(
     "Popular Enterprise Specifications and Application Frameworks" to "This diff patch covers the set of upgrades for Jakarta EE 10, Hibernate 6.2, and Micronaut 3.",
     "HTTP Client Utilities, Apache Commons Utilities, and Web Frameworks" to "This diff patch covers the set of upgrades for Apache HTTP Client 5, Apache Commons utilities (Collections, IO, Lang, Math), Struts 6.0.",
     "Testing Tools and Frameworks" to "This diff patch covers the set of upgrades for ArchUnit, Mockito, TestContainers, Cucumber, and additionally, Jenkins plugins and the Maven Wrapper.",
-    "Miscellaneous Processing Documentation" to "This diff patch covers a diverse set of upgrades spanning ORMs, XML processing, API documentation, and more."
+    "Miscellaneous Processing Documentation" to "This diff patch covers a diverse set of upgrades spanning ORMs, XML processing, API documentation, and more.",
+    "Updated dependencies to latest version" to "",
+    "Upgrade Deprecated API" to ""
 )
 
 class ArtifactHandler(private val project: Project, private val clientAdaptor: GumbyClient, private val codeTransformChatHelper: CodeTransformChatHelper? = null) {
@@ -99,8 +101,6 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
         when (val result = downloadArtifact(job, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS)) {
             is DownloadArtifactResult.Success -> {
                 if (result.artifact !is CodeModernizerArtifact) return notifyUnableToApplyPatch("")
-//                notifyStickyInfo("chosen diff", result.artifact.patches[getCurrentPatchIndex()].name)
-//                notifyStickyInfo("chosen description", result.artifact.description[getCurrentPatchIndex()].name)
                 totalPatchFiles = result.artifact.patches.size
                 if (result.artifact.description == null){
                     displayDiffUsingPatch(result.artifact.patches.first(), totalPatchFiles, null, job, source)
@@ -203,11 +203,11 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             if (artifactType == TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS) {
                 notifyDownloadStart()
             }
-//            val downloadResultsResponse = if (artifactType == TransformationDownloadArtifactType.LOGS) {
-//                clientAdaptor.downloadExportResultArchive(job, null, TransformationDownloadArtifactType.LOGS)
-//            } else {
-//                clientAdaptor.downloadExportResultArchive(job)
-//            }
+            val downloadResultsResponse = if (artifactType == TransformationDownloadArtifactType.LOGS) {
+                clientAdaptor.downloadExportResultArchive(job, null, TransformationDownloadArtifactType.LOGS)
+            } else {
+                clientAdaptor.downloadExportResultArchive(job)
+            }
 
             // 3. Convert to zip
             LOG.info { "Downloaded the export result archive, about to transform to zip" }
@@ -215,11 +215,11 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             val totalDownloadBytes: Int
             val zipPath: String
             try {
-//                val result = unzipToPath(downloadResultsResponse)
-//                path = result.first
-//                totalDownloadBytes = result.second
-//                zipPath = path.toAbsolutePath().toString()
-                zipPath = "/Users/ntarakad/Desktop/SampleArtifactOneDiffNoJson.zip"
+                val result = unzipToPath(downloadResultsResponse)
+                path = result.first
+                totalDownloadBytes = result.second
+                zipPath = path.toAbsolutePath().toString()
+//                zipPath = "/Users/ntarakad/Desktop/SampleArtifactOneDiffNoJson.zip"
                 LOG.info { "Successfully converted the download to a zip at $zipPath." }
             } catch (e: Exception) {
                 LOG.error { e.message.toString() }
@@ -234,11 +234,11 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 } else {
                     DownloadArtifactResult.Success(CodeModernizerArtifact.create(zipPath), zipPath)
                 }
-//                if (artifactType == TransformationDownloadArtifactType.LOGS) {
-//                    downloadedBuildLogPath[job] = path
-//                } else {
-//                    downloadedArtifacts[job] = path
-//                }
+                if (artifactType == TransformationDownloadArtifactType.LOGS) {
+                    downloadedBuildLogPath[job] = path
+                } else {
+                    downloadedArtifacts[job] = path
+                }
                 output
             } catch (e: RuntimeException) {
                 LOG.error { e.message.toString() }
@@ -246,7 +246,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 telemetryErrorMessage = "Unexpected error when downloading result ${e.localizedMessage}"
                 DownloadArtifactResult.ParseZipFailure(ParseZipFailureReason(artifactType, e.message.orEmpty()))
             } finally {
-//                telemetry.downloadArtifact(mapArtifactTypes(artifactType), downloadStartTime, job, totalDownloadBytes, telemetryErrorMessage)
+                telemetry.downloadArtifact(mapArtifactTypes(artifactType), downloadStartTime, job, totalDownloadBytes, telemetryErrorMessage)
             }
         } catch (e: Exception) {
             if (isPreFetch) return DownloadArtifactResult.Skipped

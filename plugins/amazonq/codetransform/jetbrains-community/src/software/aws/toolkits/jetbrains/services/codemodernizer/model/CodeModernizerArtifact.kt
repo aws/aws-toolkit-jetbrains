@@ -42,7 +42,7 @@ open class CodeModernizerArtifact(
 
     companion object {
         private const val maxSupportedVersion = 1.0
-        private var tempDir = createTempDirectory("codeTransformArtifacts", null)
+        private val tempDir = createTempDirectory("codeTransformArtifacts", null)
         private const val manifestPathInZip = "manifest.json"
         private const val summaryNameInZip = "summary.md"
         val LOG = getLogger<CodeModernizerArtifact>()
@@ -61,7 +61,7 @@ open class CodeModernizerArtifact(
                 }
 //                notifyStickyInfo("Zip", path.name)
 //                notifyStickyInfo("Zip", tempDir.path)
-                tempDir = tempDir.resolve("SampleArtifactOneDiffNoJson")
+//                tempDir = tempDir.resolve("SampleArtifactOneDiffNoJson")
                 val manifest = loadManifest()
                 if (manifest.version > maxSupportedVersion) {
                     // If not supported we can still try to use it, i.e. the versions should largely be backwards compatible

@@ -16,6 +16,7 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.putNextEntry
+import software.aws.toolkits.jetbrains.services.codemodernizer.EXPLAINABILITY_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_DEPENDENCIES_ROOT_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_MANIFEST_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runDependencyReportCommands
@@ -26,6 +27,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeMo
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactPomFolder
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilDependenciesRootDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilUploadZip
+import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.IOException
@@ -55,6 +57,7 @@ data class CodeModernizerSessionContext(
     val configurationFile: VirtualFile,
     val sourceJavaVersion: JavaSdkVersion,
     val targetJavaVersion: JavaSdkVersion,
+    var transformCapabilities: List<String> = listOf(EXPLAINABILITY_V1),
     var customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS, // run unit tests by default
 ) {
     private val mapper = jacksonObjectMapper()
@@ -203,7 +206,7 @@ data class CodeModernizerSessionContext(
                 val outputFile = createTemporaryZipFile { zip ->
                     // 1) Manifest file
                     val dependenciesRoot = if (depDirectory != null) "$ZIP_DEPENDENCIES_PATH/${depDirectory.name}" else null
-                    mapper.writeValueAsString(ZipManifest(dependenciesRoot = dependenciesRoot, customBuildCommand = customBuildCommand))
+                    mapper.writeValueAsString(ZipManifest(dependenciesRoot = dependenciesRoot, transformCapabilities = transformCapabilities, customBuildCommand = customBuildCommand))
                         .byteInputStream()
                         .use {
                             zip.putNextEntry(Path(MANIFEST_PATH).toString(), it)
@@ -253,6 +256,7 @@ data class CodeModernizerSessionContext(
                         zip.putNextEntry(Path(BUILD_LOG_PATH).toString(), it)
                     }
                 }.toFile()
+                notifyStickyInfo("output zip", outputFile.path)
                 if (depDirectory != null) ZipCreationResult.Succeeded(outputFile) else ZipCreationResult.Missing1P(outputFile)
             } catch (e: NoSuchFileException) {
                 throw CodeModernizerException("Source folder not found")

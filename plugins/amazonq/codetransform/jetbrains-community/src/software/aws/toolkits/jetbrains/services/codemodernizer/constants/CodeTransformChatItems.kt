@@ -55,6 +55,13 @@ private val confirmSkipTestsSelectionButton = Button(
     id = CodeTransformButtonId.ConfirmSkipTests.id,
 )
 
+private val confirmOneOrMultipleDiffsSelectionButton = Button(
+    keepCardAfterClick = false,
+    waitMandatoryFormItems = true,
+    text = message("codemodernizer.chat.message.button.confirm"),
+    id = CodeTransformButtonId.ConfirmOneOrMultipleDiffs.id,
+)
+
 private val openMvnBuildButton = Button(
     id = CodeTransformButtonId.OpenMvnBuild.id,
     text = message("codemodernizer.chat.message.button.view_build"),
@@ -165,6 +172,22 @@ private val selectSkipTestsFlagFormItem = FormItem(
     )
 )
 
+private val selectOneOrMultipleDiffsFlagFormItem = FormItem(
+    id = CodeTransformFormItemId.SelectOneOrMultipleDiffsFlag.id,
+    title = message("codemodernizer.chat.form.user_selection.item.choose_one_or_multiple_diffs_option"),
+    mandatory = true,
+    options = listOf(
+        FormItemOption(
+            label = message("codemodernizer.chat.message.one_or_multiple_diffs_form.one_diff"),
+            value = message("codemodernizer.chat.message.one_or_multiple_diffs_form.one_diff"),
+        ),
+        FormItemOption(
+            label = message("codemodernizer.chat.message.one_or_multiple_diffs_form.multiple_diffs"),
+            value = message("codemodernizer.chat.message.one_or_multiple_diffs_form.multiple_diffs"),
+        )
+    )
+)
+
 private fun getUserSelectionFormattedMarkdown(moduleName: String): String = """
         ### ${message("codemodernizer.chat.prompt.title.details")}
         -------------
@@ -231,10 +254,30 @@ fun buildUserInputSkipTestsFlagChatContent(): CodeTransformChatMessageContent =
         formItems = listOf(selectSkipTestsFlagFormItem),
         type = CodeTransformChatMessageType.FinalizedAnswer,
     )
+fun buildUserInputOneOrMultipleDiffsChatIntroContent(): CodeTransformChatMessageContent =
+    CodeTransformChatMessageContent(
+        message = message("codemodernizer.chat.message.one_or_multiple_diffs"),
+        type = CodeTransformChatMessageType.FinalizedAnswer,
+    )
+fun buildUserInputOneOrMultipleDiffsFlagChatContent(): CodeTransformChatMessageContent =
+    CodeTransformChatMessageContent(
+        message = message("codemodernizer.chat.form.user_selection.title"),
+        buttons = listOf(
+            confirmOneOrMultipleDiffsSelectionButton,
+            cancelUserSelectionButton,
+        ),
+        formItems = listOf(selectOneOrMultipleDiffsFlagFormItem),
+        type = CodeTransformChatMessageType.FinalizedAnswer,
+    )
 
 fun buildUserSkipTestsFlagSelectionChatContent(skipTestsSelection: String) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
     message = message("codemodernizer.chat.message.skip_tests_form.response", skipTestsSelection.lowercase())
+)
+
+fun buildUserOneOrMultipleDiffsSelectionChatContent(oneOrMultipleDiffsSelection: String) = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = message("codemodernizer.chat.message.one_or_multiple_diffs_form.response", oneOrMultipleDiffsSelection.lowercase())
 )
 
 fun buildUserInputChatContent(project: Project, validationResult: ValidationResult): CodeTransformChatMessageContent {

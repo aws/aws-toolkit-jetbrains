@@ -36,6 +36,7 @@ private enum class CodeTransformMessageTypes(val type: String) {
     CodeTransformStop("codetransform-stop"),
     CodeTransformCancel("codetransform-cancel"),
     CodeTransformConfirmSkipTests("codetransform-confirm-skip-tests"),
+    CodeTransformConfirmOneOrMultipleDiffs("codetransform-confirm-one-or-multiple-diffs"),
     CodeTransformNew("codetransform-new"),
     CodeTransformOpenTransformHub("codetransform-open-transform-hub"),
     CodeTransformOpenMvnBuild("codetransform-open-mvn-build"),
@@ -66,6 +67,7 @@ class CodeTransformChatApp : AmazonQApp {
             CodeTransformMessageTypes.CodeTransformStop.type to IncomingCodeTransformMessage.CodeTransformStop::class,
             CodeTransformMessageTypes.CodeTransformCancel.type to IncomingCodeTransformMessage.CodeTransformCancel::class,
             CodeTransformMessageTypes.CodeTransformConfirmSkipTests.type to IncomingCodeTransformMessage.CodeTransformConfirmSkipTests::class,
+            CodeTransformMessageTypes.CodeTransformConfirmOneOrMultipleDiffs.type to IncomingCodeTransformMessage.CodeTransformConfirmOneOrMultipleDiffs::class,
             CodeTransformMessageTypes.CodeTransformNew.type to IncomingCodeTransformMessage.CodeTransformNew::class,
             CodeTransformMessageTypes.CodeTransformOpenTransformHub.type to IncomingCodeTransformMessage.CodeTransformOpenTransformHub::class,
             CodeTransformMessageTypes.CodeTransformOpenMvnBuild.type to IncomingCodeTransformMessage.CodeTransformOpenMvnBuild::class,
@@ -156,6 +158,7 @@ class CodeTransformChatApp : AmazonQApp {
             is IncomingCodeTransformMessage.CodeTransformCancel -> inboundAppMessagesHandler.processCodeTransformCancelAction(message)
             is IncomingCodeTransformMessage.CodeTransformStop -> inboundAppMessagesHandler.processCodeTransformStopAction(message.tabId)
             is IncomingCodeTransformMessage.CodeTransformConfirmSkipTests -> inboundAppMessagesHandler.processCodeTransformConfirmSkipTests(message)
+            is IncomingCodeTransformMessage.CodeTransformConfirmOneOrMultipleDiffs -> inboundAppMessagesHandler.processCodeTransformOneOrMultipleDiffs(message)
             is IncomingCodeTransformMessage.CodeTransformNew -> inboundAppMessagesHandler.processCodeTransformNewAction(message)
             is IncomingCodeTransformMessage.CodeTransformOpenTransformHub -> inboundAppMessagesHandler.processCodeTransformOpenTransformHub(message)
             is IncomingCodeTransformMessage.CodeTransformOpenMvnBuild -> inboundAppMessagesHandler.processCodeTransformOpenMvnBuild(message)

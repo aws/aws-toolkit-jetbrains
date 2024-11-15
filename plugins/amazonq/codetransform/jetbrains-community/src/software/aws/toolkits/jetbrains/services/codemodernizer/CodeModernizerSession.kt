@@ -69,6 +69,7 @@ const val UPLOAD_ZIP_MANIFEST_VERSION = 1.0F
 const val MAX_ZIP_SIZE = 2000000000 // 2GB
 const val HIL_1P_UPGRADE_CAPABILITY = "HIL_1pDependency_VersionUpgrade"
 const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
+const val SELECTIVE_TRANSFORMATION_V1 = "SELECTIVE_TRANSFORMATION_V1"
 
 // constants for handling SDKClientException
 const val CONNECTION_REFUSED_ERROR: String = "Connection refused"
@@ -212,7 +213,7 @@ class CodeModernizerSession(
                 telemetryErrorMessage = "Cancelled when about to upload project"
                 return CodeModernizerStartJobResult.Cancelled
             }
-//            uploadId = payload?.let { uploadPayload(it) }.toString()
+            uploadId = payload?.let { uploadPayload(it) }.toString()
         } catch (e: AlreadyDisposedException) {
             LOG.warn { e.localizedMessage }
             telemetryErrorMessage = "Disposed when about to upload zip"
@@ -273,9 +274,9 @@ class CodeModernizerSession(
             return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER(e.localizedMessage))
         } finally {
             telemetry.uploadProject(payloadSize, startTime, true, telemetryErrorMessage)
-            if (payload != null) {
-                deleteUploadArtifact(payload)
-            }
+//            if (payload != null) {
+//                deleteUploadArtifact(payload)
+//            }
         }
 
         // Send upload completion message to chat (only if successful)
@@ -286,8 +287,8 @@ class CodeModernizerSession(
                 LOG.warn { "Job was cancelled by user before start job was called" }
                 return CodeModernizerStartJobResult.Cancelled
             }
-//            val startJobResponse = startJob(uploadId)
-            val startJobResponse = StartTransformationResponse.builder().transformationJobId("123").build()
+            val startJobResponse = startJob(uploadId)
+//            val startJobResponse = StartTransformationResponse.builder().transformationJobId("123").build()
             state.putJobHistory(sessionContext, TransformationStatus.STARTED, startJobResponse.transformationJobId())
             state.currentJobStatus = TransformationStatus.STARTED
             telemetry.jobStart(startTime, JobId(startJobResponse.transformationJobId()))
@@ -426,7 +427,7 @@ class CodeModernizerSession(
     ): CodeModernizerJobCompletedResult {
         try {
             state.currentJobId = jobId
-            return CodeModernizerJobCompletedResult.JobCompletedSuccessfully(jobId)
+//            return CodeModernizerJobCompletedResult.JobCompletedSuccessfully(jobId)
 
             // add delay to avoid the throttling error
             delay(1000)
