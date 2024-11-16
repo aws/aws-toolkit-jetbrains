@@ -45,8 +45,9 @@ fun Module.tryGetJdkLanguageLevelJdk(): JavaSdkVersion? {
 fun containsSQL(contentRoot: VirtualFile): Boolean {
     val patterns = listOf(
         "oracle.jdbc.OracleDriver",
-        "jdbc:oracle:thin:@//",
-        "jdbc:oracle:oci:@//"
+        "jdbc:oracle:thin:@",
+        "jdbc:oracle:oci:@",
+        "jdbc:odbc:",
     )
 
     val searchers = patterns.map { StringSearcher(it, false, true) }
