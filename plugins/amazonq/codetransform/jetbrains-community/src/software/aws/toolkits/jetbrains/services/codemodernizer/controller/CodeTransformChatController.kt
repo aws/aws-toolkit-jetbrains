@@ -9,7 +9,6 @@ import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.aws.toolkits.core.utils.debug
@@ -44,7 +43,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHi
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilRejectContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilResumeWithErrorContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilResumedContent
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildMultipleDiffsChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildProjectInvalidChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildProjectValidChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildStartNewTransformFollowup
@@ -68,12 +66,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUs
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserSelectionSummaryChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserSkipTestsFlagSelectionChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserStopTransformChatContent
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.createViewDiffButton
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.viewSummaryButton
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.AuthenticationNeededExceptionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessage
-import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessageContent
-import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessageType
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformCommandMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.IncomingCodeTransformMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
@@ -179,7 +173,6 @@ class CodeTransformChatController(
                 codeTransformChatHelper.addNewMessage(buildTransformInProgressChatContent())
             } else {
                 codeTransformChatHelper.addNewMessage(buildTransformBeginChatContent())
-//                codeTransformChatHelper.addNewMessage(buildMultipleDiffsChatContent())
                 codeTransformChatHelper.addNewMessage(buildTransformInProgressChatContent())
             }
             return true
@@ -256,10 +249,8 @@ class CodeTransformChatController(
             else -> MAVEN_BUILD_RUN_UNIT_TESTS
         }
         codeTransformChatHelper.addNewMessage(buildUserSkipTestsFlagSelectionChatContent(message.skipTestsSelection))
-//        codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
         codeModernizerManager.codeTransformationSession?.let {
             it.sessionContext.customBuildCommand = customBuildCommand
-//            codeModernizerManager.runLocalMavenBuild(context.project, it)
         }
         codeTransformChatHelper.run {
             addNewMessage(buildUserInputOneOrMultipleDiffsChatIntroContent())
@@ -529,7 +520,6 @@ class CodeTransformChatController(
 
     private suspend fun handleCodeTransformUploadCompleted() {
         codeTransformChatHelper.addNewMessage(buildTransformBeginChatContent())
-//        codeTransformChatHelper.addNewMessage(buildMultipleDiffsChatContent())
         codeTransformChatHelper.addNewMessage(buildTransformInProgressChatContent())
     }
 

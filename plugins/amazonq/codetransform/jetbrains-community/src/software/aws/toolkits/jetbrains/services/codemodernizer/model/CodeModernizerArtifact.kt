@@ -3,29 +3,22 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.util.io.FileUtil.createTempDirectory
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
-import org.gradle.internal.impldep.jcifs.util.DES
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.codemodernizer.TransformationSummary
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
-import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import java.io.File
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.Path
 import kotlin.io.path.isDirectory
-import kotlin.io.path.name
-import kotlin.io.path.walk
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-data class DescriptionContent (val content: List<PatchInfo>)
 
 
 /**
@@ -59,9 +52,6 @@ open class CodeModernizerArtifact(
                     LOG.error { "Could not unzip artifact" }
                     throw RuntimeException("Could not unzip artifact")
                 }
-//                notifyStickyInfo("Zip", path.name)
-//                notifyStickyInfo("Zip", tempDir.path)
-//                tempDir = tempDir.resolve("SampleArtifactOneDiffNoJson")
                 val manifest = loadManifest()
                 if (manifest.version > maxSupportedVersion) {
                     // If not supported we can still try to use it, i.e. the versions should largely be backwards compatible
@@ -138,7 +128,9 @@ open class CodeModernizerArtifact(
             }
 
             val diffPatchFile = patchesDir.resolve("diff.patch")
-            return fileSystem.findFileByNioFile(diffPatchFile)!!
+            return fileSystem.findFileByNioFile(diffPatchFile.parent.resolve("diff.patch"))
+                ?: throw IllegalStateException("Could not find diff.patch in directory: ${diffPatchFile.parent}")
+
         }
 
         @OptIn(ExperimentalPathApi::class)

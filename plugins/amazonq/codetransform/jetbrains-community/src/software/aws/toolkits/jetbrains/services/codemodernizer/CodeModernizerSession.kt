@@ -10,8 +10,6 @@ import com.intellij.util.io.HttpRequests
 import kotlinx.coroutines.delay
 import org.apache.commons.codec.digest.DigestUtils
 import software.amazon.awssdk.core.exception.SdkClientException
-import software.amazon.awssdk.services.codewhispererruntime.endpoints.internal.SourceException
-import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.ResumeTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationJob
@@ -274,9 +272,9 @@ class CodeModernizerSession(
             return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER(e.localizedMessage))
         } finally {
             telemetry.uploadProject(payloadSize, startTime, true, telemetryErrorMessage)
-//            if (payload != null) {
-//                deleteUploadArtifact(payload)
-//            }
+            if (payload != null) {
+                deleteUploadArtifact(payload)
+            }
         }
 
         // Send upload completion message to chat (only if successful)
@@ -288,7 +286,6 @@ class CodeModernizerSession(
                 return CodeModernizerStartJobResult.Cancelled
             }
             val startJobResponse = startJob(uploadId)
-//            val startJobResponse = StartTransformationResponse.builder().transformationJobId("123").build()
             state.putJobHistory(sessionContext, TransformationStatus.STARTED, startJobResponse.transformationJobId())
             state.currentJobStatus = TransformationStatus.STARTED
             telemetry.jobStart(startTime, JobId(startJobResponse.transformationJobId()))
@@ -427,7 +424,6 @@ class CodeModernizerSession(
     ): CodeModernizerJobCompletedResult {
         try {
             state.currentJobId = jobId
-//            return CodeModernizerJobCompletedResult.JobCompletedSuccessfully(jobId)
 
             // add delay to avoid the throttling error
             delay(1000)

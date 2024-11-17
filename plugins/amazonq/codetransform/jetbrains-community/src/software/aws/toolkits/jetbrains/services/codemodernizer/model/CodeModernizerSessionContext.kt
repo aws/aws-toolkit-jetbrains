@@ -256,7 +256,6 @@ data class CodeModernizerSessionContext(
                         zip.putNextEntry(Path(BUILD_LOG_PATH).toString(), it)
                     }
                 }.toFile()
-                notifyStickyInfo("output zip", outputFile.path)
                 if (depDirectory != null) ZipCreationResult.Succeeded(outputFile) else ZipCreationResult.Missing1P(outputFile)
             } catch (e: NoSuchFileException) {
                 throw CodeModernizerException("Source folder not found")

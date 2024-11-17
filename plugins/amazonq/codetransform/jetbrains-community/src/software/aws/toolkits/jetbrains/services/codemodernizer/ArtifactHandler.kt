@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
@@ -16,11 +15,8 @@ import com.intellij.openapi.vcs.changes.patch.ApplyPatchMode
 import com.intellij.openapi.vcs.changes.patch.ImportToShelfExecutor
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
-import com.jetbrains.rd.generator.nova.PredefinedType
-import com.squareup.wire.get
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.Serializable
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.core.utils.error
@@ -32,16 +28,12 @@ import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.NoTokenInitializedException
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_DOWNLOAD_ERROR_OVERVIEW
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_DOWNLOAD_EXPIRED
-import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformResultChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.getDownloadedArtifactTextFromType
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.createViewDiffButton
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.viewSummaryButton
 import software.aws.toolkits.jetbrains.services.codemodernizer.controller.CodeTransformChatHelper
-import software.aws.toolkits.jetbrains.services.codemodernizer.messages.Button
-import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformButtonId
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessageContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessageType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
@@ -53,7 +45,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ParseZipFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.PatchInfo
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.UnzipFailureReason
-import software.aws.toolkits.jetbrains.services.codemodernizer.session.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isValidCodeTransformConnection
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
@@ -69,18 +60,17 @@ import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildStartNewTransformFollowup
 
 const val DOWNLOAD_PROXY_WILDCARD_ERROR: String = "Dangling meta character '*' near index 0"
 const val DOWNLOAD_SSL_HANDSHAKE_ERROR: String = "Unable to execute HTTP request: javax.net.ssl.SSLHandshakeException"
 const val INVALID_ARTIFACT_ERROR: String = "Invalid artifact"
 val patchDescriptions: Map<String, String> = mapOf(
-    "Minimal Compatible Library Upgrade to Java 17" to "This diff patch covers the set of upgrades for Springboot, JUnit, and PowerMockito frameworks.",
-    "Popular Enterprise Specifications and Application Frameworks" to "This diff patch covers the set of upgrades for Jakarta EE 10, Hibernate 6.2, and Micronaut 3.",
+    "Prepare minimal upgrade to Java 17" to "This diff patch covers the set of upgrades for Springboot, JUnit, and PowerMockito frameworks.",
+    "Popular Enterprise Specifications and Application Frameworks upgrade" to "This diff patch covers the set of upgrades for Jakarta EE 10, Hibernate 6.2, and Micronaut 3.",
     "HTTP Client Utilities, Apache Commons Utilities, and Web Frameworks" to "This diff patch covers the set of upgrades for Apache HTTP Client 5, Apache Commons utilities (Collections, IO, Lang, Math), Struts 6.0.",
-    "Testing Tools and Frameworks" to "This diff patch covers the set of upgrades for ArchUnit, Mockito, TestContainers, Cucumber, and additionally, Jenkins plugins and the Maven Wrapper.",
-    "Miscellaneous Processing Documentation" to "This diff patch covers a diverse set of upgrades spanning ORMs, XML processing, API documentation, and more.",
+    "Testing Tools and Frameworks upgrade" to "This diff patch covers the set of upgrades for ArchUnit, Mockito, TestContainers, Cucumber, and additionally, Jenkins plugins and the Maven Wrapper.",
+    "Miscellaneous Processing Documentation upgrade" to "This diff patch covers a diverse set of upgrades spanning ORMs, XML processing, API documentation, and more.",
     "Updated dependencies to latest version" to "",
     "Upgrade Deprecated API" to ""
 )
@@ -91,7 +81,6 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
     private val downloadedSummaries = mutableMapOf<JobId, TransformationSummary>()
     private val downloadedBuildLogPath = mutableMapOf<JobId, Path>()
     private var isCurrentlyDownloading = AtomicBoolean(false)
-//    private var currentPatchIndex: Int = 0
     private val scope = CoroutineScope(Dispatchers.Default)
     private var totalPatchFiles: Int = 0
 
@@ -219,7 +208,6 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                 path = result.first
                 totalDownloadBytes = result.second
                 zipPath = path.toAbsolutePath().toString()
-//                zipPath = "/Users/ntarakad/Desktop/SampleArtifactOneDiffNoJson.zip"
                 LOG.info { "Successfully converted the download to a zip at $zipPath." }
             } catch (e: Exception) {
                 LOG.error { e.message.toString() }
@@ -299,9 +287,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
 
             if (dialog.showAndGet()) {
                 scope.launch {
-//                    notifyStickyInfo("diff accepted", if (codeTransformChatHelper == null) "null" else "not null")
                     telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Submit", source)
-                    setCurrentPatchIndex(getCurrentPatchIndex() + 1)
                     if (getCurrentPatchIndex() < totalPatchFiles){
                         val message = if (diffDescription != null) {
                             "I applied the changes in diff patch ${getCurrentPatchIndex()} of $totalPatchFiles. ${patchDescriptions[diffDescription.name]} You can make a commit if the diff shows success. If the diff shows partial success, apply and fix the errors, and start a new transformation."
@@ -317,6 +303,7 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                     } else {
                         codeTransformChatHelper?.addNewMessage(buildStartNewTransformFollowup())
                     }
+                    setCurrentPatchIndex(getCurrentPatchIndex() + 1)
                 }
             } else {
                 telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Cancel", source)

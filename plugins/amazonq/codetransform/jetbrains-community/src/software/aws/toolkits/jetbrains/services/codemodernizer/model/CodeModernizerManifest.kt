@@ -10,3 +10,6 @@ data class CodeModernizerManifest(val version: Float, val patchesRoot: String, v
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class PatchInfo (val name: String, val filename: String, val isSuccessful: Boolean)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class DescriptionContent (val content: List<PatchInfo>)
