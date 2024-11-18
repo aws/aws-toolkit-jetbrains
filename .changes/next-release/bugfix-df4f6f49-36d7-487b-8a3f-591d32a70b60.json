@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Changed default info color on dark themes to be blue, instead of gray"
+}
