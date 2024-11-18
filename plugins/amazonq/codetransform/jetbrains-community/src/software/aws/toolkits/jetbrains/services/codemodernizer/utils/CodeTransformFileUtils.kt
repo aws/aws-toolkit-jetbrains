@@ -151,7 +151,7 @@ fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {
     try {
         sctMetadata = XML_MAPPER.readValue<SctMetadata>(sctFile)
     } catch (e: Exception) {
-        getLogger<CodeTransformChatController>().error { "Error parsing .sct metadata file; invalid XML encountered. $e" }
+        getLogger<CodeTransformChatController>().error { "Error parsing .sct metadata file; invalid XML encountered: ${e.localizedMessage}" }
         return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.invalid_sct"))
     }
 
@@ -182,7 +182,7 @@ fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {
         }
         return SqlMetadataValidationResult(true, "", sourceVendor, targetVendor, sourceServerName, schemaNames)
     } catch (e: Exception) {
-        getLogger<CodeTransformChatController>().error { "Error parsing .sct metadata file: $e" }
+        getLogger<CodeTransformChatController>().error { "Error parsing .sct metadata file: ${e.localizedMessage}" }
         return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.invalid_sct"))
     }
 }

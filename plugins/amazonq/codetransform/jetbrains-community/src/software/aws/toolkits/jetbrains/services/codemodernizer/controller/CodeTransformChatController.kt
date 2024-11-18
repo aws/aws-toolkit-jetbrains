@@ -11,10 +11,9 @@ import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.util.io.FileUtil.createTempDirectory
 import com.intellij.openapi.vfs.VirtualFile
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -322,12 +321,12 @@ class CodeTransformChatController(
     }
 
     override suspend fun processCodeTransformSelectSQLMetadataAction(message: IncomingCodeTransformMessage.CodeTransformSelectSQLMetadata) {
-        runInEdt {
+        withContext(EDT) {
             val descriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
                 .withDescription("Select metadata file")
                 .withFileFilter { it.extension == "zip" }
 
-            val selectedZipFile = FileChooser.chooseFile(descriptor, null, null) ?: return@runInEdt
+            val selectedZipFile = FileChooser.chooseFile(descriptor, null, null) ?: return@withContext
             val extractedZip = createTempDirectory("codeTransformSQLMetadata", null)
 
             unzipFile(selectedZipFile.toNioPath(), extractedZip.toPath(), true)
@@ -337,36 +336,32 @@ class CodeTransformChatController(
             val metadataValidationResult = validateSctMetadata(sctFile)
 
             if (!metadataValidationResult.valid) {
-                CoroutineScope(EDT).launch {
-                    codeTransformChatHelper.run {
-                        addNewMessage(buildSQLMetadataValidationErrorChatContent(metadataValidationResult.errorReason))
-                        addNewMessage(buildStartNewTransformFollowup())
-                    }
+                codeTransformChatHelper.run {
+                    addNewMessage(buildSQLMetadataValidationErrorChatContent(metadataValidationResult.errorReason))
+                    addNewMessage(buildStartNewTransformFollowup())
                 }
-                return@runInEdt
+                return@withContext
             }
 
-            CoroutineScope(EDT).launch {
-                codeTransformChatHelper.run {
-                    addNewMessage(buildSQLMetadataValidationSuccessIntroChatContent())
-                    addNewMessage(buildSQLMetadataValidationSuccessDetailsChatContent(metadataValidationResult))
-                    addNewMessage(buildModuleSchemaFormIntroChatContent())
-                    addNewMessage(
-                        buildModuleSchemaFormChatContent(context.project, context.project.getJavaModulesWithSQL(), metadataValidationResult.schemaOptions)
-                    )
-                }
-                val selection = CustomerSelection(
-                    // for SQL conversions (no sourceJavaVersion), use dummy value of Java 8 so that startJob API can be called
-                    sourceJavaVersion = JavaSdkVersion.JDK_1_8,
-                    targetJavaVersion = JavaSdkVersion.JDK_17,
-                    sourceVendor = metadataValidationResult.sourceVendor,
-                    targetVendor = metadataValidationResult.targetVendor,
-                    sourceServerName = metadataValidationResult.sourceServerName,
-                    sqlMetadataZip = extractedZip,
+            codeTransformChatHelper.run {
+                addNewMessage(buildSQLMetadataValidationSuccessIntroChatContent())
+                addNewMessage(buildSQLMetadataValidationSuccessDetailsChatContent(metadataValidationResult))
+                addNewMessage(buildModuleSchemaFormIntroChatContent())
+                addNewMessage(
+                    buildModuleSchemaFormChatContent(context.project, context.project.getJavaModulesWithSQL(), metadataValidationResult.schemaOptions)
                 )
-                codeModernizerManager.createCodeModernizerSession(selection, context.project)
-                telemetry.submitSelection("Confirm-SQL", selection)
             }
+            val selection = CustomerSelection(
+                // for SQL conversions (no sourceJavaVersion), use dummy value of Java 8 so that startJob API can be called
+                sourceJavaVersion = JavaSdkVersion.JDK_1_8,
+                targetJavaVersion = JavaSdkVersion.JDK_17,
+                sourceVendor = metadataValidationResult.sourceVendor,
+                targetVendor = metadataValidationResult.targetVendor,
+                sourceServerName = metadataValidationResult.sourceServerName,
+                sqlMetadataZip = extractedZip,
+            )
+            codeModernizerManager.createCodeModernizerSession(selection, context.project)
+            telemetry.submitSelection("Confirm-SQL", selection)
         }
     }
 
