@@ -36,6 +36,7 @@ import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
+import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
@@ -198,7 +199,7 @@ abstract class LoginBrowser(
                 reason = e.message,
                 credentialSourceId = CredentialSourceId.AwsId,
                 isReAuth = isReauth,
-                authType = getAuthType()
+                authType = getAuthType(SONO_REGION)
             )
             AuthTelemetry.addConnection(
                 result = Result.Failed,
@@ -218,7 +219,7 @@ abstract class LoginBrowser(
                 result = Result.Succeeded,
                 credentialSourceId = CredentialSourceId.AwsId,
                 isReAuth = isReauth,
-                authType = getAuthType()
+                authType = getAuthType(SONO_REGION)
             )
             AuthTelemetry.addConnection(
                 result = Result.Succeeded,

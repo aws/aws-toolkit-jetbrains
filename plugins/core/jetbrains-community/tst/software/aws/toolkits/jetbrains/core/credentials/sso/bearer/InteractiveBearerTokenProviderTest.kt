@@ -16,6 +16,7 @@ import org.junit.jupiter.api.assertThrows
 import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
@@ -273,7 +274,7 @@ class InteractiveBearerTokenProviderTest {
     )
 
     private fun stubClientRegistration() {
-        whenever(diskCache.loadClientRegistration(any<DeviceAuthorizationClientRegistrationCacheKey>())).thenReturn(
+        whenever(diskCache.loadClientRegistration(any<DeviceAuthorizationClientRegistrationCacheKey>(), eq("testSource"))).thenReturn(
             DeviceAuthorizationClientRegistration(
                 "",
                 "",

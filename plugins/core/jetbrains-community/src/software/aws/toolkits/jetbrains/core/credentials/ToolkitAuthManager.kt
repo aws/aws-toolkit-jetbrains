@@ -10,6 +10,7 @@ import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import migration.software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
+import software.amazon.awssdk.services.toolkittelemetry.model.MetricUnit
 import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.TokenConnectionSettings
@@ -374,7 +375,7 @@ private fun recordLoginWithBrowser(
     TelemetryService.getInstance().record(null as Project?) {
         datum("aws_loginWithBrowser") {
             createTime(Instant.now())
-            unit(software.amazon.awssdk.services.toolkittelemetry.model.Unit.NONE)
+            unit(MetricUnit.NONE)
             value(1.0)
             passive(false)
             credentialSourceId?.let { metadata("credentialSourceId", it.toString()) }
@@ -398,7 +399,7 @@ private fun recordAddConnection(
     TelemetryService.getInstance().record(null as Project?) {
         datum("auth_addConnection") {
             createTime(Instant.now())
-            unit(software.amazon.awssdk.services.toolkittelemetry.model.Unit.NONE)
+            unit(MetricUnit.NONE)
             value(1.0)
             passive(false)
             credentialSourceId?.let { metadata("credentialSourceId", it.toString()) }

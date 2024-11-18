@@ -7,7 +7,7 @@ interface SsoCache {
     fun invalidateClientRegistration(ssoRegion: String)
     fun invalidateAccessToken(ssoUrl: String)
 
-    fun loadClientRegistration(cacheKey: ClientRegistrationCacheKey): ClientRegistration?
+    fun loadClientRegistration(cacheKey: ClientRegistrationCacheKey, source: String): ClientRegistration?
     fun saveClientRegistration(cacheKey: ClientRegistrationCacheKey, registration: ClientRegistration)
     fun invalidateClientRegistration(cacheKey: ClientRegistrationCacheKey)
 

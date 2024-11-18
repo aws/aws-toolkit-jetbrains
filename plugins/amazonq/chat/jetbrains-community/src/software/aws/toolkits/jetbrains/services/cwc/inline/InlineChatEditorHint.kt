@@ -19,23 +19,26 @@ import javax.swing.JPanel
 
 class InlineChatEditorHint {
     private val hint = createHint()
+    private val hintXOffset = 20
 
     private fun getHintLocation(editor: Editor): Point {
         val range = editor.calculateVisibleRange()
         val document = editor.document
         val selectionEnd = editor.selectionModel.selectionEnd
         val isOneLineSelection = isOneLineSelection(editor)
-        val isBelow = editor.offsetToXY(selectionEnd) !in editor.scrollingModel.visibleArea
+        val offset = document.getLineEndOffset(document.getLineNumber(selectionEnd))
+        val offsetXy = editor.offsetToXY(offset)
+        val potentialXy = Point(offsetXy.x + hintXOffset, offsetXy.y)
+        val isBelow = potentialXy !in editor.scrollingModel.visibleArea
         val areEdgesOutsideOfVisibleArea = editor.selectionModel.selectionStart !in range && editor.selectionModel.selectionEnd !in range
         val offsetForHint = when {
-            isOneLineSelection -> selectionEnd
             areEdgesOutsideOfVisibleArea -> document.getLineEndOffset(getLineByVisualStart(editor, editor.caretModel.offset, true))
             isBelow -> document.getLineEndOffset(getLineByVisualStart(editor, selectionEnd, true))
             else -> document.getLineEndOffset(getLineByVisualStart(editor, selectionEnd, false))
         }
         val visualPosition = editor.offsetToVisualPosition(offsetForHint)
-        val hintPoint = HintManagerImpl.getHintPosition(hint, editor, visualPosition, HintManager.RIGHT)
-        hintPoint.translate(0, if (isBelow) editor.lineHeight else 0)
+        val hintPoint = HintManagerImpl.getHintPosition(hint, editor, visualPosition, HintManager.RIGHT_UNDER)
+        hintPoint.translate(if (!isBelow) hintXOffset else 0, if (!isOneLineSelection || isBelow) editor.lineHeight else 0)
         return hintPoint
     }
 
