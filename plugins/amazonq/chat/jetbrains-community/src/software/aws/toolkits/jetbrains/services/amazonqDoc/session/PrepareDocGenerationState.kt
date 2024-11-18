@@ -17,6 +17,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Sessio
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.deleteUploadArtifact
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.uploadArtifactToS3
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 
 private val logger = getLogger<PrepareDocGenerationState>()
 
@@ -39,7 +40,8 @@ class PrepareDocGenerationState(
         var zipFileLength: Long? = null
         val nextState: SessionState
         try {
-            val repoZipResult = config.repoContext.getProjectZip()
+            val isAutoBuildFeatureEnabled = CodeWhispererSettings.getInstance().isAutoBuildFeatureEnabled(this.config.repoContext.getWorkspaceRoot())
+            val repoZipResult = config.repoContext.getProjectZip(isAutoBuildFeatureEnabled = isAutoBuildFeatureEnabled)
             val zipFileChecksum = repoZipResult.checksum
             zipFileLength = repoZipResult.contentLength
             val fileToUpload = repoZipResult.payload
