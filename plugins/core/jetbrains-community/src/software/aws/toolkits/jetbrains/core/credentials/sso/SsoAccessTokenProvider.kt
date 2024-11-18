@@ -436,7 +436,7 @@ class SsoAccessTokenProvider(
                     is PKCEAuthorizationGrantToken -> loadPkceClientRegistration(SourceOfLoadRegistration.REFRESH_TOKEN.toString())
                 }
             } catch (e: ClientRegistrationNotFoundException) {
-                //invalidate tokens to force a reauth
+                // invalidate tokens to force a reauth
                 invalidate()
                 null
             } catch (e: Exception) {
