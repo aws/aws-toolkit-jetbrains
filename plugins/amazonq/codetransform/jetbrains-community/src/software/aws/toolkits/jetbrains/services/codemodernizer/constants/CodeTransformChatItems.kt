@@ -208,7 +208,6 @@ private val selectSkipTestsFlagFormItem = FormItem(
     )
 )
 
-<<<<<<< HEAD
 private val selectOneOrMultipleDiffsFlagFormItem = FormItem(
     id = CodeTransformFormItemId.SelectOneOrMultipleDiffsFlag.id,
     title = message("codemodernizer.chat.form.user_selection.item.choose_one_or_multiple_diffs_option"),
@@ -225,10 +224,7 @@ private val selectOneOrMultipleDiffsFlagFormItem = FormItem(
     )
 )
 
-private fun getUserSelectionFormattedMarkdown(moduleName: String): String = """
-=======
 private fun getUserLanguageUpgradeSelectionFormattedMarkdown(moduleName: String): String = """
->>>>>>> 0e94d0252 (feat(amazonq): support SQL conversions (#4995))
         ### ${message("codemodernizer.chat.prompt.title.details")}
         -------------
 
@@ -341,16 +337,12 @@ fun buildUserSkipTestsFlagSelectionChatContent(skipTestsSelection: String) = Cod
     message = message("codemodernizer.chat.message.skip_tests_form.response", skipTestsSelection.lowercase())
 )
 
-<<<<<<< HEAD
 fun buildUserOneOrMultipleDiffsSelectionChatContent(oneOrMultipleDiffsSelection: String) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
     message = message("codemodernizer.chat.message.one_or_multiple_diffs_form.response", oneOrMultipleDiffsSelection.lowercase())
 )
 
-fun buildUserInputChatContent(project: Project, validationResult: ValidationResult): CodeTransformChatMessageContent {
-=======
 fun buildUserInputLanguageUpgradeChatContent(project: Project, validationResult: ValidationResult): CodeTransformChatMessageContent {
->>>>>>> 0e94d0252 (feat(amazonq): support SQL conversions (#4995))
     val moduleBuildFiles = validationResult.validatedBuildFiles
 
     return CodeTransformChatMessageContent(

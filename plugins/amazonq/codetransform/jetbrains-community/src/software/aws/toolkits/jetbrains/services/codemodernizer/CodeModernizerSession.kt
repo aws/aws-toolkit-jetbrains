@@ -63,12 +63,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.SSLHandshakeException
 
 const val MAX_ZIP_SIZE = 2000000000 // 2GB
-<<<<<<< HEAD
 const val HIL_1P_UPGRADE_CAPABILITY = "HIL_1pDependency_VersionUpgrade"
 const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
 const val SELECTIVE_TRANSFORMATION_V1 = "SELECTIVE_TRANSFORMATION_V1"
-=======
->>>>>>> 0e94d0252 (feat(amazonq): support SQL conversions (#4995))
 
 // constants for handling SDKClientException
 const val CONNECTION_REFUSED_ERROR: String = "Connection refused"

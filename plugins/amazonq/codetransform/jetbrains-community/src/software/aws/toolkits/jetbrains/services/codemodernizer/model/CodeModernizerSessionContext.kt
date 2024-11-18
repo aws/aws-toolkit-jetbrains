@@ -62,16 +62,10 @@ const val AURORA_DB = "AURORA_POSTGRESQL"
 const val RDS_DB = "RDS_POSTGRESQL"
 data class CodeModernizerSessionContext(
     val project: Project,
-<<<<<<< HEAD
-    val configurationFile: VirtualFile,
-    val sourceJavaVersion: JavaSdkVersion,
-    val targetJavaVersion: JavaSdkVersion,
-    var transformCapabilities: List<String> = listOf(EXPLAINABILITY_V1),
-=======
     var configurationFile: VirtualFile? = null, // used to ZIP module
     val sourceJavaVersion: JavaSdkVersion, // always needed for startJob API
     val targetJavaVersion: JavaSdkVersion = JavaSdkVersion.JDK_17, // only one supported
->>>>>>> 0e94d0252 (feat(amazonq): support SQL conversions (#4995))
+    var transformCapabilities: List<String> = listOf(EXPLAINABILITY_V1),
     var customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS, // run unit tests by default
     val sourceVendor: String = ORACLE_DB, // only one supported
     val targetVendor: String? = null,
@@ -227,11 +221,7 @@ data class CodeModernizerSessionContext(
                 val depSources = File(ZIP_DEPENDENCIES_PATH)
                 val outputFile = createTemporaryZipFile { zip ->
                     // 1) Manifest file
-<<<<<<< HEAD
-                    val dependenciesRoot = if (depDirectory != null) "$ZIP_DEPENDENCIES_PATH/${depDirectory.name}" else null
-                    mapper.writeValueAsString(ZipManifest(dependenciesRoot = dependenciesRoot, transformCapabilities = transformCapabilities, customBuildCommand = customBuildCommand))
-=======
-                    var manifest = ZipManifest(customBuildCommand = customBuildCommand)
+                    var manifest = ZipManifest(customBuildCommand = customBuildCommand, transformCapabilities = transformCapabilities)
                     if (sqlMetadataZip != null) {
                         // doing a SQL conversion, not language upgrade
                         val sctFileName = sqlMetadataZip.listFiles { file -> file.name.endsWith(".sct") }.first().name
@@ -242,7 +232,6 @@ data class CodeModernizerSessionContext(
                         )
                     }
                     mapper.writeValueAsString(manifest)
->>>>>>> 0e94d0252 (feat(amazonq): support SQL conversions (#4995))
                         .byteInputStream()
                         .use {
                             zip.putNextEntry(Path(MANIFEST_PATH).toString(), it)
