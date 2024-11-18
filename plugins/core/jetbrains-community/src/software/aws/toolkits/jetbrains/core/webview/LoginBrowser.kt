@@ -330,7 +330,7 @@ abstract class LoginBrowser(
                         reason = error.message,
                         credentialType = CredentialType.StaticProfile,
                         authType = AuthType.IAM,
-                        source = "",
+                        source = SourceOfEntry.LOGIN_BROWSER.toString(),
                     )
                     LOG.error(error) { "Profile file error" }
                     Messages.showErrorDialog(jcefBrowser.component, error.message, AwsCoreBundle.message("gettingstarted.auth.failed"))
@@ -341,7 +341,7 @@ abstract class LoginBrowser(
                         result = Result.Failed,
                         reason = "Profile already exists",
                         authType = AuthType.IAM,
-                        source = "",
+                        source = SourceOfEntry.LOGIN_BROWSER.toString(),
                     )
                 },
                 { error ->
@@ -351,7 +351,7 @@ abstract class LoginBrowser(
                         result = Result.Failed,
                         reason = reason,
                         authType = AuthType.IAM,
-                        source = "",
+                        source = SourceOfEntry.LOGIN_BROWSER.toString(),
                     )
                     LOG.error(error) { reason }
                     Messages.showErrorDialog(jcefBrowser.component, error.message, AwsCoreBundle.message("gettingstarted.auth.failed"))
@@ -365,7 +365,7 @@ abstract class LoginBrowser(
                     result = Result.Succeeded,
                     credentialType = CredentialType.StaticProfile,
                     authType = AuthType.IAM,
-                    source = "",
+                    source = SourceOfEntry.LOGIN_BROWSER.toString(),
                 )
             }
         }

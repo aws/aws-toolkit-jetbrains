@@ -208,7 +208,7 @@ internal class ToolkitOAuthCallbackHandler : OAuthCallbackHandlerBase() {
                 reason = error,
                 reasonDesc = errorDescription,
                 authType = AuthType.PKCE,
-                source = "",
+                source = SourceOfEntry.UNKNOWN.toString(),
             )
 
             mapOf(
