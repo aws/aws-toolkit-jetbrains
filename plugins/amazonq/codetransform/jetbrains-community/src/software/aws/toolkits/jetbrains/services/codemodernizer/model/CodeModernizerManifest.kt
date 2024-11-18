@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 data class CodeModernizerManifest(val version: Float, val patchesRoot: String, val artifactsRoot: String, val summaryRoot: String)
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class PatchInfo (val name: String, val filename: String, val isSuccessful: Boolean)
+data class PatchInfo(val name: String, val filename: String, val isSuccessful: Boolean)
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class DescriptionContent (val content: List<PatchInfo>)
+data class DescriptionContent(val content: List<PatchInfo>)

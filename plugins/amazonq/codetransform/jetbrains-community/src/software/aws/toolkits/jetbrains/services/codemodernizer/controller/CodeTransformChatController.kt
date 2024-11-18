@@ -261,9 +261,12 @@ class CodeTransformChatController(
     override suspend fun processCodeTransformOneOrMultipleDiffs(message: IncomingCodeTransformMessage.CodeTransformConfirmOneOrMultipleDiffs) {
         val transformCapabilities = when (message.oneOrMultipleDiffsSelection) {
             message("codemodernizer.chat.message.one_or_multiple_diffs_form.multiple_diffs") -> listOf(
-                EXPLAINABILITY_V1, SELECTIVE_TRANSFORMATION_V1)
+                EXPLAINABILITY_V1,
+                SELECTIVE_TRANSFORMATION_V1
+            )
             else -> listOf(
-                EXPLAINABILITY_V1)
+                EXPLAINABILITY_V1
+            )
         }
         codeTransformChatHelper.addNewMessage(buildUserOneOrMultipleDiffsSelectionChatContent(message.oneOrMultipleDiffsSelection))
         codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
@@ -539,8 +542,10 @@ class CodeTransformChatController(
                 if (result is CodeModernizerJobCompletedResult.ZipUploadFailed && result.failureReason is UploadFailureReason.CREDENTIALS_EXPIRED) {
                     return
                 } else {
-                    val downloadResult = artifactHandler.downloadArtifact(CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId,
-                        TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS)
+                    val downloadResult = artifactHandler.downloadArtifact(
+                        CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId,
+                        TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS
+                    )
                     when (downloadResult) {
                         is DownloadArtifactResult.Success -> {
                             if (downloadResult.artifact !is CodeModernizerArtifact) return artifactHandler.notifyUnableToApplyPatch("")
@@ -553,7 +558,6 @@ class CodeTransformChatController(
                         is DownloadArtifactResult.Skipped -> {}
                         is DownloadArtifactResult.UnzipFailure -> artifactHandler.notifyUnableToApplyPatch(downloadResult.failureReason.errorMessage)
                     }
-                    //codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
                 }
             }
         }

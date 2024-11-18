@@ -84,7 +84,6 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
     private val downloadedSummaries = mutableMapOf<JobId, TransformationSummary>()
     private val downloadedBuildLogPath = mutableMapOf<JobId, Path>()
     private var isCurrentlyDownloading = AtomicBoolean(false)
-//    private val scope = CoroutineScope(Dispatchers.Default)
     private var totalPatchFiles: Int = 0
 
 
@@ -292,22 +291,36 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             if (dialog.showAndGet()) {
                 projectCoroutineScope(project).launch {
                     telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Submit", source)
-                    if (getCurrentPatchIndex() < totalPatchFiles){
-                        val message = if (diffDescription != null) {
-                            "I applied the changes in diff patch ${getCurrentPatchIndex() + 1} of $totalPatchFiles. ${patchDescriptions[diffDescription.name]}"
-                        } else {
-                            "I applied the changes to your project."
-                        }
+                    if (diffDescription == null) {
+                        val message = "I applied the changes to your project."
                         val resultContent = CodeTransformChatMessageContent(
                             type = CodeTransformChatMessageType.PendingAnswer,
                             message = message,
-                            buttons = listOf(createViewDiffButton("View diff ${getCurrentPatchIndex() + 1}/${totalPatchFiles}"), viewSummaryButton),
                         )
                         codeTransformChatHelper?.updateLastPendingMessage(resultContent)
-                    } else {
                         codeTransformChatHelper?.addNewMessage(buildStartNewTransformFollowup())
+                    } else {
+                        if (getCurrentPatchIndex() < totalPatchFiles) {
+                            val message = "I applied the changes in diff patch ${getCurrentPatchIndex() + 1} of $totalPatchFiles. " +
+                                "${patchDescriptions[diffDescription.name]}"
+                            setCurrentPatchIndex(getCurrentPatchIndex() + 1)
+                            if (getCurrentPatchIndex() == totalPatchFiles) {
+                                codeTransformChatHelper?.updateLastPendingMessage(CodeTransformChatMessageContent(
+                                    type = CodeTransformChatMessageType.PendingAnswer,
+                                    message = message,
+                                ))
+                            } else {
+                                codeTransformChatHelper?.updateLastPendingMessage(CodeTransformChatMessageContent(
+                                    type = CodeTransformChatMessageType.PendingAnswer,
+                                    message = message,
+                                    buttons = listOf(createViewDiffButton("View diff ${getCurrentPatchIndex() + 1}/${totalPatchFiles}"),
+                                        viewSummaryButton),
+                                ))
+                            }
+                        } else {
+                            codeTransformChatHelper?.addNewMessage(buildStartNewTransformFollowup())
+                        }
                     }
-                    setCurrentPatchIndex(getCurrentPatchIndex() + 1)
                 }
             } else {
                 telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Cancel", source)

@@ -20,7 +20,6 @@ import kotlin.io.path.Path
 import kotlin.io.path.isDirectory
 import kotlin.io.path.walk
 
-
 /**
  * Represents a CodeModernizer artifact. Essentially a wrapper around the manifest file in the downloaded artifact zip.
  */
@@ -39,7 +38,7 @@ open class CodeModernizerArtifact(
         private const val manifestPathInZip = "manifest.json"
         private const val summaryNameInZip = "summary.md"
         val LOG = getLogger<CodeModernizerArtifact>()
-        private val MAPPER = jacksonObjectMapper()
+        val MAPPER = jacksonObjectMapper()
 
         /**
          * Extracts the file at [zipPath] and uses its contents to produce a [CodeModernizerArtifact].
@@ -117,6 +116,7 @@ open class CodeModernizerArtifact(
                 }
             }
         }
+
         @OptIn(ExperimentalPathApi::class)
         private fun extractSinglePatch(manifest: CodeModernizerManifest): List<VirtualFile> {
             val fileSystem = LocalFileSystem.getInstance()
@@ -127,7 +127,6 @@ open class CodeModernizerArtifact(
             return patchesDir.walk()
                 .map { fileSystem.refreshAndFindFileByNioFile(it) ?: throw RuntimeException("Could not find diff.patch") }
                 .toList()
-
         }
 
         @OptIn(ExperimentalPathApi::class)

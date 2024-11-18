@@ -27,7 +27,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeMo
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactPomFolder
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilDependenciesRootDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilUploadZip
-import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.IOException
@@ -206,7 +205,9 @@ data class CodeModernizerSessionContext(
                 val outputFile = createTemporaryZipFile { zip ->
                     // 1) Manifest file
                     val dependenciesRoot = if (depDirectory != null) "$ZIP_DEPENDENCIES_PATH/${depDirectory.name}" else null
-                    mapper.writeValueAsString(ZipManifest(dependenciesRoot = dependenciesRoot, transformCapabilities = transformCapabilities, customBuildCommand = customBuildCommand))
+                    mapper.writeValueAsString(
+                        ZipManifest(dependenciesRoot = dependenciesRoot, transformCapabilities = transformCapabilities, customBuildCommand = customBuildCommand)
+                    )
                         .byteInputStream()
                         .use {
                             zip.putNextEntry(Path(MANIFEST_PATH).toString(), it)

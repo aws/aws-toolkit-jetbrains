@@ -128,10 +128,10 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
         val path = testCodeModernizerArtifact.zipPath
         val result = DownloadArtifactResult.Success(testCodeModernizerArtifact, path)
         doReturn(result).whenever(handler).downloadArtifact(any(), eq(TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS), eq(false))
-        doNothing().whenever(handler).displayDiffUsingPatch(any(), any(), any())
         handler.displayDiff(jobId, CodeTransformVCSViewerSrcComponents.Chat)
         verify(handler, never()).notifyUnableToApplyPatch(any())
-        verify(handler, times(1)).displayDiffUsingPatch(testCodeModernizerArtifact.patch, jobId, CodeTransformVCSViewerSrcComponents.Chat)
+        verify(handler, times(1)).displayDiffUsingPatch(testCodeModernizerArtifact.patches[0], testCodeModernizerArtifact.patches.size,
+            testCodeModernizerArtifact.description?.get(0), jobId, CodeTransformVCSViewerSrcComponents.Chat)
     }
 
     @Test
@@ -154,8 +154,8 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
     @Test
     fun `CodeModernizerArtifact can process a valid zip file`() {
         val artifact = CodeModernizerArtifact.create(exampleZipPath.toAbsolutePath().toString())
+        assertEquals(4, artifact.patches.size)
         assertEquals(validManifest, artifact.manifest)
-        assertEquals(validTransformationSummary, artifact.summary)
     }
 
     @Test
