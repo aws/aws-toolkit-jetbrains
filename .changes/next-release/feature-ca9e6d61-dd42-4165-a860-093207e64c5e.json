@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Feature(Amazon Q Code Transformation): support conversions of embedded SQL from Oracle to PostgreSQL"
+}
