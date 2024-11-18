@@ -432,10 +432,18 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult, to
             buildZipUploadFailedChatMessage(result.failureReason)
         }
         is CodeModernizerJobCompletedResult.JobCompletedSuccessfully -> {
-            message("codemodernizer.chat.message.result.success")
+            if (totalPatchFiles == 1){
+                message("codemodernizer.chat.message.result.success")
+            } else {
+                message("codemodernizer.chat.message.result.success.multiple_diffs")
+            }
         }
         is CodeModernizerJobCompletedResult.JobPartiallySucceeded -> {
-            message("codemodernizer.chat.message.result.partially_success")
+            if (totalPatchFiles == 1){
+                message("codemodernizer.chat.message.result.partially_success")
+            } else {
+                message("codemodernizer.chat.message.result.partially_success.multiple_diffs")
+            }
         }
         is CodeModernizerJobCompletedResult.JobFailed -> {
             message("codemodernizer.chat.message.result.fail_with_known_reason", result.failureReason)
