@@ -125,6 +125,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
     private val supportedJavaMappings = mapOf(
         JavaSdkVersion.JDK_1_8 to setOf(JavaSdkVersion.JDK_17),
         JavaSdkVersion.JDK_11 to setOf(JavaSdkVersion.JDK_17),
+        JavaSdkVersion.JDK_17 to setOf(JavaSdkVersion.JDK_17),
     )
 
     init {

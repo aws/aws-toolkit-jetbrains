@@ -250,6 +250,7 @@ fun buildLanguageUpgradeProjectValidChatContent() = CodeTransformChatMessageCont
 
 fun buildProjectInvalidChatContent(validationResult: ValidationResult): CodeTransformChatMessageContent {
     val errorMessage = when (validationResult.invalidTelemetryReason.category) {
+        CodeTransformPreValidationError.NoPom -> message("codemodernizer.chat.message.validation.error.no_pom", CODE_TRANSFORM_PREREQUISITES)
         CodeTransformPreValidationError.UnsupportedJavaVersion -> message("codemodernizer.chat.message.validation.error.unsupported_java_version")
         CodeTransformPreValidationError.RemoteRunProject -> message("codemodernizer.notification.warn.invalid_project.description.reason.remote_backend")
         CodeTransformPreValidationError.NonSsoLogin -> message("codemodernizer.notification.warn.invalid_project.description.reason.not_logged_in")
