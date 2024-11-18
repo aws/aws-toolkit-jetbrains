@@ -6,23 +6,33 @@ package software.aws.toolkits.jetbrains.core.notifications
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.jetbrains.utils.notifySticky
+import software.aws.toolkits.jetbrains.utils.notifyStickyWithData
 
 object DisplayToastNotifications {
-    fun show(title: String, message: String, action: List<AnAction>, notificationType: NotificationSeverity) {
+    fun showToast(title: String, message: String, action: List<AnAction>, notificationType: NotificationSeverity, notificationId: String) {
         val notifyType = when (notificationType) {
             NotificationSeverity.CRITICAL -> NotificationType.ERROR
             NotificationSeverity.WARNING -> NotificationType.WARNING
             NotificationSeverity.INFO -> NotificationType.INFORMATION
         }
-        notifySticky(notifyType, title, message, null, action)
+        notifyStickyWithData(notifyType, title, message, null, action, notificationId)
     }
 
-    fun shouldShow(project: Project, notificationData: NotificationData) {
+    fun shouldShowNotification(project: Project, notificationData: NotificationData) {
         if (RulesEngine.displayNotification(notificationData, project)) {
             val notificationContent = notificationData.content.locale
             val severity = notificationData.severity
-            show(notificationContent.title, notificationContent.description, emptyList(), checkSeverity(severity))
+            showToast(
+                notificationContent.title,
+                notificationContent.description,
+                getNotificationActionList(notificationData.actions, notificationContent.title, notificationContent.description),
+                checkSeverity(severity),
+                notificationData.id
+            )
+
+            if (severity == "Critical") {
+                ShowCriticalNotificationBannerListener.showBanner(notificationContent.title, notificationContent.description, notificationData.actions)
+            }
         }
     }
 }

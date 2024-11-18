@@ -10,8 +10,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.openapi.wm.ex.ToolWindowEx
-import com.intellij.ui.content.Content
-import com.intellij.ui.content.ContentManager
+import com.intellij.ui.components.panels.Wrapper
+import com.intellij.util.ui.components.BorderLayoutPanel
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
@@ -22,6 +22,9 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.aws.toolkits.jetbrains.core.notifications.NotificationFollowupActions
+import software.aws.toolkits.jetbrains.core.notifications.ShowCriticalNotificationBannerListener
+import software.aws.toolkits.jetbrains.core.notifications.getBannerActionList
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.RefreshQChatPanelButtonPressedListener
@@ -29,13 +32,21 @@ import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.openMeetQ
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeatureId
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
+import javax.swing.JComponent
 
 class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
+    private val notificationPanel = NotificationPanel()
+    private val qPanel = QPanel()
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
+        val mainPanel = BorderLayoutPanel()
+        mainPanel.addToTop(notificationPanel)
+        mainPanel.add(qPanel)
+
         if (toolWindow is ToolWindowEx) {
             val actionManager = ActionManager.getInstance()
             toolWindow.setTitleActions(listOf(actionManager.getAction("aws.q.toolwindow.titleBar")))
@@ -46,7 +57,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                    onConnectionChanged(project, newConnection, toolWindow)
+                    onConnectionChanged(project, newConnection)
                 }
             }
         )
@@ -56,9 +67,17 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             object : RefreshQChatPanelButtonPressedListener {
                 override fun onRefresh() {
                     runInEdt {
-                        contentManager.removeAllContents(true)
-                        prepareChatContent(project, contentManager)
+                        prepareChatContent(project)
                     }
+                }
+            }
+        )
+
+        project.messageBus.connect().subscribe(
+            ShowCriticalNotificationBannerListener.TOPIC,
+            object : ShowCriticalNotificationBannerListener {
+                override fun onReceiveEmergencyNotification(title: String, message: String, actions: List<NotificationFollowupActions>?) {
+                    notificationPanel.updateNotificationPanel(title, message, actions)
                 }
             }
         )
@@ -68,43 +87,42 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             object : BearerTokenProviderListener {
                 override fun onChange(providerId: String, newScopes: List<String>?) {
                     if (ToolkitConnectionManager.getInstance(project).connectionStateForFeature(QConnection.getInstance()) == BearerTokenAuthState.AUTHORIZED) {
-                        val content = contentManager.factory.createContent(AmazonQToolWindow.getInstance(project).component, null, false).also {
+                        // change this
+                        val qComponent = AmazonQToolWindow.getInstance(project).component
+
+                        val content = contentManager.factory.createContent(qComponent, null, false).also {
                             it.isCloseable = true
                             it.isPinnable = true
                         }
 
                         runInEdt {
-                            contentManager.removeAllContents(true)
-                            contentManager.addContent(content)
+                            qPanel.updateQPanel(qComponent)
                         }
                     }
                 }
             }
         )
 
-        val content = prepareChatContent(project, contentManager)
+        prepareChatContent(project)
 
+        val content = contentManager.factory.createContent(mainPanel, null, false).also {
+            it.isCloseable = true
+            it.isPinnable = true
+        }
         toolWindow.activate(null)
-        contentManager.setSelectedContent(content)
+        contentManager.addContent(content)
     }
 
     private fun prepareChatContent(
         project: Project,
-        contentManager: ContentManager,
-    ): Content {
+    ) {
         val component = if (isQConnected(project) && !isQExpired(project)) {
             AmazonQToolWindow.getInstance(project).component
         } else {
             QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
             QWebviewPanel.getInstance(project).component
         }
-
-        val content = contentManager.factory.createContent(component, null, false).also {
-            it.isCloseable = true
-            it.isPinnable = true
-        }
-        contentManager.addContent(content)
-        return content
+        qPanel.updateQPanel(component)
     }
 
     override fun init(toolWindow: ToolWindow) {
@@ -125,8 +143,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
 
     override fun shouldBeAvailable(project: Project): Boolean = isQWebviewsAvailable()
 
-    private fun onConnectionChanged(project: Project, newConnection: ToolkitConnection?, toolWindow: ToolWindow) {
-        val contentManager = toolWindow.contentManager
+    private fun onConnectionChanged(project: Project, newConnection: ToolkitConnection?) {
         val isNewConnectionForQ = newConnection?.let {
             (it as? AwsBearerTokenConnection)?.let { conn ->
                 val scopeShouldHave = Q_SCOPES
@@ -151,15 +168,8 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             LOG.debug { "returning login window; no Q connection found" }
             QWebviewPanel.getInstance(project).component
         }
-
-        val content = contentManager.factory.createContent(component, null, false).also {
-            it.isCloseable = true
-            it.isPinnable = true
-        }
-
         runInEdt {
-            contentManager.removeAllContents(true)
-            contentManager.addContent(content)
+            qPanel.updateQPanel(component)
         }
     }
 
@@ -167,5 +177,43 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         private val LOG = getLogger<AmazonQToolWindowFactory>()
         const val WINDOW_ID = AMAZON_Q_WINDOW_ID
         private const val MINIMUM_TOOLWINDOW_WIDTH = 325
+    }
+}
+
+class NotificationPanel : BorderLayoutPanel() {
+    private val wrapper = Wrapper()
+    init {
+        isOpaque = false
+        addToCenter(wrapper)
+    }
+
+    private fun removeNotificationPanel() = runInEdt {
+        wrapper.removeAll()
+    }
+
+    fun updateNotificationPanel(title: String, message: String, actions: List<NotificationFollowupActions>?) {
+        val editorNotificationPanel = getBannerActionList(actions, title, message)
+
+        editorNotificationPanel.createActionLabel("Dismiss") {
+            removeNotificationPanel()
+        }
+
+        wrapper.setContent(editorNotificationPanel)
+    }
+}
+
+class QPanel : BorderLayoutPanel() {
+    private val wrapper = Wrapper()
+    init {
+        isOpaque = false
+        addToCenter(wrapper)
+    }
+
+    fun updateQPanel(content: JComponent) {
+        try {
+            wrapper.setContent(content)
+        } catch (e: Exception) {
+            notifyInfo("Error while creating window")
+        }
     }
 }
