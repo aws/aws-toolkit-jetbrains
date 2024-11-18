@@ -63,7 +63,6 @@ fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, log
     val telemetry = CodeTransformTelemetryManager.getInstance(project)
     var telemetryErrorMessage = ""
     var telemetryLocalBuildResult = Result.Succeeded
-//    return MavenCopyCommandsResult.Success(destinationDir.toFile())
 
     logger.info { "Executing IntelliJ bundled Maven" }
     try {

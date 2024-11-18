@@ -560,12 +560,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             resumeJob(session, lastJobId, currentJobResult)
         }
 
-//    private fun displayDiffNotificationAction(jobId: JobId): NotificationAction = NotificationAction.createSimple(
-//        message("codemodernizer.notification.info.modernize_complete.view_diff")
-//    ) {
-//        artifactHandler.displayDiffAction(jobId, CodeTransformVCSViewerSrcComponents.ToastNotification)
-//    }
-
     private fun displaySummaryNotificationAction(jobId: JobId) =
         NotificationAction.createSimple(message("codemodernizer.notification.info.modernize_complete.view_summary")) {
             artifactHandler.showTransformationSummary(jobId)

@@ -58,8 +58,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildStartNewTransformFollowup
 
 const val DOWNLOAD_PROXY_WILDCARD_ERROR: String = "Dangling meta character '*' near index 0"
@@ -67,21 +65,26 @@ const val DOWNLOAD_SSL_HANDSHAKE_ERROR: String = "Unable to execute HTTP request
 const val INVALID_ARTIFACT_ERROR: String = "Invalid artifact"
 val patchDescriptions: Map<String, String> = mapOf(
     "Prepare minimal upgrade to Java 17" to "This diff patch covers the set of upgrades for Springboot, JUnit, and PowerMockito frameworks.",
-    "Popular Enterprise Specifications and Application Frameworks upgrade" to "This diff patch covers the set of upgrades for Jakarta EE 10, Hibernate 6.2, and Micronaut 3.",
-    "HTTP Client Utilities, Apache Commons Utilities, and Web Frameworks" to "This diff patch covers the set of upgrades for Apache HTTP Client 5, Apache Commons utilities (Collections, IO, Lang, Math), Struts 6.0.",
-    "Testing Tools and Frameworks upgrade" to "This diff patch covers the set of upgrades for ArchUnit, Mockito, TestContainers, Cucumber, and additionally, Jenkins plugins and the Maven Wrapper.",
-    "Miscellaneous Processing Documentation upgrade" to "This diff patch covers a diverse set of upgrades spanning ORMs, XML processing, API documentation, and more.",
+    "Popular Enterprise Specifications and Application Frameworks upgrade" to "This diff patch covers the set of upgrades for Jakarta EE 10, Hibernate 6.2, " +
+        "and Micronaut 3.",
+    "HTTP Client Utilities, Apache Commons Utilities, and Web Frameworks" to "This diff patch covers the set of upgrades for Apache HTTP Client 5, Apache " +
+        "Commons utilities (Collections, IO, Lang, Math), Struts 6.0.",
+    "Testing Tools and Frameworks upgrade" to "This diff patch covers the set of upgrades for ArchUnit, Mockito, TestContainers, Cucumber, and additionally, " +
+        "Jenkins plugins and the Maven Wrapper.",
+    "Miscellaneous Processing Documentation upgrade" to "This diff patch covers a diverse set of upgrades spanning ORMs, XML processing, API documentation, " +
+        "and more.",
     "Updated dependencies to latest version" to "",
     "Upgrade Deprecated API" to ""
 )
 
-class ArtifactHandler(private val project: Project, private val clientAdaptor: GumbyClient, private val codeTransformChatHelper: CodeTransformChatHelper? = null) {
+class ArtifactHandler(private val project: Project, private val clientAdaptor: GumbyClient,
+                      private val codeTransformChatHelper: CodeTransformChatHelper? = null) {
     private val telemetry = CodeTransformTelemetryManager.getInstance(project)
     private val downloadedArtifacts = mutableMapOf<JobId, Path>()
     private val downloadedSummaries = mutableMapOf<JobId, TransformationSummary>()
     private val downloadedBuildLogPath = mutableMapOf<JobId, Path>()
     private var isCurrentlyDownloading = AtomicBoolean(false)
-    private val scope = CoroutineScope(Dispatchers.Default)
+//    private val scope = CoroutineScope(Dispatchers.Default)
     private var totalPatchFiles: Int = 0
 
 
@@ -261,7 +264,8 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
     /**
      * Opens the built-in patch dialog to display the diff and allowing users to apply the changes locally.
      */
-    internal suspend fun displayDiffUsingPatch(patchFile: VirtualFile, totalPatchFiles: Int, diffDescription: PatchInfo?, jobId: JobId, source: CodeTransformVCSViewerSrcComponents) {
+    internal suspend fun displayDiffUsingPatch(patchFile: VirtualFile, totalPatchFiles: Int, diffDescription: PatchInfo?, jobId: JobId,
+                                               source: CodeTransformVCSViewerSrcComponents) {
         runInEdt {
             val dialog = ApplyPatchDifferentiatedDialog(
                 project,
@@ -286,11 +290,11 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
             dialog.isModal = true
 
             if (dialog.showAndGet()) {
-                scope.launch {
+                projectCoroutineScope(project).launch {
                     telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Submit", source)
                     if (getCurrentPatchIndex() < totalPatchFiles){
                         val message = if (diffDescription != null) {
-                            "I applied the changes in diff patch ${getCurrentPatchIndex()} of $totalPatchFiles. ${patchDescriptions[diffDescription.name]} You can make a commit if the diff shows success. If the diff shows partial success, apply and fix the errors, and start a new transformation."
+                            "I applied the changes in diff patch ${getCurrentPatchIndex() + 1} of $totalPatchFiles. ${patchDescriptions[diffDescription.name]}"
                         } else {
                             "I applied the changes to your project."
                         }

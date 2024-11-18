@@ -87,11 +87,7 @@ private val viewDiffButton = Button(
 )
 
 fun createViewDiffButton(buttonLabel: String): Button {
-    return Button(
-        id = CodeTransformButtonId.ViewDiff.id,
-        text = buttonLabel,
-        keepCardAfterClick = true
-    )
+    return Button(id = CodeTransformButtonId.ViewDiff.id, text = buttonLabel, keepCardAfterClick = true)
 }
 
 val viewSummaryButton = Button(

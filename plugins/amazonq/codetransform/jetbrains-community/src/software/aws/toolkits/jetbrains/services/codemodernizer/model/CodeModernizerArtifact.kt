@@ -18,7 +18,7 @@ import java.io.File
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.Path
 import kotlin.io.path.isDirectory
-
+import kotlin.io.path.walk
 
 
 /**
@@ -61,7 +61,6 @@ open class CodeModernizerArtifact(
                 val patches = extractPatches(manifest, description)
                 val summary = extractSummary(manifest)
                 val summaryMarkdownFile = getSummaryFile(manifest)
-//                if (patches.size != 1) throw RuntimeException("Expected 1 patch, but found ${patches.size}")
                 return CodeModernizerArtifact(zipPath, manifest, patches, description, summary, summaryMarkdownFile)
             }
             throw RuntimeException("Could not find artifact")
@@ -101,7 +100,7 @@ open class CodeModernizerArtifact(
         @OptIn(ExperimentalPathApi::class)
         private fun extractPatches(manifest: CodeModernizerManifest, description: List<PatchInfo>?): List<VirtualFile> {
             if (description == null) {
-                return listOf(extractSinglePatch(manifest))
+                return extractSinglePatch(manifest)
             }
             val fileSystem = LocalFileSystem.getInstance()
             val patchesDir = tempDir.toPath().resolve(manifest.patchesRoot)
@@ -119,17 +118,15 @@ open class CodeModernizerArtifact(
             }
         }
         @OptIn(ExperimentalPathApi::class)
-        private fun extractSinglePatch(manifest: CodeModernizerManifest): VirtualFile {
+        private fun extractSinglePatch(manifest: CodeModernizerManifest): List<VirtualFile> {
             val fileSystem = LocalFileSystem.getInstance()
             val patchesDir = tempDir.toPath().resolve(manifest.patchesRoot)
-
             if (!patchesDir.isDirectory()) {
                 throw RuntimeException("Expected root for patches was not a directory.")
             }
-
-            val diffPatchFile = patchesDir.resolve("diff.patch")
-            return fileSystem.findFileByNioFile(diffPatchFile.parent.resolve("diff.patch"))
-                ?: throw IllegalStateException("Could not find diff.patch in directory: ${diffPatchFile.parent}")
+            return patchesDir.walk()
+                .map { fileSystem.refreshAndFindFileByNioFile(it) ?: throw RuntimeException("Could not find diff.patch") }
+                .toList()
 
         }
 

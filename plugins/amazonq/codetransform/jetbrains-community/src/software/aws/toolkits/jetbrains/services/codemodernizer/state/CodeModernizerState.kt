@@ -67,7 +67,7 @@ class CodeModernizerState : BaseState() {
             configurationFile,
             sourceJavaSdkVersion,
             targetJavaSdkVersion,
-            listOf(EXPLAINABILITY_V1), //should this be from lastJobContext? , defaulting to one diff
+            listOf(EXPLAINABILITY_V1), //default to one diff
             lastJobContext[JobDetails.CUSTOM_BUILD_COMMAND] ?: MAVEN_BUILD_RUN_UNIT_TESTS // default to running unit tests
         )
     }
