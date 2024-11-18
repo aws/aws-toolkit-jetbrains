@@ -114,6 +114,9 @@ class DiskCache(
                 reason = "Failed to load Client Registration",
                 reasonDesc = "Load Step:$stage failed. Cache file does not exist"
             )
+            if (source == SsoAccessTokenProvider.SourceOfLoadRegistration.REFRESH_TOKEN.toString()) {
+                throw ClientRegistrationNotFoundException()
+            }
             return null
         }
         return loadClientRegistration(inputStream)
@@ -320,3 +323,5 @@ class DiskCache(
         private val LOG = getLogger<DiskCache>()
     }
 }
+
+class ClientRegistrationNotFoundException : Exception("Client registration file not found")
