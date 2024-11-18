@@ -105,7 +105,7 @@ open class CodeWhispererCodeModernizerTestBase(
     internal val jobId = JobId("Test job id")
     internal lateinit var testCodeModernizerArtifact: CodeModernizerArtifact
     internal lateinit var testTransformFailureBuildLog: CodeTransformFailureBuildLog
-    internal val exampleZipPath = "simple.zip".toResourceFile().toPath()
+    internal val exampleZipPath = "sample-diff.zip".toResourceFile().toPath()
     internal val expectedFilePath = "expectedFile".toResourceFile().toPath()
     internal val overwrittenFilePath = "overwrittenFile".toResourceFile().toPath()
     internal val testRequestId = "test_aws_request_id"
