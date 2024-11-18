@@ -21,6 +21,7 @@ import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.services.telemetry.ALLOWED_CODE_EXTENSIONS
+import software.aws.toolkits.jetbrains.utils.isDevFile
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import java.io.File
@@ -47,7 +48,6 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         "\\.hg/?",
         "\\.rvm",
         "\\.git/?",
-        "\\.gitignore",
         "\\.project",
         "\\.gem",
         "/\\.idea/?",
@@ -71,7 +71,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     // projectRoot: is the directory where the project is located when selected to open a project.
     val projectRoot = project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
 
-    // selectedSourceFolder": is the directory selected in replacement of the root, this happens when the project is too big to bundle for uploading.
+    // selectedSourceFolder: is the directory selected in replacement of the root, this happens when the project is too big to bundle for uploading.
     private var _selectedSourceFolder = projectRoot
     private var ignorePatternsWithGitIgnore = emptyList<Regex>()
     private val gitIgnoreFile = File(selectedSourceFolder.path, ".gitignore")
@@ -80,10 +80,18 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         ignorePatternsWithGitIgnore = (ignorePatterns + parseGitIgnore().map { Regex(it) }).toList()
     }
 
-    fun getProjectZip(): ZipCreationResult {
+    // This function checks for existence of `devfile.yaml` in customer's repository, currently only `devfile.yaml` is supported for this feature.
+    fun checkForDevFile(): Boolean {
+        val devFile = File(projectRoot.path, "/devfile.yaml")
+        return devFile.exists()
+    }
+
+    fun getWorkspaceRoot(): String = projectRoot.path
+
+    fun getProjectZip(isAutoBuildFeatureEnabled: Boolean?): ZipCreationResult {
         val zippedProject = runBlocking {
             withBackgroundProgress(project, AwsCoreBundle.message("amazonqFeatureDev.placeholder.generating_code")) {
-                zipFiles(selectedSourceFolder)
+                zipFiles(selectedSourceFolder, isAutoBuildFeatureEnabled)
             }
         }
         val checkSum256: String = Base64.getEncoder().encodeToString(DigestUtils.sha256(FileInputStream(zippedProject)))
@@ -117,7 +125,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         return deferredResults.any { it.await() }
     }
 
-    suspend fun zipFiles(projectRoot: VirtualFile): File = withContext(getCoroutineBgContext()) {
+    suspend fun zipFiles(projectRoot: VirtualFile, isAutoBuildFeatureEnabled: Boolean?): File = withContext(getCoroutineBgContext()) {
         val files = mutableListOf<VirtualFile>()
         val ignoredExtensionMap = mutableMapOf<String, Long>().withDefault { 0L }
         var totalSize: Long = 0
@@ -127,11 +135,18 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
             object : VirtualFileVisitor<Unit>() {
                 override fun visitFile(file: VirtualFile): Boolean {
                     val isFileIgnoredByExtension = runBlocking { ignoreFileByExtension(file) }
+                    // if `isAutoBuildFeatureEnabled` is false, then filter devfile
+                    val isFilterDevFile = if (isAutoBuildFeatureEnabled == true) false else isDevFile(file)
                     if (isFileIgnoredByExtension) {
                         val extension = file.extension.orEmpty()
                         ignoredExtensionMap[extension] = (ignoredExtensionMap[extension] ?: 0) + 1
                         return false
                     }
+
+                    if (isFilterDevFile) {
+                        return false
+                    }
+
                     val isFileIgnoredByPattern = runBlocking { ignoreFile(file.name) }
                     if (isFileIgnoredByPattern) {
                         return false

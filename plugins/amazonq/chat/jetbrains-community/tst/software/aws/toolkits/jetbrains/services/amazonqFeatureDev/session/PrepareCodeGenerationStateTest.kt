@@ -87,7 +87,7 @@ class PrepareCodeGenerationStateTest : FeatureDevTestBase() {
         val repoZipResult = ZipCreationResult(mockFile, testChecksumSha, testContentLength)
         val action = SessionStateAction("test-task", userMessage)
 
-        whenever(repoContext.getProjectZip()).thenReturn(repoZipResult)
+        whenever(repoContext.getProjectZip(false)).thenReturn(repoZipResult)
         every { featureDevService.createUploadUrl(any(), any(), any(), any()) } returns exampleCreateUploadUrlResponse
 
         runTest {
@@ -95,6 +95,6 @@ class PrepareCodeGenerationStateTest : FeatureDevTestBase() {
             assertThat(actual.nextState).isInstanceOf(PrepareCodeGenerationState::class.java)
         }
         assertThat(prepareCodeGenerationState.phase).isEqualTo(SessionStatePhase.CODEGEN)
-        verify(repoContext, times(1)).getProjectZip()
+        verify(repoContext, times(1)).getProjectZip(false)
     }
 }

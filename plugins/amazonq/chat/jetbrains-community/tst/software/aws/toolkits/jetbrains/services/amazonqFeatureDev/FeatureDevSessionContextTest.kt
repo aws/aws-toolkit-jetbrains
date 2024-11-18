@@ -46,7 +46,7 @@ class FeatureDevSessionContextTest : FeatureDevTestBase() {
     @Test
     fun testWithInvalidFile() {
         val txtFile = mock<VirtualFile>()
-        whenever(txtFile.extension).thenReturn("txt")
+        whenever(txtFile.extension).thenReturn("mp4")
         assertFalse(featureDevSessionContext.isFileExtensionAllowed(txtFile))
     }
 }
