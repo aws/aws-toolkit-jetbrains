@@ -31,11 +31,13 @@ import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.amazonq.RepoSizeError
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
+import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.DEFAULT_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.GENERATE_DEV_FILE_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ModifySourceFolderErrorReason
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
@@ -75,6 +77,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.content
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.FeedbackComment
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.ui.feedback.FeatureDevFeedbackDialog
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
@@ -133,6 +136,16 @@ class FeatureDevController(
             FollowUpTypes.PROVIDE_FEEDBACK_AND_REGENERATE_CODE -> provideFeedbackAndRegenerateCode(message.tabId)
             FollowUpTypes.NEW_TASK -> newTask(message.tabId)
             FollowUpTypes.CLOSE_SESSION -> closeSession(message.tabId)
+            FollowUpTypes.ACCEPT_AUTO_BUILD -> handleDevCommandUserSetting(message.tabId, true)
+            FollowUpTypes.DENY_AUTO_BUILD -> handleDevCommandUserSetting(message.tabId, false)
+            FollowUpTypes.GENERATE_DEV_FILE -> {
+                messenger.sendAnswer(
+                    tabId = message.tabId,
+                    messageType = FeatureDevMessageType.SystemPrompt,
+                    message = message("amazonqFeatureDev.follow_up.generate_dev_file")
+                )
+                newTask(tabId = message.tabId, prefilledPrompt = GENERATE_DEV_FILE_PROMPT)
+            }
         }
     }
 
@@ -439,20 +452,38 @@ class FeatureDevController(
                 canBeVoted = true
             )
 
-            messenger.sendSystemPrompt(
-                tabId = tabId,
-                followUp = listOf(
+            val followUps = mutableListOf(
+                FollowUp(
+                    pillText = message("amazonqFeatureDev.follow_up.new_task"),
+                    type = FollowUpTypes.NEW_TASK,
+                    status = FollowUpStatusType.Info
+                ),
+                FollowUp(
+                    pillText = message("amazonqFeatureDev.follow_up.close_session"),
+                    type = FollowUpTypes.CLOSE_SESSION,
+                    status = FollowUpStatusType.Info
+                ),
+            )
+
+            if (!session.context.checkForDevFile()) {
+                followUps.add(
                     FollowUp(
-                        pillText = message("amazonqFeatureDev.follow_up.new_task"),
-                        type = FollowUpTypes.NEW_TASK,
-                        status = FollowUpStatusType.Info
-                    ),
-                    FollowUp(
-                        pillText = message("amazonqFeatureDev.follow_up.close_session"),
-                        type = FollowUpTypes.CLOSE_SESSION,
+                        pillText = message("amazonqFeatureDev.follow_up.generate_dev_file"),
+                        type = FollowUpTypes.GENERATE_DEV_FILE,
                         status = FollowUpStatusType.Info
                     )
                 )
+
+                messenger.sendAnswer(
+                    tabId = tabId,
+                    message = message("amazonqFeatureDev.chat_message.generate_dev_file"),
+                    messageType = FeatureDevMessageType.Answer
+                )
+            }
+
+            messenger.sendSystemPrompt(
+                tabId = tabId,
+                followUp = followUps
             )
 
             messenger.sendUpdatePlaceholder(
@@ -470,9 +501,7 @@ class FeatureDevController(
         }
     }
 
-    private suspend fun newTask(tabId: String, isException: Boolean? = false) {
-        this.disablePreviousFileList(tabId)
-
+    private suspend fun newTask(tabId: String, isException: Boolean? = false, prefilledPrompt: String? = null) {
         val session = getSessionInfo(tabId)
         val sessionLatency = System.currentTimeMillis() - session.sessionStartTime
 
@@ -484,15 +513,30 @@ class FeatureDevController(
         chatSessionStorage.deleteSession(tabId)
 
         newTabOpened(tabId)
-        if (isException != null && !isException) {
-            messenger.sendAnswer(
-                tabId = tabId,
-                messageType = FeatureDevMessageType.Answer,
-                message = message("amazonqFeatureDev.chat_message.ask_for_new_task")
-            )
+
+        if (prefilledPrompt != null && isException != null && !isException) {
+            handleChat(tabId = tabId, message = prefilledPrompt)
+        } else {
+            if (isException != null && !isException) {
+                messenger.sendAnswer(
+                    tabId = tabId,
+                    messageType = FeatureDevMessageType.Answer,
+                    message = message("amazonqFeatureDev.chat_message.ask_for_new_task")
+                )
+            }
+            messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.new_plan"))
+            messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = true)
         }
-        messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.new_plan"))
-        messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = true)
+    }
+
+    private suspend fun handleDevCommandUserSetting(tabId: String, value: Boolean) {
+        CodeWhispererSettings.getInstance().toggleAutoBuildFeature(context.project.basePath, value)
+        messenger.sendAnswer(
+            tabId = tabId,
+            message = message("amazonqFeatureDev.chat_message.setting_updated"),
+            messageType = FeatureDevMessageType.Answer,
+        )
+        this.retryRequests(tabId)
     }
 
     private suspend fun closeSession(tabId: String) {
@@ -669,6 +713,7 @@ class FeatureDevController(
         try {
             logger.debug { "$FEATURE_NAME: Processing message: $message" }
             session = getSessionInfo(tabId)
+            session.latestMessage = message
 
             val credentialState = authController.getAuthNeededStates(context.project).amazonQ
             if (credentialState != null) {
@@ -681,7 +726,16 @@ class FeatureDevController(
                 return
             }
 
-            session.preloader(message, messenger)
+            val codeWhispererSettings = CodeWhispererSettings.getInstance().getAutoBuildFeatureConfiguration()
+            val hasDevFile = session.context.checkForDevFile()
+            val isPromptedForAutoBuildFeature = codeWhispererSettings.containsKey(session.context.getWorkspaceRoot())
+
+            if (hasDevFile && !isPromptedForAutoBuildFeature) {
+                promptAllowQCommandsConsent(messenger, tabId)
+                return
+            }
+
+            session.preloader(messenger)
 
             when (session.sessionState.phase) {
                 SessionStatePhase.CODEGEN -> onCodeGeneration(session, message, tabId)
@@ -693,6 +747,30 @@ class FeatureDevController(
             // Lock the chat input until they explicitly click one of the follow-ups
             messenger.sendChatInputEnabledMessage(tabId, enabled = false)
         }
+    }
+
+    private suspend fun promptAllowQCommandsConsent(messenger: MessagePublisher, tabID: String) {
+        messenger.sendAnswer(
+            tabId = tabID,
+            message = message("amazonqFeatureDev.chat_message.devFileInRepository"),
+            messageType = FeatureDevMessageType.Answer
+        )
+        messenger.sendAnswer(
+            tabId = tabID,
+            messageType = FeatureDevMessageType.SystemPrompt,
+            followUp = listOf(
+                FollowUp(
+                    pillText = message("amazonqFeatureDev.follow_up.accept_for_project"),
+                    type = FollowUpTypes.ACCEPT_AUTO_BUILD,
+                    status = FollowUpStatusType.Success
+                ),
+                FollowUp(
+                    pillText = message("amazonqFeatureDev.follow_up.decline_for_project"),
+                    type = FollowUpTypes.DENY_AUTO_BUILD,
+                    status = FollowUpStatusType.Error
+                )
+            )
+        )
     }
 
     private suspend fun retryRequests(tabId: String) {
