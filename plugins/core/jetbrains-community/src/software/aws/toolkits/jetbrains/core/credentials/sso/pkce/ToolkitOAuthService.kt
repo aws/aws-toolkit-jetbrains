@@ -31,6 +31,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.AccessToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.PKCEAuthorizationGrantToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.PKCEClientRegistration
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.buildUnmanagedSsoOidcClient
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.SourceOfEntry
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AuthType
 import software.aws.toolkits.telemetry.AwsTelemetry
@@ -206,7 +207,8 @@ internal class ToolkitOAuthCallbackHandler : OAuthCallbackHandlerBase() {
                 result = MetricResult.Failed,
                 reason = error,
                 reasonDesc = errorDescription,
-                authType = AuthType.PKCE
+                authType = AuthType.PKCE,
+                source = "",
             )
 
             mapOf(

@@ -39,12 +39,12 @@ class DefaultSsoLoginCallbackProvider : SsoLoginCallbackProvider {
 
 interface SsoPrompt : SsoLoginCallback {
     override fun tokenRetrieved() {
-        AwsTelemetry.loginWithBrowser(project = null, result = Result.Succeeded, credentialType = CredentialType.SsoProfile, authType = AuthType.DeviceCode)
+        AwsTelemetry.loginWithBrowser(project = null, result = Result.Succeeded, credentialType = CredentialType.SsoProfile, authType = AuthType.DeviceCode, source= "")
     }
 
     override fun tokenRetrievalFailure(e: Exception) {
         e.notifyError(AwsCoreBundle.message("credentials.sso.login.failed"))
-        AwsTelemetry.loginWithBrowser(project = null, result = Result.Failed, credentialType = CredentialType.SsoProfile, authType = AuthType.DeviceCode)
+        AwsTelemetry.loginWithBrowser(project = null, result = Result.Failed, credentialType = CredentialType.SsoProfile, authType = AuthType.DeviceCode, source= "")
     }
 }
 
@@ -64,7 +64,8 @@ object DefaultSsoPrompt : SsoPrompt {
                     project = null,
                     result = Result.Cancelled,
                     credentialType = CredentialType.SsoProfile,
-                    authType = AuthType.DeviceCode
+                    authType = AuthType.DeviceCode,
+                    source= "",
                 )
                 throw ProcessCanceledException(IllegalStateException(AwsCoreBundle.message("credentials.sso.login.cancelled")))
             }
@@ -82,11 +83,11 @@ object SsoPromptWithBrowserSupport : SsoPrompt {
 
 interface BearerTokenPrompt : SsoLoginCallback {
     override fun tokenRetrieved() {
-        AwsTelemetry.loginWithBrowser(project = null, result = Result.Succeeded, credentialType = CredentialType.BearerToken, authType = AuthType.DeviceCode)
+        AwsTelemetry.loginWithBrowser(project = null, result = Result.Succeeded, credentialType = CredentialType.BearerToken, authType = AuthType.DeviceCode, source= "",)
     }
 
     override fun tokenRetrievalFailure(e: Exception) {
-        AwsTelemetry.loginWithBrowser(project = null, result = Result.Failed, credentialType = CredentialType.BearerToken, authType = AuthType.DeviceCode)
+        AwsTelemetry.loginWithBrowser(project = null, result = Result.Failed, credentialType = CredentialType.BearerToken, authType = AuthType.DeviceCode, source= "",)
     }
 }
 
@@ -106,7 +107,8 @@ object DefaultBearerTokenPrompt : BearerTokenPrompt {
                     project = null,
                     result = Result.Cancelled,
                     credentialType = CredentialType.BearerToken,
-                    authType = AuthType.DeviceCode
+                    authType = AuthType.DeviceCode,
+                    source= "",
                 )
             }
         }
