@@ -84,10 +84,10 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
             val nextState = actual.nextState as PrepareCodeGenerationState
             assertThat(nextState.phase).isEqualTo(SessionStatePhase.CODEGEN)
             assertThat(nextState.filePaths).isEqualTo(
-                listOf(NewFileZipInfo("test.ts", "This is a comment", false)),
+                listOf(NewFileZipInfo("test.ts", "This is a comment", rejected = false, changeApplied = false)),
             )
             assertThat(nextState.deletedFiles).isEqualTo(
-                listOf(DeletedFileInfo("deleted.ts", false)),
+                listOf(DeletedFileInfo("deleted.ts", rejected = false, changeApplied = false)),
             )
             assertThat(nextState.references).isEqualTo(testReferences)
             assertThat(nextState.codeGenerationRemainingIterationCount).isEqualTo(2)

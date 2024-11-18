@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.codewhispererstreaming.model.Transformati
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArtifactResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.InvalidTelemetryReason
@@ -30,7 +31,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.ParseZipFai
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.filterOnlyParentFiles
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
-import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 import kotlin.io.path.Path
@@ -154,8 +154,9 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
     @Test
     fun `CodeModernizerArtifact can process a valid zip file`() {
         val artifact = CodeModernizerArtifact.create(exampleZipPath.toAbsolutePath().toString())
-        assertEquals(4, artifact.patches.size)
+        assertEquals(1, artifact.patches.size)
         assertEquals(validManifest, artifact.manifest)
+        assertEquals(validMetrics.linesOfCodeChanged, artifact.metrics?.linesOfCodeChanged)
     }
 
     @Test
@@ -207,10 +208,9 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
 
     @Test
     fun `start transformation without IdC connection`() {
-        val result = codeModernizerManagerSpy.validate(project)
+        val result = codeModernizerManagerSpy.validate(project, CodeTransformType.LANGUAGE_UPGRADE)
         val expectedResult = ValidationResult(
             false,
-            message("codemodernizer.notification.warn.invalid_project.description.reason.not_logged_in"),
             InvalidTelemetryReason(
                 CodeTransformPreValidationError.NonSsoLogin
             )

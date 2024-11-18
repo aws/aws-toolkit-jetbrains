@@ -17,6 +17,8 @@ sealed interface CodeTransformBaseMessage : AmazonQMessage
 
 enum class CodeTransformButtonId(val id: String) {
     StartTransformation("codetransform-input-confirm"),
+    SelectSQLMetadata("codetransform-input-select-sql-metadata"),
+    SelectSQLModuleSchema("codetransform-input-select-sql-module-schema"),
     CancelTransformation("codetransform-input-cancel"),
     ConfirmSkipTests("codetransform-input-confirm-skip-tests"),
     ConfirmOneOrMultipleDiffs("codetransform-input-confirm-one-or-multiple-diffs"),
@@ -33,6 +35,7 @@ enum class CodeTransformButtonId(val id: String) {
 
 enum class CodeTransformFormItemId(val id: String) {
     SelectModule("module"),
+    SelectSQLSchema("sqlSchema"),
     SelectTargetVersion("targetVersion"),
     SelectSkipTestsFlag("skipTestsSelection"),
     SelectOneOrMultipleDiffsFlag("oneOrMultipleDiffsSelection"),
@@ -75,6 +78,21 @@ sealed interface IncomingCodeTransformMessage : CodeTransformBaseMessage {
         @JsonProperty("tabID") val tabId: String,
         val modulePath: String,
         val targetVersion: String,
+    ) : IncomingCodeTransformMessage
+
+    data class CodeTransformSelectSQLMetadata(
+        @JsonProperty("tabID") val tabId: String,
+    ) : IncomingCodeTransformMessage
+
+    data class CodeTransformSelectSQLModuleSchema(
+        @JsonProperty("tabID") val tabId: String,
+        val modulePath: String,
+        val schema: String,
+    ) : IncomingCodeTransformMessage
+
+    data class ChatPrompt(
+        @JsonProperty("tabID") val tabId: String,
+        val message: String,
     ) : IncomingCodeTransformMessage
 
     data class CodeTransformStop(
@@ -201,12 +219,20 @@ data class CodeTransformCommandMessage(
     type = "codeTransformCommandMessage",
 )
 
-data class CodeTransformNotificationMessage(
-    val title: String,
-    val content: String,
+data class CodeTransformUpdatePlaceholderMessage(
+    @JsonProperty("tabID") override val tabId: String,
+    val newPlaceholder: String,
 ) : CodeTransformUiMessage(
-    tabId = null,
-    type = "codeTransformNotificationMessage",
+    tabId = tabId,
+    type = "updatePlaceholderMessage"
+)
+
+data class CodeTransformChatInputEnabledMessage(
+    @JsonProperty("tabID") override val tabId: String,
+    val enabled: Boolean,
+) : CodeTransformUiMessage(
+    tabId = tabId,
+    type = "chatInputEnabledMessage"
 )
 
 data class CodeTransformChatUpdateMessage(

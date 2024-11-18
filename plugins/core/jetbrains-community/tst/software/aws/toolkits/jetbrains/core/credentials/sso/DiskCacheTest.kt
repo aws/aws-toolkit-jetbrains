@@ -57,7 +57,8 @@ class DiskCacheTest {
                     startUrl = ssoUrl,
                     scopes = scopes,
                     region = ssoRegion
-                )
+                ),
+                "testSource"
             )
         ).isNull()
     }
@@ -71,7 +72,7 @@ class DiskCacheTest {
         )
         cacheLocation.resolve("223224b6f0b4702c1a984be8284fe2c9d9718759.json").writeText("badData")
 
-        assertThat(sut.loadClientRegistration(key)).isNull()
+        assertThat(sut.loadClientRegistration(key, "testSource")).isNull()
     }
 
     @Test
@@ -91,7 +92,7 @@ class DiskCacheTest {
             """.trimIndent()
         )
 
-        assertThat(sut.loadClientRegistration(key)).isNull()
+        assertThat(sut.loadClientRegistration(key, "testSource")).isNull()
     }
 
     @Test
@@ -112,7 +113,7 @@ class DiskCacheTest {
             """.trimIndent()
         )
 
-        assertThat(sut.loadClientRegistration(key)).isNull()
+        assertThat(sut.loadClientRegistration(key, "testSource")).isNull()
     }
 
     @Test
@@ -134,7 +135,7 @@ class DiskCacheTest {
             """.trimIndent()
         )
 
-        assertThat(sut.loadClientRegistration(key))
+        assertThat(sut.loadClientRegistration(key, "testSource"))
             .usingRecursiveComparison()
             .isEqualTo(
                 DeviceAuthorizationClientRegistration(
@@ -217,7 +218,7 @@ class DiskCacheTest {
                 """.trimIndent()
             )
 
-        assertThat(sut.loadClientRegistration(key))
+        assertThat(sut.loadClientRegistration(key, "testSource"))
             .usingRecursiveComparison()
             .isEqualTo(
                 PKCEClientRegistration(
@@ -323,10 +324,10 @@ class DiskCacheTest {
             )
         )
 
-        assertThat(sut.loadClientRegistration(key1))
+        assertThat(sut.loadClientRegistration(key1, "testSource"))
             .usingRecursiveComparison()
             .isEqualTo(
-                sut.loadClientRegistration(key2)
+                sut.loadClientRegistration(key2, "testSource")
             )
     }
 
@@ -350,11 +351,11 @@ class DiskCacheTest {
             region = ssoRegion
         )
 
-        assertThat(sut.loadClientRegistration(key)).isNotNull()
+        assertThat(sut.loadClientRegistration(key, "testSource")).isNotNull()
 
         sut.invalidateClientRegistration(key)
 
-        assertThat(sut.loadClientRegistration(key)).isNull()
+        assertThat(sut.loadClientRegistration(key, "testSource")).isNull()
         assertThat(cacheFile).doesNotExist()
     }
 
@@ -619,7 +620,7 @@ class DiskCacheTest {
         registration.setPosixFilePermissions(emptySet())
         assertPosixPermissions(registration, "---------")
 
-        assertThat(sut.loadClientRegistration(key)).isNotNull()
+        assertThat(sut.loadClientRegistration(key, "testSource")).isNotNull()
 
         assertPosixPermissions(registration, "rw-------")
     }

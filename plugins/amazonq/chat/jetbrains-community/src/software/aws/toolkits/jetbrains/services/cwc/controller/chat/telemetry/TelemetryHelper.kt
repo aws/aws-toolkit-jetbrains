@@ -14,6 +14,9 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
@@ -29,13 +32,13 @@ import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.AmazonqTelemetry
+import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.CwsprChatCommandType
 import software.aws.toolkits.telemetry.CwsprChatConversationType
 import software.aws.toolkits.telemetry.CwsprChatInteractionType
 import software.aws.toolkits.telemetry.CwsprChatTriggerInteraction
 import software.aws.toolkits.telemetry.CwsprChatUserIntent
-import software.aws.toolkits.telemetry.FeedbackTelemetry
+import software.aws.toolkits.telemetry.Telemetry
 import java.time.Duration
 import java.time.Instant
 import software.amazon.awssdk.services.codewhispererruntime.model.UserIntent as CWClientUserIntent
@@ -72,55 +75,56 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
 
     // When chat panel is focused
     fun recordEnterFocusChat() {
-        AmazonqTelemetry.enterFocusChat(passive = true)
+        Telemetry.amazonq.enterFocusChat.use { it.passive(true) }
     }
 
     // When chat panel is unfocused
     fun recordExitFocusChat() {
-        AmazonqTelemetry.exitFocusChat(passive = true)
+        Telemetry.amazonq.exitFocusChat.use { it.passive(true) }
     }
 
     fun recordStartConversation(tabId: String, data: ChatRequestData) {
         val sessionHistory = sessionStorage.getSession(tabId)?.history ?: return
         if (sessionHistory.size > 1) return
-        AmazonqTelemetry.startConversation(
-            cwsprChatConversationId = getConversationId(tabId).orEmpty(),
-            cwsprChatTriggerInteraction = getTelemetryTriggerType(data.triggerType),
-            cwsprChatConversationType = CwsprChatConversationType.Chat,
-            cwsprChatUserIntent = data.userIntent?.let { getTelemetryUserIntent(it) },
-            cwsprChatHasCodeSnippet = data.activeFileContext.focusAreaContext?.codeSelection?.isNotEmpty() ?: false,
-            cwsprChatProgrammingLanguage = data.activeFileContext.fileContext?.fileLanguage,
-            credentialStartUrl = getStartUrl(project),
-            cwsprChatHasProjectContext = getIsProjectContextEnabled() && data.useRelevantDocuments && data.relevantTextDocuments.isNotEmpty()
-        )
+
+        Telemetry.amazonq.startConversation.use { span ->
+            span.cwsprChatConversationId(getConversationId(tabId).orEmpty())
+                .cwsprChatTriggerInteraction(getTelemetryTriggerType(data.triggerType))
+                .cwsprChatConversationType(CwsprChatConversationType.Chat)
+                .cwsprChatUserIntent(data.userIntent?.let { getTelemetryUserIntent(it) })
+                .cwsprChatHasCodeSnippet(data.activeFileContext.focusAreaContext?.codeSelection?.isNotEmpty() == true)
+                .cwsprChatProgrammingLanguage(data.activeFileContext.fileContext?.fileLanguage)
+                .credentialStartUrl(getStartUrl(project))
+                .cwsprChatHasProjectContext(getIsProjectContextEnabled() && data.useRelevantDocuments && data.relevantTextDocuments.isNotEmpty())
+        }
     }
 
     // When Chat API responds to a user message (full response streamed)
     fun recordAddMessage(data: ChatRequestData, response: ChatMessage, responseLength: Int, statusCode: Int, numberOfCodeBlocks: Int) {
-        AmazonqTelemetry.addMessage(
-            cwsprChatConversationId = getConversationId(response.tabId).orEmpty(),
-            cwsprChatMessageId = response.messageId,
-            cwsprChatTriggerInteraction = getTelemetryTriggerType(data.triggerType),
-            cwsprChatUserIntent = data.userIntent?.let { getTelemetryUserIntent(it) },
-            cwsprChatHasCodeSnippet = data.activeFileContext.focusAreaContext?.codeSelection?.isNotEmpty() ?: false,
-            cwsprChatProgrammingLanguage = data.activeFileContext.fileContext?.fileLanguage,
-            cwsprChatActiveEditorTotalCharacters = data.activeFileContext.focusAreaContext?.codeSelection?.length?.toLong(),
-            cwsprChatActiveEditorImportCount = data.activeFileContext.focusAreaContext?.codeNames?.fullyQualifiedNames?.used?.size?.toLong(),
-            cwsprChatResponseCodeSnippetCount = numberOfCodeBlocks.toLong(),
-            cwsprChatResponseCode = statusCode.toLong(),
-            cwsprChatSourceLinkCount = response.relatedSuggestions?.size?.toLong(),
-            cwsprChatReferencesCount = 0, // TODO
-            cwsprChatFollowUpCount = response.followUps?.size?.toLong(),
-            cwsprChatTimeToFirstChunk = getResponseStreamTimeToFirstChunk(response.tabId).toLong(),
-            cwsprChatTimeBetweenChunks = "[${getResponseStreamTimeBetweenChunks(response.tabId).joinToString(",")}]",
-            cwsprChatFullResponseLatency = responseStreamTotalTime[response.tabId]?.toLong() ?: 0,
-            cwsprChatRequestLength = data.message.length.toLong(),
-            cwsprChatResponseLength = responseLength.toLong(),
-            cwsprChatConversationType = CwsprChatConversationType.Chat,
-            credentialStartUrl = getStartUrl(project),
-            codewhispererCustomizationArn = data.customization?.arn,
-            cwsprChatHasProjectContext = getMessageHasProjectContext(response.messageId)
-        )
+        Telemetry.amazonq.addMessage.use { span ->
+            span.cwsprChatConversationId(getConversationId(response.tabId).orEmpty())
+                .cwsprChatMessageId(response.messageId)
+                .cwsprChatTriggerInteraction(getTelemetryTriggerType(data.triggerType))
+                .cwsprChatUserIntent(data.userIntent?.let { getTelemetryUserIntent(it) })
+                .cwsprChatHasCodeSnippet(data.activeFileContext.focusAreaContext?.codeSelection?.isNotEmpty() ?: false)
+                .cwsprChatProgrammingLanguage(data.activeFileContext.fileContext?.fileLanguage)
+                .cwsprChatActiveEditorTotalCharacters(data.activeFileContext.focusAreaContext?.codeSelection?.length?.toLong())
+                .cwsprChatActiveEditorImportCount(data.activeFileContext.focusAreaContext?.codeNames?.fullyQualifiedNames?.used?.size?.toLong())
+                .cwsprChatResponseCodeSnippetCount(numberOfCodeBlocks.toLong())
+                .cwsprChatResponseCode(statusCode.toLong())
+                .cwsprChatSourceLinkCount(response.relatedSuggestions?.size?.toLong())
+                .cwsprChatReferencesCount(0L) // TODO
+                .cwsprChatFollowUpCount(response.followUps?.size?.toLong())
+                .cwsprChatTimeToFirstChunk(getResponseStreamTimeToFirstChunk(response.tabId).toLong())
+                .cwsprChatTimeBetweenChunks("[${getResponseStreamTimeBetweenChunks(response.tabId).joinToString(")")}]")
+                .cwsprChatFullResponseLatency(responseStreamTotalTime[response.tabId]?.toLong() ?: 0)
+                .cwsprChatRequestLength(data.message.length.toLong())
+                .cwsprChatResponseLength(responseLength.toLong())
+                .cwsprChatConversationType(CwsprChatConversationType.Chat)
+                .credentialStartUrl(getStartUrl(project))
+                .codewhispererCustomizationArn(data.customization?.arn)
+                .cwsprChatHasProjectContext(getMessageHasProjectContext(response.messageId))
+        }
 
         val programmingLanguage = data.activeFileContext.fileContext?.fileLanguage
         val validProgrammingLanguage = if (ChatSessionV1.validLanguages.contains(programmingLanguage)) programmingLanguage else null
@@ -165,35 +169,42 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
     }
 
     fun recordMessageResponseError(data: ChatRequestData, tabId: String, responseCode: Int) {
-        AmazonqTelemetry.messageResponseError(
-            cwsprChatConversationId = getConversationId(tabId).orEmpty(),
-            cwsprChatTriggerInteraction = getTelemetryTriggerType(data.triggerType),
-            cwsprChatUserIntent = data.userIntent?.let { getTelemetryUserIntent(it) },
-            cwsprChatHasCodeSnippet = data.activeFileContext.focusAreaContext?.codeSelection?.isNotEmpty() ?: false,
-            cwsprChatProgrammingLanguage = data.activeFileContext.fileContext?.fileLanguage,
-            cwsprChatActiveEditorTotalCharacters = data.activeFileContext.focusAreaContext?.codeSelection?.length?.toLong(),
-            cwsprChatActiveEditorImportCount = data.activeFileContext.focusAreaContext?.codeNames?.fullyQualifiedNames?.used?.size?.toLong(),
-            cwsprChatResponseCode = responseCode.toLong(),
-            cwsprChatRequestLength = data.message.length.toLong(),
-            cwsprChatConversationType = CwsprChatConversationType.Chat,
-            credentialStartUrl = getStartUrl(project)
-        )
+        Telemetry.amazonq.messageResponseError.use { span ->
+            span.cwsprChatConversationId(getConversationId(tabId).orEmpty())
+                .cwsprChatTriggerInteraction(getTelemetryTriggerType(data.triggerType))
+                .cwsprChatUserIntent(data.userIntent?.let { getTelemetryUserIntent(it) })
+                .cwsprChatHasCodeSnippet(data.activeFileContext.focusAreaContext?.codeSelection?.isNotEmpty() ?: false)
+                .cwsprChatProgrammingLanguage(data.activeFileContext.fileContext?.fileLanguage)
+                .cwsprChatActiveEditorTotalCharacters(data.activeFileContext.focusAreaContext?.codeSelection?.length?.toLong())
+                .cwsprChatActiveEditorImportCount(data.activeFileContext.focusAreaContext?.codeNames?.fullyQualifiedNames?.used?.size?.toLong())
+                .cwsprChatResponseCode(responseCode.toLong())
+                .cwsprChatRequestLength(data.message.length.toLong())
+                .cwsprChatConversationType(CwsprChatConversationType.Chat)
+                .credentialStartUrl(getStartUrl(project))
+        }
     }
 
     // When user interacts with a message (e.g. copy code, insert code, vote)
-    suspend fun recordInteractWithMessage(message: IncomingCwcMessage) {
+    suspend fun recordInteractWithMessage(message: IncomingCwcMessage) = Telemetry.amazonq.interactWithMessage.use { span ->
+        if (message is IncomingCwcMessage.TabId) {
+            span.cwsprChatConversationId(message.tabId?.let { getConversationId(it) }.orEmpty())
+        }
+
+        if (message is IncomingCwcMessage.MessageId) {
+            span.cwsprChatMessageId(message.messageId.orEmpty())
+                .cwsprChatHasProjectContext(message.messageId?.let { getMessageHasProjectContext(it) })
+        }
+
+        span.credentialStartUrl(getStartUrl(project))
+
         val event: ChatInteractWithMessageEvent? = when (message) {
             is IncomingCwcMessage.ChatItemVoted -> {
-                AmazonqTelemetry.interactWithMessage(
-                    cwsprChatConversationId = getConversationId(message.tabId).orEmpty(),
-                    cwsprChatMessageId = message.messageId,
-                    cwsprChatInteractionType = when (message.vote) {
+                span.cwsprChatInteractionType(
+                    when (message.vote) {
                         "upvote" -> CwsprChatInteractionType.Upvote
                         "downvote" -> CwsprChatInteractionType.Downvote
                         else -> CwsprChatInteractionType.Unknown
-                    },
-                    credentialStartUrl = getStartUrl(project),
-                    cwsprChatHasProjectContext = getMessageHasProjectContext(message.messageId)
+                    }
                 )
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
@@ -210,13 +221,8 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
             }
 
             is IncomingCwcMessage.FollowupClicked -> {
-                AmazonqTelemetry.interactWithMessage(
-                    cwsprChatConversationId = getConversationId(message.tabId).orEmpty(),
-                    cwsprChatMessageId = message.messageId.orEmpty(),
-                    cwsprChatInteractionType = CwsprChatInteractionType.ClickFollowUp,
-                    credentialStartUrl = getStartUrl(project),
-                    cwsprChatHasProjectContext = getMessageHasProjectContext(message.messageId.orEmpty())
-                )
+                span.cwsprChatInteractionType(CwsprChatInteractionType.ClickFollowUp)
+
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
                     messageId(message.messageId.orEmpty())
@@ -226,20 +232,14 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
             }
 
             is IncomingCwcMessage.CopyCodeToClipboard -> {
-                AmazonqTelemetry.interactWithMessage(
-                    cwsprChatConversationId = getConversationId(message.tabId).orEmpty(),
-                    cwsprChatMessageId = message.messageId,
-                    cwsprChatUserIntent = message.userIntent?.let { getTelemetryUserIntent(it) },
-                    cwsprChatInteractionType = CwsprChatInteractionType.CopySnippet,
-                    cwsprChatAcceptedCharactersLength = message.code.length.toLong(),
-                    cwsprChatInteractionTarget = message.insertionTargetType,
-                    cwsprChatHasReference = null,
-                    credentialStartUrl = getStartUrl(project),
-                    cwsprChatCodeBlockIndex = message.codeBlockIndex?.toLong(),
-                    cwsprChatTotalCodeBlocks = message.totalCodeBlocks?.toLong(),
-                    cwsprChatHasProjectContext = getMessageHasProjectContext(message.messageId),
-                    cwsprChatProgrammingLanguage = message.codeBlockLanguage,
-                )
+                span.cwsprChatUserIntent(message.userIntent?.let { getTelemetryUserIntent(it) })
+                    .cwsprChatInteractionType(CwsprChatInteractionType.CopySnippet)
+                    .cwsprChatAcceptedCharactersLength(message.code.length)
+                    .cwsprChatInteractionTarget(message.insertionTargetType)
+                    .cwsprChatCodeBlockIndex(message.codeBlockIndex)
+                    .cwsprChatTotalCodeBlocks(message.totalCodeBlocks)
+                    .cwsprChatProgrammingLanguage(message.codeBlockLanguage)
+
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
                     messageId(message.messageId)
@@ -251,21 +251,15 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
             }
 
             is IncomingCwcMessage.InsertCodeAtCursorPosition -> {
-                AmazonqTelemetry.interactWithMessage(
-                    cwsprChatConversationId = getConversationId(message.tabId).orEmpty(),
-                    cwsprChatMessageId = message.messageId,
-                    cwsprChatUserIntent = message.userIntent?.let { getTelemetryUserIntent(it) },
-                    cwsprChatInteractionType = CwsprChatInteractionType.InsertAtCursor,
-                    cwsprChatAcceptedCharactersLength = message.code.length.toLong(),
-                    cwsprChatAcceptedNumberOfLines = message.code.lines().size.toLong(),
-                    cwsprChatInteractionTarget = message.insertionTargetType,
-                    cwsprChatHasReference = null,
-                    credentialStartUrl = getStartUrl(project),
-                    cwsprChatCodeBlockIndex = message.codeBlockIndex?.toLong(),
-                    cwsprChatTotalCodeBlocks = message.totalCodeBlocks?.toLong(),
-                    cwsprChatHasProjectContext = getMessageHasProjectContext(message.messageId),
-                    cwsprChatProgrammingLanguage = message.codeBlockLanguage,
-                )
+                span.cwsprChatUserIntent(message.userIntent?.let { getTelemetryUserIntent(it) })
+                    .cwsprChatInteractionType(CwsprChatInteractionType.InsertAtCursor)
+                    .cwsprChatAcceptedCharactersLength(message.code.length)
+                    .cwsprChatAcceptedNumberOfLines(message.code.lines().size)
+                    .cwsprChatInteractionTarget(message.insertionTargetType)
+                    .cwsprChatCodeBlockIndex(message.codeBlockIndex)
+                    .cwsprChatTotalCodeBlocks(message.totalCodeBlocks)
+                    .cwsprChatProgrammingLanguage(message.codeBlockLanguage)
+
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
                     messageId(message.messageId)
@@ -279,22 +273,16 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
 
             is IncomingCwcMessage.ClickedLink -> {
                 // Null when internal Amazon link is clicked
-                if (message.messageId == null) return
+                if (message.messageId == null) return null
 
                 val linkInteractionType = when (message.type) {
                     LinkType.SourceLink -> CwsprChatInteractionType.ClickLink
                     LinkType.BodyLink -> CwsprChatInteractionType.ClickBodyLink
                     else -> CwsprChatInteractionType.Unknown
                 }
-                AmazonqTelemetry.interactWithMessage(
-                    cwsprChatConversationId = getConversationId(message.tabId).orEmpty(),
-                    cwsprChatMessageId = message.messageId,
-                    cwsprChatInteractionType = linkInteractionType,
-                    cwsprChatInteractionTarget = message.link,
-                    cwsprChatHasReference = null,
-                    credentialStartUrl = getStartUrl(project),
-                    cwsprChatHasProjectContext = getMessageHasProjectContext(message.messageId)
-                )
+                span.cwsprChatInteractionType(linkInteractionType)
+                span.cwsprChatInteractionTarget(message.link)
+
                 ChatInteractWithMessageEvent.builder().apply {
                     conversationId(getConversationId(message.tabId).orEmpty())
                     messageId(message.messageId)
@@ -311,11 +299,16 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
             }
 
             is IncomingCwcMessage.ChatItemFeedback -> {
+                span.cwsprChatInteractionType(CwsprChatInteractionType.Unknown)
                 recordFeedback(message)
                 null
             }
 
-            else -> null
+            else -> {
+                span.cwsprChatInteractionType(CwsprChatInteractionType.Unknown)
+
+                null
+            }
         }?.let {
             // override request and add customizationArn if it's not null, else return itself
             customization?.let { myCustomization ->
@@ -357,24 +350,24 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
     }
 
     private fun recordFeedbackResult(success: Boolean) {
-        FeedbackTelemetry.result(project = null, success = success)
+        Telemetry.feedback.result.use { it.success(success) }
     }
 
     // When a conversation(tab) is focused
     fun recordEnterFocusConversation(tabId: String) {
         getConversationId(tabId)?.let {
-            AmazonqTelemetry.enterFocusConversation(
-                cwsprChatConversationId = it,
-            )
+            Telemetry.amazonq.enterFocusConversation.use { span ->
+                span.cwsprChatConversationId(it)
+            }
         }
     }
 
     // When a conversation(tab) is unfocused
     fun recordExitFocusConversation(tabId: String) {
         getConversationId(tabId)?.let {
-            AmazonqTelemetry.exitFocusConversation(
-                cwsprChatConversationId = it,
-            )
+            Telemetry.amazonq.exitFocusConversation.use { span ->
+                span.cwsprChatConversationId(it)
+            }
         }
     }
 
@@ -421,16 +414,30 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
     companion object {
         private val logger = getLogger<TelemetryHelper>()
 
-        fun recordOpenChat() {
-            AmazonqTelemetry.openChat(passive = true)
+        private fun getQConnection(project: Project): ToolkitConnection? = ToolkitConnectionManager.getInstance(
+            project
+        ).activeConnectionForFeature(QConnection.getInstance())
+
+        fun recordOpenChat(project: Project) {
+            Telemetry.amazonq.openChat.use { it.passive(true) }
+            if (getQConnection(project) == null) {
+                AuthTelemetry.signInPageOpened()
+            }
         }
 
-        fun recordCloseChat() {
-            AmazonqTelemetry.closeChat(passive = true)
+        fun recordCloseChat(project: Project) {
+            Telemetry.amazonq.closeChat.use { it.passive(true) }
+            if (getQConnection(project) == null) {
+                AuthTelemetry.signInPageClosed()
+            }
         }
 
         fun recordTelemetryChatRunCommand(type: CwsprChatCommandType, name: String? = null, startUrl: String? = null) {
-            AmazonqTelemetry.runCommand(cwsprChatCommandType = type, cwsprChatCommandName = name, credentialStartUrl = startUrl)
+            Telemetry.amazonq.runCommand.use {
+                it.cwsprChatCommandType(type)
+                    .cwsprChatCommandName(name)
+                    .credentialStartUrl(startUrl)
+            }
         }
     }
 }

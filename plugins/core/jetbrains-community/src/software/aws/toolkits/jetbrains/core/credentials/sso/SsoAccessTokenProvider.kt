@@ -18,11 +18,13 @@ import software.amazon.awssdk.services.ssooidc.model.InvalidClientException
 import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SlowDownException
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.pkce.PKCE_CLIENT_NAME
 import software.aws.toolkits.jetbrains.core.credentials.sso.pkce.ToolkitOAuthService
 import software.aws.toolkits.jetbrains.core.webview.getAuthType
+import software.aws.toolkits.jetbrains.services.telemetry.scrubNames
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.jetbrains.utils.sleepWithCancellation
 import software.aws.toolkits.resources.AwsCoreBundle
@@ -182,7 +184,7 @@ class SsoAccessTokenProvider(
                 source = "accessToken",
                 result = Result.Failed,
                 reason = "Failed to write AccessToken to cache",
-                reasonDesc = e.message ?: e::class.java.name,
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name,
             )
             throw e
         }
@@ -192,7 +194,7 @@ class SsoAccessTokenProvider(
 
     @Deprecated("Device authorization grant flow is deprecated")
     private fun registerDAGClient(): ClientRegistration {
-        loadDagClientRegistration()?.let {
+        loadDagClientRegistration(SourceOfLoadRegistration.REGISTER_CLIENT.toString())?.let {
             return it
         }
 
@@ -224,7 +226,7 @@ class SsoAccessTokenProvider(
                 source = "registerDAGClient",
                 result = Result.Failed,
                 reason = "Failed to write DeviceAuthorizationClientRegistration to cache",
-                reasonDesc = e.message ?: e::class.java.name
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name
             )
             throw e
         }
@@ -233,7 +235,7 @@ class SsoAccessTokenProvider(
     }
 
     private fun registerPkceClient(): PKCEClientRegistration {
-        loadPkceClientRegistration()?.let {
+        loadPkceClientRegistration(SourceOfLoadRegistration.REGISTER_CLIENT.toString())?.let {
             return it
         }
 
@@ -276,7 +278,7 @@ class SsoAccessTokenProvider(
                 source = "registerPkceClient",
                 result = Result.Failed,
                 reason = "Failed to write PKCEClientRegistration to cache",
-                reasonDesc = e.message ?: e::class.java.name
+                reasonDesc = e.message?.let { scrubNames(it) } ?: e::class.java.name
             )
             throw e
         }
@@ -429,8 +431,8 @@ class SsoAccessTokenProvider(
         stageName = RefreshCredentialStage.LOAD_REGISTRATION
         val registration = try {
             when (currentToken) {
-                is DeviceAuthorizationGrantToken -> loadDagClientRegistration()
-                is PKCEAuthorizationGrantToken -> loadPkceClientRegistration()
+                is DeviceAuthorizationGrantToken -> loadDagClientRegistration(SourceOfLoadRegistration.REFRESH_TOKEN.toString())
+                is PKCEAuthorizationGrantToken -> loadPkceClientRegistration(SourceOfLoadRegistration.REFRESH_TOKEN.toString())
             }
         } catch (e: Exception) {
             val message = e.message ?: "$stageName: ${e::class.java.name}"
@@ -498,9 +500,14 @@ class SsoAccessTokenProvider(
                 requestId = requestId,
                 result = Result.Failed
             )
-            LOG.warn { "RefreshAccessTokenFailed: ${e.message}" }
+            LOG.info { "RefreshAccessTokenFailed: ${e.message}" }
             throw e
         }
+    }
+
+    enum class SourceOfLoadRegistration {
+        REGISTER_CLIENT,
+        REFRESH_TOKEN,
     }
 
     private enum class RefreshCredentialStage {
@@ -512,13 +519,13 @@ class SsoAccessTokenProvider(
         SAVE_TOKEN,
     }
 
-    private fun loadDagClientRegistration(): ClientRegistration? =
-        cache.loadClientRegistration(dagClientRegistrationCacheKey)?.let {
+    private fun loadDagClientRegistration(source: String): ClientRegistration? =
+        cache.loadClientRegistration(dagClientRegistrationCacheKey, source)?.let {
             return it
         }
 
-    private fun loadPkceClientRegistration(): PKCEClientRegistration? =
-        cache.loadClientRegistration(pkceClientRegistrationCacheKey)?.let {
+    private fun loadPkceClientRegistration(source: String): PKCEClientRegistration? =
+        cache.loadClientRegistration(pkceClientRegistrationCacheKey, source)?.let {
             return it as PKCEClientRegistration
         }
 
