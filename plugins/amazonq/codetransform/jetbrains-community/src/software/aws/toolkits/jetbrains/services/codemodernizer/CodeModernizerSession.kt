@@ -32,6 +32,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerStartJobResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArtifactResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
@@ -61,9 +62,6 @@ import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.SSLHandshakeException
 
-const val ZIP_SOURCES_PATH = "sources"
-const val BUILD_LOG_PATH = "build-logs.txt"
-const val UPLOAD_ZIP_MANIFEST_VERSION = 1.0F
 const val MAX_ZIP_SIZE = 2000000000 // 2GB
 const val HIL_1P_UPGRADE_CAPABILITY = "HIL_1pDependency_VersionUpgrade"
 const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
@@ -145,7 +143,7 @@ class CodeModernizerSession(
      *
      *  Based on [CodeWhispererCodeScanSession]
      */
-    fun createModernizationJob(copyResult: MavenCopyCommandsResult): CodeModernizerStartJobResult {
+    fun createModernizationJob(copyResult: MavenCopyCommandsResult?): CodeModernizerStartJobResult {
         LOG.info { "Compressing local project" }
         val payload: File?
         var payloadSize = 0
@@ -165,6 +163,7 @@ class CodeModernizerSession(
                 telemetryErrorMessage = "Disposed when about to create zip"
                 return CodeModernizerStartJobResult.Disposed
             }
+            // for language upgrades, copyResult should always be Successful here, failure cases already handled
             val result = sessionContext.createZipWithModuleFiles(copyResult)
 
             if (result is ZipCreationResult.Missing1P) {
@@ -325,11 +324,6 @@ class CodeModernizerSession(
         return clientAdaptor.getCodeModernizationJob(jobId.id).transformationJob()
     }
 
-    fun getTransformPlanDetails(jobId: JobId): TransformationPlan {
-        LOG.info { "Getting transform plan details." }
-        return clientAdaptor.getCodeModernizationPlan(jobId).transformationPlan()
-    }
-
     /**
      * This will resume the job, i.e. it will resume the main job loop kicked of by [createModernizationJob]
      */
@@ -419,6 +413,7 @@ class CodeModernizerSession(
     }
 
     suspend fun pollUntilJobCompletion(
+        transformType: CodeTransformType,
         jobId: JobId,
         jobTransitionHandler: (currentStatus: TransformationStatus, migrationPlan: TransformationPlan?) -> Unit,
     ): CodeModernizerJobCompletedResult {
@@ -433,6 +428,7 @@ class CodeModernizerSession(
             var passedStart = false
 
             val result = jobId.pollTransformationStatusAndPlan(
+                transformType,
                 succeedOn = setOf(
                     TransformationStatus.COMPLETED,
                     TransformationStatus.PAUSED,
@@ -464,8 +460,8 @@ class CodeModernizerSession(
                     }
                 }
 
-                // Open the transformation plan detail panel once transformation plan is available
-                if (state.transformationPlan != null && !isTransformationPlanEditorOpened) {
+                // Open the transformation plan detail panel once transformation plan is available (no plan for SQL conversions)
+                if (transformType != CodeTransformType.SQL_CONVERSION && state.transformationPlan != null && !isTransformationPlanEditorOpened) {
                     tryOpenTransformationPlanEditor()
                     isTransformationPlanEditorOpened = true
                 }

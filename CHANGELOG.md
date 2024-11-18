@@ -1,3 +1,16 @@
+# _3.40_ (2024-11-14)
+- **(Feature)** Amazon Q /dev: Add an action to accept individual files
+- **(Bug Fix)** Fix a bug when Amazon Q responds with still indexing message even when `@workspace` index is done
+- **(Bug Fix)** Fix issue where Amazon Q inline chat can be invoked from non-editor windows
+
+# _3.39_ (2024-11-12)
+- **(Bug Fix)** Fix poor inline suggestions from Amazon Q caused by improperly formatted supplemental context
+
+# _3.38_ (2024-11-07)
+- **(Bug Fix)** Improve the position that inline chat shortcut hint is shown in editor
+- **(Bug Fix)** Improve `@workspace` index start stop strategy
+- **(Bug Fix)** Fixed an issue where Q inline won't appear in JetBrains remote 2024.2+
+
 # _3.37_ (2024-10-31)
 - **(Bug Fix)** Amazon Q /dev: Fix the issue resulting in the first request per conversation to /dev failing
 - **(Bug Fix)** Fix inline chat shortcut hint breaking text selection on remote editors

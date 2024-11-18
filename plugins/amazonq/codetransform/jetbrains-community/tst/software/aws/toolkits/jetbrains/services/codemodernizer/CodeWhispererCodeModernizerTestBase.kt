@@ -53,6 +53,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClien
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact.Companion.MAPPER
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerManifest
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerMetrics
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformFailureBuildLog
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
@@ -116,6 +117,7 @@ open class CodeWhispererCodeModernizerTestBase(
     internal val validZipSummaryPath = "summary/"
     internal val validZipManifestPath = "manifest.json"
     internal val validZipPatchFilePath = "patch/diff.patch"
+    internal val validZipMetricsPath = "metrics/"
     internal val validZipManifestVersion = 1.0F
     internal val validManifest =
         CodeModernizerManifest(
@@ -123,6 +125,7 @@ open class CodeWhispererCodeModernizerTestBase(
             validZipPatchDirPath,
             validZipArtifactsPath,
             validZipSummaryPath,
+            validZipMetricsPath
         )
     internal val validTransformationSummary =
         TransformationSummary(
@@ -137,6 +140,14 @@ open class CodeWhispererCodeModernizerTestBase(
             `some code`
 
             """.trimIndent(),
+        )
+
+    internal val validMetrics =
+        CodeModernizerMetrics(
+            charactersOfCodeChanged = 1234,
+            linesOfCodeChanged = 119,
+            linesOfCodeSubmitted = 567,
+            programmingLanguage = "JAVA",
         )
 
     internal val exampleCreateUploadUrlResponse =
@@ -295,6 +306,7 @@ open class CodeWhispererCodeModernizerTestBase(
                     exampleDescriptionContent.content,
                     validTransformationSummary,
                     summaryFileMock,
+                    validMetrics
                 ),
             )
         testTransformFailureBuildLog =
