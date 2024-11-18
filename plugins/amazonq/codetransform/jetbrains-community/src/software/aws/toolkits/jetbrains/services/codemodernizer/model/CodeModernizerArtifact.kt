@@ -4,8 +4,11 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
 import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.intellij.openapi.util.io.FileUtil.createTempDirectory
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
@@ -43,6 +46,7 @@ open class CodeModernizerArtifact(
         private const val METRICS_FILE_NAME = "metrics.json"
         val LOG = getLogger<CodeModernizerArtifact>()
         val MAPPER = jacksonObjectMapper()
+        val XML_MAPPER = XmlMapper().registerKotlinModule().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
         /**
          * Extracts the file at [zipPath] and uses its contents to produce a [CodeModernizerArtifact].
