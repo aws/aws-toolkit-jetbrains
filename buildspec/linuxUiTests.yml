@@ -19,7 +19,7 @@ env:
 phases:
   install:
     commands:
-      - dnf install -y marco mate-media
+      - dnf install -y marco mate-media e2fsprogs
       - startDesktop.sh
 
       # login to DockerHub so we don't get throttled
