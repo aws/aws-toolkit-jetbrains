@@ -13,8 +13,8 @@ import com.intellij.openapi.util.io.FileUtil.createTempDirectory
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import kotlinx.coroutines.withContext
+import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -29,7 +29,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTele
 import software.aws.toolkits.jetbrains.services.codemodernizer.EXPLAINABILITY_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.HilTelemetryMetaData
 import software.aws.toolkits.jetbrains.services.codemodernizer.InboundAppMessagesHandler
-import software.aws.toolkits.jetbrains.services.codemodernizer.SELECTIVE_TRANSFORMATION_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformActionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformCommand
@@ -99,6 +98,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDepend
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.UploadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.SELECTIVE_TRANSFORMATION_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.session.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.codemodernizer.session.Session
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState

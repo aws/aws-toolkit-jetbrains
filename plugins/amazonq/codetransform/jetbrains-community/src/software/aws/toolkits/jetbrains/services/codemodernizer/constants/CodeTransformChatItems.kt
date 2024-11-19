@@ -102,9 +102,11 @@ private val viewDiffButton = Button(
     keepCardAfterClick = true,
 )
 
-fun createViewDiffButton(buttonLabel: String): Button {
-    return Button(id = CodeTransformButtonId.ViewDiff.id, text = buttonLabel, keepCardAfterClick = true)
-}
+fun createViewDiffButton(buttonLabel: String): Button = Button(
+    id = CodeTransformButtonId.ViewDiff.id,
+    text = buttonLabel,
+    keepCardAfterClick = true
+)
 
 val viewSummaryButton = Button(
     id = CodeTransformButtonId.ViewSummary.id,
@@ -587,7 +589,7 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult, to
         type = CodeTransformChatMessageType.FinalizedAnswer,
         message = resultMessage,
         buttons = if (result is CodeModernizerJobCompletedResult.JobPartiallySucceeded || result is CodeModernizerJobCompletedResult.JobCompletedSuccessfully) {
-            listOf(createViewDiffButton(if (totalPatchFiles == 1) "View diff" else "View diff 1/${totalPatchFiles}"), viewSummaryButton)
+            listOf(createViewDiffButton(if (totalPatchFiles == 1) "View diff" else "View diff 1/$totalPatchFiles"), viewSummaryButton)
         } else if (result is CodeModernizerJobCompletedResult.JobFailedInitialBuild && result.hasBuildLog) {
             listOf(viewBuildLog)
         } else {

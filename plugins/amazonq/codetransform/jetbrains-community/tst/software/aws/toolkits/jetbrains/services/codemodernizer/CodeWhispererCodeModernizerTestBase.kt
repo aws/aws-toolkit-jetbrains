@@ -107,6 +107,7 @@ open class CodeWhispererCodeModernizerTestBase(
     internal lateinit var testCodeModernizerArtifact: CodeModernizerArtifact
     internal lateinit var testTransformFailureBuildLog: CodeTransformFailureBuildLog
     internal val exampleZipPath = "simple.zip".toResourceFile().toPath()
+    internal val multipleDiffZipPath = "multiple-diff.zip".toResourceFile().toPath()
     internal val expectedFilePath = "expectedFile".toResourceFile().toPath()
     internal val overwrittenFilePath = "overwrittenFile".toResourceFile().toPath()
     internal val testRequestId = "test_aws_request_id"
@@ -146,6 +147,14 @@ open class CodeWhispererCodeModernizerTestBase(
         CodeModernizerMetrics(
             charactersOfCodeChanged = 1234,
             linesOfCodeChanged = 119,
+            linesOfCodeSubmitted = 567,
+            programmingLanguage = "JAVA",
+        )
+
+    internal val validMetricsMultipleDiffs =
+        CodeModernizerMetrics(
+            charactersOfCodeChanged = 83,
+            linesOfCodeChanged = 3,
             linesOfCodeSubmitted = 567,
             programmingLanguage = "JAVA",
         )
@@ -290,8 +299,14 @@ open class CodeWhispererCodeModernizerTestBase(
         val summaryFileMock = Mockito.mock(File::class.java)
         val logFileMock = Mockito.mock(File::class.java)
         doReturn("dummy/path").whenever(virtualFileMock).path
-        testSessionContextSpy = spy(CodeModernizerSessionContext(project, virtualFileMock, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11,
-            listOf("EXPLAINABILITY_V1", "SELECTIVE_TRANSFORMATION_V1"), "test"))
+        testSessionContextSpy = spy(CodeModernizerSessionContext(
+            project,
+            virtualFileMock,
+            JavaSdkVersion.JDK_1_8,
+            JavaSdkVersion.JDK_11,
+            listOf("EXPLAINABILITY_V1", "SELECTIVE_TRANSFORMATION_V1"),
+            "test")
+        )
 
         testSessionSpy = spy(CodeModernizerSession(testSessionContextSpy, 0, 0))
         doNothing().whenever(testSessionSpy).deleteUploadArtifact(any())

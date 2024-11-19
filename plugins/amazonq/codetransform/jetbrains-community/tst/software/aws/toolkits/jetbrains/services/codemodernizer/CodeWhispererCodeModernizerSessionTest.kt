@@ -145,8 +145,14 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         assertFalse(roots.isEmpty() || roots.size > 1)
         assert(rootManager.dependencies.isEmpty())
         val root = roots[0]
-        val context = CodeModernizerSessionContext(project, root.children[0], JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11,
-            listOf(EXPLAINABILITY_V1, SELECTIVE_TRANSFORMATION_V1), MAVEN_BUILD_SKIP_UNIT_TESTS)
+        val context = CodeModernizerSessionContext(
+            project,
+            root.children[0],
+            JavaSdkVersion.JDK_1_8,
+            JavaSdkVersion.JDK_11,
+            listOf(EXPLAINABILITY_V1, SELECTIVE_TRANSFORMATION_V1),
+            MAVEN_BUILD_SKIP_UNIT_TESTS
+        )
         val mockFile = mock(File::class.java)
         val mockStringBuilder = mock(StringBuilder::class.java)
         val file = runInEdtAndGet {

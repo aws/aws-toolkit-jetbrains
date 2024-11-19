@@ -150,7 +150,6 @@ open class CodeModernizerArtifact(
                 .toList()
         }
 
-        @OptIn(ExperimentalPathApi::class)
         private fun loadDescription(manifest: CodeModernizerManifest): List<PatchInfo>? {
             val patchesDir = tempDir.toPath().resolve(manifest.patchesRoot).toFile()
             if (!patchesDir.isDirectory) {

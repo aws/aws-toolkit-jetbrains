@@ -15,6 +15,11 @@ import com.intellij.openapi.vcs.changes.patch.ApplyPatchMode
 import com.intellij.openapi.vcs.changes.patch.ImportToShelfExecutor
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
+import java.time.Instant
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
@@ -30,8 +35,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESH
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_DOWNLOAD_EXPIRED
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.getDownloadedArtifactTextFromType
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildStartNewTransformFollowup
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.createViewDiffButton
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.getDownloadedArtifactTextFromType
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.viewSummaryButton
 import software.aws.toolkits.jetbrains.services.codemodernizer.controller.CodeTransformChatHelper
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessageContent
@@ -54,12 +60,6 @@ import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformArtifactType
 import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.Path
-import java.time.Instant
-import java.util.concurrent.atomic.AtomicBoolean
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildStartNewTransformFollowup
 
 const val DOWNLOAD_PROXY_WILDCARD_ERROR: String = "Dangling meta character '*' near index 0"
 const val DOWNLOAD_SSL_HANDSHAKE_ERROR: String = "Unable to execute HTTP request: javax.net.ssl.SSLHandshakeException"
@@ -78,8 +78,11 @@ val patchDescriptions: Map<String, String> = mapOf(
     "Upgrade Deprecated API" to ""
 )
 
-class ArtifactHandler(private val project: Project, private val clientAdaptor: GumbyClient,
-                      private val codeTransformChatHelper: CodeTransformChatHelper? = null) {
+class ArtifactHandler(
+    private val project: Project,
+    private val clientAdaptor: GumbyClient,
+    private val codeTransformChatHelper: CodeTransformChatHelper? = null,
+) {
     private val telemetry = CodeTransformTelemetryManager.getInstance(project)
     private val downloadedArtifacts = mutableMapOf<JobId, Path>()
     private val downloadedSummaries = mutableMapOf<JobId, TransformationSummary>()
@@ -87,14 +90,13 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
     private var isCurrentlyDownloading = AtomicBoolean(false)
     private var totalPatchFiles: Int = 0
 
-
     internal suspend fun displayDiff(job: JobId, source: CodeTransformVCSViewerSrcComponents) {
         if (isCurrentlyDownloading.get()) return
         when (val result = downloadArtifact(job, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS)) {
             is DownloadArtifactResult.Success -> {
                 if (result.artifact !is CodeModernizerArtifact) return notifyUnableToApplyPatch("")
                 totalPatchFiles = result.artifact.patches.size
-                if (result.artifact.description == null){
+                if (result.artifact.description == null) {
                     displayDiffUsingPatch(result.artifact.patches.first(), totalPatchFiles, null, job, source)
                 } else {
                     val diffDescription = result.artifact.description[getCurrentPatchIndex()]
@@ -275,8 +277,13 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
     /**
      * Opens the built-in patch dialog to display the diff and allowing users to apply the changes locally.
      */
-    internal suspend fun displayDiffUsingPatch(patchFile: VirtualFile, totalPatchFiles: Int, diffDescription: PatchInfo?, jobId: JobId,
-                                               source: CodeTransformVCSViewerSrcComponents) {
+    internal fun displayDiffUsingPatch(
+        patchFile: VirtualFile,
+        totalPatchFiles: Int,
+        diffDescription: PatchInfo?,
+        jobId: JobId,
+        source: CodeTransformVCSViewerSrcComponents,
+    ) {
         runInEdt {
             val dialog = ApplyPatchDifferentiatedDialog(
                 project,
@@ -292,7 +299,8 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                         } else {
                             patchFile.name
                         },
-                        ""),
+                        ""
+                    ),
                 null,
                 null,
                 null,
@@ -315,19 +323,26 @@ class ArtifactHandler(private val project: Project, private val clientAdaptor: G
                         if (getCurrentPatchIndex() < totalPatchFiles) {
                             val message = "I applied the changes in diff patch ${getCurrentPatchIndex() + 1} of $totalPatchFiles. " +
                                 "${patchDescriptions[diffDescription.name]}"
+                            val notificationMessage = "Amazon Q applied the changes in diff patch ${getCurrentPatchIndex() + 1} of $totalPatchFiles " +
+                                "to your project."
+                            val notificationTitle = "Diff patch ${getCurrentPatchIndex() + 1} of $totalPatchFiles applied"
                             setCurrentPatchIndex(getCurrentPatchIndex() + 1)
+                            notifyStickyInfo(notificationTitle, notificationMessage, project)
                             if (getCurrentPatchIndex() == totalPatchFiles) {
-                                codeTransformChatHelper?.updateLastPendingMessage(CodeTransformChatMessageContent(
-                                    type = CodeTransformChatMessageType.PendingAnswer,
-                                    message = message,
-                                ))
+                                codeTransformChatHelper?.updateLastPendingMessage(
+                                    CodeTransformChatMessageContent(type = CodeTransformChatMessageType.PendingAnswer, message = message)
+                                )
                             } else {
-                                codeTransformChatHelper?.updateLastPendingMessage(CodeTransformChatMessageContent(
-                                    type = CodeTransformChatMessageType.PendingAnswer,
-                                    message = message,
-                                    buttons = listOf(createViewDiffButton("View diff ${getCurrentPatchIndex() + 1}/${totalPatchFiles}"),
-                                        viewSummaryButton),
-                                ))
+                                codeTransformChatHelper?.updateLastPendingMessage(
+                                    CodeTransformChatMessageContent(
+                                        type = CodeTransformChatMessageType.PendingAnswer,
+                                        message = message,
+                                        buttons = listOf(
+                                            createViewDiffButton("View diff ${getCurrentPatchIndex() + 1}/$totalPatchFiles"),
+                                            viewSummaryButton
+                                        )
+                                    )
+                                )
                             }
                         } else {
                             codeTransformChatHelper?.addNewMessage(buildStartNewTransformFollowup())

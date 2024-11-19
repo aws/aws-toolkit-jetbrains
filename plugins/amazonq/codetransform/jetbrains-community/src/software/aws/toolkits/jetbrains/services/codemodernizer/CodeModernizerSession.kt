@@ -63,7 +63,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.SSLHandshakeException
 
 const val MAX_ZIP_SIZE = 2000000000 // 2GB
-const val HIL_1P_UPGRADE_CAPABILITY = "HIL_1pDependency_VersionUpgrade"
 const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
 const val SELECTIVE_TRANSFORMATION_V1 = "SELECTIVE_TRANSFORMATION_V1"
 
