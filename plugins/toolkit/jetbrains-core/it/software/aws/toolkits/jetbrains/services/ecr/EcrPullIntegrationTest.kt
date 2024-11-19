@@ -85,7 +85,4 @@ class EcrPullIntegrationTest {
             assertThat(serverRuntime.agent.getImages(null).firstOrNull { it.imageId == localImageId }).isNotNull()
         }
     }
-
-    // FIX_WHEN_MIN_IS_231: deleteImage() is blocking prior to 231
-    private fun Unit.await() {}
 }

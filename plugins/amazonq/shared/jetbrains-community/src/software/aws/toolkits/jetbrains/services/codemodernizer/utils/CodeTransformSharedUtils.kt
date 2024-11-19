@@ -9,7 +9,6 @@ import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.lazyIsUnauthedBearerConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import software.aws.toolkits.jetbrains.services.amazonq.isQSupportedInThisVersion
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import java.time.Instant
 
@@ -28,6 +27,6 @@ fun isValidCodeTransformConnection(project: Project): Boolean {
 }
 fun isCodeTransformAvailable(project: Project): Boolean {
     if (!isIntellij()) return false
-    if (isRunningOnRemoteBackend() || !isQSupportedInThisVersion()) return false
+    if (isRunningOnRemoteBackend()) return false
     return isValidCodeTransformConnection(project)
 }
