@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.BuildProgressStepTreeItem
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.BuildStepStatus
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerException
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ProgressStepId
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.BuildProgressStepDetailsPanel
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.BuildProgressTreePanel
@@ -42,12 +43,9 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
             val userObject = selectedNode.userObject
             if (userObject is BuildProgressStepTreeItem) {
                 if (isValidStepClick(userObject.id) && userObject.transformationStepId != null) {
-                    System.out.println("Is valid stepID")
                     buildProgressStepDetailsPanel.updateListData(userObject.transformationStepId)
                     revalidate()
                     repaint()
-                } else {
-                    System.out.println("Is NOT valid stepID")
                 }
             }
         }
@@ -114,18 +112,26 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
         }
     }
 
-    fun handleProgressStateChanged(newState: TransformationStatus, transformationPlan: TransformationPlan?, jdkVersion: JavaSdkVersion) {
+    fun handleProgressStateChanged(newState: TransformationStatus, plan: TransformationPlan?, jdk: JavaSdkVersion, transformType: CodeTransformType) {
         val currentState = statusTreePanel.getCurrentElements()
         val loadingPanelText: String
         // show the details panel when there are progress updates
         // otherwise it would show an empty panel
         val backendProgressStepsAvailable = (
-            transformationPlan != null &&
-                transformationPlan.hasTransformationSteps() &&
-                haveProgressUpdates(transformationPlan)
+            plan != null &&
+                plan.hasTransformationSteps() &&
+                haveProgressUpdates(plan)
             )
 
-        fun maybeAdd(stepId: ProgressStepId, string: String) {
+        fun maybeAddTransformationStep(stepId: ProgressStepId, string: String) {
+            // don't show building or generate plan message for SQL conversions since we don't build or generate plan
+            if (transformType == CodeTransformType.SQL_CONVERSION && (
+                    string == message("codemodernizer.toolwindow.progress.building") ||
+                        string == message("codemodernizer.toolwindow.progress.planning")
+                    )
+            ) {
+                return
+            }
             if (currentState.none { it.id == stepId }) {
                 currentState.add(BuildProgressStepTreeItem(string, BuildStepStatus.WORKING, stepId))
             }
@@ -137,41 +143,37 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
                 TransformationStatus.PREPARING,
             )
         ) {
-            maybeAdd(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
-            maybeAdd(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
+            maybeAddTransformationStep(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
+            maybeAddTransformationStep(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
         }
-        if (newState in setOf(
-                TransformationStatus.PREPARED,
-                TransformationStatus.PLANNING,
-            )
-        ) {
-            maybeAdd(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
-            maybeAdd(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
-            maybeAdd(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
+        if (newState in setOf(TransformationStatus.PREPARED, newState == TransformationStatus.PLANNING)) {
+            maybeAddTransformationStep(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
+            maybeAddTransformationStep(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
+            maybeAddTransformationStep(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
         }
         if (newState in setOf(
                 TransformationStatus.PLANNED,
                 TransformationStatus.TRANSFORMING,
             )
         ) {
-            maybeAdd(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
-            maybeAdd(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
-            maybeAdd(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
-            maybeAdd(ProgressStepId.TRANSFORMING, message("codemodernizer.toolwindow.progress.transforming"))
+            maybeAddTransformationStep(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
+            maybeAddTransformationStep(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
+            maybeAddTransformationStep(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
+            maybeAddTransformationStep(ProgressStepId.TRANSFORMING, message("codemodernizer.toolwindow.progress.transforming"))
         }
 
         if (newState == TransformationStatus.PAUSED) {
-            maybeAdd(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
-            maybeAdd(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
-            maybeAdd(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
-            maybeAdd(ProgressStepId.TRANSFORMING, message("codemodernizer.toolwindow.progress.transforming"))
+            maybeAddTransformationStep(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
+            maybeAddTransformationStep(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
+            maybeAddTransformationStep(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
+            maybeAddTransformationStep(ProgressStepId.TRANSFORMING, message("codemodernizer.toolwindow.progress.transforming"))
         }
 
         if (newState == TransformationStatus.RESUMED) {
-            maybeAdd(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
-            maybeAdd(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
-            maybeAdd(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
-            maybeAdd(ProgressStepId.TRANSFORMING, message("codemodernizer.toolwindow.progress.transforming"))
+            maybeAddTransformationStep(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
+            maybeAddTransformationStep(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
+            maybeAddTransformationStep(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
+            maybeAddTransformationStep(ProgressStepId.TRANSFORMING, message("codemodernizer.toolwindow.progress.transforming"))
         }
 
         if (newState in setOf(
@@ -179,21 +181,21 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
                 TransformationStatus.PARTIALLY_COMPLETED,
             )
         ) {
-            maybeAdd(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
-            maybeAdd(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
-            maybeAdd(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
-            maybeAdd(ProgressStepId.TRANSFORMING, message("codemodernizer.toolwindow.progress.transforming"))
+            maybeAddTransformationStep(ProgressStepId.UPLOADING, message("codemodernizer.toolwindow.progress.uploading"))
+            maybeAddTransformationStep(ProgressStepId.BUILDING, message("codemodernizer.toolwindow.progress.building"))
+            maybeAddTransformationStep(ProgressStepId.PLANNING, message("codemodernizer.toolwindow.progress.planning"))
+            maybeAddTransformationStep(ProgressStepId.TRANSFORMING, message("codemodernizer.toolwindow.progress.transforming"))
         }
 
         // Figure out if we should add plan steps
         val statuses: List<BuildProgressStepTreeItem> = if (currentState.isEmpty()) {
             defaultProgressData().toList()
         } else {
-            if (backendProgressStepsAvailable && transformationPlan != null) {
+            if (backendProgressStepsAvailable && plan != null) {
                 currentBuildingTransformationStep = newBuildingTransformationStep
                 // skip step 0 (contains supplemental info)
-                newBuildingTransformationStep = transformationPlan.transformationSteps().size - 1
-                val transformationPlanSteps = transformationPlan.transformationSteps()?.drop(1)?.map {
+                newBuildingTransformationStep = plan.transformationSteps().size - 1
+                val transformationPlanSteps = plan.transformationSteps()?.drop(1)?.map {
                     getUpdatedBuildProgressStepTreeItem(it)
                 }
                 transformationPlanSteps?.sortedBy { it.transformationStepId }
@@ -215,22 +217,38 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
             }
 
             TransformationStatus.PREPARING -> {
-                loadingPanelText = message("codemodernizer.toolwindow.scan_in_progress.building", jdkVersion.description)
+                loadingPanelText = if (transformType == CodeTransformType.SQL_CONVERSION) {
+                    message("codemodernizer.toolwindow.scan_in_progress.transforming")
+                } else {
+                    message("codemodernizer.toolwindow.scan_in_progress.building", jdk.description)
+                }
                 statuses.update(BuildStepStatus.DONE, ProgressStepId.UPLOADING)
             }
 
             TransformationStatus.PREPARED -> {
-                loadingPanelText = message("codemodernizer.toolwindow.scan_in_progress.building", jdkVersion.description)
+                loadingPanelText = if (transformType == CodeTransformType.SQL_CONVERSION) {
+                    message("codemodernizer.toolwindow.scan_in_progress.transforming")
+                } else {
+                    message("codemodernizer.toolwindow.scan_in_progress.building", jdk.description)
+                }
                 statuses.update(BuildStepStatus.DONE, ProgressStepId.BUILDING)
             }
 
             TransformationStatus.PLANNING -> {
-                loadingPanelText = message("codemodernizer.toolwindow.scan_in_progress.planning")
+                loadingPanelText = if (transformType == CodeTransformType.SQL_CONVERSION) {
+                    message("codemodernizer.toolwindow.scan_in_progress.transforming")
+                } else {
+                    message("codemodernizer.toolwindow.scan_in_progress.planning")
+                }
                 statuses.update(BuildStepStatus.DONE, ProgressStepId.BUILDING)
             }
 
             TransformationStatus.PLANNED -> {
-                loadingPanelText = message("codemodernizer.toolwindow.scan_in_progress.planning")
+                loadingPanelText = if (transformType == CodeTransformType.SQL_CONVERSION) {
+                    message("codemodernizer.toolwindow.scan_in_progress.transforming")
+                } else {
+                    message("codemodernizer.toolwindow.scan_in_progress.planning")
+                }
                 statuses.update(BuildStepStatus.DONE, ProgressStepId.PLANNING)
             }
 
@@ -289,8 +307,8 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
                 this.remove(loadingPanel)
                 setProgressStepsDefaultUI()
             }
-            if (transformationPlan != null) {
-                buildProgressStepDetailsPanel.setTransformationPlan(transformationPlan)
+            if (plan != null) {
+                buildProgressStepDetailsPanel.setTransformationPlan(plan)
                 // automatically jump to the next step's right details' panel only when the current step is finished and next step starts
                 if (newBuildingTransformationStep == 1 || currentBuildingTransformationStep != newBuildingTransformationStep) {
                     buildProgressStepDetailsPanel.updateListData(newBuildingTransformationStep)
@@ -348,6 +366,7 @@ class BuildProgressSplitterPanelManager(private val project: Project) :
             .toKotlinDuration().inWholeSeconds.seconds.toString() to formatter.format(Date.from(endTime))
     }
 
+    // will be False for SQL conversions, which is what we want so that the (nonexistent) progressUpdates do not render
     private fun haveProgressUpdates(plan: TransformationPlan): Boolean = plan.transformationSteps().any { it.progressUpdates().size > 0 }
 
     private fun isValidStepClick(stepId: ProgressStepId): Boolean = when (stepId) {

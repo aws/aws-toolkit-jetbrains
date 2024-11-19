@@ -3,13 +3,15 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
-import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
 import software.aws.toolkits.core.utils.createParentDirectories
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager.Companion.LOG
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_ARTIFACT_DIR_NAME
@@ -20,8 +22,15 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_DEP
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_POM_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_POM_VERSION_PLACEHOLDER
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_UPLOAD_ZIP_NAME
+import software.aws.toolkits.jetbrains.services.codemodernizer.controller.CodeTransformChatController
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.AURORA_DB
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact.Companion.XML_MAPPER
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DependencyUpdatesReport
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_CONFIGURATION_FILE_NAME
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.ORACLE_DB
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.RDS_DB
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.SctMetadata
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.SqlMetadataValidationResult
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.content
 import software.aws.toolkits.resources.message
 import java.io.File
@@ -104,14 +113,20 @@ fun parseBuildFile(buildFile: VirtualFile?): String? {
 /**
  * Unzips a zip into a dir. Returns the true when successfully unzips the file pointed to by [zipFilePath] to [destDir]
  */
-fun unzipFile(zipFilePath: Path, destDir: Path): Boolean {
+fun unzipFile(zipFilePath: Path, destDir: Path, isSqlMetadata: Boolean = false): Boolean {
     if (!zipFilePath.exists()) return false
     val zipFile = ZipFile(zipFilePath.toFile())
     zipFile.use { file ->
         file.entries().asSequence()
             .filterNot { it.isDirectory }
             .map { zipEntry ->
-                val destPath = destDir.resolve(zipEntry.name)
+                var fileName = zipEntry.name
+                if (isSqlMetadata) {
+                    // when manually compressing ZIP files, the files get unzipped under a subdirectory where we extract them to,
+                    // this change puts the files directly under the root of the target directory, which is what we want
+                    fileName = zipEntry.name.substringAfterLast(File.separatorChar)
+                }
+                val destPath = destDir.resolve(fileName)
                 destPath.createParentDirectories()
                 FileOutputStream(destPath.toFile()).use { targetFile ->
                     zipFile.getInputStream(zipEntry).copyTo(targetFile)
@@ -123,9 +138,53 @@ fun unzipFile(zipFilePath: Path, destDir: Path): Boolean {
 
 fun parseXmlDependenciesReport(pathToXmlDependency: Path): DependencyUpdatesReport {
     val reportFile = pathToXmlDependency.toFile()
-    val xmlMapper = XmlMapper()
-    val report = xmlMapper.readValue(reportFile, DependencyUpdatesReport::class.java)
+    val report = XML_MAPPER.readValue(reportFile, DependencyUpdatesReport::class.java)
     return report
+}
+
+fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {
+    if (sctFile == null) {
+        return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.missing_sct_file"))
+    }
+
+    val sctMetadata: SctMetadata
+    try {
+        sctMetadata = XML_MAPPER.readValue<SctMetadata>(sctFile)
+    } catch (e: Exception) {
+        getLogger<CodeTransformChatController>().error { "Error parsing .sct metadata file; invalid XML encountered: ${e.localizedMessage}" }
+        return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.invalid_sct"))
+    }
+
+    try {
+        val projectModel = sctMetadata.instances.projectModel
+        val sourceDbServer = projectModel.entities.sources.dbServer
+        val sourceVendor = sourceDbServer.vendor.trim().uppercase()
+        if (sourceVendor != ORACLE_DB) {
+            return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.invalid_source_db"))
+        }
+
+        val sourceServerName = sourceDbServer.name.trim()
+
+        val targetDbServer = projectModel.entities.targets.dbServer
+        val targetVendor = targetDbServer.vendor.trim().uppercase()
+        if (targetVendor != AURORA_DB && targetVendor != RDS_DB) {
+            return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.invalid_target_db"))
+        }
+
+        val schemaNames = mutableSetOf<String>()
+        projectModel.relations.serverNodeLocation.forEach { serverNodeLocation ->
+            val fullNameNodeInfoList = serverNodeLocation.fullNameNodeInfoList.nameParts.fullNameNodeInfo
+            fullNameNodeInfoList.forEach { node ->
+                if (node.typeNode.lowercase() == "schema") {
+                    schemaNames.add(node.nameNode.uppercase())
+                }
+            }
+        }
+        return SqlMetadataValidationResult(true, "", sourceVendor, targetVendor, sourceServerName, schemaNames)
+    } catch (e: Exception) {
+        getLogger<CodeTransformChatController>().error { "Error parsing .sct metadata file: ${e.localizedMessage}" }
+        return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.invalid_sct"))
+    }
 }
 
 fun createFileCopy(originalFile: File, outputPath: Path): File {

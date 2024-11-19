@@ -585,7 +585,7 @@ class InlineChatController(
                 requestCredentialsForQ(project, isReauth = false)
             } else {
                 runInEdt {
-                    QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
+                    QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AmazonQ))
                     ToolWindowManager.getInstance(project).getToolWindow(AMAZON_Q_WINDOW_ID)?.activate(null, false)
                     ToolWindowManager.getInstance(project).getToolWindow(AMAZON_Q_WINDOW_ID)?.show()
                 }
