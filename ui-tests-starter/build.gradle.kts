@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeVersions
 
 plugins {
@@ -9,6 +10,16 @@ plugins {
     id("toolkit-intellij-plugin")
 
     id("org.jetbrains.intellij.platform")
+}
+
+val ideProfile = IdeVersions.ideProfile(project)
+
+// Add our source sets per IDE profile version (i.e. src-211)
+sourceSets {
+    test {
+        java.srcDirs(findFolders(project, "tst", ideProfile))
+        resources.srcDirs(findFolders(project, "tst-resources", ideProfile))
+    }
 }
 
 intellijPlatform {
