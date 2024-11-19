@@ -145,7 +145,7 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
 
         when (message) {
             is BrowserMessage.PrepareUi -> {
-                this.prepareBrowser(BrowserState(FeatureId.Q, false))
+                this.prepareBrowser(BrowserState(FeatureId.AmazonQ, false))
                 WebviewTelemetry.amazonqSignInOpened(
                     project,
                     reAuth = isQExpired(project)
