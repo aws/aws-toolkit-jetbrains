@@ -22,16 +22,17 @@ object DisplayToastNotifications {
         if (RulesEngine.displayNotification(notificationData, project)) {
             val notificationContent = notificationData.content.locale
             val severity = notificationData.severity
+            val followupActions = NotificationManager.createActions(notificationData.actions, notificationContent.description, notificationContent.title)
             showToast(
                 notificationContent.title,
                 notificationContent.description,
-                getNotificationActionList(notificationData.actions, notificationContent.title, notificationContent.description),
+                NotificationManager.buildNotificationActions(followupActions),
                 checkSeverity(severity),
                 notificationData.id
             )
 
             if (severity == "Critical") {
-                ShowCriticalNotificationBannerListener.showBanner(notificationContent.title, notificationContent.description, notificationData.actions)
+                ShowCriticalNotificationBannerListener.showBanner(notificationContent.title, notificationContent.description, followupActions)
             }
         }
     }

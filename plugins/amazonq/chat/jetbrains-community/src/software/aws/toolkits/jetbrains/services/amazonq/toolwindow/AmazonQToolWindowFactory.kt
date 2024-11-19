@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.toolwindow
 
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAware
@@ -10,6 +11,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.openapi.wm.ex.ToolWindowEx
+import com.intellij.ui.EditorNotificationPanel
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.util.ui.components.BorderLayoutPanel
 import software.aws.toolkits.core.utils.debug
@@ -22,9 +24,9 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
-import software.aws.toolkits.jetbrains.core.notifications.NotificationFollowupActions
+import software.aws.toolkits.jetbrains.core.notifications.NotificationActionList
+import software.aws.toolkits.jetbrains.core.notifications.NotificationManager
 import software.aws.toolkits.jetbrains.core.notifications.ShowCriticalNotificationBannerListener
-import software.aws.toolkits.jetbrains.core.notifications.getBannerActionList
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.RefreshQChatPanelButtonPressedListener
@@ -32,7 +34,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.openMeetQ
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
-import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeatureId
 import java.awt.event.ComponentAdapter
@@ -76,8 +78,8 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         project.messageBus.connect().subscribe(
             ShowCriticalNotificationBannerListener.TOPIC,
             object : ShowCriticalNotificationBannerListener {
-                override fun onReceiveEmergencyNotification(title: String, message: String, actions: List<NotificationFollowupActions>?) {
-                    notificationPanel.updateNotificationPanel(title, message, actions)
+                override fun onReceiveEmergencyNotification(title: String, message: String, notificationActionList: List<NotificationActionList>) {
+                    notificationPanel.updateNotificationPanel(title, message, notificationActionList)
                 }
             }
         )
@@ -87,13 +89,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             object : BearerTokenProviderListener {
                 override fun onChange(providerId: String, newScopes: List<String>?) {
                     if (ToolkitConnectionManager.getInstance(project).connectionStateForFeature(QConnection.getInstance()) == BearerTokenAuthState.AUTHORIZED) {
-                        // change this
                         val qComponent = AmazonQToolWindow.getInstance(project).component
-
-                        val content = contentManager.factory.createContent(qComponent, null, false).also {
-                            it.isCloseable = true
-                            it.isPinnable = true
-                        }
 
                         runInEdt {
                             qPanel.updateQPanel(qComponent)
@@ -191,14 +187,16 @@ class NotificationPanel : BorderLayoutPanel() {
         wrapper.removeAll()
     }
 
-    fun updateNotificationPanel(title: String, message: String, actions: List<NotificationFollowupActions>?) {
-        val editorNotificationPanel = getBannerActionList(actions, title, message)
-
-        editorNotificationPanel.createActionLabel("Dismiss") {
+    fun updateNotificationPanel(title: String, message: String, notificationActionList: List<NotificationActionList>) {
+        val panel = EditorNotificationPanel()
+        panel.text = title
+        panel.icon(AllIcons.General.Error)
+        val panelWithActions = NotificationManager.buildBannerPanel(panel, notificationActionList)
+        panelWithActions.createActionLabel(AwsCoreBundle.message("general.dismiss")) {
             removeNotificationPanel()
         }
 
-        wrapper.setContent(editorNotificationPanel)
+        wrapper.setContent(panelWithActions)
     }
 }
 
@@ -213,7 +211,7 @@ class QPanel : BorderLayoutPanel() {
         try {
             wrapper.setContent(content)
         } catch (e: Exception) {
-            notifyInfo("Error while creating window")
+            getLogger<QPanel>().error("Error while creating window")
         }
     }
 }

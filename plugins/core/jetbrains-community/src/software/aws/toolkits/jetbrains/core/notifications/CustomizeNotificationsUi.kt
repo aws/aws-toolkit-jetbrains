@@ -9,6 +9,8 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.EditorNotificationPanel
+import software.aws.toolkits.jetbrains.AwsToolkit
+import software.aws.toolkits.resources.AwsCoreBundle
 
 fun checkSeverity(notificationSeverity: String): NotificationSeverity = when (notificationSeverity) {
     "Critical" -> NotificationSeverity.CRITICAL
@@ -17,83 +19,73 @@ fun checkSeverity(notificationSeverity: String): NotificationSeverity = when (no
     else -> NotificationSeverity.INFO
 }
 
-fun getNotificationActionList(
-    notificationFollowupActions: List<NotificationFollowupActions>?,
-    notificationTitle: String,
-    notificationMessage: String,
-): List<AnAction> {
-    val actionList = mutableListOf<AnAction>()
-    actionList.add(
-        getNotifAction("Expand") {
-            Messages.showYesNoDialog(null, notificationMessage, notificationTitle, "OK", "Cancel", AllIcons.General.Error)
-        }
-    )
-    if (notificationFollowupActions.isNullOrEmpty()) return actionList
-    notificationFollowupActions.forEach { notificationAction ->
-        if (notificationAction.type == "ShowUrl") {
-            actionList.add(
-                getNotifAction("Learn more") {
-                    notificationAction.content.locale.url?.let { url -> BrowserUtil.browse(url) }
-                }
-            )
-        }
+object NotificationManager {
+    fun createActions(
+        followupActions: List<NotificationFollowupActions>?,
+        message: String,
+        title: String,
 
-        if (notificationAction.type == "UpdateExtension") {
-            actionList.add(
-                getNotifAction("Update") {
-                    // add update logic
-                }
-            )
-        }
-
-        if (notificationAction.type == "openChangelog") {
-            actionList.add(
-                getNotifAction("Changelog") {
-                    BrowserUtil.browse("https://github.com/aws/aws-toolkit-jetbrains/blob/main/CHANGELOG.md")
-                }
-            )
-        }
-    }
-    return actionList
-}
-
-fun getNotifAction(title: String, block: () -> Unit): AnAction = object : AnAction(title) {
-    override fun actionPerformed(e: AnActionEvent) {
-        block()
-    }
-}
-
-fun getBannerActionList(
-    notificationFollowupActions: List<NotificationFollowupActions>?,
-    notificationTitle: String,
-    notificationMessage: String,
-): EditorNotificationPanel {
-    val panel = EditorNotificationPanel()
-
-    panel.text = notificationTitle
-    panel.icon(AllIcons.General.Error)
-    panel.createActionLabel("Expand") {
-        Messages.showYesNoDialog(null, notificationMessage, notificationTitle, "OK", "Cancel", AllIcons.General.Error)
-    }
-    if (notificationFollowupActions.isNullOrEmpty()) return panel
-    notificationFollowupActions.forEach { notificationAction ->
-        if (notificationAction.type == "ShowUrl") {
-            panel.createActionLabel("Learn more") {
-                notificationAction.content.locale.url?.let { url -> BrowserUtil.browse(url) }
+    ): List<NotificationActionList> = buildList {
+        add(
+            NotificationActionList(AwsCoreBundle.message("notification.expand")) {
+                Messages.showYesNoDialog(
+                    null,
+                    message,
+                    title,
+                    AwsCoreBundle.message("general.ok"),
+                    AwsCoreBundle.message("general.cancel"),
+                    AllIcons.General.Error
+                )
             }
-        }
+        )
 
-        if (notificationAction.type == "UpdateExtension") {
-            panel.createActionLabel("Update") {
-                // add update logic
+        followupActions?.forEach { action ->
+            if (action.type == "ShowUrl") {
+                add(
+                    NotificationActionList(AwsCoreBundle.message("notification.learn_more")) {
+                        action.content.locale.url?.let { url -> BrowserUtil.browse(url) }
+                    }
+                )
             }
-        }
 
-        if (notificationAction.type == "openChangelog") {
-            panel.createActionLabel("Changelog") {
-                BrowserUtil.browse("https://github.com/aws/aws-toolkit-jetbrains/blob/main/CHANGELOG.md")
+            if (action.type == "UpdateExtension") {
+                add(
+                    NotificationActionList(AwsCoreBundle.message("notification.update")) {
+                        // TODO: Add update logic
+                    }
+                )
+            }
+
+            if (action.type == "OpenChangelog") {
+                add(
+                    NotificationActionList(AwsCoreBundle.message("notification.changelog")) {
+                        BrowserUtil.browse(AwsToolkit.GITHUB_CHANGELOG)
+                    }
+                )
             }
         }
     }
-    return panel
+
+    fun buildNotificationActions(actions: List<NotificationActionList>): List<AnAction> = actions.map { (title, block) ->
+        object : AnAction(title) {
+            override fun actionPerformed(e: AnActionEvent) {
+                block()
+            }
+        }
+    }
+
+    fun buildBannerPanel(panel: EditorNotificationPanel, actions: List<NotificationActionList>): EditorNotificationPanel {
+        actions.forEach { (actionTitle, block) ->
+            panel.createActionLabel(actionTitle) {
+                block()
+            }
+        }
+
+        return panel
+    }
 }
+
+data class NotificationActionList(
+    val title: String,
+    val blockToExecute: () -> Unit,
+)

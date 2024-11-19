@@ -13,6 +13,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.openapi.wm.ex.ToolWindowEx
+import com.intellij.ui.EditorNotificationPanel
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.util.messages.Topic
 import com.intellij.util.ui.components.BorderLayoutPanel
@@ -36,13 +37,13 @@ import software.aws.toolkits.jetbrains.core.experiments.ExperimentsActionGroup
 import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
 import software.aws.toolkits.jetbrains.core.explorer.webview.shouldPromptToolkitReauth
 import software.aws.toolkits.jetbrains.core.help.HelpIds
-import software.aws.toolkits.jetbrains.core.notifications.NotificationFollowupActions
+import software.aws.toolkits.jetbrains.core.notifications.NotificationActionList
+import software.aws.toolkits.jetbrains.core.notifications.NotificationManager
 import software.aws.toolkits.jetbrains.core.notifications.ShowCriticalNotificationBannerListener
-import software.aws.toolkits.jetbrains.core.notifications.getBannerActionList
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
 import software.aws.toolkits.jetbrains.utils.isTookitConnected
-import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeatureId
 import java.util.EventListener
@@ -154,8 +155,8 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         project.messageBus.connect().subscribe(
             ShowCriticalNotificationBannerListener.TOPIC,
             object : ShowCriticalNotificationBannerListener {
-                override fun onReceiveEmergencyNotification(title: String, message: String, actions: List<NotificationFollowupActions>?) {
-                    notificationPanel.updateNotificationPanel(title, message, actions)
+                override fun onReceiveEmergencyNotification(title: String, message: String, notificationActionList: List<NotificationActionList>) {
+                    notificationPanel.updateNotificationPanel(title, message, notificationActionList)
                 }
             }
         )
@@ -233,14 +234,17 @@ class NotificationPanel : BorderLayoutPanel() {
         wrapper.removeAll()
     }
 
-    fun updateNotificationPanel(title: String, message: String, actions: List<NotificationFollowupActions>?) {
-        val editorNotificationPanel = getBannerActionList(actions, title, message)
+    fun updateNotificationPanel(title: String, message: String, notificationActionList: List<NotificationActionList>) {
+        val panel = EditorNotificationPanel()
+        panel.text = title
+        panel.icon(AllIcons.General.Error)
+        val panelWithActions = NotificationManager.buildBannerPanel(panel, notificationActionList)
 
-        editorNotificationPanel.createActionLabel("Dismiss") {
+        panelWithActions.createActionLabel(AwsCoreBundle.message("general.dismiss")) {
             removeNotificationPanel()
         }
 
-        wrapper.setContent(editorNotificationPanel)
+        wrapper.setContent(panelWithActions)
     }
 }
 
@@ -255,7 +259,7 @@ class ToolkitPanel : BorderLayoutPanel() {
         try {
             wrapper.setContent(content)
         } catch (e: Exception) {
-            notifyInfo("Error while creating window")
+            getLogger<ToolkitPanel>().error("Error while creating window")
         }
     }
 }

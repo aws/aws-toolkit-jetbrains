@@ -8,14 +8,14 @@ import com.intellij.util.messages.Topic
 import java.util.EventListener
 
 interface ShowCriticalNotificationBannerListener : EventListener {
-    fun onReceiveEmergencyNotification(title: String, message: String, actions: List<NotificationFollowupActions>?) {}
+    fun onReceiveEmergencyNotification(title: String, message: String, notificationActionList: List<NotificationActionList>) {}
 
     companion object {
         @Topic.AppLevel
         val TOPIC = Topic.create("Show critical banner", ShowCriticalNotificationBannerListener::class.java)
 
-        fun showBanner(title: String, message: String, actions: List<NotificationFollowupActions>?) {
-            ApplicationManager.getApplication().messageBus.syncPublisher(TOPIC).onReceiveEmergencyNotification(title, message, actions)
+        fun showBanner(title: String, message: String, notificationActionList: List<NotificationActionList>) {
+            ApplicationManager.getApplication().messageBus.syncPublisher(TOPIC).onReceiveEmergencyNotification(title, message, notificationActionList)
         }
     }
 }
