@@ -117,7 +117,6 @@ open class CodeModernizerArtifact(
             }
         }
 
-        @OptIn(ExperimentalPathApi::class)
         private fun extractPatches(manifest: CodeModernizerManifest, description: List<PatchInfo>?): List<VirtualFile> {
             if (description == null) {
                 return extractSinglePatch(manifest)
@@ -125,15 +124,15 @@ open class CodeModernizerArtifact(
             val fileSystem = LocalFileSystem.getInstance()
             val patchesDir = tempDir.toPath().resolve(manifest.patchesRoot)
             if (!patchesDir.isDirectory()) {
-                throw RuntimeException("Expected root for patches was not a directory.")
+                error("Expected root for patches was not a directory.")
             }
             return description.map { patchInfo ->
                 val patchFile = patchesDir.resolve(patchInfo.filename)
                 if (patchFile.toFile().exists()) {
                     fileSystem.findFileByNioFile(patchFile)
-                        ?: throw RuntimeException("Could not find patch: ${patchInfo.filename}")
+                        ?: error("Could not find patch: ${patchInfo.filename}")
                 } else {
-                    throw RuntimeException("Patch file not found: ${patchInfo.filename}")
+                    error("Patch file not found: ${patchInfo.filename}")
                 }
             }
         }
@@ -163,7 +162,7 @@ open class CodeModernizerArtifact(
                 // No JSON description file found, return null
                 return null
             }
-            val descriptionContent: DescriptionContent = MAPPER.readValue(descriptionFile, DescriptionContent::class.java)
+            val descriptionContent: DescriptionContent = MAPPER.readValue(descriptionFile)
             return descriptionContent.content
         }
     }

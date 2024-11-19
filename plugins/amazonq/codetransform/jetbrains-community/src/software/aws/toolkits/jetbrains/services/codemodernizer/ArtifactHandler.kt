@@ -15,11 +15,6 @@ import com.intellij.openapi.vcs.changes.patch.ApplyPatchMode
 import com.intellij.openapi.vcs.changes.patch.ImportToShelfExecutor
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.Path
-import java.time.Instant
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
@@ -28,6 +23,7 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.NoTokenInitializedException
@@ -55,16 +51,22 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isValidCodeTransformConnection
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformArtifactType
 import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
+import java.time.Instant
+import java.util.concurrent.atomic.AtomicBoolean
 
 const val DOWNLOAD_PROXY_WILDCARD_ERROR: String = "Dangling meta character '*' near index 0"
 const val DOWNLOAD_SSL_HANDSHAKE_ERROR: String = "Unable to execute HTTP request: javax.net.ssl.SSLHandshakeException"
 const val INVALID_ARTIFACT_ERROR: String = "Invalid artifact"
-val patchDescriptions: Map<String, String> = mapOf(
+val patchDescriptions = mapOf(
     "Prepare minimal upgrade to Java 17" to "This diff patch covers the set of upgrades for Springboot, JUnit, and PowerMockito frameworks.",
     "Popular Enterprise Specifications and Application Frameworks upgrade" to "This diff patch covers the set of upgrades for Jakarta EE 10, Hibernate 6.2, " +
         "and Micronaut 3.",
@@ -74,8 +76,7 @@ val patchDescriptions: Map<String, String> = mapOf(
         "Jenkins plugins and the Maven Wrapper.",
     "Miscellaneous Processing Documentation upgrade" to "This diff patch covers a diverse set of upgrades spanning ORMs, XML processing, API documentation, " +
         "and more.",
-    "Updated dependencies to latest version" to "",
-    "Upgrade Deprecated API" to ""
+    "Deprecated API replacement and dependency upgrades" to "This diff patch replaces deprecated APIs and makes additional dependency version upgrades."
 )
 
 class ArtifactHandler(
@@ -89,6 +90,7 @@ class ArtifactHandler(
     private val downloadedBuildLogPath = mutableMapOf<JobId, Path>()
     private var isCurrentlyDownloading = AtomicBoolean(false)
     private var totalPatchFiles: Int = 0
+    private var sharedPatchIndex: Int = 0
 
     internal suspend fun displayDiff(job: JobId, source: CodeTransformVCSViewerSrcComponents) {
         if (isCurrentlyDownloading.get()) return
@@ -277,14 +279,14 @@ class ArtifactHandler(
     /**
      * Opens the built-in patch dialog to display the diff and allowing users to apply the changes locally.
      */
-    internal fun displayDiffUsingPatch(
+    internal suspend fun displayDiffUsingPatch(
         patchFile: VirtualFile,
         totalPatchFiles: Int,
         diffDescription: PatchInfo?,
         jobId: JobId,
         source: CodeTransformVCSViewerSrcComponents,
     ) {
-        runInEdt {
+        withContext(EDT) {
             val dialog = ApplyPatchDifferentiatedDialog(
                 project,
                 ApplyPatchDefaultExecutor(project),
@@ -309,44 +311,41 @@ class ArtifactHandler(
             dialog.isModal = true
 
             if (dialog.showAndGet()) {
-                projectCoroutineScope(project).launch {
-                    telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Submit", source)
-                    if (diffDescription == null) {
-                        val message = "I applied the changes to your project."
-                        val resultContent = CodeTransformChatMessageContent(
-                            type = CodeTransformChatMessageType.PendingAnswer,
-                            message = message,
-                        )
-                        codeTransformChatHelper?.updateLastPendingMessage(resultContent)
-                        codeTransformChatHelper?.addNewMessage(buildStartNewTransformFollowup())
-                    } else {
-                        if (getCurrentPatchIndex() < totalPatchFiles) {
-                            val message = "I applied the changes in diff patch ${getCurrentPatchIndex() + 1} of $totalPatchFiles. " +
-                                "${patchDescriptions[diffDescription.name]}"
-                            val notificationMessage = "Amazon Q applied the changes in diff patch ${getCurrentPatchIndex() + 1} of $totalPatchFiles " +
-                                "to your project."
-                            val notificationTitle = "Diff patch ${getCurrentPatchIndex() + 1} of $totalPatchFiles applied"
-                            setCurrentPatchIndex(getCurrentPatchIndex() + 1)
-                            notifyStickyInfo(notificationTitle, notificationMessage, project)
-                            if (getCurrentPatchIndex() == totalPatchFiles) {
-                                codeTransformChatHelper?.updateLastPendingMessage(
-                                    CodeTransformChatMessageContent(type = CodeTransformChatMessageType.PendingAnswer, message = message)
-                                )
-                            } else {
-                                codeTransformChatHelper?.updateLastPendingMessage(
-                                    CodeTransformChatMessageContent(
-                                        type = CodeTransformChatMessageType.PendingAnswer,
-                                        message = message,
-                                        buttons = listOf(
-                                            createViewDiffButton("View diff ${getCurrentPatchIndex() + 1}/$totalPatchFiles"),
-                                            viewSummaryButton
-                                        )
+                telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Submit", source)
+                if (diffDescription == null) {
+                    val resultContent = CodeTransformChatMessageContent(
+                        type = CodeTransformChatMessageType.PendingAnswer,
+                        message = message("codemodernizer.chat.message.changes_applied"),
+                    )
+                    codeTransformChatHelper?.updateLastPendingMessage(resultContent)
+                    codeTransformChatHelper?.addNewMessage(buildStartNewTransformFollowup())
+                } else {
+                    if (getCurrentPatchIndex() < totalPatchFiles) {
+                        val message = "I applied the changes in diff patch ${getCurrentPatchIndex() + 1} of $totalPatchFiles. " +
+                            "${patchDescriptions[diffDescription.name]}"
+                        val notificationMessage = "Amazon Q applied the changes in diff patch ${getCurrentPatchIndex() + 1} of $totalPatchFiles " +
+                            "to your project."
+                        val notificationTitle = "Diff patch ${getCurrentPatchIndex() + 1} of $totalPatchFiles applied"
+                        setCurrentPatchIndex(getCurrentPatchIndex() + 1)
+                        notifyInfo(notificationTitle, notificationMessage, project)
+                        if (getCurrentPatchIndex() == totalPatchFiles) {
+                            codeTransformChatHelper?.updateLastPendingMessage(
+                                CodeTransformChatMessageContent(type = CodeTransformChatMessageType.PendingAnswer, message = message)
+                            )
+                        } else {
+                            codeTransformChatHelper?.updateLastPendingMessage(
+                                CodeTransformChatMessageContent(
+                                    type = CodeTransformChatMessageType.PendingAnswer,
+                                    message = message,
+                                    buttons = listOf(
+                                        createViewDiffButton("View diff ${getCurrentPatchIndex() + 1}/$totalPatchFiles"),
+                                        viewSummaryButton
                                     )
                                 )
-                            }
-                        } else {
-                            codeTransformChatHelper?.addNewMessage(buildStartNewTransformFollowup())
+                            )
                         }
+                    } else {
+                        codeTransformChatHelper?.addNewMessage(buildStartNewTransformFollowup())
                     }
                 }
             } else {
@@ -471,6 +470,12 @@ class ArtifactHandler(
 
     fun getSummary(job: JobId) = downloadedSummaries[job]
 
+    private fun getCurrentPatchIndex() = sharedPatchIndex
+
+    private fun setCurrentPatchIndex(index: Int) {
+        sharedPatchIndex = index
+    }
+
     private fun showSummaryFromFile(summaryFile: File) {
         val summaryMarkdownVirtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(summaryFile)
         if (summaryMarkdownVirtualFile != null) {
@@ -529,10 +534,5 @@ class ArtifactHandler(
 
     companion object {
         val LOG = getLogger<ArtifactHandler>()
-        private var sharedPatchIndex: Int = 0
-        fun getCurrentPatchIndex() = sharedPatchIndex
-        fun setCurrentPatchIndex(index: Int) {
-            sharedPatchIndex = index
-        }
     }
 }

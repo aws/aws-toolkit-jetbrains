@@ -93,8 +93,10 @@ open class CodeWhispererCodeModernizerTestBase(
     internal val minJDKUpgradePatchResource = "min_jdk_upgrade.patch".toResourceFile()
     internal val minJDKUpgradePatchResourceFile = LightVirtualFile("min_jdk_upgrade.patch", minJDKUpgradePatchResource.readText())
     internal val enterpriseApplicationUpgradePatchResource = "popular_enterprise_application_framework.patch".toResourceFile()
-    internal val enterpriseApplicationUpgradePatchResourceFile = LightVirtualFile("popular_enterprise_application_framework.patch",
-        enterpriseApplicationUpgradePatchResource.readText())
+    internal val enterpriseApplicationUpgradePatchResourceFile = LightVirtualFile(
+        "popular_enterprise_application_framework.patch",
+        enterpriseApplicationUpgradePatchResource.readText()
+    )
     internal val testingToolPatchResource = "testing_tool.patch".toResourceFile()
     internal val testingToolPatchResourceFile = LightVirtualFile("testing_tool.patch", testingToolPatchResource.readText())
     internal val deprecatedAPIPatchResource = "update_deprecated_api.patch".toResourceFile()
@@ -299,13 +301,15 @@ open class CodeWhispererCodeModernizerTestBase(
         val summaryFileMock = Mockito.mock(File::class.java)
         val logFileMock = Mockito.mock(File::class.java)
         doReturn("dummy/path").whenever(virtualFileMock).path
-        testSessionContextSpy = spy(CodeModernizerSessionContext(
-            project,
-            virtualFileMock,
-            JavaSdkVersion.JDK_1_8,
-            JavaSdkVersion.JDK_11,
-            listOf("EXPLAINABILITY_V1", "SELECTIVE_TRANSFORMATION_V1"),
-            "test")
+        testSessionContextSpy = spy(
+            CodeModernizerSessionContext(
+                project,
+                virtualFileMock,
+                JavaSdkVersion.JDK_1_8,
+                JavaSdkVersion.JDK_11,
+                listOf("EXPLAINABILITY_V1", "SELECTIVE_TRANSFORMATION_V1"),
+                "test"
+            )
         )
 
         testSessionSpy = spy(CodeModernizerSession(testSessionContextSpy, 0, 0))
@@ -316,8 +320,12 @@ open class CodeWhispererCodeModernizerTestBase(
                 CodeModernizerArtifact(
                     exampleZipPath.toAbsolutePath().toString(),
                     validManifest,
-                    listOf(minJDKUpgradePatchResourceFile, enterpriseApplicationUpgradePatchResourceFile,
-                        testingToolPatchResourceFile, deprecatedAPIPatchResourceFile),
+                    listOf(
+                        minJDKUpgradePatchResourceFile,
+                        enterpriseApplicationUpgradePatchResourceFile,
+                        testingToolPatchResourceFile,
+                        deprecatedAPIPatchResourceFile
+                    ),
                     exampleDescriptionContent.content,
                     validTransformationSummary,
                     summaryFileMock,
