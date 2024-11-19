@@ -67,7 +67,6 @@ object DefaultSsoPrompt : SsoPrompt {
             val result = ConfirmUserCodeLoginDialog(
                 authorization.userCode,
                 AwsCoreBundle.message("credentials.sso.login.title"),
-                CredentialType.SsoProfile
             ).showAndGet()
 
             if (result) {
@@ -122,7 +121,6 @@ object DefaultBearerTokenPrompt : BearerTokenPrompt {
             val codeCopied = ConfirmUserCodeLoginDialog(
                 authorization.userCode,
                 AwsCoreBundle.message("credentials.sono.login"),
-                CredentialType.BearerToken
             ).showAndGet()
 
             if (codeCopied) {

@@ -19,14 +19,12 @@ import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.components.BorderLayoutPanel
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.resources.AwsCoreBundle
-import software.aws.toolkits.telemetry.CredentialType
 import java.awt.datatransfer.StringSelection
 import javax.swing.JComponent
 
 class ConfirmUserCodeLoginDialog(
     private val authCode: String,
-    private val dialogTitle: String,
-    private val credentialType: CredentialType,
+    dialogTitle: String,
 ) : DialogWrapper(null) {
 
     private val pane = panel {
