@@ -162,7 +162,7 @@ open class CodeModernizerArtifact(
                 // No JSON description file found, return null
                 return null
             }
-            val descriptionContent: DescriptionContent = MAPPER.readValue(descriptionFile)
+            val descriptionContent: DescriptionContent = MAPPER.readValue<DescriptionContent>(descriptionFile)
             return descriptionContent.content
         }
     }

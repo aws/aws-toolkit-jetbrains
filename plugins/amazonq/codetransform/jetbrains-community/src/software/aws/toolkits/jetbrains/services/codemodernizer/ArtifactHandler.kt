@@ -311,7 +311,7 @@ class ArtifactHandler(
             dialog.isModal = true
 
             if (dialog.showAndGet()) {
-                telemetry.submitSelection("Submit-${patchDescriptions[diffDescription?.name]}")
+                telemetry.submitSelection("Submit-${diffDescription?.name}")
                 telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Submit", source)
                 if (diffDescription == null) {
                     val resultContent = CodeTransformChatMessageContent(
