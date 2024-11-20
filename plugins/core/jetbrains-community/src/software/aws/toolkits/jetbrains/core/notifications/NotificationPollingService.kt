@@ -9,13 +9,17 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
+import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import com.intellij.util.io.HttpRequests
+import software.aws.toolkits.core.utils.RemoteResource
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.core.DefaultRemoteResourceResolverProvider
+import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
 import java.io.IOException
 import java.nio.file.Path
 import java.time.Duration
@@ -35,12 +39,32 @@ interface NotificationPollingService {
 }
 
 @Service(Service.Level.APP)
-class NotificationPollingServiceImpl : NotificationPollingService, Disposable {
+class NotificationPollingServiceImpl :
+    NotificationPollingService,
+    PersistentStateComponent<NotificationPollingServiceImpl.State>,
+    Disposable {
 
+    private var state = State()
     private val mapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     private var currentETag: String? = null // todo Persistant state? add an init possibly
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val pollingIntervalMs = Duration.ofMinutes(10).toMillis()
+    private val resourceResolver: RemoteResourceResolverProvider = DefaultRemoteResourceResolverProvider()
+    private val notificationsResource = object : RemoteResource {
+        override val name: String = NOTIFICATIONS_RESOURCE_PATH
+        override val urls: List<String> = listOf(NOTIFICATION_ENDPOINT)
+    }
+
+    // PersistentStateComponent implementation
+    data class State(
+        var currentETag: String? = null,
+    )
+
+    override fun getState(): State = state
+
+    override fun loadState(state: State) {
+        this.state = state
+    }
 
     override fun dispose() {
         alarm.dispose()
@@ -59,24 +83,26 @@ class NotificationPollingServiceImpl : NotificationPollingService, Disposable {
      * Main polling function that checks for updates and downloads if necessary
      * Returns the parsed notifications if successful, null otherwise
      */
-    private fun pollForNotifications(): NotificationFile? {
+    private fun pollForNotifications(): Boolean {
         var retryCount = 0
         var lastException: Exception? = null
+        // check ETag of current cached file
 
         while (retryCount < MAX_RETRIES) {
             try {
                 // Check if there are updates available
                 val newETag = getNotificationETag()
-
                 if (newETag == currentETag) {
                     LOG.debug { "No updates available for notifications" }
-                    return loadLocalNotifications()
+                    return false
                 }
-
-                // Download and process new notifications
-                val notifications = downloadAndProcessNotifications()
+                // Force a new download by resolving the resource
+                resourceResolver.get()
+                    .resolve(notificationsResource)
+                    .toCompletableFuture()
+                    .get()
                 currentETag = newETag
-                return notifications
+                return true
             } catch (e: Exception) {
                 lastException = e
                 LOG.error(e) { "Failed to poll for notifications (attempt ${retryCount + 1}/$MAX_RETRIES)" }
@@ -87,10 +113,8 @@ class NotificationPollingServiceImpl : NotificationPollingService, Disposable {
                 }
             }
         }
-
-        // After all retries failed, emit metric and return null
         emitFailureMetric(lastException)
-        return loadLocalNotifications()
+        return false
     }
 
     private fun getNotificationETag(): String =
@@ -99,85 +123,6 @@ class NotificationPollingServiceImpl : NotificationPollingService, Disposable {
             .connect { request ->
                 request.connection.headerFields["ETag"]?.firstOrNull() ?: ""
             }
-
-    private fun downloadAndProcessNotifications(): NotificationFile {
-        val content = HttpRequests.request(NOTIFICATION_ENDPOINT)
-            .userAgent("AWS Toolkit for JetBrains")
-            .readString()
-
-        // Save to local file for backup
-        saveLocalNotifications(content)
-
-        return deserializeNotifications(content)
-    }
-
-    /**
-     * Deserializes the notification content with error handling
-     */
-    private fun deserializeNotifications(content: String): NotificationFile {
-        try {
-            return mapper.readValue(content)
-        } catch (e: Exception) {
-            LOG.error(e) { "Failed to deserialize notifications" }
-            throw e
-        }
-    }
-
-    /**
-     * Loads notifications, preferring the latest downloaded version if available,
-     * falling back to bundled resource if no downloaded version exists
-     */
-    private fun loadLocalNotifications(): NotificationFile? {
-        // First try to load from system directory (latest downloaded version)
-        getLocalNotificationsPath().let { path ->
-            if (path.exists()) {
-                try {
-                    val content = path.readText()
-                    return deserializeNotifications(content)
-                } catch (e: Exception) {
-                    LOG.error(e) { "Failed to load downloaded notifications, falling back to bundled resource" }
-                }
-            }
-        }
-
-        // Fall back to bundled resource if no downloaded version exists
-        return try {
-            val resourceStream = javaClass.getResourceAsStream(NOTIFICATIONS_RESOURCE_PATH)
-                ?: return null
-
-            val content = resourceStream.use { stream ->
-                stream.bufferedReader().readText()
-            }
-
-            deserializeNotifications(content)
-        } catch (e: Exception) {
-            LOG.error(e) { "Failed to load notifications from bundled resources" }
-            null
-        }
-    }
-
-    /**
-     * Saves downloaded notifications to system directory
-     */
-    private fun saveLocalNotifications(content: String) {
-        try {
-            val path = getLocalNotificationsPath()
-            path.parent.createDirectories()
-            path.writeText(content)
-        } catch (e: IOException) {
-            LOG.error(e) { "Failed to save notifications to local storage" }
-        }
-    }
-
-    /**
-     * Gets the path for downloaded notifications in IntelliJ's system directory
-     */
-    private fun getLocalNotificationsPath(): Path {
-        return Path.of(PathManager.getSystemPath())
-            .resolve("aws-toolkit")
-            .resolve("notifications")
-            .resolve("notifications.json")
-    }
 
     /**
      * Emits telemetry metric for polling failures
@@ -193,30 +138,3 @@ class NotificationPollingServiceImpl : NotificationPollingService, Disposable {
             ApplicationManager.getApplication().getService(NotificationPollingService::class.java)
     }
 }
-
-data class NotificationFile(
-    val notifications: List<Notification>,
-    val version: String,
-)
-
-data class Notification(
-    val id: String,
-    val message: String,
-    val criteria: NotificationCriteria,
-)
-
-data class NotificationCriteria(
-    val minVersion: String?,
-    val maxVersion: String?,
-    val regions: List<String>?,
-    val ideType: String?,
-    val pluginVersion: String?,
-    val os: String?,
-    val authType: String?,
-    val authRegion: String?,
-    val authState: String?,
-    val authScopes: List<String>?,
-    val installedPlugins: List<String>?,
-    val computeEnvironment: String?,
-    val messageType: String?,
-)
