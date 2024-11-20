@@ -13,8 +13,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.openapi.wm.ex.ToolWindowEx
-import com.intellij.ui.EditorNotificationPanel
-import com.intellij.ui.components.panels.Wrapper
 import com.intellij.util.messages.Topic
 import com.intellij.util.ui.components.BorderLayoutPanel
 import software.aws.toolkits.core.utils.debug
@@ -34,25 +32,26 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROL
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.experiments.ExperimentsActionGroup
+import software.aws.toolkits.jetbrains.core.explorer.webview.NotificationPanel
+import software.aws.toolkits.jetbrains.core.explorer.webview.OuterToolkitPanel
 import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
 import software.aws.toolkits.jetbrains.core.explorer.webview.shouldPromptToolkitReauth
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.jetbrains.core.notifications.NotificationActionList
-import software.aws.toolkits.jetbrains.core.notifications.NotificationManager
 import software.aws.toolkits.jetbrains.core.notifications.ShowCriticalNotificationBannerListener
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
 import software.aws.toolkits.jetbrains.utils.isTookitConnected
-import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeatureId
 import java.util.EventListener
 import javax.swing.JComponent
 
 class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
-    private val notificationPanel = NotificationPanel()
-    private val toolkitPanel = ToolkitPanel()
+
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
+        val notificationPanel = NotificationPanel.getInstance(project)
+        val toolkitPanel = OuterToolkitPanel.getInstance(project)
         val mainPanel = BorderLayoutPanel()
         mainPanel.addToTop(notificationPanel)
         mainPanel.add(toolkitPanel)
@@ -133,7 +132,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
                     if (ToolkitConnectionManager.getInstance(project)
                             .connectionStateForFeature(CodeCatalystConnection.getInstance()) == BearerTokenAuthState.AUTHORIZED
                     ) {
-                        loadContent(AwsToolkitExplorerToolWindow.getInstance(project))
+                        loadContent(project, AwsToolkitExplorerToolWindow.getInstance(project))
                     }
                 }
             }
@@ -143,11 +142,11 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             ShowToolkitListener.TOPIC,
             object : ShowToolkitListener {
                 override fun showWebview(project: Project) {
-                    loadContent(ToolkitWebviewPanel.getInstance(project).component)
+                    loadContent(project, ToolkitWebviewPanel.getInstance(project).component)
                 }
 
                 override fun showExplorerTree(project: Project) {
-                    loadContent(AwsToolkitExplorerToolWindow.getInstance(project))
+                    loadContent(project, AwsToolkitExplorerToolWindow.getInstance(project))
                 }
             }
         )
@@ -187,12 +186,12 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         }
 
         if (isNewConnToolkitConnection) {
-            loadContent(AwsToolkitExplorerToolWindow.getInstance(project))
+            loadContent(project, AwsToolkitExplorerToolWindow.getInstance(project))
         } else if (!isTookitConnected(project) || shouldPromptToolkitReauth(project)) {
             ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AwsExplorer))
-            loadContent(ToolkitWebviewPanel.getInstance(project).component)
+            loadContent(project, ToolkitWebviewPanel.getInstance(project).component)
         } else {
-            loadContent(AwsToolkitExplorerToolWindow.getInstance(project))
+            loadContent(project, AwsToolkitExplorerToolWindow.getInstance(project))
         }
     }
 
@@ -207,60 +206,22 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
 
         if (!isToolkitConnected || shouldPromptToolkitReauth(project)) {
             ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AwsExplorer))
-            loadContent(ToolkitWebviewPanel.getInstance(project).component)
+            loadContent(project, ToolkitWebviewPanel.getInstance(project).component)
         } else {
-            loadContent(AwsToolkitExplorerToolWindow.getInstance(project))
+            loadContent(project, AwsToolkitExplorerToolWindow.getInstance(project))
         }
     }
 
-    private fun loadContent(component: JComponent) {
-        toolkitPanel.updateToolkitPanel(component)
+    private fun loadContent(project: Project, component: JComponent) {
+        runInEdt {
+            val toolkitPanel = OuterToolkitPanel.getInstance(project)
+            toolkitPanel.updateToolkitPanel(component)
+        }
     }
 
     companion object {
         private val LOG = getLogger<AwsToolkitExplorerFactory>()
         const val TOOLWINDOW_ID = "aws.toolkit.explorer"
-    }
-}
-
-class NotificationPanel : BorderLayoutPanel() {
-    private val wrapper = Wrapper()
-    init {
-        isOpaque = false
-        addToCenter(wrapper)
-    }
-
-    private fun removeNotificationPanel() = runInEdt {
-        wrapper.removeAll()
-    }
-
-    fun updateNotificationPanel(title: String, message: String, notificationActionList: List<NotificationActionList>) {
-        val panel = EditorNotificationPanel()
-        panel.text = title
-        panel.icon(AllIcons.General.Error)
-        val panelWithActions = NotificationManager.buildBannerPanel(panel, notificationActionList)
-
-        panelWithActions.createActionLabel(AwsCoreBundle.message("general.dismiss")) {
-            removeNotificationPanel()
-        }
-
-        wrapper.setContent(panelWithActions)
-    }
-}
-
-class ToolkitPanel : BorderLayoutPanel() {
-    private val wrapper = Wrapper()
-    init {
-        isOpaque = false
-        addToCenter(wrapper)
-    }
-
-    fun updateToolkitPanel(content: JComponent) {
-        try {
-            wrapper.setContent(content)
-        } catch (e: Exception) {
-            getLogger<ToolkitPanel>().error("Error while creating window")
-        }
     }
 }
 

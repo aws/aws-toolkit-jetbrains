@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.toolwindow
 
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAware
@@ -11,8 +10,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.openapi.wm.ex.ToolWindowEx
-import com.intellij.ui.EditorNotificationPanel
-import com.intellij.ui.components.panels.Wrapper
 import com.intellij.util.ui.components.BorderLayoutPanel
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -25,7 +22,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.notifications.NotificationActionList
-import software.aws.toolkits.jetbrains.core.notifications.NotificationManager
 import software.aws.toolkits.jetbrains.core.notifications.ShowCriticalNotificationBannerListener
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
@@ -34,18 +30,17 @@ import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.openMeetQ
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
-import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeatureId
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
-import javax.swing.JComponent
 
 class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
-    private val notificationPanel = NotificationPanel()
-    private val qPanel = QPanel()
+
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val mainPanel = BorderLayoutPanel()
+        val qPanel = OuterAmazonQPanel.getInstance(project)
+        val notificationPanel = NotificationPanel.getInstance(project)
         mainPanel.addToTop(notificationPanel)
         mainPanel.add(qPanel)
 
@@ -79,7 +74,9 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             ShowCriticalNotificationBannerListener.TOPIC,
             object : ShowCriticalNotificationBannerListener {
                 override fun onReceiveEmergencyNotification(title: String, message: String, notificationActionList: List<NotificationActionList>) {
-                    notificationPanel.updateNotificationPanel(title, message, notificationActionList)
+                    runInEdt {
+                        notificationPanel.updateNotificationPanel(title, message, notificationActionList)
+                    }
                 }
             }
         )
@@ -118,7 +115,11 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
             QWebviewPanel.getInstance(project).component
         }
-        qPanel.updateQPanel(component)
+
+        runInEdt {
+            val qPanel = OuterAmazonQPanel.getInstance(project)
+            qPanel.updateQPanel(component)
+        }
     }
 
     override fun init(toolWindow: ToolWindow) {
@@ -165,6 +166,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             QWebviewPanel.getInstance(project).component
         }
         runInEdt {
+            val qPanel = OuterAmazonQPanel.getInstance(project)
             qPanel.updateQPanel(component)
         }
     }
@@ -173,45 +175,5 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         private val LOG = getLogger<AmazonQToolWindowFactory>()
         const val WINDOW_ID = AMAZON_Q_WINDOW_ID
         private const val MINIMUM_TOOLWINDOW_WIDTH = 325
-    }
-}
-
-class NotificationPanel : BorderLayoutPanel() {
-    private val wrapper = Wrapper()
-    init {
-        isOpaque = false
-        addToCenter(wrapper)
-    }
-
-    private fun removeNotificationPanel() = runInEdt {
-        wrapper.removeAll()
-    }
-
-    fun updateNotificationPanel(title: String, message: String, notificationActionList: List<NotificationActionList>) {
-        val panel = EditorNotificationPanel()
-        panel.text = title
-        panel.icon(AllIcons.General.Error)
-        val panelWithActions = NotificationManager.buildBannerPanel(panel, notificationActionList)
-        panelWithActions.createActionLabel(AwsCoreBundle.message("general.dismiss")) {
-            removeNotificationPanel()
-        }
-
-        wrapper.setContent(panelWithActions)
-    }
-}
-
-class QPanel : BorderLayoutPanel() {
-    private val wrapper = Wrapper()
-    init {
-        isOpaque = false
-        addToCenter(wrapper)
-    }
-
-    fun updateQPanel(content: JComponent) {
-        try {
-            wrapper.setContent(content)
-        } catch (e: Exception) {
-            getLogger<QPanel>().error("Error while creating window")
-        }
     }
 }
