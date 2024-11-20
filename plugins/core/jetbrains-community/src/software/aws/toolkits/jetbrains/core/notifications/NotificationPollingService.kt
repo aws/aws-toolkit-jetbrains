@@ -25,6 +25,7 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 private const val NOTIFICATION_ENDPOINT = "https://idetoolkits-hostedfiles.amazonaws.com/Notifications/JetBrains/1.json" // TODO: Replace with actual endpoint
+private const val NOTIFICATIONS_RESOURCE_PATH = "/software/aws/toolkits/resources/notifications.json"
 private const val MAX_RETRIES = 3
 private const val RETRY_DELAY_MS = 1000L
 
@@ -187,7 +188,6 @@ class NotificationPollingServiceImpl : NotificationPollingService, Disposable {
     }
 
     companion object {
-        private const val NOTIFICATIONS_RESOURCE_PATH = "/software/aws/toolkits/resources/notifications.json"
         private val LOG = getLogger<NotificationPollingServiceImpl>()
         fun getInstance(): NotificationPollingService =
             ApplicationManager.getApplication().getService(NotificationPollingService::class.java)
