@@ -9,6 +9,7 @@ export const enum FormButtonIds {
   CodeTransformInputSQLModuleSchema = 'codetransform-input-select-sql-module-schema',
   CodeTransformInputCancel = 'codetransform-input-cancel',
   CodeTransformInputSkipTests = 'codetransform-input-confirm-skip-tests',
+  CodeTransformInputOneOrMultipleDiffs = 'codetransform-input-confirm-one-or-multiple-diffs',
   OpenMvnBuild = 'open_mvn_build',
   StopTransform = 'stop_transform',
   OpenTransformationHub = 'open_transformation_hub',
@@ -27,6 +28,7 @@ export const isFormButtonCodeTransform = (id: string): boolean => {
     id === FormButtonIds.CodeTransformInputSQLMetadata ||
     id === FormButtonIds.CodeTransformInputSQLModuleSchema ||
     id === FormButtonIds.CodeTransformInputSkipTests ||
+    id === FormButtonIds.CodeTransformInputOneOrMultipleDiffs ||
     id === FormButtonIds.CodeTransformViewDiff ||
     id === FormButtonIds.CodeTransformViewSummary ||
     id === FormButtonIds.CodeTransformViewBuildLog ||
