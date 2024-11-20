@@ -20,7 +20,7 @@ fun getAuthType(region: String): AuthType {
 
 fun getFeatureId(scopes: List<String>): FeatureId =
     if (scopes.intersect(Q_SCOPES.toSet()).isNotEmpty()) {
-        FeatureId.Q
+        FeatureId.AmazonQ
     } else if (scopes.intersect(CODECATALYST_SCOPES.toSet()).isNotEmpty()) {
         FeatureId.Codecatalyst
     } else {

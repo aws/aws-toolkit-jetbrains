@@ -57,6 +57,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerStartJobResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_SKIP_UNIT_TESTS
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.UploadFailureReason
@@ -502,7 +503,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         doReturn(exampleStartCodeMigrationResponse).whenever(clientAdaptorSpy).startCodeModernization(any(), any(), any())
 
         doNothing().whenever(testSessionStateSpy).updateJobHistory(any(), any(), any())
-        val result = testSessionSpy.pollUntilJobCompletion(jobId) { _, _ -> }
+        val result = testSessionSpy.pollUntilJobCompletion(CodeTransformType.LANGUAGE_UPGRADE, jobId) { _, _ -> }
         assertEquals(CodeModernizerJobCompletedResult.JobCompletedSuccessfully(jobId), result)
 
         // two polls to check status as we 1. check for plan existing and 2. check if job completed
@@ -523,7 +524,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         doReturn(exampleStartCodeMigrationResponse).whenever(clientAdaptorSpy).startCodeModernization(any(), any(), any())
 
         doNothing().whenever(testSessionStateSpy).updateJobHistory(any(), any(), any())
-        val result = testSessionSpy.pollUntilJobCompletion(jobId) { _, _ -> }
+        val result = testSessionSpy.pollUntilJobCompletion(CodeTransformType.LANGUAGE_UPGRADE, jobId) { _, _ -> }
         assertEquals(CodeModernizerJobCompletedResult.JobPartiallySucceeded(jobId, testSessionContextSpy.targetJavaVersion), result)
         verify(clientAdaptorSpy, times(4)).getCodeModernizationJob(any())
         verify(clientAdaptorSpy, atLeastOnce()).getCodeModernizationPlan(any())

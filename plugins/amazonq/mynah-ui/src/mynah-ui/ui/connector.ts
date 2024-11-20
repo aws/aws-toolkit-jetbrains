@@ -58,7 +58,8 @@ export interface ConnectorProps {
         tabID: string,
         filePaths: DiffTreeFileInfo[],
         deletedFiles: DiffTreeFileInfo[],
-        messageId: string
+        messageId: string,
+        disableFileActions: boolean
     ) => void
     onUpdatePlaceholder: (tabID: string, newPlaceholder: string) => void
     onChatInputEnabled: (tabID: string, enabled: boolean) => void
@@ -126,6 +127,13 @@ export class Connector {
             default:
                 this.cwChatConnector.onInfoLinkClick(tabID, link)
                 break
+        }
+    }
+
+    requestAnswer = (tabID: string, payload: ChatPayload) => {
+        switch (this.tabsStorage.getTab(tabID)?.type) {
+            case 'codetransform':
+                return this.codeTransformChatConnector.requestAnswer(tabID, payload)
         }
     }
 
