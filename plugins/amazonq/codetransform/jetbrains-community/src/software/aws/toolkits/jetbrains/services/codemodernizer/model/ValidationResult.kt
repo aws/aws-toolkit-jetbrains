@@ -8,10 +8,8 @@ import software.aws.toolkits.telemetry.CodeTransformBuildSystem
 
 data class ValidationResult(
     val valid: Boolean,
-    val invalidReason: String? = null,
     val invalidTelemetryReason: InvalidTelemetryReason = InvalidTelemetryReason(),
     val validatedBuildFiles: List<VirtualFile> = emptyList(),
-    val validatedProjectJdkName: String = "",
     val buildSystem: CodeTransformBuildSystem = CodeTransformBuildSystem.Unknown,
     val buildSystemVersion: String = "",
 )
