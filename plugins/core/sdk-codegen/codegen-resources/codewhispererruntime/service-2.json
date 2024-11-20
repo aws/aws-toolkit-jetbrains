@@ -577,7 +577,9 @@
                 "acceptedCharacterCount": { "shape": "PrimitiveInteger" },
                 "totalCharacterCount": { "shape": "PrimitiveInteger" },
                 "timestamp": { "shape": "Timestamp" },
-                "unmodifiedAcceptedCharacterCount": { "shape": "PrimitiveInteger" }
+                "unmodifiedAcceptedCharacterCount": { "shape": "PrimitiveInteger" },
+                "totalNewCodeCharacterCount": { "shape": "PrimitiveInteger" },
+                "totalNewCodeLineCount": { "shape": "PrimitiveInteger" }
             }
         },
         "CodeFixAcceptanceEvent": {
@@ -657,6 +659,16 @@
                 "codeAnalysisScope": { "shape": "CodeAnalysisScope" }
             }
         },
+        "CodeScanFailedEvent": {
+            "type": "structure",
+            "required": ["programmingLanguage", "codeScanJobId", "timestamp"],
+            "members": {
+                "programmingLanguage": { "shape": "ProgrammingLanguage" },
+                "codeScanJobId": { "shape": "CodeScanJobId" },
+                "timestamp": { "shape": "Timestamp" },
+                "codeAnalysisScope": { "shape": "CodeAnalysisScope" }
+            }
+        },
         "CodeScanJobId": {
             "type": "string",
             "max": 128,
@@ -685,6 +697,17 @@
         "CodeScanRemediationsEventType": {
             "type": "string",
             "enum": ["CODESCAN_ISSUE_HOVER", "CODESCAN_ISSUE_APPLY_FIX", "CODESCAN_ISSUE_VIEW_DETAILS"]
+        },
+        "CodeScanSucceededEvent": {
+            "type": "structure",
+            "required": ["programmingLanguage", "codeScanJobId", "timestamp", "numberOfFindings"],
+            "members": {
+                "programmingLanguage": { "shape": "ProgrammingLanguage" },
+                "codeScanJobId": { "shape": "CodeScanJobId" },
+                "timestamp": { "shape": "Timestamp" },
+                "numberOfFindings": { "shape": "PrimitiveInteger" },
+                "codeAnalysisScope": { "shape": "CodeAnalysisScope" }
+            }
         },
         "Completion": {
             "type": "structure",
@@ -909,12 +932,19 @@
                 "numberOfAddLines": { "shape": "PrimitiveInteger" },
                 "numberOfAddFiles": { "shape": "PrimitiveInteger" },
                 "userDecision": { "shape": "DocGenerationUserDecision" },
-                "interactionType": { "shape": "DocGenerationInteractionType" }
+                "interactionType": { "shape": "DocGenerationInteractionType" },
+                "userIdentity": { "shape": "String" },
+                "numberOfNavigation": { "shape": "PrimitiveInteger" },
+                "folderLevel": { "shape": "DocGenerationFolderLevel" }
             }
+        },
+        "DocGenerationFolderLevel": {
+            "type": "string",
+            "enum": ["SUB_FOLDER", "ENTIRE_WORKSPACE"]
         },
         "DocGenerationInteractionType": {
             "type": "string",
-            "enum": ["GENERATE_README", "UPDATE_README"]
+            "enum": ["GENERATE_README", "UPDATE_README", "EDIT_README"]
         },
         "DocGenerationUserDecision": {
             "type": "string",
@@ -1952,7 +1982,7 @@
         },
         "SuggestionState": {
             "type": "string",
-            "enum": ["ACCEPT", "REJECT", "DISCARD", "EMPTY"]
+            "enum": ["ACCEPT", "REJECT", "DISCARD", "EMPTY", "MERGE"]
         },
         "SupplementalContext": {
             "type": "structure",
@@ -2090,6 +2120,8 @@
                 "codeCoverageEvent": { "shape": "CodeCoverageEvent" },
                 "userModificationEvent": { "shape": "UserModificationEvent" },
                 "codeScanEvent": { "shape": "CodeScanEvent" },
+                "codeScanSucceededEvent": { "shape": "CodeScanSucceededEvent" },
+                "codeScanFailedEvent": { "shape": "CodeScanFailedEvent" },
                 "codeScanRemediationsEvent": { "shape": "CodeScanRemediationsEvent" },
                 "codeFixGenerationEvent": { "shape": "CodeFixGenerationEvent" },
                 "codeFixAcceptanceEvent": { "shape": "CodeFixAcceptanceEvent" },
