@@ -28,7 +28,6 @@ private const val NOTIFICATION_ENDPOINT = "https://idetoolkits-hostedfiles.amazo
 private const val MAX_RETRIES = 3
 private const val RETRY_DELAY_MS = 1000L
 
-
 interface NotificationPollingService {
     fun startPolling()
     fun dispose()
