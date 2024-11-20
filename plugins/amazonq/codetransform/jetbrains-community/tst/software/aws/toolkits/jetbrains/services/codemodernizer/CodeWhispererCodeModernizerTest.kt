@@ -3,12 +3,15 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer
 
+import com.intellij.openapi.vcs.changes.patch.ApplyPatchDifferentiatedDialog
 import com.intellij.testFramework.LightVirtualFile
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
+import org.mockito.Mockito.doAnswer
+import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doReturn
@@ -128,6 +131,12 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
         val path = testCodeModernizerArtifact.zipPath
         val result = DownloadArtifactResult.Success(testCodeModernizerArtifact, path)
         doReturn(result).whenever(handler).downloadArtifact(any(), eq(TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS), eq(false))
+        val mockDialog = mock<ApplyPatchDifferentiatedDialog>()
+        whenever(mockDialog.showAndGet()).thenReturn(true)
+        doAnswer {
+            mockDialog.showAndGet()
+            mockDialog
+        }.whenever(handler).displayDiffUsingPatch(any(), any(), any(), any(), any())
         handler.displayDiff(jobId, CodeTransformVCSViewerSrcComponents.Chat)
         verify(handler, never()).notifyUnableToApplyPatch(any())
         verify(handler, times(1)).displayDiffUsingPatch(
