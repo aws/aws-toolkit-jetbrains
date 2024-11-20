@@ -105,7 +105,7 @@ class NotificationFormatUtilsTest {
     fun `The notification is shown`(notification: String, expectedData: NotificationData) {
         val notificationData = mapper.readValue<NotificationData>(notification)
         assertThat(notificationData).isEqualTo(expectedData)
-        val shouldShow = RulesEngine.displayNotification(notificationData, projectRule.project)
+        val shouldShow = RulesEngine.displayNotification(projectRule.project, notificationData)
         assertThat(shouldShow).isTrue
     }
 
@@ -114,7 +114,7 @@ class NotificationFormatUtilsTest {
     fun `The notification is not shown`(notification: String, expectedData: NotificationData) {
         val notificationData = mapper.readValue<NotificationData>(notification)
         assertThat(notificationData).isEqualTo(expectedData)
-        val shouldShow = RulesEngine.displayNotification(notificationData, projectRule.project)
+        val shouldShow = RulesEngine.displayNotification(projectRule.project, notificationData)
         assertThat(shouldShow).isFalse
     }
 
