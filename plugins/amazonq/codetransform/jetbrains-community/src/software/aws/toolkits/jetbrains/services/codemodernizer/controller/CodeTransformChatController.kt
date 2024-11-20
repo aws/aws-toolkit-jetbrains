@@ -14,6 +14,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -25,8 +26,10 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthFollowUpType
 import software.aws.toolkits.jetbrains.services.codemodernizer.ArtifactHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.EXPLAINABILITY_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.HilTelemetryMetaData
 import software.aws.toolkits.jetbrains.services.codemodernizer.InboundAppMessagesHandler
+import software.aws.toolkits.jetbrains.services.codemodernizer.SELECTIVE_TRANSFORMATION_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformActionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformCommand
@@ -67,10 +70,13 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTr
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserCancelledChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserHilSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputLanguageUpgradeChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputOneOrMultipleDiffsChatIntroContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputOneOrMultipleDiffsFlagChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputSQLConversionMetadataChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputSkipTestsFlagChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputSkipTestsFlagChatIntroContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserLanguageUpgradeSelectionSummaryChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserOneOrMultipleDiffsSelectionChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserSQLConversionSelectionSummaryChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserSkipTestsFlagSelectionChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserStopTransformChatContent
@@ -78,10 +84,12 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.Authenti
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformCommandMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.IncomingCodeTransformMessage
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArtifactResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_RUN_UNIT_TESTS
@@ -111,9 +119,9 @@ class CodeTransformChatController(
 ) : InboundAppMessagesHandler {
     private val authController = AuthController()
     private val messagePublisher = context.messagesFromAppToUi
-    private val codeModernizerManager = CodeModernizerManager.getInstance(context.project)
     private val codeTransformChatHelper = CodeTransformChatHelper(context.messagesFromAppToUi, chatSessionStorage)
-    private val artifactHandler = ArtifactHandler(context.project, GumbyClient.getInstance(context.project))
+    private val codeModernizerManager = CodeModernizerManager.getInstance(context.project)
+    private val artifactHandler = ArtifactHandler(context.project, GumbyClient.getInstance(context.project), codeTransformChatHelper)
     private val telemetry = CodeTransformTelemetryManager.getInstance(context.project)
 
     override suspend fun processChatPromptMessage(message: IncomingCodeTransformMessage.ChatPrompt) {
@@ -370,10 +378,37 @@ class CodeTransformChatController(
             message("codemodernizer.chat.message.skip_tests_form.skip") -> MAVEN_BUILD_SKIP_UNIT_TESTS
             else -> MAVEN_BUILD_RUN_UNIT_TESTS
         }
+        // feature flag for Selective Transformation
+        val isSelectiveTransformationReady = false
         codeTransformChatHelper.addNewMessage(buildUserSkipTestsFlagSelectionChatContent(message.skipTestsSelection))
-        codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
         codeModernizerManager.codeTransformationSession?.let {
             it.sessionContext.customBuildCommand = customBuildCommand
+            if (!isSelectiveTransformationReady) {
+                codeModernizerManager.runLocalMavenBuild(context.project, it)
+            }
+        }
+        if (isSelectiveTransformationReady) {
+            codeTransformChatHelper.run {
+                addNewMessage(buildUserInputOneOrMultipleDiffsChatIntroContent())
+                addNewMessage(buildUserInputOneOrMultipleDiffsFlagChatContent())
+            }
+        }
+    }
+
+    override suspend fun processCodeTransformOneOrMultipleDiffs(message: IncomingCodeTransformMessage.CodeTransformConfirmOneOrMultipleDiffs) {
+        val transformCapabilities = when (message.oneOrMultipleDiffsSelection) {
+            message("codemodernizer.chat.message.one_or_multiple_diffs_form.multiple_diffs") -> listOf(
+                EXPLAINABILITY_V1,
+                SELECTIVE_TRANSFORMATION_V1
+            )
+            else -> listOf(
+                EXPLAINABILITY_V1
+            )
+        }
+        codeTransformChatHelper.addNewMessage(buildUserOneOrMultipleDiffsSelectionChatContent(message.oneOrMultipleDiffsSelection))
+        codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
+        codeModernizerManager.codeTransformationSession?.let {
+            it.sessionContext.transformCapabilities = transformCapabilities
             codeModernizerManager.runLocalMavenBuild(context.project, it)
         }
     }
@@ -644,10 +679,22 @@ class CodeTransformChatController(
                 if (result is CodeModernizerJobCompletedResult.ZipUploadFailed && result.failureReason is UploadFailureReason.CREDENTIALS_EXPIRED) {
                     return
                 } else {
-                    codeTransformChatHelper.updateLastPendingMessage(
-                        buildTransformResultChatContent(result)
+                    val downloadResult = artifactHandler.downloadArtifact(
+                        CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId,
+                        TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS
                     )
-                    codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
+                    when (downloadResult) {
+                        is DownloadArtifactResult.Success -> {
+                            if (downloadResult.artifact !is CodeModernizerArtifact) return artifactHandler.notifyUnableToApplyPatch("")
+                            codeTransformChatHelper.updateLastPendingMessage(
+                                buildTransformResultChatContent(result, downloadResult.artifact.patches.size)
+                            )
+                        }
+                        is DownloadArtifactResult.DownloadFailure -> artifactHandler.notifyUnableToDownload(downloadResult.failureReason)
+                        is DownloadArtifactResult.ParseZipFailure -> artifactHandler.notifyUnableToApplyPatch(downloadResult.failureReason.errorMessage)
+                        is DownloadArtifactResult.Skipped -> {}
+                        is DownloadArtifactResult.UnzipFailure -> artifactHandler.notifyUnableToApplyPatch(downloadResult.failureReason.errorMessage)
+                    }
                 }
             }
         }
