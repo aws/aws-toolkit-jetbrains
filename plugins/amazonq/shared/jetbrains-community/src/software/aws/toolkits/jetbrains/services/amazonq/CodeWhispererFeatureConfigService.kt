@@ -109,7 +109,7 @@ class CodeWhispererFeatureConfigService {
     // 6) Add a test case for this feature.
     fun getTestFeature(): String = getFeatureValueForKey(TEST_FEATURE_NAME).stringValue()
 
-    fun getCustomizationArnOverride(): String = getFeatureValueForKey(CUSTOMIZATION_ARN_OVERRIDE_NAME).stringValue()
+    fun getCustomizationFeature(): FeatureContext? = getFeature(CUSTOMIZATION_ARN_OVERRIDE_NAME)
 
     fun getNewAutoTriggerUX(): Boolean = getFeatureValueForKey(NEW_AUTO_TRIGGER_UX).stringValue() == "TREATMENT"
 
@@ -118,8 +118,11 @@ class CodeWhispererFeatureConfigService {
     // Get the feature value for the given key.
     // In case of a misconfiguration, it will return a default feature value of Boolean false.
     private fun getFeatureValueForKey(name: String): FeatureValue =
-        featureConfigs[name]?.value ?: FEATURE_DEFINITIONS[name]?.value
+        getFeature(name)?.value ?: FEATURE_DEFINITIONS[name]?.value
             ?: FeatureValue.builder().boolValue(false).build()
+
+    // Gets the feature context for a given feature name.
+    private fun getFeature(name: String): FeatureContext? = featureConfigs[name]
 
     private fun connection(project: Project) =
         ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())

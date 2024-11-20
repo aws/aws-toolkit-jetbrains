@@ -161,11 +161,11 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
         val result = calculateIfIamIdentityCenterConnection(project) { connectionIdToActiveCustomizationArn[it.id] }
 
         // A/B case
-        val customizationArnFromAB = CodeWhispererFeatureConfigService.getInstance().getCustomizationArnOverride()
-        if (customizationArnFromAB.isEmpty()) return result
+        val customizationFeature = CodeWhispererFeatureConfigService.getInstance().getCustomizationFeature()
+        if (customizationFeature == null || customizationFeature.value.stringValue().isEmpty()) return result
         return CodeWhispererCustomization(
-            arn = customizationArnFromAB,
-            name = result?.name.orEmpty(),
+            arn = customizationFeature.value.stringValue(),
+            name = customizationFeature.variation,
             description = result?.description
         )
     }
