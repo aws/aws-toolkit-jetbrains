@@ -187,7 +187,7 @@ fun requestCredentialsForQ(
         scopes = Q_SCOPES,
         promptForIdcPermissionSet = false,
         sourceOfEntry = SourceOfEntry.Q,
-        featureId = FeatureId.Q, // TODO: Update Q  in common
+        featureId = FeatureId.AmazonQ,
         connectionInitiatedFromQChatPanel = connectionInitiatedFromQChatPanel
     )
 
@@ -196,7 +196,7 @@ fun requestCredentialsForQ(
         AuthTelemetry.addConnection(
             project,
             source = getSourceOfEntry(SourceOfEntry.Q, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel),
-            featureId = FeatureId.Q,
+            featureId = FeatureId.AmazonQ,
             credentialSourceId = authenticationDialog.authType,
             isAggregated = true,
             attempts = authenticationDialog.attempts + 1,
@@ -217,7 +217,7 @@ fun requestCredentialsForQ(
         AuthTelemetry.addConnection(
             project,
             source = getSourceOfEntry(SourceOfEntry.Q, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel),
-            featureId = FeatureId.Q,
+            featureId = FeatureId.AmazonQ,
             credentialSourceId = authenticationDialog.authType,
             isAggregated = false,
             attempts = authenticationDialog.attempts + 1,

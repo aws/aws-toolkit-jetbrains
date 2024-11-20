@@ -23,7 +23,7 @@ jobs:
     needs: [ time ]
     strategy:
       matrix:
-        supported_versions: [ '2023.3', '2024.1', '2024.2', '2024.3' ]
+        supported_versions: [ '2024.1', '2024.2', '2024.3' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -54,7 +54,7 @@ jobs:
     needs: [ time ]
     strategy:
       matrix:
-        supported_versions: [ '2023.3', '2024.1', '2024.2', '2024.3' ]
+        supported_versions: [ '2024.1', '2024.2', '2024.3' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

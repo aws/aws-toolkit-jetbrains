@@ -7,6 +7,7 @@ import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.progress.ProcessCanceledException
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.ConfirmUserCodeLoginDialog
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.SourceOfEntry
 import software.aws.toolkits.jetbrains.utils.computeOnEdt
 import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.jetbrains.utils.notifyError
@@ -39,12 +40,24 @@ class DefaultSsoLoginCallbackProvider : SsoLoginCallbackProvider {
 
 interface SsoPrompt : SsoLoginCallback {
     override fun tokenRetrieved() {
-        AwsTelemetry.loginWithBrowser(project = null, result = Result.Succeeded, credentialType = CredentialType.SsoProfile, authType = AuthType.DeviceCode)
+        AwsTelemetry.loginWithBrowser(
+            project = null,
+            result = Result.Succeeded,
+            credentialType = CredentialType.SsoProfile,
+            authType = AuthType.DeviceCode,
+            source = SourceOfEntry.UNKNOWN.toString(),
+        )
     }
 
     override fun tokenRetrievalFailure(e: Exception) {
         e.notifyError(AwsCoreBundle.message("credentials.sso.login.failed"))
-        AwsTelemetry.loginWithBrowser(project = null, result = Result.Failed, credentialType = CredentialType.SsoProfile, authType = AuthType.DeviceCode)
+        AwsTelemetry.loginWithBrowser(
+            project = null,
+            result = Result.Failed,
+            credentialType = CredentialType.SsoProfile,
+            authType = AuthType.DeviceCode,
+            source = SourceOfEntry.UNKNOWN.toString(),
+        )
     }
 }
 
@@ -54,7 +67,6 @@ object DefaultSsoPrompt : SsoPrompt {
             val result = ConfirmUserCodeLoginDialog(
                 authorization.userCode,
                 AwsCoreBundle.message("credentials.sso.login.title"),
-                CredentialType.SsoProfile
             ).showAndGet()
 
             if (result) {
@@ -64,7 +76,8 @@ object DefaultSsoPrompt : SsoPrompt {
                     project = null,
                     result = Result.Cancelled,
                     credentialType = CredentialType.SsoProfile,
-                    authType = AuthType.DeviceCode
+                    authType = AuthType.DeviceCode,
+                    source = SourceOfEntry.UNKNOWN.toString(),
                 )
                 throw ProcessCanceledException(IllegalStateException(AwsCoreBundle.message("credentials.sso.login.cancelled")))
             }
@@ -82,11 +95,23 @@ object SsoPromptWithBrowserSupport : SsoPrompt {
 
 interface BearerTokenPrompt : SsoLoginCallback {
     override fun tokenRetrieved() {
-        AwsTelemetry.loginWithBrowser(project = null, result = Result.Succeeded, credentialType = CredentialType.BearerToken, authType = AuthType.DeviceCode)
+        AwsTelemetry.loginWithBrowser(
+            project = null,
+            result = Result.Succeeded,
+            credentialType = CredentialType.BearerToken,
+            authType = AuthType.DeviceCode,
+            source = "",
+        )
     }
 
     override fun tokenRetrievalFailure(e: Exception) {
-        AwsTelemetry.loginWithBrowser(project = null, result = Result.Failed, credentialType = CredentialType.BearerToken, authType = AuthType.DeviceCode)
+        AwsTelemetry.loginWithBrowser(
+            project = null,
+            result = Result.Failed,
+            credentialType = CredentialType.BearerToken,
+            authType = AuthType.DeviceCode,
+            source = "",
+        )
     }
 }
 
@@ -96,7 +121,6 @@ object DefaultBearerTokenPrompt : BearerTokenPrompt {
             val codeCopied = ConfirmUserCodeLoginDialog(
                 authorization.userCode,
                 AwsCoreBundle.message("credentials.sono.login"),
-                CredentialType.BearerToken
             ).showAndGet()
 
             if (codeCopied) {
@@ -106,7 +130,8 @@ object DefaultBearerTokenPrompt : BearerTokenPrompt {
                     project = null,
                     result = Result.Cancelled,
                     credentialType = CredentialType.BearerToken,
-                    authType = AuthType.DeviceCode
+                    authType = AuthType.DeviceCode,
+                    source = SourceOfEntry.UNKNOWN.toString(),
                 )
             }
         }
