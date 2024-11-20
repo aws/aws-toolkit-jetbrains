@@ -36,6 +36,36 @@ val validComputeInvalidOs = """{
 }
 """.trimIndent()
 
+val validOsInvalidComputeData = NotificationData(
+    id = "example_id_12344",
+    schedule = NotificationSchedule(type = "StartUp"),
+    severity = "Critical",
+    condition = NotificationDisplayCondition(
+        compute = ComputeType(type = NotificationExpression.ComparisonCondition("Local"), architecture = null),
+        os = SystemType(type = NotificationExpression.ComparisonCondition("Windows"), version = null),
+        ide = null,
+        extension = null,
+        authx = null
+    ),
+    actions = listOf(
+        NotificationFollowupActions(
+            type = "ShowMarketplace",
+            content = NotificationFollowupActionsContent(
+                NotificationActionDescription(
+                    title = "Go to market",
+                    url = null
+                )
+            )
+        )
+    ),
+    content = NotificationContentDescriptionLocale(
+        NotificationContentDescription(
+            title = "Look at this!",
+            description = "Some bug is there"
+        )
+    )
+)
+
 val invalidExtensionVersion = """{
     "id": "example_id_12344",
     "schedule": {
@@ -66,6 +96,36 @@ val invalidExtensionVersion = """{
 }
 }
 """.trimIndent()
+
+val invalidExtensionVersionData = NotificationData(
+    id = "example_id_12344",
+    schedule = NotificationSchedule(type = "StartUp"),
+    severity = "Critical",
+    condition = NotificationDisplayCondition(
+        compute = null,
+        os = null,
+        ide = null,
+        extension = listOf(
+            ExtensionType(
+                id = "aws.toolkit",
+                version = NotificationExpression.NotEqualsCondition("1.3334")
+            ),
+            ExtensionType(
+                id = "amazon.q",
+                version = NotificationExpression.GreaterThanCondition("3.37.0")
+            )
+        ),
+        authx = null
+
+    ),
+    actions = emptyList(),
+    content = NotificationContentDescriptionLocale(
+        NotificationContentDescription(
+            title = "Look at this!",
+            description = "Some bug is there"
+        )
+    )
+)
 
 val exampleNotificationWithoutSchema = """
         {
@@ -116,6 +176,20 @@ val notificationWithoutConditionsOrActions = """
            
 """.trimIndent()
 
+val notificationsWithoutConditionsOrActionsData = NotificationData(
+    id = "example_id_12344",
+    schedule = NotificationSchedule(type = "StartUp"),
+    severity = "Critical",
+    condition = null,
+    actions = emptyList(),
+    content = NotificationContentDescriptionLocale(
+        NotificationContentDescription(
+            title = "Look at this!",
+            description = "Some bug is there"
+        )
+    )
+)
+
 val notificationWithConditionsOrActions = """
         {
         "id": "example_id_12344",
@@ -152,6 +226,36 @@ val notificationWithConditionsOrActions = """
                
 """.trimIndent()
 
+val notificationWithConditionsOrActionsData = NotificationData(
+    id = "example_id_12344",
+    schedule = NotificationSchedule(type = "StartUp"),
+    severity = "Critical",
+    condition = NotificationDisplayCondition(
+        compute = ComputeType(type = NotificationExpression.ComparisonCondition("Local"), architecture = null),
+        os = null,
+        ide = null,
+        extension = null,
+        authx = null
+    ),
+    actions = listOf(
+        NotificationFollowupActions(
+            type = "ShowMarketplace",
+            content = NotificationFollowupActionsContent(
+                NotificationActionDescription(
+                    title = "Go to market",
+                    url = null
+                )
+            )
+        )
+    ),
+    content = NotificationContentDescriptionLocale(
+        NotificationContentDescription(
+            title = "Look at this!",
+            description = "Some bug is there"
+        )
+    )
+)
+
 val notificationWithValidConnection = """{
     "id": "example_id_12344",
     "schedule": {
@@ -184,6 +288,34 @@ val notificationWithValidConnection = """{
 }
 """.trimIndent()
 
+val notificationWithValidConnectionData = NotificationData(
+    id = "example_id_12344",
+    schedule = NotificationSchedule(type = "StartUp"),
+    severity = "Critical",
+    condition = NotificationDisplayCondition(
+        compute = null,
+        os = null,
+        ide = null,
+        extension = null,
+        authx = listOf(
+            AuthxType(
+                feature = "q",
+                type = NotificationExpression.AnyOfCondition(listOf("Idc", "BuilderId")),
+                region = NotificationExpression.ComparisonCondition("us-west-2"),
+                connectionState = NotificationExpression.ComparisonCondition("Connected"),
+                ssoScopes = null
+            )
+        )
+    ),
+    actions = emptyList(),
+    content = NotificationContentDescriptionLocale(
+        NotificationContentDescription(
+            title = "Look at this!",
+            description = "Some bug is there"
+        )
+    )
+)
+
 val invalidIdeTypeAndVersion = """{
     "id": "example_id_12344",
     "schedule": {
@@ -204,3 +336,27 @@ val invalidIdeTypeAndVersion = """{
 }
 }
 """.trimIndent()
+
+val invalidIdeTypeAndVersionData = NotificationData(
+    id = "example_id_12344",
+    schedule = NotificationSchedule(type = "StartUp"),
+    severity = "Critical",
+    condition = NotificationDisplayCondition(
+        compute = null,
+        os = null,
+        ide = SystemType(
+            type = NotificationExpression.NoneOfCondition(listOf("IC", "IU", "RD")),
+            version = NotificationExpression.NotEqualsCondition("1.3334")
+        ),
+        extension = null,
+        authx = null
+
+    ),
+    actions = emptyList(),
+    content = NotificationContentDescriptionLocale(
+        NotificationContentDescription(
+            title = "Look at this!",
+            description = "Some bug is there"
+        )
+    )
+)
