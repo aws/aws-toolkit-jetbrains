@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.core.notifications
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.jetbrains.utils.notifySticky
 
 object DisplayToastNotifications {
     fun show(title: String, message: String, action: List<AnAction>, notificationType: NotificationSeverity) {
@@ -15,7 +14,7 @@ object DisplayToastNotifications {
             NotificationSeverity.WARNING -> NotificationType.WARNING
             NotificationSeverity.INFO -> NotificationType.INFORMATION
         }
-        notifySticky(notifyType, title, message, null, action)
+
     }
 
     fun shouldShow(project: Project, notificationData: NotificationData) {
