@@ -5,10 +5,8 @@ package software.aws.toolkits.jetbrains.core.notifications
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
 import com.intellij.util.Alarm
@@ -20,13 +18,7 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.DefaultRemoteResourceResolverProvider
 import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
-import java.io.IOException
-import java.nio.file.Path
 import java.time.Duration
-import kotlin.io.path.createDirectories
-import kotlin.io.path.exists
-import kotlin.io.path.readText
-import kotlin.io.path.writeText
 
 private const val NOTIFICATION_ENDPOINT = "https://idetoolkits-hostedfiles.amazonaws.com/Notifications/JetBrains/1.json" // TODO: Replace with actual endpoint
 private const val NOTIFICATIONS_RESOURCE_PATH = "/software/aws/toolkits/resources/notifications.json"
