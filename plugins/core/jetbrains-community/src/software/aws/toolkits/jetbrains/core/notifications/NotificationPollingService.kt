@@ -86,17 +86,14 @@ class NotificationPollingServiceImpl :
     private fun pollForNotifications(): Boolean {
         var retryCount = 0
         var lastException: Exception? = null
-        // check ETag of current cached file
 
         while (retryCount < MAX_RETRIES) {
             try {
-                // Check if there are updates available
                 val newETag = getNotificationETag()
                 if (newETag == currentETag) {
                     LOG.debug { "No updates available for notifications" }
                     return false
                 }
-                // Force a new download by resolving the resource
                 resourceResolver.get()
                     .resolve(notificationsResource)
                     .toCompletableFuture()
@@ -129,7 +126,6 @@ class NotificationPollingServiceImpl :
      */
     private fun emitFailureMetric(exception: Exception?) {
         // todo: add metric
-        // toolkit
     }
 
     companion object {
