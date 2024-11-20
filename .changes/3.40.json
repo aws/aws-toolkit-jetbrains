@@ -1,0 +1,14 @@
+{
+  "date" : "2024-11-14",
+  "version" : "3.40",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Amazon Q /dev: Add an action to accept individual files"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix a bug when Amazon Q responds with still indexing message even when `@workspace` index is done"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix issue where Amazon Q inline chat can be invoked from non-editor windows"
+  } ]
+}

@@ -6,32 +6,131 @@ package software.aws.toolkits.jetbrains.core.notifications
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import org.junit.Before
-import org.junit.Test
+import com.intellij.testFramework.ApplicationExtension
+import com.intellij.testFramework.ProjectRule
+import io.mockk.every
+import io.mockk.mockkStatic
+import io.mockk.unmockkAll
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.Rule
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.assertDoesNotThrow
+import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.MethodSource
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.inputStream
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
 import java.io.InputStream
 import java.nio.file.Paths
+import java.util.stream.Stream
 
+@ExtendWith(ApplicationExtension::class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class NotificationFormatUtilsTest {
-    lateinit var notificationJson: InputStream
+    @Rule
+    @JvmField
+    val projectRule = ProjectRule()
 
-    @Before
+    private lateinit var mockSystemDetails: SystemDetails
+    private lateinit var exampleNotification: InputStream
+
+    @BeforeAll
     fun setUp() {
-        val file = javaClass.getResource("/exampleNotification2.json")?.let { Paths.get(it.toURI()).takeIf { f -> f.exists() } }
-            ?: throw RuntimeException("Test file not found")
-        notificationJson = file.inputStream()
+        mockSystemDetails = SystemDetails(
+            computeType = "Local",
+            computeArchitecture = "x86_64",
+            osType = "Linux",
+            osVersion = "5.4.0",
+            ideType = "IC",
+            ideVersion = "2023.1",
+            pluginVersions = mapOf(
+                "aws.toolkit" to "1.0",
+                "amazon.q" to "2.0"
+            )
+        )
+
+        exampleNotification = javaClass.getResource("/exampleNotification2.json")?.let {
+            Paths.get(it.toURI()).takeIf { f -> f.exists() }
+        }?.inputStream() ?: throw RuntimeException("Test not found")
+
+        mockkStatic("software.aws.toolkits.jetbrains.core.notifications.RulesEngineKt")
+        every { getCurrentSystemAndConnectionDetails() } returns mockSystemDetails
+        every { getConnectionDetailsForFeature(projectRule.project, BearerTokenFeatureSet.Q) } returns FeatureAuthDetails(
+            "Idc",
+            "us-west-2",
+            "Connected"
+        )
+    }
+
+    @AfterAll
+    fun tearDown() {
+        unmockkAll()
     }
 
     @Test
-    fun checkValidity() {
+    fun `test System Details`() {
+        val result = getCurrentSystemAndConnectionDetails()
+        assertThat(mockSystemDetails).isEqualTo(result)
+    }
+
+    @Test
+    fun `check Json Validity which has all the required fields`() {
         assertDoesNotThrow {
-            mapper.readValue<NotificationsList>(notificationJson)
+            mapper.readValue<NotificationsList>(exampleNotification)
         }
     }
 
+    @Test
+    fun `No schema version associated with the notification file throws an exception`() {
+        assertThrows<Exception> {
+            mapper.readValue<NotificationsList>(exampleNotificationWithoutSchema)
+        }
+    }
+
+    @Test
+    fun `No notifications present with the version file does not throw an exception`() {
+        assertDoesNotThrow {
+            mapper.readValue<NotificationsList>(exampleNotificationWithoutNotification)
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("validNotifications")
+    fun `The notification is shown`(notification: String) {
+        val notificationData = mapper.readValue<NotificationData>(notification)
+        val shouldShow = RulesEngine.displayNotification(notificationData, projectRule.project)
+        assertThat(shouldShow).isTrue
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidNotifications")
+    fun `The notification is not shown`(notification: String) {
+        val notificationData = mapper.readValue<NotificationData>(notification)
+        val shouldShow = RulesEngine.displayNotification(notificationData, projectRule.project)
+        assertThat(shouldShow).isFalse
+    }
+
     companion object {
-        val mapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        @JvmStatic
+        fun validNotifications(): Stream<Arguments> = Stream.of(
+            Arguments.of(notificationWithConditionsOrActions),
+            Arguments.of(notificationWithoutConditionsOrActions),
+            Arguments.of(notificationWithValidConnection)
+        )
+
+        @JvmStatic
+        fun invalidNotifications(): Stream<Arguments> = Stream.of(
+            Arguments.of(validComputeInvalidOs),
+            Arguments.of(invalidExtensionVersion),
+            Arguments.of(invalidIdeTypeAndVersion)
+        )
+
+        private val mapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     }
 }

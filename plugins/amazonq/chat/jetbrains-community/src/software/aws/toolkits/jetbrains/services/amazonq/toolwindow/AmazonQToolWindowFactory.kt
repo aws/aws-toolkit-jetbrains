@@ -112,7 +112,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         val component = if (isQConnected(project) && !isQExpired(project)) {
             AmazonQToolWindow.getInstance(project).component
         } else {
-            QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
+            QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AmazonQ))
             QWebviewPanel.getInstance(project).component
         }
 
@@ -155,7 +155,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             openMeetQPage(project)
         }
 
-        QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
+        QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AmazonQ))
 
         // isQConnected alone is not robust and there is race condition (read/update connection states)
         val component = if (isNewConnectionForQ || (isQConnected(project) && !isQExpired(project))) {

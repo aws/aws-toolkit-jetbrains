@@ -36,7 +36,7 @@ object RulesEngine {
 
     private fun matchesCompute(notificationCompute: ComputeType, actualCompute: String, actualArchitecture: String): Boolean {
         val type = notificationCompute.type?.let { evaluateNotificationExpression(it, actualCompute) } ?: true
-        val architecture = notificationCompute.architecture?.let { evaluateNotificationExpression(it, actualArchitecture) } ?: return true
+        val architecture = notificationCompute.architecture?.let { evaluateNotificationExpression(it, actualArchitecture) } ?: true
         return type && architecture
     }
 
@@ -89,32 +89,27 @@ object RulesEngine {
     }
 
     private fun evaluateNotificationExpression(notificationExpression: NotificationExpression, value: String): Boolean = when (notificationExpression) {
-        is NotificationOperation -> performNotifOp(notificationExpression, value)
-        is NotCondition -> performNotOp(notificationExpression, value)
-        is OrCondition -> performOrOp(notificationExpression, value)
-        is AndCondition -> performAndOp(notificationExpression, value)
+        is NotificationExpression.NotCondition -> performNotOp(notificationExpression, value)
+        is NotificationExpression.OrCondition -> performOrOp(notificationExpression, value)
+        is NotificationExpression.AndCondition -> performAndOp(notificationExpression, value)
+        is NotificationExpression.ComparisonCondition -> notificationExpression.value == value
+        is NotificationExpression.NotEqualsCondition -> notificationExpression.value != value
+        is NotificationExpression.GreaterThanCondition -> value > notificationExpression.value
+        is NotificationExpression.LessThanCondition -> value < notificationExpression.value
+        is NotificationExpression.GreaterThanOrEqualsCondition -> value >= notificationExpression.value
+        is NotificationExpression.LessThanOrEqualsCondition -> value <= notificationExpression.value
+        is NotificationExpression.AnyOfCondition -> notificationExpression.value.contains(value)
+        is NotificationExpression.NoneOfCondition -> !notificationExpression.value.contains(value)
         else -> true
     }
 
-    private fun performNotifOp(notificationOperation: NotificationOperation, actualValue: String): Boolean = when (notificationOperation) {
-        is ComparisonCondition -> notificationOperation.expectedValue == actualValue
-        is NotEqualsCondition -> notificationOperation.expectedValue != actualValue
-        is GreaterThanCondition -> actualValue > notificationOperation.expectedValue
-        is LessThanCondition -> actualValue < notificationOperation.expectedValue
-        is GreaterThanOrEqualsCondition -> actualValue >= notificationOperation.expectedValue
-        is LessThanOrEqualsCondition -> actualValue <= notificationOperation.expectedValue
-        is InCondition -> notificationOperation.expectedValueList.contains(actualValue)
-        is NotInCondition -> !notificationOperation.expectedValueList.contains(actualValue)
-        else -> true
-    }
-
-    private fun performNotOp(notificationOperation: NotCondition, actualValue: String): Boolean =
+    private fun performNotOp(notificationOperation: NotificationExpression.NotCondition, actualValue: String): Boolean =
         !evaluateNotificationExpression(notificationOperation.expectedValue, actualValue)
 
-    private fun performOrOp(notificationOperation: OrCondition, actualValue: String): Boolean =
+    private fun performOrOp(notificationOperation: NotificationExpression.OrCondition, actualValue: String): Boolean =
         notificationOperation.expectedValueList.any { evaluateNotificationExpression(it, actualValue) }
 
-    private fun performAndOp(notificationOperation: AndCondition, actualValue: String): Boolean =
+    private fun performAndOp(notificationOperation: NotificationExpression.AndCondition, actualValue: String): Boolean =
         notificationOperation.expectedValueList.all { evaluateNotificationExpression(it, actualValue) }
 }
 
@@ -133,12 +128,6 @@ fun getCurrentSystemAndConnectionDetails(): SystemDetails {
 
     return SystemDetails(computeType, computeArchitecture, osType, osVersion, ideType, ideVersion, pluginVersionMap)
 }
-
-data class AuthDetails(
-    val qConnection: ActiveConnection,
-    val codeCatalystConnection: ActiveConnection,
-    val explorerConnection: ActiveConnection,
-)
 
 data class FeatureAuthDetails(
     val connectionType: String,
@@ -196,7 +185,7 @@ private fun getConnectionDetailsForToolkit(project: Project): FeatureAuthDetails
     )
 }
 
-private fun getConnectionDetailsForFeature(project: Project, featureId: BearerTokenFeatureSet): FeatureAuthDetails? {
+fun getConnectionDetailsForFeature(project: Project, featureId: BearerTokenFeatureSet): FeatureAuthDetails? {
     val connection = checkBearerConnectionValidity(project, featureId)
     if (connection.activeConnectionBearer == null) return null
     val authType = when (connection.connectionType) {
