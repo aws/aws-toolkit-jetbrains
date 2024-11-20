@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.components.Service
 import com.intellij.util.Alarm
@@ -27,56 +28,30 @@ private const val NOTIFICATION_ENDPOINT = "https://idetoolkits-hostedfiles.amazo
 private const val MAX_RETRIES = 3
 private const val RETRY_DELAY_MS = 1000L
 
-@Service
-class NotificationPollingService : Disposable {
-    /**
-     * Data class representing the structure of notifications from the endpoint
-     */
-    data class NotificationFile(
-        val notifications: List<Notification>,
-        val version: String,
-    )
 
-    data class Notification(
-        val id: String,
-        val message: String,
-        val criteria: NotificationCriteria,
-    )
+interface NotificationPollingService {
+    fun startPolling()
+    fun dispose()
+}
 
-    data class NotificationCriteria(
-        val minVersion: String?,
-        val maxVersion: String?,
-        val regions: List<String>?,
-        val ideType: String?,
-        val pluginVersion: String?,
-        val os: String?,
-        val authType: String?,
-        val authRegion: String?,
-        val authState: String?,
-        val authScopes: List<String>?,
-        val installedPlugins: List<String>?,
-        val computeEnvironment: String?,
-        val messageType: String?,
-    )
+@Service(Service.Level.APP)
+class NotificationPollingServiceImpl : NotificationPollingService, Disposable {
+
     private val mapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-    private val LOG = getLogger<NotificationPollingService>()
-    private var currentETag: String? = null
+    private var currentETag: String? = null // todo Persistant state? add an init possibly
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
-
-    init {
-        startPolling()
-    }
+    private val pollingIntervalMs = Duration.ofMinutes(10).toMillis()
 
     override fun dispose() {
         alarm.dispose()
     }
 
-    private fun startPolling() {
+    override fun startPolling() {
         pollForNotifications()
 
         alarm.addRequest(
             { startPolling() },
-            Duration.ofMinutes(10).toMillis()
+            pollingIntervalMs
         )
     }
 
@@ -99,7 +74,7 @@ class NotificationPollingService : Disposable {
                 }
 
                 // Download and process new notifications
-                val notifications = downloadAndProcessNotifications(newETag)
+                val notifications = downloadAndProcessNotifications()
                 currentETag = newETag
                 return notifications
             } catch (e: Exception) {
@@ -125,7 +100,7 @@ class NotificationPollingService : Disposable {
                 request.connection.headerFields["ETag"]?.firstOrNull() ?: ""
             }
 
-    private fun downloadAndProcessNotifications(newETag: String): NotificationFile {
+    private fun downloadAndProcessNotifications(): NotificationFile {
         val content = HttpRequests.request(NOTIFICATION_ENDPOINT)
             .userAgent("AWS Toolkit for JetBrains")
             .readString()
@@ -214,5 +189,35 @@ class NotificationPollingService : Disposable {
 
     companion object {
         private const val NOTIFICATIONS_RESOURCE_PATH = "/software/aws/toolkits/resources/notifications.json"
+        private val LOG = getLogger<NotificationPollingServiceImpl>()
+        fun getInstance(): NotificationPollingService =
+            ApplicationManager.getApplication().getService(NotificationPollingService::class.java)
     }
 }
+
+data class NotificationFile(
+    val notifications: List<Notification>,
+    val version: String,
+)
+
+data class Notification(
+    val id: String,
+    val message: String,
+    val criteria: NotificationCriteria,
+)
+
+data class NotificationCriteria(
+    val minVersion: String?,
+    val maxVersion: String?,
+    val regions: List<String>?,
+    val ideType: String?,
+    val pluginVersion: String?,
+    val os: String?,
+    val authType: String?,
+    val authRegion: String?,
+    val authState: String?,
+    val authScopes: List<String>?,
+    val installedPlugins: List<String>?,
+    val computeEnvironment: String?,
+    val messageType: String?,
+)
