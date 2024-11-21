@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Inline Auto trigger will now happen more consistently and will not conflict with JetBrains code completion."
+}
