@@ -8,10 +8,9 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.core.utils.inputStream
-import java.io.InputStream
 import java.nio.file.Path
 
-object NotificationMapperUtil{
+object NotificationMapperUtil {
     val mapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 }
 
@@ -26,7 +25,6 @@ class ProcessNotificationsBase {
         path.inputStream().use { data ->
             NotificationMapperUtil.mapper.readValue<NotificationsList>(data)
         }
-
 
     fun retrieveStartupAndEmergencyNotifications() {
         // TODO: separates notifications into startup and emergency
