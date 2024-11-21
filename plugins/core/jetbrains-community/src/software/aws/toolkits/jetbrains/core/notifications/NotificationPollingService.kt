@@ -21,10 +21,11 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.DefaultRemoteResourceResolverProvider
 import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
 import java.io.InputStream
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.Duration
 
 private const val NOTIFICATION_ENDPOINT = "https://idetoolkits-hostedfiles.amazonaws.com/Notifications/JetBrains/1.json" // TODO: Replace with actual endpoint
-private const val NOTIFICATIONS_RESOURCE_PATH = "/software/aws/toolkits/resources/notifications.json"
 private const val MAX_RETRIES = 3
 private const val RETRY_DELAY_MS = 1000L
 
@@ -52,18 +53,18 @@ class NotificationPollingServiceImpl :
     Disposable {
 
     private var state = State()
-    private var currentETag: String? = null
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val pollingIntervalMs = Duration.ofMinutes(10).toMillis()
     private val resourceResolver: RemoteResourceResolverProvider = DefaultRemoteResourceResolverProvider()
     private val notificationsResource = object : RemoteResource {
-        override val name: String = NOTIFICATIONS_RESOURCE_PATH
+        override val name: String = "notifications.json"
         override val urls: List<String> = listOf(NOTIFICATION_ENDPOINT)
         override val remoteResolveParser: RemoteResolveParser = NotificationFileValidator
     }
 
     data class State(
         var currentETag: String? = null,
+        var cachedFilePath: String? = null
     )
 
     override fun getState(): State = state
@@ -96,15 +97,16 @@ class NotificationPollingServiceImpl :
         while (retryCount < MAX_RETRIES) {
             try {
                 val newETag = getNotificationETag()
-                if (newETag == currentETag) {
+                if (newETag == state.currentETag) {
                     LOG.debug { "No updates available for notifications" }
                     return false
                 }
-                resourceResolver.get()
+                val resolvedPath = resourceResolver.get()
                     .resolve(notificationsResource)
                     .toCompletableFuture()
                     .get()
-                currentETag = newETag
+                state.currentETag = newETag
+                state.cachedFilePath = resolvedPath.toString()
                 return true
             } catch (e: Exception) {
                 lastException = e
@@ -126,6 +128,10 @@ class NotificationPollingServiceImpl :
             .connect { request ->
                 request.connection.headerFields["ETag"]?.firstOrNull() ?: ""
             }
+
+    // Helper method to get Path from stored String
+    fun getCachedPath(): Path? =
+        state.cachedFilePath?.let { Paths.get(it) }
 
     /**
      * Emits telemetry metric for polling failures
