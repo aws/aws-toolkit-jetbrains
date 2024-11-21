@@ -30,7 +30,7 @@ class NotificationManagerTest {
             "UpdateExtension",
             NotificationFollowupActionsContent(NotificationActionDescription("title", null))
         )
-        val sut = NotificationManager.createActions(projectRule.project,listOf(followupActions), "Dummy Test Action", "Dummy title")
+        val sut = NotificationManager.createActions(projectRule.project, listOf(followupActions), "Dummy Test Action", "Dummy title")
         assertThat(sut).isNotNull
         assertThat(sut).hasSize(2)
         assertThat(sut.first().title).isEqualTo("Update")

@@ -8,6 +8,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.util.ui.components.BorderLayoutPanel
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import javax.swing.JComponent
 
@@ -23,7 +24,7 @@ class OuterAmazonQPanel : BorderLayoutPanel() {
         try {
             wrapper.setContent(content)
         } catch (e: Exception) {
-            getLogger<OuterAmazonQPanel>().error("Error while creating window")
+            getLogger<OuterAmazonQPanel>().error { "Error while creating window" }
         }
     }
 

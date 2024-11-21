@@ -62,6 +62,7 @@ object NotificationManager {
                         AllIcons.General.Error
                     )
                 } else {
+                    val link = url ?: AwsToolkit.GITHUB_URL
                     val openLink = Messages.showYesNoDialog(
                         project,
                         message,
@@ -71,7 +72,7 @@ object NotificationManager {
                         AllIcons.General.Error
                     )
                     if (openLink == 0) {
-                        BrowserUtil.browse(url!!)
+                        BrowserUtil.browse(link)
                     }
                 }
             }
