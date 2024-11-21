@@ -5,29 +5,38 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.controller
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.fileChooser.FileChooser
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.projectRoots.JavaSdkVersion
+import com.intellij.openapi.util.io.FileUtil.createTempDirectory
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthFollowUpType
 import software.aws.toolkits.jetbrains.services.codemodernizer.ArtifactHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.EXPLAINABILITY_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.HilTelemetryMetaData
 import software.aws.toolkits.jetbrains.services.codemodernizer.InboundAppMessagesHandler
+import software.aws.toolkits.jetbrains.services.codemodernizer.SELECTIVE_TRANSFORMATION_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformActionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformCommand
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildAbsolutePathWarning
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCheckingValidProjectChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildChooseTransformationObjectiveChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileHilAlternativeVersionContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalFailedChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalFailedNoJdkChatContent
@@ -40,8 +49,14 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHi
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilRejectContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilResumeWithErrorContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilResumedContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildLanguageUpgradeProjectValidChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildModuleSchemaFormChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildModuleSchemaFormIntroChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildObjectiveChosenChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildProjectInvalidChatContent
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildProjectValidChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildSQLMetadataValidationErrorChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildSQLMetadataValidationSuccessDetailsChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildSQLMetadataValidationSuccessIntroChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildStartNewTransformFollowup
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformAwaitUserInputChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformBeginChatContent
@@ -54,19 +69,27 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTr
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformStoppingChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserCancelledChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserHilSelection
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputLanguageUpgradeChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputOneOrMultipleDiffsChatIntroContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputOneOrMultipleDiffsFlagChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputSQLConversionMetadataChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputSkipTestsFlagChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputSkipTestsFlagChatIntroContent
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserSelectionSummaryChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserLanguageUpgradeSelectionSummaryChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserOneOrMultipleDiffsSelectionChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserSQLConversionSelectionSummaryChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserSkipTestsFlagSelectionChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserStopTransformChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.AuthenticationNeededExceptionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformCommandMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.IncomingCodeTransformMessage
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArtifactResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_RUN_UNIT_TESTS
@@ -74,14 +97,18 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.UploadFailureReason
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.session.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.codemodernizer.session.Session
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getJavaModulesWithSQL
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toVirtualFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
@@ -92,10 +119,29 @@ class CodeTransformChatController(
 ) : InboundAppMessagesHandler {
     private val authController = AuthController()
     private val messagePublisher = context.messagesFromAppToUi
-    private val codeModernizerManager = CodeModernizerManager.getInstance(context.project)
     private val codeTransformChatHelper = CodeTransformChatHelper(context.messagesFromAppToUi, chatSessionStorage)
-    private val artifactHandler = ArtifactHandler(context.project, GumbyClient.getInstance(context.project))
+    private val codeModernizerManager = CodeModernizerManager.getInstance(context.project)
+    private val artifactHandler = ArtifactHandler(context.project, GumbyClient.getInstance(context.project), codeTransformChatHelper)
     private val telemetry = CodeTransformTelemetryManager.getInstance(context.project)
+
+    override suspend fun processChatPromptMessage(message: IncomingCodeTransformMessage.ChatPrompt) {
+        val objective = message.message.trim().lowercase()
+
+        codeTransformChatHelper.addNewMessage(buildObjectiveChosenChatContent(objective))
+        codeTransformChatHelper.sendChatInputEnabledMessage(message.tabId, false)
+        codeTransformChatHelper.sendUpdatePlaceholderMessage(message.tabId, "Open a new tab to chat with Q")
+
+        // since we're prompting the user, their module(s) must be eligible for both types of transformations, so track how often this happens here
+        if (objective == "language upgrade" || objective == "sql conversion") {
+            telemetry.submitSelection(objective)
+        }
+
+        when (objective) {
+            "language upgrade" -> this.handleLanguageUpgrade()
+            "sql conversion" -> this.handleSQLConversion()
+            else -> this.getUserObjective(message.tabId) // ask user again for objective
+        }
+    }
 
     override suspend fun processTransformQuickAction(message: IncomingCodeTransformMessage.Transform) {
         telemetry.prepareForNewJobSubmission()
@@ -116,13 +162,38 @@ class CodeTransformChatController(
         // Publish a metric when transform is first initiated from chat prompt.
         telemetry.initiateTransform()
 
+        val anyModuleContainsOracleSQL = codeModernizerManager.validate(context.project, CodeTransformType.SQL_CONVERSION).valid
+
+        if (!anyModuleContainsOracleSQL) {
+            this.handleLanguageUpgrade()
+            return
+        }
+
+        val eligibleForLanguageUpgrade = codeModernizerManager.validate(context.project, CodeTransformType.LANGUAGE_UPGRADE).valid
+
+        if (!eligibleForLanguageUpgrade) {
+            this.handleSQLConversion()
+            return
+        }
+
+        // eligible for both language upgrade and sql conversion, so ask user what they want to do
+        this.getUserObjective(message.tabId)
+    }
+
+    private suspend fun getUserObjective(tabId: String) {
+        codeTransformChatHelper.addNewMessage(buildChooseTransformationObjectiveChatContent())
+        codeTransformChatHelper.sendChatInputEnabledMessage(tabId, true)
+        codeTransformChatHelper.sendUpdatePlaceholderMessage(tabId, message("codemodernizer.chat.message.choose_objective"))
+    }
+
+    private suspend fun validateAndReplyOnError(transformationType: CodeTransformType): ValidationResult? {
         codeTransformChatHelper.addNewMessage(
             buildCheckingValidProjectChatContent()
         )
 
-        codeTransformChatHelper.chatDelayLong()
+        codeTransformChatHelper.chatDelayShort()
 
-        val validationResult = codeModernizerManager.validate(context.project)
+        val validationResult = codeModernizerManager.validate(context.project, transformationType)
 
         if (!validationResult.valid) {
             codeTransformChatHelper.updateLastPendingMessage(
@@ -131,21 +202,30 @@ class CodeTransformChatController(
             codeTransformChatHelper.addNewMessage(
                 buildStartNewTransformFollowup()
             )
-            return
+            return null
         }
+        return validationResult
+    }
 
-        codeTransformChatHelper.updateLastPendingMessage(
-            buildProjectValidChatContent()
-        )
-
-        codeTransformChatHelper.chatDelayShort()
-
+    private suspend fun handleSQLConversion() {
+        this.validateAndReplyOnError(CodeTransformType.SQL_CONVERSION) ?: return
         codeTransformChatHelper.addNewMessage(
-            buildUserInputChatContent(context.project, validationResult)
+            buildUserInputSQLConversionMetadataChatContent()
         )
     }
 
-    suspend fun tryRestoreChatProgress(): Boolean {
+    private suspend fun handleLanguageUpgrade() {
+        val validationResult = this.validateAndReplyOnError(CodeTransformType.LANGUAGE_UPGRADE) ?: return
+        codeTransformChatHelper.updateLastPendingMessage(
+            buildLanguageUpgradeProjectValidChatContent()
+        )
+        codeTransformChatHelper.chatDelayShort()
+        codeTransformChatHelper.addNewMessage(
+            buildUserInputLanguageUpgradeChatContent(context.project, validationResult)
+        )
+    }
+
+    private suspend fun tryRestoreChatProgress(): Boolean {
         val isTransformOngoing = codeModernizerManager.isModernizationJobActive()
         val isMvnRunning = codeModernizerManager.isRunningMvn()
 
@@ -213,25 +293,83 @@ class CodeTransformChatController(
         val moduleVirtualFile: VirtualFile = modulePath.toVirtualFile() as VirtualFile
         val moduleName = context.project.getModuleOrProjectNameForFile(moduleVirtualFile)
 
-        codeTransformChatHelper.addNewMessage(buildUserSelectionSummaryChatContent(moduleName))
+        codeTransformChatHelper.addNewMessage(buildUserLanguageUpgradeSelectionSummaryChatContent(moduleName))
 
         val sourceJdk = getSourceJdk(moduleVirtualFile)
 
         val selection = CustomerSelection(
-            moduleVirtualFile,
-            sourceJdk,
-            JavaSdkVersion.JDK_17,
+            configurationFile = moduleVirtualFile,
+            sourceJavaVersion = sourceJdk,
+            targetJavaVersion = JavaSdkVersion.JDK_17,
         )
 
         // Create and set a session
         codeModernizerManager.createCodeModernizerSession(selection, context.project)
 
         // Publish metric to capture user selection before local build starts
-        telemetry.submitSelection("Confirm", selection)
+        telemetry.submitSelection("Confirm-Java", selection)
 
         codeTransformChatHelper.run {
             addNewMessage(buildUserInputSkipTestsFlagChatIntroContent())
             addNewMessage(buildUserInputSkipTestsFlagChatContent())
+        }
+    }
+
+    override suspend fun processCodeTransformSelectSQLModuleSchemaAction(message: IncomingCodeTransformMessage.CodeTransformSelectSQLModuleSchema) {
+        val moduleName = context.project.getModuleOrProjectNameForFile(message.modulePath.toVirtualFile())
+        codeTransformChatHelper.addNewMessage(buildUserSQLConversionSelectionSummaryChatContent(moduleName, message.schema))
+        codeModernizerManager.codeTransformationSession?.let {
+            it.sessionContext.configurationFile = message.modulePath.toVirtualFile()
+            it.sessionContext.schema = message.schema
+        }
+        // start the SQL conversion
+        runInEdt {
+            codeModernizerManager.runModernize()
+        }
+    }
+
+    override suspend fun processCodeTransformSelectSQLMetadataAction(message: IncomingCodeTransformMessage.CodeTransformSelectSQLMetadata) {
+        withContext(EDT) {
+            val descriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
+                .withDescription("Select metadata file")
+                .withFileFilter { it.extension == "zip" }
+
+            val selectedZipFile = FileChooser.chooseFile(descriptor, null, null) ?: return@withContext
+            val extractedZip = createTempDirectory("codeTransformSQLMetadata", null)
+
+            unzipFile(selectedZipFile.toNioPath(), extractedZip.toPath(), true)
+
+            val sctFile = extractedZip.listFiles { file -> file.name.endsWith(".sct") }.firstOrNull()
+
+            val metadataValidationResult = validateSctMetadata(sctFile)
+
+            if (!metadataValidationResult.valid) {
+                codeTransformChatHelper.run {
+                    addNewMessage(buildSQLMetadataValidationErrorChatContent(metadataValidationResult.errorReason))
+                    addNewMessage(buildStartNewTransformFollowup())
+                }
+                return@withContext
+            }
+
+            codeTransformChatHelper.run {
+                addNewMessage(buildSQLMetadataValidationSuccessIntroChatContent())
+                addNewMessage(buildSQLMetadataValidationSuccessDetailsChatContent(metadataValidationResult))
+                addNewMessage(buildModuleSchemaFormIntroChatContent())
+                addNewMessage(
+                    buildModuleSchemaFormChatContent(context.project, context.project.getJavaModulesWithSQL(), metadataValidationResult.schemaOptions)
+                )
+            }
+            val selection = CustomerSelection(
+                // for SQL conversions (no sourceJavaVersion), use dummy value of Java 8 so that startJob API can be called
+                sourceJavaVersion = JavaSdkVersion.JDK_1_8,
+                targetJavaVersion = JavaSdkVersion.JDK_17,
+                sourceVendor = metadataValidationResult.sourceVendor,
+                targetVendor = metadataValidationResult.targetVendor,
+                sourceServerName = metadataValidationResult.sourceServerName,
+                sqlMetadataZip = extractedZip,
+            )
+            codeModernizerManager.createCodeModernizerSession(selection, context.project)
+            telemetry.submitSelection("Confirm-SQL", selection)
         }
     }
 
@@ -240,10 +378,37 @@ class CodeTransformChatController(
             message("codemodernizer.chat.message.skip_tests_form.skip") -> MAVEN_BUILD_SKIP_UNIT_TESTS
             else -> MAVEN_BUILD_RUN_UNIT_TESTS
         }
+        // feature flag for Selective Transformation
+        val isSelectiveTransformationReady = false
         codeTransformChatHelper.addNewMessage(buildUserSkipTestsFlagSelectionChatContent(message.skipTestsSelection))
-        codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
         codeModernizerManager.codeTransformationSession?.let {
             it.sessionContext.customBuildCommand = customBuildCommand
+            if (!isSelectiveTransformationReady) {
+                codeModernizerManager.runLocalMavenBuild(context.project, it)
+            }
+        }
+        if (isSelectiveTransformationReady) {
+            codeTransformChatHelper.run {
+                addNewMessage(buildUserInputOneOrMultipleDiffsChatIntroContent())
+                addNewMessage(buildUserInputOneOrMultipleDiffsFlagChatContent())
+            }
+        }
+    }
+
+    override suspend fun processCodeTransformOneOrMultipleDiffs(message: IncomingCodeTransformMessage.CodeTransformConfirmOneOrMultipleDiffs) {
+        val transformCapabilities = when (message.oneOrMultipleDiffsSelection) {
+            message("codemodernizer.chat.message.one_or_multiple_diffs_form.multiple_diffs") -> listOf(
+                EXPLAINABILITY_V1,
+                SELECTIVE_TRANSFORMATION_V1
+            )
+            else -> listOf(
+                EXPLAINABILITY_V1
+            )
+        }
+        codeTransformChatHelper.addNewMessage(buildUserOneOrMultipleDiffsSelectionChatContent(message.oneOrMultipleDiffsSelection))
+        codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
+        codeModernizerManager.codeTransformationSession?.let {
+            it.sessionContext.transformCapabilities = transformCapabilities
             codeModernizerManager.runLocalMavenBuild(context.project, it)
         }
     }
@@ -514,10 +679,22 @@ class CodeTransformChatController(
                 if (result is CodeModernizerJobCompletedResult.ZipUploadFailed && result.failureReason is UploadFailureReason.CREDENTIALS_EXPIRED) {
                     return
                 } else {
-                    codeTransformChatHelper.updateLastPendingMessage(
-                        buildTransformResultChatContent(result)
+                    val downloadResult = artifactHandler.downloadArtifact(
+                        CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId,
+                        TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS
                     )
-                    codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
+                    when (downloadResult) {
+                        is DownloadArtifactResult.Success -> {
+                            if (downloadResult.artifact !is CodeModernizerArtifact) return artifactHandler.notifyUnableToApplyPatch("")
+                            codeTransformChatHelper.updateLastPendingMessage(
+                                buildTransformResultChatContent(result, downloadResult.artifact.patches.size)
+                            )
+                        }
+                        is DownloadArtifactResult.DownloadFailure -> artifactHandler.notifyUnableToDownload(downloadResult.failureReason)
+                        is DownloadArtifactResult.ParseZipFailure -> artifactHandler.notifyUnableToApplyPatch(downloadResult.failureReason.errorMessage)
+                        is DownloadArtifactResult.Skipped -> {}
+                        is DownloadArtifactResult.UnzipFailure -> artifactHandler.notifyUnableToApplyPatch(downloadResult.failureReason.errorMessage)
+                    }
                 }
             }
         }

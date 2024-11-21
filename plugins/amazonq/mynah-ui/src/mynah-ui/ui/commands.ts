@@ -2,6 +2,7 @@
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
+import { QuickActionCommandGroup } from "@aws/mynah-ui-chat"
 
 type MessageCommand =
     | 'chat-prompt'
@@ -30,9 +31,12 @@ type MessageCommand =
     | 'transform'
     | 'footer-info-link-click'
     | 'codetransform-start'
+    | 'codetransform-select-sql-metadata'
+    | 'codetransform-select-sql-module-schema'
     | 'codetransform-cancel'
     | 'codetransform-stop'
     | 'codetransform-confirm-skip-tests'
+    | 'codetransform-confirm-one-or-multiple-diffs'
     | 'codetransform-new'
     | 'codetransform-open-transform-hub'
     | 'codetransform-open-mvn-build'
@@ -47,3 +51,13 @@ type MessageCommand =
     | 'store-code-result-message-id'
 
 export type ExtensionMessage = Record<string, any> & { command: MessageCommand }
+
+export const workspaceCommand: QuickActionCommandGroup = {
+    groupName: 'Mention code',
+    commands: [
+        {
+            command: '@workspace',
+            description: '(BETA) Reference all code in workspace.',
+        },
+    ],
+}
