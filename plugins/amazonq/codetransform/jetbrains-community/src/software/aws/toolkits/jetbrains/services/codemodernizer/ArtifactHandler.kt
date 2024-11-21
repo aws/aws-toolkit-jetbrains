@@ -76,7 +76,8 @@ val patchDescriptions = mapOf(
         "Jenkins plugins and the Maven Wrapper.",
     "Miscellaneous Processing Documentation upgrade" to "This diff patch covers a diverse set of upgrades spanning ORMs, XML processing, API documentation, " +
         "and more.",
-    "Deprecated API replacement and dependency upgrades" to "This diff patch replaces deprecated APIs and makes additional dependency version upgrades."
+    "Deprecated API replacement, dependency upgrades, and formatting" to "This diff patch replaces deprecated APIs, makes additional dependency version " +
+        "upgrades, and formats code changes."
 )
 
 class ArtifactHandler(
