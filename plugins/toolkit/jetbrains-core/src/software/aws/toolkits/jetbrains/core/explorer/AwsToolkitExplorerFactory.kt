@@ -37,8 +37,7 @@ import software.aws.toolkits.jetbrains.core.explorer.webview.OuterToolkitPanel
 import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
 import software.aws.toolkits.jetbrains.core.explorer.webview.shouldPromptToolkitReauth
 import software.aws.toolkits.jetbrains.core.help.HelpIds
-import software.aws.toolkits.jetbrains.core.notifications.NotificationActionList
-import software.aws.toolkits.jetbrains.core.notifications.ShowCriticalNotificationBannerListener
+import software.aws.toolkits.jetbrains.core.notifications.ProcessNotificationsBase
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
 import software.aws.toolkits.jetbrains.utils.isTookitConnected
@@ -55,6 +54,12 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         val mainPanel = BorderLayoutPanel()
         mainPanel.addToTop(notificationPanel)
         mainPanel.add(toolkitPanel)
+        val notifListener = ProcessNotificationsBase.getInstance(project)
+        notifListener.addListenerForNotification { title, message, followupActions ->
+            runInEdt {
+                notificationPanel.updateNotificationPanel(title, message, followupActions)
+            }
+        }
         toolWindow.helpId = HelpIds.EXPLORER_WINDOW.id
 
         if (toolWindow is ToolWindowEx) {
@@ -147,15 +152,6 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
 
                 override fun showExplorerTree(project: Project) {
                     loadContent(project, AwsToolkitExplorerToolWindow.getInstance(project))
-                }
-            }
-        )
-
-        project.messageBus.connect().subscribe(
-            ShowCriticalNotificationBannerListener.TOPIC,
-            object : ShowCriticalNotificationBannerListener {
-                override fun onReceiveEmergencyNotification(title: String, message: String, notificationActionList: List<NotificationActionList>) {
-                    notificationPanel.updateNotificationPanel(title, message, notificationActionList)
                 }
             }
         )

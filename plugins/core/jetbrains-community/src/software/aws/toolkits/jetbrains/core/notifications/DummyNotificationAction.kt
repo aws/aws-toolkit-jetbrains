@@ -10,10 +10,21 @@ import com.intellij.openapi.util.registry.Registry
 class DummyNotificationAction : AnAction("Show notif") {
     override fun actionPerformed(e: AnActionEvent) {
         if (!Registry.`is`("aws.toolkit.developerMode")) return
-        ShowCriticalNotificationBannerListener.showBanner(
+//        ShowCriticalNotificationBannerListener.showBanner(
+//            "hello hello",
+//            "This is a bug",
+//            NotificationManager.createActions(emptyList(), "This is a bug", "hello hello")
+//        )
+        val a = e.project?.let { ProcessNotificationsBase.getInstance(it) } ?: return
+        a.notifyListenerForNotification(
             "hello hello",
             "This is a bug",
             NotificationManager.createActions(emptyList(), "This is a bug", "hello hello")
+
         )
+    }
+
+    override fun update(e: AnActionEvent) {
+        e.presentation.isEnabledAndVisible = Registry.`is`("aws.toolkit.developerMode")
     }
 }

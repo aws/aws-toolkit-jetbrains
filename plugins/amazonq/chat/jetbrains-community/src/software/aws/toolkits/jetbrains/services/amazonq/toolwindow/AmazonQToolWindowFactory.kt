@@ -21,8 +21,7 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
-import software.aws.toolkits.jetbrains.core.notifications.NotificationActionList
-import software.aws.toolkits.jetbrains.core.notifications.ShowCriticalNotificationBannerListener
+import software.aws.toolkits.jetbrains.core.notifications.ProcessNotificationsBase
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.RefreshQChatPanelButtonPressedListener
@@ -41,8 +40,15 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         val mainPanel = BorderLayoutPanel()
         val qPanel = OuterAmazonQPanel.getInstance(project)
         val notificationPanel = NotificationPanel.getInstance(project)
+
         mainPanel.addToTop(notificationPanel)
         mainPanel.add(qPanel)
+        val notifListener = ProcessNotificationsBase.getInstance(project)
+        notifListener.addListenerForNotification { title, message, followupActions ->
+            runInEdt {
+                notificationPanel.updateNotificationPanel(title, message, followupActions)
+            }
+        }
 
         if (toolWindow is ToolWindowEx) {
             val actionManager = ActionManager.getInstance()
@@ -65,17 +71,6 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
                 override fun onRefresh() {
                     runInEdt {
                         prepareChatContent(project)
-                    }
-                }
-            }
-        )
-
-        project.messageBus.connect().subscribe(
-            ShowCriticalNotificationBannerListener.TOPIC,
-            object : ShowCriticalNotificationBannerListener {
-                override fun onReceiveEmergencyNotification(title: String, message: String, notificationActionList: List<NotificationActionList>) {
-                    runInEdt {
-                        notificationPanel.updateNotificationPanel(title, message, notificationActionList)
                     }
                 }
             }
