@@ -1,5 +1,6 @@
 .gradle
 .intellijPlatform
+.kotlin
 out/
 target/
 .idea

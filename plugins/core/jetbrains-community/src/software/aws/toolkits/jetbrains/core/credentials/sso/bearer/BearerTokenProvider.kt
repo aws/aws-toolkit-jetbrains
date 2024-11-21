@@ -48,6 +48,9 @@ interface BearerTokenProvider : SdkTokenProvider, SdkAutoCloseable, ToolkitBeare
      */
     fun currentToken(): AccessToken?
 
+    /**
+     * Not meant to be invoked outside the implementation
+     */
     fun refresh(): AccessToken
 
     /**
@@ -58,13 +61,13 @@ interface BearerTokenProvider : SdkTokenProvider, SdkAutoCloseable, ToolkitBeare
     /**
      * Request provider to interactively request user input to obtain a new [AccessToken]
      */
-    open fun reauthenticate() {
+    fun reauthenticate() {
         throw UnsupportedOperationException("Provider is not interactive and cannot reauthenticate")
     }
 
-    open fun supportsLogout() = this is BearerTokenLogoutSupport
+    fun supportsLogout() = this is BearerTokenLogoutSupport
 
-    open fun invalidate() {
+    fun invalidate() {
         throw UnsupportedOperationException("Provider is not interactive and cannot be invalidated")
     }
 
@@ -90,10 +93,9 @@ class InteractiveBearerTokenProvider(
     val startUrl: String,
     val region: String,
     val scopes: List<String>,
-    id: String,
+    override val id: String,
     cache: DiskCache = diskCache,
 ) : BearerTokenProvider, BearerTokenLogoutSupport, Disposable {
-    override val id = id
     override val displayName = ToolkitBearerTokenProvider.ssoDisplayName(startUrl)
 
     private val ssoOidcClient: SsoOidcClient = buildUnmanagedSsoOidcClient(region)
@@ -107,7 +109,7 @@ class InteractiveBearerTokenProvider(
         )
 
     private val supplier = CachedSupplier.builder { refreshToken() }.prefetchStrategy(NonBlocking("AWS SSO bearer token refresher")).build()
-    private val lastToken = AtomicReference<AccessToken?>()
+    internal val lastToken = AtomicReference<AccessToken?>()
     val pendingAuthorization: PendingAuthorization?
         get() = accessTokenProvider.authorization
 
@@ -134,6 +136,7 @@ class InteractiveBearerTokenProvider(
         )
     }
 
+    // we need to seed CachedSupplier with an initial value, then subsequent calls need to hit the network
     private fun refreshToken(): RefreshResult<out SdkToken> {
         val lastToken = lastToken.get() ?: throw NoTokenInitializedException("Token refresh started before session initialized")
         val token = if (Duration.between(Instant.now(), lastToken.expiresAt) > Duration.ofMinutes(30)) {
@@ -148,6 +151,7 @@ class InteractiveBearerTokenProvider(
             .build()
     }
 
+    // how we expect consumers to obtain a token
     override fun resolveToken() = supplier.get()
 
     override fun close() {
@@ -159,6 +163,7 @@ class InteractiveBearerTokenProvider(
         close()
     }
 
+    // internal nonsense so we can query the token without triggering a refresh
     override fun currentToken() = lastToken.get()
 
     /**
@@ -189,7 +194,7 @@ class InteractiveBearerTokenProvider(
 
 class NoTokenInitializedException(message: String) : Exception(message)
 
-public enum class BearerTokenAuthState {
+enum class BearerTokenAuthState {
     AUTHORIZED,
     NEEDS_REFRESH,
     NOT_AUTHENTICATED,

@@ -130,6 +130,7 @@ abstract class LoginBrowser(
 
     protected val onPendingToken: (InteractiveBearerTokenProvider) -> Unit = { provider ->
         startBrowserOpenTimer(provider.startUrl, provider.region, provider.scopes)
+
         projectCoroutineScope(project).launch {
             val authorization = pollForAuthorization(provider)
             if (authorization != null) {
