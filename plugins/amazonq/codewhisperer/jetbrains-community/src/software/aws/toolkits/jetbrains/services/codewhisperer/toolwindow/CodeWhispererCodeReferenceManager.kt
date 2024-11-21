@@ -31,7 +31,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhisper
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.horizontalPanelConstraints
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.PreviewContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.EDITOR_CODE_REFERENCE_HOVER
 import software.aws.toolkits.resources.message
@@ -118,7 +117,7 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
         insertCodeReference(detail.content(), reformattedDetail.references(), editor, caretPosition, detail)
     }
 
-    fun insertCodeReference(states: InvocationContextNew, previews: List<PreviewContext>, selectedIndex: Int) {
+    fun insertCodeReference(states: InvocationContext, previews: List<PreviewContext>, selectedIndex: Int) {
         val detail = previews[selectedIndex].detail
         insertCodeReference(
             detail.recommendation.content(),

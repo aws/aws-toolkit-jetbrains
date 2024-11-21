@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.VisualPosition
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.async
@@ -46,13 +47,13 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContex
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.RequestContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.UtgStrategy
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
@@ -69,6 +70,9 @@ object CodeWhispererTestUtil {
     const val codeWhispererCodeScanActionId = "codewhisperer.toolbar.security.scan"
     const val testValidAccessToken = "test_valid_access_token"
     const val testNextToken = "test_next_token"
+    const val ACTION_KEY_ACCEPT = "codewhisperer.inline.accept"
+    const val ACTION_KEY_NAV_PREV = "codewhisperer.inline.navigate.previous"
+    const val ACTION_KEY_NAV_NEXT = "codewhisperer.inline.navigate.next"
     private val testReferenceInfoPair = listOf(
         Pair("MIT", "testRepo1"),
         Pair("Apache-2.0", "testRepo2"),
@@ -172,10 +176,10 @@ object CodeWhispererTestUtil {
     const val leftContext_success_Iac = "# Create an S3 Bucket named CodeWhisperer in CloudFormation"
     const val leftContext_failure_Iac = "Create an S3 Bucket named CodeWhisperer"
 
-    internal fun pythonResponseWithToken(token: String): GenerateCompletionsResponse =
+    fun pythonResponseWithToken(token: String): GenerateCompletionsResponse =
         pythonResponse.toBuilder().nextToken(token).build()
 
-    internal fun generateMockCompletionDetail(content: String): Completion {
+    fun generateMockCompletionDetail(content: String): Completion {
         val referenceInfo = getReferenceInfo()
         return Completion.builder().content(content)
             .references(
@@ -184,9 +188,9 @@ object CodeWhispererTestUtil {
             .build()
     }
 
-    internal fun getReferenceInfo() = testReferenceInfoPair[Random.nextInt(testReferenceInfoPair.size)]
+    fun getReferenceInfo() = testReferenceInfoPair[Random.nextInt(testReferenceInfoPair.size)]
 
-    internal fun generateMockCompletionDetail(
+    fun generateMockCompletionDetail(
         content: String,
         licenseName: String,
         repository: String,
@@ -210,6 +214,12 @@ object CodeWhispererTestUtil {
             )
             .build()
 }
+
+fun aSessionContext(
+    project: Project = mock(),
+    editor: Editor = mock(),
+    latencyContext: LatencyContext = LatencyContext(),
+) = SessionContext(project, editor, latencyContext = latencyContext)
 
 fun aRequestContext(
     project: Project,
@@ -242,21 +252,6 @@ fun aRequestContext(
         fileContextInfo = myFileContextInfo ?: aFileContextInfo(),
         supplementalContextDeferred = supplementalContextDeferred,
         null,
-        LatencyContext(
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextDouble(),
-            Random.nextDouble(),
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextLong(),
-            Random.nextLong(),
-            aString()
-        ),
         customizationArn = null
     )
 }
@@ -307,14 +302,15 @@ fun aRecommendationContext(): RecommendationContext {
         details,
         aString(),
         aString(),
-        VisualPosition(Random.nextInt(1, 100), Random.nextInt(1, 100))
+        VisualPosition(Random.nextInt(1, 100), Random.nextInt(1, 100)),
+        0
     )
 }
 
 /**
  * util to generate a RecommendationContext and a SessionContext given expected decisions
  */
-fun aRecommendationContextAndSessionContext(decisions: List<CodewhispererSuggestionState>): Pair<RecommendationContext, SessionContext> {
+fun aRecommendationContext(decisions: List<CodewhispererSuggestionState>): RecommendationContext {
     val table = CodewhispererSuggestionState.values().associateWith { 0 }.toMutableMap()
     decisions.forEach {
         table[it]?.let { curCount -> table[it] = 1 + curCount }
@@ -332,6 +328,8 @@ fun aRecommendationContextAndSessionContext(decisions: List<CodewhispererSuggest
             val completion = aCompletion()
             DetailContext(aString(), completion, completion, false, Random.nextBoolean(), aString(), CodewhispererCompletionType.Line)
         }
+        toAdd.hasSeen = decision != CodewhispererSuggestionState.Unseen
+        toAdd.isAccepted = decision == CodewhispererSuggestionState.Accept
 
         details.add(toAdd)
     }
@@ -340,29 +338,11 @@ fun aRecommendationContextAndSessionContext(decisions: List<CodewhispererSuggest
         details,
         aString(),
         aString(),
-        VisualPosition(Random.nextInt(1, 100), Random.nextInt(1, 100))
+        VisualPosition(Random.nextInt(1, 100), Random.nextInt(1, 100)),
+        0,
     )
 
-    val selectedIndex = decisions.indexOfFirst { it == CodewhispererSuggestionState.Accept }.let {
-        if (it != -1) {
-            it
-        } else {
-            0
-        }
-    }
-
-    val seen = mutableSetOf<Int>()
-    decisions.forEachIndexed { index, decision ->
-        if (decision != CodewhispererSuggestionState.Unseen) {
-            seen.add(index)
-        }
-    }
-
-    val sessionContext = SessionContext(
-        selectedIndex = selectedIndex,
-        seen = seen
-    )
-    return recommendationContext to sessionContext
+    return recommendationContext
 }
 
 fun aCompletion(content: String? = null, isEmpty: Boolean = false, referenceCount: Int? = null, importCount: Int? = null): Completion {

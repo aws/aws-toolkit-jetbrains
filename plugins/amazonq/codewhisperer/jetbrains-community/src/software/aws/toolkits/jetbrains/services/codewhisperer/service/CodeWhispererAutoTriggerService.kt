@@ -17,13 +17,11 @@ import kotlinx.coroutines.launch
 import org.apache.commons.collections4.queue.CircularFifoQueue
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.coroutines.applicationCoroutineScope
-import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryServiceNew
 import software.aws.toolkits.telemetry.CodewhispererAutomatedTriggerType
 import software.aws.toolkits.telemetry.CodewhispererPreviousSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
@@ -79,14 +77,7 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
 
     // real auto trigger logic
     fun invoke(editor: Editor, triggerType: CodeWhispererAutomatedTriggerType): Job? {
-        if (!(
-                if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
-                    CodeWhispererServiceNew.getInstance().canDoInvocation(editor, CodewhispererTriggerType.AutoTrigger)
-                } else {
-                    CodeWhispererService.getInstance().canDoInvocation(editor, CodewhispererTriggerType.AutoTrigger)
-                }
-                )
-        ) {
+        if (!CodeWhispererService.getInstance().canDoInvocation(editor, CodewhispererTriggerType.AutoTrigger)) {
             return null
         }
 
@@ -179,12 +170,7 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
         var previousOneAccept: Double = 0.0
         var previousOneReject: Double = 0.0
         var previousOneOther: Double = 0.0
-        val previousOneDecision =
-            if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
-                CodeWhispererTelemetryServiceNew.getInstance().previousUserTriggerDecision
-            } else {
-                CodeWhispererTelemetryService.getInstance().previousUserTriggerDecision
-            }
+        val previousOneDecision = CodeWhispererTelemetryService.getInstance().previousUserTriggerDecision
         if (previousOneDecision == null) {
             previousOneAccept = 0.0
             previousOneReject = 0.0
