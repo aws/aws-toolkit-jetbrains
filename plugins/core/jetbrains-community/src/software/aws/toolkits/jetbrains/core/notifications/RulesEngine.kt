@@ -17,7 +17,7 @@ import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 
 object RulesEngine {
 
-    fun displayNotification(notification: NotificationData, project: Project): Boolean {
+    fun displayNotification(project: Project, notification: NotificationData): Boolean {
         // If no conditions provided, show display the notification to everyone
         val shouldShow = notification.condition?.let { matchesAllRules(it, project) } ?: true
         return shouldShow

@@ -16,6 +16,7 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.putNextEntry
+import software.aws.toolkits.jetbrains.services.codemodernizer.EXPLAINABILITY_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_DEPENDENCIES_ROOT_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_MANIFEST_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runDependencyReportCommands
@@ -63,6 +64,7 @@ data class CodeModernizerSessionContext(
     var configurationFile: VirtualFile? = null, // used to ZIP module
     val sourceJavaVersion: JavaSdkVersion, // always needed for startJob API
     val targetJavaVersion: JavaSdkVersion = JavaSdkVersion.JDK_17, // only one supported
+    var transformCapabilities: List<String> = listOf(EXPLAINABILITY_V1),
     var customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS, // run unit tests by default
     val sourceVendor: String = ORACLE_DB, // only one supported
     val targetVendor: String? = null,
@@ -218,7 +220,7 @@ data class CodeModernizerSessionContext(
                 val depSources = File(ZIP_DEPENDENCIES_PATH)
                 val outputFile = createTemporaryZipFile { zip ->
                     // 1) Manifest file
-                    var manifest = ZipManifest(customBuildCommand = customBuildCommand)
+                    var manifest = ZipManifest(transformCapabilities = transformCapabilities, customBuildCommand = customBuildCommand)
                     if (sqlMetadataZip != null) {
                         // doing a SQL conversion, not language upgrade
                         val sctFileName = sqlMetadataZip.listFiles { file -> file.name.endsWith(".sct") }.first().name

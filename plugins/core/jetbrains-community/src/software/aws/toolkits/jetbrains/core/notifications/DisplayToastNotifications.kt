@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.core.notifications
 
-import com.intellij.notification.NotificationType
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.utils.notifyStickyWithData
 
@@ -37,3 +35,5 @@ object DisplayToastNotifications {
         }
     }
 }
+
+

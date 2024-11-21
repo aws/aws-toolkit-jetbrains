@@ -3,12 +3,15 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer
 
+import com.intellij.openapi.vcs.changes.patch.ApplyPatchDifferentiatedDialog
 import com.intellij.testFramework.LightVirtualFile
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
+import org.mockito.Mockito.doAnswer
+import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doReturn
@@ -128,10 +131,21 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
         val path = testCodeModernizerArtifact.zipPath
         val result = DownloadArtifactResult.Success(testCodeModernizerArtifact, path)
         doReturn(result).whenever(handler).downloadArtifact(any(), eq(TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS), eq(false))
-        doNothing().whenever(handler).displayDiffUsingPatch(any(), any(), any())
+        val mockDialog = mock<ApplyPatchDifferentiatedDialog>()
+        whenever(mockDialog.showAndGet()).thenReturn(true)
+        doAnswer {
+            mockDialog.showAndGet()
+            mockDialog
+        }.whenever(handler).displayDiffUsingPatch(any(), any(), any(), any(), any())
         handler.displayDiff(jobId, CodeTransformVCSViewerSrcComponents.Chat)
         verify(handler, never()).notifyUnableToApplyPatch(any())
-        verify(handler, times(1)).displayDiffUsingPatch(testCodeModernizerArtifact.patch, jobId, CodeTransformVCSViewerSrcComponents.Chat)
+        verify(handler, times(1)).displayDiffUsingPatch(
+            testCodeModernizerArtifact.patches[0],
+            testCodeModernizerArtifact.patches.size,
+            testCodeModernizerArtifact.description?.get(0),
+            jobId,
+            CodeTransformVCSViewerSrcComponents.Chat
+        )
     }
 
     @Test
@@ -159,9 +173,26 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
     }
 
     @Test
+    fun `CodeModernizerArtifact can process a valid zip file with multiple diffs`() {
+        val artifact = CodeModernizerArtifact.create(multipleDiffZipPath.toAbsolutePath().toString())
+        assertEquals(4, artifact.patches.size)
+        assertEquals(validManifest, artifact.manifest)
+        assertEquals(validMetricsMultipleDiffs.linesOfCodeChanged, artifact.metrics?.linesOfCodeChanged)
+    }
+
+    @Test
     fun `can unzip a file`() {
         val tempDir = createTempDirectory()
         val result = unzipFile(exampleZipPath, tempDir)
+        assert(result)
+        assert(tempDir.resolve(validZipManifestPath).exists())
+        assert(tempDir.resolve(validZipPatchFilePath).exists())
+    }
+
+    @Test
+    fun `can unzip a file with multiple diffs`() {
+        val tempDir = createTempDirectory()
+        val result = unzipFile(multipleDiffZipPath, tempDir)
         assert(result)
         assert(tempDir.resolve(validZipManifestPath).exists())
         assert(tempDir.resolve(validZipPatchFilePath).exists())

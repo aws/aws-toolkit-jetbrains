@@ -102,33 +102,35 @@ class NotificationFormatUtilsTest {
 
     @ParameterizedTest
     @MethodSource("validNotifications")
-    fun `The notification is shown`(notification: String) {
+    fun `The notification is shown`(notification: String, expectedData: NotificationData) {
         val notificationData = mapper.readValue<NotificationData>(notification)
-        val shouldShow = RulesEngine.displayNotification(notificationData, projectRule.project)
+        assertThat(notificationData).isEqualTo(expectedData)
+        val shouldShow = RulesEngine.displayNotification(projectRule.project, notificationData)
         assertThat(shouldShow).isTrue
     }
 
     @ParameterizedTest
     @MethodSource("invalidNotifications")
-    fun `The notification is not shown`(notification: String) {
+    fun `The notification is not shown`(notification: String, expectedData: NotificationData) {
         val notificationData = mapper.readValue<NotificationData>(notification)
-        val shouldShow = RulesEngine.displayNotification(notificationData, projectRule.project)
+        assertThat(notificationData).isEqualTo(expectedData)
+        val shouldShow = RulesEngine.displayNotification(projectRule.project, notificationData)
         assertThat(shouldShow).isFalse
     }
 
     companion object {
         @JvmStatic
         fun validNotifications(): Stream<Arguments> = Stream.of(
-            Arguments.of(notificationWithConditionsOrActions),
-            Arguments.of(notificationWithoutConditionsOrActions),
-            Arguments.of(notificationWithValidConnection)
+            Arguments.of(notificationWithConditionsOrActions, notificationWithConditionsOrActionsData),
+            Arguments.of(notificationWithoutConditionsOrActions, notificationsWithoutConditionsOrActionsData),
+            Arguments.of(notificationWithValidConnection, notificationWithValidConnectionData)
         )
 
         @JvmStatic
         fun invalidNotifications(): Stream<Arguments> = Stream.of(
-            Arguments.of(validComputeInvalidOs),
-            Arguments.of(invalidExtensionVersion),
-            Arguments.of(invalidIdeTypeAndVersion)
+            Arguments.of(validComputeInvalidOs, validOsInvalidComputeData),
+            Arguments.of(invalidExtensionVersion, invalidExtensionVersionData),
+            Arguments.of(invalidIdeTypeAndVersion, invalidIdeTypeAndVersionData)
         )
 
         private val mapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)

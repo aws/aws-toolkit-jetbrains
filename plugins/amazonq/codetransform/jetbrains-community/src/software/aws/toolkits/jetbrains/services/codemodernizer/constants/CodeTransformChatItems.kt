@@ -71,6 +71,13 @@ private val confirmSkipTestsSelectionButton = Button(
     id = CodeTransformButtonId.ConfirmSkipTests.id,
 )
 
+private val confirmOneOrMultipleDiffsSelectionButton = Button(
+    keepCardAfterClick = false,
+    waitMandatoryFormItems = true,
+    text = message("codemodernizer.chat.message.button.confirm"),
+    id = CodeTransformButtonId.ConfirmOneOrMultipleDiffs.id,
+)
+
 private val openMvnBuildButton = Button(
     id = CodeTransformButtonId.OpenMvnBuild.id,
     text = message("codemodernizer.chat.message.button.view_build"),
@@ -95,7 +102,13 @@ private val viewDiffButton = Button(
     keepCardAfterClick = true,
 )
 
-private val viewSummaryButton = Button(
+fun createViewDiffButton(buttonLabel: String): Button = Button(
+    id = CodeTransformButtonId.ViewDiff.id,
+    text = buttonLabel,
+    keepCardAfterClick = true
+)
+
+val viewSummaryButton = Button(
     id = CodeTransformButtonId.ViewSummary.id,
     text = message("codemodernizer.chat.message.button.view_summary"),
     keepCardAfterClick = true,
@@ -197,6 +210,22 @@ private val selectSkipTestsFlagFormItem = FormItem(
     )
 )
 
+private val selectOneOrMultipleDiffsFlagFormItem = FormItem(
+    id = CodeTransformFormItemId.SelectOneOrMultipleDiffsFlag.id,
+    title = message("codemodernizer.chat.form.user_selection.item.choose_one_or_multiple_diffs_option"),
+    mandatory = true,
+    options = listOf(
+        FormItemOption(
+            label = message("codemodernizer.chat.message.one_or_multiple_diffs_form.one_diff"),
+            value = message("codemodernizer.chat.message.one_or_multiple_diffs_form.one_diff"),
+        ),
+        FormItemOption(
+            label = message("codemodernizer.chat.message.one_or_multiple_diffs_form.multiple_diffs"),
+            value = message("codemodernizer.chat.message.one_or_multiple_diffs_form.multiple_diffs"),
+        )
+    )
+)
+
 private fun getUserLanguageUpgradeSelectionFormattedMarkdown(moduleName: String): String = """
         ### ${message("codemodernizer.chat.prompt.title.details")}
         -------------
@@ -289,10 +318,30 @@ fun buildUserInputSkipTestsFlagChatContent(): CodeTransformChatMessageContent =
         formItems = listOf(selectSkipTestsFlagFormItem),
         type = CodeTransformChatMessageType.FinalizedAnswer,
     )
+fun buildUserInputOneOrMultipleDiffsChatIntroContent(): CodeTransformChatMessageContent =
+    CodeTransformChatMessageContent(
+        message = message("codemodernizer.chat.message.one_or_multiple_diffs"),
+        type = CodeTransformChatMessageType.FinalizedAnswer,
+    )
+fun buildUserInputOneOrMultipleDiffsFlagChatContent(): CodeTransformChatMessageContent =
+    CodeTransformChatMessageContent(
+        message = message("codemodernizer.chat.form.user_selection.title"),
+        buttons = listOf(
+            confirmOneOrMultipleDiffsSelectionButton,
+            cancelUserSelectionButton,
+        ),
+        formItems = listOf(selectOneOrMultipleDiffsFlagFormItem),
+        type = CodeTransformChatMessageType.FinalizedAnswer,
+    )
 
 fun buildUserSkipTestsFlagSelectionChatContent(skipTestsSelection: String) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
     message = message("codemodernizer.chat.message.skip_tests_form.response", skipTestsSelection.lowercase())
+)
+
+fun buildUserOneOrMultipleDiffsSelectionChatContent(oneOrMultipleDiffsSelection: String) = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = message("codemodernizer.chat.message.one_or_multiple_diffs_form.response", oneOrMultipleDiffsSelection.lowercase())
 )
 
 fun buildUserInputLanguageUpgradeChatContent(project: Project, validationResult: ValidationResult): CodeTransformChatMessageContent {
@@ -488,7 +537,7 @@ fun buildTransformResumingChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
 )
 
-fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): CodeTransformChatMessageContent {
+fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult, totalPatchFiles: Int): CodeTransformChatMessageContent {
     val resultMessage = when (result) {
         is CodeModernizerJobCompletedResult.JobAbortedZipTooLarge -> {
             "${message(
@@ -502,10 +551,18 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
             buildZipUploadFailedChatMessage(result.failureReason)
         }
         is CodeModernizerJobCompletedResult.JobCompletedSuccessfully -> {
-            message("codemodernizer.chat.message.result.success")
+            if (totalPatchFiles == 1) {
+                message("codemodernizer.chat.message.result.success")
+            } else {
+                message("codemodernizer.chat.message.result.success.multiple_diffs")
+            }
         }
         is CodeModernizerJobCompletedResult.JobPartiallySucceeded -> {
-            message("codemodernizer.chat.message.result.partially_success")
+            if (totalPatchFiles == 1) {
+                message("codemodernizer.chat.message.result.partially_success")
+            } else {
+                message("codemodernizer.chat.message.result.partially_success.multiple_diffs")
+            }
         }
         is CodeModernizerJobCompletedResult.JobFailed -> {
             message("codemodernizer.chat.message.result.fail_with_known_reason", result.failureReason)
@@ -532,7 +589,7 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
         type = CodeTransformChatMessageType.FinalizedAnswer,
         message = resultMessage,
         buttons = if (result is CodeModernizerJobCompletedResult.JobPartiallySucceeded || result is CodeModernizerJobCompletedResult.JobCompletedSuccessfully) {
-            listOf(viewDiffButton, viewSummaryButton)
+            listOf(createViewDiffButton(if (totalPatchFiles == 1) "View diff" else "View diff 1/$totalPatchFiles"), viewSummaryButton)
         } else if (result is CodeModernizerJobCompletedResult.JobFailedInitialBuild && result.hasBuildLog) {
             listOf(viewBuildLog)
         } else {
