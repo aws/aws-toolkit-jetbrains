@@ -1,0 +1,115 @@
+{
+    "schema": {
+        "version": "2.0"
+    },
+    "notifications": [
+        {
+            
+            "id": "example_id_12344",
+            "schedule": {
+                "type": "StartUp"
+            },
+            "severity": "Critical",
+            "condition": {
+                "compute": {
+                    "type": {
+                        "or": [
+                            {
+                                "==": "ec2"
+                            },
+                            {
+                                "==": "desktop"
+                            }
+                        ]
+                    },
+                    "architecture": {
+                        "!=": "x64"
+                    }
+                },
+                "os": {
+                    "type": {
+                        "anyOf": [
+                            "Darwin",
+                            "Linux"
+                        ]
+                    },
+                    "version": {
+                        "<=": "23.0.1.0"
+                    }
+                    
+                },
+                "ide": {
+                    "type": {
+                        "noneOf": [
+                            "PyCharm",
+                            "IDEA"
+                        ]
+                    },
+                    "version": {
+                        "and": [
+                            {
+                                ">=": "1.0"
+                            },
+                            {
+                                "<": "2.0"
+                            }
+                        ]
+                    }
+                },
+                "extension": {
+                    "type": {
+                        "==": "AWS Toolkit for JetBrains"
+                    },
+                    "version": {
+                        "<": "1.47.0.0"
+                    }
+                },
+                "authx": {
+                    "type": {
+                        "anyOf": [
+                            "IamIdentityCenter",
+                            "AwsBuilderId"
+                        ]
+                    },
+                    "region": {
+                        "==": "us-east-1"
+                    },
+                    "connectionState": {
+                        "!=": "Connected"
+                    },
+                    "ssoScopes": {
+                        "noneOf": [
+                            "codewhisperer:scope1",
+                            "sso:account:access"
+                        ]
+                    }
+                }
+            },
+            "content": {
+                "en-US": {
+                    "title": "Look at this!",
+                    "description": "Some bug is there"
+                }
+            },
+            "actions": [
+                {
+                    "type": "ShowMarketplace",
+                    "content": {
+                        "en-US": {
+                            "title": "Go to market"
+                        }
+                    }
+                },
+                {
+                    "type": "ShowUrl",
+                    "content": {
+                        "en-US": {
+                            "title": "Click me!",
+                            "url": "http://nowhere"
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

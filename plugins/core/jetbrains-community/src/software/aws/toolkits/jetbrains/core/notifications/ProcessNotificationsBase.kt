@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.core.notifications
 
+import com.intellij.openapi.project.Project
+
 class ProcessNotificationsBase {
     init {
         // TODO: install a listener for the polling class
@@ -17,8 +19,11 @@ class ProcessNotificationsBase {
         // iterates through the 2 lists and processes each notification(if it isn't dismissed)
     }
 
-    fun processNotification() {
-        // TODO: calls the Rule engine and notifies listeners
+    fun processNotification(project: Project, notificationData: NotificationData) {
+        val shouldShow = RulesEngine.displayNotification(project, notificationData)
+        if (shouldShow) {
+            // TODO: notifies listeners
+        }
     }
 
     fun notifyListenerForNotification() {
