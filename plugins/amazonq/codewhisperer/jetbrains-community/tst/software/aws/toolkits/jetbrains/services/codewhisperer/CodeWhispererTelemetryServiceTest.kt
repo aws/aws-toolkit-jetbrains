@@ -154,7 +154,7 @@ class CodeWhispererTelemetryServiceTest {
     @Test
     fun `test aggregateUserDecision`() {
         fun assertAggregateUserDecision(decisions: List<CodewhispererSuggestionState>, expected: CodewhispererSuggestionState) {
-            val actual = sut.aggregateUserDecision(decisions)
+            val actual = sut.aggregateUserDecision(decisions, false)
             assertThat(actual).isEqualTo(expected)
         }
 
@@ -199,6 +199,25 @@ class CodeWhispererTelemetryServiceTest {
                 CodewhispererSuggestionState.Empty
             ),
             CodewhispererSuggestionState.Empty
+        )
+    }
+
+    @Test
+    fun `test aggregateUserDecision when there was a previous reject`() {
+        fun assertAggregateUserDecision(decisions: List<CodewhispererSuggestionState>, expected: CodewhispererSuggestionState) {
+            val actual = sut.aggregateUserDecision(decisions, true)
+            assertThat(actual).isEqualTo(expected)
+        }
+
+        assertAggregateUserDecision(
+            listOf(
+                CodewhispererSuggestionState.Discard,
+                CodewhispererSuggestionState.Discard,
+                CodewhispererSuggestionState.Reject,
+                CodewhispererSuggestionState.Empty,
+                CodewhispererSuggestionState.Ignore
+            ),
+            CodewhispererSuggestionState.Ignore
         )
     }
 
