@@ -21,7 +21,7 @@ class ProcessNotificationsBase {
 
     fun processNotification(project: Project, notificationData: NotificationData) {
         val shouldShow = RulesEngine.displayNotification(project, notificationData)
-        if(shouldShow) {
+        if (shouldShow) {
             // TODO: notifies listeners
         }
     }

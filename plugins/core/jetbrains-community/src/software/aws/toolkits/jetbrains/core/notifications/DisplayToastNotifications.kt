@@ -3,6 +3,4 @@
 
 package software.aws.toolkits.jetbrains.core.notifications
 
-import com.intellij.openapi.project.Project
-
-object DisplayToastNotifications {}
+object DisplayToastNotifications
