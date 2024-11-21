@@ -11,10 +11,9 @@ import com.intellij.codeInsight.lookup.impl.LookupImpl
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.observable.util.addMouseHoverListener
 import com.intellij.ui.hover.HoverListener
-import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererServiceNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import java.awt.Component
 
 object CodeWhispererIntelliSenseAutoTriggerListener : LookupManagerListener {
@@ -33,6 +32,7 @@ object CodeWhispererIntelliSenseAutoTriggerListener : LookupManagerListener {
                 CodeWhispererAutoTriggerService.getInstance().tryInvokeAutoTrigger(editor, CodeWhispererAutomatedTriggerType.IntelliSense())
                 cleanup()
             }
+
             override fun lookupCanceled(event: LookupEvent) {
                 cleanup()
             }
@@ -42,21 +42,20 @@ object CodeWhispererIntelliSenseAutoTriggerListener : LookupManagerListener {
             }
         })
 
-        if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
-            (newLookup as LookupImpl).component.addMouseHoverListener(
-                newLookup,
-                object : HoverListener() {
-                    override fun mouseEntered(component: Component, x: Int, y: Int) {
-                        runReadAction {
-                            newLookup.project.messageBus.syncPublisher(
-                                CodeWhispererServiceNew.CODEWHISPERER_INTELLISENSE_POPUP_ON_HOVER,
-                            ).onEnter()
-                        }
+        (newLookup as LookupImpl).component.addMouseHoverListener(
+            newLookup,
+            object : HoverListener() {
+                override fun mouseEntered(component: Component, x: Int, y: Int) {
+                    runReadAction {
+                        newLookup.project.messageBus.syncPublisher(
+                            CodeWhispererService.CODEWHISPERER_INTELLISENSE_POPUP_ON_HOVER,
+                        ).onEnter()
                     }
-                    override fun mouseMoved(component: Component, x: Int, y: Int) {}
-                    override fun mouseExited(component: Component) {}
                 }
-            )
-        }
+
+                override fun mouseMoved(component: Component, x: Int, y: Int) {}
+                override fun mouseExited(component: Component) {}
+            }
+        )
     }
 }
