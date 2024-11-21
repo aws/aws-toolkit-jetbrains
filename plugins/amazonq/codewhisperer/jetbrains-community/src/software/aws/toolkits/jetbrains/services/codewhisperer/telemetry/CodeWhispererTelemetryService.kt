@@ -393,6 +393,7 @@ class CodeWhispererTelemetryService {
         hasUserAccepted: Boolean,
         popupShownTime: Duration? = null,
     ) {
+        var hasSentRejectedTrigger = false
         CodeWhispererService.getInstance().getAllPaginationSessions().forEach { (jobId, state) ->
             if (state == null) return@forEach
             val details = state.recommendationContext.details
@@ -405,9 +406,15 @@ class CodeWhispererTelemetryService {
             }
             LOG.debug { "jobId: $jobId, userDecisions: [${decisions.joinToString(", ")}]" }
 
-            with(aggregateUserDecision(decisions)) {
+            with(aggregateUserDecision(decisions, hasSentRejectedTrigger)) {
                 // the order of the following matters
                 // step 1, send out current decision
+
+                // if we have sent one reject in this display session(which can contain multiple triggers),
+                // we will not send rejects for the remaining triggers in this display session.
+                if (this == CodewhispererSuggestionState.Reject) {
+                    hasSentRejectedTrigger = true
+                }
                 LOG.debug { "jobId: $jobId, userTriggerDecision: $this" }
                 previousUserTriggerDecisionTimestamp = Instant.now()
 
@@ -455,7 +462,10 @@ class CodeWhispererTelemetryService {
      * - Record the accepted suggestion index
      * - Discard otherwise
      */
-    fun aggregateUserDecision(decisions: List<CodewhispererSuggestionState>): CodewhispererSuggestionState {
+    fun aggregateUserDecision(
+        decisions: List<CodewhispererSuggestionState>,
+        hasRejectedTrigger: Boolean,
+    ): CodewhispererSuggestionState {
         var isEmpty = true
         var isUnseen = true
         var isDiscard = true
@@ -464,7 +474,11 @@ class CodeWhispererTelemetryService {
             if (decision == CodewhispererSuggestionState.Accept) {
                 return CodewhispererSuggestionState.Accept
             } else if (decision == CodewhispererSuggestionState.Reject) {
-                return CodewhispererSuggestionState.Reject
+                return if (!hasRejectedTrigger) {
+                    CodewhispererSuggestionState.Reject
+                } else {
+                    CodewhispererSuggestionState.Ignore
+                }
             } else if (decision == CodewhispererSuggestionState.Unseen) {
                 isEmpty = false
                 isDiscard = false

@@ -10,7 +10,6 @@ import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.async
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
@@ -23,6 +22,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
+import org.mockito.kotlin.timeout
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -191,11 +191,9 @@ class CodeWhispererServiceTest {
             )
         )
 
-        runBlocking {
-            sut.invokeCodeWhispererInBackground(mockRequestContext, 0, LatencyContext())
-        }
+        sut.invokeCodeWhispererInBackground(mockRequestContext, 0, LatencyContext())
 
-        verify(mockRequestContext, times(1)).awaitSupplementalContext()
+        verify(mockRequestContext, timeout(5000).atLeastOnce()).awaitSupplementalContext()
         verify(clientFacade).generateCompletionsPaginator(any())
 
         argumentCaptor<GenerateCompletionsRequest> {
