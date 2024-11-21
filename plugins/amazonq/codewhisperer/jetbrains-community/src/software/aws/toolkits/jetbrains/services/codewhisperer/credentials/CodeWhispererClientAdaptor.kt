@@ -304,6 +304,18 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         val programmingLanguage = fileContext.programmingLanguage
         var e2eLatency = sessionContext.latencyContext.getCodeWhispererEndToEndLatency()
 
+        // service side will only aggregate perceivedLatency with non-zero value
+        // For client-side, if the decision is not accept and reject, we will set the value to 0
+        // If the decision is accept or reject, it's guaranteed that they will need a perceivedLatency
+        // of non-zero because for accept case it's trivial, for reject case, this trigger must be the
+        // first seen trigger and this is the only one reject in this display session.
+        val emittedPerceivedLatency =
+            if (suggestionState == CodewhispererSuggestionState.Accept || suggestionState == CodewhispererSuggestionState.Reject) {
+                sessionContext.latencyContext.perceivedLatency
+            } else {
+                0.0
+            }
+
         // When we send a userTriggerDecision of Empty or Discard, we set the time users see the first
         // suggestion to be now.
         if (e2eLatency < 0) {
@@ -320,7 +332,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     it.sessionId(responseContext.sessionId)
                     it.recommendationLatencyMilliseconds(e2eLatency)
                     it.triggerToResponseLatencyMilliseconds(sessionContext.latencyContext.paginationFirstCompletionTime)
-                    it.perceivedLatencyMilliseconds(sessionContext.latencyContext.perceivedLatency)
+                    it.perceivedLatencyMilliseconds(emittedPerceivedLatency)
                     it.suggestionState(suggestionState.toCodeWhispererSdkType())
                     it.timestamp(Instant.now())
                     it.suggestionReferenceCount(suggestionReferenceCount)
