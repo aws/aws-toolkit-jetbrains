@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.core.notifications
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
@@ -12,12 +13,14 @@ import com.intellij.openapi.components.Service
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import com.intellij.util.io.HttpRequests
+import software.aws.toolkits.core.utils.RemoteResolveParser
 import software.aws.toolkits.core.utils.RemoteResource
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.DefaultRemoteResourceResolverProvider
 import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
+import java.io.InputStream
 import java.time.Duration
 
 private const val NOTIFICATION_ENDPOINT = "https://idetoolkits-hostedfiles.amazonaws.com/Notifications/JetBrains/1.json" // TODO: Replace with actual endpoint
@@ -30,6 +33,18 @@ interface NotificationPollingService {
     fun dispose()
 }
 
+object NotificationFileValidator : RemoteResolveParser {
+    private val mapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    override fun canBeParsed(data: InputStream): Boolean {
+        return try {
+            mapper.readValue<NotificationsList>(data)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+}
+
 @Service(Service.Level.APP)
 class NotificationPollingServiceImpl :
     NotificationPollingService,
@@ -37,17 +52,16 @@ class NotificationPollingServiceImpl :
     Disposable {
 
     private var state = State()
-    private val mapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-    private var currentETag: String? = null // todo Persistant state? add an init possibly
+    private var currentETag: String? = null
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val pollingIntervalMs = Duration.ofMinutes(10).toMillis()
     private val resourceResolver: RemoteResourceResolverProvider = DefaultRemoteResourceResolverProvider()
     private val notificationsResource = object : RemoteResource {
         override val name: String = NOTIFICATIONS_RESOURCE_PATH
         override val urls: List<String> = listOf(NOTIFICATION_ENDPOINT)
+        override val remoteResolveParser: RemoteResolveParser = NotificationFileValidator
     }
 
-    // PersistentStateComponent implementation
     data class State(
         var currentETag: String? = null,
     )
@@ -64,7 +78,7 @@ class NotificationPollingServiceImpl :
 
     override fun startPolling() {
         pollForNotifications()
-
+        // todo notify observers
         alarm.addRequest(
             { startPolling() },
             pollingIntervalMs
