@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.core.notifications
 
+import com.intellij.notification.NotificationType
+import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.utils.notifyStickyWithData
 
@@ -17,7 +19,7 @@ object DisplayToastNotifications {
     }
 
     fun shouldShowNotification(project: Project, notificationData: NotificationData) {
-        if (RulesEngine.displayNotification(notificationData, project)) {
+        if (RulesEngine.displayNotification(project, notificationData)) {
             val notificationContent = notificationData.content.locale
             val severity = notificationData.severity
             val followupActions = NotificationManager.createActions(notificationData.actions, notificationContent.description, notificationContent.title)
