@@ -3,11 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
-import com.intellij.openapi.actionSystem.DataContext
-import com.intellij.openapi.actionSystem.IdeActions
-import com.intellij.openapi.editor.actionSystem.EditorActionManager
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.AnActionEvent
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
+import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.ACTION_KEY_NAV_NEXT
+import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.ACTION_KEY_NAV_PREV
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
 import javax.swing.JButton
 
@@ -34,10 +35,10 @@ class CodeWhispererNavigationTest : CodeWhispererTestBase() {
     }
 
     private fun testNavigation(isReverse: Boolean, useKeyboard: Boolean = false) {
-        withCodeWhispererServiceInvokedAndWait {
+        withCodeWhispererServiceInvokedAndWait { session ->
             val indexChange = if (isReverse) -1 else 1
 
-            assertThat(popupManagerSpy.sessionContext.selectedIndex).isEqualTo(0)
+            assertThat(session.selectedIndex).isEqualTo(0)
 
             val expectedCount = pythonResponse.completions().size
             var expectedSelectedIndex: Int
@@ -58,7 +59,7 @@ class CodeWhispererNavigationTest : CodeWhispererTestBase() {
                 }
             }
 
-            assertThat(popupManagerSpy.sessionContext.selectedIndex).isEqualTo(expectedSelectedIndex)
+            assertThat(session.selectedIndex).isEqualTo(expectedSelectedIndex)
             assertThat(oppositeButton.isEnabled).isEqualTo(false)
 
             repeat(expectedCount - 1) {
@@ -66,7 +67,7 @@ class CodeWhispererNavigationTest : CodeWhispererTestBase() {
                 navigateHelper(isReverse, useKeyboard)
                 assertThat(oppositeButton.isEnabled).isEqualTo(true)
                 expectedSelectedIndex = (expectedSelectedIndex + indexChange) % expectedCount
-                assertThat(popupManagerSpy.sessionContext.selectedIndex).isEqualTo(expectedSelectedIndex)
+                assertThat(session.selectedIndex).isEqualTo(expectedSelectedIndex)
                 checkRecommendationInfoLabelText(expectedSelectedIndex + 1, expectedCount)
             }
             assertThat(navigationButton.isEnabled).isEqualTo(false)
@@ -75,13 +76,13 @@ class CodeWhispererNavigationTest : CodeWhispererTestBase() {
 
     private fun navigateHelper(isReverse: Boolean, useKeyboard: Boolean) {
         if (useKeyboard) {
-            val actionHandler = EditorActionManager.getInstance()
+            val actionHandler = ActionManager.getInstance()
             if (isReverse) {
-                val leftArrowHandler = actionHandler.getActionHandler(IdeActions.ACTION_EDITOR_MOVE_CARET_LEFT)
-                leftArrowHandler.execute(projectRule.fixture.editor, null, DataContext.EMPTY_CONTEXT)
+                val leftArrowHandler = actionHandler.getAction(ACTION_KEY_NAV_PREV)
+                leftArrowHandler.actionPerformed(AnActionEvent.createFromDataContext("", null) { projectRule.project })
             } else {
-                val rightArrowHandler = actionHandler.getActionHandler(IdeActions.ACTION_EDITOR_MOVE_CARET_RIGHT)
-                rightArrowHandler.execute(projectRule.fixture.editor, null, DataContext.EMPTY_CONTEXT)
+                val rightArrowHandler = actionHandler.getAction(ACTION_KEY_NAV_NEXT)
+                rightArrowHandler.actionPerformed(AnActionEvent.createFromDataContext("", null) { projectRule.project })
             }
         } else {
             if (isReverse) {
