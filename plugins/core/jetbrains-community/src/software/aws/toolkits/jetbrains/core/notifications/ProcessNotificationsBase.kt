@@ -4,13 +4,16 @@
 package software.aws.toolkits.jetbrains.core.notifications
 
 import com.intellij.openapi.project.Project
+import java.nio.file.Path
 
 class ProcessNotificationsBase {
     init {
-        // TODO: install a listener for the polling class
+        NotificationPollingServiceImpl.getInstance().addObserver { path ->
+            getNotificationsFromFile(path)
+        }
     }
 
-    fun getNotificationsFromFile() {
+    fun getNotificationsFromFile(path: Path) {
         // TODO: returns a notification list
     }
 

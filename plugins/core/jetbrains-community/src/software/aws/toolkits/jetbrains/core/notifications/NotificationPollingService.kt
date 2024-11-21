@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.core.notifications
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
@@ -15,7 +16,6 @@ import com.intellij.util.AlarmFactory
 import com.intellij.util.io.HttpRequests
 import software.aws.toolkits.core.utils.RemoteResolveParser
 import software.aws.toolkits.core.utils.RemoteResource
-import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.DefaultRemoteResourceResolverProvider
@@ -31,6 +31,7 @@ private const val RETRY_DELAY_MS = 1000L
 
 interface NotificationPollingService {
     fun startPolling()
+    fun addObserver(observer: (Path) -> Unit)
     fun dispose()
 }
 
@@ -52,6 +53,7 @@ class NotificationPollingServiceImpl :
     PersistentStateComponent<NotificationPollingServiceImpl.State>,
     Disposable {
 
+    private val observers = mutableListOf<(Path) -> Unit>()
     private var state = State()
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val pollingIntervalMs = Duration.ofMinutes(10).toMillis()
@@ -62,24 +64,13 @@ class NotificationPollingServiceImpl :
         override val remoteResolveParser: RemoteResolveParser = NotificationFileValidator
     }
 
-    data class State(
-        var currentETag: String? = null,
-        var cachedFilePath: String? = null
-    )
-
-    override fun getState(): State = state
-
-    override fun loadState(state: State) {
-        this.state = state
-    }
-
-    override fun dispose() {
-        alarm.dispose()
-    }
-
     override fun startPolling() {
-        pollForNotifications()
-        // todo notify observers
+        val newNotifications = pollForNotifications()
+        if (newNotifications) {
+            getCachedPath()?.let { path ->
+                notifyObservers(path)
+            }
+        }
         alarm.addRequest(
             { startPolling() },
             pollingIntervalMs
@@ -98,7 +89,12 @@ class NotificationPollingServiceImpl :
             try {
                 val newETag = getNotificationETag()
                 if (newETag == state.currentETag) {
-                    LOG.debug { "No updates available for notifications" }
+                    RunOnceUtil.runOnceForApp(this::class.qualifiedName.toString()) {
+                        // try startup notifications regardless of file change
+                        getCachedPath()?.let { path ->
+                            notifyObservers(path)
+                        }
+                    }
                     return false
                 }
                 val resolvedPath = resourceResolver.get()
@@ -133,9 +129,14 @@ class NotificationPollingServiceImpl :
     fun getCachedPath(): Path? =
         state.cachedFilePath?.let { Paths.get(it) }
 
-    /**
-     * Emits telemetry metric for polling failures
-     */
+    override fun addObserver(observer: (Path) -> Unit) {
+        observers.add(observer)
+    }
+
+    private fun notifyObservers(path: Path) {
+        observers.forEach { it(path) }
+    }
+
     private fun emitFailureMetric(exception: Exception?) {
         // todo: add metric
     }
@@ -144,5 +145,20 @@ class NotificationPollingServiceImpl :
         private val LOG = getLogger<NotificationPollingServiceImpl>()
         fun getInstance(): NotificationPollingService =
             ApplicationManager.getApplication().getService(NotificationPollingService::class.java)
+    }
+
+    data class State(
+        var currentETag: String? = null,
+        var cachedFilePath: String? = null,
+    )
+
+    override fun getState(): State = state
+
+    override fun loadState(state: State) {
+        this.state = state
+    }
+
+    override fun dispose() {
+        alarm.dispose()
     }
 }
