@@ -11,9 +11,9 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiDocumentManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PAIRED_BRACKETS
@@ -23,17 +23,21 @@ import java.util.Stack
 
 @Service
 class CodeWhispererEditorManager {
-    fun updateEditorWithRecommendation(states: InvocationContext, sessionContext: SessionContext) {
-        val (requestContext, responseContext, recommendationContext) = states
-        val (project, editor) = requestContext
+    fun updateEditorWithRecommendation(sessionContext: SessionContext) {
+        val previews = CodeWhispererService.getInstance().getAllSuggestionsPreviewInfo()
+        val selectedIndex = sessionContext.selectedIndex
+        val preview = previews[selectedIndex]
+        val states = CodeWhispererService.getInstance().getAllPaginationSessions()[preview.jobId] ?: return
+        val (requestContext, responseContext) = states
+        val (project, editor) = sessionContext
         val document = editor.document
         val primaryCaret = editor.caretModel.primaryCaret
-        val selectedIndex = sessionContext.selectedIndex
-        val typeahead = sessionContext.typeahead
-        val detail = recommendationContext.details[selectedIndex]
+        val typeahead = preview.typeahead
+        val detail = preview.detail
+        val userInput = preview.userInput
         val reformatted = CodeWhispererPopupManager.getInstance().getReformattedRecommendation(
             detail,
-            recommendationContext.userInputSinceInvocation
+            userInput
         )
         val remainingRecommendation = reformatted.substring(typeahead.length)
         val originalOffset = primaryCaret.offset - typeahead.length
@@ -42,6 +46,8 @@ class CodeWhispererEditorManager {
 
         val insertEndOffset = sessionContext.insertEndOffset
         val endOffsetToReplace = if (insertEndOffset != -1) insertEndOffset else primaryCaret.offset
+
+        preview.detail.isAccepted = true
 
         WriteCommandAction.runWriteCommandAction(project) {
             document.replaceString(originalOffset, endOffsetToReplace, reformatted)
@@ -67,7 +73,7 @@ class CodeWhispererEditorManager {
 
                 ApplicationManager.getApplication().messageBus.syncPublisher(
                     CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
-                ).afterAccept(states, sessionContext, rangeMarker)
+                ).afterAccept(states, previews, sessionContext, rangeMarker)
             }
         }
     }
@@ -117,7 +123,9 @@ class CodeWhispererEditorManager {
             totalDocLengthChecked < lineText.length &&
             totalDocLengthChecked < recommendation.length
         ) {
+            var shouldContinue = true
             val currentDocChar = lineText[totalDocLengthChecked]
+
             if (!isMatchingSymbol(currentDocChar)) {
                 // currentDocChar is not a matching symbol, so we try to compare the remaining strings as a last step to match
                 val recommendationRemaining = recommendation.substring(current)
@@ -133,19 +141,20 @@ class CodeWhispererEditorManager {
             totalDocLengthChecked++
 
             // find symbol in the recommendation that will match this
-            while (current < recommendation.length) {
+            while (current < recommendation.length && shouldContinue) {
                 val char = recommendation[current]
                 current++
 
                 // if char isn't a paired symbol, or it is, but it's not the matching currentDocChar or
                 // the opening version of it, then we're done
-                if (!isMatchingSymbol(char) || (char != currentDocChar && PAIRED_BRACKETS[char] != currentDocChar)) {
-                    continue
-                }
-
-                // if char is an opening bracket, push it to the stack
-                if (PAIRED_BRACKETS[char] == currentDocChar) {
-                    bracketsStack.push(char)
+                if (!isMatchingSymbol(char) ||
+                    (char != currentDocChar && PAIRED_BRACKETS[char] != currentDocChar) ||
+                    PAIRED_BRACKETS[char] == currentDocChar
+                ) {
+                    // if char is an opening bracket, push it to the stack
+                    if (PAIRED_BRACKETS[char] == currentDocChar) {
+                        bracketsStack.push(char)
+                    }
                     continue
                 }
 
@@ -155,13 +164,13 @@ class CodeWhispererEditorManager {
                 // on the stack
                 if (char.isWhitespace()) {
                     result.add(current to caretOffset + totalDocLengthChecked)
-                    break
+                    shouldContinue = false
                 } else if (bracketsStack.isNotEmpty() && PAIRED_BRACKETS[bracketsStack.peek()] == char) {
                     bracketsStack.pop()
                 } else if (quotesStack.isNotEmpty() && quotesStack.peek().first == char) {
                     result.add(quotesStack.pop().second)
                     result.add(current to caretOffset + totalDocLengthChecked)
-                    break
+                    shouldContinue = false
                 } else {
                     // char does not have a matching opening symbol in the stack, if it's a (opening) bracket,
                     // immediately add it to the result; if it's a quote, push it to the stack
@@ -170,7 +179,7 @@ class CodeWhispererEditorManager {
                     } else {
                         result.add(current to caretOffset + totalDocLengthChecked)
                     }
-                    break
+                    shouldContinue = false
                 }
             }
         }
