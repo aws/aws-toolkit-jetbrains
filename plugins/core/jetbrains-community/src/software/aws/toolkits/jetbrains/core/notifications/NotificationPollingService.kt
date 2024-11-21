@@ -36,10 +36,9 @@ interface NotificationPollingService {
 }
 
 object NotificationFileValidator : RemoteResolveParser {
-    private val mapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     override fun canBeParsed(data: InputStream): Boolean {
         return try {
-            mapper.readValue<NotificationsList>(data)
+            NotificationMapperUtil.mapper.readValue<NotificationsList>(data)
             true
         } catch (e: Exception) {
             false
