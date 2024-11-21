@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "The key shortcuts for Q inline suggestions are now configurable from keymap settings. Default key shortcuts for navigating through suggestions are changed from left/right arrow keys to option(alt) + [ and option(alt) + ], respectively."
+}
