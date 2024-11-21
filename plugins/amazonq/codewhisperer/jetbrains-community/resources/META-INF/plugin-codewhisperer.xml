@@ -5,11 +5,7 @@
     <applicationListeners>
         <listener class="software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererUIChangeListener"
                   topic="software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupStateChangeListener"/>
-        <listener class="software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererUIChangeListenerNew"
-                  topic="software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupStateChangeListener"/>
         <listener class="software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceActionListener"
-                  topic="software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererUserActionListener"/>
-        <listener class="software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceActionListenerNew"
                   topic="software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererUserActionListener"/>
     </applicationListeners>
 
