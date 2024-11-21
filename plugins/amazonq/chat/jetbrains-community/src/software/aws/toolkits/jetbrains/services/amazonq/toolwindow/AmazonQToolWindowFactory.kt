@@ -44,9 +44,9 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         mainPanel.addToTop(notificationPanel)
         mainPanel.add(qPanel)
         val notifListener = ProcessNotificationsBase.getInstance(project)
-        notifListener.addListenerForNotification { title, message, followupActions ->
+        notifListener.addListenerForNotification { bannerContent ->
             runInEdt {
-                notificationPanel.updateNotificationPanel(title, message, followupActions)
+                notificationPanel.updateNotificationPanel(bannerContent)
             }
         }
 

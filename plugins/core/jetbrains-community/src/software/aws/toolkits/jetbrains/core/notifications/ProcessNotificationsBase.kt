@@ -31,7 +31,12 @@ class ProcessNotificationsBase {
         if (shouldShow) {
             val notificationContent = notificationData.content.locale
             val severity = notificationData.severity
-            val followupActions = NotificationManager.createActions(notificationData.actions, notificationContent.description, notificationContent.title)
+            val followupActions = NotificationManager.createActions(
+                project,
+                notificationData.actions,
+                notificationContent.description,
+                notificationContent.title
+            )
             showToast(
                 notificationContent.title,
                 notificationContent.description,
@@ -40,7 +45,9 @@ class ProcessNotificationsBase {
                 notificationData.id
             )
             if (severity == "Critical") {
-                notifyListenerForNotification(notificationContent.title, notificationContent.description, followupActions)
+                val bannerContent = BannerContent(notificationContent.title, notificationContent.description, followupActions, notificationData.id)
+                showBannerNotification[notificationData.id] = bannerContent
+                notifyListenerForNotification(bannerContent)
             }
         }
     }
@@ -54,15 +61,17 @@ class ProcessNotificationsBase {
         notifyStickyWithData(notifyType, title, message, null, action, notificationId)
     }
 
-    fun notifyListenerForNotification(title: String, description: String, followUpActions: List<NotificationActionList>) =
-        notifListener.forEach { it(title, description, followUpActions) }
+    fun notifyListenerForNotification(bannerContent: BannerContent) =
+        notifListener.forEach { it(bannerContent) }
 
     fun addListenerForNotification(newNotifListener: NotifListener) =
         notifListener.add(newNotifListener)
 
     companion object {
         fun getInstance(project: Project): ProcessNotificationsBase = project.service()
+
+        val showBannerNotification = mutableMapOf<String, BannerContent>()
     }
 }
 
-typealias NotifListener = (title: String, message: String, followupActions: List<NotificationActionList>) -> Unit
+typealias NotifListener = (bannerContent: BannerContent) -> Unit

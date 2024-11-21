@@ -17,6 +17,7 @@ import com.intellij.ui.ScrollPaneFactory
 import org.slf4j.LoggerFactory
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.help.HelpIds
+import software.aws.toolkits.jetbrains.core.notifications.ProcessNotificationsBase
 import software.aws.toolkits.resources.AwsCoreBundle
 import javax.swing.JLabel
 import javax.swing.JTextArea
@@ -65,7 +66,7 @@ fun notifyStickyWithData(
         createNotificationExpiringAction(
             object : AnAction("Dismiss") {
                 override fun actionPerformed(e: AnActionEvent) {
-                    id
+                    ProcessNotificationsBase.showBannerNotification.remove(id)
                     // TODO: add id to dismissed notification list
                 }
             }

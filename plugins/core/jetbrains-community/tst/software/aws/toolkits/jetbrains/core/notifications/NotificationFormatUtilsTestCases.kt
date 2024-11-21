@@ -301,7 +301,7 @@ val notificationWithValidConnectionData = NotificationData(
             AuthxType(
                 feature = "q",
                 type = NotificationExpression.AnyOfCondition(listOf("Idc", "BuilderId")),
-                region = NotificationExpression.ComparisonCondition("us-west-2"),
+                region = NotificationExpression.ComparisonCondition("us-east-1"),
                 connectionState = NotificationExpression.ComparisonCondition("Connected"),
                 ssoScopes = null
             )

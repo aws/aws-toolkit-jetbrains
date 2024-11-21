@@ -10,8 +10,9 @@ import com.intellij.openapi.components.service
 import com.intellij.ui.EditorNotificationPanel
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.util.ui.components.BorderLayoutPanel
-import software.aws.toolkits.jetbrains.core.notifications.NotificationActionList
+import software.aws.toolkits.jetbrains.core.notifications.BannerContent
 import software.aws.toolkits.jetbrains.core.notifications.NotificationManager
+import software.aws.toolkits.jetbrains.core.notifications.ProcessNotificationsBase
 import software.aws.toolkits.resources.AwsCoreBundle
 
 @Service(Service.Level.PROJECT)
@@ -20,20 +21,25 @@ class NotificationPanel : BorderLayoutPanel() {
     init {
         isOpaque = false
         addToCenter(wrapper)
+        // will show only 1 critical notification
+        ProcessNotificationsBase.showBannerNotification.forEach {
+            updateNotificationPanel(it.value)
+        }
     }
 
-    private fun removeNotificationPanel() = runInEdt {
+    private fun removeNotificationPanel(notificationId: String) = runInEdt {
+        ProcessNotificationsBase.showBannerNotification.remove(notificationId) // TODO: add id to dismissed notification list
         wrapper.removeAll()
     }
 
-    fun updateNotificationPanel(title: String, message: String, notificationActionList: List<NotificationActionList>) {
+    fun updateNotificationPanel(bannerContent: BannerContent) {
         val panel = EditorNotificationPanel()
-        panel.text = title
+        panel.text = bannerContent.title
         panel.icon(AllIcons.General.Error)
-        val panelWithActions = NotificationManager.buildBannerPanel(panel, notificationActionList)
+        val panelWithActions = NotificationManager.buildBannerPanel(panel, bannerContent.actions)
 
         panelWithActions.createActionLabel(AwsCoreBundle.message("general.dismiss")) {
-            removeNotificationPanel()
+            removeNotificationPanel(bannerContent.id)
         }
 
         wrapper.setContent(panelWithActions)

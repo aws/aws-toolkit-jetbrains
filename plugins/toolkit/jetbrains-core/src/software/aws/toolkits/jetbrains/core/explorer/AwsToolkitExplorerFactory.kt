@@ -55,9 +55,9 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         mainPanel.addToTop(notificationPanel)
         mainPanel.add(toolkitPanel)
         val notifListener = ProcessNotificationsBase.getInstance(project)
-        notifListener.addListenerForNotification { title, message, followupActions ->
+        notifListener.addListenerForNotification { bannerContent ->
             runInEdt {
-                notificationPanel.updateNotificationPanel(title, message, followupActions)
+                notificationPanel.updateNotificationPanel(bannerContent)
             }
         }
         toolWindow.helpId = HelpIds.EXPLORER_WINDOW.id

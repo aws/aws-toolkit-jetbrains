@@ -7,6 +7,7 @@ import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.EditorNotificationPanel
 import software.aws.toolkits.jetbrains.AwsToolkit
@@ -21,31 +22,16 @@ fun checkSeverity(notificationSeverity: String): NotificationSeverity = when (no
 
 object NotificationManager {
     fun createActions(
+        project: Project,
         followupActions: List<NotificationFollowupActions>?,
         message: String,
         title: String,
 
     ): List<NotificationActionList> = buildList {
-        add(
-            NotificationActionList(AwsCoreBundle.message("notification.expand")) {
-                Messages.showYesNoDialog(
-                    null,
-                    message,
-                    title,
-                    AwsCoreBundle.message("general.ok"),
-                    AwsCoreBundle.message("general.cancel"),
-                    AllIcons.General.Error
-                )
-            }
-        )
-
+        var url: String? = null
         followupActions?.forEach { action ->
             if (action.type == "ShowUrl") {
-                add(
-                    NotificationActionList(AwsCoreBundle.message("notification.learn_more")) {
-                        action.content.locale.url?.let { url -> BrowserUtil.browse(url) }
-                    }
-                )
+                url = action.content.locale.url
             }
 
             if (action.type == "UpdateExtension") {
@@ -64,6 +50,32 @@ object NotificationManager {
                 )
             }
         }
+        add(
+            NotificationActionList(AwsCoreBundle.message("general.more_dialog")) {
+                if (url == null) {
+                    Messages.showYesNoDialog(
+                        project,
+                        message,
+                        title,
+                        AwsCoreBundle.message("general.acknowledge"),
+                        AwsCoreBundle.message("general.cancel"),
+                        AllIcons.General.Error
+                    )
+                } else {
+                    val openLink = Messages.showYesNoDialog(
+                        project,
+                        message,
+                        title,
+                        AwsCoreBundle.message(AwsCoreBundle.message("notification.learn_more")),
+                        AwsCoreBundle.message("general.cancel"),
+                        AllIcons.General.Error
+                    )
+                    if (openLink == 0) {
+                        BrowserUtil.browse(url!!)
+                    }
+                }
+            }
+        )
     }
 
     fun buildNotificationActions(actions: List<NotificationActionList>): List<AnAction> = actions.map { (title, block) ->
@@ -88,4 +100,11 @@ object NotificationManager {
 data class NotificationActionList(
     val title: String,
     val blockToExecute: () -> Unit,
+)
+
+data class BannerContent(
+    val title: String,
+    val message: String,
+    val actions: List<NotificationActionList>,
+    val id: String,
 )
