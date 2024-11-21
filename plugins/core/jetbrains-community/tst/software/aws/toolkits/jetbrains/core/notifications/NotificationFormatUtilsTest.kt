@@ -13,10 +13,9 @@ import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
@@ -31,7 +30,6 @@ import java.nio.file.Paths
 import java.util.stream.Stream
 
 @ExtendWith(ApplicationExtension::class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class NotificationFormatUtilsTest {
     @Rule
     @JvmField
@@ -40,7 +38,7 @@ class NotificationFormatUtilsTest {
     private lateinit var mockSystemDetails: SystemDetails
     private lateinit var exampleNotification: InputStream
 
-    @BeforeAll
+    @BeforeEach
     fun setUp() {
         mockSystemDetails = SystemDetails(
             computeType = "Local",
@@ -68,7 +66,7 @@ class NotificationFormatUtilsTest {
         )
     }
 
-    @AfterAll
+    @AfterEach
     fun tearDown() {
         unmockkAll()
     }
