@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "The Q suggestion inline popup will now hide by default and will show when the user hovers over the suggestion text, the IDE code suggestion popup will also appear to be more transparent to unblock seeing the multi-line suggestions."
+}

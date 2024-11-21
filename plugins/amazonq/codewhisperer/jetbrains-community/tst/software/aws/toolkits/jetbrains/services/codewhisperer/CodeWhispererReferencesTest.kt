@@ -56,8 +56,8 @@ class CodeWhispererReferencesTest : CodeWhispererTestBase() {
             }
         }
 
-        withCodeWhispererServiceInvokedAndWait { states ->
-            states.recommendationContext.details.forEach {
+        withCodeWhispererServiceInvokedAndWait { session ->
+            codewhispererService.getAllSuggestionsPreviewInfo().map { it.detail }.forEach {
                 assertThat(it.recommendation.references().isEmpty()).isEqualTo(invalid)
             }
             popupManagerSpy.popupComponents.acceptButton.doClick()
