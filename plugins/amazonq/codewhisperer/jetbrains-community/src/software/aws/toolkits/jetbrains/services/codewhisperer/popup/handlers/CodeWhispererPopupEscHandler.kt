@@ -6,11 +6,11 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererServiceNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 
-class CodeWhispererPopupEscHandler(sessionContext: SessionContextNew) : CodeWhispererEditorActionHandlerNew(sessionContext) {
+class CodeWhispererPopupEscHandler(sessionContext: SessionContext) : CodeWhispererEditorActionHandler(sessionContext) {
     override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
-        CodeWhispererServiceNew.getInstance().disposeDisplaySession(false)
+        CodeWhispererService.getInstance().disposeDisplaySession(false)
     }
 }
