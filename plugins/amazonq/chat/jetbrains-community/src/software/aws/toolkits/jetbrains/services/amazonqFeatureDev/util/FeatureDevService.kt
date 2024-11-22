@@ -65,7 +65,14 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
                 errMssg = e.awsErrorDetails().errorMessage()
                 logger.warn(e) { "Start conversation failed for request: ${e.requestId()}" }
 
-                if (e is software.amazon.awssdk.services.codewhispererruntime.model.ServiceQuotaExceededException) {
+                // BE service will throw ServiceQuota if conversation limit is reached. API Front-end will throw Throttling with this message if conversation limit is reached
+                if (
+                    e is software.amazon.awssdk.services.codewhispererruntime.model.ServiceQuotaExceededException ||
+                    (
+                        e is software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException &&
+                            e.message?.contains("reached for this month.") == true
+                        )
+                ) {
                     throw MonthlyConversationLimitError(errMssg, operation = FeatureDevOperation.CreateConversation.toString(), desc = null, cause = e.cause)
                 }
             }
@@ -134,10 +141,19 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
                 errMssg = e.awsErrorDetails().errorMessage()
                 logger.warn(e) { "StartTaskAssistCodeGeneration failed for request: ${e.requestId()}" }
 
-                if (e is software.amazon.awssdk.services.codewhispererruntime.model.ServiceQuotaExceededException || (
-                        e is software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException && e.message?.contains(
-                            "limit for number of iterations on a code generation"
-                        ) == true
+                // API Front-end will throw Throttling if conversation limit is reached. API Front-end monitors StartCodeGeneration for throttling
+                if (e is software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException &&
+                    e.message?.contains("StartTaskAssistCodeGeneration reached for this month.") == true
+                ) {
+                    throw MonthlyConversationLimitError(errMssg, operation = FeatureDevOperation.StartTaskAssistCodeGeneration.toString(), desc = null, e.cause)
+                }
+                // BE service will throw ServiceQuota if code generation iteration limit is reached
+                else if (e is software.amazon.awssdk.services.codewhispererruntime.model.ServiceQuotaExceededException || (
+                        e is software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException && (
+                            e.message?.contains(
+                                "limit for number of iterations on a code generation"
+                            ) == true
+                            )
                         )
                 ) {
                     throw CodeIterationLimitException(operation = FeatureDevOperation.StartTaskAssistCodeGeneration.toString(), desc = null, e.cause)
