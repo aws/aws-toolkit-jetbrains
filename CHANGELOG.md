@@ -1,3 +1,17 @@
+# _3.41_ (2024-11-22)
+- **(Feature)** Amazon Q /dev: support `.gradle` files
+- **(Feature)** Inline Auto trigger will now happen more consistently and will not conflict with JetBrains code completion.
+- **(Feature)** Uses AB variation as the name for overriden customizations
+- **(Feature)** Code Transform: Enable support for Java 17 projects.
+- **(Feature)** The key shortcuts for Q inline suggestions are now configurable from keymap settings. Default key shortcuts for navigating through suggestions are changed from left/right arrow keys to option(alt) + [ and option(alt) + ], respectively.
+- **(Feature)** The Q suggestion inline popup will now hide by default and will show when the user hovers over the suggestion text, the IDE code suggestion popup will also appear to be more transparent to unblock seeing the multi-line suggestions.
+- **(Feature)** Feature(Amazon Q Code Transformation): support conversions of embedded SQL from Oracle to PostgreSQL
+- **(Bug Fix)** Amazon Q chat: `@workspace` command shown in all tab types
+- **(Bug Fix)** Amazon Q Feature Dev: display limit reached error message
+- **(Bug Fix)** Amazon Q Chat: Changed default info color on dark themes to be blue, instead of gray
+- **(Removal)** Removed support for Gateway 2024.2
+- **(Removal)** Removed support for 2023.3.x IDEs
+
 # _3.40_ (2024-11-14)
 - **(Feature)** Amazon Q /dev: Add an action to accept individual files
 - **(Bug Fix)** Fix a bug when Amazon Q responds with still indexing message even when `@workspace` index is done
