@@ -26,7 +26,5 @@
     <projectListeners>
         <listener class="software.aws.toolkits.jetbrains.services.telemetry.OpenedFileTypesMetricsListener" topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
     </projectListeners>
-<actions>
-    <action class="software.aws.toolkits.jetbrains.core.notifications.DummyNotificationAction"/>
-</actions>
+
 </idea-plugin>

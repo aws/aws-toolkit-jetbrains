@@ -13,6 +13,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.openapi.wm.ex.ToolWindowEx
+import com.intellij.ui.components.panels.Wrapper
 import com.intellij.util.messages.Topic
 import com.intellij.util.ui.components.BorderLayoutPanel
 import software.aws.toolkits.core.utils.debug
@@ -32,11 +33,10 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROL
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.experiments.ExperimentsActionGroup
-import software.aws.toolkits.jetbrains.core.explorer.webview.NotificationPanel
-import software.aws.toolkits.jetbrains.core.explorer.webview.OuterToolkitPanel
 import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
 import software.aws.toolkits.jetbrains.core.explorer.webview.shouldPromptToolkitReauth
 import software.aws.toolkits.jetbrains.core.help.HelpIds
+import software.aws.toolkits.jetbrains.core.notifications.NotificationPanel
 import software.aws.toolkits.jetbrains.core.notifications.ProcessNotificationsBase
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.utils.actions.OpenBrowserAction
@@ -50,7 +50,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val notificationPanel = NotificationPanel()
-        val toolkitPanel = OuterToolkitPanel(project)
+        val toolkitPanel = Wrapper()
         val mainPanel = BorderLayoutPanel()
         mainPanel.addToTop(notificationPanel)
         mainPanel.add(toolkitPanel)
@@ -102,7 +102,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             AwsToolkitExplorerToolWindow.getInstance(project)
         }
 
-        toolkitPanel.updateToolkitPanel(component)
+        toolkitPanel.setContent(component)
 
         val content = contentManager.factory.createContent(mainPanel, null, false).also {
             it.isCloseable = true
@@ -161,7 +161,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         toolWindow.stripeTitle = message("aws.notification.title")
     }
 
-    private fun connectionChanged(project: Project, newConnection: ToolkitConnection?, toolkitPanel: OuterToolkitPanel) {
+    private fun connectionChanged(project: Project, newConnection: ToolkitConnection?, toolkitPanel: Wrapper) {
         val isNewConnToolkitConnection = when (newConnection) {
             is AwsConnectionManagerConnection -> {
                 LOG.debug { "IAM connection" }
@@ -191,7 +191,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         }
     }
 
-    private fun settingsStateChanged(project: Project, newState: ConnectionState, toolkitPanel: OuterToolkitPanel) {
+    private fun settingsStateChanged(project: Project, newState: ConnectionState, toolkitPanel: Wrapper) {
         val isToolkitConnected = if (newState is ConnectionState.ValidConnection) {
             true
         } else {
@@ -208,9 +208,9 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         }
     }
 
-    private fun loadContent(component: JComponent, toolkitPanel: OuterToolkitPanel) {
+    private fun loadContent(component: JComponent, toolkitPanel: Wrapper) {
         runInEdt {
-            toolkitPanel.updateToolkitPanel(component)
+            toolkitPanel.setContent(component)
         }
     }
 
