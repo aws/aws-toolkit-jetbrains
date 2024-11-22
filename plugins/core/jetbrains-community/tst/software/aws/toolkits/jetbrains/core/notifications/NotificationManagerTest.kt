@@ -6,15 +6,21 @@ package software.aws.toolkits.jetbrains.core.notifications
 import com.intellij.testFramework.ApplicationExtension
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Rule
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.api.extension.Extension
+import org.junit.jupiter.api.extension.RegisterExtension
 
 @ExtendWith(ApplicationExtension::class)
 class NotificationManagerTest {
-    @Rule
-    @JvmField
+
     val projectRule = ProjectRule()
+
+    @JvmField
+    @RegisterExtension
+    val testExtension = object : Extension {
+        fun getProject() = projectRule.project
+    }
 
     @Test
     fun `If no follow-up actions, expand action is present`() {
