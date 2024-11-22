@@ -24,6 +24,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthE
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ExportParseException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeGenerationStreamResult
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
@@ -192,6 +193,37 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
             )
         }.isExactlyInstanceOf(CodeIterationLimitException::class.java).withFailMessage(
             message("amazonqFeatureDev.code_generation.iteration_limit.error_text"),
+        )
+    }
+
+    @Test
+    fun `test startTaskAssistConversation throws ThrottlingException, different case`() {
+        val exampleCWException =
+            ThrottlingException
+                .builder()
+                .awsErrorDetails(
+                    AwsErrorDetails.builder().errorMessage("StartTaskAssistCodeGeneration reached for this month.").build(),
+                ).build()
+        whenever(
+            featureDevClient.startTaskAssistCodeGeneration(
+                testConversationId,
+                testUploadId,
+                userMessage,
+                codeGenerationId = codeGenerationId,
+                currentCodeGenerationId = "EMPTY_CURRENT_CODE_GENERATION_ID",
+            ),
+        ).thenThrow(exampleCWException)
+
+        assertThatThrownBy {
+            featureDevService.startTaskAssistCodeGeneration(
+                testConversationId,
+                testUploadId,
+                userMessage,
+                codeGenerationId = codeGenerationId,
+                currentCodeGenerationId = "EMPTY_CURRENT_CODE_GENERATION_ID",
+            )
+        }.isExactlyInstanceOf(MonthlyConversationLimitError::class.java).withFailMessage(
+            message("amazonqFeatureDev.exception.monthly_limit_error"),
         )
     }
 
