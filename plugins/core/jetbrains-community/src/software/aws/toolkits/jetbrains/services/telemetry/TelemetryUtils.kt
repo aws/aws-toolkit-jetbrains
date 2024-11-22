@@ -61,6 +61,7 @@ val ALLOWED_CODE_EXTENSIONS = setOf(
     "gd",
     "go",
     "gql",
+    "gradle",
     "graphql",
     "groovy",
     "gs",
