@@ -8,14 +8,13 @@ import com.intellij.openapi.startup.ProjectActivity
 import java.util.concurrent.atomic.AtomicBoolean
 
 internal class NotificationServiceInitializer : ProjectActivity {
-    companion object {
-        private val initialized = AtomicBoolean(false)
-    }
+
+    private val initialized = AtomicBoolean(false)
 
     override suspend fun execute(project: Project) {
-        val service = NotificationPollingService.getInstance()
-        ProcessNotificationsBase()
         if (initialized.compareAndSet(false, true)) {
+            val service = NotificationPollingService.getInstance()
+            ProcessNotificationsBase()
             service.startPolling()
         }
     }
