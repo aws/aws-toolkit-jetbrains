@@ -1,0 +1,41 @@
+{
+  "date" : "2024-11-22",
+  "version" : "3.41",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Amazon Q /dev: support `.gradle` files"
+  }, {
+    "type" : "feature",
+    "description" : "Inline Auto trigger will now happen more consistently and will not conflict with JetBrains code completion."
+  }, {
+    "type" : "feature",
+    "description" : "Uses AB variation as the name for overriden customizations"
+  }, {
+    "type" : "feature",
+    "description" : "Code Transform: Enable support for Java 17 projects."
+  }, {
+    "type" : "feature",
+    "description" : "The key shortcuts for Q inline suggestions are now configurable from keymap settings. Default key shortcuts for navigating through suggestions are changed from left/right arrow keys to option(alt) + [ and option(alt) + ], respectively."
+  }, {
+    "type" : "feature",
+    "description" : "The Q suggestion inline popup will now hide by default and will show when the user hovers over the suggestion text, the IDE code suggestion popup will also appear to be more transparent to unblock seeing the multi-line suggestions."
+  }, {
+    "type" : "feature",
+    "description" : "Feature(Amazon Q Code Transformation): support conversions of embedded SQL from Oracle to PostgreSQL"
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q chat: `@workspace` command shown in all tab types"
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q Feature Dev: display limit reached error message"
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q Chat: Changed default info color on dark themes to be blue, instead of gray"
+  }, {
+    "type" : "removal",
+    "description" : "Removed support for Gateway 2024.2"
+  }, {
+    "type" : "removal",
+    "description" : "Removed support for 2023.3.x IDEs"
+  } ]
+}
