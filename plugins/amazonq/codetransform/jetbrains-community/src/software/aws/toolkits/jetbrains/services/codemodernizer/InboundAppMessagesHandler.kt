@@ -23,6 +23,8 @@ interface InboundAppMessagesHandler {
 
     suspend fun processCodeTransformConfirmSkipTests(message: IncomingCodeTransformMessage.CodeTransformConfirmSkipTests)
 
+    suspend fun processCodeTransformOneOrMultipleDiffs(message: IncomingCodeTransformMessage.CodeTransformConfirmOneOrMultipleDiffs)
+
     suspend fun processCodeTransformOpenTransformHub(message: IncomingCodeTransformMessage.CodeTransformOpenTransformHub)
 
     suspend fun processCodeTransformOpenMvnBuild(message: IncomingCodeTransformMessage.CodeTransformOpenMvnBuild)
