@@ -3,16 +3,19 @@
 
 package software.aws.toolkits.jetbrains.core.notifications
 
-import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
+import java.util.concurrent.atomic.AtomicBoolean
 
 internal class NotificationServiceInitializer : ProjectActivity {
+    companion object {
+        private val initialized = AtomicBoolean(false)
+    }
 
     override suspend fun execute(project: Project) {
         val service = NotificationPollingService.getInstance()
         ProcessNotificationsBase()
-        RunOnceUtil.runOnceForApp(this::class.qualifiedName.toString()) {
+        if (initialized.compareAndSet(false, true)) {
             service.startPolling()
         }
     }

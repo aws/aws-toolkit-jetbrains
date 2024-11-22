@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.core.notifications
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
@@ -22,6 +21,7 @@ import software.aws.toolkits.telemetry.Component
 import software.aws.toolkits.telemetry.ToolkitTelemetry
 import java.io.InputStream
 import java.time.Duration
+import java.util.concurrent.atomic.AtomicBoolean
 
 private const val NOTIFICATION_ENDPOINT = "" // TODO: Replace with actual endpoint
 private const val MAX_RETRIES = 3
@@ -87,8 +87,7 @@ class NotificationPollingService : Disposable {
             try {
                 val newETag = getNotificationETag()
                 if (newETag == NotificationState.getState().etag) {
-                    RunOnceUtil.runOnceForApp(this::class.qualifiedName.toString()) {
-                        // try startup notifications regardless of file change
+                    if (firstPoll.compareAndSet(false, true)) {
                         notifyObservers()
                     }
                     return false
@@ -146,6 +145,7 @@ class NotificationPollingService : Disposable {
     }
 
     companion object {
+        private val firstPoll = AtomicBoolean(false)
         private val LOG = getLogger<NotificationPollingService>()
         fun getInstance(): NotificationPollingService =
             ApplicationManager.getApplication().getService(NotificationPollingService::class.java)
