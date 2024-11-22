@@ -11,6 +11,7 @@ internal class NotificationServiceInitializer : ProjectActivity {
 
     override suspend fun execute(project: Project) {
         val service = NotificationPollingService.getInstance()
+        ProcessNotificationsBase()
         RunOnceUtil.runOnceForApp(this::class.qualifiedName.toString()) {
             service.startPolling()
         }

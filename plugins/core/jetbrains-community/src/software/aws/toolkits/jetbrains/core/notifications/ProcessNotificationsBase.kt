@@ -6,25 +6,33 @@ package software.aws.toolkits.jetbrains.core.notifications
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.core.utils.inputStream
 import java.nio.file.Path
+import java.nio.file.Paths
 
 object NotificationMapperUtil {
     val mapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 }
 
 class ProcessNotificationsBase {
+
     init {
-        NotificationPollingService.getInstance().addObserver { path ->
-            getNotificationsFromFile(path)
+        NotificationPollingService.getInstance().addObserver {
+            val list = getNotificationsFromFile()
+            println("here")
         }
     }
 
-    fun getNotificationsFromFile(path: Path): NotificationsList =
-        path.inputStream().use { data ->
-            NotificationMapperUtil.mapper.readValue<NotificationsList>(data)
+    fun getNotificationsFromFile(): NotificationsList? {
+        val path = Paths.get(PathManager.getSystemPath(), NOTIFICATIONS_PATH)
+        val content = path.inputStream().bufferedReader().use { it.readText() }
+        if (content.isEmpty()) {
+            return null
         }
+        return NotificationMapperUtil.mapper.readValue(content)
+    }
 
     fun retrieveStartupAndEmergencyNotifications() {
         // TODO: separates notifications into startup and emergency
@@ -42,5 +50,9 @@ class ProcessNotificationsBase {
     }
 
     fun addListenerForNotification() {
+    }
+
+    companion object {
+        private const val NOTIFICATIONS_PATH = "aws-static-resources/notifications.json"
     }
 }

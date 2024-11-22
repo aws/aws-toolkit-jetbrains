@@ -23,7 +23,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
 
-private const val NOTIFICATION_ENDPOINT = "https://idetoolkits-hostedfiles.amazonaws.com/Notifications/JetBrains/1.json" // TODO: Replace with actual endpoint
+private const val NOTIFICATION_ENDPOINT = "" // TODO: Replace with actual endpoint
 private const val MAX_RETRIES = 3
 private const val RETRY_DELAY_MS = 1000L
 
@@ -43,7 +43,7 @@ class NotificationPollingService :
     PersistentStateComponent<NotificationPollingService.State>,
     Disposable {
 
-    private val observers = mutableListOf<(Path) -> Unit>()
+    private val observers = mutableListOf<(Unit) -> Unit>()
     private var state = State()
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val pollingIntervalMs = Duration.ofMinutes(10).toMillis()
@@ -57,9 +57,7 @@ class NotificationPollingService :
     fun startPolling() {
         val newNotifications = pollForNotifications()
         if (newNotifications) {
-            getCachedPath()?.let { path ->
-                notifyObservers(path)
-            }
+            notifyObservers()
         }
         alarm.addRequest(
             { startPolling() },
@@ -81,9 +79,7 @@ class NotificationPollingService :
                 if (newETag == state.currentETag) {
                     RunOnceUtil.runOnceForApp(this::class.qualifiedName.toString()) {
                         // try startup notifications regardless of file change
-                        getCachedPath()?.let { path ->
-                            notifyObservers(path)
-                        }
+                        notifyObservers()
                     }
                     return false
                 }
@@ -119,12 +115,14 @@ class NotificationPollingService :
     fun getCachedPath(): Path? =
         state.cachedFilePath?.let { Paths.get(it) }
 
-    fun addObserver(observer: (Path) -> Unit) {
+    fun addObserver(observer: (Unit) -> Unit) {
         observers.add(observer)
     }
 
-    private fun notifyObservers(path: Path) {
-        observers.forEach { it(path) }
+    private fun notifyObservers() {
+        observers.forEach {observer ->
+            observer(Unit)
+        }
     }
 
     private fun emitFailureMetric(exception: Exception?) {
