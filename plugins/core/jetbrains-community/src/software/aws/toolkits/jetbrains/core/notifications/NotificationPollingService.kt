@@ -54,7 +54,7 @@ object NotificationState : PersistentStateComponent<NotificationState.State> {
 
 @Service(Service.Level.APP)
 class NotificationPollingService : Disposable {
-    private val observers = mutableListOf<(Unit) -> Unit>()
+    private val observers = mutableListOf<() -> Unit>()
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val pollingIntervalMs = Duration.ofMinutes(10).toMillis()
     private val resourceResolver: RemoteResourceResolverProvider = DefaultRemoteResourceResolverProvider()
@@ -130,13 +130,11 @@ class NotificationPollingService : Disposable {
         )
     }
 
-    fun addObserver(observer: (Unit) -> Unit) {
-        observers.add(observer)
-    }
+    fun addObserver(observer: () -> Unit) = observers.add(observer)
 
     private fun notifyObservers() {
         observers.forEach { observer ->
-            observer(Unit)
+            observer()
         }
     }
 
