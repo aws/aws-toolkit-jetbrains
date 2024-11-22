@@ -19,11 +19,11 @@ class ProcessNotificationsBase {
 
     init {
         NotificationPollingService.getInstance().addObserver {
-            val list = getNotificationsFromFile()
+            getNotificationsFromFile()
         }
     }
 
-    fun getNotificationsFromFile(): NotificationsList? {
+    private fun getNotificationsFromFile(): NotificationsList? {
         val path = Paths.get(PathManager.getSystemPath(), NOTIFICATIONS_PATH)
         val content = path.inputStream().bufferedReader().use { it.readText() }
         if (content.isEmpty()) {

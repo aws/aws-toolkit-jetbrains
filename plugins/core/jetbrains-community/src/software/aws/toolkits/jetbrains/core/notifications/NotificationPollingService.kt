@@ -31,14 +31,13 @@ private const val MAX_RETRIES = 3
 private const val RETRY_DELAY_MS = 1000L
 
 object NotificationFileValidator : RemoteResolveParser {
-    override fun canBeParsed(data: InputStream): Boolean {
-        return try {
+    override fun canBeParsed(data: InputStream): Boolean =
+        try {
             NotificationMapperUtil.mapper.readValue<NotificationsList>(data)
             true
         } catch (e: Exception) {
             false
         }
-    }
 }
 
 @State(name = "NotificationETagState", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
@@ -96,7 +95,7 @@ class NotificationPollingService : Disposable {
                     }
                     return false
                 }
-                val resolvedPath = resourceResolver.get()
+                resourceResolver.get()
                     .resolve(notificationsResource)
                     .toCompletableFuture()
                     .get()
