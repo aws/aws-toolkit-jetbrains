@@ -108,7 +108,7 @@ class EditorThemeAdapter {
                 secondaryButtonBackground = themeColor("Button.startBackground", default = 0xFFFFFF, darkDefault = 0x4C5052),
                 secondaryButtonForeground = themeColor("Button.foreground", default = 0x000000, darkDefault = 0xBBBBBB),
 
-                info = themeColor("ProgressBar.progressColor", default = 0x1E82E6, darkDefault = 0xA0A0A0),
+                info = themeColor("ProgressBar.progressColor", default = 0x1E82E6, darkDefault = 0x1E82E6),
                 success = themeColor("ProgressBar.passedColor", default = 0x34B171, darkDefault = 0x008F50),
                 warning = themeColor("Component.warningFocusColor", default = 0xE2A53A),
                 error = themeColor("ProgressBar.failedColor", default = 0xD64F4F, darkDefault = 0xE74848),
