@@ -215,4 +215,32 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
             logger.warn(e) { "$FEATURE_NAME: failed to send feature dev telemetry" }
         }
     }
+
+    fun sendFeatureDevCodeGenerationEvent(conversationId: String, linesOfCodeGenerated: Int, charactersOfCodeGenerated: Int) {
+        val sendFeatureDevTelemetryEventResponse: SendTelemetryEventResponse
+        try {
+            sendFeatureDevTelemetryEventResponse = proxyClient
+                .sendFeatureDevCodeGenerationEvent(conversationId, linesOfCodeGenerated, charactersOfCodeGenerated)
+            val requestId = sendFeatureDevTelemetryEventResponse.responseMetadata().requestId()
+            logger.debug {
+                "$FEATURE_NAME: successfully sent feature dev code generation telemetry: ConversationId: $conversationId RequestId: $requestId"
+            }
+        } catch (e: Exception) {
+            logger.warn(e) { "$FEATURE_NAME: failed to send feature dev code generation telemetry" }
+        }
+    }
+
+    fun sendFeatureDevCodeAcceptanceEvent(conversationId: String, linesOfCodeAccepted: Int, charactersOfCodeAccepted: Int) {
+        val sendFeatureDevTelemetryEventResponse: SendTelemetryEventResponse
+        try {
+            sendFeatureDevTelemetryEventResponse = proxyClient
+                .sendFeatureDevCodeAcceptanceEvent(conversationId, linesOfCodeAccepted, charactersOfCodeAccepted)
+            val requestId = sendFeatureDevTelemetryEventResponse.responseMetadata().requestId()
+            logger.debug {
+                "$FEATURE_NAME: successfully sent feature dev code acceptance telemetry: ConversationId: $conversationId RequestId: $requestId"
+            }
+        } catch (e: Exception) {
+            logger.warn(e) { "$FEATURE_NAME: failed to send feature dev code acceptance telemetry" }
+        }
+    }
 }
