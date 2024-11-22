@@ -77,3 +77,8 @@ data class CodeGenerationStreamResult(
 data class ExportTaskAssistResultArchiveStreamResult(
     var code_generation_result: CodeGenerationStreamResult,
 )
+
+data class DiffMetricsProcessed(
+    var accepted: HashSet<String>,
+    var generated: HashSet<String>,
+)
