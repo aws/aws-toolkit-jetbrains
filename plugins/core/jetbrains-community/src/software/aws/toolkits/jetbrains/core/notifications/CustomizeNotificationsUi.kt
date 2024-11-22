@@ -11,8 +11,11 @@ import com.intellij.notification.NotificationAction
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.EditorNotificationPanel
@@ -22,9 +25,7 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.AwsPlugin
 import software.aws.toolkits.jetbrains.AwsToolkit
-import software.aws.toolkits.jetbrains.core.plugin.PluginUpdateManager.Companion.ID_ACTION_AUTO_UPDATE_SETTINGS
-import software.aws.toolkits.jetbrains.core.plugin.PluginUpdateManager.Companion.LOG
-import software.aws.toolkits.jetbrains.core.plugin.PluginUpdateManager.Companion.SOURCE_AUTO_UPDATE_FINISH_NOTIFY
+import software.aws.toolkits.jetbrains.core.plugin.PluginUpdateManager
 import software.aws.toolkits.jetbrains.core.plugin.PluginUpdateManager.Companion.updatePlugin
 import software.aws.toolkits.jetbrains.settings.AwsSettingsSharedConfigurable
 import software.aws.toolkits.jetbrains.utils.notifyInfo
@@ -56,7 +57,7 @@ object NotificationManager {
             if (action.type == "UpdateExtension") {
                 add(
                     NotificationActionList(AwsCoreBundle.message("notification.update")) {
-
+                        updatePlugins()
                     }
                 )
             }
@@ -116,40 +117,20 @@ object NotificationManager {
         return panel
     }
 
-    @RequiresBackgroundThread
-    fun updatePlugins(progressIndicator: ProgressIndicator, plugin: AwsPlugin) {
-        val pluginInfo = AwsToolkit.PLUGINS_INFO[plugin] ?: return
-        val pluginDescriptor = pluginInfo.descriptor as? IdeaPluginDescriptor ?: return
-        val pluginName = pluginInfo.name
-        try {
-            if (!PluginManagerCore.isPluginInstalled(pluginDescriptor.pluginId)) {
-               // LOG.debug { "$pluginName is not detected as installed, not performing auto-update" }
-                return
-            }
-
-            if (!updatePlugin(pluginDescriptor, progressIndicator)) return
-
-        } catch (e: Exception) {
-            getLogger<NotificationManager>().debug(e) { "Unable to update $pluginName" }
-
-            return
-        } catch (e: Error) {
-            getLogger<NotificationManager>().error { "Unable to update $pluginName" }
-            return
+    private fun updatePlugins() {
+        val pluginUpdateManager = PluginUpdateManager()
+        runInEdt {
+            ProgressManager.getInstance().run(object : Task.Backgroundable(
+                null,
+                AwsCoreBundle.message("aws.settings.auto_update.progress.message")
+            ) {
+                override fun run(indicator: ProgressIndicator) {
+                    pluginUpdateManager.checkForUpdates(indicator, AwsPlugin.CORE)
+                    pluginUpdateManager.checkForUpdates(indicator, AwsPlugin.TOOLKIT)
+                    pluginUpdateManager.checkForUpdates(indicator, AwsPlugin.Q)
+                }
+            })
         }
-
-        if (plugin == AwsPlugin.CORE) return
-        notifyInfo(
-            title = AwsCoreBundle.message("aws.notification.auto_update.title", pluginName),
-            content = AwsCoreBundle.message("aws.settings.auto_update.notification.message"),
-            project = null,
-            notificationActions = listOf(
-                NotificationAction.createSimpleExpiring(AwsCoreBundle.message("aws.settings.auto_update.notification.yes")) {
-                    ApplicationManager.getApplication().restart()
-                },
-                NotificationAction.createSimpleExpiring(AwsCoreBundle.message("aws.settings.auto_update.notification.no")) {}
-            )
-        )
     }
 }
 
