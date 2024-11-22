@@ -9,7 +9,6 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.core.utils.inputStream
-import java.nio.file.Path
 import java.nio.file.Paths
 
 object NotificationMapperUtil {

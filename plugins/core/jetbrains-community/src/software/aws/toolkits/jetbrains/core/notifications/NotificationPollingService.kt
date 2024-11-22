@@ -19,8 +19,6 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.DefaultRemoteResourceResolverProvider
 import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
 import java.io.InputStream
-import java.nio.file.Path
-import java.nio.file.Paths
 import java.time.Duration
 
 private const val NOTIFICATION_ENDPOINT = "" // TODO: Replace with actual endpoint
@@ -38,13 +36,23 @@ object NotificationFileValidator : RemoteResolveParser {
     }
 }
 
-@Service(Service.Level.APP)
-class NotificationPollingService :
-    PersistentStateComponent<NotificationPollingService.State>,
-    Disposable {
+object NotificationState : PersistentStateComponent<NotificationState.State> {
+    data class State(
+        var etag: String? = null,
+    )
 
+    private var myState = State()
+
+    override fun getState(): State = myState
+
+    override fun loadState(state: State) {
+        myState = state
+    }
+}
+
+@Service(Service.Level.APP)
+class NotificationPollingService : Disposable {
     private val observers = mutableListOf<(Unit) -> Unit>()
-    private var state = State()
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val pollingIntervalMs = Duration.ofMinutes(10).toMillis()
     private val resourceResolver: RemoteResourceResolverProvider = DefaultRemoteResourceResolverProvider()
@@ -76,7 +84,7 @@ class NotificationPollingService :
         while (retryCount < MAX_RETRIES) {
             try {
                 val newETag = getNotificationETag()
-                if (newETag == state.currentETag) {
+                if (newETag == NotificationState.getState().etag) {
                     RunOnceUtil.runOnceForApp(this::class.qualifiedName.toString()) {
                         // try startup notifications regardless of file change
                         notifyObservers()
@@ -87,8 +95,7 @@ class NotificationPollingService :
                     .resolve(notificationsResource)
                     .toCompletableFuture()
                     .get()
-                state.currentETag = newETag
-                state.cachedFilePath = resolvedPath.toString()
+                NotificationState.getState().etag = newETag
                 return true
             } catch (e: Exception) {
                 lastException = e
@@ -111,42 +118,27 @@ class NotificationPollingService :
                 request.connection.headerFields["ETag"]?.firstOrNull() ?: ""
             }
 
-    // Helper method to get Path from stored String
-    fun getCachedPath(): Path? =
-        state.cachedFilePath?.let { Paths.get(it) }
+    private fun emitFailureMetric(exception: Exception?) {
+        // todo: add metric
+    }
 
     fun addObserver(observer: (Unit) -> Unit) {
         observers.add(observer)
     }
 
     private fun notifyObservers() {
-        observers.forEach {observer ->
+        observers.forEach { observer ->
             observer(Unit)
         }
     }
 
-    private fun emitFailureMetric(exception: Exception?) {
-        // todo: add metric
+    override fun dispose() {
+        alarm.dispose()
     }
 
     companion object {
         private val LOG = getLogger<NotificationPollingService>()
         fun getInstance(): NotificationPollingService =
             ApplicationManager.getApplication().getService(NotificationPollingService::class.java)
-    }
-
-    data class State(
-        var currentETag: String? = null,
-        var cachedFilePath: String? = null,
-    )
-
-    override fun getState(): State = state
-
-    override fun loadState(state: State) {
-        this.state = state
-    }
-
-    override fun dispose() {
-        alarm.dispose()
     }
 }
