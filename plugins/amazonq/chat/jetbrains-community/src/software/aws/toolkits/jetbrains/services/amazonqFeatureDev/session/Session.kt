@@ -18,9 +18,13 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendA
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.updateFileComponent
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getChangeIdentifier
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getDiffMetrics
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.readFileToString
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.resolveAndCreateOrUpdateFile
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.resolveAndDeleteFile
 import software.aws.toolkits.jetbrains.services.cwc.controller.ReferenceLogController
+import java.util.HashSet
 
 class Session(val tabID: String, val project: Project) {
     var context: FeatureDevSessionContext
@@ -45,7 +49,15 @@ class Session(val tabID: String, val project: Project) {
         context = FeatureDevSessionContext(project, MAX_PROJECT_SIZE_BYTES)
         proxyClient = FeatureDevClient.getInstance(project)
         featureDevService = FeatureDevService(proxyClient, project)
-        _state = ConversationNotStartedState("", tabID, null, 0, CODE_GENERATION_RETRY_LIMIT, 0)
+        _state = ConversationNotStartedState(
+            approach = "",
+            tabID = tabID,
+            token = null,
+            codeGenerationRemainingIterationCount = 0,
+            codeGenerationTotalIterationCount = CODE_GENERATION_RETRY_LIMIT,
+            currentIteration = 0,
+            diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet())
+        )
         isAuthenticating = false
         codegenRetries = CODE_GENERATION_RETRY_LIMIT
     }
@@ -83,6 +95,7 @@ class Session(val tabID: String, val project: Project) {
             uploadId = "", // There is no code gen uploadId so far
             messenger = messenger,
             token = CancellationTokenSource(),
+            diffMetricsProcessed = sessionState.diffMetricsProcessed,
         )
     }
 
@@ -107,6 +120,42 @@ class Session(val tabID: String, val project: Project) {
         val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
         val newFilePaths = filePaths.filter { !it.rejected && !it.changeApplied }
         val newDeletedFiles = deletedFiles.filter { !it.rejected && !it.changeApplied }
+
+        runCatching {
+            var insertedLines = 0
+            var insertedCharacters = 0
+            filePaths.forEach { file ->
+                // FIXME: Ideally, the before content should be read from the uploaded context instead of from disk, to avoid drift
+                val before = selectedSourceFolder
+                    .resolve(file.zipFilePath)
+                    .toFile()
+                    .let { f ->
+                        if (f.exists() && f.canRead()) {
+                            readFileToString(f)
+                        } else {
+                            ""
+                        }
+                    }
+
+                val changeIdentifier = getChangeIdentifier(file.zipFilePath, before, file.fileContent)
+
+                if (_state?.diffMetricsProcessed?.accepted?.contains(changeIdentifier) != true) {
+                    val diffMetrics = getDiffMetrics(before, file.fileContent)
+                    insertedLines += diffMetrics.insertedLines
+                    insertedCharacters += diffMetrics.insertedCharacters
+                    _state?.diffMetricsProcessed?.accepted?.add(changeIdentifier)
+                }
+            }
+
+            if (insertedLines > 0) {
+                featureDevService.sendFeatureDevCodeAcceptanceEvent(
+                    conversationId = conversationId,
+                    linesOfCodeAccepted = insertedLines,
+                    charactersOfCodeAccepted = insertedCharacters,
+                )
+            }
+        }.onFailure { /* Noop on diff telemetry failure */ }
+
         newFilePaths.forEach {
             resolveAndCreateOrUpdateFile(selectedSourceFolder, it.zipFilePath, it.fileContent)
             it.changeApplied = true
