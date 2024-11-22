@@ -16,7 +16,7 @@ object NotificationMapperUtil {
 
 class ProcessNotificationsBase {
     init {
-        NotificationPollingServiceImpl.getInstance().addObserver { path ->
+        NotificationPollingService.getInstance().addObserver { path ->
             getNotificationsFromFile(path)
         }
     }

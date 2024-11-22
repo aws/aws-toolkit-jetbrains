@@ -27,12 +27,6 @@ private const val NOTIFICATION_ENDPOINT = "https://idetoolkits-hostedfiles.amazo
 private const val MAX_RETRIES = 3
 private const val RETRY_DELAY_MS = 1000L
 
-interface NotificationPollingService {
-    fun startPolling()
-    fun addObserver(observer: (Path) -> Unit)
-    fun dispose()
-}
-
 object NotificationFileValidator : RemoteResolveParser {
     override fun canBeParsed(data: InputStream): Boolean {
         return try {
@@ -45,9 +39,8 @@ object NotificationFileValidator : RemoteResolveParser {
 }
 
 @Service(Service.Level.APP)
-class NotificationPollingServiceImpl :
-    NotificationPollingService,
-    PersistentStateComponent<NotificationPollingServiceImpl.State>,
+class NotificationPollingService :
+    PersistentStateComponent<NotificationPollingService.State>,
     Disposable {
 
     private val observers = mutableListOf<(Path) -> Unit>()
@@ -61,7 +54,7 @@ class NotificationPollingServiceImpl :
         override val remoteResolveParser: RemoteResolveParser = NotificationFileValidator
     }
 
-    override fun startPolling() {
+    fun startPolling() {
         val newNotifications = pollForNotifications()
         if (newNotifications) {
             getCachedPath()?.let { path ->
@@ -126,7 +119,7 @@ class NotificationPollingServiceImpl :
     fun getCachedPath(): Path? =
         state.cachedFilePath?.let { Paths.get(it) }
 
-    override fun addObserver(observer: (Path) -> Unit) {
+    fun addObserver(observer: (Path) -> Unit) {
         observers.add(observer)
     }
 
@@ -139,7 +132,7 @@ class NotificationPollingServiceImpl :
     }
 
     companion object {
-        private val LOG = getLogger<NotificationPollingServiceImpl>()
+        private val LOG = getLogger<NotificationPollingService>()
         fun getInstance(): NotificationPollingService =
             ApplicationManager.getApplication().getService(NotificationPollingService::class.java)
     }

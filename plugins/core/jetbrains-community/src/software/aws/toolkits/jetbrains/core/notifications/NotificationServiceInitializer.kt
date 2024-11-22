@@ -10,7 +10,7 @@ import com.intellij.openapi.startup.ProjectActivity
 class NotificationServiceInitializer : ProjectActivity {
 
     override suspend fun execute(project: Project) {
-        val service = NotificationPollingServiceImpl.getInstance()
+        val service = NotificationPollingService.getInstance()
         RunOnceUtil.runOnceForApp(this::class.qualifiedName.toString()) {
             service.startPolling()
         }
