@@ -61,7 +61,8 @@ class PrepareCodeGenerationStateTest : FeatureDevTestBase() {
             emptyList(),
             testUploadId,
             0,
-            messenger
+            messenger,
+            diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet())
         )
 
         mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.UploadArtifactKt")

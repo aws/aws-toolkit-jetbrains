@@ -34,6 +34,7 @@ class PrepareCodeGenerationState(
     private var messenger: MessagePublisher,
     override var codeGenerationRemainingIterationCount: Int? = null,
     override var codeGenerationTotalIterationCount: Int? = null,
+    override var diffMetricsProcessed: DiffMetricsProcessed,
 ) : SessionState {
     override val phase = SessionStatePhase.CODEGEN
     override suspend fun interact(action: SessionStateAction): SessionStateInteraction {
@@ -74,7 +75,8 @@ class PrepareCodeGenerationState(
                 currentIteration = this.currentIteration,
                 repositorySize = zipFileLength.toDouble(),
                 messenger = messenger,
-                token = this.token
+                token = this.token,
+                diffMetricsProcessed = diffMetricsProcessed
             )
         } catch (e: Exception) {
             result = Result.Failed
