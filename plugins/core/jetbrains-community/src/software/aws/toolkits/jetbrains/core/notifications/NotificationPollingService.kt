@@ -8,6 +8,9 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.State
+import com.intellij.openapi.components.Storage
+import com.intellij.openapi.components.RoamingType
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import com.intellij.util.io.HttpRequests
@@ -38,7 +41,8 @@ object NotificationFileValidator : RemoteResolveParser {
     }
 }
 
-object NotificationState : PersistentStateComponent<NotificationState.State> {
+@State(name = "NotificationETagState", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
+object ETagState : PersistentStateComponent<ETagState.State> {
     data class State(
         var etag: String? = null,
     )
@@ -86,7 +90,7 @@ class NotificationPollingService : Disposable {
         while (retryCount < MAX_RETRIES) {
             try {
                 val newETag = getNotificationETag()
-                if (newETag == NotificationState.getState().etag) {
+                if (newETag == ETagState.getState().etag) {
                     if (firstPoll.compareAndSet(false, true)) {
                         notifyObservers()
                     }
@@ -96,7 +100,7 @@ class NotificationPollingService : Disposable {
                     .resolve(notificationsResource)
                     .toCompletableFuture()
                     .get()
-                NotificationState.getState().etag = newETag
+                ETagState.getState().etag = newETag
                 return true
             } catch (e: Exception) {
                 lastException = e
