@@ -129,7 +129,7 @@ open class CodeModernizerArtifact(
             return description.map { patchInfo ->
                 val patchFile = patchesDir.resolve(patchInfo.filename)
                 if (patchFile.toFile().exists()) {
-                    fileSystem.findFileByNioFile(patchFile)
+                    fileSystem.refreshAndFindFileByNioFile(patchFile)
                         ?: error("Could not find patch: ${patchInfo.filename}")
                 } else {
                     error("Patch file not found: ${patchInfo.filename}")
