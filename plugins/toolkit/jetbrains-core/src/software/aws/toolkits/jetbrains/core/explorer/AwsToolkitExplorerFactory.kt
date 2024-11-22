@@ -49,8 +49,8 @@ import javax.swing.JComponent
 class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        val notificationPanel = NotificationPanel.getInstance(project)
-        val toolkitPanel = OuterToolkitPanel.getInstance(project)
+        val notificationPanel = NotificationPanel()
+        val toolkitPanel = OuterToolkitPanel(project)
         val mainPanel = BorderLayoutPanel()
         mainPanel.addToTop(notificationPanel)
         mainPanel.add(toolkitPanel)
@@ -116,7 +116,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                    connectionChanged(project, newConnection)
+                    connectionChanged(project, newConnection, toolkitPanel)
                 }
             }
         )
@@ -125,7 +125,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED,
             object : ConnectionSettingsStateChangeNotifier {
                 override fun settingsStateChanged(newState: ConnectionState) {
-                    settingsStateChanged(project, newState)
+                    settingsStateChanged(project, newState, toolkitPanel)
                 }
             }
         )
@@ -137,7 +137,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
                     if (ToolkitConnectionManager.getInstance(project)
                             .connectionStateForFeature(CodeCatalystConnection.getInstance()) == BearerTokenAuthState.AUTHORIZED
                     ) {
-                        loadContent(project, AwsToolkitExplorerToolWindow.getInstance(project))
+                        loadContent(AwsToolkitExplorerToolWindow.getInstance(project), toolkitPanel)
                     }
                 }
             }
@@ -147,11 +147,11 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             ShowToolkitListener.TOPIC,
             object : ShowToolkitListener {
                 override fun showWebview(project: Project) {
-                    loadContent(project, ToolkitWebviewPanel.getInstance(project).component)
+                    loadContent(ToolkitWebviewPanel.getInstance(project).component, toolkitPanel)
                 }
 
                 override fun showExplorerTree(project: Project) {
-                    loadContent(project, AwsToolkitExplorerToolWindow.getInstance(project))
+                    loadContent(AwsToolkitExplorerToolWindow.getInstance(project), toolkitPanel)
                 }
             }
         )
@@ -161,7 +161,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         toolWindow.stripeTitle = message("aws.notification.title")
     }
 
-    private fun connectionChanged(project: Project, newConnection: ToolkitConnection?) {
+    private fun connectionChanged(project: Project, newConnection: ToolkitConnection?, toolkitPanel: OuterToolkitPanel) {
         val isNewConnToolkitConnection = when (newConnection) {
             is AwsConnectionManagerConnection -> {
                 LOG.debug { "IAM connection" }
@@ -182,16 +182,16 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         }
 
         if (isNewConnToolkitConnection) {
-            loadContent(project, AwsToolkitExplorerToolWindow.getInstance(project))
+            loadContent(AwsToolkitExplorerToolWindow.getInstance(project), toolkitPanel)
         } else if (!isTookitConnected(project) || shouldPromptToolkitReauth(project)) {
             ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AwsExplorer))
-            loadContent(project, ToolkitWebviewPanel.getInstance(project).component)
+            loadContent(ToolkitWebviewPanel.getInstance(project).component, toolkitPanel)
         } else {
-            loadContent(project, AwsToolkitExplorerToolWindow.getInstance(project))
+            loadContent(AwsToolkitExplorerToolWindow.getInstance(project), toolkitPanel)
         }
     }
 
-    private fun settingsStateChanged(project: Project, newState: ConnectionState) {
+    private fun settingsStateChanged(project: Project, newState: ConnectionState, toolkitPanel: OuterToolkitPanel) {
         val isToolkitConnected = if (newState is ConnectionState.ValidConnection) {
             true
         } else {
@@ -202,15 +202,14 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
 
         if (!isToolkitConnected || shouldPromptToolkitReauth(project)) {
             ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AwsExplorer))
-            loadContent(project, ToolkitWebviewPanel.getInstance(project).component)
+            loadContent(ToolkitWebviewPanel.getInstance(project).component, toolkitPanel)
         } else {
-            loadContent(project, AwsToolkitExplorerToolWindow.getInstance(project))
+            loadContent(AwsToolkitExplorerToolWindow.getInstance(project), toolkitPanel)
         }
     }
 
-    private fun loadContent(project: Project, component: JComponent) {
+    private fun loadContent(component: JComponent, toolkitPanel: OuterToolkitPanel) {
         runInEdt {
-            val toolkitPanel = OuterToolkitPanel.getInstance(project)
             toolkitPanel.updateToolkitPanel(component)
         }
     }

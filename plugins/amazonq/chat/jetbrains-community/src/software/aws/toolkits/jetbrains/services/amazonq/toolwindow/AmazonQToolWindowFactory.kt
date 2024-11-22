@@ -38,8 +38,8 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val mainPanel = BorderLayoutPanel()
-        val qPanel = OuterAmazonQPanel.getInstance(project)
-        val notificationPanel = NotificationPanel.getInstance(project)
+        val qPanel = OuterAmazonQPanel(project)
+        val notificationPanel = NotificationPanel()
 
         mainPanel.addToTop(notificationPanel)
         mainPanel.add(qPanel)
@@ -60,7 +60,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                    onConnectionChanged(project, newConnection)
+                    onConnectionChanged(project, newConnection, qPanel)
                 }
             }
         )
@@ -70,7 +70,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             object : RefreshQChatPanelButtonPressedListener {
                 override fun onRefresh() {
                     runInEdt {
-                        prepareChatContent(project)
+                        prepareChatContent(project, qPanel)
                     }
                 }
             }
@@ -91,7 +91,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             }
         )
 
-        prepareChatContent(project)
+        prepareChatContent(project, qPanel)
 
         val content = contentManager.factory.createContent(mainPanel, null, false).also {
             it.isCloseable = true
@@ -103,6 +103,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
 
     private fun prepareChatContent(
         project: Project,
+        qPanel: OuterAmazonQPanel,
     ) {
         val component = if (isQConnected(project) && !isQExpired(project)) {
             AmazonQToolWindow.getInstance(project).component
@@ -112,7 +113,6 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         }
 
         runInEdt {
-            val qPanel = OuterAmazonQPanel.getInstance(project)
             qPanel.updateQPanel(component)
         }
     }
@@ -135,7 +135,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
 
     override fun shouldBeAvailable(project: Project): Boolean = isQWebviewsAvailable()
 
-    private fun onConnectionChanged(project: Project, newConnection: ToolkitConnection?) {
+    private fun onConnectionChanged(project: Project, newConnection: ToolkitConnection?, qPanel: OuterAmazonQPanel) {
         val isNewConnectionForQ = newConnection?.let {
             (it as? AwsBearerTokenConnection)?.let { conn ->
                 val scopeShouldHave = Q_SCOPES
@@ -161,7 +161,6 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             QWebviewPanel.getInstance(project).component
         }
         runInEdt {
-            val qPanel = OuterAmazonQPanel.getInstance(project)
             qPanel.updateQPanel(component)
         }
     }
