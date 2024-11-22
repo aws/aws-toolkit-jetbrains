@@ -7,10 +7,10 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
+import com.intellij.openapi.components.RoamingType
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
-import com.intellij.openapi.components.RoamingType
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import com.intellij.util.io.HttpRequests
