@@ -12,6 +12,7 @@ import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
@@ -19,9 +20,9 @@ import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
+import org.mockito.kotlin.timeout
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -36,17 +37,16 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.customization.Code
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
@@ -95,31 +95,9 @@ class CodeWhispererServiceTest {
         projectRule.project.replaceService(AwsConnectionManager::class.java, mock(), disposableRule.disposable)
     }
 
-    @Test
-    fun `getRequestContext should use correct fileContext and timeout to fetch supplementalContext`() = runTest {
-        val fileContextProvider = FileContextProvider.getInstance(projectRule.project)
-        val fileContextProviderSpy = spy(fileContextProvider)
-        projectRule.project.replaceService(FileContextProvider::class.java, fileContextProviderSpy, disposableRule.disposable)
-
-        val requestContext = sut.getRequestContext(
-            TriggerTypeInfo(CodewhispererTriggerType.AutoTrigger, CodeWhispererAutomatedTriggerType.Enter()),
-            editor = projectRule.fixture.editor,
-            project = projectRule.project,
-            file,
-            LatencyContext()
-        )
-
-        requestContext.awaitSupplementalContext()
-        val fileContextCaptor = argumentCaptor<FileContextInfo>()
-        verify(fileContextProviderSpy, times(1)).extractSupplementalFileContext(eq(file), fileContextCaptor.capture(), eq(100))
-        assertThat(fileContextCaptor.firstValue).isEqualTo(
-            FileContextInfo(
-                CaretContext(leftFileContext = "", rightFileContext = "public class Main {}", leftContextOnCurrentLine = ""),
-                "main.java",
-                CodeWhispererJava.INSTANCE,
-                "main.java"
-            )
-        )
+    @After
+    fun tearDown() {
+        sut.disposeDisplaySession(false)
     }
 
     @Test
@@ -153,8 +131,7 @@ class CodeWhispererServiceTest {
             TriggerTypeInfo(CodewhispererTriggerType.OnDemand, CodeWhispererAutomatedTriggerType.Unknown()),
             projectRule.fixture.editor,
             projectRule.project,
-            file,
-            LatencyContext()
+            file
         )
 
         runTest {
@@ -178,8 +155,7 @@ class CodeWhispererServiceTest {
             TriggerTypeInfo(CodewhispererTriggerType.OnDemand, CodeWhispererAutomatedTriggerType.Unknown()),
             projectRule.fixture.editor,
             projectRule.project,
-            file,
-            LatencyContext()
+            file
         )
 
         assertThat(actual.supplementalContext).isNotNull
@@ -211,14 +187,13 @@ class CodeWhispererServiceTest {
                 fileContextInfo = mockFileContext,
                 supplementalContextDeferred = async { mockSupContext },
                 connection = ToolkitConnectionManager.getInstance(projectRule.project).activeConnection(),
-                latencyContext = LatencyContext(),
                 customizationArn = "fake-arn"
             )
         )
 
-        sut.invokeCodeWhispererInBackground(mockRequestContext).join()
+        sut.invokeCodeWhispererInBackground(mockRequestContext, 0, LatencyContext())
 
-        verify(mockRequestContext, times(1)).awaitSupplementalContext()
+        verify(mockRequestContext, timeout(5000).atLeastOnce()).awaitSupplementalContext()
         verify(clientFacade).generateCompletionsPaginator(any())
 
         argumentCaptor<GenerateCompletionsRequest> {

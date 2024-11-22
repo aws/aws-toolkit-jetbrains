@@ -10,12 +10,12 @@ import com.intellij.openapi.editor.EditorCustomElementRenderer
 import com.intellij.openapi.editor.Inlay
 import com.intellij.openapi.util.Disposer
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationChunk
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 
 @Service
 class CodeWhispererInlayManagerNew {
     private val existingInlays = mutableListOf<Inlay<EditorCustomElementRenderer>>()
-    fun updateInlays(sessionContext: SessionContextNew, chunks: List<RecommendationChunk>) {
+    fun updateInlays(sessionContext: SessionContext, chunks: List<RecommendationChunk>) {
         clearInlays()
 
         chunks.forEach { chunk ->
@@ -23,7 +23,7 @@ class CodeWhispererInlayManagerNew {
         }
     }
 
-    private fun createCodeWhispererInlays(sessionContext: SessionContextNew, startOffset: Int, inlayText: String) {
+    private fun createCodeWhispererInlays(sessionContext: SessionContext, startOffset: Int, inlayText: String) {
         if (inlayText.isEmpty()) return
         val editor = sessionContext.editor
         val firstNewlineIndex = inlayText.indexOf("\n")

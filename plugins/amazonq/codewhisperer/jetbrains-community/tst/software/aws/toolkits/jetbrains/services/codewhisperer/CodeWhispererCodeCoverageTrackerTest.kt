@@ -53,13 +53,14 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.RequestContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager.Companion.CODEWHISPERER_USER_ACTION_PERFORMED
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeCoverageTokens
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
@@ -175,12 +176,11 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
                 }
             },
             null,
-            mock(),
             aString()
         )
         val responseContext = ResponseContext("sessionId")
         val recommendationContext = RecommendationContext(
-            listOf(
+            mutableListOf(
                 DetailContext(
                     "requestId",
                     pythonResponse.completions()[0],
@@ -193,10 +193,11 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             ),
             "x, y",
             "x, y",
-            mock()
+            mock(),
+            0
         )
-        invocationContext = InvocationContext(requestContext, responseContext, recommendationContext, mock())
-        sessionContext = SessionContext()
+        invocationContext = InvocationContext(requestContext, responseContext, recommendationContext)
+        sessionContext = SessionContext(project, fixture.editor, latencyContext = LatencyContext())
 
         // it is needed because referenceManager is listening to CODEWHISPERER_USER_ACTION_PERFORMED topic
         project.replaceService(CodeWhispererCodeReferenceManager::class.java, mock(), disposableRule.disposable)
@@ -339,6 +340,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
         ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_USER_ACTION_PERFORMED).afterAccept(
             invocationContext,
             mock(),
+            SessionContext(project, fixture.editor, latencyContext = LatencyContext()),
             rangeMarkerMock
         )
 
@@ -422,6 +424,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             metricCaptor.allValues,
             CODE_PERCENTAGE,
             1,
+            CWSPR_PERCENTAGE to "3",
             CWSPR_ACCEPTED_TOKENS to "2",
             CWSPR_RAW_ACCEPTED_TOKENS to "3",
             CWSPR_TOTAL_TOKENS to "100",
