@@ -20,7 +20,6 @@ class ProcessNotificationsBase {
     init {
         NotificationPollingService.getInstance().addObserver {
             val list = getNotificationsFromFile()
-            println("here")
         }
     }
 

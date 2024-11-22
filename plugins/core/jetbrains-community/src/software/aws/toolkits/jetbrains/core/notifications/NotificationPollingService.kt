@@ -18,6 +18,8 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.DefaultRemoteResourceResolverProvider
 import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
+import software.aws.toolkits.telemetry.Component
+import software.aws.toolkits.telemetry.ToolkitTelemetry
 import java.io.InputStream
 import java.time.Duration
 
@@ -118,8 +120,15 @@ class NotificationPollingService : Disposable {
                 request.connection.headerFields["ETag"]?.firstOrNull() ?: ""
             }
 
-    private fun emitFailureMetric(exception: Exception?) {
-        // todo: add metric
+    private fun emitFailureMetric(e: Exception?) {
+        ToolkitTelemetry.showNotification(
+            project = null,
+            component = Component.Filesystem,
+            id = "",
+            reason = "Failed to poll for notifications",
+            success = false,
+            reasonDesc = "${e?.javaClass?.simpleName ?: "Unknown"}: ${e?.message ?: "No message"}",
+        )
     }
 
     fun addObserver(observer: (Unit) -> Unit) {
