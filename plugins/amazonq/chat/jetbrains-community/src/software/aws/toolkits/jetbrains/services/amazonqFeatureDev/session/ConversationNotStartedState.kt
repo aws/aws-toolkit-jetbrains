@@ -12,6 +12,7 @@ class ConversationNotStartedState(
     override var codeGenerationRemainingIterationCount: Int?,
     override var codeGenerationTotalIterationCount: Int?,
     override var currentIteration: Int?,
+    override var diffMetricsProcessed: DiffMetricsProcessed,
 ) : SessionState {
     override val phase = SessionStatePhase.INIT
 

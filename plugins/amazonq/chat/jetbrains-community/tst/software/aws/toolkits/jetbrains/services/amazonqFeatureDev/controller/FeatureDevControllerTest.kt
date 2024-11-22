@@ -50,6 +50,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendS
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendUpdatePlaceholder
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.updateFileComponent
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DiffMetricsProcessed
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Interaction
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.PrepareCodeGenerationState
@@ -236,6 +237,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     messenger,
                     0,
                     0,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
                 ),
             )
 
@@ -295,6 +297,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     testUploadId,
                     0,
                     messenger,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
                 ),
             )
 
@@ -354,6 +357,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     testUploadId,
                     0,
                     messenger,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
                 ),
             )
             whenever(mockSession.retries).thenReturn(3)
@@ -393,6 +397,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     testUploadId,
                     0,
                     messenger,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
                 ),
             )
             whenever(mockSession.retries).thenReturn(0)
@@ -425,6 +430,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     testUploadId,
                     0,
                     messenger,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
                 ),
             )
 
@@ -458,6 +464,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     testUploadId,
                     0,
                     messenger,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
                 ),
             )
             doReturn(testConversationId).`when`(spySession).conversationId
@@ -514,6 +521,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     testUploadId,
                     0,
                     messenger,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
                 ),
             )
             doReturn(testConversationId).`when`(spySession).conversationId
