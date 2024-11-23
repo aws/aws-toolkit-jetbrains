@@ -147,7 +147,6 @@ class ChatController private constructor(
             }
         } else if (
             CodeWhispererSettings.getInstance().isProjectContextEnabled() &&
-            isInternalUser &&
             ProjectContextController.getInstance(context.project).getProjectContextIndexComplete()
         ) {
             // if user does not have @workspace in the prompt, but user is Amazon internal
