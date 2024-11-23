@@ -4,7 +4,12 @@
 package software.aws.toolkits.jetbrains.core.notifications
 
 import com.intellij.util.io.HttpRequests
-import io.mockk.*
+import io.mockk.Runs
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.verify
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
