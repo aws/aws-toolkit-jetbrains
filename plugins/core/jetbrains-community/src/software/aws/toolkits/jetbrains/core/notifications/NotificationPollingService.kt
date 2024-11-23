@@ -57,6 +57,7 @@ object ETagState : PersistentStateComponent<ETagState.State> {
 
 @Service(Service.Level.APP)
 class NotificationPollingService : Disposable {
+    private val firstPollDone = AtomicBoolean(false)
     private val observers = mutableListOf<() -> Unit>()
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val pollingIntervalMs = Duration.ofMinutes(10).toMillis()
@@ -90,7 +91,7 @@ class NotificationPollingService : Disposable {
             try {
                 val newETag = getNotificationETag()
                 if (newETag == ETagState.getState().etag) {
-                    if (firstPoll.compareAndSet(false, true)) {
+                    if (firstPollDone.compareAndSet(false, true)) {
                         notifyObservers()
                     }
                     return false
@@ -119,7 +120,7 @@ class NotificationPollingService : Disposable {
         HttpRequests.request(NOTIFICATION_ENDPOINT)
             .userAgent("AWS Toolkit for JetBrains")
             .connect { request ->
-                request.connection.headerFields["ETag"]?.firstOrNull() ?: ""
+                request.connection.headerFields["ETag"]?.firstOrNull().orEmpty()
             }
 
     private fun emitFailureMetric(e: Exception?) {
@@ -146,7 +147,6 @@ class NotificationPollingService : Disposable {
     }
 
     companion object {
-        private val firstPoll = AtomicBoolean(false)
         private val LOG = getLogger<NotificationPollingService>()
         fun getInstance(): NotificationPollingService =
             ApplicationManager.getApplication().getService(NotificationPollingService::class.java)
