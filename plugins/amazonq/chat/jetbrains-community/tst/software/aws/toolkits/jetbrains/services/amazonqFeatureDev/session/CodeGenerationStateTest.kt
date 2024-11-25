@@ -59,6 +59,7 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
                 messenger,
                 token = null,
                 currentCodeGenerationId = "EMPTY_CURRENT_CODE_GENERATION_ID",
+                diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
             )
 
         mockkStatic(MessagePublisher::sendAnswerPart)

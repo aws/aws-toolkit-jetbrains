@@ -89,6 +89,42 @@ class FeatureDevClient(
             requestBuilder.userContext(featureDevUserContext)
         }
 
+    fun sendFeatureDevCodeGenerationEvent(
+        conversationId: String,
+        linesOfCodeGenerated: Int,
+        charactersOfCodeGenerated: Int,
+    ): SendTelemetryEventResponse =
+        bearerClient().sendTelemetryEvent { requestBuilder ->
+            requestBuilder.telemetryEvent { telemetryEventBuilder ->
+                telemetryEventBuilder.featureDevCodeGenerationEvent {
+                    it
+                        .conversationId(conversationId)
+                        .linesOfCodeGenerated(linesOfCodeGenerated)
+                        .charactersOfCodeGenerated(charactersOfCodeGenerated)
+                }
+            }
+            requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+            requestBuilder.userContext(featureDevUserContext)
+        }
+
+    fun sendFeatureDevCodeAcceptanceEvent(
+        conversationId: String,
+        linesOfCodeAccepted: Int,
+        charactersOfCodeAccepted: Int,
+    ): SendTelemetryEventResponse =
+        bearerClient().sendTelemetryEvent { requestBuilder ->
+            requestBuilder.telemetryEvent { telemetryEventBuilder ->
+                telemetryEventBuilder.featureDevCodeAcceptanceEvent {
+                    it
+                        .conversationId(conversationId)
+                        .linesOfCodeAccepted(linesOfCodeAccepted)
+                        .charactersOfCodeAccepted(charactersOfCodeAccepted)
+                }
+            }
+            requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+            requestBuilder.userContext(featureDevUserContext)
+        }
+
     fun createTaskAssistConversation(): CreateTaskAssistConversationResponse =
         bearerClient().createTaskAssistConversation(
             CreateTaskAssistConversationRequest.builder().build(),
