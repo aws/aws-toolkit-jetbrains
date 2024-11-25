@@ -14,7 +14,6 @@ import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import com.intellij.util.io.HttpRequests
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -26,6 +25,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.DefaultRemoteResourceResolverProvider
 import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.telemetry.Component
 import software.aws.toolkits.telemetry.ToolkitTelemetry
 import java.io.InputStream
@@ -48,9 +48,7 @@ object NotificationFileValidator : RemoteResolveParser {
 object NotificationEndpoint {
     private var overriddenEndpoint: String? = null
 
-    fun getEndpoint(): String {
-        return overriddenEndpoint ?: DEFAULT_ENDPOINT
-    }
+    fun getEndpoint(): String = overriddenEndpoint ?: DEFAULT_ENDPOINT
 
     @VisibleForTesting
     fun setTestEndpoint(endpoint: String) {
@@ -69,7 +67,7 @@ object NotificationEndpoint {
 class NotificationEtagState : PersistentStateComponent<NotificationEtagConfiguration> {
     private var state = NotificationEtagConfiguration()
 
-    override fun getState(): NotificationEtagConfiguration? = state
+    override fun getState(): NotificationEtagConfiguration = state
 
     override fun loadState(state: NotificationEtagConfiguration) {
         this.state = state
@@ -96,7 +94,7 @@ internal final class NotificationPollingService : Disposable {
     private val firstPollDone = AtomicBoolean(false)
     private val observers = mutableListOf<() -> Unit>()
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
-    private val scope = CoroutineScope(Dispatchers.Default)
+    private val scope = CoroutineScope(getCoroutineBgContext())
     private val pollingIntervalMs = Duration.ofMinutes(10).toMillis()
     private val resourceResolver: RemoteResourceResolverProvider = DefaultRemoteResourceResolverProvider()
     private val notificationsResource = object : RemoteResource {
