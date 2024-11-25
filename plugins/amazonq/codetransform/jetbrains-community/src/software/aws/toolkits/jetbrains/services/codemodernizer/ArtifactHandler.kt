@@ -71,9 +71,9 @@ val patchDescriptions = mapOf(
     "Popular Enterprise Specifications and Application Frameworks upgrade" to "This diff patch covers the set of upgrades for Jakarta EE 10, Hibernate 6.2, " +
         "and Micronaut 3.",
     "HTTP Client Utilities, Apache Commons Utilities, and Web Frameworks" to "This diff patch covers the set of upgrades for Apache HTTP Client 5, Apache " +
-        "Commons utilities (Collections, IO, Lang, Math), Struts 6.0.",
-    "Testing Tools and Frameworks upgrade" to "This diff patch covers the set of upgrades for ArchUnit, Mockito, TestContainers, Cucumber, and additionally, " +
-        "Jenkins plugins and the Maven Wrapper.",
+        "Commons utilities (Collections, IO, Lang, Math), and Struts 6.0.",
+    "Testing Tools and Frameworks upgrade" to "This diff patch covers the set of upgrades for ArchUnit, Mockito, TestContainers, and Cucumber, in addition " +
+        "to the Jenkins plugins and the Maven Wrapper.",
     "Miscellaneous Processing Documentation upgrade" to "This diff patch covers a diverse set of upgrades spanning ORMs, XML processing, API documentation, " +
         "and more.",
     "Deprecated API replacement, dependency upgrades, and formatting" to "This diff patch replaces deprecated APIs, makes additional dependency version " +
