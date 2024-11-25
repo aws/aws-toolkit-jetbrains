@@ -14,6 +14,11 @@ import com.intellij.openapi.components.Storage
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import com.intellij.util.io.HttpRequests
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.RemoteResolveParser
 import software.aws.toolkits.core.utils.RemoteResource
 import software.aws.toolkits.core.utils.error
@@ -60,6 +65,7 @@ class NotificationPollingService : Disposable {
     private val firstPollDone = AtomicBoolean(false)
     private val observers = mutableListOf<() -> Unit>()
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
+    private val scope = CoroutineScope(Dispatchers.Default)
     private val pollingIntervalMs = Duration.ofMinutes(10).toMillis()
     private val resourceResolver: RemoteResourceResolverProvider = DefaultRemoteResourceResolverProvider()
     private val notificationsResource = object : RemoteResource {
@@ -108,7 +114,9 @@ class NotificationPollingService : Disposable {
                 retryCount++
                 if (retryCount < MAX_RETRIES) {
                     val backoffDelay = RETRY_DELAY_MS * (1L shl (retryCount - 1))
-                    Thread.sleep(backoffDelay)
+                    scope.launch {
+                        delay(backoffDelay)
+                    }
                 }
             }
         }
@@ -144,6 +152,7 @@ class NotificationPollingService : Disposable {
 
     override fun dispose() {
         alarm.dispose()
+        scope.cancel()
     }
 
     companion object {
