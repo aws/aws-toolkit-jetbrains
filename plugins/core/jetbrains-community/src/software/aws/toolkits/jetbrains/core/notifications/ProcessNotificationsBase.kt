@@ -6,15 +6,15 @@ package software.aws.toolkits.jetbrains.core.notifications
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.intellij.openapi.application.PathManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.core.utils.inputStream
-import java.nio.file.Paths
 import software.aws.toolkits.jetbrains.utils.notifyStickyWithData
+import java.nio.file.Paths
 
 object NotificationMapperUtil {
     val mapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -34,7 +34,6 @@ class ProcessNotificationsBase {
         val content = path.inputStream().bufferedReader().use { it.readText() }
         if (content.isEmpty()) {
             return null
-
         }
         return NotificationMapperUtil.mapper.readValue(content)
     }
@@ -94,5 +93,3 @@ class ProcessNotificationsBase {
 }
 
 typealias NotifListener = (bannerContent: BannerContent) -> Unit
-
-
