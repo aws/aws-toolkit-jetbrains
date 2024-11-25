@@ -3,6 +3,11 @@
 
 package software.aws.toolkits.jetbrains.core.notifications
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.impl.ApplicationImpl
+import com.intellij.testFramework.ApplicationExtension
+import com.intellij.testFramework.ApplicationRule
+import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.util.io.HttpRequests
 import io.mockk.Runs
 import io.mockk.every
@@ -10,16 +15,20 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.verify
+import org.gradle.api.internal.plugins.PluginDescriptor
+import org.junit.Rule
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import software.aws.toolkits.core.utils.RemoteResourceResolver
 import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 
-class NotificationPollingServiceTest {
+@ExtendWith(ApplicationExtension::class)
+class NotificationPollingServiceTest{
     private lateinit var sut: NotificationPollingService
     private lateinit var mockResolver: RemoteResourceResolver
     private lateinit var mockProvider: RemoteResourceResolverProvider
@@ -28,6 +37,7 @@ class NotificationPollingServiceTest {
 
     @BeforeEach
     fun setUp() {
+
         sut = NotificationPollingService()
 
         mockResolver = mockk<RemoteResourceResolver> {
