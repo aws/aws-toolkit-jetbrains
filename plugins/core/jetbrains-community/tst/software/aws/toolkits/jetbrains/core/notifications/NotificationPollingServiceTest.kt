@@ -61,7 +61,7 @@ class NotificationPollingServiceTest {
 
     @Test
     fun `test pollForNotifications when ETag matches - no new notifications`() {
-        ETagState.getState().etag = "same"
+        NotificationEtagState.getInstance().etag = "same"
         val firstPollField = NotificationPollingService::class.java
             .getDeclaredField("firstPollDone")
             .apply { isAccessible = true }
@@ -80,7 +80,7 @@ class NotificationPollingServiceTest {
 
     @Test
     fun `test pollForNotifications when ETag matches on startup - notify observers`() {
-        ETagState.getState().etag = "same"
+        NotificationEtagState.getInstance().etag = "same"
         mockkStatic(HttpRequests::class) {
             every {
                 HttpRequests.request(any<String>())
@@ -94,7 +94,7 @@ class NotificationPollingServiceTest {
 
     @Test
     fun `test pollForNotifications when ETag different - notify observers`() {
-        ETagState.getState().etag = "oldETag"
+        NotificationEtagState.getInstance().etag = "oldETag"
         mockkStatic(HttpRequests::class) {
             every {
                 HttpRequests.request(any<String>())
