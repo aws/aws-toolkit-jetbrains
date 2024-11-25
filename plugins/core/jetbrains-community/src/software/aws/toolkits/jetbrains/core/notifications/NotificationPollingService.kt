@@ -7,7 +7,6 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
-import com.intellij.openapi.components.RoamingType
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
@@ -23,6 +22,7 @@ import software.aws.toolkits.core.utils.RemoteResolveParser
 import software.aws.toolkits.core.utils.RemoteResource
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.DefaultRemoteResourceResolverProvider
 import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
 import software.aws.toolkits.telemetry.Component
@@ -45,23 +45,34 @@ object NotificationFileValidator : RemoteResolveParser {
         }
 }
 
-@State(name = "NotificationETagState", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
-object ETagState : PersistentStateComponent<ETagState.State> {
-    data class State(
-        var etag: String? = null,
-    )
+@State(name = "notificationEtag", storages = [Storage("aws.xml")])
+class NotificationEtagState : PersistentStateComponent<NotificationEtagConfiguration> {
+    private var state = NotificationEtagConfiguration()
 
-    private var myState = State()
+    override fun getState(): NotificationEtagConfiguration? = state
 
-    override fun getState(): State = myState
+    override fun loadState(state: NotificationEtagConfiguration) {
+        this.state = state
+    }
 
-    override fun loadState(state: State) {
-        myState = state
+    var etag: String?
+        get() = state.etag
+        set(value) {
+            state.etag = value
+        }
+
+    companion object {
+        fun getInstance(): NotificationEtagState =
+            ApplicationManager.getApplication().getService(NotificationEtagState::class.java)
     }
 }
 
+data class NotificationEtagConfiguration(
+    var etag: String? = null,
+)
+
 @Service(Service.Level.APP)
-class NotificationPollingService : Disposable {
+internal final class NotificationPollingService : Disposable {
     private val firstPollDone = AtomicBoolean(false)
     private val observers = mutableListOf<() -> Unit>()
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
@@ -96,7 +107,8 @@ class NotificationPollingService : Disposable {
         while (retryCount < MAX_RETRIES) {
             try {
                 val newETag = getNotificationETag()
-                if (newETag == ETagState.getState().etag) {
+                if (newETag == NotificationEtagState.getInstance().etag) {
+                    // when there are notifications that may need to be shown on startup, but no new file was fetched
                     if (firstPollDone.compareAndSet(false, true)) {
                         notifyObservers()
                     }
@@ -106,7 +118,7 @@ class NotificationPollingService : Disposable {
                     .resolve(notificationsResource)
                     .toCompletableFuture()
                     .get()
-                ETagState.getState().etag = newETag
+                NotificationEtagState.getInstance().etag = newETag
                 return true
             } catch (e: Exception) {
                 lastException = e
@@ -125,11 +137,16 @@ class NotificationPollingService : Disposable {
     }
 
     private fun getNotificationETag(): String =
-        HttpRequests.request(NOTIFICATION_ENDPOINT)
-            .userAgent("AWS Toolkit for JetBrains")
-            .connect { request ->
-                request.connection.headerFields["ETag"]?.firstOrNull().orEmpty()
-            }
+        try {
+            HttpRequests.request(NOTIFICATION_ENDPOINT)
+                .userAgent("AWS Toolkit for JetBrains")
+                .connect { request ->
+                    request.connection.headerFields["ETag"]?.firstOrNull().orEmpty()
+                }
+        } catch (e: Exception) {
+            LOG.warn { "Failed to fetch notification ETag: $e.message" }
+            throw e
+        }
 
     private fun emitFailureMetric(e: Exception?) {
         ToolkitTelemetry.showNotification(
