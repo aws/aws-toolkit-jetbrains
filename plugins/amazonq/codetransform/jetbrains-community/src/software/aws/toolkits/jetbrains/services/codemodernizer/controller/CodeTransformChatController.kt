@@ -378,20 +378,13 @@ class CodeTransformChatController(
             message("codemodernizer.chat.message.skip_tests_form.skip") -> MAVEN_BUILD_SKIP_UNIT_TESTS
             else -> MAVEN_BUILD_RUN_UNIT_TESTS
         }
-        // feature flag for Selective Transformation
-        val isSelectiveTransformationReady = false
         codeTransformChatHelper.addNewMessage(buildUserSkipTestsFlagSelectionChatContent(message.skipTestsSelection))
         codeModernizerManager.codeTransformationSession?.let {
             it.sessionContext.customBuildCommand = customBuildCommand
-            if (!isSelectiveTransformationReady) {
-                codeModernizerManager.runLocalMavenBuild(context.project, it)
-            }
         }
-        if (isSelectiveTransformationReady) {
-            codeTransformChatHelper.run {
-                addNewMessage(buildUserInputOneOrMultipleDiffsChatIntroContent())
-                addNewMessage(buildUserInputOneOrMultipleDiffsFlagChatContent())
-            }
+        codeTransformChatHelper.run {
+            addNewMessage(buildUserInputOneOrMultipleDiffsChatIntroContent())
+            addNewMessage(buildUserInputOneOrMultipleDiffsFlagChatContent())
         }
     }
 
