@@ -25,7 +25,7 @@ class ProcessNotificationsBase {
     private val notifListener = mutableListOf<NotifListener>()
     init {
         NotificationPollingService.getInstance().addObserver {
-            getNotificationsFromFile()
+            retrieveStartupAndEmergencyNotifications()
         }
     }
 
@@ -39,8 +39,29 @@ class ProcessNotificationsBase {
     }
 
     fun retrieveStartupAndEmergencyNotifications() {
-        // TODO: separates notifications into startup and emergency
-        // iterates through the 2 lists and processes each notification(if it isn't dismissed)
+        val notifications = getNotificationsFromFile()
+
+        notifications?.let { notificationsList ->
+            val (startupNotifications, emergencyNotifications) = notificationsList.notifications
+                ?.partition { notification ->
+                    notification.schedule.type.equals("StartUp", ignoreCase = true)
+                }
+                ?: Pair(emptyList(), emptyList())
+
+
+            val startupNotificationsList = NotificationsList(
+                schema = notificationsList.schema,
+                notifications = startupNotifications
+            )
+
+            val emergencyNotificationsList = NotificationsList(
+                schema = notificationsList.schema,
+                notifications = emergencyNotifications
+            )
+
+            // Now you can process each list separately
+            // TODO: Process the separated lists as needed
+        }
     }
 
     fun processNotification(project: Project, notificationData: NotificationData) {
