@@ -91,7 +91,7 @@ data class NotificationEtagConfiguration(
 
 @Service(Service.Level.APP)
 internal final class NotificationPollingService : Disposable {
-    private val isFirstPoll = AtomicBoolean(false)
+    private val isFirstPoll = AtomicBoolean(true)
     private val isStartup = AtomicBoolean(true)
     private val observers = mutableListOf<(Boolean) -> Unit>()
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
