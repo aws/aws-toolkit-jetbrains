@@ -18,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.RemoteResolveParser
 import software.aws.toolkits.core.utils.RemoteResource
 import software.aws.toolkits.core.utils.error
@@ -31,7 +32,6 @@ import java.io.InputStream
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
 
-private const val NOTIFICATION_ENDPOINT = "" // TODO: Replace with actual endpoint
 private const val MAX_RETRIES = 3
 private const val RETRY_DELAY_MS = 1000L
 
@@ -43,6 +43,26 @@ object NotificationFileValidator : RemoteResolveParser {
         } catch (e: Exception) {
             false
         }
+}
+
+object NotificationEndpoint {
+    private var overriddenEndpoint: String? = null
+
+    fun getEndpoint(): String {
+        return overriddenEndpoint ?: DEFAULT_ENDPOINT
+    }
+
+    @VisibleForTesting
+    fun setTestEndpoint(endpoint: String) {
+        overriddenEndpoint = endpoint
+    }
+
+    @VisibleForTesting
+    fun resetEndpoint() {
+        overriddenEndpoint = null
+    }
+
+    private const val DEFAULT_ENDPOINT = "" // TODO: Replace with actual endpoint
 }
 
 @State(name = "notificationEtag", storages = [Storage("aws.xml")])
@@ -81,7 +101,7 @@ internal final class NotificationPollingService : Disposable {
     private val resourceResolver: RemoteResourceResolverProvider = DefaultRemoteResourceResolverProvider()
     private val notificationsResource = object : RemoteResource {
         override val name: String = "notifications.json"
-        override val urls: List<String> = listOf(NOTIFICATION_ENDPOINT)
+        override val urls: List<String> = listOf(NotificationEndpoint.getEndpoint())
         override val remoteResolveParser: RemoteResolveParser = NotificationFileValidator
     }
 
@@ -138,7 +158,7 @@ internal final class NotificationPollingService : Disposable {
 
     private fun getNotificationETag(): String =
         try {
-            HttpRequests.request(NOTIFICATION_ENDPOINT)
+            HttpRequests.request(NotificationEndpoint.getEndpoint())
                 .userAgent("AWS Toolkit for JetBrains")
                 .connect { request ->
                     request.connection.headerFields["ETag"]?.firstOrNull().orEmpty()
