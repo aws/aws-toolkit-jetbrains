@@ -37,10 +37,8 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererCon
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
@@ -88,7 +86,7 @@ class CodeWhispererTelemetryServiceTest {
         mockClient = spy(CodeWhispererClientAdaptor.getInstance(projectRule.project))
         mockClient.stub {
             onGeneric {
-                sendUserTriggerDecisionTelemetry(any(), any(), any(), any(), any(), any(), any(), any(), any())
+                sendUserTriggerDecisionTelemetry(any(), any(), any(), any(), any(), any(), any(), any())
             }.doAnswer {
                 mock<SendTelemetryEventResponse>()
             }
@@ -99,20 +97,25 @@ class CodeWhispererTelemetryServiceTest {
     @After
     fun cleanup() {
         sut.previousDecisions().clear()
-        CodeWhispererService.getInstance().disposeDisplaySession(false)
-        CodeWhispererService.getInstance().getAllPaginationSessions().clear()
     }
 
     @Test
     fun `test recordSuggestionState`() {
         fun assertSuggestionStates(expectedStates: List<CodewhispererSuggestionState>) {
-            val recommendationContext = aRecommendationContext(expectedStates)
+            val (recommendationContext, sessionContext) = aRecommendationContextAndSessionContext(expectedStates)
             val hasUserAccepted = expectedStates.any { it == CodewhispererSuggestionState.Accept }
 
             val details = recommendationContext.details
             val actualStates = mutableListOf<CodewhispererSuggestionState>()
             details.forEachIndexed { index, detail ->
-                val suggestionState = sut.recordSuggestionState(detail, hasUserAccepted)
+                val suggestionState = sut.recordSuggestionState(
+                    index,
+                    sessionContext.selectedIndex,
+                    sessionContext.seen.contains(index),
+                    hasUserAccepted,
+                    detail.isDiscarded,
+                    detail.recommendation.content().isEmpty()
+                )
                 actualStates.add(suggestionState)
             }
 
@@ -153,8 +156,8 @@ class CodeWhispererTelemetryServiceTest {
 
     @Test
     fun `test aggregateUserDecision`() {
-        fun assertAggregateUserDecision(decisions: List<CodewhispererSuggestionState>, expected: CodewhispererSuggestionState) {
-            val actual = sut.aggregateUserDecision(decisions, false)
+        fun assertAggregateUserDecision(decisions: List<CodewhispererSuggestionState>, expected: CodewhispererPreviousSuggestionState) {
+            val actual = sut.aggregateUserDecision(decisions)
             assertThat(actual).isEqualTo(expected)
         }
 
@@ -166,7 +169,7 @@ class CodeWhispererTelemetryServiceTest {
                 CodewhispererSuggestionState.Unseen,
                 CodewhispererSuggestionState.Unseen
             ),
-            CodewhispererSuggestionState.Accept
+            CodewhispererPreviousSuggestionState.Accept
         )
 
         assertAggregateUserDecision(
@@ -177,7 +180,7 @@ class CodeWhispererTelemetryServiceTest {
                 CodewhispererSuggestionState.Empty,
                 CodewhispererSuggestionState.Ignore
             ),
-            CodewhispererSuggestionState.Reject
+            CodewhispererPreviousSuggestionState.Reject
         )
 
         assertAggregateUserDecision(
@@ -188,7 +191,7 @@ class CodeWhispererTelemetryServiceTest {
                 CodewhispererSuggestionState.Discard,
                 CodewhispererSuggestionState.Empty
             ),
-            CodewhispererSuggestionState.Discard
+            CodewhispererPreviousSuggestionState.Discard
         )
 
         assertAggregateUserDecision(
@@ -198,26 +201,7 @@ class CodeWhispererTelemetryServiceTest {
                 CodewhispererSuggestionState.Empty,
                 CodewhispererSuggestionState.Empty
             ),
-            CodewhispererSuggestionState.Empty
-        )
-    }
-
-    @Test
-    fun `test aggregateUserDecision when there was a previous reject`() {
-        fun assertAggregateUserDecision(decisions: List<CodewhispererSuggestionState>, expected: CodewhispererSuggestionState) {
-            val actual = sut.aggregateUserDecision(decisions, true)
-            assertThat(actual).isEqualTo(expected)
-        }
-
-        assertAggregateUserDecision(
-            listOf(
-                CodewhispererSuggestionState.Discard,
-                CodewhispererSuggestionState.Discard,
-                CodewhispererSuggestionState.Reject,
-                CodewhispererSuggestionState.Empty,
-                CodewhispererSuggestionState.Ignore
-            ),
-            CodewhispererSuggestionState.Ignore
+            CodewhispererPreviousSuggestionState.Empty
         )
     }
 
@@ -235,7 +219,6 @@ class CodeWhispererTelemetryServiceTest {
         )
 
         val supplementalContextInfo = aSupplementalContextInfo()
-        val sessionContext = aSessionContext(projectRule.project)
         val requestContext = aRequestContext(projectRule.project, mySupplementalContextInfo = supplementalContextInfo).also {
             runTest { it.awaitSupplementalContext() }
         }
@@ -252,7 +235,6 @@ class CodeWhispererTelemetryServiceTest {
         }
 
         sut.sendUserTriggerDecisionEvent(
-            sessionContext,
             requestContext,
             responseContext,
             recommendationContext,
@@ -270,7 +252,7 @@ class CodeWhispererTelemetryServiceTest {
                 "codewhisperer_userTriggerDecision",
                 1,
                 "codewhispererSessionId" to responseContext.sessionId,
-                "codewhispererFirstRequestId" to sessionContext.latencyContext.firstRequestId,
+                "codewhispererFirstRequestId" to requestContext.latencyContext.firstRequestId,
                 "codewhispererCompletionType" to recommendationContext.details[0].completionType,
                 "codewhispererLanguage" to requestContext.fileContextInfo.programmingLanguage.toTelemetryType(),
                 "codewhispererTriggerType" to requestContext.triggerTypeInfo.triggerType,
@@ -299,29 +281,21 @@ class CodeWhispererTelemetryServiceTest {
 
     @Test
     fun `sendUserDecisionEventForAll will send userDecision event for all suggestions`() {
-        doNothing().whenever(sut).sendUserTriggerDecisionEvent(any(), any(), any(), any(), any(), any(), any(), any(), any())
+        doNothing().whenever(sut).sendUserTriggerDecisionEvent(any(), any(), any(), any(), any(), any(), any(), any())
         val eventCount = mutableMapOf<CodewhispererSuggestionState, Int>()
         var totalEventCount = 0
+        val requestContext = aRequestContext(projectRule.project)
+        val responseContext = aResponseContext()
 
         fun assertUserDecision(decisions: List<CodewhispererSuggestionState>) {
             decisions.forEach { eventCount[it] = 1 + (eventCount[it] ?: 0) }
             totalEventCount += decisions.size
 
-            CodeWhispererService.getInstance().getAllPaginationSessions()[0] = InvocationContext(
-                aRequestContext(projectRule.project),
-                aResponseContext(),
-                aRecommendationContext(decisions)
-            )
+            val (recommendationContext, sessionContext) = aRecommendationContextAndSessionContext(decisions)
             val hasUserAccept = decisions.any { it == CodewhispererSuggestionState.Accept }
             val popupShownDuration = Duration.ofSeconds(Random.nextLong(0, 30))
 
-            val sessionContext = aSessionContext(projectRule.project)
-            sessionContext.selectedIndex = 0
-            sut.sendUserDecisionEventForAll(
-                sessionContext,
-                hasUserAccept,
-                popupShownDuration
-            )
+            sut.sendUserDecisionEventForAll(requestContext, responseContext, recommendationContext, sessionContext, hasUserAccept, popupShownDuration)
             argumentCaptor<MetricEvent>().apply {
                 verify(batcher, atLeastOnce()).enqueue(capture())
 
@@ -374,21 +348,12 @@ class CodeWhispererTelemetryServiceTest {
             val requestContext = aRequestContext(projectRule.project, mySupplementalContextInfo = supplementalContextInfo).also {
                 runTest { it.awaitSupplementalContext() }
             }
+            val responseContext = aResponseContext()
+            val (recommendationContext, sessionContext) = aRecommendationContextAndSessionContext(decisions)
             val hasUserAccept = decisions.any { it == CodewhispererSuggestionState.Accept }
             val popupShownDuration = Duration.ofSeconds(Random.nextLong(0, 30))
 
-            CodeWhispererService.getInstance().getAllPaginationSessions()[0] = InvocationContext(
-                requestContext,
-                aResponseContext(),
-                aRecommendationContext(decisions)
-            )
-            val sessionContext = aSessionContext(projectRule.project)
-            sessionContext.selectedIndex = 0
-            sut.sendUserDecisionEventForAll(
-                sessionContext,
-                hasUserAccept,
-                popupShownDuration
-            )
+            sut.sendUserDecisionEventForAll(requestContext, responseContext, recommendationContext, sessionContext, hasUserAccept, popupShownDuration)
             argumentCaptor<MetricEvent>().apply {
                 verify(batcher, atLeastOnce()).enqueue(capture())
 
@@ -474,7 +439,6 @@ class CodeWhispererTelemetryServiceTest {
         )
         AwsSettings.getInstance().isTelemetryEnabled = isTelemetryEnabled
 
-        val expectedSessionContext = aSessionContext(projectRule.project)
         val expectedRequestContext = aRequestContext(projectRule.project)
         val expectedResponseContext = aResponseContext()
         val expectedRecommendationContext = aRecommendationContext()
@@ -485,7 +449,6 @@ class CodeWhispererTelemetryServiceTest {
         val expectedCharCount = 100
         val expectedCompletionType = expectedRecommendationContext.details[0].completionType
         sut.sendUserTriggerDecisionEvent(
-            expectedSessionContext,
             expectedRequestContext,
             expectedResponseContext,
             expectedRecommendationContext,
@@ -493,12 +456,11 @@ class CodeWhispererTelemetryServiceTest {
             expectedDuration,
             expectedSuggestionReferenceCount,
             expectedGeneratedLineCount,
-            expectedCharCount,
+            expectedCharCount
         )
 
         if (isProTier || isTelemetryEnabled) {
             verify(mockClient).sendUserTriggerDecisionTelemetry(
-                eq(expectedSessionContext),
                 eq(expectedRequestContext),
                 eq(expectedResponseContext),
                 eq(expectedCompletionType),
