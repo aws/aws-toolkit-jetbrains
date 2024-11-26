@@ -19,8 +19,8 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.aws.toolkits.core.utils.test.aString
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererRecommendationManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 
 class CodeWhispererRecommendationManagerTest {

@@ -11,10 +11,11 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiDocumentManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManagerNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererServiceNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryServiceNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PAIRED_BRACKETS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PAIRED_QUOTES
@@ -22,18 +23,22 @@ import java.time.Instant
 import java.util.Stack
 
 @Service
-class CodeWhispererEditorManager {
-    fun updateEditorWithRecommendation(states: InvocationContext, sessionContext: SessionContext) {
-        val (requestContext, responseContext, recommendationContext) = states
-        val (project, editor) = requestContext
+class CodeWhispererEditorManagerNew {
+    fun updateEditorWithRecommendation(sessionContext: SessionContextNew) {
+        val previews = CodeWhispererServiceNew.getInstance().getAllSuggestionsPreviewInfo()
+        val selectedIndex = sessionContext.selectedIndex
+        val preview = previews[selectedIndex]
+        val states = CodeWhispererServiceNew.getInstance().getAllPaginationSessions()[preview.jobId] ?: return
+        val (requestContext, responseContext) = states
+        val (project, editor) = sessionContext
         val document = editor.document
         val primaryCaret = editor.caretModel.primaryCaret
-        val selectedIndex = sessionContext.selectedIndex
-        val typeahead = sessionContext.typeahead
-        val detail = recommendationContext.details[selectedIndex]
-        val reformatted = CodeWhispererPopupManager.getInstance().getReformattedRecommendation(
+        val typeahead = preview.typeahead
+        val detail = preview.detail
+        val userInput = preview.userInput
+        val reformatted = CodeWhispererPopupManagerNew.getInstance().getReformattedRecommendation(
             detail,
-            recommendationContext.userInputSinceInvocation
+            userInput
         )
         val remainingRecommendation = reformatted.substring(typeahead.length)
         val originalOffset = primaryCaret.offset - typeahead.length
@@ -42,6 +47,8 @@ class CodeWhispererEditorManager {
 
         val insertEndOffset = sessionContext.insertEndOffset
         val endOffsetToReplace = if (insertEndOffset != -1) insertEndOffset else primaryCaret.offset
+
+        preview.detail.isAccepted = true
 
         WriteCommandAction.runWriteCommandAction(project) {
             document.replaceString(originalOffset, endOffsetToReplace, reformatted)
@@ -53,7 +60,7 @@ class CodeWhispererEditorManager {
             WriteCommandAction.runWriteCommandAction(project) {
                 val rangeMarker = document.createRangeMarker(originalOffset, endOffset, true)
 
-                CodeWhispererTelemetryService.getInstance().enqueueAcceptedSuggestionEntry(
+                CodeWhispererTelemetryServiceNew.getInstance().enqueueAcceptedSuggestionEntry(
                     detail.requestId,
                     requestContext,
                     responseContext,
@@ -67,7 +74,7 @@ class CodeWhispererEditorManager {
 
                 ApplicationManager.getApplication().messageBus.syncPublisher(
                     CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
-                ).afterAccept(states, sessionContext, rangeMarker)
+                ).afterAccept(states, previews, sessionContext, rangeMarker)
             }
         }
     }
@@ -95,7 +102,7 @@ class CodeWhispererEditorManager {
         editor: Editor,
         recommendation: String,
         isTruncatedOnRight: Boolean,
-        sessionContext: SessionContext,
+        sessionContext: SessionContextNew,
     ): List<Pair<Int, Int>> {
         val result = mutableListOf<Pair<Int, Int>>()
         val bracketsStack = Stack<Char>()
@@ -107,6 +114,7 @@ class CodeWhispererEditorManager {
 
         var totalDocLengthChecked = 0
         var current = 0
+        var shouldContinue = true
 
         result.add(0 to caretOffset)
         result.add(recommendation.length + 1 to lineEndOffset)
@@ -133,19 +141,20 @@ class CodeWhispererEditorManager {
             totalDocLengthChecked++
 
             // find symbol in the recommendation that will match this
-            while (current < recommendation.length) {
+            while (current < recommendation.length && shouldContinue) {
                 val char = recommendation[current]
                 current++
 
                 // if char isn't a paired symbol, or it is, but it's not the matching currentDocChar or
                 // the opening version of it, then we're done
-                if (!isMatchingSymbol(char) || (char != currentDocChar && PAIRED_BRACKETS[char] != currentDocChar)) {
-                    continue
-                }
-
-                // if char is an opening bracket, push it to the stack
-                if (PAIRED_BRACKETS[char] == currentDocChar) {
-                    bracketsStack.push(char)
+                if (!isMatchingSymbol(char) ||
+                    (char != currentDocChar && PAIRED_BRACKETS[char] != currentDocChar) ||
+                    PAIRED_BRACKETS[char] == currentDocChar
+                ) {
+                    // if char is an opening bracket, push it to the stack
+                    if (PAIRED_BRACKETS[char] == currentDocChar) {
+                        bracketsStack.push(char)
+                    }
                     continue
                 }
 
@@ -155,13 +164,13 @@ class CodeWhispererEditorManager {
                 // on the stack
                 if (char.isWhitespace()) {
                     result.add(current to caretOffset + totalDocLengthChecked)
-                    break
+                    shouldContinue = false
                 } else if (bracketsStack.isNotEmpty() && PAIRED_BRACKETS[bracketsStack.peek()] == char) {
                     bracketsStack.pop()
                 } else if (quotesStack.isNotEmpty() && quotesStack.peek().first == char) {
                     result.add(quotesStack.pop().second)
                     result.add(current to caretOffset + totalDocLengthChecked)
-                    break
+                    shouldContinue = false
                 } else {
                     // char does not have a matching opening symbol in the stack, if it's a (opening) bracket,
                     // immediately add it to the result; if it's a quote, push it to the stack
@@ -170,7 +179,7 @@ class CodeWhispererEditorManager {
                     } else {
                         result.add(current to caretOffset + totalDocLengthChecked)
                     }
-                    break
+                    shouldContinue = false
                 }
             }
         }
@@ -195,7 +204,7 @@ class CodeWhispererEditorManager {
         editor: Editor,
         recommendationLines: List<String>,
         isTruncatedOnRight: Boolean,
-        sessionContext: SessionContext,
+        sessionContext: SessionContextNew,
     ): Int {
         val caretOffset = editor.caretModel.offset
         if (isTruncatedOnRight) {
@@ -268,6 +277,6 @@ class CodeWhispererEditorManager {
     }
 
     companion object {
-        fun getInstance(): CodeWhispererEditorManager = service()
+        fun getInstance(): CodeWhispererEditorManagerNew = service()
     }
 }
