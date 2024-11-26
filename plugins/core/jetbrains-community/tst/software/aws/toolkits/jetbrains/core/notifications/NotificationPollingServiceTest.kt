@@ -26,7 +26,7 @@ class NotificationPollingServiceTest {
     private lateinit var sut: NotificationPollingService
     private lateinit var mockResolver: RemoteResourceResolver
     private lateinit var mockProvider: RemoteResourceResolverProvider
-    private lateinit var observer: () -> Unit
+    private lateinit var observer: (Boolean) -> Unit
     private val testPath = Path.of("/test/path")
 
     @BeforeEach
@@ -47,8 +47,8 @@ class NotificationPollingServiceTest {
         providerField.set(sut, mockProvider)
 
         // Create mock observers
-        observer = mockk<() -> Unit>()
-        every { observer.invoke() } just Runs
+        observer = mockk<(Boolean) -> Unit>()
+        every { observer.invoke(any()) } just Runs
 
         val observersField = NotificationPollingService::class.java
             .getDeclaredField("observers")
@@ -66,9 +66,9 @@ class NotificationPollingServiceTest {
     fun `test pollForNotifications when ETag matches - no new notifications`() {
         NotificationEtagState.getInstance().etag = "same"
         val firstPollField = NotificationPollingService::class.java
-            .getDeclaredField("firstPollDone")
+            .getDeclaredField("isFirstPoll")
             .apply { isAccessible = true }
-        firstPollField.set(sut, AtomicBoolean(true))
+        firstPollField.set(sut, AtomicBoolean(false))
 
         mockkStatic(HttpRequests::class) {
             every {
@@ -78,7 +78,7 @@ class NotificationPollingServiceTest {
             } returns "same"
             sut.startPolling()
         }
-        verify(exactly = 0) { observer.invoke() }
+        verify(exactly = 0) { observer.invoke(any()) }
     }
 
     @Test
@@ -92,7 +92,7 @@ class NotificationPollingServiceTest {
             } returns "same"
             sut.startPolling()
         }
-        verify(exactly = 1) { observer.invoke() }
+        verify(exactly = 1) { observer.invoke(any()) }
     }
 
     @Test
@@ -106,6 +106,6 @@ class NotificationPollingServiceTest {
             } returns "newEtag"
             sut.startPolling()
         }
-        verify(exactly = 1) { observer.invoke() }
+        verify(exactly = 1) { observer.invoke(any()) }
     }
 }

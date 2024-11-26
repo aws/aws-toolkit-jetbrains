@@ -91,8 +91,9 @@ data class NotificationEtagConfiguration(
 
 @Service(Service.Level.APP)
 internal final class NotificationPollingService : Disposable {
-    private val firstPollDone = AtomicBoolean(false)
-    private val observers = mutableListOf<() -> Unit>()
+    private val isFirstPoll = AtomicBoolean(true)
+    private val isStartup = AtomicBoolean(true)
+    private val observers = mutableListOf<(Boolean) -> Unit>()
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val scope = CoroutineScope(getCoroutineBgContext())
     private val pollingIntervalMs = Duration.ofMinutes(10).toMillis()
@@ -126,8 +127,8 @@ internal final class NotificationPollingService : Disposable {
             try {
                 val newETag = getNotificationETag()
                 if (newETag == NotificationEtagState.getInstance().etag) {
-                    // when there are notifications that may need to be shown on startup, but no new file was fetched
-                    if (firstPollDone.compareAndSet(false, true)) {
+                    // for when we need to notify on first poll even when there's no new ETag
+                    if (isFirstPoll.compareAndSet(true, false)) {
                         notifyObservers()
                     }
                     return false
@@ -177,11 +178,11 @@ internal final class NotificationPollingService : Disposable {
         )
     }
 
-    fun addObserver(observer: () -> Unit) = observers.add(observer)
+    fun addObserver(observer: (Boolean) -> Unit) = observers.add(observer)
 
     private fun notifyObservers() {
         observers.forEach { observer ->
-            observer()
+            observer(isStartup.getAndSet(false))
         }
     }
 
