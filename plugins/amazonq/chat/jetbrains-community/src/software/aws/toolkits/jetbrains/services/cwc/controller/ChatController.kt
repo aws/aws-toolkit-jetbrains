@@ -32,11 +32,11 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
 import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
+import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
-import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.CHAT_IMPLICIT_PROJECT_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
@@ -132,7 +132,6 @@ class ChatController private constructor(
         var shouldAddIndexInProgressMessage: Boolean = false
         var shouldUseWorkspaceContext: Boolean = false
         val startUrl = getStartUrl(context.project)
-        val isInternalUser = isInternalUser(startUrl)
 
         if (prompt.contains("@workspace")) {
             if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
@@ -145,14 +144,13 @@ class ChatController private constructor(
             } else {
                 sendOpenSettingsMessage(message.tabId)
             }
-        } else if (
-            CodeWhispererSettings.getInstance().isProjectContextEnabled() &&
-            ProjectContextController.getInstance(context.project).getProjectContextIndexComplete()
-        ) {
-            // if user does not have @workspace in the prompt, but user is Amazon internal
-            // add project context by default
-            val projectContextController = ProjectContextController.getInstance(context.project)
-            queryResult = projectContextController.query(prompt, timeout = CHAT_IMPLICIT_PROJECT_CONTEXT_TIMEOUT)
+        } else if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
+            if (ProjectContextController.getInstance(context.project).getProjectContextIndexComplete()) {
+                val projectContextController = ProjectContextController.getInstance(context.project)
+                queryResult = projectContextController.query(prompt, timeout = CHAT_IMPLICIT_PROJECT_CONTEXT_TIMEOUT)
+            } else {
+                logger.debug { "skipping implicit workspace context as index is not ready" }
+            }
         }
 
         handleChat(
