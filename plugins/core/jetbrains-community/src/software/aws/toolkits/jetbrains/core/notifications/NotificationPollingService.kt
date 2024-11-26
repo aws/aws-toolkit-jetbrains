@@ -63,32 +63,6 @@ object NotificationEndpoint {
     private const val DEFAULT_ENDPOINT = "" // TODO: Replace with actual endpoint
 }
 
-@State(name = "notificationEtag", storages = [Storage("aws.xml")])
-class NotificationEtagState : PersistentStateComponent<NotificationEtagConfiguration> {
-    private var state = NotificationEtagConfiguration()
-
-    override fun getState(): NotificationEtagConfiguration = state
-
-    override fun loadState(state: NotificationEtagConfiguration) {
-        this.state = state
-    }
-
-    var etag: String?
-        get() = state.etag
-        set(value) {
-            state.etag = value
-        }
-
-    companion object {
-        fun getInstance(): NotificationEtagState =
-            ApplicationManager.getApplication().getService(NotificationEtagState::class.java)
-    }
-}
-
-data class NotificationEtagConfiguration(
-    var etag: String? = null,
-)
-
 @Service(Service.Level.APP)
 internal final class NotificationPollingService : Disposable {
     private val isFirstPoll = AtomicBoolean(true)
