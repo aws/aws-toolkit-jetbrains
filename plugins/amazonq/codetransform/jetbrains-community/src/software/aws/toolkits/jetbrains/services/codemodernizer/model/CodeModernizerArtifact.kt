@@ -19,6 +19,7 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.codemodernizer.TransformationSummary
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
 import java.io.File
+import java.util.UUID
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.Path
 import kotlin.io.path.isDirectory
@@ -39,7 +40,7 @@ open class CodeModernizerArtifact(
 
     companion object {
         private const val MAX_SUPPORTED_VERSION = 1.0
-        private val tempDir = createTempDirectory("codeTransformArtifacts", null)
+        private var tempDir = createTempDirectory("codeTransformArtifacts", null)
         private const val MANIFEST_FILE_NAME = "manifest.json"
         private const val SUMMARY_FILE_NAME = "summary.md"
         private const val METRICS_FILE_NAME = "metrics.json"
@@ -52,6 +53,7 @@ open class CodeModernizerArtifact(
          * If anything goes wrong during this process an exception is thrown.
          */
         fun create(zipPath: String): CodeModernizerArtifact {
+            tempDir = createTempDirectory("codeTransformArtifacts-", UUID.randomUUID().toString())
             val path = Path(zipPath)
             if (path.exists()) {
                 if (!unzipFile(path, tempDir.toPath())) {
