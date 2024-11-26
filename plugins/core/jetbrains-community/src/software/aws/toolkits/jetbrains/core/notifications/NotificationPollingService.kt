@@ -13,10 +13,9 @@ import com.intellij.openapi.components.Storage
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import com.intellij.util.io.HttpRequests
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.RemoteResolveParser
 import software.aws.toolkits.core.utils.RemoteResource
@@ -25,7 +24,6 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.DefaultRemoteResourceResolverProvider
 import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.telemetry.Component
 import software.aws.toolkits.telemetry.ToolkitTelemetry
 import java.io.InputStream
@@ -94,7 +92,6 @@ internal final class NotificationPollingService : Disposable {
     private val isFirstPoll = AtomicBoolean(true)
     private val observers = mutableListOf<() -> Unit>()
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
-    private val scope = CoroutineScope(getCoroutineBgContext())
     private val pollingIntervalMs = Duration.ofMinutes(10).toMillis()
     private val resourceResolver: RemoteResourceResolverProvider = DefaultRemoteResourceResolverProvider()
     private val notificationsResource = object : RemoteResource {
@@ -104,7 +101,7 @@ internal final class NotificationPollingService : Disposable {
     }
 
     fun startPolling() {
-        val newNotifications = pollForNotifications()
+        val newNotifications = runBlocking { pollForNotifications() }
         if (newNotifications) {
             notifyObservers()
         }
@@ -118,7 +115,7 @@ internal final class NotificationPollingService : Disposable {
      * Main polling function that checks for updates and downloads if necessary
      * Returns the parsed notifications if successful, null otherwise
      */
-    private fun pollForNotifications(): Boolean {
+    private suspend fun pollForNotifications(): Boolean {
         var retryCount = 0
         var lastException: Exception? = null
 
@@ -144,9 +141,7 @@ internal final class NotificationPollingService : Disposable {
                 retryCount++
                 if (retryCount < MAX_RETRIES) {
                     val backoffDelay = RETRY_DELAY_MS * (1L shl (retryCount - 1))
-                    scope.launch {
-                        delay(backoffDelay)
-                    }
+                    delay(backoffDelay)
                 }
             }
         }
@@ -187,7 +182,6 @@ internal final class NotificationPollingService : Disposable {
 
     override fun dispose() {
         alarm.dispose()
-        scope.cancel()
     }
 
     companion object {
