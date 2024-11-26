@@ -44,24 +44,20 @@ class ProcessNotificationsBase(
     }
 
     fun retrieveStartupAndEmergencyNotifications() {
+        val isStartupPoll = isStartup.compareAndSet(true,false)
         val notifications = getNotificationsFromFile()
-
         notifications?.let { notificationsList ->
-            val (startupNotifications, emergencyNotifications) = notificationsList.notifications
-                ?.partition { notification ->
-                    notification.schedule.type.equals("StartUp", ignoreCase = true)
+            val activeNotifications = notificationsList.notifications
+                ?.filter { notification ->
+                    // Keep notification if:
+                    // - it's not a startup notification, OR
+                    // - it is a startup notification AND this is the first poll
+                    notification.schedule.type != NotificationScheduleType.STARTUP || isStartupPoll
                 }
-                ?: Pair(emptyList(), emptyList())
-
-            val dismissalState = NotificationDismissalState.getInstance()
-            val startupList = if (isStartup.compareAndSet(true, false)) {
-                startupNotifications
-            } else {
-                emptyList()
-            }
-
-            val combinedNotifications = startupList.plus(emergencyNotifications)
-            val activeNotifications = combinedNotifications.filter { !dismissalState.isDismissed(it.id) }
+                ?.filter { notification ->
+                    !NotificationDismissalState.getInstance().isDismissed(notification.id)
+                }
+                ?: emptyList()
 
             activeNotifications.forEach { processNotification(project, it) }
         }

@@ -27,13 +27,30 @@ data class NotificationData(
 )
 
 data class NotificationSchedule(
-    val type: String,
-)
+    @JsonDeserialize(using = NotificationTypeDeserializer::class)
+    val type: NotificationScheduleType,
+) {
+    constructor(type: String) : this(NotificationScheduleType.fromString(type))
+}
 
 enum class NotificationSeverity {
     INFO,
     WARNING,
     CRITICAL,
+}
+
+enum class NotificationScheduleType {
+    STARTUP,
+    EMERGENCY;
+
+    companion object {
+        fun fromString(value: String): NotificationScheduleType {
+            return when (value.lowercase()) {
+                "startup" -> STARTUP
+                else -> EMERGENCY
+            }
+        }
+    }
 }
 
 data class NotificationContentDescriptionLocale(
