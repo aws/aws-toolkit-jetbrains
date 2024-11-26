@@ -6,26 +6,28 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.inlay
 import com.intellij.idea.AppMode
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorCustomElementRenderer
 import com.intellij.openapi.editor.Inlay
+import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.util.Disposer
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationChunk
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
 
 @Service
-class CodeWhispererInlayManagerNew {
+class CodeWhispererInlayManager {
     private val existingInlays = mutableListOf<Inlay<EditorCustomElementRenderer>>()
-    fun updateInlays(sessionContext: SessionContextNew, chunks: List<RecommendationChunk>) {
+    fun updateInlays(states: InvocationContext, chunks: List<RecommendationChunk>) {
+        val editor = states.requestContext.editor
         clearInlays()
 
         chunks.forEach { chunk ->
-            createCodeWhispererInlays(sessionContext, chunk.inlayOffset, chunk.text)
+            createCodeWhispererInlays(editor, chunk.inlayOffset, chunk.text, states.popup)
         }
     }
 
-    private fun createCodeWhispererInlays(sessionContext: SessionContextNew, startOffset: Int, inlayText: String) {
+    private fun createCodeWhispererInlays(editor: Editor, startOffset: Int, inlayText: String, popup: JBPopup) {
         if (inlayText.isEmpty()) return
-        val editor = sessionContext.editor
         val firstNewlineIndex = inlayText.indexOf("\n")
         val firstLine: String
         val otherLines: String
@@ -47,7 +49,7 @@ class CodeWhispererInlayManagerNew {
             val inlineInlay = editor.inlayModel.addInlineElement(startOffset, true, firstLineRenderer)
             inlineInlay?.let {
                 existingInlays.add(it)
-                Disposer.register(sessionContext, it)
+                Disposer.register(popup, it)
             }
         }
 
@@ -71,7 +73,7 @@ class CodeWhispererInlayManagerNew {
             )
             blockInlay?.let {
                 existingInlays.add(it)
-                Disposer.register(sessionContext, it)
+                Disposer.register(popup, it)
             }
         }
     }
@@ -85,6 +87,6 @@ class CodeWhispererInlayManagerNew {
 
     companion object {
         @JvmStatic
-        fun getInstance(): CodeWhispererInlayManagerNew = service()
+        fun getInstance(): CodeWhispererInlayManager = service()
     }
 }
