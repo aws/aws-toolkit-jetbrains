@@ -19,6 +19,7 @@ import org.junit.Rule
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.timeout
@@ -40,7 +41,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhisper
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreActionState
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreStateType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererRecommendationManager
@@ -96,11 +97,9 @@ open class CodeWhispererTestBase {
             }
         }
 
-        codewhispererService = spy(CodeWhispererService.getInstance())
-        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererService, disposableRule.disposable)
-
         popupManagerSpy = spy(CodeWhispererPopupManager.getInstance())
-        codewhispererService.disposeDisplaySession(false)
+        popupManagerSpy.reset()
+        doNothing().`when`(popupManagerSpy).showPopup(any(), any(), any(), any(), any())
         ApplicationManager.getApplication().replaceService(CodeWhispererPopupManager::class.java, popupManagerSpy, disposableRule.disposable)
 
         invocationStatusSpy = spy(CodeWhispererInvocationStatus.getInstance())
@@ -115,6 +114,7 @@ open class CodeWhispererTestBase {
 
         stateManager = spy(CodeWhispererExplorerActionManager.getInstance())
         recommendationManager = CodeWhispererRecommendationManager.getInstance()
+        codewhispererService = CodeWhispererService.getInstance()
         editorManager = CodeWhispererEditorManager.getInstance()
         settingsManager = CodeWhispererSettings.getInstance()
 
@@ -153,22 +153,24 @@ open class CodeWhispererTestBase {
     open fun tearDown() {
         stateManager.loadState(originalExplorerActionState)
         settingsManager.loadState(originalSettings)
-        codewhispererService.disposeDisplaySession(true)
+        popupManagerSpy.reset()
+        runInEdtAndWait {
+            popupManagerSpy.closePopup()
+        }
     }
 
-    fun withCodeWhispererServiceInvokedAndWait(runnable: (SessionContext) -> Unit) {
-        val sessionCaptor = argumentCaptor<SessionContext>()
+    fun withCodeWhispererServiceInvokedAndWait(runnable: (InvocationContext) -> Unit) {
+        val statesCaptor = argumentCaptor<InvocationContext>()
         invokeCodeWhispererService()
         verify(popupManagerSpy, timeout(5000).atLeastOnce())
-            .showPopup(sessionCaptor.capture(), any())
-        CodeWhispererInvocationStatus.getInstance().setDisplaySessionActive(true)
-        val session = sessionCaptor.lastValue
+            .showPopup(statesCaptor.capture(), any(), any(), any(), any())
+        val states = statesCaptor.lastValue
 
         runInEdtAndWait {
             try {
-                runnable(session)
+                runnable(states)
             } finally {
-                codewhispererService.disposeDisplaySession(true)
+                CodeWhispererPopupManager.getInstance().closePopup(states.popup)
             }
         }
 
