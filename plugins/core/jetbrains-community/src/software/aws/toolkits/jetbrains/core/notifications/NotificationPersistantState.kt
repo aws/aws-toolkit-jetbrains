@@ -10,12 +10,13 @@ import com.intellij.openapi.components.Storage
 
 @State(name = "notificationDismissals", storages = [Storage("aws.xml")])
 class NotificationDismissalState : PersistentStateComponent<NotificationDismissalConfiguration> {
-    private var state = NotificationDismissalConfiguration()
+    private val state = NotificationDismissalConfiguration()
 
     override fun getState(): NotificationDismissalConfiguration = state
 
     override fun loadState(state: NotificationDismissalConfiguration) {
-        this.state = state
+        this.state.dismissedNotificationIds.clear()
+        this.state.dismissedNotificationIds.addAll(state.dismissedNotificationIds)
     }
 
     fun isDismissed(notificationId: String): Boolean =
@@ -37,12 +38,12 @@ data class NotificationDismissalConfiguration(
 
 @State(name = "notificationEtag", storages = [Storage("aws.xml")])
 class NotificationEtagState : PersistentStateComponent<NotificationEtagConfiguration> {
-    private var state = NotificationEtagConfiguration()
+    private val state = NotificationEtagConfiguration()
 
     override fun getState(): NotificationEtagConfiguration = state
 
     override fun loadState(state: NotificationEtagConfiguration) {
-        this.state = state
+        this.state.etag = state.etag
     }
 
     var etag: String?

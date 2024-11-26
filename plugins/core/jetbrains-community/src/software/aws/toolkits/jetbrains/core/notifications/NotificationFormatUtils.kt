@@ -41,7 +41,8 @@ enum class NotificationSeverity {
 
 enum class NotificationScheduleType {
     STARTUP,
-    EMERGENCY;
+    EMERGENCY,
+    ;
 
     companion object {
         fun fromString(value: String): NotificationScheduleType {

@@ -3,17 +3,17 @@
 
 package software.aws.toolkits.jetbrains.core.notifications
 
+import com.intellij.openapi.project.Project
+import com.intellij.testFramework.ApplicationExtension
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.spyk
-import io.mockk.verify
-import io.mockk.unmockkAll
 import io.mockk.mockkObject
+import io.mockk.spyk
+import io.mockk.unmockkAll
+import io.mockk.verify
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import com.intellij.openapi.project.Project
-import com.intellij.testFramework.ApplicationExtension
 import org.junit.jupiter.api.extension.ExtendWith
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -34,7 +34,6 @@ class ProcessNotificationsBaseTest {
         sut = spyk<ProcessNotificationsBase>(
             objToCopy = ProcessNotificationsBase(project)
         )
-
     }
 
     @Test
@@ -81,7 +80,6 @@ class ProcessNotificationsBaseTest {
         // second poll skips processing
         sut.retrieveStartupAndEmergencyNotifications()
 
-
         verify(exactly = 1) { sut.processNotification(project, any()) }
     }
 
@@ -96,7 +94,7 @@ class ProcessNotificationsBaseTest {
 
     @Test
     fun `empty notifications list is handled gracefully`() {
-        every { sut["getNotificationsFromFile"]()} returns createNotificationsList()
+        every { sut["getNotificationsFromFile"]() } returns createNotificationsList()
 
         sut.retrieveStartupAndEmergencyNotifications()
 
@@ -128,7 +126,7 @@ class ProcessNotificationsBaseTest {
     }
 
     // Helper functions to create test data
-private fun createNotification(id: String, type: NotificationScheduleType) = NotificationData(
+    private fun createNotification(id: String, type: NotificationScheduleType) = NotificationData(
         id = id,
         schedule = NotificationSchedule(type = type),
         severity = "INFO",
@@ -155,8 +153,6 @@ private fun createNotification(id: String, type: NotificationScheduleType) = Not
         val value = field.get(null) as AtomicBoolean
         value.set(true)
     }
-
-
 
     @AfterEach
     fun tearDown() {

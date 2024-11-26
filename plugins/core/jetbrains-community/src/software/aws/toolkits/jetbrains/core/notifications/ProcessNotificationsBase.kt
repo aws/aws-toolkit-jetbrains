@@ -44,7 +44,7 @@ class ProcessNotificationsBase(
     }
 
     fun retrieveStartupAndEmergencyNotifications() {
-        val isStartupPoll = isStartup.compareAndSet(true,false)
+        val isStartupPoll = isStartup.compareAndSet(true, false)
         val notifications = getNotificationsFromFile()
         notifications?.let { notificationsList ->
             val activeNotifications = notificationsList.notifications
