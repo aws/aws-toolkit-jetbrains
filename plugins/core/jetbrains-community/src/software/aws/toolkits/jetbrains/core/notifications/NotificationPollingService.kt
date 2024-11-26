@@ -92,8 +92,7 @@ data class NotificationEtagConfiguration(
 @Service(Service.Level.APP)
 internal final class NotificationPollingService : Disposable {
     private val isFirstPoll = AtomicBoolean(true)
-    private val isStartup = AtomicBoolean(true)
-    private val observers = mutableListOf<(Boolean) -> Unit>()
+    private val observers = mutableListOf<() -> Unit>()
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val scope = CoroutineScope(getCoroutineBgContext())
     private val pollingIntervalMs = Duration.ofMinutes(10).toMillis()
@@ -178,11 +177,11 @@ internal final class NotificationPollingService : Disposable {
         )
     }
 
-    fun addObserver(observer: (Boolean) -> Unit) = observers.add(observer)
+    fun addObserver(observer: () -> Unit) = observers.add(observer)
 
     private fun notifyObservers() {
         observers.forEach { observer ->
-            observer(isStartup.getAndSet(false))
+            observer()
         }
     }
 

@@ -24,8 +24,8 @@ object NotificationMapperUtil {
 class ProcessNotificationsBase {
     private val notifListener = mutableListOf<NotifListener>()
     init {
-        NotificationPollingService.getInstance().addObserver { isStartup ->
-            retrieveStartupAndEmergencyNotifications(isStartup)
+        NotificationPollingService.getInstance().addObserver {  ->
+            retrieveStartupAndEmergencyNotifications()
         }
     }
 
@@ -38,7 +38,7 @@ class ProcessNotificationsBase {
         return NotificationMapperUtil.mapper.readValue(content)
     }
 
-    fun retrieveStartupAndEmergencyNotifications(isStartup: Boolean) {
+    fun retrieveStartupAndEmergencyNotifications() {
         // TODO: separates notifications into startup and emergency
         // iterates through the 2 lists and processes each notification(if it isn't dismissed)
     }
