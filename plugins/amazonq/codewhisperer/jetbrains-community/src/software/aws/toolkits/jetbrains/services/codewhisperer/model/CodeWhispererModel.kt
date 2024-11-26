@@ -12,20 +12,22 @@ import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import kotlinx.coroutines.Deferred
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManagerNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererIntelliSenseOnHoverListener
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatusNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererServiceNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContextNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryServiceNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.setIntelliSensePopupAlpha
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
@@ -94,7 +96,14 @@ data class SupplementalContextInfo(
 }
 
 data class RecommendationContext(
-    val details: MutableList<DetailContext>,
+    val details: List<DetailContext>,
+    val userInputOriginal: String,
+    val userInputSinceInvocation: String,
+    val position: VisualPosition,
+)
+
+data class RecommendationContextNew(
+    val details: MutableList<DetailContextNew>,
     val userInputOriginal: String,
     val userInputSinceInvocation: String,
     val position: VisualPosition,
@@ -104,7 +113,7 @@ data class RecommendationContext(
 
 data class PreviewContext(
     val jobId: Int,
-    val detail: DetailContext,
+    val detail: DetailContextNew,
     val userInput: String,
     val typeahead: String,
 )
@@ -117,11 +126,31 @@ data class DetailContext(
     val isTruncatedOnRight: Boolean,
     val rightOverlap: String = "",
     val completionType: CodewhispererCompletionType,
+)
+
+data class DetailContextNew(
+    val requestId: String,
+    val recommendation: Completion,
+    val reformatted: Completion,
+    val isDiscarded: Boolean,
+    val isTruncatedOnRight: Boolean,
+    val rightOverlap: String = "",
+    val completionType: CodewhispererCompletionType,
     var hasSeen: Boolean = false,
     var isAccepted: Boolean = false,
 )
 
 data class SessionContext(
+    val typeahead: String = "",
+    val typeaheadOriginal: String = "",
+    val selectedIndex: Int = 0,
+    val seen: MutableSet<Int> = mutableSetOf(),
+    val isFirstTimeShowingPopup: Boolean = true,
+    var toBeRemovedHighlighter: RangeHighlighter? = null,
+    var insertEndOffset: Int = -1,
+)
+
+data class SessionContextNew(
     val project: Project,
     val editor: Editor,
     var popup: JBPopup? = null,
@@ -136,10 +165,10 @@ data class SessionContext(
     private var isDisposed = false
     init {
         project.messageBus.connect(this).subscribe(
-            CodeWhispererService.CODEWHISPERER_INTELLISENSE_POPUP_ON_HOVER,
+            CodeWhispererServiceNew.CODEWHISPERER_INTELLISENSE_POPUP_ON_HOVER,
             object : CodeWhispererIntelliSenseOnHoverListener {
                 override fun onEnter() {
-                    CodeWhispererPopupManager.getInstance().bringSuggestionInlayToFront(editor, popup, opposite = true)
+                    CodeWhispererPopupManagerNew.getInstance().bringSuggestionInlayToFront(editor, popup, opposite = true)
                 }
             }
         )
@@ -147,13 +176,13 @@ data class SessionContext(
 
     @RequiresEdt
     override fun dispose() {
-        CodeWhispererTelemetryService.getInstance().sendUserDecisionEventForAll(
+        CodeWhispererTelemetryServiceNew.getInstance().sendUserDecisionEventForAll(
             this,
             hasAccepted,
-            CodeWhispererInvocationStatus.getInstance().popupStartTimestamp?.let { Duration.between(it, Instant.now()) }
+            CodeWhispererInvocationStatusNew.getInstance().popupStartTimestamp?.let { Duration.between(it, Instant.now()) }
         )
         setIntelliSensePopupAlpha(editor, 0f)
-        CodeWhispererInvocationStatus.getInstance().setDisplaySessionActive(false)
+        CodeWhispererInvocationStatusNew.getInstance().setDisplaySessionActive(false)
 
         if (hasAccepted) {
             popup?.closeOk(null)
@@ -162,7 +191,7 @@ data class SessionContext(
         }
         popup?.let { Disposer.dispose(it) }
         popup = null
-        CodeWhispererInvocationStatus.getInstance().finishInvocation()
+        CodeWhispererInvocationStatusNew.getInstance().finishInvocation()
         isDisposed = true
     }
 
@@ -186,6 +215,15 @@ data class InvocationContext(
     val requestContext: RequestContext,
     val responseContext: ResponseContext,
     val recommendationContext: RecommendationContext,
+    val popup: JBPopup,
+) : Disposable {
+    override fun dispose() {}
+}
+
+data class InvocationContextNew(
+    val requestContext: RequestContextNew,
+    val responseContext: ResponseContext,
+    val recommendationContext: RecommendationContextNew,
 ) : Disposable {
     private var isDisposed = false
 
@@ -196,9 +234,15 @@ data class InvocationContext(
 
     fun isDisposed() = isDisposed
 }
-
 data class WorkerContext(
     val requestContext: RequestContext,
+    val responseContext: ResponseContext,
+    val response: GenerateCompletionsResponse,
+    val popup: JBPopup,
+)
+
+data class WorkerContextNew(
+    val requestContext: RequestContextNew,
     val responseContext: ResponseContext,
     val response: GenerateCompletionsResponse,
 )
@@ -282,38 +326,4 @@ data class LatencyContext(
 data class TryExampleRowContext(
     val description: String,
     val filename: String?,
-)
-
-data class RequestContext(
-    val project: Project,
-    val editor: Editor,
-    val triggerTypeInfo: TriggerTypeInfo,
-    val caretPosition: CaretPosition,
-    val fileContextInfo: FileContextInfo,
-    private val supplementalContextDeferred: Deferred<SupplementalContextInfo?>,
-    val connection: ToolkitConnection?,
-    val customizationArn: String?,
-) {
-    // TODO: should make the entire getRequestContext() suspend function instead of making supplemental context only
-    var supplementalContext: SupplementalContextInfo? = null
-        private set
-        get() = when (field) {
-            null -> {
-                if (!supplementalContextDeferred.isCompleted) {
-                    error("attempt to access supplemental context before awaiting the deferred")
-                } else {
-                    null
-                }
-            }
-            else -> field
-        }
-
-    suspend fun awaitSupplementalContext(): SupplementalContextInfo? {
-        supplementalContext = supplementalContextDeferred.await()
-        return supplementalContext
-    }
-}
-
-data class ResponseContext(
-    val sessionId: String,
 )

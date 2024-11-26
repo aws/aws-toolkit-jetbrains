@@ -116,7 +116,6 @@ object NotificationManager {
 
         return panel
     }
-
     private fun updatePlugins() {
         val pluginUpdateManager = PluginUpdateManager()
         runInEdt {

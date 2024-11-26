@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Introduce @workspace command to enhance chat context fetching for Chat"
+}
