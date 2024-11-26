@@ -13,7 +13,6 @@ import com.intellij.openapi.components.Storage
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import com.intellij.util.io.HttpRequests
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.annotations.VisibleForTesting

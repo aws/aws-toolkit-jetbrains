@@ -24,7 +24,7 @@ object NotificationMapperUtil {
 class ProcessNotificationsBase {
     private val notifListener = mutableListOf<NotifListener>()
     init {
-        NotificationPollingService.getInstance().addObserver {  ->
+        NotificationPollingService.getInstance().addObserver {
             retrieveStartupAndEmergencyNotifications()
         }
     }
