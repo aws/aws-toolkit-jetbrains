@@ -15,6 +15,7 @@ import com.intellij.openapi.project.Project
 import software.aws.toolkits.core.utils.inputStream
 import software.aws.toolkits.jetbrains.utils.notifyStickyWithData
 import java.nio.file.Paths
+import java.util.concurrent.atomic.AtomicBoolean
 
 object NotificationMapperUtil {
     val mapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -25,9 +26,10 @@ class ProcessNotificationsBase(
     private val project: Project,
 ) {
     private val notifListener = mutableListOf<NotifListener>()
+    private var isStartup: AtomicBoolean = AtomicBoolean(true)
     init {
-        NotificationPollingService.getInstance().addObserver { isStartup ->
-            retrieveStartupAndEmergencyNotifications(isStartup)
+        NotificationPollingService.getInstance().addObserver {
+            retrieveStartupAndEmergencyNotifications()
         }
     }
 
@@ -40,7 +42,7 @@ class ProcessNotificationsBase(
         return NotificationMapperUtil.mapper.readValue(content)
     }
 
-    fun retrieveStartupAndEmergencyNotifications(isStartup: Boolean) {
+    fun retrieveStartupAndEmergencyNotifications() {
         val notifications = getNotificationsFromFile()
 
         notifications?.let { notificationsList ->
@@ -51,10 +53,16 @@ class ProcessNotificationsBase(
                 ?: Pair(emptyList(), emptyList())
 
             val dismissalState = NotificationDismissalState.getInstance()
-            (if (isStartup) startupNotifications else emptyList())
-                .plus(emergencyNotifications)
-                .filter { !dismissalState.isDismissed(it.id) }
-                .forEach { processNotification(project, it) }
+            val startupList = if (isStartup.compareAndSet(true, false)) {
+                startupNotifications
+            } else {
+                emptyList()
+            }
+
+            val combinedNotifications = startupList.plus(emergencyNotifications)
+            val activeNotifications = combinedNotifications.filter { !dismissalState.isDismissed(it.id) }
+
+            activeNotifications.forEach { processNotification(project, it) }
         }
     }
 

@@ -35,7 +35,6 @@ data class NotificationDismissalConfiguration(
     var dismissedNotificationIds: MutableSet<String> = mutableSetOf(),
 )
 
-
 @State(name = "notificationEtag", storages = [Storage("aws.xml")])
 class NotificationEtagState : PersistentStateComponent<NotificationEtagConfiguration> {
     private var state = NotificationEtagConfiguration()
