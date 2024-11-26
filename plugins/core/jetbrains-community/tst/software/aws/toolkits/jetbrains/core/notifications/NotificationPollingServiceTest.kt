@@ -26,7 +26,7 @@ class NotificationPollingServiceTest {
     private lateinit var sut: NotificationPollingService
     private lateinit var mockResolver: RemoteResourceResolver
     private lateinit var mockProvider: RemoteResourceResolverProvider
-    private lateinit var observer: (Boolean) -> Unit
+    private lateinit var observer: () -> Unit
     private val testPath = Path.of("/test/path")
 
     @BeforeEach
@@ -47,8 +47,8 @@ class NotificationPollingServiceTest {
         providerField.set(sut, mockProvider)
 
         // Create mock observers
-        observer = mockk<(Boolean) -> Unit>()
-        every { observer.invoke(any()) } just Runs
+        observer = mockk<() -> Unit>()
+        every { observer.invoke() } just Runs
 
         val observersField = NotificationPollingService::class.java
             .getDeclaredField("observers")
@@ -78,7 +78,7 @@ class NotificationPollingServiceTest {
             } returns "same"
             sut.startPolling()
         }
-        verify(exactly = 0) { observer.invoke(any()) }
+        verify(exactly = 0) { observer.invoke() }
     }
 
     @Test
@@ -92,7 +92,7 @@ class NotificationPollingServiceTest {
             } returns "same"
             sut.startPolling()
         }
-        verify(exactly = 1) { observer.invoke(any()) }
+        verify(exactly = 1) { observer.invoke() }
     }
 
     @Test
@@ -106,6 +106,6 @@ class NotificationPollingServiceTest {
             } returns "newEtag"
             sut.startPolling()
         }
-        verify(exactly = 1) { observer.invoke(any()) }
+        verify(exactly = 1) { observer.invoke() }
     }
 }
