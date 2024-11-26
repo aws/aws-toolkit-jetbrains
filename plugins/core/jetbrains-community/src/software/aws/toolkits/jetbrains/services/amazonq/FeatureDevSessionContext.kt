@@ -132,7 +132,6 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     }
 
     private fun wellKnown(file: VirtualFile): Boolean = wellKnownSourceFiles.contains(file.name)
-
     suspend fun zipFiles(projectRoot: VirtualFile, isAutoBuildFeatureEnabled: Boolean?): File = withContext(getCoroutineBgContext()) {
         val files = mutableListOf<VirtualFile>()
         val ignoredExtensionMap = mutableMapOf<String, Long>().withDefault { 0L }
