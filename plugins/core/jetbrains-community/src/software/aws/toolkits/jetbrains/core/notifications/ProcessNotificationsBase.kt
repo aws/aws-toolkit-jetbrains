@@ -22,7 +22,7 @@ object NotificationMapperUtil {
 
 @Service(Service.Level.PROJECT)
 class ProcessNotificationsBase(
-    private val project: Project
+    private val project: Project,
 ) {
     private val notifListener = mutableListOf<NotifListener>()
     init {
@@ -50,8 +50,10 @@ class ProcessNotificationsBase(
                 }
                 ?: Pair(emptyList(), emptyList())
 
+            val dismissalState = NotificationDismissalState.getInstance()
             (if (isStartup) startupNotifications else emptyList())
                 .plus(emergencyNotifications)
+                .filter { !dismissalState.isDismissed(it.id) }
                 .forEach { processNotification(project, it) }
         }
     }

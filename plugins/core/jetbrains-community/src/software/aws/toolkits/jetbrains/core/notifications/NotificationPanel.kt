@@ -21,7 +21,8 @@ class NotificationPanel : BorderLayoutPanel() {
     }
 
     private fun removeNotificationPanel(notificationId: String) = runInEdt {
-        ProcessNotificationsBase.showBannerNotification.remove(notificationId) // TODO: add id to dismissed notification list
+        ProcessNotificationsBase.showBannerNotification.remove(notificationId)
+        NotificationDismissalState.getInstance().dismissNotification(notificationId)
         wrapper.removeAll()
     }
 
