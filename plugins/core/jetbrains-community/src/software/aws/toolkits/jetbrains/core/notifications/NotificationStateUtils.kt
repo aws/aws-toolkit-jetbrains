@@ -3,12 +3,15 @@
 
 package software.aws.toolkits.jetbrains.core.notifications
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
+import com.intellij.openapi.components.RoamingType
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 
-@State(name = "notificationDismissals", storages = [Storage("aws.xml")])
+@Service
+@State(name = "notificationDismissals", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
 class NotificationDismissalState : PersistentStateComponent<NotificationDismissalConfiguration> {
     private val state = NotificationDismissalConfiguration()
 
@@ -28,7 +31,7 @@ class NotificationDismissalState : PersistentStateComponent<NotificationDismissa
 
     companion object {
         fun getInstance(): NotificationDismissalState =
-            ApplicationManager.getApplication().getService(NotificationDismissalState::class.java)
+            service()
     }
 }
 
@@ -36,7 +39,8 @@ data class NotificationDismissalConfiguration(
     var dismissedNotificationIds: MutableSet<String> = mutableSetOf(),
 )
 
-@State(name = "notificationEtag", storages = [Storage("aws.xml")])
+@Service
+@State(name = "notificationEtag", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
 class NotificationEtagState : PersistentStateComponent<NotificationEtagConfiguration> {
     private val state = NotificationEtagConfiguration()
 
@@ -54,7 +58,7 @@ class NotificationEtagState : PersistentStateComponent<NotificationEtagConfigura
 
     companion object {
         fun getInstance(): NotificationEtagState =
-            ApplicationManager.getApplication().getService(NotificationEtagState::class.java)
+            service()
     }
 }
 
