@@ -21,11 +21,13 @@ object NotificationMapperUtil {
 }
 
 @Service(Service.Level.PROJECT)
-class ProcessNotificationsBase {
+class ProcessNotificationsBase(
+    private val project: Project
+) {
     private val notifListener = mutableListOf<NotifListener>()
     init {
-        NotificationPollingService.getInstance().addObserver {
-            retrieveStartupAndEmergencyNotifications()
+        NotificationPollingService.getInstance().addObserver { isStartup ->
+            retrieveStartupAndEmergencyNotifications(isStartup)
         }
     }
 
@@ -38,7 +40,7 @@ class ProcessNotificationsBase {
         return NotificationMapperUtil.mapper.readValue(content)
     }
 
-    fun retrieveStartupAndEmergencyNotifications() {
+    fun retrieveStartupAndEmergencyNotifications(isStartup: Boolean) {
         val notifications = getNotificationsFromFile()
 
         notifications?.let { notificationsList ->
@@ -48,19 +50,9 @@ class ProcessNotificationsBase {
                 }
                 ?: Pair(emptyList(), emptyList())
 
-
-            val startupNotificationsList = NotificationsList(
-                schema = notificationsList.schema,
-                notifications = startupNotifications
-            )
-
-            val emergencyNotificationsList = NotificationsList(
-                schema = notificationsList.schema,
-                notifications = emergencyNotifications
-            )
-
-            // Now you can process each list separately
-            // TODO: Process the separated lists as needed
+            (if (isStartup) startupNotifications else emptyList())
+                .plus(emergencyNotifications)
+                .forEach { processNotification(project, it) }
         }
     }
 
