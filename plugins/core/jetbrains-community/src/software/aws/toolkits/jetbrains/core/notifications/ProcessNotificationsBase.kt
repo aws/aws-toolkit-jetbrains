@@ -83,7 +83,7 @@ class ProcessNotificationsBase(
             )
             if (severity == "Critical") {
                 val bannerContent = BannerContent(notificationContent.title, notificationContent.description, followupActions, notificationData.id)
-                showBannerNotification[notificationData.id] = bannerContent
+                BannerNotificationService.getInstance().addNotification(notificationData.id, bannerContent)
                 notifyListenerForNotification(bannerContent)
             }
         }
@@ -107,7 +107,6 @@ class ProcessNotificationsBase(
     companion object {
         fun getInstance(project: Project): ProcessNotificationsBase = project.service()
 
-        val showBannerNotification = mutableMapOf<String, BannerContent>()
         private const val NOTIFICATIONS_PATH = "aws-static-resources/notifications.json"
     }
 }

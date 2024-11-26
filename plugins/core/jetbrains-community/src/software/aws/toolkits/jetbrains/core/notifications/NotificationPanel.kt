@@ -15,13 +15,13 @@ class NotificationPanel : BorderLayoutPanel() {
     init {
         isOpaque = false
         addToCenter(wrapper)
-        ProcessNotificationsBase.showBannerNotification.forEach {
-            updateNotificationPanel(it.value)
+        BannerNotificationService.getInstance().getNotifications().forEach { (_, content) ->
+            updateNotificationPanel(content)
         }
     }
 
     private fun removeNotificationPanel(notificationId: String) = runInEdt {
-        ProcessNotificationsBase.showBannerNotification.remove(notificationId)
+        BannerNotificationService.getInstance().removeNotification(notificationId)
         NotificationDismissalState.getInstance().dismissNotification(notificationId)
         wrapper.removeAll()
     }

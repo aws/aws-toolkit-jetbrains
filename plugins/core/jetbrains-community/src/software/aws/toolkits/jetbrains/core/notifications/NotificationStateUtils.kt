@@ -5,9 +5,9 @@ package software.aws.toolkits.jetbrains.core.notifications
 
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.RoamingType
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
-import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 
 @Service
@@ -65,3 +65,23 @@ class NotificationEtagState : PersistentStateComponent<NotificationEtagConfigura
 data class NotificationEtagConfiguration(
     var etag: String? = null,
 )
+
+@Service
+class BannerNotificationService {
+    private val notifications = mutableMapOf<String, BannerContent>()
+
+    fun addNotification(id: String, content: BannerContent) {
+        notifications[id] = content
+    }
+
+    fun getNotifications(): Map<String, BannerContent> = notifications
+
+    fun removeNotification(id: String) {
+        notifications.remove(id)
+    }
+
+    companion object {
+        fun getInstance(): BannerNotificationService =
+            service()
+    }
+}
