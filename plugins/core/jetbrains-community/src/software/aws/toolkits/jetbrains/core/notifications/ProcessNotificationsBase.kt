@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.core.notifications
 
 import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.notification.NotificationType
@@ -18,15 +19,15 @@ import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicBoolean
 
 object NotificationMapperUtil {
-    val mapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    val mapper: ObjectMapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 }
+private var isStartup: AtomicBoolean = AtomicBoolean(true)
 
 @Service(Service.Level.PROJECT)
 class ProcessNotificationsBase(
     private val project: Project,
 ) {
     private val notifListener = mutableListOf<NotifListener>()
-    private var isStartup: AtomicBoolean = AtomicBoolean(true)
     init {
         NotificationPollingService.getInstance().addObserver {
             retrieveStartupAndEmergencyNotifications()
