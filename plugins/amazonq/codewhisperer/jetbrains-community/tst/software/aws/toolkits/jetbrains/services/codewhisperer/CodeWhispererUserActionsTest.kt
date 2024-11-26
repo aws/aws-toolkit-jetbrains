@@ -14,12 +14,14 @@ import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_TEXT_END_WITH_
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_TEXT_START_WITH_SELECTION
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.event.VisibleAreaEvent
+import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.times
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.timeout
@@ -93,7 +95,7 @@ class CodeWhispererUserActionsTest : CodeWhispererTestBase() {
         }
         withCodeWhispererServiceInvokedAndWait {
             projectRule.fixture.performEditorAction(actionId)
-            verify(codewhispererService, timeout(5000).atLeastOnce()).disposeDisplaySession(false)
+            verify(popupManagerSpy, timeout(5000)).cancelPopup(any())
         }
     }
 
@@ -118,9 +120,11 @@ class CodeWhispererUserActionsTest : CodeWhispererTestBase() {
         projectRule.fixture.type('\n')
         val expectedFileContext = "$testLeftContext\n        \n    $testRightContext"
         assertThat(projectRule.fixture.editor.document.text).isEqualTo(expectedFileContext)
-        verify(popupManagerSpy, timeout(5000)).showPopup(any(), any())
+        val popupCaptor = argumentCaptor<JBPopup>()
+        verify(popupManagerSpy, timeout(5000))
+            .showPopup(any(), any(), popupCaptor.capture(), any(), any())
         runInEdtAndWait {
-            codewhispererService.disposeDisplaySession(true)
+            popupManagerSpy.closePopup(popupCaptor.lastValue)
         }
     }
 
@@ -134,10 +138,10 @@ class CodeWhispererUserActionsTest : CodeWhispererTestBase() {
             on { this.newRectangle } doReturn newRect
         }
         withCodeWhispererServiceInvokedAndWait { states ->
-            CodeWhispererInvocationStatus.getInstance().setDisplaySessionActive(true)
+            CodeWhispererInvocationStatus.getInstance().setPopupActive(true)
             val listener = CodeWhispererScrollListener(states)
             listener.visibleAreaChanged(event)
-            verify(popupManagerSpy, times(2)).showPopup(any(), any())
+            verify(popupManagerSpy, times(2)).showPopup(any(), any(), any(), any(), any())
         }
     }
 
@@ -159,12 +163,15 @@ class CodeWhispererUserActionsTest : CodeWhispererTestBase() {
         setFileContext(pythonFileName, "def", rightContext)
         projectRule.fixture.type('{')
         if (shouldtrigger) {
-            verify(popupManagerSpy, timeout(5000).atLeastOnce()).showPopup(any(), any())
+            val popupCaptor = argumentCaptor<JBPopup>()
+            verify(popupManagerSpy, timeout(5000).atLeastOnce())
+                .showPopup(any(), any(), popupCaptor.capture(), any(), any())
             runInEdtAndWait {
-                codewhispererService.disposeDisplaySession(true)
+                popupManagerSpy.closePopup(popupCaptor.lastValue)
             }
         } else {
-            verify(popupManagerSpy, times(0)).showPopup(any(), any())
+            verify(popupManagerSpy, times(0))
+                .showPopup(any(), any(), any(), any(), any())
         }
     }
 
@@ -172,9 +179,11 @@ class CodeWhispererUserActionsTest : CodeWhispererTestBase() {
         CodeWhispererExplorerActionManager.getInstance().setAutoEnabled(true)
         setFileContext(pythonFileName, prompt, "")
         projectRule.fixture.type('\n')
-        verify(popupManagerSpy, timeout(5000).atLeast(times)).showPopup(any(), any())
+        val popupCaptor = argumentCaptor<JBPopup>()
+        verify(popupManagerSpy, timeout(5000).atLeast(times))
+            .showPopup(any(), any(), popupCaptor.capture(), any(), any())
         runInEdtAndWait {
-            codewhispererService.disposeDisplaySession(true)
+            popupManagerSpy.closePopup(popupCaptor.lastValue)
         }
     }
 }
