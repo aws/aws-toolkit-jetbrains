@@ -44,9 +44,10 @@ import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.RequestContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.ResponseContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContextNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.transform
@@ -89,8 +90,19 @@ interface CodeWhispererClientAdaptor : Disposable {
     fun listAvailableCustomizations(): List<CodeWhispererCustomization>
 
     fun sendUserTriggerDecisionTelemetry(
-        sessionContext: SessionContext,
         requestContext: RequestContext,
+        responseContext: ResponseContext,
+        completionType: CodewhispererCompletionType,
+        suggestionState: CodewhispererSuggestionState,
+        suggestionReferenceCount: Int,
+        lineCount: Int,
+        numberOfRecommendations: Int,
+        acceptedCharCount: Int,
+    ): SendTelemetryEventResponse
+
+    fun sendUserTriggerDecisionTelemetry(
+        sessionContext: SessionContextNew,
+        requestContext: RequestContextNew,
         responseContext: ResponseContext,
         completionType: CodewhispererCompletionType,
         suggestionState: CodewhispererSuggestionState,
@@ -290,7 +302,6 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             }
 
     override fun sendUserTriggerDecisionTelemetry(
-        sessionContext: SessionContext,
         requestContext: RequestContext,
         responseContext: ResponseContext,
         completionType: CodewhispererCompletionType,
@@ -302,19 +313,54 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
     ): SendTelemetryEventResponse {
         val fileContext = requestContext.fileContextInfo
         val programmingLanguage = fileContext.programmingLanguage
-        var e2eLatency = sessionContext.latencyContext.getCodeWhispererEndToEndLatency()
+        var e2eLatency = requestContext.latencyContext.getCodeWhispererEndToEndLatency()
 
-        // service side will only aggregate perceivedLatency with non-zero value
-        // For client-side, if the decision is not accept and reject, we will set the value to 0
-        // If the decision is accept or reject, it's guaranteed that they will need a perceivedLatency
-        // of non-zero because for accept case it's trivial, for reject case, this trigger must be the
-        // first seen trigger and this is the only one reject in this display session.
-        val emittedPerceivedLatency =
-            if (suggestionState == CodewhispererSuggestionState.Accept || suggestionState == CodewhispererSuggestionState.Reject) {
-                sessionContext.latencyContext.perceivedLatency
-            } else {
-                0.0
+        // When we send a userTriggerDecision for neither Accept nor Reject, service side should not use this value
+        // and client side will set this value to 0.0.
+        if (suggestionState != CodewhispererSuggestionState.Accept &&
+            suggestionState != CodewhispererSuggestionState.Reject
+        ) {
+            e2eLatency = 0.0
+        }
+
+        return bearerClient().sendTelemetryEvent { requestBuilder ->
+            requestBuilder.telemetryEvent { telemetryEventBuilder ->
+                telemetryEventBuilder.userTriggerDecisionEvent {
+                    it.requestId(requestContext.latencyContext.firstRequestId)
+                    it.completionType(completionType.toCodeWhispererSdkType())
+                    it.programmingLanguage { builder -> builder.languageName(programmingLanguage.toCodeWhispererRuntimeLanguage().languageId) }
+                    it.sessionId(responseContext.sessionId)
+                    it.recommendationLatencyMilliseconds(e2eLatency)
+                    it.triggerToResponseLatencyMilliseconds(requestContext.latencyContext.paginationFirstCompletionTime)
+                    it.perceivedLatencyMilliseconds(requestContext.latencyContext.perceivedLatency)
+                    it.suggestionState(suggestionState.toCodeWhispererSdkType())
+                    it.timestamp(Instant.now())
+                    it.suggestionReferenceCount(suggestionReferenceCount)
+                    it.generatedLine(lineCount)
+                    it.customizationArn(requestContext.customizationArn)
+                    it.numberOfRecommendations(numberOfRecommendations)
+                    it.acceptedCharacterCount(acceptedCharCount)
+                }
             }
+            requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+            requestBuilder.userContext(codeWhispererUserContext())
+        }
+    }
+
+    override fun sendUserTriggerDecisionTelemetry(
+        sessionContext: SessionContextNew,
+        requestContext: RequestContextNew,
+        responseContext: ResponseContext,
+        completionType: CodewhispererCompletionType,
+        suggestionState: CodewhispererSuggestionState,
+        suggestionReferenceCount: Int,
+        lineCount: Int,
+        numberOfRecommendations: Int,
+        acceptedCharCount: Int,
+    ): SendTelemetryEventResponse {
+        val fileContext = requestContext.fileContextInfo
+        val programmingLanguage = fileContext.programmingLanguage
+        var e2eLatency = sessionContext.latencyContext.getCodeWhispererEndToEndLatency()
 
         // When we send a userTriggerDecision of Empty or Discard, we set the time users see the first
         // suggestion to be now.
@@ -332,7 +378,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     it.sessionId(responseContext.sessionId)
                     it.recommendationLatencyMilliseconds(e2eLatency)
                     it.triggerToResponseLatencyMilliseconds(sessionContext.latencyContext.paginationFirstCompletionTime)
-                    it.perceivedLatencyMilliseconds(emittedPerceivedLatency)
+                    it.perceivedLatencyMilliseconds(sessionContext.latencyContext.perceivedLatency)
                     it.suggestionState(suggestionState.toCodeWhispererSdkType())
                     it.timestamp(Instant.now())
                     it.suggestionReferenceCount(suggestionReferenceCount)
@@ -640,8 +686,6 @@ private fun CodewhispererSuggestionState.toCodeWhispererSdkType() = when {
     this == CodewhispererSuggestionState.Reject -> SuggestionState.REJECT
     this == CodewhispererSuggestionState.Empty -> SuggestionState.EMPTY
     this == CodewhispererSuggestionState.Discard -> SuggestionState.DISCARD
-    this == CodewhispererSuggestionState.Ignore -> SuggestionState.MERGE
-    this == CodewhispererSuggestionState.Unseen -> SuggestionState.MERGE
     else -> SuggestionState.UNKNOWN_TO_SDK_VERSION
 }
 
