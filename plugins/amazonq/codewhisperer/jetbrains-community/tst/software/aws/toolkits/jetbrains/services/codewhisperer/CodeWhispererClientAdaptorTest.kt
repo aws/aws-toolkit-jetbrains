@@ -83,11 +83,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWh
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.ResponseContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
@@ -239,10 +238,10 @@ class CodeWhispererClientAdaptorTest {
 
     @Test
     fun sendUserTriggerDecisionTelemetry() {
-        val mockModelConfigurator = mock<CodeWhispererModelConfigurator> {
+        val mockModelConfiguraotr = mock<CodeWhispererModelConfigurator> {
             on { activeCustomization(any()) } doReturn CodeWhispererCustomization("fake-arn", "fake-name")
         }
-        ApplicationManager.getApplication().replaceService(CodeWhispererModelConfigurator::class.java, mockModelConfigurator, disposableRule.disposable)
+        ApplicationManager.getApplication().replaceService(CodeWhispererModelConfigurator::class.java, mockModelConfiguraotr, disposableRule.disposable)
 
         val file = projectRule.fixture.addFileToProject("main.java", "public class Main {}")
         runInEdtAndWait {
@@ -253,14 +252,10 @@ class CodeWhispererClientAdaptorTest {
             projectRule.fixture.editor,
             projectRule.project,
             file,
+            LatencyContext(codewhispererEndToEndStart = 0, codewhispererEndToEndEnd = 20000000)
         )
 
         sut.sendUserTriggerDecisionTelemetry(
-            SessionContext(
-                projectRule.project,
-                projectRule.fixture.editor,
-                latencyContext = LatencyContext(codewhispererEndToEndStart = 0, codewhispererEndToEndEnd = 20000000)
-            ),
             requestContext,
             ResponseContext("fake-session-id"),
             CodewhispererCompletionType.Line,
@@ -268,7 +263,7 @@ class CodeWhispererClientAdaptorTest {
             3,
             1,
             2,
-            10,
+            10
         )
 
         argumentCaptor<SendTelemetryEventRequest>().apply {
@@ -381,7 +376,6 @@ class CodeWhispererClientAdaptorTest {
     fun `sendTelemetryEvent for userTriggerDecision respects telemetry optin status, for SSO users`() {
         sendTelemetryEventOptOutCheckHelper {
             sut.sendUserTriggerDecisionTelemetry(
-                SessionContext(projectRule.project, mock(), latencyContext = LatencyContext()),
                 aRequestContext(projectRule.project),
                 aResponseContext(),
                 aCompletionType(),
@@ -389,7 +383,7 @@ class CodeWhispererClientAdaptorTest {
                 0,
                 1,
                 2,
-                10,
+                10
             )
         }
     }
