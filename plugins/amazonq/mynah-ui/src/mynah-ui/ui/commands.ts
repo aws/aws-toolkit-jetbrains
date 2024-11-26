@@ -57,7 +57,7 @@ export const workspaceCommand: QuickActionCommandGroup = {
     commands: [
         {
             command: '@workspace',
-            description: '(BETA) Reference all code in workspace.',
+            description: 'Reference all code in workspace.',
         },
     ],
 }
