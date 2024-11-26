@@ -258,7 +258,8 @@ private suspend fun CodeGenerationState.generateCode(
 fun registerNewFiles(newFileContents: Map<String, String>): List<NewFileZipInfo> =
     newFileContents.map {
         NewFileZipInfo(
-            zipFilePath = it.key,
+            // Note: When managing file state, we normalize file paths returned from the agent in order to ensure they are handled as relative paths.
+            zipFilePath = it.key.removePrefix("/"),
             fileContent = it.value,
             rejected = false,
             changeApplied = false
@@ -268,7 +269,8 @@ fun registerNewFiles(newFileContents: Map<String, String>): List<NewFileZipInfo>
 fun registerDeletedFiles(deletedFiles: List<String>): List<DeletedFileInfo> =
     deletedFiles.map {
         DeletedFileInfo(
-            zipFilePath = it,
+            // Note: When managing file state, we normalize file paths returned from the agent in order to ensure they are handled as relative paths.
+            zipFilePath = it.removePrefix("/"),
             rejected = false,
             changeApplied = false
         )
