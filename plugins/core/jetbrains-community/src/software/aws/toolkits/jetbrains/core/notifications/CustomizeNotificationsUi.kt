@@ -7,10 +7,16 @@ import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.EditorNotificationPanel
+import software.aws.toolkits.jetbrains.AwsPlugin
 import software.aws.toolkits.jetbrains.AwsToolkit
+import software.aws.toolkits.jetbrains.core.plugin.PluginUpdateManager
 import software.aws.toolkits.resources.AwsCoreBundle
 
 fun checkSeverity(notificationSeverity: String): NotificationSeverity = when (notificationSeverity) {
@@ -37,7 +43,7 @@ object NotificationManager {
             if (action.type == "UpdateExtension") {
                 add(
                     NotificationActionList(AwsCoreBundle.message("notification.update")) {
-                        // TODO: Add update logic
+                        updatePlugins()
                     }
                 )
             }
@@ -95,6 +101,21 @@ object NotificationManager {
         }
 
         return panel
+    }
+    private fun updatePlugins() {
+        val pluginUpdateManager = PluginUpdateManager()
+        runInEdt {
+            ProgressManager.getInstance().run(object : Task.Backgroundable(
+                null,
+                AwsCoreBundle.message("aws.settings.auto_update.progress.message")
+            ) {
+                override fun run(indicator: ProgressIndicator) {
+                    pluginUpdateManager.checkForUpdates(indicator, AwsPlugin.CORE)
+                    pluginUpdateManager.checkForUpdates(indicator, AwsPlugin.TOOLKIT)
+                    pluginUpdateManager.checkForUpdates(indicator, AwsPlugin.Q)
+                }
+            })
+        }
     }
 }
 
