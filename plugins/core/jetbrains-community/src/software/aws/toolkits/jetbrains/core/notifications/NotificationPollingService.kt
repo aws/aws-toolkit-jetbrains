@@ -44,7 +44,6 @@ object NotificationEndpoint {
         Registry.get("aws.toolkit.notification.endpoint").asString()
 }
 
-
 @Service(Service.Level.APP)
 internal final class NotificationPollingService : Disposable {
     private val isFirstPoll = AtomicBoolean(true)
