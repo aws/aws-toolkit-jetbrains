@@ -57,7 +57,7 @@ class ProcessNotificationsBase(
                 ?.filter { notification ->
                     !NotificationDismissalState.getInstance().isDismissed(notification.id)
                 }
-                ?: emptyList()
+                .orEmpty()
 
             activeNotifications.forEach { processNotification(project, it) }
         }

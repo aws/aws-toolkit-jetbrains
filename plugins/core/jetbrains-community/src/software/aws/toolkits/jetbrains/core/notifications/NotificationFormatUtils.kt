@@ -45,12 +45,11 @@ enum class NotificationScheduleType {
     ;
 
     companion object {
-        fun fromString(value: String): NotificationScheduleType {
-            return when (value.lowercase()) {
+        fun fromString(value: String): NotificationScheduleType =
+            when (value.lowercase()) {
                 "startup" -> STARTUP
                 else -> EMERGENCY
             }
-        }
     }
 }
 
