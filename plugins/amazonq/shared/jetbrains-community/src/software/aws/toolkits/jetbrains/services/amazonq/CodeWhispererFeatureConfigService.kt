@@ -42,6 +42,14 @@ class CodeWhispererFeatureConfigService {
                 featureConfigs[it.feature()] = FeatureContext(it.feature(), it.variation(), it.value())
             }
 
+            // Only apply new auto-trigger UX to BID users
+            val isNewAutoTriggerUX = getNewAutoTriggerUX()
+            if (isNewAutoTriggerUX) {
+                calculateIfIamIdentityCenterConnection(project) {
+                    featureConfigs.remove(NEW_AUTO_TRIGGER_UX)
+                }
+            }
+
             val customizationArnOverride = featureConfigs[CUSTOMIZATION_ARN_OVERRIDE_NAME]?.value?.stringValue()
             if (customizationArnOverride != null) {
                 // Double check if server-side wrongly returns a customizationArn to BID users
@@ -103,6 +111,8 @@ class CodeWhispererFeatureConfigService {
 
     fun getCustomizationFeature(): FeatureContext? = getFeature(CUSTOMIZATION_ARN_OVERRIDE_NAME)
 
+    fun getNewAutoTriggerUX(): Boolean = getFeatureValueForKey(NEW_AUTO_TRIGGER_UX).stringValue() == "TREATMENT"
+
     fun getInlineCompletion(): Boolean = getFeatureValueForKey(INLINE_COMPLETION).stringValue() == "TREATMENT"
 
     // Get the feature value for the given key.
@@ -122,6 +132,7 @@ class CodeWhispererFeatureConfigService {
         private const val TEST_FEATURE_NAME = "testFeature"
         private const val INLINE_COMPLETION = "ProjectContextV2"
         const val CUSTOMIZATION_ARN_OVERRIDE_NAME = "customizationArnOverride"
+        private const val NEW_AUTO_TRIGGER_UX = "newAutoTriggerUX"
         private val LOG = getLogger<CodeWhispererFeatureConfigService>()
 
         // TODO: add real feature later
@@ -137,6 +148,11 @@ class CodeWhispererFeatureConfigService {
                 CUSTOMIZATION_ARN_OVERRIDE_NAME,
                 "customizationARN",
                 FeatureValue.builder().stringValue("").build()
+            ),
+            NEW_AUTO_TRIGGER_UX to FeatureContext(
+                NEW_AUTO_TRIGGER_UX,
+                "CONTROL",
+                FeatureValue.builder().stringValue("CONTROL").build()
             ),
             INLINE_COMPLETION to FeatureContext(
                 INLINE_COMPLETION,

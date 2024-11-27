@@ -17,6 +17,7 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.concurrency.EdtExecutorService
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
@@ -94,18 +95,20 @@ class CodeWhispererConfigurable(private val project: Project) :
                 }.comment(message("aws.settings.codewhisperer.automatic_import_adder.tooltip"))
             }
 
-            row {
-                link("Configure inline suggestion keybindings") { e ->
-                    // TODO: user needs feedback if these are null
-                    val settings = DataManager.getInstance().getDataContext(e.source as ActionLink).getData(Settings.KEY) ?: return@link
-                    val configurable: Configurable = settings.find("preferences.keymap") ?: return@link
+            if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
+                row {
+                    link("Configure inline suggestion keybindings") { e ->
+                        // TODO: user needs feedback if these are null
+                        val settings = DataManager.getInstance().getDataContext(e.source as ActionLink).getData(Settings.KEY) ?: return@link
+                        val configurable: Configurable = settings.find("preferences.keymap") ?: return@link
 
-                    settings.select(configurable, Q_INLINE_KEYBINDING_SEARCH_TEXT)
-
-                    // workaround for certain cases for sometimes the string is not input there
-                    EdtExecutorService.getScheduledExecutorInstance().schedule({
                         settings.select(configurable, Q_INLINE_KEYBINDING_SEARCH_TEXT)
-                    }, 500, TimeUnit.MILLISECONDS)
+
+                        // workaround for certain cases for sometimes the string is not input there
+                        EdtExecutorService.getScheduledExecutorInstance().schedule({
+                            settings.select(configurable, Q_INLINE_KEYBINDING_SEARCH_TEXT)
+                        }, 500, TimeUnit.MILLISECONDS)
+                    }
                 }
             }
         }
@@ -206,6 +209,6 @@ class CodeWhispererConfigurable(private val project: Project) :
     }
 
     companion object {
-        private const val Q_INLINE_KEYBINDING_SEARCH_TEXT = "inline suggestion"
+        private const val Q_INLINE_KEYBINDING_SEARCH_TEXT = "Amazon Q inline suggestion"
     }
 }

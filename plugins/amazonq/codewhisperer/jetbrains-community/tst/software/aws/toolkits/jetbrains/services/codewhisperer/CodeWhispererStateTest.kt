@@ -12,16 +12,13 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
-import kotlin.test.assertNotNull
 
 class CodeWhispererStateTest : CodeWhispererTestBase() {
 
     @Test
     fun `test CodeWhisperer invocation sets request metadata correctly`() {
-        withCodeWhispererServiceInvokedAndWait { session ->
-            val selectedJobId = codewhispererService.getAllSuggestionsPreviewInfo()[session.selectedIndex].jobId
-            val actualRequestContext = codewhispererService.ongoingRequestsContext[selectedJobId]
-            assertNotNull(actualRequestContext)
+        withCodeWhispererServiceInvokedAndWait { states ->
+            val actualRequestContext = states.requestContext
             val editor = projectRule.fixture.editor
             val (actualProject, actualEditor, actualTriggerTypeInfo, actualCaretPosition, actualFileContextInfo) = actualRequestContext
             val (actualCaretContext, actualFilename, actualProgrammingLanguage) = actualFileContextInfo
@@ -49,10 +46,8 @@ class CodeWhispererStateTest : CodeWhispererTestBase() {
 
     @Test
     fun `test CodeWhisperer invocation sets response metadata correctly`() {
-        withCodeWhispererServiceInvokedAndWait { session ->
-            val selectedJobId = codewhispererService.getAllSuggestionsPreviewInfo()[session.selectedIndex].jobId
-            val actualResponseContext = codewhispererService.getAllPaginationSessions()[selectedJobId]?.responseContext
-            assertNotNull(actualResponseContext)
+        withCodeWhispererServiceInvokedAndWait { states ->
+            val actualResponseContext = states.responseContext
             assertThat(listOf(actualResponseContext.sessionId)).isEqualTo(
                 pythonResponse.sdkHttpResponse().headers()[CodeWhispererService.KET_SESSION_ID]
             )
@@ -61,9 +56,7 @@ class CodeWhispererStateTest : CodeWhispererTestBase() {
 
     @Test
     fun `test CodeWhisperer invocation sets recommendation metadata correctly`() {
-        withCodeWhispererServiceInvokedAndWait {
-            val states = codewhispererService.getAllPaginationSessions()[0]
-            assertNotNull(states)
+        withCodeWhispererServiceInvokedAndWait { states ->
             val actualRecommendationContext = states.recommendationContext
             val (actualDetailContexts, actualUserInput) = actualRecommendationContext
 
@@ -81,13 +74,15 @@ class CodeWhispererStateTest : CodeWhispererTestBase() {
 
     @Test
     fun `test CodeWhisperer invocation sets initial typeahead and selected index correctly`() {
-        withCodeWhispererServiceInvokedAndWait { session ->
-            val actualSelectedIndex = session.selectedIndex
-            val preview = codewhispererService.getAllSuggestionsPreviewInfo()[actualSelectedIndex]
-            val actualTypeahead = preview.typeahead
+        withCodeWhispererServiceInvokedAndWait {
+            val sessionContext = popupManagerSpy.sessionContext
+            val actualSelectedIndex = sessionContext.selectedIndex
+            val actualTypeahead = sessionContext.typeahead
+            val actualTypeaheadOriginal = sessionContext.typeaheadOriginal
 
             assertThat(actualSelectedIndex).isEqualTo(0)
             assertThat(actualTypeahead).isEqualTo("")
+            assertThat(actualTypeaheadOriginal).isEqualTo("")
         }
     }
 }
