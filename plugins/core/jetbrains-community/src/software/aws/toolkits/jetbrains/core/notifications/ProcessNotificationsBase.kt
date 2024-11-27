@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.core.notifications
 
 import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.notification.NotificationType
@@ -15,13 +16,17 @@ import com.intellij.openapi.project.Project
 import software.aws.toolkits.core.utils.inputStream
 import software.aws.toolkits.jetbrains.utils.notifyStickyWithData
 import java.nio.file.Paths
+import java.util.concurrent.atomic.AtomicBoolean
 
 object NotificationMapperUtil {
-    val mapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    val mapper: ObjectMapper = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 }
+private var isStartup: AtomicBoolean = AtomicBoolean(true)
 
 @Service(Service.Level.PROJECT)
-class ProcessNotificationsBase {
+class ProcessNotificationsBase(
+    private val project: Project,
+) {
     private val notifListener = mutableListOf<NotifListener>()
     init {
         NotificationPollingService.getInstance().addObserver {
@@ -39,8 +44,23 @@ class ProcessNotificationsBase {
     }
 
     fun retrieveStartupAndEmergencyNotifications() {
-        // TODO: separates notifications into startup and emergency
-        // iterates through the 2 lists and processes each notification(if it isn't dismissed)
+        val isStartupPoll = isStartup.compareAndSet(true, false)
+        val notifications = getNotificationsFromFile()
+        notifications?.let { notificationsList ->
+            val activeNotifications = notificationsList.notifications
+                ?.filter { notification ->
+                    // Keep notification if:
+                    // - it's not a startup notification, OR
+                    // - it is a startup notification AND this is the first poll
+                    notification.schedule.type != NotificationScheduleType.STARTUP || isStartupPoll
+                }
+                ?.filter { notification ->
+                    !NotificationDismissalState.getInstance().isDismissed(notification.id)
+                }
+                .orEmpty()
+
+            activeNotifications.forEach { processNotification(project, it) }
+        }
     }
 
     fun processNotification(project: Project, notificationData: NotificationData) {
@@ -63,7 +83,7 @@ class ProcessNotificationsBase {
             )
             if (severity == "Critical") {
                 val bannerContent = BannerContent(notificationContent.title, notificationContent.description, followupActions, notificationData.id)
-                showBannerNotification[notificationData.id] = bannerContent
+                BannerNotificationService.getInstance().addNotification(notificationData.id, bannerContent)
                 notifyListenerForNotification(bannerContent)
             }
         }
@@ -87,7 +107,6 @@ class ProcessNotificationsBase {
     companion object {
         fun getInstance(project: Project): ProcessNotificationsBase = project.service()
 
-        val showBannerNotification = mutableMapOf<String, BannerContent>()
         private const val NOTIFICATIONS_PATH = "aws-static-resources/notifications.json"
     }
 }

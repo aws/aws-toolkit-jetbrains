@@ -6,10 +6,7 @@ package software.aws.toolkits.jetbrains.core.notifications
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
-import com.intellij.openapi.components.State
-import com.intellij.openapi.components.Storage
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import com.intellij.util.io.HttpRequests
@@ -59,32 +56,6 @@ object NotificationEndpoint {
 
     private const val DEFAULT_ENDPOINT = "" // TODO: Replace with actual endpoint
 }
-
-@State(name = "notificationEtag", storages = [Storage("aws.xml")])
-class NotificationEtagState : PersistentStateComponent<NotificationEtagConfiguration> {
-    private var state = NotificationEtagConfiguration()
-
-    override fun getState(): NotificationEtagConfiguration = state
-
-    override fun loadState(state: NotificationEtagConfiguration) {
-        this.state = state
-    }
-
-    var etag: String?
-        get() = state.etag
-        set(value) {
-            state.etag = value
-        }
-
-    companion object {
-        fun getInstance(): NotificationEtagState =
-            ApplicationManager.getApplication().getService(NotificationEtagState::class.java)
-    }
-}
-
-data class NotificationEtagConfiguration(
-    var etag: String? = null,
-)
 
 @Service(Service.Level.APP)
 internal final class NotificationPollingService : Disposable {

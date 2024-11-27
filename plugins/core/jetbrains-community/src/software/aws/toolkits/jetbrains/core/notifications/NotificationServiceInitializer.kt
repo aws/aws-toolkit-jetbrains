@@ -14,7 +14,6 @@ internal class NotificationServiceInitializer : ProjectActivity {
     override suspend fun execute(project: Project) {
         if (initialized.compareAndSet(false, true)) {
             val service = NotificationPollingService.getInstance()
-            ProcessNotificationsBase()
             service.startPolling()
         }
     }
