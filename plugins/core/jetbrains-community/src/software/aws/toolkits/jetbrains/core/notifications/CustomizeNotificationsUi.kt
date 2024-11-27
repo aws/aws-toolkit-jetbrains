@@ -5,33 +5,19 @@ package software.aws.toolkits.jetbrains.core.notifications
 
 import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
-import com.intellij.ide.plugins.IdeaPluginDescriptor
-import com.intellij.ide.plugins.PluginManagerCore
-import com.intellij.notification.NotificationAction
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.EditorNotificationPanel
-import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.AwsPlugin
 import software.aws.toolkits.jetbrains.AwsToolkit
 import software.aws.toolkits.jetbrains.core.plugin.PluginUpdateManager
-import software.aws.toolkits.jetbrains.core.plugin.PluginUpdateManager.Companion.updatePlugin
-import software.aws.toolkits.jetbrains.settings.AwsSettingsSharedConfigurable
-import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.AwsCoreBundle
-import software.aws.toolkits.telemetry.Component
-import software.aws.toolkits.telemetry.ToolkitTelemetry
 
 fun checkSeverity(notificationSeverity: String): NotificationSeverity = when (notificationSeverity) {
     "Critical" -> NotificationSeverity.CRITICAL
