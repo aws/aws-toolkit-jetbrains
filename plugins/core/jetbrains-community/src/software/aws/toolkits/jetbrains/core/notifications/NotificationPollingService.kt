@@ -108,7 +108,6 @@ internal final class NotificationPollingService : Disposable {
             }
         }
         emitFailureMetric(lastException)
-        LOG.error { "Failed to poll for notifications after $MAX_RETRIES attempts" }
         return false
     }
 
