@@ -77,6 +77,9 @@
                      restartRequired="true"/>
         <registryKey key="aws.toolkit.developerMode" description="Enables features to facilitate development of the toolkit" restartRequired="false"
                      defaultValue="false"/>
+        <registryKey key="aws.toolkit.notification.endpoint" description="Endpoint for AWS Toolkit notifications"
+                     defaultValue=""/>
+
 
         <notificationGroup id="aws.plugin.version.mismatch" displayType="STICKY_BALLOON" key="aws.settings.title"/>
 

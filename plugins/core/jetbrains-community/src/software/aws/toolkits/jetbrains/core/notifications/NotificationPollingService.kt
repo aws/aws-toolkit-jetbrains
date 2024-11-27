@@ -7,12 +7,12 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.util.registry.Registry
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import com.intellij.util.io.HttpRequests
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.RemoteResolveParser
 import software.aws.toolkits.core.utils.RemoteResource
 import software.aws.toolkits.core.utils.error
@@ -40,22 +40,10 @@ object NotificationFileValidator : RemoteResolveParser {
 }
 
 object NotificationEndpoint {
-    private var overriddenEndpoint: String? = null
-
-    fun getEndpoint(): String = overriddenEndpoint ?: DEFAULT_ENDPOINT
-
-    @VisibleForTesting
-    fun setTestEndpoint(endpoint: String) {
-        overriddenEndpoint = endpoint
-    }
-
-    @VisibleForTesting
-    fun resetEndpoint() {
-        overriddenEndpoint = null
-    }
-
-    private const val DEFAULT_ENDPOINT = "" // TODO: Replace with actual endpoint
+    fun getEndpoint(): String =
+        Registry.get("aws.toolkit.notification.endpoint").asString()
 }
+
 
 @Service(Service.Level.APP)
 internal final class NotificationPollingService : Disposable {
