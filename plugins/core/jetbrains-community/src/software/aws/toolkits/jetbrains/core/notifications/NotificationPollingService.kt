@@ -17,6 +17,7 @@ import software.aws.toolkits.core.utils.RemoteResolveParser
 import software.aws.toolkits.core.utils.RemoteResource
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.DefaultRemoteResourceResolverProvider
 import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
@@ -77,13 +78,16 @@ internal final class NotificationPollingService : Disposable {
         var lastException: Exception? = null
 
         while (retryCount < MAX_RETRIES) {
+            LOG.info { "Polling for notifications" }
             try {
                 val newETag = getNotificationETag()
                 if (newETag == NotificationEtagState.getInstance().etag) {
                     // for when we need to notify on first poll even when there's no new ETag
                     if (isFirstPoll.compareAndSet(true, false)) {
-                        notifyObservers()
+                        LOG.info { "No new notifications, checking cached notifications on first poll" }
+                        return true
                     }
+                    LOG.info { "No new notifications to fetch" }
                     return false
                 }
                 resourceResolver.get()
@@ -91,6 +95,7 @@ internal final class NotificationPollingService : Disposable {
                     .toCompletableFuture()
                     .get()
                 NotificationEtagState.getInstance().etag = newETag
+                LOG.info { "New notifications fetched" }
                 return true
             } catch (e: Exception) {
                 lastException = e
@@ -103,6 +108,7 @@ internal final class NotificationPollingService : Disposable {
             }
         }
         emitFailureMetric(lastException)
+        LOG.error { "Failed to poll for notifications after $MAX_RETRIES attempts" }
         return false
     }
 
