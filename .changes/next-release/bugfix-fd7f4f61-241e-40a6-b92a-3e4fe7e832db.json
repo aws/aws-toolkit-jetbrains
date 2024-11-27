@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Amazon Q /dev: Fix error when accepting changes if leading slash is present."
-}

@@ -1,3 +1,11 @@
+# _3.42_ (2024-11-27)
+- **(Feature)** Amazon Q /dev: support `Dockerfile` files
+- **(Feature)** Feature(Amazon Q Code Transformation): allow users to view results in 5 smaller diffs
+- **(Feature)** Introduce @workspace command to enhance chat context fetching for Chat
+- **(Bug Fix)** Correct search text for Amazon Q inline suggestion keybindings
+- **(Bug Fix)** Fix(Amazon Q Code Transformation): always show user latest/correct transformation results
+- **(Bug Fix)** Amazon Q /dev: Fix error when accepting changes if leading slash is present.
+
 # _3.41_ (2024-11-22)
 - **(Feature)** Amazon Q /dev: support `.gradle` files
 - **(Feature)** Inline Auto trigger will now happen more consistently and will not conflict with JetBrains code completion.
