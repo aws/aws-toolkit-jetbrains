@@ -66,6 +66,7 @@
 
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.plugin.PluginAutoUpdater"/>
         <postStartupActivity implementation="software.aws.toolkits.jetbrains.core.AwsTelemetryPrompter"/>
+        <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.telemetry.AwsToolkitStartupMetrics"/>
 
         <registryKey key="aws.dev.useDAG" description="True if DAG should be used instead of authorization_grant with PKCE"
                      defaultValue="false" restartRequired="false"/>
@@ -77,6 +78,9 @@
                      restartRequired="true"/>
         <registryKey key="aws.toolkit.developerMode" description="Enables features to facilitate development of the toolkit" restartRequired="false"
                      defaultValue="false"/>
+        <registryKey key="aws.toolkit.notification.endpoint" description="Endpoint for AWS Toolkit notifications"
+                     defaultValue="https://idetoolkits-hostedfiles.amazonaws.com/Notifications/Jetbrains/emergency/1.x.json" restartRequired="true"/>
+
 
         <notificationGroup id="aws.plugin.version.mismatch" displayType="STICKY_BALLOON" key="aws.settings.title"/>
 

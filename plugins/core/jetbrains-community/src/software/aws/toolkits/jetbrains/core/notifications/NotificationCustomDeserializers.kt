@@ -114,6 +114,12 @@ class NotConditionDeserializer : JsonDeserializer<NotificationExpression.NotCond
     }
 }
 
+// Create a custom deserializer if needed
+class NotificationTypeDeserializer : JsonDeserializer<NotificationScheduleType>() {
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): NotificationScheduleType =
+        NotificationScheduleType.fromString(p.valueAsString)
+}
+
 private fun JsonNode.toNotificationExpressions(p: JsonParser): List<NotificationExpression> = this.map { element ->
     val parser = element.traverse(p.codec)
     parser.nextToken()
