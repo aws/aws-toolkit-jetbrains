@@ -64,6 +64,7 @@ class ProcessNotificationsBase(
 
             activeNotifications.forEach { processNotification(project, it) }
         }
+        LOG.info { "Finished processing notifications" }
     }
 
     fun processNotification(project: Project, notificationData: NotificationData) {
