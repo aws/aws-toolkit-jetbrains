@@ -31,6 +31,7 @@ class ProcessNotificationsBase(
 ) {
     private val notifListener = mutableListOf<NotifListener>()
     init {
+        LOG.info { "Initializing ProcessNotificationsBase" }
         NotificationPollingService.getInstance().addObserver {
             retrieveStartupAndEmergencyNotifications()
         }
