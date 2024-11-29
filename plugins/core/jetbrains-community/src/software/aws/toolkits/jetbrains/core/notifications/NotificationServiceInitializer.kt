@@ -13,6 +13,7 @@ internal class NotificationServiceInitializer : ProjectActivity {
     private val initialized = AtomicBoolean(false)
 
     override suspend fun execute(project: Project) {
+        ProcessNotificationsBase.getInstance(project)
         if (ApplicationManager.getApplication().isUnitTestMode) return
         if (initialized.compareAndSet(false, true)) {
             val service = NotificationPollingService.getInstance()
