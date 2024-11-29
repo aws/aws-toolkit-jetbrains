@@ -60,6 +60,7 @@ internal final class NotificationPollingService : Disposable {
 
     fun startPolling() {
         val newNotifications = runBlocking { pollForNotifications() }
+        isFirstPoll.set(false)
         if (newNotifications) {
             notifyObservers()
         }
