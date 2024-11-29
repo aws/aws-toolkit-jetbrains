@@ -13,6 +13,8 @@ import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.inputStream
 import software.aws.toolkits.jetbrains.utils.notifyStickyWithData
 import java.nio.file.Paths
@@ -45,6 +47,7 @@ class ProcessNotificationsBase(
 
     fun retrieveStartupAndEmergencyNotifications() {
         val isStartupPoll = isStartup.compareAndSet(true, false)
+        LOG.info { "Retrieving notifications for processing. StartUp notifications included: $isStartupPoll" }
         val notifications = getNotificationsFromFile()
         notifications?.let { notificationsList ->
             val activeNotifications = notificationsList.notifications
@@ -61,11 +64,13 @@ class ProcessNotificationsBase(
 
             activeNotifications.forEach { processNotification(project, it) }
         }
+        LOG.info { "Finished processing notifications" }
     }
 
     fun processNotification(project: Project, notificationData: NotificationData) {
         val shouldShow = RulesEngine.displayNotification(project, notificationData)
         if (shouldShow) {
+            LOG.info { "Showing notification with id: ${notificationData.id}" }
             val notificationContent = notificationData.content.locale
             val severity = notificationData.severity
             val followupActions = NotificationManager.createActions(
@@ -105,6 +110,7 @@ class ProcessNotificationsBase(
         notifListener.add(newNotifListener)
 
     companion object {
+        private val LOG = getLogger<ProcessNotificationsBase>()
         fun getInstance(project: Project): ProcessNotificationsBase = project.service()
 
         private const val NOTIFICATIONS_PATH = "aws-static-resources/notifications.json"
