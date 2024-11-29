@@ -155,18 +155,20 @@ class AmazonQToolWindow private constructor(
         }
 
         fun getStarted(project: Project) {
+            openTab(project, OnboardingPageInteraction(OnboardingPageInteractionType.CwcButtonClick), "cwc")
+        }
+
+        fun openScanTab(project: Project) {
+            openTab(project, runCodeScanMessage, "codescan")
+        }
+
+        private fun openTab(project: Project, message: AmazonQMessage, tabType: String) {
             // Make sure the window is shown
             showChatWindow(project)
 
             // Send the interaction message
             val window = getInstance(project)
-            window.sendMessage(OnboardingPageInteraction(OnboardingPageInteractionType.CwcButtonClick), "cwc")
-        }
-
-        fun openScanTab(project: Project) {
-            showChatWindow(project)
-            val window = getInstance(project)
-            window.sendMessageAppToUi(runCodeScanMessage, tabType = "codescan")
+            window.sendMessage(message, tabType)
         }
     }
 
