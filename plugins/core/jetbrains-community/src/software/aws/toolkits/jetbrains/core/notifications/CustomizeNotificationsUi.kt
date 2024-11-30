@@ -59,12 +59,10 @@ object NotificationManager {
         add(
             NotificationActionList(AwsCoreBundle.message("general.more_dialog")) {
                 if (url == null) {
-                    Messages.showYesNoDialog(
+                    Messages.showMessageDialog(
                         project,
                         message,
                         title,
-                        AwsCoreBundle.message("general.acknowledge"),
-                        AwsCoreBundle.message("general.cancel"),
                         AllIcons.General.Error
                     )
                 } else {
