@@ -26,7 +26,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.readFileT
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
-import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.MetricResult
 import java.util.UUID
 
 private val logger = getLogger<CodeGenerationState>()
@@ -47,9 +47,9 @@ class CodeGenerationState(
 ) : SessionState {
     override val phase = SessionStatePhase.CODEGEN
 
-    override suspend fun interact(action: SessionStateAction): SessionStateInteraction {
+    override suspend fun interact(action: SessionStateAction): SessionStateInteraction<SessionState> {
         val startTime = System.currentTimeMillis()
-        var result: Result = Result.Succeeded
+        var result: MetricResult = MetricResult.Succeeded
         var failureReason: String? = null
         var failureReasonDesc: String? = null
         var codeGenerationWorkflowStatus: CodeGenerationWorkflowStatus = CodeGenerationWorkflowStatus.COMPLETE
@@ -145,7 +145,7 @@ class CodeGenerationState(
             )
         } catch (e: Exception) {
             logger.warn(e) { "$FEATURE_NAME: Code generation failed: ${e.message}" }
-            result = Result.Failed
+            result = MetricResult.Failed
             failureReason = e.javaClass.simpleName
             if (e is FeatureDevException) {
                 failureReason = e.reason()

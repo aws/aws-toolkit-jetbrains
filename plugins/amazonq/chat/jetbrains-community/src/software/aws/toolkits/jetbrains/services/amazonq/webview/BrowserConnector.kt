@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.webview
 
+import com.intellij.ide.BrowserUtil
 import com.intellij.ui.jcef.JBCefJSQuery.Response
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.awaitClose
@@ -21,6 +22,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.util.command
 import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.AmazonQTheme
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.ThemeBrowserAdapter
+import software.aws.toolkits.telemetry.Telemetry
 import java.util.function.Function
 
 class BrowserConnector(
@@ -37,9 +39,31 @@ class BrowserConnector(
         addMessageHook(browser)
             .onEach { json ->
                 val node = serializer.toNode(json)
-                if (node.command == "ui-is-ready") {
-                    uiReady.complete(true)
+                when (node.command) {
+                    "ui-is-ready" -> uiReady.complete(true)
+
+                    // some weird issue preventing deserialization from working
+                    "open-user-guide" -> {
+                        BrowserUtil.browse(node.get("userGuideLink").asText())
+                    }
+                    "send-telemetry" -> {
+                        val source = node.get("source")
+                        val module = node.get("module")
+                        val trigger = node.get("trigger")
+
+                        if (source != null) {
+                            Telemetry.ui.click.use {
+                                it.elementId(source.asText())
+                            }
+                        } else if (module != null && trigger != null) {
+                            Telemetry.toolkit.openModule.use {
+                                it.module(module.asText())
+                                it.source(trigger.asText())
+                            }
+                        }
+                    }
                 }
+
                 val tabType = node.tabType ?: return@onEach
                 connections.filter { connection -> connection.app.tabTypes.contains(tabType) }.forEach { connection ->
                     launch {
