@@ -15,6 +15,12 @@ class CodeWhispererRuby private constructor() : CodeWhispererProgrammingLanguage
 
     override fun isAutoFileScanSupported(): Boolean = true
 
+    override fun lineCommentPrefix(): String = "#"
+
+    override fun blockCommentPrefix(): String = "=begin"
+
+    override fun blockCommentSuffix(): String = "=end"
+
     companion object {
         const val ID = "ruby"
 

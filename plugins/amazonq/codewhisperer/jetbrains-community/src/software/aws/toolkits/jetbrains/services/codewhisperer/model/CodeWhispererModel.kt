@@ -256,14 +256,14 @@ data class CodeScanTelemetryEvent(
     val codeAnalysisScope: CodeWhispererConstants.CodeAnalysisScope,
 )
 
-data class CodeScanServiceInvocationContext(
-    val artifactsUploadDuration: Long,
-    val serviceInvocationDuration: Long,
+data class CreateUploadUrlServiceInvocationContext(
+    val artifactsUploadDuration: Long = 0,
+    val serviceInvocationDuration: Long = 0,
 )
 
 data class CodeScanResponseContext(
     val payloadContext: PayloadContext,
-    val serviceInvocationContext: CodeScanServiceInvocationContext,
+    val serviceInvocationContext: CreateUploadUrlServiceInvocationContext,
     val codeScanJobId: String? = null,
     val codeScanTotalIssues: Int = 0,
     val codeScanIssuesWithFixes: Int = 0,

@@ -23,11 +23,11 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import software.aws.toolkits.jetbrains.common.util.resolveAndCreateOrUpdateFile
+import software.aws.toolkits.jetbrains.common.util.resolveAndDeleteFile
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.resolveAndCreateOrUpdateFile
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.resolveAndDeleteFile
 import software.aws.toolkits.jetbrains.services.cwc.controller.ReferenceLogController
 import kotlin.io.path.Path
 
@@ -72,7 +72,7 @@ class SessionTest : FeatureDevTestBase() {
         mockkObject(ReferenceLogController)
         every { ReferenceLogController.addReferenceLog(any(), any()) } just runs
 
-        mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FileUtilsKt")
+        mockkStatic("software.aws.toolkits.jetbrains.common.util.FileUtilsKt")
         every { resolveAndDeleteFile(any(), any()) } just runs
         every { resolveAndCreateOrUpdateFile(any(), any(), any()) } just runs
 
