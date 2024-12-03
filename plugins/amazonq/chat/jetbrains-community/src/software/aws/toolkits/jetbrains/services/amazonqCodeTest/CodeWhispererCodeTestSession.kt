@@ -23,7 +23,7 @@ import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 import kotlin.coroutines.coroutineContext
 
 // TODO: Refactor with CodeWhispererCodeScanSession code since both are about zip CreateUploadUrl logic
