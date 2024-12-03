@@ -96,7 +96,7 @@ class AmazonQCodeFixSession(val project: Project) {
             val createCodeFixResponse = createCodeFixJob(
                 sourceZipUploadResponse.uploadId(),
                 issueRange,
-                issue.description.toString(),
+                issue.recommendation.text,
                 codeFixName,
                 issue.ruleId
             )
