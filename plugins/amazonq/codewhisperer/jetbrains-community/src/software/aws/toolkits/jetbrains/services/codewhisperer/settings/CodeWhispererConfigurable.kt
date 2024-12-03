@@ -11,10 +11,13 @@ import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.options.ex.Settings
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.ActionLink
+import com.intellij.ui.components.fields.ExpandableTextField
 import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindSelected
+import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.concurrency.EdtExecutorService
+import com.intellij.util.execution.ParametersListUtil
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
@@ -199,6 +202,17 @@ class CodeWhispererConfigurable(private val project: Project) :
                     enabled(invoke)
                     bindSelected(codeWhispererSettings::isProjectContextGpu, codeWhispererSettings::toggleProjectContextGpu)
                 }.comment(message("aws.settings.codewhisperer.project_context_gpu.tooltip"))
+            }
+        }
+
+        group(message("aws.settings.codewhisperer.code_review")) {
+            row {
+                ExpandableTextField(ParametersListUtil.COLON_LINE_PARSER, ParametersListUtil.COLON_LINE_JOINER).also {
+                    cell(it)
+                        .label(message("aws.settings.codewhisperer.code_review.title"))
+                        .comment(message("aws.settings.codewhisperer.code_review.description"))
+                        .bindText(codeWhispererSettings::getIgnoredCodeReviewIssues, codeWhispererSettings::setIgnoredCodeReviewIssues)
+                }
             }
         }
 

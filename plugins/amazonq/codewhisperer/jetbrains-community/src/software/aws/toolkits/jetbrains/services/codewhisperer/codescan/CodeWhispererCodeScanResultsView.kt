@@ -10,13 +10,17 @@ import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.AnimatedIcon
+import com.intellij.ui.ClickListener
 import com.intellij.ui.OnePixelSplitter
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.border.CustomLineBorder
 import com.intellij.ui.components.ActionLink
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.JBUI
+import icons.AwsIcons
+import kotlinx.coroutines.CoroutineScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanTreeMouseListener
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.IssueSeverity
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addHorizontalGlue
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.INACTIVE_TEXT_COLOR
@@ -26,25 +30,42 @@ import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
+import java.awt.event.MouseEvent
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import javax.swing.BorderFactory
-import javax.swing.JButton
+import javax.swing.Icon
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTree
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreeCellRenderer
+import javax.swing.tree.TreePath
 
 /**
  * Create a Code Scan results view that displays the code scan results.
  */
-internal class CodeWhispererCodeScanResultsView(private val project: Project) : JPanel(BorderLayout()) {
+internal class CodeWhispererCodeScanResultsView(private val project: Project, private val defaultScope: CoroutineScope) : JPanel(BorderLayout()) {
 
     private val codeScanTree: Tree = Tree().apply {
         isRootVisible = false
         CodeWhispererCodeScanTreeMouseListener(project).installOn(this)
+        object : ClickListener() {
+            override fun onClick(event: MouseEvent, clickCount: Int): Boolean {
+                val issueNode = (event.source as Tree).selectionPath?.lastPathComponent as? DefaultMutableTreeNode
+                val issue = issueNode?.userObject as? CodeWhispererCodeScanIssue ?: return false
+                showIssueDetails(issue, defaultScope)
+                return true
+            }
+        }.installOn(this)
         cellRenderer = ColoredTreeCellRenderer()
+    }
+
+    private fun expandItems() {
+        val criticalTreePath = TreePath(arrayOf(codeScanTree.model.root, codeScanTree.model.getChild(codeScanTree.model.root, 0)))
+        val highTreePath = TreePath(arrayOf(codeScanTree.model.root, codeScanTree.model.getChild(codeScanTree.model.root, 1)))
+        codeScanTree.expandPath(criticalTreePath)
+        codeScanTree.expandPath(highTreePath)
     }
 
     private val scrollPane = ScrollPaneFactory.createScrollPane(codeScanTree, true)
@@ -70,6 +91,20 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project) : 
             showScannedFiles(scannedFiles)
         }
     }
+
+    private val filtersAppliedToResultsLabel = JLabel(message("codewhisperer.codescan.scan_results_hidden_by_filters")).apply {
+        border = BorderFactory.createEmptyBorder(7, 7, 7, 7)
+    }
+    private val clearFiltersLink = ActionLink(message("codewhisperer.codescan.clear_filters")).apply {
+        addActionListener {
+            CodeWhispererCodeScanManager.getInstance(project).clearFilters()
+        }
+    }
+    private val filtersAppliedIndicator = JPanel(GridBagLayout()).apply {
+        add(filtersAppliedToResultsLabel, GridBagConstraints())
+        add(clearFiltersLink, GridBagConstraints().apply { gridy = 1 })
+    }
+
     private val learnMoreLabelLink = ActionLink().apply {
         border = BorderFactory.createEmptyBorder(0, 7, 0, 0)
     }
@@ -89,15 +124,9 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project) : 
     private val progressIndicatorLabel = JLabel(message("codewhisperer.codescan.scan_in_progress"), AnimatedIcon.Default(), JLabel.CENTER).apply {
         border = BorderFactory.createEmptyBorder(7, 7, 7, 7)
     }
-    private val stopCodeScanButton = JButton(message("codewhisperer.codescan.stop_scan")).apply {
-        addActionListener {
-            CodeWhispererCodeScanManager.getInstance(project).stopCodeScan()
-        }
-    }
 
     private val progressIndicator = JPanel(GridBagLayout()).apply {
         add(progressIndicatorLabel, GridBagConstraints())
-        add(stopCodeScanButton, GridBagConstraints().apply { gridy = 1 })
     }
 
     // Results panel containing info label and progressIndicator/scrollPane
@@ -126,6 +155,7 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project) : 
             model = scanTreeModel
             repaint()
         }
+        expandItems()
 
         if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
             this.scannedFiles = scannedFiles
@@ -146,15 +176,34 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project) : 
     }
 
     fun refreshUIWithUpdatedModel(scanTreeModel: CodeWhispererCodeScanTreeModel) {
-        codeScanTree.apply {
-            model = scanTreeModel
-            repaint()
+        changeInfoLabelToDisplayScanCompleted(scannedFiles.size)
+        val codeScanManager = CodeWhispererCodeScanManager.getInstance(project)
+        if (scanTreeModel.getTotalIssuesCount() == 0 && codeScanManager.hasCodeScanIssues()) {
+            resultsPanel.apply {
+                if (components.contains(splitter)) remove(splitter)
+                add(BorderLayout.CENTER, filtersAppliedIndicator)
+                revalidate()
+                repaint()
+            }
+        } else {
+            codeScanTree.apply {
+                model = scanTreeModel
+                repaint()
+            }
+            expandItems()
+            resultsPanel.apply {
+                if (components.contains(filtersAppliedIndicator)) remove(filtersAppliedIndicator)
+                add(BorderLayout.CENTER, splitter)
+                splitter.proportion = 1.0f
+                splitter.secondComponent = null
+                revalidate()
+                repaint()
+            }
         }
     }
 
     fun setStoppingCodeScan() {
         completeInfoLabel.isVisible = false
-        stopCodeScanButton.isVisible = false
         resultsPanel.apply {
             if (components.contains(splitter)) remove(splitter)
             progressIndicatorLabel.apply {
@@ -197,7 +246,6 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project) : 
     fun showInProgressIndicator() {
         completeInfoLabel.isVisible = false
 
-        stopCodeScanButton.isVisible = true
         progressIndicatorLabel.text = message("codewhisperer.codescan.scan_in_progress")
         resultsPanel.apply {
             if (components.contains(splitter)) remove(splitter)
@@ -241,6 +289,20 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project) : 
         }
     }
 
+    private fun showIssueDetails(issue: CodeWhispererCodeScanIssue, defaultScope: CoroutineScope) {
+        val issueDetailsViewPanel = CodeWhispererCodeScanIssueDetailsPanel(project, issue, defaultScope)
+        issueDetailsViewPanel.apply {
+            isVisible = true
+            revalidate()
+        }
+        splitter.apply {
+            secondComponent = issueDetailsViewPanel
+            proportion = 0.5f
+            revalidate()
+            repaint()
+        }
+    }
+
     private fun changeInfoLabelToDisplayScanCompleted(numScannedFiles: Int) {
         completeInfoLabel.isVisible = true
         infoLabelPrefix.icon = AllIcons.Actions.Commit
@@ -265,6 +327,15 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project) : 
     }
 
     private class ColoredTreeCellRenderer : TreeCellRenderer {
+        private fun getSeverityIcon(severity: String): Icon? = when (severity) {
+            IssueSeverity.LOW.displayName -> AwsIcons.Resources.CodeWhisperer.SEVERITY_INITIAL_LOW
+            IssueSeverity.MEDIUM.displayName -> AwsIcons.Resources.CodeWhisperer.SEVERITY_INITIAL_MEDIUM
+            IssueSeverity.HIGH.displayName -> AwsIcons.Resources.CodeWhisperer.SEVERITY_INITIAL_HIGH
+            IssueSeverity.CRITICAL.displayName -> AwsIcons.Resources.CodeWhisperer.SEVERITY_INITIAL_CRITICAL
+            IssueSeverity.INFO.displayName -> AwsIcons.Resources.CodeWhisperer.SEVERITY_INITIAL_INFO
+            else -> null
+        }
+
         override fun getTreeCellRendererComponent(
             tree: JTree?,
             value: Any?,
@@ -278,12 +349,16 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project) : 
             val cell = JLabel()
             synchronized(value) {
                 when (val obj = value.userObject) {
+                    is String -> {
+                        cell.text = message("codewhisperer.codescan.severity_issues_count", obj, value.childCount, INACTIVE_TEXT_COLOR)
+                        cell.icon = this.getSeverityIcon(obj)
+                    }
                     is VirtualFile -> {
                         cell.text = message("codewhisperer.codescan.file_name_issues_count", obj.name, obj.path, value.childCount, INACTIVE_TEXT_COLOR)
                         cell.icon = obj.fileType.icon
                     }
                     is CodeWhispererCodeScanIssue -> {
-                        val cellText = "${obj.title}: ${obj.description.text}"
+                        val cellText = "${obj.title.trimEnd('.')}: ${obj.file.name} "
                         if (obj.isInvalid) {
                             cell.text = message("codewhisperer.codescan.scan_recommendation_invalid", obj.title, obj.displayTextRange(), INACTIVE_TEXT_COLOR)
                             cell.toolTipText = message("codewhisperer.codescan.scan_recommendation_invalid.tooltip_text")
