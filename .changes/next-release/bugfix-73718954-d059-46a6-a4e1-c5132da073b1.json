@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix DynamoDB viewer throwing 'ActionGroup should be registered using <group> tag' on IDE start (#5012) (#5120)"
+}
