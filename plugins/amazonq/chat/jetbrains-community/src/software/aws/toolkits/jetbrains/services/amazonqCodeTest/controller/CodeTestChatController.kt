@@ -77,6 +77,7 @@ import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerTy
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.v1.ChatSessionV1.Companion.validLanguages
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.StaticPrompt
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.StaticTextResponse
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContext
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContextExtractor
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTriggerType
@@ -285,6 +286,7 @@ class CodeTestChatController(
                 cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
                 hasUserPromptSupplied = session.hasUserPromptSupplied,
                 isSupportedLanguage = false,
+                credentialStartUrl = getStartUrl(project),
                 result = MetricResult.Succeeded,
                 perfClientLatency = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration)
             )
@@ -583,6 +585,7 @@ class CodeTestChatController(
                     cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
                     hasUserPromptSupplied = session.hasUserPromptSupplied,
                     isSupportedLanguage = true,
+                    credentialStartUrl = getStartUrl(project = context.project),
                     jobGroup = session.testGenerationJobGroupName,
                     jobId = session.testGenerationJob,
                     acceptedCount = session.numberOfUnitTestCasesGenerated?.toLong(),
@@ -775,6 +778,7 @@ class CodeTestChatController(
                     cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
                     hasUserPromptSupplied = session.hasUserPromptSupplied,
                     isSupportedLanguage = true,
+                    credentialStartUrl = getStartUrl(project = context.project),
                     jobGroup = session.testGenerationJobGroupName,
                     jobId = session.testGenerationJob,
                     acceptedCount = 0,
