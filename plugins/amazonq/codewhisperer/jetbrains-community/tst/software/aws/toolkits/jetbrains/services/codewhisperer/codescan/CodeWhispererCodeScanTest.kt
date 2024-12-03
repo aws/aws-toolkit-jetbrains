@@ -14,12 +14,11 @@ import org.mockito.ArgumentMatchers.anyString
 import org.mockito.internal.verification.Times
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
-import org.mockito.kotlin.isNull
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails
 import software.amazon.awssdk.services.codewhisperer.model.CodeWhispererException
@@ -30,6 +29,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionco
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.TOTAL_MILLIS_IN_SECOND
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getTelemetryErrorMessage
 import software.aws.toolkits.jetbrains.utils.isInstanceOf
 import software.aws.toolkits.jetbrains.utils.isInstanceOfSatisfying
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
@@ -69,7 +69,8 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
             CodeScanSessionConfig.create(
                 psifile.virtualFile,
                 project,
-                CodeWhispererConstants.CodeAnalysisScope.PROJECT
+                CodeWhispererConstants.CodeAnalysisScope.PROJECT,
+                false
             )
         )
         setupResponse(psifile.virtualFile.toNioPath().relativeTo(sessionConfigSpy.projectRoot.toNioPath()))
@@ -81,7 +82,6 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
         // Mock CodeWhispererClient needs to be setup before initializing CodeWhispererCodeScanSession
         codeScanSessionContext = CodeScanSessionContext(project, sessionConfigSpy, CodeWhispererConstants.CodeAnalysisScope.PROJECT)
         codeScanSessionSpy = spy(CodeWhispererCodeScanSession(codeScanSessionContext))
-        doNothing().`when`(codeScanSessionSpy).uploadArtifactToS3(any(), any(), any(), any(), isNull(), any())
 
         mockClient.stub {
             onGeneric { createUploadUrl(any()) }.thenReturn(fakeCreateUploadUrlResponse)
@@ -94,16 +94,21 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
     @Test
     fun `test createUploadUrlAndUpload()`() {
         val fileMd5: String = Base64.getEncoder().encodeToString(DigestUtils.md5(FileInputStream(file)))
-        codeScanSessionSpy.stub {
-            onGeneric { codeScanSessionSpy.createUploadUrl(any(), any(), any()) }
+        zipUploadManagerSpy.stub {
+            onGeneric { zipUploadManagerSpy.createUploadUrl(any(), any(), any(), any()) }
                 .thenReturn(fakeCreateUploadUrlResponse)
         }
 
-        codeScanSessionSpy.createUploadUrlAndUpload(file, "artifactType", codeScanName)
+        zipUploadManagerSpy.createUploadUrlAndUpload(
+            file,
+            "artifactType",
+            CodeWhispererConstants.UploadTaskType.SCAN_FILE,
+            codeScanName
+        )
 
-        val inOrder = inOrder(codeScanSessionSpy)
-        inOrder.verify(codeScanSessionSpy).createUploadUrl(eq(fileMd5), eq("artifactType"), any())
-        inOrder.verify(codeScanSessionSpy).uploadArtifactToS3(
+        val inOrder = inOrder(zipUploadManagerSpy)
+        inOrder.verify(zipUploadManagerSpy).createUploadUrl(eq(fileMd5), eq("artifactType"), any(), any())
+        inOrder.verify(zipUploadManagerSpy).uploadArtifactToS3(
             eq(fakeCreateUploadUrlResponse.uploadUrl()),
             eq(fakeCreateUploadUrlResponse.uploadId()),
             eq(file),
@@ -118,13 +123,23 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
         val invalidZipFile = File("/path/file.zip")
 
         assertThrows<CodeWhispererCodeScanException> {
-            codeScanSessionSpy.createUploadUrlAndUpload(invalidZipFile, "artifactType", codeScanName)
+            zipUploadManagerSpy.createUploadUrlAndUpload(
+                invalidZipFile,
+                "artifactType",
+                CodeWhispererConstants.UploadTaskType.SCAN_FILE,
+                codeScanName
+            )
         }
     }
 
     @Test
     fun `test createUploadUrl()`() {
-        val response = codeScanSessionSpy.createUploadUrl("md5", "type", codeScanName)
+        val response = zipUploadManagerSpy.createUploadUrl(
+            "md5",
+            "type",
+            CodeWhispererConstants.UploadTaskType.SCAN_FILE,
+            codeScanName
+        )
 
         argumentCaptor<CreateUploadUrlRequest>().apply {
             verify(mockClient).createUploadUrl(capture())
@@ -141,7 +156,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
             fakeListCodeScanFindingsResponse.codeScanFindings(),
             getFakeRecommendationsOnNonExistentFile()
         )
-        val res = codeScanSessionSpy.mapToCodeScanIssues(recommendations)
+        val res = codeScanSessionSpy.mapToCodeScanIssues(recommendations, project)
         assertThat(res).hasSize(2)
     }
 
@@ -150,7 +165,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
         val recommendations = listOf(
             fakeListCodeScanFindingsOutOfBoundsIndexResponse.codeScanFindings(),
         )
-        val res = codeScanSessionSpy.mapToCodeScanIssues(recommendations)
+        val res = codeScanSessionSpy.mapToCodeScanIssues(recommendations, project)
         assertThat(res).hasSize(1)
     }
 
@@ -179,7 +194,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
         )
 
         exceptions.forEachIndexed { index, exception ->
-            val actualMessage = codeScanSessionSpy.getTelemetryErrorMessage(exception)
+            val actualMessage = getTelemetryErrorMessage(exception)
             assertThat(expectedMessages[index]).isEqualTo(actualMessage)
         }
     }
@@ -194,8 +209,8 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
             assertThat(it.responseContext.codeScanJobId).isEqualTo("jobId")
         }
 
+        verify(zipUploadManagerSpy, times(1)).createUploadUrlAndUpload(eq(file), eq("SourceCode"), any(), anyString())
         val inOrder = inOrder(codeScanSessionSpy)
-        inOrder.verify(codeScanSessionSpy, Times(1)).createUploadUrlAndUpload(eq(file), eq("SourceCode"), anyString())
         inOrder.verify(codeScanSessionSpy, Times(1)).createCodeScan(eq(CodewhispererLanguage.Python.toString()), anyString())
         inOrder.verify(codeScanSessionSpy, Times(1)).getCodeScan(any())
         inOrder.verify(codeScanSessionSpy, Times(1)).listCodeScanFindings(eq("jobId"), eq(null))
@@ -206,9 +221,9 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
         assertNotNull(sessionConfigSpy)
 
         mockClient.stub {
-            onGeneric { codeScanSessionSpy.createUploadUrlAndUpload(any(), any(), any()) }.thenThrow(
+            onGeneric { zipUploadManagerSpy.createUploadUrlAndUpload(any(), any(), any(), any()) }.thenThrow(
                 CodeWhispererException.builder()
-                    .message("Project Scan Monthly Exceeded")
+                    .message("Project Review Monthly Exceeded")
                     .requestId("abc123")
                     .statusCode(400)
                     .cause(RuntimeException("Something went wrong"))
@@ -228,7 +243,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
         assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
         if (codeScanResponse is CodeScanResponse.Failure) {
             assertThat(codeScanResponse.failureReason).isInstanceOf<CodeWhispererException>()
-            assertThat(codeScanResponse.failureReason.toString()).contains("Project Scan Monthly Exceeded")
+            assertThat(codeScanResponse.failureReason.toString()).contains("Project Review Monthly Exceeded")
             assertThat(codeScanResponse.failureReason.cause.toString()).contains("java.lang.RuntimeException: Something went wrong")
         }
     }

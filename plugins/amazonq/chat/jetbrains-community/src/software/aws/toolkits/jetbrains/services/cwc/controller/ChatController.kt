@@ -41,6 +41,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.CHAT_IMPLICIT_PROJECT_CO
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
+import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
@@ -83,6 +84,12 @@ import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.CwsprChatCommandType
 import java.time.Instant
 import java.util.UUID
+
+data class TestCommandMessage(
+    val sender: String = "codetest",
+    val command: String = "test",
+    val type: String = "addAnswer",
+) : AmazonQMessage
 
 class ChatController private constructor(
     private val context: AmazonQAppInitContext,
@@ -158,7 +165,7 @@ class ChatController private constructor(
             triggerId = triggerId,
             message = prompt,
             activeFileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ChatMessage),
-            userIntent = intentRecognizer.getUserIntentFromPromptChatMessage(message.chatMessage, startUrl),
+            userIntent = intentRecognizer.getUserIntentFromPromptChatMessage(message.chatMessage),
             TriggerType.Click,
             projectContextQueryResult = queryResult,
             shouldAddIndexInProgressMessage = shouldAddIndexInProgressMessage,
@@ -299,7 +306,7 @@ class ChatController private constructor(
     }
 
     override suspend fun processCodeScanIssueAction(message: CodeScanIssueActionMessage) {
-        logger.info { "Code Scan Explain issue with Q message received for issue: ${message.issue["title"]}" }
+        logger.info { "Code Review Explain issue with Q message received for issue: ${message.issue["title"]}" }
         // Extract context
         val fileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.CodeScanButton)
         val triggerId = UUID.randomUUID().toString()
@@ -337,15 +344,15 @@ class ChatController private constructor(
             )
             return
         }
-
-        // Create prompt
-        val prompt = if (EditorContextCommand.GenerateUnitTests == message.command) {
-            "${message.command.verb} the following part of my code for me: $codeSelection"
+        if (message.command == EditorContextCommand.GenerateUnitTests) {
+            // Publish an event to "codetest" tab with command as "test" and type as "addAnswer"
+            val messageToPublish = TestCommandMessage()
+            context.messagesFromAppToUi.publish(messageToPublish)
         } else {
-            "${message.command} the following part of my code for me: $codeSelection"
+            // Create prompt
+            val prompt = "${message.command} the following part of my code for me: $codeSelection"
+            processPromptActions(prompt, message, triggerId, fileContext)
         }
-
-        processPromptActions(prompt, message, triggerId, fileContext)
     }
 
     private suspend fun processPromptActions(
@@ -385,7 +392,11 @@ class ChatController private constructor(
     }
 
     override suspend fun processLinkClick(message: IncomingCwcMessage.ClickedLink) {
-        BrowserUtil.browse(message.link)
+        processLinkClick(message, message.link)
+    }
+
+    private suspend fun processLinkClick(message: IncomingCwcMessage, link: String) {
+        BrowserUtil.browse(link)
         telemetryHelper.recordInteractWithMessage(message)
     }
 

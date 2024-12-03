@@ -14,5 +14,5 @@ interface SessionState {
     var currentIteration: Int?
     var approach: String
     var diffMetricsProcessed: DiffMetricsProcessed
-    suspend fun interact(action: SessionStateAction): SessionStateInteraction
+    suspend fun interact(action: SessionStateAction): SessionStateInteraction<SessionState>
 }

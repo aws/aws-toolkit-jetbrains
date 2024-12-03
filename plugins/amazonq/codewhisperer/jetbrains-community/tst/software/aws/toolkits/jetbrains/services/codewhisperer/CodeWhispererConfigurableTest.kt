@@ -23,7 +23,8 @@ class CodeWhispererConfigurableTest : CodeWhispererTestBase() {
     @Test
     fun `test CodeWhisperer configurable`() {
         val codeScanManagerSpy = Mockito.spy(CodeWhispererCodeScanManager.getInstance(projectRule.project))
-        doNothing().`when`(codeScanManagerSpy).addCodeScanUI()
+        doNothing().`when`(codeScanManagerSpy).buildCodeScanUI()
+        doNothing().`when`(codeScanManagerSpy).showCodeScanUI()
         doNothing().`when`(codeScanManagerSpy).removeCodeScanUI()
         projectRule.project.replaceService(CodeWhispererCodeScanManager::class.java, codeScanManagerSpy, disposableRule.disposable)
         val configurable = CodeWhispererConfigurable(projectRule.project)
@@ -48,7 +49,7 @@ class CodeWhispererConfigurableTest : CodeWhispererTestBase() {
         )
 
         val comments = panel.components.filterIsInstance<DslLabel>()
-        assertThat(comments.size).isEqualTo(7)
+        assertThat(comments.size).isEqualTo(8)
 
         mockCodeWhispererEnabledStatus(false)
         ApplicationManager.getApplication().messageBus.syncPublisher(ToolkitConnectionManagerListener.TOPIC)
