@@ -16,6 +16,7 @@ import com.intellij.openapi.project.Project
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.inputStream
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.utils.notifyStickyWithData
 import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicBoolean
@@ -38,12 +39,17 @@ class ProcessNotificationsBase(
     }
 
     private fun getNotificationsFromFile(): NotificationsList? {
-        val path = Paths.get(PathManager.getSystemPath(), NOTIFICATIONS_PATH)
-        val content = path.inputStream().bufferedReader().use { it.readText() }
-        if (content.isEmpty()) {
+        try {
+            val path = Paths.get(PathManager.getSystemPath(), NOTIFICATIONS_PATH)
+            val content = path.inputStream().bufferedReader().use { it.readText() }
+            if (content.isEmpty()) {
+                return null
+            }
+            return NotificationMapperUtil.mapper.readValue(content)
+        } catch (e: Exception) {
+            LOG.warn { "Error reading notifications file: $e" }
             return null
         }
-        return NotificationMapperUtil.mapper.readValue(content)
     }
 
     fun retrieveStartupAndEmergencyNotifications() {
