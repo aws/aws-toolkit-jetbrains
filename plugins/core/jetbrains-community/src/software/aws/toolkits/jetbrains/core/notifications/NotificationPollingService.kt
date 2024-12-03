@@ -56,6 +56,8 @@ internal final class NotificationPollingService : Disposable {
         override val name: String = "notifications.json"
         override val urls: List<String> = listOf(NotificationEndpoint.getEndpoint())
         override val remoteResolveParser: RemoteResolveParser = NotificationFileValidator
+        override val ttl: Duration = Duration.ofMillis(1)
+        // ttl forces resolver to fetch from endpoint every time
     }
 
     fun startPolling() {

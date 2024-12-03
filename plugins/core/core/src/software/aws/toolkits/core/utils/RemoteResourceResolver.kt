@@ -32,11 +32,9 @@ class DefaultRemoteResourceResolver(
     private fun internalResolve(resource: RemoteResource): Path {
         val expectedLocation = cacheBasePath.resolve(resource.name)
         val current = expectedLocation.existsOrNull()
-        if (resource.name != "notifications.json") {
-            if ((current != null && !isExpired(current, resource))) {
-                LOG.debug { "Existing file ($current) for ${resource.name} is present and not expired - using it." }
-                return current
-            }
+        if (current != null && !isExpired(current, resource)) {
+            LOG.debug { "Existing file ($current) for ${resource.name} is present and not expired - using it." }
+            return current
         }
 
         LOG.debug { "Current file for ${resource.name} does not exist or is expired. Attempting to fetch from ${resource.urls}" }
