@@ -1,3 +1,9 @@
+# _3.43_ (2024-12-03)
+- **(Feature)** `/review` in Q chat to scan your code for vulnerabilities and quality issues, and generate fixes
+- **(Feature)** `/test` in Q chat to generate unit tests for java and python
+- **(Feature)** `/doc` in Q chat to generate and update documentation for your project
+- **(Feature)** Added system notifications to inform users about critical plugin updates and potential issues with available workarounds
+
 # _3.42_ (2024-11-27)
 - **(Feature)** Amazon Q /dev: support `Dockerfile` files
 - **(Feature)** Feature(Amazon Q Code Transformation): allow users to view results in 5 smaller diffs

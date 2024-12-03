@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.cwc.controller.chat.userIntent
 
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
-import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FollowUpType
@@ -21,12 +20,12 @@ class UserIntentRecognizer {
         EditorContextCommand.SendToPrompt -> null
     }
 
-    fun getUserIntentFromPromptChatMessage(prompt: String, startUrl: String?) = when {
+    fun getUserIntentFromPromptChatMessage(prompt: String) = when {
         prompt.startsWith("Explain") -> UserIntent.EXPLAIN_CODE_SELECTION
         prompt.startsWith("Refactor") -> UserIntent.SUGGEST_ALTERNATE_IMPLEMENTATION
         prompt.startsWith("Fix") -> UserIntent.APPLY_COMMON_BEST_PRACTICES
         prompt.startsWith("Optimize") -> UserIntent.IMPROVE_CODE
-        prompt.startsWith("Generate unit tests") && isInternalUser(startUrl) -> UserIntent.GENERATE_UNIT_TESTS
+        prompt.startsWith("Generate unit tests") -> UserIntent.GENERATE_UNIT_TESTS
         else -> null
     }
 
@@ -41,6 +40,9 @@ class UserIntentRecognizer {
         FollowUpType.Generated -> null
         FollowUpType.StopCodeTransform -> null
         FollowUpType.NewCodeTransform -> null
+        FollowUpType.CreateDocumentation -> null
+        FollowUpType.NewCodeScan -> null
+        FollowUpType.ViewDiff -> UserIntent.GENERATE_UNIT_TESTS
     }
 
     fun getUserIntentFromOnboardingPageInteraction(interaction: OnboardingPageInteraction) = when (interaction.type) {

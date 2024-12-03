@@ -27,6 +27,10 @@ import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPag
 import software.aws.toolkits.jetbrains.services.amazonq.webview.BrowserConnector
 import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapter
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.EditorThemeAdapter
+import software.aws.toolkits.jetbrains.services.amazonqCodeScan.auth.isCodeScanAvailable
+import software.aws.toolkits.jetbrains.services.amazonqCodeScan.runCodeScanMessage
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.auth.isCodeTestAvailable
+import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
 import javax.swing.JComponent
@@ -72,6 +76,14 @@ class AmazonQToolWindow private constructor(
         }
     }
 
+    private fun sendMessageAppToUi(message: AmazonQMessage, tabType: String) {
+        appConnections.filter { it.app.tabTypes.contains(tabType) }.forEach {
+            scope.launch {
+                it.messagesFromAppToUi.publish(message)
+            }
+        }
+    }
+
     private fun initConnections() {
         val apps = appSource.getApps(project)
         apps.forEach { app ->
@@ -110,7 +122,10 @@ class AmazonQToolWindow private constructor(
 
         chatBrowser.init(
             isCodeTransformAvailable = isCodeTransformAvailable(project),
-            isFeatureDevAvailable = isFeatureDevAvailable(project)
+            isFeatureDevAvailable = isFeatureDevAvailable(project),
+            isCodeScanAvailable = isCodeScanAvailable(project),
+            isCodeTestAvailable = isCodeTestAvailable(project),
+            isDocAvailable = isDocAvailable(project)
         )
 
         scope.launch {
@@ -134,16 +149,24 @@ class AmazonQToolWindow private constructor(
     companion object {
         fun getInstance(project: Project): AmazonQToolWindow = project.service<AmazonQToolWindow>()
 
+        private fun showChatWindow(project: Project) = runInEdt {
+            val toolWindow = ToolWindowManager.getInstance(project).getToolWindow(AmazonQToolWindowFactory.WINDOW_ID)
+            toolWindow?.show()
+        }
+
         fun getStarted(project: Project) {
             // Make sure the window is shown
-            runInEdt {
-                val toolWindow = ToolWindowManager.getInstance(project).getToolWindow(AmazonQToolWindowFactory.WINDOW_ID)
-                toolWindow?.show()
-            }
+            showChatWindow(project)
 
             // Send the interaction message
             val window = getInstance(project)
             window.sendMessage(OnboardingPageInteraction(OnboardingPageInteractionType.CwcButtonClick), "cwc")
+        }
+
+        fun openScanTab(project: Project) {
+            showChatWindow(project)
+            val window = getInstance(project)
+            window.sendMessageAppToUi(runCodeScanMessage, tabType = "codescan")
         }
     }
 
