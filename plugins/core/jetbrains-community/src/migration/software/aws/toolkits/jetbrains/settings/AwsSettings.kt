@@ -6,7 +6,7 @@ package migration.software.aws.toolkits.jetbrains.settings
 import com.intellij.openapi.components.service
 import software.aws.toolkits.jetbrains.settings.ProfilesNotification
 import software.aws.toolkits.jetbrains.settings.UseAwsCredentialRegion
-import java.util.*
+import java.util.UUID
 
 interface AwsSettings {
     var isTelemetryEnabled: Boolean

@@ -97,6 +97,15 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         state.intValue[CodeWhispererIntConfigurationType.ProjectContextIndexMaxSize] = value
     }
 
+    fun getIgnoredCodeReviewIssues(): String = state.stringValue.getOrDefault(
+        CodeWhispererStringConfigurationType.IgnoredCodeReviewIssues,
+        ""
+    )
+
+    fun setIgnoredCodeReviewIssues(value: String) {
+        state.stringValue[CodeWhispererStringConfigurationType.IgnoredCodeReviewIssues] = value
+    }
+
     companion object {
         fun getInstance(): CodeWhispererSettings = service()
     }
@@ -104,13 +113,16 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
     override fun getState(): CodeWhispererConfiguration = CodeWhispererConfiguration().apply {
         value.putAll(state.value)
         intValue.putAll(state.intValue)
+        stringValue.putAll(state.stringValue)
     }
 
     override fun loadState(state: CodeWhispererConfiguration) {
         this.state.value.clear()
         this.state.intValue.clear()
+        this.state.stringValue.clear()
         this.state.value.putAll(state.value)
         this.state.intValue.putAll(state.intValue)
+        this.state.stringValue.putAll(state.stringValue)
     }
 }
 
@@ -119,6 +131,7 @@ class CodeWhispererConfiguration : BaseState() {
     val value by map<CodeWhispererConfigurationType, Boolean>()
     val intValue by map<CodeWhispererIntConfigurationType, Int>()
     val projectAutoBuildConfigurationMap by map<String, Boolean>()
+    val stringValue by map<CodeWhispererStringConfigurationType, String>()
 }
 
 enum class CodeWhispererConfigurationType {
@@ -131,6 +144,10 @@ enum class CodeWhispererConfigurationType {
     IsProjectContextEnabled,
     IsProjectContextGpu,
     HasEnabledProjectContextOnce,
+}
+
+enum class CodeWhispererStringConfigurationType {
+    IgnoredCodeReviewIssues,
 }
 
 enum class CodeWhispererIntConfigurationType {

@@ -20,8 +20,8 @@ data class Interaction(
     val interactionSucceeded: Boolean,
 )
 
-data class SessionStateInteraction(
-    val nextState: SessionState? = null,
+data class SessionStateInteraction<T : SessionState>(
+    val nextState: T? = null,
     val interaction: Interaction,
 )
 

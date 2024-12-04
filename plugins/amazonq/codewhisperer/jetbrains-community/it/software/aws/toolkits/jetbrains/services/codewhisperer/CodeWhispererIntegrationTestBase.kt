@@ -98,7 +98,8 @@ open class CodeWhispererIntegrationTestBase(val projectRule: CodeInsightTestFixt
         )
 
         scanManager = spy(CodeWhispererCodeScanManager.getInstance(projectRule.project))
-        doNothing().whenever(scanManager).addCodeScanUI(any())
+        doNothing().whenever(scanManager).buildCodeScanUI()
+        doNothing().whenever(scanManager).showCodeScanUI()
         projectRule.project.replaceService(CodeWhispererCodeScanManager::class.java, scanManager, disposableRule.disposable)
 
         telemetryServiceSpy = spy(CodeWhispererTelemetryService.getInstance())

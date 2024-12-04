@@ -211,7 +211,7 @@ class ExplorerToolWindow(private val project: Project) :
                                         GettingStartedPanel.openPanel(project)
                                     } else {
                                         ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AwsExplorer, true))
-                                        showWebview(project)
+                                        ShowToolkitListener.showWebview(project)
                                     }
                                 }
                             }

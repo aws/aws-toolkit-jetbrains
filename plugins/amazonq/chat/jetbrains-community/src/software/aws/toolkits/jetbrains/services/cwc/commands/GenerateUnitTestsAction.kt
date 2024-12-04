@@ -3,20 +3,4 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.commands
 
-import com.intellij.openapi.actionSystem.ActionUpdateThread
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.CommonDataKeys
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
-
-class GenerateUnitTestsAction : CustomAction(EditorContextCommand.GenerateUnitTests) {
-    override fun getActionUpdateThread() = ActionUpdateThread.BGT
-
-    override fun update(e: AnActionEvent) {
-        val project = e.getData(CommonDataKeys.PROJECT) ?: return
-        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
-        e.presentation.isEnabledAndVisible = isInternalUser(connection?.startUrl)
-    }
-}
+class GenerateUnitTestsAction : CustomAction(EditorContextCommand.GenerateUnitTests)

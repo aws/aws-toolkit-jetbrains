@@ -3,15 +3,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ChatItemAction } from '@aws/mynah-ui-chat'
+import { ChatItemAction, ChatPrompt } from '@aws/mynah-ui-chat'
 import { AuthFollowUpType } from '../followUps/generator'
 import { ExtensionMessage } from '../commands'
+import {getTabCommandFromTabType, isTabType, TabType } from '../storages/tabsStorage'
+import {codeScanUserGuide, codeTestUserGuide, codeTransformUserGuide, docUserGuide, featureDevUserGuide} from "../texts/constants";
+import {createClickTelemetry, createOpenAgentTelemetry, Trigger} from "../telemetry/actions";
 
 export type WelcomeFollowupType = 'continue-to-chat'
 
 export interface ConnectorProps {
     sendMessageToExtension: (message: ExtensionMessage) => void
     onWelcomeFollowUpClicked: (tabID: string, welcomeFollowUpType: WelcomeFollowupType) => void
+    handleCommand: (chatPrompt: ChatPrompt, tabId: string) => void
 }
 export interface CodeReference {
     licenseName?: string
@@ -26,10 +30,12 @@ export interface CodeReference {
 export class Connector {
     private readonly sendMessageToExtension
     private readonly onWelcomeFollowUpClicked
+    private readonly handleCommand
 
     constructor(props: ConnectorProps) {
         this.sendMessageToExtension = props.sendMessageToExtension
         this.onWelcomeFollowUpClicked = props.onWelcomeFollowUpClicked
+        this.handleCommand = props.handleCommand
     }
 
     followUpClicked = (tabID: string, followUp: ChatItemAction): void => {
@@ -44,6 +50,65 @@ export class Connector {
             authType,
             tabID,
             tabType,
+        })
+    }
+
+    onCustomFormAction(
+        tabId: string,
+        action: {
+            id: string
+            text?: string | undefined
+            formItemValues?: Record<string, string> | undefined
+        }
+    ) {
+        const tabType = action.id.split('-')[2]
+        if (!isTabType(tabType)) {
+            return
+        }
+
+        if (action.id.startsWith('user-guide-')) {
+            this.processUserGuideLink(tabType, action.id)
+            return
+        }
+
+        if (action.id.startsWith('quick-start-')) {
+            this.handleCommand(
+                {
+                    command: getTabCommandFromTabType(tabType),
+                },
+                tabId
+            )
+
+            this.sendMessageToExtension(createOpenAgentTelemetry(tabType, 'quick-start'))
+        }
+    }
+
+    private processUserGuideLink(tabType: TabType, actionId: string) {
+        let userGuideLink = ''
+        switch (tabType) {
+            case 'codescan':
+                userGuideLink = codeScanUserGuide
+                break
+            case 'codetest':
+                userGuideLink = codeTestUserGuide
+                break
+            case 'codetransform':
+                userGuideLink = codeTransformUserGuide
+                break
+            case 'doc':
+                userGuideLink = docUserGuide
+                break
+            case 'featuredev':
+                userGuideLink = featureDevUserGuide
+                break
+        }
+
+        // e.g. amazonq-explore-user-guide-featuredev
+        this.sendMessageToExtension(createClickTelemetry(`amazonq-explore-${actionId}`))
+
+        this.sendMessageToExtension({
+            command: 'open-user-guide',
+            userGuideLink,
         })
     }
 }

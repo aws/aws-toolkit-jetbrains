@@ -24,11 +24,18 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUr
 import software.amazon.awssdk.services.codewhispererruntime.model.Dimension
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeFixJobRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeFixJobResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.GetTestGenerationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.InlineChatUserDecision
 import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEvaluationsResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeFixJobRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeFixJobResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.StartTestGenerationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.SuggestionState
+import software.amazon.awssdk.services.codewhispererruntime.model.TargetCode
 import software.amazon.awssdk.services.codewhispererruntime.model.UserIntent
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -87,7 +94,15 @@ interface CodeWhispererClientAdaptor : Disposable {
         isSigv4: Boolean = shouldUseSigv4Client(project),
     ): ListCodeScanFindingsResponse
 
+    fun startCodeFixJob(request: StartCodeFixJobRequest): StartCodeFixJobResponse
+
+    fun getCodeFixJob(request: GetCodeFixJobRequest): GetCodeFixJobResponse
+
     fun listAvailableCustomizations(): List<CodeWhispererCustomization>
+
+    fun startTestGeneration(uploadId: String, targetCode: List<TargetCode>, userInput: String): StartTestGenerationResponse
+
+    fun getTestGeneration(jobId: String, jobGroupName: String): GetTestGenerationResponse
 
     fun sendUserTriggerDecisionTelemetry(
         requestContext: RequestContext,
@@ -135,6 +150,39 @@ interface CodeWhispererClientAdaptor : Disposable {
         scope: CodeWhispererConstants.CodeAnalysisScope,
     ): SendTelemetryEventResponse
 
+    fun sendCodeScanSucceededTelemetry(
+        language: CodeWhispererProgrammingLanguage,
+        codeScanJobId: String?,
+        scope: CodeWhispererConstants.CodeAnalysisScope,
+        findings: Int,
+    ): SendTelemetryEventResponse
+
+    fun sendCodeScanFailedTelemetry(
+        language: CodeWhispererProgrammingLanguage,
+        codeScanJobId: String?,
+        scope: CodeWhispererConstants.CodeAnalysisScope,
+    ): SendTelemetryEventResponse
+
+    fun sendCodeFixGenerationTelemetry(
+        language: CodeWhispererProgrammingLanguage,
+        codeFixJobId: String?,
+        ruleId: String?,
+        detectorId: String?,
+        findingId: String?,
+        linesOfCodeGenerated: Int?,
+        charsOfCodeGenerated: Int?,
+    ): SendTelemetryEventResponse
+
+    fun sendCodeFixAcceptanceTelemetry(
+        language: CodeWhispererProgrammingLanguage,
+        codeFixJobId: String?,
+        ruleId: String?,
+        detectorId: String?,
+        findingId: String?,
+        linesOfCodeGenerated: Int?,
+        charsOfCodeGenerated: Int?,
+    ): SendTelemetryEventResponse
+
     fun sendCodeScanRemediationTelemetry(
         language: CodeWhispererProgrammingLanguage?,
         codeScanRemediationEventType: String?,
@@ -146,6 +194,19 @@ interface CodeWhispererClientAdaptor : Disposable {
         result: String?,
         includesFix: Boolean?,
     ): SendTelemetryEventResponse
+
+    fun sendTestGenerationEvent(
+        jobId: String,
+        groupName: String,
+        language: CodeWhispererProgrammingLanguage?,
+        numberOfUnitTestCasesGenerated: Int?,
+        numberOfUnitTestCasesAccepted: Int?,
+        linesOfCodeGenerated: Int?,
+        linesOfCodeAccepted: Int?,
+        charsOfCodeGenerated: Int?,
+        charsOfCodeAccepted: Int?,
+    ): SendTelemetryEventResponse
+
     fun listFeatureEvaluations(): ListFeatureEvaluationsResponse
 
     fun sendMetricDataTelemetry(eventName: String, metadata: Map<String, Any?>): SendTelemetryEventResponse
@@ -210,6 +271,7 @@ interface CodeWhispererClientAdaptor : Disposable {
             CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.Accountless
 
         const val INVALID_CODESCANJOBID = "Invalid_CodeScanJobID"
+        const val INVALID_CODEFIXJOBID = "Invalid_CodeFixJobID"
     }
 }
 
@@ -281,6 +343,10 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             bearerClient().listCodeAnalysisFindings(request.transform()).transform()
         }
 
+    override fun startCodeFixJob(request: StartCodeFixJobRequest): StartCodeFixJobResponse = bearerClient().startCodeFixJob(request)
+
+    override fun getCodeFixJob(request: GetCodeFixJobRequest): GetCodeFixJobResponse = bearerClient().getCodeFixJob(request)
+
     // DO NOT directly use this method to fetch customizations, use wrapper [CodeWhispererModelConfigurator.listCustomization()] instead
     override fun listAvailableCustomizations(): List<CodeWhispererCustomization> =
         bearerClient().listAvailableCustomizationsPaginator(ListAvailableCustomizationsRequest.builder().build())
@@ -300,6 +366,20 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     )
                 }
             }
+
+    override fun startTestGeneration(uploadId: String, targetCode: List<TargetCode>, userInput: String): StartTestGenerationResponse =
+        bearerClient().startTestGeneration { builder ->
+            builder.uploadId(uploadId)
+            builder.targetCodeList(targetCode)
+            builder.userInput(userInput)
+            // TODO: client token
+        }
+
+    override fun getTestGeneration(jobId: String, jobGroupName: String): GetTestGenerationResponse =
+        bearerClient().getTestGeneration { builder ->
+            builder.testGenerationJobId(jobId)
+            builder.testGenerationJobGroupName(jobGroupName)
+        }
 
     override fun sendUserTriggerDecisionTelemetry(
         requestContext: RequestContext,
@@ -459,6 +539,100 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
     }
+
+    override fun sendCodeScanSucceededTelemetry(
+        language: CodeWhispererProgrammingLanguage,
+        codeScanJobId: String?,
+        scope: CodeWhispererConstants.CodeAnalysisScope,
+        findings: Int,
+    ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
+        requestBuilder.telemetryEvent { telemetryEventBuilder ->
+            telemetryEventBuilder.codeScanSucceededEvent {
+                it.programmingLanguage { languageBuilder ->
+                    languageBuilder.languageName(language.toCodeWhispererRuntimeLanguage().languageId)
+                }
+                it.codeScanJobId(if (codeScanJobId.isNullOrEmpty()) CodeWhispererClientAdaptor.INVALID_CODESCANJOBID else codeScanJobId)
+                it.timestamp(Instant.now())
+                it.codeAnalysisScope(scope.value)
+                it.numberOfFindings(findings)
+                it.timestamp(Instant.now())
+            }
+        }
+        requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+        requestBuilder.userContext(codeWhispererUserContext())
+    }
+
+    override fun sendCodeScanFailedTelemetry(
+        language: CodeWhispererProgrammingLanguage,
+        codeScanJobId: String?,
+        scope: CodeWhispererConstants.CodeAnalysisScope,
+    ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
+        requestBuilder.telemetryEvent { telemetryEventBuilder ->
+            telemetryEventBuilder.codeScanFailedEvent {
+                it.programmingLanguage { languageBuilder ->
+                    languageBuilder.languageName(language.toCodeWhispererRuntimeLanguage().languageId)
+                }
+                it.codeScanJobId(if (codeScanJobId.isNullOrEmpty()) CodeWhispererClientAdaptor.INVALID_CODESCANJOBID else codeScanJobId)
+                it.timestamp(Instant.now())
+                it.codeAnalysisScope(scope.value)
+            }
+        }
+        requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+        requestBuilder.userContext(codeWhispererUserContext())
+    }
+
+    override fun sendCodeFixGenerationTelemetry(
+        language: CodeWhispererProgrammingLanguage,
+        codeFixJobId: String?,
+        ruleId: String?,
+        detectorId: String?,
+        findingId: String?,
+        linesOfCodeGenerated: Int?,
+        charsOfCodeGenerated: Int?,
+    ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
+        requestBuilder.telemetryEvent { telemetryEventBuilder ->
+            telemetryEventBuilder.codeFixGenerationEvent {
+                it.programmingLanguage { languageBuilder ->
+                    languageBuilder.languageName(language.toCodeWhispererRuntimeLanguage().languageId)
+                }
+                it.jobId(if (codeFixJobId.isNullOrEmpty()) CodeWhispererClientAdaptor.INVALID_CODEFIXJOBID else codeFixJobId)
+                it.ruleId(ruleId)
+                it.detectorId(detectorId)
+                it.findingId(findingId)
+                it.linesOfCodeGenerated(linesOfCodeGenerated)
+                it.charsOfCodeGenerated(charsOfCodeGenerated)
+            }
+        }
+        requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+        requestBuilder.userContext(codeWhispererUserContext())
+    }
+
+    override fun sendCodeFixAcceptanceTelemetry(
+        language: CodeWhispererProgrammingLanguage,
+        codeFixJobId: String?,
+        ruleId: String?,
+        detectorId: String?,
+        findingId: String?,
+        linesOfCodeGenerated: Int?,
+        charsOfCodeGenerated: Int?,
+    ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
+        requestBuilder.telemetryEvent { telemetryEventBuilder ->
+            telemetryEventBuilder.codeFixAcceptanceEvent {
+                it.programmingLanguage { languageBuilder ->
+                    languageBuilder.languageName(language.toCodeWhispererRuntimeLanguage().languageId)
+                }
+                it.jobId(if (codeFixJobId.isNullOrEmpty()) CodeWhispererClientAdaptor.INVALID_CODEFIXJOBID else codeFixJobId)
+                it.ruleId(ruleId)
+                it.detectorId(detectorId)
+                it.findingId(findingId)
+                it.linesOfCodeAccepted(linesOfCodeGenerated)
+                it.charsOfCodeAccepted(charsOfCodeGenerated)
+            }
+        }
+        requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+        requestBuilder.userContext(codeWhispererUserContext())
+    }
+
     override fun sendCodeScanRemediationTelemetry(
         language: CodeWhispererProgrammingLanguage?,
         codeScanRemediationEventType: String?,
@@ -483,6 +657,37 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 it.reason(reason)
                 it.result(result)
                 it.includesFix(includesFix)
+                it.timestamp(Instant.now())
+            }
+        }
+        requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+        requestBuilder.userContext(codeWhispererUserContext())
+    }
+
+    override fun sendTestGenerationEvent(
+        jobId: String,
+        groupName: String,
+        language: CodeWhispererProgrammingLanguage?,
+        numberOfUnitTestCasesGenerated: Int?,
+        numberOfUnitTestCasesAccepted: Int?,
+        linesOfCodeGenerated: Int?,
+        linesOfCodeAccepted: Int?,
+        charsOfCodeGenerated: Int?,
+        charsOfCodeAccepted: Int?,
+    ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
+        requestBuilder.telemetryEvent { telemetryEventBuilder ->
+            telemetryEventBuilder.testGenerationEvent {
+                it.programmingLanguage { languageBuilder ->
+                    languageBuilder.languageName(language?.toCodeWhispererRuntimeLanguage()?.languageId)
+                }
+                it.jobId(jobId)
+                it.groupName(groupName)
+                it.numberOfUnitTestCasesGenerated(numberOfUnitTestCasesGenerated)
+                it.numberOfUnitTestCasesAccepted(numberOfUnitTestCasesAccepted)
+                it.linesOfCodeGenerated(linesOfCodeGenerated)
+                it.linesOfCodeAccepted(linesOfCodeAccepted)
+                it.charsOfCodeGenerated(charsOfCodeGenerated)
+                it.charsOfCodeAccepted(charsOfCodeAccepted)
                 it.timestamp(Instant.now())
             }
         }

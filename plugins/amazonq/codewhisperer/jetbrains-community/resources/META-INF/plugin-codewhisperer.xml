@@ -38,6 +38,7 @@
         <projectService serviceInterface="software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider"
                         serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.util.DefaultCodeWhispererFileContextProvider"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager"/>
+        <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.codetest.CodeWhispererUTGChatManager"/>
 
         <statusBarWidgetFactory id="aws.codewhisperer"
                                 implementation="software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhispererStatusBarWidgetFactory"/>
@@ -111,13 +112,12 @@
             <keyboard-shortcut keymap="$default" first-keystroke="alt ENTER"/>
         </action>
 
+
         <group id="aws.toolkit.codewhisperer.toolbar.security">
-            <action
-                id="codewhisperer.toolbar.security.scan"
-                class="software.aws.toolkits.jetbrains.services.codewhisperer.codescan.actions.CodeWhispererCodeScanRunAction"/>
-            <action
-                id="codewhisperer.toolbar.security.stopscan"
-                class="software.aws.toolkits.jetbrains.services.codewhisperer.codescan.actions.CodeWhispererStopCodeScanAction"/>
+            <group id="codewhisperer.toolbar.security.filter" icon="com.intellij.icons.ExpUiIcons.General.Filter" text="Filter" popup="true" >
+                <separator text="Severity"/>
+                <action class="software.aws.toolkits.jetbrains.services.codewhisperer.codescan.actions.CodeWhispererCodeScanFilterGroup" text="Severity"/>
+            </group>
         </group>
 
         <group id="aws.toolkit.jetbrains.core.services.codewhisperer.suggestions"
@@ -126,7 +126,10 @@
         <group id = "aws.toolkit.explorer.codewhisperer.codescan">
             <action
                 id="aws.amazonq.explainCodeScanIssue"
-                class= "software.aws.toolkits.jetbrains.services.cwc.commands.codescan.actions.ExplainCodeIssueAction"/>
+                class="software.aws.toolkits.jetbrains.services.cwc.commands.codescan.actions.ExplainCodeIssueAction"/>
+            <action
+                id="aws.amazonq.codeScanComplete"
+                class="software.aws.toolkits.jetbrains.services.cwc.commands.codescan.actions.CodeScanCompleteAction" />
         </group>
 
     </actions>

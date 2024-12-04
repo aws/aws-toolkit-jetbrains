@@ -16,6 +16,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererLearnMoreAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererProvideFeedbackAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererShowSettingsAction
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.actions.CodeWhispererCodeScanRunAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.ActionProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.Customize
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.Learn
@@ -38,8 +39,7 @@ class QStatusBarLoggedInActionGroup : DefaultActionGroup() {
         override val customize = Customize()
         override val learn = Learn()
         override val openChatPanel = ActionManager.getInstance().getAction("q.openchat")
-        override val runScan = ActionManager.getInstance().getAction("codewhisperer.toolbar.security.scan")
-        override val stopScan = ActionManager.getInstance().getAction("codewhisperer.toolbar.security.stopscan")
+        override val runScan = CodeWhispererCodeScanRunAction()
         override val pauseAutoScans = PauseCodeScans()
         override val resumeAutoScans = ResumeCodeScans()
         override val sendFeedback = CodeWhispererProvideFeedbackAction()

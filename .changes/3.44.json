@@ -1,0 +1,20 @@
+{
+  "date" : "2024-12-04",
+  "version" : "3.44",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Amazon Q: UI improvements to chat: New splash loader animation, initial streaming card animation, improved button colours"
+  }, {
+    "type" : "feature",
+    "description" : "Amazon Q: Navigate through prompt history by using the up/down arrows"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix issue where Amazon Q Code Transform is unable to start"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix DynamoDB viewer throwing 'ActionGroup should be registered using <group> tag' on IDE start (#5012) (#5120)"
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q: Fix chat syntax highlighting when using several different themes"
+  } ]
+}

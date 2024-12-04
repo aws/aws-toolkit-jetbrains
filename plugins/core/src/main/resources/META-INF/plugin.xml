@@ -22,8 +22,11 @@
         <!-- each plugin needs its own instance of these -->
         <applicationService serviceImplementation="migration.software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
         <projectService serviceImplementation="migration.software.aws.toolkits.jetbrains.core.coroutines.PluginCoroutineScopeTracker"/>
+        <postStartupActivity implementation = "software.aws.toolkits.jetbrains.core.notifications.NotificationServiceInitializer"/>
+        <postStartupActivity implementation="software.aws.toolkits.jetbrains.services.telemetry.AwsToolkitStartupMetrics"/>
     </extensions>
     <projectListeners>
         <listener class="software.aws.toolkits.jetbrains.services.telemetry.OpenedFileTypesMetricsListener" topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
     </projectListeners>
+
 </idea-plugin>

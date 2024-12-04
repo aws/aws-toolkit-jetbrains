@@ -8,6 +8,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.intellij.analysis.problemsView.toolWindow.ProblemsView
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.RegisterToolWindowTask
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.testFramework.ApplicationRule
@@ -33,7 +34,12 @@ import software.amazon.awssdk.services.codewhisperer.model.CodeScanStatus
 import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanResponse
 import software.amazon.awssdk.services.codewhisperer.model.GetCodeScanResponse
 import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.CodeFixJobStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeFixJobResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.Reference
+import software.amazon.awssdk.services.codewhispererruntime.model.Span
+import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeFixJobResponse
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
@@ -41,6 +47,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWh
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererZipUploadManager
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.nio.file.Path
@@ -81,12 +88,15 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
     internal lateinit var fakeGetCodeScanResponse: GetCodeScanResponse
     internal lateinit var fakeGetCodeScanResponsePending: GetCodeScanResponse
     internal lateinit var fakeGetCodeScanResponseFailed: GetCodeScanResponse
+    internal lateinit var fakeGetCodeFixJobResponse: GetCodeFixJobResponse
+    internal lateinit var fakeStartCodeFixJobResponse: StartCodeFixJobResponse
 
     internal val metadata: DefaultAwsResponseMetadata = DefaultAwsResponseMetadata.create(
         mapOf(AwsHeader.AWS_REQUEST_ID to CodeWhispererTestUtil.testRequestId)
     )
 
     internal lateinit var scanManagerSpy: CodeWhispererCodeScanManager
+    internal lateinit var zipUploadManagerSpy: CodeWhispererZipUploadManager
     internal lateinit var project: Project
 
     @Before
@@ -95,7 +105,12 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
         s3endpoint = "http://127.0.0.1:${wireMock.port()}"
 
         scanManagerSpy = spy(CodeWhispererCodeScanManager.getInstance(project))
-        doNothing().whenever(scanManagerSpy).addCodeScanUI(any())
+        doNothing().whenever(scanManagerSpy).buildCodeScanUI()
+        doNothing().whenever(scanManagerSpy).showCodeScanUI()
+
+        zipUploadManagerSpy = spy(CodeWhispererZipUploadManager.getInstance(project))
+        doNothing().whenever(zipUploadManagerSpy).uploadArtifactToS3(any(), any(), any(), any(), isNull(), any())
+        projectRule.project.replaceService(CodeWhispererZipUploadManager::class.java, zipUploadManagerSpy, disposableRule.disposable)
 
         mockClient = mock<CodeWhispererClientAdaptor>().also {
             project.replaceService(CodeWhispererClientAdaptor::class.java, it, disposableRule.disposable)
@@ -142,7 +157,7 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
             "codeSnippet": [
                 $codeSnippetJson
             ],
-            "severity": "severity",
+            "severity": "Low",
             "remediation": {
                 "recommendation": {
                     "text": "recommendationText",
@@ -211,6 +226,36 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
             .uploadUrl(s3endpoint)
             .responseMetadata(metadata)
             .build() as CreateUploadUrlResponse
+
+        fakeGetCodeFixJobResponse = GetCodeFixJobResponse.builder()
+            .jobStatus(CodeFixJobStatus.SUCCEEDED)
+            .suggestedFix(
+                software.amazon.awssdk.services.codewhispererruntime.model.SuggestedFix.builder()
+                    .codeDiff("diff")
+                    .description("description")
+                    .references(
+                        Reference.builder()
+                            .url(s3endpoint)
+                            .licenseName("license")
+                            .repository("repo")
+                            .recommendationContentSpan(
+                                Span.builder()
+                                    .start(6)
+                                    .end(8)
+                                    .build()
+                            )
+                            .build()
+                    )
+                    .build()
+            )
+            .responseMetadata(metadata)
+            .build() as GetCodeFixJobResponse
+
+        fakeStartCodeFixJobResponse = StartCodeFixJobResponse.builder()
+            .jobId(JOB_ID)
+            .status(CodeFixJobStatus.IN_PROGRESS)
+            .responseMetadata(metadata)
+            .build() as StartCodeFixJobResponse
 
         fakeCreateCodeScanResponse = CreateCodeScanResponse.builder()
             .status(CodeScanStatus.COMPLETED)
@@ -286,7 +331,7 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
                         "content": "codeBlock2"
                     }
                 ],
-                "severity": "severity",
+                "severity": "Low",
                 "remediation": {
                     "recommendation": {
                         "text": "recommendationText",
@@ -336,7 +381,6 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
     ) {
         val codeScanContext = CodeScanSessionContext(project, sessionConfigSpy, CodeWhispererConstants.CodeAnalysisScope.PROJECT)
         val sessionMock = spy(CodeWhispererCodeScanSession(codeScanContext))
-        doNothing().`when`(sessionMock).uploadArtifactToS3(any(), any(), any(), any(), isNull(), any())
 
         ToolWindowManager.getInstance(project).registerToolWindow(
             RegisterToolWindowTask(
@@ -364,8 +408,58 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
         assertThat(treeModel.getTotalIssuesCount()).isEqualTo(expectedTotalIssues)
     }
 
+    fun createCodeScanIssue(project: Project, virtualFile: VirtualFile): CodeWhispererCodeScanIssue =
+        CodeWhispererCodeScanIssue(
+            project = project,
+            file = virtualFile,
+            startLine = 10,
+            startCol = 5,
+            endLine = 15,
+            endCol = 20,
+            title = "Potential Security Vulnerability",
+            description = Description(
+                text = "A detailed description of the security issue found in the code",
+                markdown = "# Security Issue\n\nA detailed description of the security issue found in the code"
+            ),
+            detectorId = "AWS-DETECTOR-001",
+            detectorName = "SecurityScanner",
+            findingId = "FINDING-123",
+            ruleId = "RULE-456",
+            relatedVulnerabilities = listOf(
+                "CVE-2023-12345",
+                "CVE-2023-67890"
+            ),
+            severity = "HIGH",
+            recommendation = Recommendation(
+                text = "Consider implementing secure coding practices",
+                url = "https://docs.aws.amazon.com/security-best-practices"
+            ),
+            suggestedFixes = emptyList(), // Empty list as requested
+            codeSnippet = listOf(
+                CodeLine(
+                    number = 10,
+                    content = "val unsecureCode = performOperation()"
+                ),
+                CodeLine(
+                    number = 11,
+                    content = "processData(unsecureCode)"
+                )
+            )
+        )
+
+// You might need these data classes depending on your implementation
+    data class Description(val message: String)
+    data class Recommendation(val text: String)
+    data class SuggestedFix(val description: String, val code: String)
+    data class CodeLine(val lineNumber: Int, val content: String)
+
     companion object {
         const val UPLOAD_ID = "uploadId"
         const val JOB_ID = "jobId"
+        const val KMS_KEY_ARN = "kmsKeyArn"
+        val REQUEST_HEADERS = mapOf(
+            "Content-Type" to "application/zip",
+            "test" to "aws:test",
+        )
     }
 }

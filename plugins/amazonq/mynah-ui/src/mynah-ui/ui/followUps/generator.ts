@@ -52,7 +52,33 @@ export class FollowUpGenerator {
                         },
                     ],
                 }
+            case 'doc':
+                return {
+                    text: 'Select one of the following...',
+                    options: [
+                        {
+                            pillText: 'Create a README',
+                            prompt: 'Create a README',
+                            type: 'CreateDocumentation',
+                        },
+                        {
+                            pillText: 'Update an existing README',
+                            prompt: 'Update an existing README',
+                            type: 'UpdateDocumentation',
+                        },
+                    ],
+                }
             case 'codetransform':
+                return {
+                    text: '',
+                    options: [],
+                }
+            case 'codescan':
+                return {
+                    text: '',
+                    options: []
+                }
+            case 'codetest':
                 return {
                     text: '',
                     options: [],

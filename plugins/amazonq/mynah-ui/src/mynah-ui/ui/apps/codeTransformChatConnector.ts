@@ -20,7 +20,14 @@ export interface ICodeTransformChatConnectorProps {
     onUpdatePlaceholder: (tabID: string, newPlaceholder: string) => void
     onNotification: (props: {content: string; title?: string; type: NotificationType}) => void
     onStartNewTransform: (tabID: string) => void
-    onUpdateAuthentication: (featureDevEnabled: boolean, codeTransformEnabled: boolean, authenticatingTabIDs: string[]) => void
+    onUpdateAuthentication: (
+        featureDevEnabled: boolean,
+        codeTransformEnabled: boolean,
+        docEnabled: boolean,
+        codeScanEnabled: boolean,
+        codeTestEnabled: boolean,
+        authenticatingTabIDs: string[]
+    ) => void
     tabsStorage: TabsStorage
     onNewTab: (tabType: TabType) => void
 }
@@ -201,7 +208,14 @@ export class CodeTransformChatConnector {
         }
 
         if (messageData.type === 'authenticationUpdateMessage') {
-            this.onUpdateAuthentication(messageData.featureDevEnabled, messageData.codeTransformEnabled, messageData.authenticatingTabIDs)
+            this.onUpdateAuthentication(
+                messageData.featureDevEnabled,
+                messageData.codeTransformEnabled,
+                messageData.docEnabled,
+                messageData.codeScanEnabled,
+                messageData.codeTestEnabled,
+                messageData.authenticatingTabIDs
+            )
             return
         }
 

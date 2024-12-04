@@ -13,6 +13,12 @@ class CodeWhispererShell private constructor() : CodeWhispererProgrammingLanguag
 
     override fun isCodeCompletionSupported(): Boolean = true
 
+    override fun lineCommentPrefix(): String = "#"
+
+    override fun blockCommentPrefix(): String = ": '"
+
+    override fun blockCommentSuffix(): String = "'"
+
     companion object {
         const val ID = "shell"
 

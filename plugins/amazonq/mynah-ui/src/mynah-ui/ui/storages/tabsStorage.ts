@@ -4,7 +4,38 @@
  */
 
 export type TabStatus = 'free' | 'busy' | 'dead'
-export type TabType = 'cwc' | 'featuredev' | 'codetransform' | 'unknown'
+const TabTypes = [
+    'cwc',
+    'featuredev',
+    'codetransform',
+    'doc',
+    'codescan',
+    'codetest',
+    'agentWalkthrough',
+    'welcome',
+    'unknown',
+] as const
+export type TabType = (typeof TabTypes)[number]
+export function isTabType(value: string): value is TabType {
+    return (TabTypes as readonly string[]).includes(value)
+}
+
+export function getTabCommandFromTabType(tabType: TabType): string {
+    switch (tabType) {
+        case 'featuredev':
+            return '/dev'
+        case 'codetransform':
+            return '/transform'
+        case 'doc':
+            return '/doc'
+        case 'codescan':
+            return '/review'
+        case 'codetest':
+            return '/test'
+        default:
+            return ''
+    }
+}
 export type TabOpenType = 'click' | 'contextMenu' | 'hotkeys'
 
 const TabTimeoutDuration = 172_800_000 // 48hrs

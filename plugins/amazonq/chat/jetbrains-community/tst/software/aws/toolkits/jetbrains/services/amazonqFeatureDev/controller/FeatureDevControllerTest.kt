@@ -30,6 +30,7 @@ import org.mockito.kotlin.reset
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.whenever
+import software.aws.toolkits.jetbrains.common.util.selectFolder
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
@@ -62,7 +63,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.Cancellat
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.InsertAction
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.selectFolder
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.uploadArtifactToS3
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
@@ -571,7 +571,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             whenever(featureDevClient.sendFeatureDevTelemetryEvent(any())).thenReturn(exampleSendTelemetryEventResponse)
             whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
 
-            mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FileUtilsKt")
+            mockkStatic("software.aws.toolkits.jetbrains.common.util.FileUtilsKt")
             every { selectFolder(any(), any()) } returns null
 
             spySession.preloader(messenger)
@@ -602,7 +602,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             whenever(featureDevClient.sendFeatureDevTelemetryEvent(any())).thenReturn(exampleSendTelemetryEventResponse)
             whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
 
-            mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FileUtilsKt")
+            mockkStatic("software.aws.toolkits.jetbrains.common.util.FileUtilsKt")
             every { selectFolder(any(), any()) } returns LightVirtualFile("/path")
 
             spySession.preloader(messenger)
@@ -639,7 +639,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
 
             val folder = LightVirtualFile("${spySession.context.projectRoot.name}/path/to/sub/folder")
-            mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FileUtilsKt")
+            mockkStatic("software.aws.toolkits.jetbrains.common.util.FileUtilsKt")
             every { selectFolder(any(), any()) } returns folder
 
             spySession.preloader(messenger)

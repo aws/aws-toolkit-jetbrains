@@ -7,6 +7,8 @@ import software.aws.toolkits.resources.message
 
 open class CodeWhispererCodeScanException(override val message: String?) : RuntimeException()
 
+open class CodeWhispererCodeFixException(override val message: String?) : RuntimeException()
+
 open class CodeWhispererCodeScanServerException(override val message: String?) : RuntimeException()
 
 internal fun noFileOpenError(): Nothing =

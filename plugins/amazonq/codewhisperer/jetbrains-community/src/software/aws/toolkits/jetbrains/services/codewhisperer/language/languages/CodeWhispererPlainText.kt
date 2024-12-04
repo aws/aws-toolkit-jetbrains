@@ -13,6 +13,12 @@ class CodeWhispererPlainText private constructor() : CodeWhispererProgrammingLan
 
     override fun isAutoFileScanSupported(): Boolean = false
 
+    override fun lineCommentPrefix() = null
+
+    override fun blockCommentPrefix() = null
+
+    override fun blockCommentSuffix() = null
+
     companion object {
         const val ID = "plaintext"
 

@@ -45,6 +45,7 @@ internal class CodeWhispererCodeScanDocumentListener(val project: Project) : Doc
             }
             issue.rangeHighlighter?.textAttributes = null
             issue.rangeHighlighter?.dispose()
+            scanManager.removeIssue(issue)
         }
         scanManager.updateScanNodes(file)
         if (activeEditor != null && activeEditor.file == file &&

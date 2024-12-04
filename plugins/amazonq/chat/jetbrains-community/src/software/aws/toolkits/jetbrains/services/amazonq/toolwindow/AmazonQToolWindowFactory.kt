@@ -10,8 +10,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.openapi.wm.ex.ToolWindowEx
-import com.intellij.ui.content.Content
-import com.intellij.ui.content.ContentManager
+import com.intellij.ui.components.panels.Wrapper
+import com.intellij.util.ui.components.BorderLayoutPanel
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
@@ -22,6 +22,8 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.aws.toolkits.jetbrains.core.notifications.NotificationPanel
+import software.aws.toolkits.jetbrains.core.notifications.ProcessNotificationsBase
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.RefreshQChatPanelButtonPressedListener
@@ -35,7 +37,21 @@ import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
 
 class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
+
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
+        val mainPanel = BorderLayoutPanel()
+        val qPanel = Wrapper()
+        val notificationPanel = NotificationPanel()
+
+        mainPanel.addToTop(notificationPanel)
+        mainPanel.add(qPanel)
+        val notifListener = ProcessNotificationsBase.getInstance(project)
+        notifListener.addListenerForNotification { bannerContent ->
+            runInEdt {
+                notificationPanel.updateNotificationPanel(bannerContent)
+            }
+        }
+
         if (toolWindow is ToolWindowEx) {
             val actionManager = ActionManager.getInstance()
             toolWindow.setTitleActions(listOf(actionManager.getAction("aws.q.toolwindow.titleBar")))
@@ -46,7 +62,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                    onConnectionChanged(project, newConnection, toolWindow)
+                    onConnectionChanged(project, newConnection, qPanel)
                 }
             }
         )
@@ -56,8 +72,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             object : RefreshQChatPanelButtonPressedListener {
                 override fun onRefresh() {
                     runInEdt {
-                        contentManager.removeAllContents(true)
-                        prepareChatContent(project, contentManager)
+                        prepareChatContent(project, qPanel)
                     }
                 }
             }
@@ -68,43 +83,37 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             object : BearerTokenProviderListener {
                 override fun onChange(providerId: String, newScopes: List<String>?) {
                     if (ToolkitConnectionManager.getInstance(project).connectionStateForFeature(QConnection.getInstance()) == BearerTokenAuthState.AUTHORIZED) {
-                        val content = contentManager.factory.createContent(AmazonQToolWindow.getInstance(project).component, null, false).also {
-                            it.isCloseable = true
-                            it.isPinnable = true
-                        }
+                        val qComponent = AmazonQToolWindow.getInstance(project).component
 
                         runInEdt {
-                            contentManager.removeAllContents(true)
-                            contentManager.addContent(content)
+                            qPanel.setContent(qComponent)
                         }
                     }
                 }
             }
         )
 
-        val content = prepareChatContent(project, contentManager)
+        prepareChatContent(project, qPanel)
 
+        val content = contentManager.factory.createContent(mainPanel, null, false).also {
+            it.isCloseable = true
+            it.isPinnable = true
+        }
         toolWindow.activate(null)
-        contentManager.setSelectedContent(content)
+        contentManager.addContent(content)
     }
 
     private fun prepareChatContent(
         project: Project,
-        contentManager: ContentManager,
-    ): Content {
+        qPanel: Wrapper,
+    ) {
         val component = if (isQConnected(project) && !isQExpired(project)) {
             AmazonQToolWindow.getInstance(project).component
         } else {
             QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AmazonQ))
             QWebviewPanel.getInstance(project).component
         }
-
-        val content = contentManager.factory.createContent(component, null, false).also {
-            it.isCloseable = true
-            it.isPinnable = true
-        }
-        contentManager.addContent(content)
-        return content
+        qPanel.setContent(component)
     }
 
     override fun init(toolWindow: ToolWindow) {
@@ -125,8 +134,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
 
     override fun shouldBeAvailable(project: Project): Boolean = isQWebviewsAvailable()
 
-    private fun onConnectionChanged(project: Project, newConnection: ToolkitConnection?, toolWindow: ToolWindow) {
-        val contentManager = toolWindow.contentManager
+    private fun onConnectionChanged(project: Project, newConnection: ToolkitConnection?, qPanel: Wrapper) {
         val isNewConnectionForQ = newConnection?.let {
             (it as? AwsBearerTokenConnection)?.let { conn ->
                 val scopeShouldHave = Q_SCOPES
@@ -151,15 +159,8 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             LOG.debug { "returning login window; no Q connection found" }
             QWebviewPanel.getInstance(project).component
         }
-
-        val content = contentManager.factory.createContent(component, null, false).also {
-            it.isCloseable = true
-            it.isPinnable = true
-        }
-
         runInEdt {
-            contentManager.removeAllContents(true)
-            contentManager.addContent(content)
+            qPanel.setContent(component)
         }
     }
 

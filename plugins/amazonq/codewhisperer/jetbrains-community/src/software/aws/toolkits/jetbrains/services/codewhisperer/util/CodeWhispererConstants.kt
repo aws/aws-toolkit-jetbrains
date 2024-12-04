@@ -3,12 +3,14 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
+import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.editor.markup.EffectType
 import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.ui.JBColor
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeScanResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
 import java.awt.Font
@@ -53,6 +55,10 @@ object CodeWhispererConstants {
     // avoid ThrottlingException as much as possible.
     const val INVOCATION_INTERVAL: Long = 2050
 
+    val runScanKey = DataKey.create<Boolean>("amazonq.codescan.run")
+    val scanResultsKey = DataKey.create<CodeScanResponse>("amazonq.codescan.result")
+    val scanScopeKey = DataKey.create<CodeAnalysisScope>("amazonq.codescan.scope")
+
     const val Q_CUSTOM_LEARN_MORE_URI = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/customizations.html"
     const val Q_SUPPORTED_LANG_URI = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/q-language-ide-support.html"
     const val CODEWHISPERER_CODE_SCAN_LEARN_MORE_URI = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/security-scans.html"
@@ -70,9 +76,12 @@ object CodeWhispererConstants {
     const val FILE_SCAN_INITIAL_POLLING_INTERVAL_IN_SECONDS: Long = 10
     const val PROJECT_SCAN_INITIAL_POLLING_INTERVAL_IN_SECONDS: Long = 30
     const val CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS: Long = 10
-    const val FILE_SCAN_TIMEOUT_IN_SECONDS: Long = 60 // 60 seconds
+    const val FILE_SCAN_TIMEOUT_IN_SECONDS: Long = 60 * 10 // 10 minutes
     const val FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES: Long = 1024 * 200 // 200KB
     const val AUTO_SCAN_DEBOUNCE_DELAY_IN_SECONDS: Long = 30
+    const val CODE_FIX_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS: Long = 10
+    const val CODE_FIX_POLLING_INTERVAL_IN_SECONDS: Long = 1
+    const val CODE_FIX_TIMEOUT_IN_SECONDS: Long = 60 // 60 seconds
     const val TOTAL_BYTES_IN_KB = 1024
     const val TOTAL_BYTES_IN_MB = 1024 * 1024
     const val TOTAL_MILLIS_IN_SECOND = 1000
@@ -93,6 +102,7 @@ object CodeWhispererConstants {
     const val PROJECT_SCANS_LIMIT_REACHED = "You have reached the monthly quota of project scans."
     const val FILE_SCANS_THROTTLING_MESSAGE = "Maximum auto-scans count reached for this month"
     const val PROJECT_SCANS_THROTTLING_MESSAGE = "Maximum project scan count reached for this month"
+    const val amazonqIgnoreNextLine = "amazonq-ignore-next-line"
 
     // Date when Accountless is not supported
     val EXPIRE_DATE = SimpleDateFormat("yyyy-MM-dd").parse("2023-01-31")
@@ -115,6 +125,19 @@ object CodeWhispererConstants {
     enum class CodeAnalysisScope(val value: String) {
         FILE("FILE"),
         PROJECT("PROJECT"),
+    }
+
+    enum class UploadTaskType(val value: String) {
+        SCAN_FILE("SCAN_FILE"),
+        SCAN_PROJECT("SCAN_PROJECT"),
+        UTG("UTG"),
+        CODE_FIX("CODE_FIX"),
+    }
+
+    enum class FixGenerationState(val value: String) {
+        GENERATING("GENERATING"),
+        COMPLETED("COMPLETED"),
+        FAILED("FAILED"),
     }
 
     object Config {

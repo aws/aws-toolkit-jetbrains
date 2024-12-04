@@ -11,6 +11,9 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQApp
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
+import software.aws.toolkits.jetbrains.services.amazonqCodeScan.auth.isCodeScanAvailable
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.auth.isCodeTestAvailable
+import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.controller.FeatureDevController
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.AuthenticationUpdateMessage
@@ -62,7 +65,10 @@ class FeatureDevApp : AmazonQApp {
                             AuthenticationUpdateMessage(
                                 featureDevEnabled = isFeatureDevAvailable(context.project),
                                 codeTransformEnabled = isCodeTransformAvailable(context.project),
-                                authenticatingTabIDs = chatSessionStorage.getAuthenticatingSessions().map { it.tabID }
+                                codeScanEnabled = isCodeScanAvailable(context.project),
+                                codeTestEnabled = isCodeTestAvailable(context.project),
+                                docEnabled = isDocAvailable(context.project),
+                                authenticatingTabIDs = chatSessionStorage.getAuthenticatingSessions().map { it.tabID },
                             )
                         )
                     }

@@ -38,7 +38,7 @@ class PrepareCodeGenerationState(
     override var diffMetricsProcessed: DiffMetricsProcessed,
 ) : SessionState {
     override val phase = SessionStatePhase.CODEGEN
-    override suspend fun interact(action: SessionStateAction): SessionStateInteraction {
+    override suspend fun interact(action: SessionStateAction): SessionStateInteraction<SessionState> {
         val startTime = System.currentTimeMillis()
         var result: Result = Result.Succeeded
         var failureReason: String? = null

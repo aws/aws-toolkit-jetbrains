@@ -15,6 +15,12 @@ class CodeWhispererJson private constructor() : CodeWhispererProgrammingLanguage
 
     override fun isAutoFileScanSupported(): Boolean = true
 
+    override fun lineCommentPrefix() = null
+
+    override fun blockCommentPrefix() = null
+
+    override fun blockCommentSuffix() = null
+
     companion object {
         const val ID = "json"
 

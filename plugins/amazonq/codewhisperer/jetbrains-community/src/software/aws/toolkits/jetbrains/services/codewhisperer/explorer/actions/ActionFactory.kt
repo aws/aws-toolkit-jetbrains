@@ -7,7 +7,6 @@ import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isUserBuilderId
@@ -23,7 +22,6 @@ interface ActionProvider<T> {
     val pauseAutoScans: T
     val resumeAutoScans: T
     val runScan: T
-    val stopScan: T
     val sendFeedback: T
     val connectOnGithub: T
     val documentation: T
@@ -48,7 +46,6 @@ fun <T> buildActionListForInlineSuggestions(project: Project, actionProvider: Ac
 
 fun <T> buildActionListForCodeScan(project: Project, actionProvider: ActionProvider<T>): List<T> =
     buildList {
-        val codeScanManager = CodeWhispererCodeScanManager.getInstance(project)
         val manager = CodeWhispererExplorerActionManager.getInstance()
         if (!isUserBuilderId(project)) {
             if (manager.isAutoEnabledForCodeScan()) {
@@ -57,11 +54,7 @@ fun <T> buildActionListForCodeScan(project: Project, actionProvider: ActionProvi
                 add(actionProvider.resumeAutoScans)
             }
         }
-        if (codeScanManager.isProjectScanInProgress()) {
-            add(actionProvider.stopScan)
-        } else {
-            add(actionProvider.runScan)
-        }
+        add(actionProvider.runScan)
     }
 
 fun <T> buildActionListForOtherFeatures(project: Project, actionProvider: ActionProvider<T>): List<T> =

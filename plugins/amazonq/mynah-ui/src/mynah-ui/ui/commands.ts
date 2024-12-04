@@ -48,7 +48,21 @@ type MessageCommand =
     | 'codetransform-pom-file-open-click'
     | 'file-click'
     | 'open-settings'
+    | 'button-click'
     | 'store-code-result-message-id'
+    | 'folderConfirmationMessage'
+    | 'scan'
+    | 'codescan_start_project_scan'
+    | 'codescan_start_file_scan'
+    | 'codescan_stop_project_scan'
+    | 'codescan_stop_file_scan'
+    | 'codescan_open_issues'
+    | 'generate-test'
+    | 'start-test-gen'
+    | 'open-user-guide'
+    | 'send-telemetry'
+    | 'doc_stop_generate'
+    | 'updatePromptProgress'
 
 export type ExtensionMessage = Record<string, any> & { command: MessageCommand }
 

@@ -33,7 +33,7 @@ class CodeWhispererProjectStartupSettingsListener(private val project: Project) 
         CodeWhispererCodeReferenceManager.getInstance(project).toolWindow?.isAvailable = value
         if (value) {
             CodeWhispererSettings.getInstance().toggleIncludeCodeWithReference(true)
-            CodeWhispererCodeScanManager.getInstance(project).addCodeScanUI()
+            CodeWhispererCodeScanManager.getInstance(project).buildCodeScanUI()
         } else {
             CodeWhispererCodeScanManager.getInstance(project).removeCodeScanUI()
         }
@@ -43,7 +43,8 @@ class CodeWhispererProjectStartupSettingsListener(private val project: Project) 
         super.toolWindowShown(toolWindow)
         if (toolWindow.id != ProblemsView.ID) return
         if (!isCodeWhispererEnabled(project)) return
-        CodeWhispererCodeScanManager.getInstance(project).addCodeScanUI()
+        CodeWhispererCodeScanManager.getInstance(project).buildCodeScanUI()
+        CodeWhispererCodeScanManager.getInstance(project).showCodeScanUI()
     }
 
     override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
@@ -53,7 +54,7 @@ class CodeWhispererProjectStartupSettingsListener(private val project: Project) 
             CodeWhispererCodeReferenceManager.getInstance(project).toolWindow?.isAvailable = newConnection != null
         }
         if (newConnection != null) {
-            CodeWhispererCodeScanManager.getInstance(project).addCodeScanUI()
+            CodeWhispererCodeScanManager.getInstance(project).buildCodeScanUI()
         } else {
             CodeWhispererCodeScanManager.getInstance(project).removeCodeScanUI()
         }

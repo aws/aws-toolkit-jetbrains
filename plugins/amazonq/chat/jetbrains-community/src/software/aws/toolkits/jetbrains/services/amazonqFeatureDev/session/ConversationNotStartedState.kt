@@ -16,7 +16,7 @@ class ConversationNotStartedState(
 ) : SessionState {
     override val phase = SessionStatePhase.INIT
 
-    override suspend fun interact(action: SessionStateAction): SessionStateInteraction {
+    override suspend fun interact(action: SessionStateAction): SessionStateInteraction<SessionState> {
         error("Illegal transition between states, restart the conversation")
     }
 }

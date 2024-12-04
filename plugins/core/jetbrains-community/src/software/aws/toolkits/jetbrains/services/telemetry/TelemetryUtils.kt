@@ -42,6 +42,7 @@ val ALLOWED_CODE_EXTENSIONS = setOf(
     "d",
     "dart",
     "dfm",
+    "dockerfile",
     "dpr",
     "e",
     "el",

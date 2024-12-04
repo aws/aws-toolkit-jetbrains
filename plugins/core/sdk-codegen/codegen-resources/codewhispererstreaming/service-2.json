@@ -288,7 +288,8 @@
         "ExportContext":{
             "type":"structure",
             "members":{
-                "transformationExportContext":{"shape":"TransformationExportContext"}
+                "transformationExportContext":{"shape":"TransformationExportContext"},
+                "unitTestGenerationExportContext":{"shape":"UnitTestGenerationExportContext"}
             },
             "union":true
         },
@@ -296,7 +297,8 @@
             "type":"string",
             "enum":[
                 "TRANSFORMATION",
-                "TASK_ASSIST"
+                "TASK_ASSIST",
+                "UNIT_TESTS"
             ]
         },
         "ExportResultArchiveRequest":{
@@ -625,6 +627,12 @@
                 "USAGE"
             ]
         },
+        "TestGenerationJobGroupName":{
+            "type":"string",
+            "max":128,
+            "min":1,
+            "pattern":"[a-zA-Z0-9-_]+"
+        },
         "TextDocument":{
             "type":"structure",
             "required":["relativeFilePath"],
@@ -704,6 +712,19 @@
             "members":{
                 "downloadArtifactId":{"shape":"ArtifactId"},
                 "downloadArtifactType":{"shape":"TransformationDownloadArtifactType"}
+            }
+        },
+        "UUID":{
+            "type":"string",
+            "max":36,
+            "min":36
+        },
+        "UnitTestGenerationExportContext":{
+            "type":"structure",
+            "required":["testGenerationJobGroupName"],
+            "members":{
+                "testGenerationJobGroupName":{"shape":"TestGenerationJobGroupName"},
+                "testGenerationJobId":{"shape":"UUID"}
             }
         },
         "UploadId":{

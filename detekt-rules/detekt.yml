@@ -72,7 +72,7 @@ formatting:
     maxLineLength: 160
     ignoreBackTickedIdentifier: true
   NoWildcardImports:
-    # no `packagesToUseImportOnDemandProperty` because we don't want to allow any star imports
+    packagesToUseImportOnDemandProperty: ""
     active: true
   ParameterListWrapping:
     active: true

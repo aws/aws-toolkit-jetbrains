@@ -1,0 +1,17 @@
+{
+  "date" : "2024-12-03",
+  "version" : "3.43",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "`/review` in Q chat to scan your code for vulnerabilities and quality issues, and generate fixes"
+  }, {
+    "type" : "feature",
+    "description" : "`/test` in Q chat to generate unit tests for java and python"
+  }, {
+    "type" : "feature",
+    "description" : "`/doc` in Q chat to generate and update documentation for your project"
+  }, {
+    "type" : "feature",
+    "description" : "Added system notifications to inform users about critical plugin updates and potential issues with available workarounds"
+  } ]
+}

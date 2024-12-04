@@ -125,6 +125,10 @@ sealed interface IncomingCwcMessage : CwcMessage {
         val type: FocusType,
     ) : IncomingCwcMessage
 
+    data class OpenUserGuide(
+        val userGuideLink: String,
+    ) : IncomingCwcMessage
+
     data class ClickedLink(
         @JsonProperty("command") val type: LinkType,
         @JsonProperty("tabID") override val tabId: String,
@@ -200,6 +204,7 @@ data class FollowUp(
     val type: FollowUpType,
     val pillText: String,
     val prompt: String,
+    val status: String? = null,
 )
 
 data class Suggestion(
