@@ -41,6 +41,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTo
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.sessionconfig.CodeTestSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
@@ -511,6 +512,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
                     hasUserPromptSupplied = session.hasUserPromptSupplied,
                     isSupportedLanguage = true,
+                    credentialStartUrl = getStartUrl(project),
                     jobGroup = session.testGenerationJobGroupName,
                     jobId = session.testGenerationJob,
                     result = if (e.message == message("testgen.message.cancelled")) MetricResult.Cancelled else MetricResult.Failed,

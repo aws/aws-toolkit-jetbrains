@@ -12,7 +12,7 @@
     <p><code>/dev</code> to task Amazon Q with generating new code across your entire project and implement features.</p>
 
     <h3>Generate documentation</h3>
-    <p><code>/docs</code> to task Amazon Q with writing API, technical design, and onboarding documentation.</p>
+    <p><code>/doc</code> to task Amazon Q with writing API, technical design, and onboarding documentation.</p>
 
     <h3>Automate code reviews</h3>
     <p><code>/review</code> to ask Amazon Q to perform code reviews, flagging suspicious code patterns and assessing deployment risk.</p>
