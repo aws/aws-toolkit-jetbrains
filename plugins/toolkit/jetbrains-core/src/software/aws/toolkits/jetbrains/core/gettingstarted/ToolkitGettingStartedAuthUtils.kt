@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.core.gettingstarted
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
-import software.aws.toolkits.jetbrains.core.explorer.showWebview
+import software.aws.toolkits.jetbrains.core.explorer.ShowToolkitListener
 import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.SourceOfEntry
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionCount
@@ -32,7 +32,7 @@ fun requestCredentialsForCodeCatalyst(
 ): Boolean? {
     if (isQWebviewsAvailable() && project != null) {
         ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Codecatalyst, true)) // TODO: consume data
-        showWebview(project)
+        ShowToolkitListener.showWebview(project)
 
         return null
     }
@@ -128,7 +128,7 @@ fun requestCredentialsForExplorer(
 ): Boolean? {
     if (isQWebviewsAvailable()) {
         ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AwsExplorer, true)) // TODO: consume data
-        showWebview(project)
+        ShowToolkitListener.showWebview(project)
         return null
     }
 

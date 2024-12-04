@@ -17,6 +17,8 @@ import com.intellij.ui.ScrollPaneFactory
 import org.slf4j.LoggerFactory
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.help.HelpIds
+import software.aws.toolkits.jetbrains.core.notifications.BannerNotificationService
+import software.aws.toolkits.jetbrains.core.notifications.NotificationDismissalState
 import software.aws.toolkits.resources.AwsCoreBundle
 import javax.swing.JLabel
 import javax.swing.JTextArea
@@ -45,6 +47,34 @@ private fun notify(type: NotificationType, title: String, content: String = "", 
     notificationActions.forEach {
         notification.addAction(if (it !is NotificationAction) createNotificationExpiringAction(it) else it)
     }
+    notify(notification, project)
+}
+
+fun notifyStickyWithData(
+    type: NotificationType,
+    title: String,
+    content: String = "",
+    project: Project? = null,
+    notificationActions: Collection<AnAction>,
+    id: String,
+) {
+    val notification = Notification(GROUP_DISPLAY_ID_STICKY, title, content, type)
+    notificationActions.forEach {
+        notification.addAction(it)
+    }
+
+    notification.addAction(
+        createNotificationExpiringAction(
+            object : AnAction("Dismiss") {
+                override fun actionPerformed(e: AnActionEvent) {
+                    BannerNotificationService.getInstance().removeNotification(id)
+                    NotificationDismissalState.getInstance().dismissNotification(id)
+                }
+            }
+        )
+
+    )
+
     notify(notification, project)
 }
 

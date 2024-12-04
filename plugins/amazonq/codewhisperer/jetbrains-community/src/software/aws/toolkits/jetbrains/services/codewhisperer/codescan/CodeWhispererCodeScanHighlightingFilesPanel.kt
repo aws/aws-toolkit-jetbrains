@@ -31,7 +31,7 @@ internal class CodeWhispererCodeScanHighlightingFilesPanel(private val project: 
 
     init {
         removeAll()
-        val scannedFilesTreeNodeRoot = DefaultMutableTreeNode("CodeWhisperer scanned files for security scan")
+        val scannedFilesTreeNodeRoot = DefaultMutableTreeNode("Amazon Q reviewed files for code issues")
         files.forEach {
             scannedFilesTreeNodeRoot.add(DefaultMutableTreeNode(it))
         }

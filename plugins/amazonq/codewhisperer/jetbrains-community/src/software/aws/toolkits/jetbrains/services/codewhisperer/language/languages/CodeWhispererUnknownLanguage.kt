@@ -13,6 +13,12 @@ class CodeWhispererUnknownLanguage private constructor() : CodeWhispererProgramm
 
     override fun toCodeWhispererRuntimeLanguage(): CodeWhispererProgrammingLanguage = CodeWhispererPlainText.INSTANCE
 
+    override fun lineCommentPrefix() = null
+
+    override fun blockCommentPrefix() = null
+
+    override fun blockCommentSuffix() = null
+
     companion object {
         const val ID = "unknown"
 

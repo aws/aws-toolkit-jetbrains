@@ -15,6 +15,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQApp
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
+import software.aws.toolkits.jetbrains.services.amazonqCodeScan.auth.isCodeScanAvailable
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.auth.isCodeTestAvailable
+import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformActionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
@@ -106,7 +109,10 @@ class CodeTransformChatApp : AmazonQApp {
                         AuthenticationUpdateMessage(
                             featureDevEnabled = isFeatureDevAvailable(context.project),
                             codeTransformEnabled = isCodeTransformAvailable(context.project),
-                            authenticatingTabIDs = chatSessionStorage.getAuthenticatingSessions().map { it.tabId }
+                            codeScanEnabled = isCodeScanAvailable(context.project),
+                            codeTestEnabled = isCodeTestAvailable(context.project),
+                            docEnabled = isDocAvailable(context.project),
+                            authenticatingTabIDs = chatSessionStorage.getAuthenticatingSessions().map { it.tabId },
                         )
                     )
 
@@ -164,6 +170,7 @@ class CodeTransformChatApp : AmazonQApp {
             is IncomingCodeTransformMessage.CodeTransformSelectSQLMetadata -> inboundAppMessagesHandler.processCodeTransformSelectSQLMetadataAction(message)
             is IncomingCodeTransformMessage.CodeTransformSelectSQLModuleSchema ->
                 inboundAppMessagesHandler.processCodeTransformSelectSQLModuleSchemaAction(message)
+
             is IncomingCodeTransformMessage.CodeTransformCancel -> inboundAppMessagesHandler.processCodeTransformCancelAction(message)
             is IncomingCodeTransformMessage.CodeTransformStop -> inboundAppMessagesHandler.processCodeTransformStopAction(message.tabId)
             is IncomingCodeTransformMessage.ChatPrompt -> inboundAppMessagesHandler.processChatPromptMessage(message)

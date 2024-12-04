@@ -1267,7 +1267,8 @@
             "required": ["conversationId", "codeGenerationId"],
             "members": {
                 "conversationId": { "shape": "ConversationId" },
-                "codeGenerationId": { "shape": "CodeGenerationId" }
+                "codeGenerationId": { "shape": "CodeGenerationId" },
+                "intent": { "shape": "String" }
             }
         },
         "GetTaskAssistCodeGenerationResponse": {

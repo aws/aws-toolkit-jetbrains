@@ -18,7 +18,13 @@ class Browser(parent: Disposable) : Disposable {
 
     val receiveMessageQuery = JBCefJSQuery.create(jcefBrowser)
 
-    fun init(isCodeTransformAvailable: Boolean, isFeatureDevAvailable: Boolean) {
+    fun init(
+        isCodeTransformAvailable: Boolean,
+        isFeatureDevAvailable: Boolean,
+        isDocAvailable: Boolean,
+        isCodeScanAvailable: Boolean,
+        isCodeTestAvailable: Boolean,
+    ) {
         // register the scheme handler to route http://mynah/ URIs to the resources/assets directory on classpath
         CefApp.getInstance()
             .registerSchemeHandlerFactory(
@@ -27,7 +33,7 @@ class Browser(parent: Disposable) : Disposable {
                 AssetResourceHandler.AssetResourceHandlerFactory(),
             )
 
-        loadWebView(isCodeTransformAvailable, isFeatureDevAvailable)
+        loadWebView(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable)
     }
 
     override fun dispose() {
@@ -42,19 +48,31 @@ class Browser(parent: Disposable) : Disposable {
             .executeJavaScript("window.postMessage(JSON.stringify($message))", jcefBrowser.cefBrowser.url, 0)
 
     // Load the chat web app into the jcefBrowser
-    private fun loadWebView(isCodeTransformAvailable: Boolean, isFeatureDevAvailable: Boolean) {
+    private fun loadWebView(
+        isCodeTransformAvailable: Boolean,
+        isFeatureDevAvailable: Boolean,
+        isDocAvailable: Boolean,
+        isCodeScanAvailable: Boolean,
+        isCodeTestAvailable: Boolean,
+    ) {
         // setup empty state. The message request handlers use this for storing state
         // that's persistent between page loads.
         jcefBrowser.setProperty("state", "")
         // load the web app
-        jcefBrowser.loadHTML(getWebviewHTML(isCodeTransformAvailable, isFeatureDevAvailable))
+        jcefBrowser.loadHTML(getWebviewHTML(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable))
     }
 
     /**
      * Generate index.html for the web view
      * @return HTML source
      */
-    private fun getWebviewHTML(isCodeTransformAvailable: Boolean, isFeatureDevAvailable: Boolean): String {
+    private fun getWebviewHTML(
+        isCodeTransformAvailable: Boolean,
+        isFeatureDevAvailable: Boolean,
+        isDocAvailable: Boolean,
+        isCodeScanAvailable: Boolean,
+        isCodeTestAvailable: Boolean,
+    ): String {
         val postMessageToJavaJsCode = receiveMessageQuery.inject("JSON.stringify(message)")
 
         val jsScripts = """
@@ -69,6 +87,9 @@ class Browser(parent: Disposable) : Disposable {
                         },
                         $isFeatureDevAvailable, // whether /dev is available
                         $isCodeTransformAvailable, // whether /transform is available
+                        $isDocAvailable, // whether /doc is available
+                        $isCodeScanAvailable, // whether /scan is available
+                        $isCodeTestAvailable // whether /test is available
                     ); 
                 }
             </script>        

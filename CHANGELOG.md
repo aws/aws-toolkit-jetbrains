@@ -1,3 +1,24 @@
+# _3.44_ (2024-12-04)
+- **(Feature)** Amazon Q: UI improvements to chat: New splash loader animation, initial streaming card animation, improved button colours
+- **(Feature)** Amazon Q: Navigate through prompt history by using the up/down arrows
+- **(Bug Fix)** Fix issue where Amazon Q Code Transform is unable to start
+- **(Bug Fix)** Fix DynamoDB viewer throwing 'ActionGroup should be registered using <group> tag' on IDE start ([#5012](https://github.com/aws/aws-toolkit-jetbrains/issues/5012)) ([#5120](https://github.com/aws/aws-toolkit-jetbrains/issues/5120))
+- **(Bug Fix)** Amazon Q: Fix chat syntax highlighting when using several different themes
+
+# _3.43_ (2024-12-03)
+- **(Feature)** `/review` in Q chat to scan your code for vulnerabilities and quality issues, and generate fixes
+- **(Feature)** `/test` in Q chat to generate unit tests for java and python
+- **(Feature)** `/doc` in Q chat to generate and update documentation for your project
+- **(Feature)** Added system notifications to inform users about critical plugin updates and potential issues with available workarounds
+
+# _3.42_ (2024-11-27)
+- **(Feature)** Amazon Q /dev: support `Dockerfile` files
+- **(Feature)** Feature(Amazon Q Code Transformation): allow users to view results in 5 smaller diffs
+- **(Feature)** Introduce @workspace command to enhance chat context fetching for Chat
+- **(Bug Fix)** Correct search text for Amazon Q inline suggestion keybindings
+- **(Bug Fix)** Fix(Amazon Q Code Transformation): always show user latest/correct transformation results
+- **(Bug Fix)** Amazon Q /dev: Fix error when accepting changes if leading slash is present.
+
 # _3.41_ (2024-11-22)
 - **(Feature)** Amazon Q /dev: support `.gradle` files
 - **(Feature)** Inline Auto trigger will now happen more consistently and will not conflict with JetBrains code completion.
