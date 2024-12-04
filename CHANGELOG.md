@@ -1,3 +1,10 @@
+# _3.44_ (2024-12-04)
+- **(Feature)** Amazon Q: UI improvements to chat: New splash loader animation, initial streaming card animation, improved button colours
+- **(Feature)** Amazon Q: Navigate through prompt history by using the up/down arrows
+- **(Bug Fix)** Fix issue where Amazon Q Code Transform is unable to start
+- **(Bug Fix)** Fix DynamoDB viewer throwing 'ActionGroup should be registered using <group> tag' on IDE start ([#5012](https://github.com/aws/aws-toolkit-jetbrains/issues/5012)) ([#5120](https://github.com/aws/aws-toolkit-jetbrains/issues/5120))
+- **(Bug Fix)** Amazon Q: Fix chat syntax highlighting when using several different themes
+
 # _3.43_ (2024-12-03)
 - **(Feature)** `/review` in Q chat to scan your code for vulnerabilities and quality issues, and generate fixes
 - **(Feature)** `/test` in Q chat to generate unit tests for java and python
