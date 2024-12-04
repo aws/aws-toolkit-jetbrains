@@ -398,6 +398,7 @@ class CodeTransformChatController(
                 EXPLAINABILITY_V1
             )
         }
+        telemetry.submitSelection(message.oneOrMultipleDiffsSelection)
         codeTransformChatHelper.addNewMessage(buildUserOneOrMultipleDiffsSelectionChatContent(message.oneOrMultipleDiffsSelection))
         codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
         codeModernizerManager.codeTransformationSession?.let {
