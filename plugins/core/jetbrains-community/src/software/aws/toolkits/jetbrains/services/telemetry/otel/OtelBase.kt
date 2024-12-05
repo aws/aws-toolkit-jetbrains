@@ -3,9 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.telemetry.otel
 
-import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.platform.diagnostic.telemetry.helpers.useWithoutActiveScope
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.Span
@@ -53,17 +51,8 @@ abstract class AbstractSpanBuilder<
      * @inheritdoc
      */
     inline fun<T> use(operation: (SpanType) -> T): T =
-        // FIX_WHEN_MIN_IS_241: not worth fixing for 233
-        if (ApplicationInfo.getInstance().build.baselineVersion == 233) {
-            startSpan().useWithoutActiveScope { span ->
-                span.makeCurrent().use {
-                    operation(span as SpanType)
-                }
-            }
-        } else {
-            startSpan().ijUse { span ->
-                operation(span as SpanType)
-            }
+        startSpan().ijUse { span ->
+            operation(span as SpanType)
         }
 
     /**

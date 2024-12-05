@@ -15,6 +15,8 @@ class CodeWhispererTf private constructor() : CodeWhispererProgrammingLanguage()
 
     override fun isAutoFileScanSupported(): Boolean = true
 
+    override fun lineCommentPrefix(): String = "#"
+
     companion object {
         const val ID = "tf"
 

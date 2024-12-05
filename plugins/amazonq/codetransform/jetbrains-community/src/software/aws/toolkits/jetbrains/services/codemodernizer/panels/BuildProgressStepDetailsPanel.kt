@@ -91,8 +91,8 @@ class BuildProgressStepDetailsPanel : JPanel(BorderLayout()) {
                 // We don't show description text until step finished.
                 when (it.status) {
                     BuildStepStatus.DONE -> setForeground(CodeModernizerUIConstants.getGreenThemeFontColor())
-                    BuildStepStatus.ERROR -> setForeground(CodeModernizerUIConstants.getRedThemeFontColor())
-                    BuildStepStatus.WARNING -> setForeground(CodeModernizerUIConstants.getRedThemeFontColor())
+                    BuildStepStatus.ERROR -> setForeground(CodeModernizerUIConstants.getGrayThemeFontColor())
+                    BuildStepStatus.WARNING -> setForeground(CodeModernizerUIConstants.getGrayThemeFontColor())
                     BuildStepStatus.WORKING -> text = null
                 }
             }

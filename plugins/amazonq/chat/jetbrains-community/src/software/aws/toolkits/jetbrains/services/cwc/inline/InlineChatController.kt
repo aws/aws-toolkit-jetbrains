@@ -585,7 +585,7 @@ class InlineChatController(
                 requestCredentialsForQ(project, isReauth = false)
             } else {
                 runInEdt {
-                    QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Q))
+                    QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AmazonQ))
                     ToolWindowManager.getInstance(project).getToolWindow(AMAZON_Q_WINDOW_ID)?.activate(null, false)
                     ToolWindowManager.getInstance(project).getToolWindow(AMAZON_Q_WINDOW_ID)?.show()
                 }
@@ -630,7 +630,7 @@ class InlineChatController(
             tabId = tabId,
             message = message,
             activeFileContext = fileContext,
-            userIntent = intentRecognizer.getUserIntentFromPromptChatMessage(message, null),
+            userIntent = intentRecognizer.getUserIntentFromPromptChatMessage(message),
             triggerType = TriggerType.Inline,
             customization = CodeWhispererModelConfigurator.getInstance().activeCustomization(project),
             relevantTextDocuments = emptyList(),

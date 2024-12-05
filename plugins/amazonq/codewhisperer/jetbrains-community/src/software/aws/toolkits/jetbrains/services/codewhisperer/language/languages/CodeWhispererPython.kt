@@ -24,6 +24,12 @@ class CodeWhispererPython private constructor() : CodeWhispererProgrammingLangua
 
     override fun isSupplementalContextSupported() = true
 
+    override fun lineCommentPrefix() = "#"
+
+    override fun blockCommentPrefix() = "\"\"\""
+
+    override fun blockCommentSuffix() = "\"\"\""
+
     companion object {
         const val ID = "python"
 

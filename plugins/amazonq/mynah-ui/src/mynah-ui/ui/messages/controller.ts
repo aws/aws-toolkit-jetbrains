@@ -15,6 +15,9 @@ export interface MessageControllerProps {
     tabsStorage: TabsStorage
     isFeatureDevEnabled: boolean
     isCodeTransformEnabled: boolean
+    isDocEnabled: boolean
+    isCodeScanEnabled: boolean
+    isCodeTestEnabled: boolean
 }
 
 export class MessageController {
@@ -30,6 +33,9 @@ export class MessageController {
         this.tabDataGenerator = new TabDataGenerator({
             isFeatureDevEnabled: props.isFeatureDevEnabled,
             isCodeTransformEnabled: props.isCodeTransformEnabled,
+            isDocEnabled: props.isDocEnabled,
+            isCodeScanEnabled: props.isCodeScanEnabled,
+            isCodeTestEnabled: props.isCodeTestEnabled,
         })
     }
 

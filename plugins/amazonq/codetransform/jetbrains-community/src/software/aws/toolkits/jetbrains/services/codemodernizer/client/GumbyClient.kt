@@ -222,7 +222,7 @@ class GumbyClient(private val project: Project) {
                     it.timestamp(Instant.now())
                     it.ideCategory(IdeCategory.JETBRAINS)
                     it.programmingLanguage { language ->
-                        language.languageName(metrics.programmingLanguage)
+                        language.languageName(metrics.programmingLanguage?.lowercase())
                     }
                     it.linesOfCodeChanged(metrics.linesOfCodeChanged)
                     it.charsOfCodeChanged(metrics.charactersOfCodeChanged)

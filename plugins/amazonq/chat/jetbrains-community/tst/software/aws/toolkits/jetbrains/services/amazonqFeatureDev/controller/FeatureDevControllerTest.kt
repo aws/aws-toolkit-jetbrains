@@ -30,6 +30,7 @@ import org.mockito.kotlin.reset
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.whenever
+import software.aws.toolkits.jetbrains.common.util.selectFolder
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
@@ -50,6 +51,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendS
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendUpdatePlaceholder
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.updateFileComponent
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DiffMetricsProcessed
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Interaction
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.PrepareCodeGenerationState
@@ -61,7 +63,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.Cancellat
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.InsertAction
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.selectFolder
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.uploadArtifactToS3
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
@@ -236,6 +237,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     messenger,
                     0,
                     0,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
                 ),
             )
 
@@ -295,6 +297,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     testUploadId,
                     0,
                     messenger,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
                 ),
             )
 
@@ -354,6 +357,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     testUploadId,
                     0,
                     messenger,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
                 ),
             )
             whenever(mockSession.retries).thenReturn(3)
@@ -393,6 +397,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     testUploadId,
                     0,
                     messenger,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
                 ),
             )
             whenever(mockSession.retries).thenReturn(0)
@@ -425,6 +430,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     testUploadId,
                     0,
                     messenger,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
                 ),
             )
 
@@ -458,6 +464,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     testUploadId,
                     0,
                     messenger,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
                 ),
             )
             doReturn(testConversationId).`when`(spySession).conversationId
@@ -514,6 +521,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     testUploadId,
                     0,
                     messenger,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
                 ),
             )
             doReturn(testConversationId).`when`(spySession).conversationId
@@ -562,7 +570,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             whenever(featureDevClient.sendFeatureDevTelemetryEvent(any())).thenReturn(exampleSendTelemetryEventResponse)
             whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
 
-            mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FileUtilsKt")
+            mockkStatic("software.aws.toolkits.jetbrains.common.util.FileUtilsKt")
             every { selectFolder(any(), any()) } returns null
 
             spySession.preloader(userMessage, messenger)
@@ -593,7 +601,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             whenever(featureDevClient.sendFeatureDevTelemetryEvent(any())).thenReturn(exampleSendTelemetryEventResponse)
             whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
 
-            mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FileUtilsKt")
+            mockkStatic("software.aws.toolkits.jetbrains.common.util.FileUtilsKt")
             every { selectFolder(any(), any()) } returns LightVirtualFile("/path")
 
             spySession.preloader(userMessage, messenger)
@@ -630,7 +638,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
 
             val folder = LightVirtualFile("${spySession.context.projectRoot.name}/path/to/sub/folder")
-            mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FileUtilsKt")
+            mockkStatic("software.aws.toolkits.jetbrains.common.util.FileUtilsKt")
             every { selectFolder(any(), any()) } returns folder
 
             spySession.preloader(userMessage, messenger)
