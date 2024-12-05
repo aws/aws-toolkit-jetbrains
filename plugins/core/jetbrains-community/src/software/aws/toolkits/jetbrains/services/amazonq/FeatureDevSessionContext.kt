@@ -83,7 +83,16 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     private val gitIgnoreFile = File(selectedSourceFolder.path, ".gitignore")
 
     init {
-        ignorePatternsWithGitIgnore = (ignorePatterns + parseGitIgnore().map { Regex(it) }).toList()
+        ignorePatternsWithGitIgnore = try {
+            buildList {
+                addAll(ignorePatterns)
+                parseGitIgnore().mapNotNull { pattern ->
+                    runCatching { Regex(pattern) }.getOrNull()
+                }.let { addAll(it) }
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 
     fun getProjectZip(): ZipCreationResult {
