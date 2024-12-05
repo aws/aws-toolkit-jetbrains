@@ -128,7 +128,8 @@ fun buildClearPromptProgressMessage(tabId: String) = PromptProgressMessage(
     tabId = tabId
 )
 
-val runCodeScanMessage = CodeScanChatMessage(messageType = ChatMessageType.Prompt, command = "review", tabId = UUID.randomUUID().toString())
+val runCodeScanMessage
+    get() = CodeScanChatMessage(messageType = ChatMessageType.Prompt, command = "review", tabId = UUID.randomUUID().toString())
 
 val cancelFileScanButton = Button(
     id = CodeScanButtonId.StopFileScan.id,
