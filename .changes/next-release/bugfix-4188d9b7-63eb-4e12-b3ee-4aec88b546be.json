@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix `@workspace` missing from the Amazon Q Chat welcome tab"
+}
