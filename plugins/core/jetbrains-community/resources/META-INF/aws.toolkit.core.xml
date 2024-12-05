@@ -36,6 +36,9 @@
                             testServiceImplementation="software.aws.toolkits.jetbrains.core.region.MockRegionProvider"/>
         <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider"
                             serviceImplementation="software.aws.toolkits.jetbrains.core.DefaultRemoteResourceResolverProvider"/>
+        <applicationService serviceInterface="software.aws.toolkits.jetbrains.core.notifications.NotificationResourceResolverProvider"
+                            serviceImplementation="software.aws.toolkits.jetbrains.core.notifications.DefaultNotificationResourceResolverProvider"/>
+
         <applicationService serviceInterface="migration.software.aws.toolkits.core.clients.SdkClientProvider"
                             serviceImplementation="software.aws.toolkits.jetbrains.core.AwsSdkClient"/>
         <applicationService serviceInterface="migration.software.aws.toolkits.core.ToolkitClientManager"

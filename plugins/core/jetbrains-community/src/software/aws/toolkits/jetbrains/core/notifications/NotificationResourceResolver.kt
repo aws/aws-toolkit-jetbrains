@@ -3,56 +3,52 @@
 
 package software.aws.toolkits.jetbrains.core.notifications
 
+import com.intellij.openapi.application.PathManager
+import com.intellij.openapi.components.service
+import com.intellij.util.io.HttpRequests
+import com.intellij.util.io.createDirectories
 import software.aws.toolkits.core.utils.DefaultRemoteResourceResolver
 import software.aws.toolkits.core.utils.RemoteResource
 import software.aws.toolkits.core.utils.RemoteResourceResolver
-import software.aws.toolkits.jetbrains.core.saveFileFromUrl
-import software.aws.toolkits.core.utils.exists
-import java.nio.file.Path
-import java.util.concurrent.Callable
-import java.util.concurrent.CompletionStage
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.core.utils.warn
-import com.intellij.util.io.HttpRequests
-import com.intellij.openapi.application.PathManager
-import com.intellij.util.io.createDirectories
 import software.aws.toolkits.core.utils.UrlFetcher
-import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
+import software.aws.toolkits.core.utils.exists
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.saveFileFromUrl
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
+import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
+import java.util.concurrent.atomic.AtomicBoolean
 
-interface NotificationRemoteResourceResolverProvider {
+interface NotificationResourceResolverProvider {
     fun get(): NotificationResourceResolver
 
     companion object {
-        fun getInstance(): NotificationRemoteResourceResolverProvider = service()
+        fun getInstance(): NotificationResourceResolverProvider = service()
     }
 }
 
-class DefaultNotificationRemoteResourceResolverProvider {
+class DefaultNotificationResourceResolverProvider : NotificationResourceResolverProvider {
     override fun get() = RESOLVER_INSTANCE
 
     companion object {
         private val RESOLVER_INSTANCE by lazy {
             val cachePath = Paths.get(PathManager.getSystemPath(), "aws-notifications").createDirectories()
 
-            NotificationResourceResolver(
-                urlFetcher = HttpRequestUrlFetcher,
-                cacheBasePath = cachePath,
-                executor = { callable ->
-                    val future = CompletableFuture<Path>()
-                    pluginAwareExecuteOnPooledThread {
-                        try {
-                            future.complete(callable.call())
-                        } catch (e: Exception) {
-                            future.completeExceptionally(e)
-                        }
+            NotificationResourceResolver(HttpRequestUrlFetcher, cachePath) {
+                val future = CompletableFuture<Path>()
+                pluginAwareExecuteOnPooledThread {
+                    try {
+                        future.complete(it.call())
+                    } catch (e: Exception) {
+                        future.completeExceptionally(e)
                     }
-                    future
                 }
-            )
+                future
+            }
         }
 
         object HttpRequestUrlFetcher : UrlFetcher {
@@ -63,44 +59,50 @@ class DefaultNotificationRemoteResourceResolverProvider {
     }
 }
 
+sealed class UpdateCheckResult {
+    object HasUpdates : UpdateCheckResult()
+    object NoUpdates : UpdateCheckResult()
+    object FirstPollCheck : UpdateCheckResult()
+}
 
 class NotificationResourceResolver(
     private val urlFetcher: UrlFetcher,
     private val cacheBasePath: Path,
     private val executor: (Callable<Path>) -> CompletionStage<Path>,
-    private val etagState: NotificationEtagState = NotificationEtagState.getInstance()
 ) : RemoteResourceResolver {
     private val delegate = DefaultRemoteResourceResolver(urlFetcher, cacheBasePath, executor)
+    private val etagState: NotificationEtagState = NotificationEtagState.getInstance()
+    private val isFirstPoll = AtomicBoolean(true)
 
     fun getLocalResourcePath(resourceName: String): Path? {
         val expectedLocation = cacheBasePath.resolve(resourceName)
         return expectedLocation.existsOrNull()
     }
 
-    override fun resolve(resource: RemoteResource): CompletionStage<Path> {
-        return executor(Callable { internalResolve(resource) })
-    }
+    fun checkForUpdates(): UpdateCheckResult {
+        val hasETagUpdate = updateETags()
 
-    private fun internalResolve(resource: RemoteResource): Path {
-        val expectedLocation = cacheBasePath.resolve(resource.name)
-        val current = expectedLocation.existsOrNull()
-
-        if (current != null) {
-            val currentEtag = etagState.etag
-            try {
-                val remoteEtag = getEndpointETag()
-                if (currentEtag == remoteEtag) {
-                    LOG.info { "Existing file ($current) matches remote etag - using cached version" }
-                    return current
-                }
-            } catch (e: Exception) {
-                LOG.warn(e) { "Failed to check remote etag, using cached version if available" }
-                return current
-            }
+        // for when we need to notify on first poll even when there's no new ETag
+        if (isFirstPoll.compareAndSet(true, false) && !hasETagUpdate) {
+            return UpdateCheckResult.FirstPollCheck
         }
 
-        // Use delegate for download logic
-        return delegate.resolve(resource).toCompletableFuture().get()
+        return if (hasETagUpdate) {
+            UpdateCheckResult.HasUpdates
+        } else {
+            UpdateCheckResult.NoUpdates
+        }
+    }
+
+    fun updateETags(): Boolean {
+        val currentEtag = etagState.etag
+        val remoteEtag = getEndpointETag()
+        etagState.etag = remoteEtag
+        return currentEtag != remoteEtag
+    }
+
+    override fun resolve(resource: RemoteResource): CompletionStage<Path> {
+        return delegate.resolve(resource)
     }
 
     private fun getEndpointETag(): String =
@@ -122,6 +124,5 @@ class NotificationResourceResolver(
         } else {
             null
         }
-
     }
 }
