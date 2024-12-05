@@ -31,7 +31,7 @@ interface NotificationResourceResolverProvider {
     }
 }
 
-class DefaultNotificationResourceResolverProvider : NotificationResourceResolverProvider {
+internal final class DefaultNotificationResourceResolverProvider : NotificationResourceResolverProvider {
     override fun get() = RESOLVER_INSTANCE
 
     companion object {
@@ -60,9 +60,9 @@ class DefaultNotificationResourceResolverProvider : NotificationResourceResolver
 }
 
 sealed class UpdateCheckResult {
-    object HasUpdates : UpdateCheckResult()
-    object NoUpdates : UpdateCheckResult()
-    object FirstPollCheck : UpdateCheckResult()
+    data object HasUpdates : UpdateCheckResult()
+    data object NoUpdates : UpdateCheckResult()
+    data object FirstPollCheck : UpdateCheckResult()
 }
 
 class NotificationResourceResolver(
@@ -73,6 +73,9 @@ class NotificationResourceResolver(
     private val delegate = DefaultRemoteResourceResolver(urlFetcher, cacheBasePath, executor)
     private val etagState: NotificationEtagState = NotificationEtagState.getInstance()
     private val isFirstPoll = AtomicBoolean(true)
+
+    override fun resolve(resource: RemoteResource): CompletionStage<Path> =
+        delegate.resolve(resource)
 
     fun getLocalResourcePath(resourceName: String): Path? {
         val expectedLocation = cacheBasePath.resolve(resourceName)
@@ -94,15 +97,11 @@ class NotificationResourceResolver(
         }
     }
 
-    fun updateETags(): Boolean {
+    private fun updateETags(): Boolean {
         val currentEtag = etagState.etag
         val remoteEtag = getEndpointETag()
         etagState.etag = remoteEtag
         return currentEtag != remoteEtag
-    }
-
-    override fun resolve(resource: RemoteResource): CompletionStage<Path> {
-        return delegate.resolve(resource)
     }
 
     private fun getEndpointETag(): String =
