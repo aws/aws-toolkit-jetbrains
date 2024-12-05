@@ -201,7 +201,7 @@ class Session(val tabID: String, val project: Project) {
             resolveAndDeleteFile(selectedSourceFolder, it.zipFilePath)
             it.changeApplied = true
         }
-        }
+    }
 
     suspend fun disableFileList(
         filePaths: List<NewFileZipInfo>,
