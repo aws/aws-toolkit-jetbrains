@@ -65,7 +65,7 @@ class SessionTest : FeatureDevTestBase() {
     }
 
     @Test
-    fun `test insertChanges`() {
+    fun `test insertChangesAndUpdateFileComponents`() {
         mockkStatic("com.intellij.openapi.vfs.VfsUtil")
         every { VfsUtil.markDirtyAndRefresh(true, true, true, any<VirtualFile>()) } just runs
 
@@ -83,7 +83,7 @@ class SessionTest : FeatureDevTestBase() {
         whenever(session.context.selectedSourceFolder.toNioPath()).thenReturn(Path(""))
 
         runBlocking {
-            session.insertChanges(mockNewFile, mockDeletedFile, emptyList(), messenger)
+            session.insertChangesAndUpdateFileComponents(mockNewFile, mockDeletedFile, emptyList(), messenger)
         }
 
         verify(exactly = 1) { resolveAndDeleteFile(any(), "deletedTest.ts") }

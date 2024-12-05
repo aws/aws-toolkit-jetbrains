@@ -114,15 +114,40 @@ class Session(val tabID: String, val project: Project) {
     /**
      * Triggered by the Insert code follow-up button to apply code changes.
      */
-    suspend fun insertChanges(
+    suspend fun insertChangesAndUpdateFileComponents(
         filePaths: List<NewFileZipInfo>,
         deletedFiles: List<DeletedFileInfo>,
         references: List<CodeReferenceGenerated>,
         messenger: MessagePublisher,
     ) {
-        val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
+        insertChangesWithoutUpdateFileComponents(filePaths, deletedFiles, references, messenger)
+        val codeResultMessageId = this._codeResultMessageId
+        if (codeResultMessageId != null) {
+            messenger.updateFileComponent(this.tabID, filePaths, deletedFiles, codeResultMessageId)
+        }
+    }
+
+    suspend fun insertChangesWithoutUpdateFileComponents(
+        filePaths: List<NewFileZipInfo>,
+        deletedFiles: List<DeletedFileInfo>,
+        references: List<CodeReferenceGenerated>,
+        messenger: MessagePublisher,
+    ) {
         val newFilePaths = filePaths.filter { !it.rejected && !it.changeApplied }
         val newDeletedFiles = deletedFiles.filter { !it.rejected && !it.changeApplied }
+        insertChanges(newFilePaths, newDeletedFiles)
+
+        ReferenceLogController.addReferenceLog(references, project)
+
+        // Taken from https://intellij-support.jetbrains.com/hc/en-us/community/posts/206118439-Refresh-after-external-changes-to-project-structure-and-sources
+        VfsUtil.markDirtyAndRefresh(true, true, true, context.selectedSourceFolder)
+    }
+
+    suspend fun insertChanges(
+        filePaths: List<NewFileZipInfo>,
+        deletedFiles: List<DeletedFileInfo>,
+    ) {
+        val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
 
         runCatching {
             var insertedLines = 0
@@ -159,23 +184,14 @@ class Session(val tabID: String, val project: Project) {
             }
         }.onFailure { /* Noop on diff telemetry failure */ }
 
-        newFilePaths.forEach {
+        filePaths.forEach {
             resolveAndCreateOrUpdateFile(selectedSourceFolder, it.zipFilePath, it.fileContent)
             it.changeApplied = true
         }
 
-        newDeletedFiles.forEach {
+        deletedFiles.forEach {
             resolveAndDeleteFile(selectedSourceFolder, it.zipFilePath)
             it.changeApplied = true
-        }
-
-        ReferenceLogController.addReferenceLog(references, project)
-
-        // Taken from https://intellij-support.jetbrains.com/hc/en-us/community/posts/206118439-Refresh-after-external-changes-to-project-structure-and-sources
-        VfsUtil.markDirtyAndRefresh(true, true, true, context.selectedSourceFolder)
-        val codeResultMessageId = this._codeResultMessageId
-        if (codeResultMessageId != null) {
-            messenger.updateFileComponent(this.tabID, filePaths, deletedFiles, codeResultMessageId)
         }
     }
 
