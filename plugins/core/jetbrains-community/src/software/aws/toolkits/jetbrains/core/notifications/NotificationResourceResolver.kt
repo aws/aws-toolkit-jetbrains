@@ -31,7 +31,7 @@ interface NotificationResourceResolverProvider {
     }
 }
 
-internal final class DefaultNotificationResourceResolverProvider : NotificationResourceResolverProvider {
+internal class DefaultNotificationResourceResolverProvider : NotificationResourceResolverProvider {
     override fun get() = RESOLVER_INSTANCE
 
     companion object {
