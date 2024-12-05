@@ -316,7 +316,7 @@ class ArtifactHandler(
                 telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Submit", source)
                 if (diffDescription == null) {
                     val resultContent = CodeTransformChatMessageContent(
-                        type = CodeTransformChatMessageType.FinalizedAnswer,
+                        type = CodeTransformChatMessageType.PendingAnswer,
                         message = message("codemodernizer.chat.message.changes_applied"),
                     )
                     codeTransformChatHelper?.updateLastPendingMessage(resultContent)
