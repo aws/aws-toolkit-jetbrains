@@ -287,10 +287,6 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                 )
                 messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.additional_improvements"))
             }
-
-            // insert changes for only non rejected files
-//            verify(exactly = 1) { resolveAndCreateOrUpdateFile(any(), newFileContents[0].zipFilePath, newFileContents[0].fileContent) }
-//            verify(exactly = 1) { resolveAndDeleteFile(any(), deletedFiles[0].zipFilePath) }
         }
 
     @Test
