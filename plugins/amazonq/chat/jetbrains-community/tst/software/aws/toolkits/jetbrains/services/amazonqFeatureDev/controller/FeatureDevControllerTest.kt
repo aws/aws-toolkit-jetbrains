@@ -16,6 +16,7 @@ import io.mockk.mockkStatic
 import io.mockk.runs
 import io.mockk.unmockkAll
 import io.mockk.verify
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
@@ -30,6 +31,8 @@ import org.mockito.kotlin.reset
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.whenever
+import software.aws.toolkits.jetbrains.common.util.resolveAndCreateOrUpdateFile
+import software.aws.toolkits.jetbrains.common.util.resolveAndDeleteFile
 import software.aws.toolkits.jetbrains.common.util.selectFolder
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
@@ -241,8 +244,9 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                 ),
             )
 
-            doReturn(Unit).`when`(spySession).insertChangesAndUpdateFileComponents(any(), any(), any(), any())
-            doReturn(Unit).`when`(spySession).insertChanges(any(), any())
+            doReturn(Unit).`when`(spySession).insertChanges(any(), any(), any())
+            doReturn(Unit).`when`(spySession).insertNewFiles(any())
+            doReturn(Unit).`when`(spySession).applyDeleteFiles(any())
 
             spySession.preloader(userMessage, messenger)
             controller.processFollowupClickedMessage(message)
@@ -250,7 +254,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             mockitoVerify(
                 spySession,
                 times(1),
-            ).insertChangesAndUpdateFileComponents(newFileContents, deletedFiles, testReferences, messenger) // updates for all files
+            ).insertChanges(newFileContents, deletedFiles, testReferences) // updates for all files
             coVerifyOrder {
                 AmazonqTelemetry.isAcceptedCodeChanges(
                     amazonqNumberOfFilesAccepted = 2.0, // it should be 2 files per test setup
@@ -258,7 +262,16 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     enabled = true,
                     createTime = any(),
                 )
-                spySession.insertChanges(listOf(newFileContents[0]), listOf(deletedFiles[0])) // insert changes for only non-rejected files
+
+                // insert changes for only non rejected files
+                spySession.insertNewFiles(listOf(newFileContents[0]))
+                spySession.applyDeleteFiles(listOf(deletedFiles[0]))
+
+                spySession.updateFilesPaths(
+                    filePaths = newFileContents,
+                    deletedFiles = deletedFiles,
+                    messenger
+                )
                 messenger.sendAnswer(
                     tabId = testTabId,
                     message = message("amazonqFeatureDev.code_generation.updated_code"),
@@ -274,6 +287,10 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                 )
                 messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.additional_improvements"))
             }
+
+            // insert changes for only non rejected files
+//            verify(exactly = 1) { resolveAndCreateOrUpdateFile(any(), newFileContents[0].zipFilePath, newFileContents[0].fileContent) }
+//            verify(exactly = 1) { resolveAndDeleteFile(any(), deletedFiles[0].zipFilePath) }
         }
 
     @Test
@@ -470,7 +487,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                 ),
             )
             doReturn(testConversationId).`when`(spySession).conversationId
-            doReturn(Unit).`when`(spySession).insertChangesWithoutUpdateFileComponents(any(), any(), any(), any())
+            doReturn(Unit).`when`(spySession).insertChanges(any(), any(), any())
 
             mockkObject(AmazonqTelemetry)
             every {
@@ -493,7 +510,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             mockitoVerify(
                 spySession,
                 times(1),
-            ).insertChangesWithoutUpdateFileComponents(listOf(newFileContents[0]), listOf(), testReferences, messenger)
+            ).insertChanges(listOf(newFileContents[0]), listOf(), testReferences)
 
             // Does not continue automatically, because files are remaining:
             mockitoVerify(
@@ -527,7 +544,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                 ),
             )
             doReturn(testConversationId).`when`(spySession).conversationId
-            doReturn(Unit).`when`(spySession).insertChangesWithoutUpdateFileComponents(any(), any(), any(), any())
+            doReturn(Unit).`when`(spySession).insertChanges(any(), any(), any())
 
             mockkObject(AmazonqTelemetry)
             every {

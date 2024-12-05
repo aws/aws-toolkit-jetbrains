@@ -294,11 +294,10 @@ class FeatureDevController(
         val prevInsertAction = insertAction()
 
         if (action == "accept-change") {
-            session.insertChangesWithoutUpdateFileComponents(
+            session.insertChanges(
                 filePaths = filePaths.filter { it.zipFilePath == fileToUpdate },
                 deletedFiles = deletedFiles.filter { it.zipFilePath == fileToUpdate },
                 references = references, // Add all references (not attributed per-file)
-                messenger
             )
 
             AmazonqTelemetry.isAcceptedCodeChanges(
@@ -419,10 +418,14 @@ class FeatureDevController(
                 credentialStartUrl = getStartUrl(project = context.project)
             )
 
-            session.insertChangesAndUpdateFileComponents(
+            session.insertChanges(
                 filePaths = filePaths,
                 deletedFiles = deletedFiles,
-                references = references,
+                references = references
+            )
+            session.updateFilesPaths(
+                filePaths = filePaths,
+                deletedFiles = deletedFiles,
                 messenger
             )
 
