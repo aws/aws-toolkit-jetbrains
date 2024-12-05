@@ -542,6 +542,9 @@ export class Connector {
             case 'codetest':
                 this.codeTestChatConnector.onFormButtonClick(tabId, messageId ?? '', action)
                 break
+            case 'codetransform':
+                this.codeTransformChatConnector.onFormButtonClick(tabId, action)
+                break
             case 'doc':
                 this.docChatConnector.onFormButtonClick(tabId, action)
                 break
