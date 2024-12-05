@@ -84,15 +84,12 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
 
     init {
         ignorePatternsWithGitIgnore = try {
-            (
-                ignorePatterns + parseGitIgnore().map { pattern ->
-                    try {
-                        Regex(pattern)
-                    } catch (e: Exception) {
-                        null
-                    }
-                }.filterNotNull()
-                ).toList()
+            buildList {
+                addAll(ignorePatterns)
+                parseGitIgnore().mapNotNull { pattern ->
+                    runCatching { Regex(pattern) }.getOrNull()
+                }.let { addAll(it) }
+            }
         } catch (e: Exception) {
             emptyList()
         }
