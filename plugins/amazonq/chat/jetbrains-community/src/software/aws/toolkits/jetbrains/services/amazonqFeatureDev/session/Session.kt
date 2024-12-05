@@ -24,7 +24,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getChange
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getDiffMetrics
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.readFileToString
 import software.aws.toolkits.jetbrains.services.cwc.controller.ReferenceLogController
-import java.nio.file.Path
 import java.util.HashSet
 
 class Session(val tabID: String, val project: Project) {
