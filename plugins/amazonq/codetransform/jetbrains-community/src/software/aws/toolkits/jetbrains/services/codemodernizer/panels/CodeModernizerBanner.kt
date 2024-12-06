@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.panels
 
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.project.Project
-import com.intellij.serviceContainer.AlreadyDisposedException
 import com.intellij.ui.JBColor
 import com.intellij.ui.border.CustomLineBorder
 import com.intellij.ui.components.ActionLink
@@ -14,8 +13,8 @@ import com.intellij.util.ui.JBInsets
 import com.intellij.util.ui.JBUI
 import icons.AwsIcons
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addHorizontalGlue
 import software.aws.toolkits.jetbrains.ui.feedback.CodeTransformFeedbackDialog
@@ -42,11 +41,13 @@ class CodeModernizerBanner(val project: Project) : JPanel(BorderLayout()) {
         border = BorderFactory.createEmptyBorder(0, 5, 0, 0)
     }
 
+    private val infoLabelJobId = JBLabel().apply {
+        foreground = JBColor.GRAY
+        border = BorderFactory.createEmptyBorder(0, 5, 0, 0)
+    }
+
     private val infoPanel = JPanel(GridBagLayout())
 
-    val showDiffAction = ActionLink(message("codemodernizer.toolwindow.banner.action.diff")) {
-        CodeModernizerManager.getInstance(project).showDiff()
-    }
     val showPlanAction = ActionLink(message("codemodernizer.toolwindow.banner.action.plan")) {
         CodeModernizerManager.getInstance(project).showTransformationPlan()
     }
@@ -84,6 +85,7 @@ class CodeModernizerBanner(val project: Project) : JPanel(BorderLayout()) {
                 )
             }
             add(infoLabelRunningTime, CodeWhispererLayoutConfig.kebabMenuConstraints)
+            add(infoLabelJobId, CodeWhispererLayoutConfig.kebabMenuConstraints)
         }
         infoPanel.revalidate()
         infoPanel.repaint()
@@ -114,19 +116,18 @@ class CodeModernizerBanner(val project: Project) : JPanel(BorderLayout()) {
     }
 
     fun updateRunningTime(runTime: Duration?) {
-        try {
-            if (runTime == null) {
-                infoLabelRunningTime.text = ""
-            } else {
-                val timeTaken = runTime.toKotlinDuration().inWholeSeconds.seconds.toString()
-                infoLabelRunningTime.text = message(
-                    "codemodernizer.toolwindow.transformation.progress.running_time",
-                    timeTaken
-                )
-            }
-        } catch (exception: AlreadyDisposedException) {
-            LOG.warn { "Disposed when about to create the loading panel" }
-            return
+        infoLabelRunningTime.text = if (runTime != null) {
+            message("codemodernizer.toolwindow.transformation.progress.running_time", runTime.toKotlinDuration().inWholeSeconds.seconds.toString())
+        } else {
+            ""
+        }
+    }
+
+    fun updateJobId(jobId: JobId?) {
+        infoLabelJobId.text = if (jobId != null) {
+            message("codemodernizer.toolwindow.transformation.progress.job_id", jobId.id)
+        } else {
+            ""
         }
     }
 

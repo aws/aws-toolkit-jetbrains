@@ -630,7 +630,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             is CodeModernizerJobCompletedResult.JobPartiallySucceeded -> {
                 notifyStickyInfo(
                     message("codemodernizer.notification.info.modernize_partial_complete.title"),
-                    message("codemodernizer.notification.info.modernize_partial_complete.content", result.targetJavaVersion.description),
+                    message("codemodernizer.notification.info.modernize_partial_complete.content"),
                     project,
                     listOf(displaySummaryNotificationAction(result.jobId), displayFeedbackNotificationAction()),
                 )
