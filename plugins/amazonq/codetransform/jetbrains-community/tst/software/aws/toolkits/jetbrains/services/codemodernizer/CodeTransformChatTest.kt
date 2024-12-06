@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.codemodernizer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.fail
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformResultChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformButtonId
@@ -21,8 +22,8 @@ class CodeTransformChatTest {
         val chatItem = buildTransformResultChatContent(result)
         assertEquals(chatItem.message, message("codemodernizer.chat.message.result.fail_initial_build"))
         assertNotNull(chatItem.buttons)
-        assertEquals(chatItem.buttons!!.size, 1)
-        assertEquals(chatItem.buttons!![0].id, CodeTransformButtonId.ViewBuildLog.id)
+        assertEquals(chatItem.buttons?.size ?: fail("buttons is null"), 1)
+        assertEquals(chatItem.buttons?.get(0)?.id ?: fail("buttons is null"), CodeTransformButtonId.ViewBuildLog.id)
     }
 
     @Test
@@ -31,10 +32,10 @@ class CodeTransformChatTest {
         val chatItem = buildTransformResultChatContent(result, 5)
         assertEquals(chatItem.message, message("codemodernizer.chat.message.result.success.multiple_diffs"))
         assertNotNull(chatItem.buttons)
-        assertEquals(chatItem.buttons!!.size, 2)
-        assertEquals(chatItem.buttons!![0].id, CodeTransformButtonId.ViewDiff.id)
-        assertEquals(chatItem.buttons!![0].text, "View diff 1/5")
-        assertEquals(chatItem.buttons!![1].id, CodeTransformButtonId.ViewSummary.id)
+        assertEquals(chatItem.buttons?.size ?: fail("buttons is null"), 2)
+        assertEquals(chatItem.buttons?.get(0)?.id ?: fail("buttons is null"), CodeTransformButtonId.ViewDiff.id)
+        assertEquals(chatItem.buttons?.get(0)?.text ?: fail("buttons is null"), "View diff 1/5")
+        assertEquals(chatItem.buttons?.get(1)?.id ?: fail("buttons is null"), CodeTransformButtonId.ViewSummary.id)
     }
 
     @Test
@@ -43,10 +44,10 @@ class CodeTransformChatTest {
         val chatItem = buildTransformResultChatContent(result, 1)
         assertEquals(chatItem.message, message("codemodernizer.chat.message.result.partially_success"))
         assertNotNull(chatItem.buttons)
-        assertEquals(chatItem.buttons!!.size, 2)
-        assertEquals(chatItem.buttons!![0].id, CodeTransformButtonId.ViewDiff.id)
-        assertEquals(chatItem.buttons!![0].text, "View diff")
-        assertEquals(chatItem.buttons!![1].id, CodeTransformButtonId.ViewSummary.id)
+        assertEquals(chatItem.buttons?.size ?: fail("buttons is null"), 2)
+        assertEquals(chatItem.buttons?.get(0)?.id ?: fail("buttons is null"), CodeTransformButtonId.ViewDiff.id)
+        assertEquals(chatItem.buttons?.get(0)?.text ?: fail("buttons is null"), "View diff")
+        assertEquals(chatItem.buttons?.get(1)?.id ?: fail("buttons is null"), CodeTransformButtonId.ViewSummary.id)
     }
 
     @Test
