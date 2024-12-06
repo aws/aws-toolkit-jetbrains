@@ -23,8 +23,8 @@ class SsoLogoutAction(private val value: AwsBearerTokenConnection) : DumbAwareAc
                 AwsCoreBundle.message("gettingstarted.auth.idc.sign.out.confirmation.title"),
                 AwsCoreBundle.message("gettingstarted.auth.idc.sign.out.confirmation")
             ).yesText(AwsCoreBundle.message("general.confirm")).ask(e.project)
-            if (confirmDeletion) {
-                deleteSsoConnection(value)
+            if (!confirmDeletion) {
+                return
             }
         }
         logoutFromSsoConnection(e.project, value)
