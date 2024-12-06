@@ -6,7 +6,7 @@ package software.aws.toolkits.core.utils
 import java.io.FileInputStream
 import java.io.InputStream
 import java.net.HttpURLConnection
-import java.net.URL
+import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -127,13 +127,13 @@ class DefaultRemoteResourceResolver(
 
     private fun getEndpointETag(endpoint: String): String =
         try {
-            val url = URL(endpoint)
+            val url = URI(endpoint).toURL()
             (url.openConnection() as HttpURLConnection).let { connection ->
                 connection.requestMethod = "HEAD"
                 connection.setRequestProperty("User-Agent", "AWS Toolkit for JetBrains")
                 connection.connect()
 
-                val eTag = connection.getHeaderField("ETag") ?: ""
+                val eTag = connection.getHeaderField("ETag").orEmpty()
                 connection.disconnect()
                 eTag
             }
