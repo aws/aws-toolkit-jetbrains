@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.core.utils
 
+import com.intellij.util.io.HttpRequests
 import java.io.FileInputStream
 import java.io.InputStream
 import java.nio.file.Files
@@ -13,6 +14,7 @@ import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.Callable
 import java.util.concurrent.CompletionStage
+import java.util.concurrent.atomic.AtomicBoolean
 
 interface RemoteResourceResolver {
     fun resolve(resource: RemoteResource): CompletionStage<Path>
@@ -21,13 +23,44 @@ interface RemoteResolveParser {
     fun canBeParsed(data: InputStream): Boolean
 }
 
+interface ETagProvider {
+    var etag: String?
+    fun updateETag(newETag: String?)
+}
+
+sealed class UpdateCheckResult {
+    data object HasUpdates : UpdateCheckResult()
+    data object NoUpdates : UpdateCheckResult()
+    data object FirstPollCheck : UpdateCheckResult()
+}
+
 class DefaultRemoteResourceResolver(
     private val urlFetcher: UrlFetcher,
     private val cacheBasePath: Path,
     private val executor: (Callable<Path>) -> CompletionStage<Path>,
 ) : RemoteResourceResolver {
+    private val isFirstPoll = AtomicBoolean(true)
 
     override fun resolve(resource: RemoteResource): CompletionStage<Path> = executor(Callable { internalResolve(resource) })
+
+    fun getLocalResourcePath(resourceName: String): Path? {
+        val expectedLocation = cacheBasePath.resolve(resourceName)
+        return expectedLocation.existsOrNull()
+    }
+
+    fun checkForUpdates(endpoint: String, eTagProvider: ETagProvider): UpdateCheckResult {
+        val hasETagUpdate = updateETags(eTagProvider, endpoint)
+        // for when we need to notify on first poll even when there's no new ETag
+        if (isFirstPoll.compareAndSet(true, false) && !hasETagUpdate) {
+            return UpdateCheckResult.FirstPollCheck
+        }
+
+        return if (hasETagUpdate) {
+            UpdateCheckResult.HasUpdates
+        } else {
+            UpdateCheckResult.NoUpdates
+        }
+    }
 
     private fun internalResolve(resource: RemoteResource): Path {
         val expectedLocation = cacheBasePath.resolve(resource.name)
@@ -81,6 +114,25 @@ class DefaultRemoteResourceResolver(
 
         return expectedLocation
     }
+
+    private fun updateETags(eTagProvider: ETagProvider, endpoint: String): Boolean {
+        val currentEtag = eTagProvider.etag
+        val remoteEtag = getEndpointETag(endpoint)
+        eTagProvider.etag = remoteEtag
+        return currentEtag != remoteEtag
+    }
+
+    private fun getEndpointETag(endpoint: String): String =
+        try {
+            HttpRequests.request(endpoint)
+                .userAgent("AWS Toolkit for JetBrains")
+                .connect { request ->
+                    request.connection.headerFields["ETag"]?.firstOrNull().orEmpty()
+                }
+        } catch (e: Exception) {
+            LOG.warn { "Failed to fetch notification ETag: $e.message" }
+            throw e
+        }
 
     private companion object {
         val LOG = getLogger<RemoteResourceResolver>()
