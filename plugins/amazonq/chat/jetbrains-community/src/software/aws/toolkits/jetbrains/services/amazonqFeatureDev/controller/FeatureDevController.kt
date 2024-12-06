@@ -298,7 +298,6 @@ class FeatureDevController(
                 filePaths = filePaths.filter { it.zipFilePath == fileToUpdate },
                 deletedFiles = deletedFiles.filter { it.zipFilePath == fileToUpdate },
                 references = references, // Add all references (not attributed per-file)
-                messenger
             )
 
             AmazonqTelemetry.isAcceptedCodeChanges(
@@ -313,8 +312,6 @@ class FeatureDevController(
             deletedFiles.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
         }
 
-        // FIXME: This is a kludge that is hiding the fact that insertChanges is updating the file tree above this point to
-        // an incorrect state. Update the state of the tree view:
         messenger.updateFileComponent(message.tabId, filePaths, deletedFiles, messageId)
 
         // Then, if the accepted file is not a deletion, open a diff to show the changes are applied:
@@ -421,14 +418,14 @@ class FeatureDevController(
                 credentialStartUrl = getStartUrl(project = context.project)
             )
 
-            // Caution: insertChanges has multiple responsibilities.
-            // The filter here results in rejected files being hidden from the tree after continuing, by design.
-            // However, it is critical that we don't hide already-accepted files. Inside insertChanges, it
-            // filters to only update the subset of passed files that aren't accepted or rejected already.
             session.insertChanges(
-                filePaths = filePaths.filter { !it.rejected },
-                deletedFiles = deletedFiles.filter { !it.rejected },
-                references = references,
+                filePaths = filePaths,
+                deletedFiles = deletedFiles,
+                references = references
+            )
+            session.updateFilesPaths(
+                filePaths = filePaths,
+                deletedFiles = deletedFiles,
                 messenger
             )
 
