@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonq.webview
 
 import com.intellij.ide.BrowserUtil
+import com.intellij.ide.util.RunOnceUtil
 import com.intellij.ui.jcef.JBCefJSQuery.Response
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.awaitClose
@@ -22,6 +23,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.util.command
 import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.AmazonQTheme
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.ThemeBrowserAdapter
+import software.aws.toolkits.jetbrains.settings.MeetQSettings
 import software.aws.toolkits.telemetry.Telemetry
 import java.util.function.Function
 
@@ -40,7 +42,12 @@ class BrowserConnector(
             .onEach { json ->
                 val node = serializer.toNode(json)
                 when (node.command) {
-                    "ui-is-ready" -> uiReady.complete(true)
+                    "ui-is-ready" -> {
+                        uiReady.complete(true)
+                        RunOnceUtil.runOnceForApp("AmazonQ-UI-Ready") {
+                            MeetQSettings.getInstance().reinvent2024OnboardingCount += 1
+                        }
+                    }
 
                     // some weird issue preventing deserialization from working
                     "open-user-guide" -> {

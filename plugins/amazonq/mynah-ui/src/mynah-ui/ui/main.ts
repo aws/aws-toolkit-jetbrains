@@ -33,6 +33,7 @@ import {createClickTelemetry, createOpenAgentTelemetry} from "./telemetry/action
 
 export const createMynahUI = (
     ideApi: any,
+    showWelcomePage: boolean,
     featureDevInitEnabled: boolean,
     codeTransformInitEnabled: boolean,
     docInitEnabled: boolean,
@@ -61,7 +62,7 @@ export const createMynahUI = (
     tabsStorage.addTab({
         id: 'tab-1',
         status: 'free',
-        type: 'cwc',
+        type: showWelcomePage ? 'welcome' : 'cwc',
         isSelected: true,
     })
 
@@ -598,6 +599,17 @@ export const createMynahUI = (
                 }
             }
 
+            if (tabsStorage.getTab(tabID)?.type === 'welcome') {
+                mynahUI.updateStore(tabID, {
+                    tabHeaderDetails: void 0,
+                    compactMode: false,
+                    tabBackground: false,
+                    promptInputText: '',
+                    promptInputLabel: void 0,
+                    chatItems: [],
+                })
+            }
+
             if (prompt.command !== undefined && prompt.command.trim() !== '') {
                 quickActionHandler.handleCommand(prompt, tabID, eventId)
 
@@ -678,7 +690,9 @@ export const createMynahUI = (
         tabs: {
             'tab-1': {
                 isSelected: true,
-                store: welcomeScreenTabData(tabDataGenerator).store,
+                store: showWelcomePage
+                    ? welcomeScreenTabData(tabDataGenerator).store
+                    : tabDataGenerator.getTabData('cwc', true),
             },
         },
         onInBodyButtonClicked: (tabId, messageId, action, eventId) => {
