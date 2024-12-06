@@ -135,8 +135,4 @@ class CodeModernizerBanner(val project: Project) : JPanel(BorderLayout()) {
         currentlyShownOptions.clear()
         buildContent()
     }
-
-    companion object {
-        private val LOG = getLogger<CodeModernizerBanner>()
-    }
 }

@@ -770,12 +770,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         codeTransformationSession?.tryOpenTransformationPlanEditor()
     }
 
-    fun showDiff() {
-        val job = codeTransformationSession?.getActiveJobId() ?: return
-        // Use "TreeViewHeader" for Hub
-        artifactHandler.displayDiffAction(job, CodeTransformVCSViewerSrcComponents.TreeViewHeader)
-    }
-
     fun handleCredentialsChanged() {
         codeTransformationSession?.dispose()
         codeModernizerBottomWindowPanelManager.reset()
