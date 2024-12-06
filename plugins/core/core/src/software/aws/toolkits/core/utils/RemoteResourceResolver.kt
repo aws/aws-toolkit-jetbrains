@@ -3,9 +3,10 @@
 
 package software.aws.toolkits.core.utils
 
-import com.intellij.util.io.HttpRequests
 import java.io.FileInputStream
 import java.io.InputStream
+import java.net.HttpURLConnection
+import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -18,6 +19,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 interface RemoteResourceResolver {
     fun resolve(resource: RemoteResource): CompletionStage<Path>
+    fun checkForUpdates(endpoint: String, eTagProvider: ETagProvider): UpdateCheckResult
+    fun getLocalResourcePath(filename: String): Path?
 }
 interface RemoteResolveParser {
     fun canBeParsed(data: InputStream): Boolean
@@ -43,12 +46,12 @@ class DefaultRemoteResourceResolver(
 
     override fun resolve(resource: RemoteResource): CompletionStage<Path> = executor(Callable { internalResolve(resource) })
 
-    fun getLocalResourcePath(resourceName: String): Path? {
-        val expectedLocation = cacheBasePath.resolve(resourceName)
+    override fun getLocalResourcePath(filename: String): Path? {
+        val expectedLocation = cacheBasePath.resolve(filename)
         return expectedLocation.existsOrNull()
     }
 
-    fun checkForUpdates(endpoint: String, eTagProvider: ETagProvider): UpdateCheckResult {
+    override fun checkForUpdates(endpoint: String, eTagProvider: ETagProvider): UpdateCheckResult {
         val hasETagUpdate = updateETags(eTagProvider, endpoint)
         // for when we need to notify on first poll even when there's no new ETag
         if (isFirstPoll.compareAndSet(true, false) && !hasETagUpdate) {
@@ -124,13 +127,18 @@ class DefaultRemoteResourceResolver(
 
     private fun getEndpointETag(endpoint: String): String =
         try {
-            HttpRequests.request(endpoint)
-                .userAgent("AWS Toolkit for JetBrains")
-                .connect { request ->
-                    request.connection.headerFields["ETag"]?.firstOrNull().orEmpty()
-                }
+            val url = URL(endpoint)
+            (url.openConnection() as HttpURLConnection).let { connection ->
+                connection.requestMethod = "HEAD"
+                connection.setRequestProperty("User-Agent", "AWS Toolkit for JetBrains")
+                connection.connect()
+
+                val eTag = connection.getHeaderField("ETag") ?: ""
+                connection.disconnect()
+                eTag
+            }
         } catch (e: Exception) {
-            LOG.warn { "Failed to fetch notification ETag: $e.message" }
+            LOG.warn { "Failed to fetch notification ETag: ${e.message}" }
             throw e
         }
 

@@ -14,9 +14,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.core.utils.RemoteResolveParser
 import software.aws.toolkits.core.utils.RemoteResource
+import software.aws.toolkits.core.utils.UpdateCheckResult
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.DefaultRemoteResourceResolverProvider
+import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
 import software.aws.toolkits.telemetry.Component
 import software.aws.toolkits.telemetry.ToolkitTelemetry
 import java.io.InputStream
@@ -24,6 +27,7 @@ import java.time.Duration
 
 private const val MAX_RETRIES = 3
 private const val RETRY_DELAY_MS = 1000L
+internal const val FILENAME = "notifications.json"
 
 object NotificationFileValidator : RemoteResolveParser {
     override fun canBeParsed(data: InputStream): Boolean =
@@ -45,9 +49,9 @@ internal final class NotificationPollingService : Disposable {
     private val observers = mutableListOf<() -> Unit>()
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val pollingIntervalMs = Duration.ofMinutes(10).toMillis()
-    private val resourceResolver: NotificationResourceResolverProvider = DefaultNotificationResourceResolverProvider()
+    private val resourceResolver: RemoteResourceResolverProvider = DefaultRemoteResourceResolverProvider()
     private val notificationsResource = object : RemoteResource {
-        override val name: String = "notifications.json"
+        override val name: String = FILENAME
         override val urls: List<String> = listOf(NotificationEndpoint.getEndpoint())
         override val remoteResolveParser: RemoteResolveParser = NotificationFileValidator
         override val ttl: Duration = Duration.ofMillis(1)
@@ -71,7 +75,12 @@ internal final class NotificationPollingService : Disposable {
         while (retryCount < MAX_RETRIES) {
             LOG.info { "Polling for notifications" }
             try {
-                when (resourceResolver.get().checkForUpdates()) {
+                when (
+                    resourceResolver.get().checkForUpdates(
+                        NotificationEndpoint.getEndpoint(),
+                        NotificationEtagState.getInstance()
+                    )
+                ) {
                     is UpdateCheckResult.HasUpdates -> {
                         resourceResolver.get()
                             .resolve(notificationsResource)

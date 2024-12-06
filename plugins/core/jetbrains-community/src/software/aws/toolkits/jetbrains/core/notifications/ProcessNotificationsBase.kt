@@ -16,6 +16,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.inputStream
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
 import software.aws.toolkits.jetbrains.utils.notifyStickyWithData
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -38,10 +39,10 @@ class ProcessNotificationsBase(
 
     private fun getNotificationsFromFile(): NotificationsList? {
         try {
-            val path = NotificationResourceResolverProvider
+            val path = RemoteResourceResolverProvider
                 .getInstance()
                 .get()
-                .getLocalResourcePath("notifications.json")
+                .getLocalResourcePath(FILENAME)
             if (path == null) {
                 LOG.warn { "Notifications file not found" }
                 return null

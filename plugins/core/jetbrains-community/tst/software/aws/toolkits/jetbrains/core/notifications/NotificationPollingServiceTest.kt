@@ -13,14 +13,17 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import software.aws.toolkits.core.utils.RemoteResourceResolver
+import software.aws.toolkits.core.utils.UpdateCheckResult
+import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 
 @ExtendWith(ApplicationExtension::class)
 class NotificationPollingServiceTest {
     private lateinit var sut: NotificationPollingService
-    private lateinit var mockResolver: NotificationResourceResolver
-    private lateinit var mockProvider: NotificationResourceResolverProvider
+    private lateinit var mockResolver: RemoteResourceResolver
+    private lateinit var mockProvider: RemoteResourceResolverProvider
     private lateinit var observer: () -> Unit
     private val testPath = Path.of("/test/path")
 
@@ -28,11 +31,11 @@ class NotificationPollingServiceTest {
     fun setUp() {
         sut = NotificationPollingService()
 
-        mockResolver = mockk<NotificationResourceResolver> {
+        mockResolver = mockk<RemoteResourceResolver> {
             every { resolve(any()) } returns CompletableFuture.completedFuture(testPath)
         }
 
-        mockProvider = mockk<NotificationResourceResolverProvider> {
+        mockProvider = mockk<RemoteResourceResolverProvider> {
             every { get() } returns mockResolver
         }
 
@@ -59,21 +62,21 @@ class NotificationPollingServiceTest {
 
     @Test
     fun `test pollForNotifications when ETag matches - no new notifications`() {
-        every { mockResolver.checkForUpdates() } returns UpdateCheckResult.NoUpdates
+        every { mockResolver.checkForUpdates(any(), any()) } returns UpdateCheckResult.NoUpdates
         sut.startPolling()
         verify(exactly = 0) { observer.invoke() }
     }
 
     @Test
     fun `test pollForNotifications when ETag matches on startup - notify observers`() {
-        every { mockResolver.checkForUpdates() } returns UpdateCheckResult.FirstPollCheck
+        every { mockResolver.checkForUpdates(any(), any()) } returns UpdateCheckResult.FirstPollCheck
         sut.startPolling()
         verify(exactly = 1) { observer.invoke() }
     }
 
     @Test
     fun `test pollForNotifications when ETag different - notify observers`() {
-        every { mockResolver.checkForUpdates() } returns UpdateCheckResult.HasUpdates
+        every { mockResolver.checkForUpdates(any(), any()) } returns UpdateCheckResult.HasUpdates
         sut.startPolling()
         verify(exactly = 1) { observer.invoke() }
     }
