@@ -10,7 +10,6 @@ import com.intellij.openapi.ui.MessageDialogBuilder
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ProfileSsoManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
-import software.aws.toolkits.jetbrains.core.credentials.deleteSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.UiTelemetry
