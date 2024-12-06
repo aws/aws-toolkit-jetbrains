@@ -9,7 +9,6 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -17,8 +16,8 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.inputStream
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
 import software.aws.toolkits.jetbrains.utils.notifyStickyWithData
-import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicBoolean
 
 object NotificationMapperUtil {
@@ -40,7 +39,14 @@ class ProcessNotificationsBase(
 
     private fun getNotificationsFromFile(): NotificationsList? {
         try {
-            val path = Paths.get(PathManager.getSystemPath(), NOTIFICATIONS_PATH)
+            val path = RemoteResourceResolverProvider
+                .getInstance()
+                .get()
+                .getLocalResourcePath(FILENAME)
+            if (path == null) {
+                LOG.warn { "Notifications file not found" }
+                return null
+            }
             val content = path.inputStream().bufferedReader().use { it.readText() }
             if (content.isEmpty()) {
                 return null
@@ -119,8 +125,6 @@ class ProcessNotificationsBase(
     companion object {
         private val LOG = getLogger<ProcessNotificationsBase>()
         fun getInstance(project: Project): ProcessNotificationsBase = project.service()
-
-        private const val NOTIFICATIONS_PATH = "aws-static-resources/notifications.json"
     }
 }
 
