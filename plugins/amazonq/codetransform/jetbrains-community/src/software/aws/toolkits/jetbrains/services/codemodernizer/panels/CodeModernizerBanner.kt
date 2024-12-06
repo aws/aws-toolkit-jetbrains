@@ -12,7 +12,6 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBInsets
 import com.intellij.util.ui.JBUI
 import icons.AwsIcons
-import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig

@@ -84,7 +84,6 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformBuildSystem
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
-import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 import java.io.File
 import java.nio.file.Path
 import java.time.Instant
