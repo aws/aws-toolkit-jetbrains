@@ -457,7 +457,7 @@ class CodeTransformChatController(
     }
 
     override suspend fun processCodeTransformStopAction(tabId: String) {
-        if (!checkForAuth(tabId)) {
+        if (!checkForAuth(tabId) || !codeModernizerManager.isModernizationJobActive()) {
             return
         }
 
