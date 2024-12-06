@@ -30,16 +30,20 @@ import { ChatPrompt, CodeSelectionType} from "@aws/mynah-ui-chat/dist/static";
 import {welcomeScreenTabData} from "./walkthrough/welcome";
 import { agentWalkthroughDataModel } from './walkthrough/agent'
 import {createClickTelemetry, createOpenAgentTelemetry} from "./telemetry/actions";
+import {disclaimerAcknowledgeButtonId, disclaimerCard} from "./texts/disclaimer";
 
 export const createMynahUI = (
     ideApi: any,
     showWelcomePage: boolean,
+    disclaimerAcknowledged: boolean,
     featureDevInitEnabled: boolean,
     codeTransformInitEnabled: boolean,
     docInitEnabled: boolean,
     codeScanEnabled: boolean,
     codeTestEnabled: boolean
 ) => {
+    let disclaimerCardActive = !disclaimerAcknowledged
+
     // eslint-disable-next-line prefer-const
     let mynahUI: MynahUI
     // eslint-disable-next-line prefer-const
@@ -556,6 +560,7 @@ export const createMynahUI = (
             // make sure to show/hide it accordingly
             mynahUI.updateStore(tabID, {
                 quickActionCommands: tabDataGenerator.quickActionsGenerator.generateForTab('unknown'),
+                ...(disclaimerCardActive ? { promptInputStickyCard: disclaimerCard } : {}),
             })
             connector.onTabAdd(tabID)
         },
@@ -690,12 +695,32 @@ export const createMynahUI = (
         tabs: {
             'tab-1': {
                 isSelected: true,
-                store: showWelcomePage
-                    ? welcomeScreenTabData(tabDataGenerator).store
-                    : tabDataGenerator.getTabData('cwc', true),
+                store: {
+                    ...(showWelcomePage
+                        ? welcomeScreenTabData(tabDataGenerator).store
+                        : tabDataGenerator.getTabData('cwc', true)),
+                    ...(disclaimerCardActive ? { promptInputStickyCard: disclaimerCard } : {}),
+                },
             },
         },
         onInBodyButtonClicked: (tabId, messageId, action, eventId) => {
+            if (action.id === disclaimerAcknowledgeButtonId) {
+                disclaimerCardActive = false
+                // post message to tell IDE that disclaimer is acknowledged
+                ideApi.postMessage({
+                    command: 'disclaimer-acknowledged',
+                })
+
+                // create telemetry
+                ideApi.postMessage(createClickTelemetry('amazonq-disclaimer-acknowledge-button'))
+
+                // remove all disclaimer cards from all tabs
+                Object.keys(mynahUI.getAllTabs()).forEach((storeTabKey) => {
+                    // eslint-disable-next-line no-null/no-null
+                    mynahUI.updateStore(storeTabKey, { promptInputStickyCard: null })
+                })
+            }
+
             if (action.id === 'quick-start') {
                 /**
                  * quick start is the action on the welcome page. When its
