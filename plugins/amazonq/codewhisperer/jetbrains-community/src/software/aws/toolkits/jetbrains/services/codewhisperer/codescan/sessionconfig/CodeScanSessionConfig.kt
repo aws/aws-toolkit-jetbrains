@@ -169,7 +169,7 @@ class CodeScanSessionConfig(
                 append("+++ b/")
                 append(project.name)
                 append('/')
-                append(fileNio.relativeTo(projectRootNio).pathString)
+                append(fileNio.relativeTo(projectRootNio).toString().replace(File.separator, "/"))
             }
         } catch (e: Exception) {
             LOG.debug(e) { "Failed to create git diff" }
