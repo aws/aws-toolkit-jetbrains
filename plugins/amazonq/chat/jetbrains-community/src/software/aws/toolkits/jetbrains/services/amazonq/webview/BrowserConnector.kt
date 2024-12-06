@@ -49,6 +49,10 @@ class BrowserConnector(
                         }
                     }
 
+                    "disclaimer-acknowledged" -> {
+                        MeetQSettings.getInstance().disclaimerAcknowledged = true
+                    }
+
                     // some weird issue preventing deserialization from working
                     "open-user-guide" -> {
                         BrowserUtil.browse(node.get("userGuideLink").asText())
