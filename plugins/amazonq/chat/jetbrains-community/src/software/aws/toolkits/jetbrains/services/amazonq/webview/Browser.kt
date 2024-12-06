@@ -87,12 +87,13 @@ class Browser(parent: Disposable) : Disposable {
                             }
                         },
                         ${MeetQSettings.getInstance().reinvent2024OnboardingCount < MAX_ONBOARDING_PAGE_COUNT},
+                        ${MeetQSettings.getInstance().disclaimerAcknowledged},
                         $isFeatureDevAvailable, // whether /dev is available
                         $isCodeTransformAvailable, // whether /transform is available
                         $isDocAvailable, // whether /doc is available
                         $isCodeScanAvailable, // whether /scan is available
                         $isCodeTestAvailable // whether /test is available
-                    ); 
+                    );
                 }
             </script>        
         """.trimIndent()
