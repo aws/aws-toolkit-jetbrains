@@ -84,7 +84,6 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformBuildSystem
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
-import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 import java.io.File
 import java.nio.file.Path
 import java.time.Instant
@@ -630,7 +629,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             is CodeModernizerJobCompletedResult.JobPartiallySucceeded -> {
                 notifyStickyInfo(
                     message("codemodernizer.notification.info.modernize_partial_complete.title"),
-                    message("codemodernizer.notification.info.modernize_partial_complete.content", result.targetJavaVersion.description),
+                    message("codemodernizer.notification.info.modernize_partial_complete.content"),
                     project,
                     listOf(displaySummaryNotificationAction(result.jobId), displayFeedbackNotificationAction()),
                 )
@@ -768,12 +767,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     fun showTransformationPlan() {
         codeTransformationSession?.tryOpenTransformationPlanEditor()
-    }
-
-    fun showDiff() {
-        val job = codeTransformationSession?.getActiveJobId() ?: return
-        // Use "TreeViewHeader" for Hub
-        artifactHandler.displayDiffAction(job, CodeTransformVCSViewerSrcComponents.TreeViewHeader)
     }
 
     fun handleCredentialsChanged() {

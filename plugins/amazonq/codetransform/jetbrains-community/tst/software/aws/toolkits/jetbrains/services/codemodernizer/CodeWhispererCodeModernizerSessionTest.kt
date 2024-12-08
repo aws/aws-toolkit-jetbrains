@@ -532,7 +532,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
 
         doNothing().whenever(testSessionStateSpy).updateJobHistory(any(), any(), any())
         val result = testSessionSpy.pollUntilJobCompletion(CodeTransformType.LANGUAGE_UPGRADE, jobId) { _, _ -> }
-        assertEquals(CodeModernizerJobCompletedResult.JobPartiallySucceeded(jobId, testSessionContextSpy.targetJavaVersion), result)
+        assertEquals(CodeModernizerJobCompletedResult.JobPartiallySucceeded(jobId), result)
         verify(clientAdaptorSpy, times(4)).getCodeModernizationJob(any())
         verify(clientAdaptorSpy, atLeastOnce()).getCodeModernizationPlan(any())
     }
