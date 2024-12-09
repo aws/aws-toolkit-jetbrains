@@ -18,6 +18,10 @@ import software.aws.toolkits.core.utils.inputStream
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
 import software.aws.toolkits.jetbrains.utils.notifyStickyWithData
+import software.aws.toolkits.telemetry.Component
+import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.ToolkitTelemetry
+import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicBoolean
 
 object NotificationMapperUtil {
@@ -104,6 +108,11 @@ class ProcessNotificationsBase(
                 BannerNotificationService.getInstance().addNotification(notificationData.id, bannerContent)
                 notifyListenerForNotification(bannerContent)
             }
+            ToolkitTelemetry.showNotification(
+                id = notificationData.id,
+                result = Result.Succeeded,
+                component = Component.Infobar
+            )
         }
     }
 
