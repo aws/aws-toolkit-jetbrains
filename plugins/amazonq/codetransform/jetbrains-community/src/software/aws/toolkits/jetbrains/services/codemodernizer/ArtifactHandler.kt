@@ -334,6 +334,7 @@ class ArtifactHandler(
                             codeTransformChatHelper?.updateLastPendingMessage(
                                 CodeTransformChatMessageContent(type = CodeTransformChatMessageType.PendingAnswer, message = message)
                             )
+                            codeTransformChatHelper?.addNewMessage(buildStartNewTransformFollowup())
                         } else {
                             codeTransformChatHelper?.updateLastPendingMessage(
                                 CodeTransformChatMessageContent(
