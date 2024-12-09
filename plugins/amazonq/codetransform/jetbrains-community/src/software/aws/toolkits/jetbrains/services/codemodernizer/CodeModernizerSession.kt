@@ -493,10 +493,7 @@ class CodeModernizerSession(
                     message("codemodernizer.notification.warn.unknown_status_response")
                 )
 
-                result.state == TransformationStatus.PARTIALLY_COMPLETED -> CodeModernizerJobCompletedResult.JobPartiallySucceeded(
-                    jobId,
-                    sessionContext.targetJavaVersion
-                )
+                result.state == TransformationStatus.PARTIALLY_COMPLETED -> CodeModernizerJobCompletedResult.JobPartiallySucceeded(jobId)
 
                 result.state == TransformationStatus.FAILED -> {
                     if (!passedStart) {

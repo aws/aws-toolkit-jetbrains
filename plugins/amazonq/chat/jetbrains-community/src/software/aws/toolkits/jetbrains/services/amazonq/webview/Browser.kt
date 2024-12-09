@@ -8,6 +8,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
+import software.aws.toolkits.jetbrains.settings.MeetQSettings
 
 /*
 Displays the web view for the Amazon Q tool window
@@ -85,12 +86,14 @@ class Browser(parent: Disposable) : Disposable {
                                 $postMessageToJavaJsCode
                             }
                         },
+                        ${MeetQSettings.getInstance().reinvent2024OnboardingCount < MAX_ONBOARDING_PAGE_COUNT},
+                        ${MeetQSettings.getInstance().disclaimerAcknowledged},
                         $isFeatureDevAvailable, // whether /dev is available
                         $isCodeTransformAvailable, // whether /transform is available
                         $isDocAvailable, // whether /doc is available
                         $isCodeScanAvailable, // whether /scan is available
                         $isCodeTestAvailable // whether /test is available
-                    ); 
+                    );
                 }
             </script>        
         """.trimIndent()
@@ -110,5 +113,6 @@ class Browser(parent: Disposable) : Disposable {
 
     companion object {
         private const val WEB_SCRIPT_URI = "http://mynah/js/mynah-ui.js"
+        private const val MAX_ONBOARDING_PAGE_COUNT = 3
     }
 }

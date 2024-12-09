@@ -10,7 +10,6 @@ import com.intellij.openapi.ui.MessageDialogBuilder
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ProfileSsoManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
-import software.aws.toolkits.jetbrains.core.credentials.deleteSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.UiTelemetry
@@ -23,8 +22,8 @@ class SsoLogoutAction(private val value: AwsBearerTokenConnection) : DumbAwareAc
                 AwsCoreBundle.message("gettingstarted.auth.idc.sign.out.confirmation.title"),
                 AwsCoreBundle.message("gettingstarted.auth.idc.sign.out.confirmation")
             ).yesText(AwsCoreBundle.message("general.confirm")).ask(e.project)
-            if (confirmDeletion) {
-                deleteSsoConnection(value)
+            if (!confirmDeletion) {
+                return
             }
         }
         logoutFromSsoConnection(e.project, value)
