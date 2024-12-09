@@ -20,6 +20,7 @@ data class Session(val tabId: String) {
     var programmingLanguage: CodeWhispererProgrammingLanguage = CodeWhispererUnknownLanguage.INSTANCE
     var testGenerationJob: String = ""
     var testGenerationJobGroupName: String = ""
+    var startTestGenerationRequestId: String = ""
 
     // Telemetry
     var hasUserPromptSupplied: Boolean = false
