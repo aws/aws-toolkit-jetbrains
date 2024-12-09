@@ -124,6 +124,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         )
 
         val job = startTestGenerationResponse.testGenerationJob()
+        session.startTestGenerationRequestId = startTestGenerationResponse.responseMetadata().requestId()
         session.testGenerationJobGroupName = job.testGenerationJobGroupName()
         session.testGenerationJob = job.testGenerationJobId()
         throwIfCancelled(session)
@@ -522,7 +523,8 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     isCodeBlockSelected = session.isCodeBlockSelected,
                     artifactsUploadDuration = session.artifactUploadDuration,
                     buildPayloadBytes = session.srcPayloadSize,
-                    buildZipFileBytes = session.srcZipFileSize
+                    buildZipFileBytes = session.srcZipFileSize,
+                    requestId = session.startTestGenerationRequestId
                 )
                 session.isGeneratingTests = false
             } finally {
