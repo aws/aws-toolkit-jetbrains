@@ -14,8 +14,10 @@ import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.core.rules.EnvironmentVariableHelper
 import software.aws.toolkits.core.rules.SystemPropertyHelper
+import software.aws.toolkits.core.utils.ETagProvider
 import software.aws.toolkits.core.utils.RemoteResource
 import software.aws.toolkits.core.utils.RemoteResourceResolver
+import software.aws.toolkits.core.utils.UpdateCheckResult
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.writeText
 import software.aws.toolkits.jetbrains.core.RemoteResourceResolverProvider
@@ -165,6 +167,13 @@ class AwsRegionProviderTest {
                 override fun resolve(resource: RemoteResource): CompletionStage<Path> = CompletableFuture<Path>().apply {
                     complete(file)
                 }
+
+                // following two methods are not used in this test, make compiler happy
+                override fun checkForUpdates(endpoint: String, eTagProvider: ETagProvider): UpdateCheckResult =
+                    UpdateCheckResult.NoUpdates
+
+                override fun getLocalResourcePath(filename: String): Path? =
+                    null
             }
         }
         ApplicationManager.getApplication().replaceService(RemoteResourceResolverProvider::class.java, mockRemoteResource, disposableRule.disposable)
