@@ -19,8 +19,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 interface RemoteResourceResolver {
     fun resolve(resource: RemoteResource): CompletionStage<Path>
-    fun checkForUpdates(endpoint: String, eTagProvider: ETagProvider): UpdateCheckResult
-    fun getLocalResourcePath(filename: String): Path?
+    fun checkForUpdates(endpoint: String, eTagProvider: ETagProvider): UpdateCheckResult = UpdateCheckResult.NoUpdates
+    fun getLocalResourcePath(filename: String): Path? = null
 }
 interface RemoteResolveParser {
     fun canBeParsed(data: InputStream): Boolean
