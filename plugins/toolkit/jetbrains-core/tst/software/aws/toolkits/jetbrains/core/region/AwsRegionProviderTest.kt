@@ -167,14 +167,13 @@ class AwsRegionProviderTest {
                 override fun resolve(resource: RemoteResource): CompletionStage<Path> = CompletableFuture<Path>().apply {
                     complete(file)
                 }
-                // following two methods are not used in this test, make compiler happy
-                override fun checkForUpdates(endpoint: String, eTagProvider: ETagProvider): UpdateCheckResult {
-                    return UpdateCheckResult.NoUpdates
-                }
 
-                override fun getLocalResourcePath(filename: String): Path? {
-                    return null
-                }
+                // following two methods are not used in this test, make compiler happy
+                override fun checkForUpdates(endpoint: String, eTagProvider: ETagProvider): UpdateCheckResult =
+                    UpdateCheckResult.NoUpdates
+
+                override fun getLocalResourcePath(filename: String): Path? =
+                    null
             }
         }
         ApplicationManager.getApplication().replaceService(RemoteResourceResolverProvider::class.java, mockRemoteResource, disposableRule.disposable)
