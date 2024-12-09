@@ -24,7 +24,7 @@ import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
 
 @ExtendWith(ApplicationExtension::class)
-class RemoteResourceResolverTest {
+class NotificationResourceResolverTest {
     private lateinit var urlFetcher: UrlFetcher
     private lateinit var sut: DefaultRemoteResourceResolver
 
