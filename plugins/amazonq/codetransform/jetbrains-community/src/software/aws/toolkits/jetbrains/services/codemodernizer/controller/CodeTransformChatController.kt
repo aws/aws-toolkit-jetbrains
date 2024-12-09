@@ -399,6 +399,7 @@ class CodeTransformChatController(
                 EXPLAINABILITY_V1
             )
         }
+        telemetry.submitSelection(message.oneOrMultipleDiffsSelection)
         codeTransformChatHelper.addNewMessage(buildUserOneOrMultipleDiffsSelectionChatContent(message.oneOrMultipleDiffsSelection))
         codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
         codeModernizerManager.codeTransformationSession?.let {
@@ -458,7 +459,7 @@ class CodeTransformChatController(
     }
 
     override suspend fun processCodeTransformStopAction(tabId: String) {
-        if (!checkForAuth(tabId)) {
+        if (!checkForAuth(tabId) || !codeModernizerManager.isModernizationJobActive()) {
             return
         }
 
