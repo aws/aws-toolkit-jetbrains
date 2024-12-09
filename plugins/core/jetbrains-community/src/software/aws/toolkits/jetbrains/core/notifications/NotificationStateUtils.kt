@@ -9,35 +9,54 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
+import java.time.Duration
+import java.time.Instant
+
+data class DismissedNotification(
+    val id: String,
+    val dismissedAt: Instant = Instant.now()
+)
+
+data class NotificationDismissalConfiguration(
+    var dismissedNotifications: MutableSet<DismissedNotification> = mutableSetOf()
+)
 
 @Service
 @State(name = "notificationDismissals", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
 class NotificationDismissalState : PersistentStateComponent<NotificationDismissalConfiguration> {
     private val state = NotificationDismissalConfiguration()
+    private val retentionPeriod = Duration.ofDays(60) // 2 months
 
     override fun getState(): NotificationDismissalConfiguration = state
 
     override fun loadState(state: NotificationDismissalConfiguration) {
-        this.state.dismissedNotificationIds.clear()
-        this.state.dismissedNotificationIds.addAll(state.dismissedNotificationIds)
+        this.state.dismissedNotifications.clear()
+        this.state.dismissedNotifications.addAll(state.dismissedNotifications)
+        cleanExpiredNotifications()
     }
 
-    fun isDismissed(notificationId: String): Boolean =
-        state.dismissedNotificationIds.contains(notificationId)
+    fun isDismissed(notificationId: String): Boolean {
+        cleanExpiredNotifications()
+        return state.dismissedNotifications.any { it.id == notificationId }
+    }
 
     fun dismissNotification(notificationId: String) {
-        state.dismissedNotificationIds.add(notificationId)
+        state.dismissedNotifications.add(DismissedNotification(notificationId))
+        cleanExpiredNotifications()
+    }
+
+    private fun cleanExpiredNotifications() {
+        val now = Instant.now()
+        state.dismissedNotifications.removeAll { notification ->
+            Duration.between(notification.dismissedAt, now) > retentionPeriod
+        }
     }
 
     companion object {
-        fun getInstance(): NotificationDismissalState =
-            service()
+        fun getInstance(): NotificationDismissalState = service()
     }
 }
 
-data class NotificationDismissalConfiguration(
-    var dismissedNotificationIds: MutableSet<String> = mutableSetOf(),
-)
 
 @Service
 @State(name = "notificationEtag", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
