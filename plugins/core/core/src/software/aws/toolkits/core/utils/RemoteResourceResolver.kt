@@ -127,7 +127,7 @@ class DefaultRemoteResourceResolver(
         try {
             urlFetcher.getETag(endpoint)
         } catch (e: Exception) {
-            LOG.warn(e) { "Failed to fetch ETag: $e.message" }
+            LOG.warn { "Failed to fetch ETag: $e.message" }
             throw e
         }
 
