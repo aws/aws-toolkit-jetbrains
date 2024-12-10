@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fix for /review LLM based code issues for file review on windows"
-}
