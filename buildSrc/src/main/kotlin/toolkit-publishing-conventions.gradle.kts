@@ -66,3 +66,8 @@ tasks.verifyPlugin {
     // give each instance its own home dir
     systemProperty("plugin.verifier.home.dir", temporaryDir)
 }
+
+val pluginZip by configurations.creating
+artifacts {
+    add("pluginZip", tasks.buildPlugin)
+}
