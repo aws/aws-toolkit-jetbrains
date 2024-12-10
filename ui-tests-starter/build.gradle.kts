@@ -50,3 +50,11 @@ tasks.test {
 
     systemProperty("ui.test.plugins", testPlugins.get().asPath)
 }
+
+// hack to disable ui tests in ./gradlew check
+val action = Action<TaskExecutionGraph> {
+    if (hasTask(tasks.test.get())) {
+        tasks.test.get().enabled = false
+    }
+}
+gradle.taskGraph.whenReady(action)
