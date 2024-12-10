@@ -630,7 +630,7 @@ class InlineChatController(
             tabId = tabId,
             message = message,
             activeFileContext = fileContext,
-            userIntent = intentRecognizer.getUserIntentFromPromptChatMessage(message, null),
+            userIntent = intentRecognizer.getUserIntentFromPromptChatMessage(message),
             triggerType = TriggerType.Inline,
             customization = CodeWhispererModelConfigurator.getInstance().activeCustomization(project),
             relevantTextDocuments = emptyList(),

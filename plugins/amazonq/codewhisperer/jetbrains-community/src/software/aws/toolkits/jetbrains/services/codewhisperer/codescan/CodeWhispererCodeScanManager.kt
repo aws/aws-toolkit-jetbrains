@@ -7,11 +7,21 @@ import com.intellij.analysis.problemsView.toolWindow.ProblemsView
 import com.intellij.codeHighlighting.HighlightDisplayLevel
 import com.intellij.codeInspection.util.InspectionMessage
 import com.intellij.icons.AllIcons
+import com.intellij.lang.Commenter
+import com.intellij.lang.Language
+import com.intellij.lang.LanguageCommenters
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.components.service
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.ex.RangeHighlighterEx
 import com.intellij.openapi.editor.impl.DocumentMarkupModel
@@ -20,13 +30,13 @@ import com.intellij.openapi.editor.markup.HighlighterTargetArea
 import com.intellij.openapi.editor.markup.MarkupModel
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.fileEditor.impl.FileDocumentManagerImpl
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.MessageDialogBuilder
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.isFile
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.refactoring.suggested.range
 import com.intellij.ui.content.ContentManagerEvent
 import com.intellij.ui.content.ContentManagerListener
@@ -51,6 +61,7 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineUiContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -59,6 +70,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanEditorMouseMotionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanFileListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.AmazonQCodeReviewGitUtils.isInsideWorkTree
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.IssueSeverity
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.overlaps
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
@@ -66,13 +79,19 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isUserBui
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererPlainText
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanTelemetryEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.INACTIVE_TEXT_COLOR
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.ISSUE_HIGHLIGHT_TEXT_ATTRIBUTES
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.amazonqIgnoreNextLine
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.scanResultsKey
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.scanScopeKey
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
@@ -89,8 +108,9 @@ import kotlin.coroutines.CoroutineContext
 private val LOG = getLogger<CodeWhispererCodeScanManager>()
 
 class CodeWhispererCodeScanManager(val project: Project) {
+    private val defaultScope = projectCoroutineScope(project)
     private val codeScanResultsPanel by lazy {
-        CodeWhispererCodeScanResultsView(project)
+        CodeWhispererCodeScanResultsView(project, defaultScope)
     }
     private val codeScanIssuesContent by lazy {
         val contentManager = getProblemsWindow().contentManager
@@ -108,16 +128,24 @@ class CodeWhispererCodeScanManager(val project: Project) {
         }
     }
 
-    private val fileNodeLookup = mutableMapOf<VirtualFile, DefaultMutableTreeNode>()
+    private var autoScanIssues = emptyList<CodeWhispererCodeScanIssue>()
+    private var ondemandScanIssues = emptyList<CodeWhispererCodeScanIssue>()
+    private fun getCombinedScanIssues() = getUniqueIssues(autoScanIssues + ondemandScanIssues)
+    private val severityNodeLookup = mapOf(
+        IssueSeverity.CRITICAL.displayName to DefaultMutableTreeNode(IssueSeverity.CRITICAL.displayName),
+        IssueSeverity.HIGH.displayName to DefaultMutableTreeNode(IssueSeverity.HIGH.displayName),
+        IssueSeverity.MEDIUM.displayName to DefaultMutableTreeNode(IssueSeverity.MEDIUM.displayName),
+        IssueSeverity.LOW.displayName to DefaultMutableTreeNode(IssueSeverity.LOW.displayName),
+        IssueSeverity.INFO.displayName to DefaultMutableTreeNode(IssueSeverity.INFO.displayName)
+    )
     private val scanNodesLookup = mutableMapOf<VirtualFile, MutableList<DefaultMutableTreeNode>>()
+    private val selectedSeverityValues = IssueSeverity.entries.associate { it.displayName to true }.toMutableMap()
 
     private val documentListener = CodeWhispererCodeScanDocumentListener(project)
     private val editorMouseListener = CodeWhispererCodeScanEditorMouseMotionListener(project)
     private val fileListener = CodeWhispererCodeScanFileListener(project)
 
-    private val isProjectScanInProgress = AtomicBoolean(false)
-
-    private val defaultScope = projectCoroutineScope(project)
+    private val isOnDemandScanInProgress = AtomicBoolean(false)
 
     private lateinit var codeScanJob: Job
     private lateinit var debouncedCodeScanJob: Job
@@ -126,33 +154,154 @@ class CodeWhispererCodeScanManager(val project: Project) {
      * Returns true if the code scan is in progress.
      * This function will return true for a cancelled code scan job which is in cancellation state.
      */
-    fun isProjectScanInProgress(): Boolean = isProjectScanInProgress.get()
+    fun isOnDemandScanInProgress(): Boolean = isOnDemandScanInProgress.get()
 
     /**
      * Code scan job is active when the [Job] is started and is in active state.
      */
-    fun isCodeScanJobActive(): Boolean = this::codeScanJob.isInitialized && codeScanJob.isActive && isProjectScanInProgress()
+    fun isCodeScanJobActive(): Boolean = this::codeScanJob.isInitialized && codeScanJob.isActive && isOnDemandScanInProgress()
 
-    fun getRunActionButtonIcon(): Icon = if (isProjectScanInProgress()) AllIcons.Process.Step_1 else AllIcons.Actions.Execute
+    fun getRunActionButtonIcon(): Icon = if (isOnDemandScanInProgress()) AllIcons.Process.Step_1 else AllIcons.Actions.Execute
 
-    fun getActionButtonIconForExplorerNode(): Icon = if (isProjectScanInProgress()) AllIcons.Actions.Suspend else AllIcons.Actions.Execute
+    fun getActionButtonIconForExplorerNode(): Icon = if (isOnDemandScanInProgress()) AllIcons.Actions.Suspend else AllIcons.Actions.Execute
 
-    fun getActionButtonText(): String = if (!isProjectScanInProgress()) {
+    fun getActionButtonText(): String = if (!isOnDemandScanInProgress()) {
         message(
-            "codewhisperer.codescan.run_scan"
+            "codewhisperer.codescan.run_scan",
+            INACTIVE_TEXT_COLOR
         )
     } else {
         message("codewhisperer.codescan.stop_scan")
     }
 
+    private fun isIgnoredIssueTitle(title: String) = getIgnoredIssueTitles().contains(title)
+
+    fun isIgnoredIssue(title: String, document: Document, file: VirtualFile, startLine: Int) = isIgnoredIssueTitle(title) ||
+        detectSingleIssueIgnored(document, file, startLine)
+
+    private fun getIgnoredIssueTitles() = CodeWhispererSettings.getInstance().getIgnoredCodeReviewIssues().split(";").toMutableSet()
+
+    fun ignoreAllIssues(issue: CodeWhispererCodeScanIssue) {
+        val ignoredIssueTitles = getIgnoredIssueTitles()
+        ignoredIssueTitles.add(issue.title)
+        CodeWhispererSettings.getInstance().setIgnoredCodeReviewIssues(ignoredIssueTitles.joinToString(separator = ";"))
+        // update the in memory copy and UI
+        ondemandScanIssues = ondemandScanIssues.filter { it.title != issue.title }
+        autoScanIssues = autoScanIssues.filter { it.title != issue.title }
+        updateCodeScanIssuesTree()
+    }
+
+    private fun detectSingleIssueIgnored(document: Document, file: VirtualFile, startLine: Int): Boolean = runReadAction {
+        try {
+            if (startLine == 0) return@runReadAction false
+            val commenter = getLanguageCommenter(document, project)
+            val linePrefix: String? = commenter?.lineCommentPrefix ?: file.programmingLanguage().lineCommentPrefix()
+            val blockPrefix: String? = commenter?.blockCommentPrefix ?: file.programmingLanguage().blockCommentPrefix()
+            val blockSuffix: String? = commenter?.blockCommentSuffix ?: file.programmingLanguage().blockCommentSuffix()
+
+            for (i in (startLine - 1) downTo 0) {
+                val lineStart = document.getLineStartOffset(i)
+                val lineEnd = document.getLineEndOffset(i)
+                val targetRange = TextRange(lineStart, lineEnd)
+                val lineText = document.getText(targetRange)
+                if (lineText.isEmpty()) {
+                    continue
+                }
+                if (linePrefix != null &&
+                    lineText.trimIndent().startsWith(linePrefix) &&
+                    lineText.contains(amazonqIgnoreNextLine)
+                ) {
+                    return@runReadAction true
+                }
+                if (blockPrefix != null &&
+                    blockSuffix != null &&
+                    lineText.trimIndent().startsWith(blockPrefix) &&
+                    lineText.contains(amazonqIgnoreNextLine) &&
+                    lineText.trimEnd().endsWith(blockSuffix)
+                ) {
+                    return@runReadAction true
+                }
+                return@runReadAction false
+            }
+            return@runReadAction false
+        } catch (e: Exception) {
+            LOG.warn { "Failed to detect if scan issue is ignored: ${e.stackTraceToString()}" }
+            return@runReadAction false
+        }
+    }
+
+    fun ignoreSingleIssue(issue: CodeWhispererCodeScanIssue) {
+        val document = issue.document
+        var commentString: String? = null
+        var insertOffset: Int? = null
+        try {
+            runReadAction {
+                if (!issue.isVisible) return@runReadAction
+                val lineNumber = issue.startLine
+                val issueRange = TextRange(document.getLineStartOffset(lineNumber - 1), document.getLineEndOffset(lineNumber - 1))
+                val lineContent = document.getText(issueRange)
+                val indentation = lineContent.takeWhile { it.isWhitespace() }
+                insertOffset = document.getLineStartOffset(lineNumber - 1)
+                val commenter = getLanguageCommenter(document, project)
+                val linePrefix: String? = commenter?.lineCommentPrefix ?: issue.file.programmingLanguage().lineCommentPrefix()
+                val blockPrefix: String? = commenter?.blockCommentPrefix ?: issue.file.programmingLanguage().blockCommentPrefix()
+                val blockSuffix: String? = commenter?.blockCommentSuffix ?: issue.file.programmingLanguage().blockCommentSuffix()
+                if (linePrefix != null) {
+                    commentString = "$indentation$linePrefix $amazonqIgnoreNextLine\n"
+                } else if (blockPrefix != null && blockSuffix != null) {
+                    commentString = "$indentation$blockPrefix $amazonqIgnoreNextLine $blockSuffix\n"
+                }
+            }
+            val finalOffset = insertOffset ?: return
+            val finalCommentString = commentString ?: return
+            ApplicationManager.getApplication().invokeLater {
+                WriteCommandAction.runWriteCommandAction(project) {
+                    document.insertString(finalOffset, finalCommentString)
+                }
+            }
+        } catch (e: Exception) {
+            LOG.warn { "Failed to insert ignore comment ${e.stackTraceToString()}" }
+        }
+        ondemandScanIssues = ondemandScanIssues.filter { it.findingId != issue.findingId }
+        autoScanIssues = autoScanIssues.filter { it.findingId != issue.findingId }
+        removeIssueByFindingId(issue, issue.findingId)
+    }
+
+    private fun getLanguageCommenter(document: Document, project: Project): Commenter? {
+        // TODO: need to implement fall back for languages not supported by IDE
+        val language: Language = document
+            .let { PsiDocumentManager.getInstance(project).getPsiFile(it) }
+            ?.language ?: return null
+        return LanguageCommenters.INSTANCE.forLanguage(language)
+    }
+
+    fun isSeveritySelected(severity: String): Boolean = selectedSeverityValues[severity] ?: true
+    fun setSeveritySelected(severity: String, selected: Boolean) {
+        selectedSeverityValues[severity] = selected
+        updateCodeScanIssuesTree()
+    }
+
+    /**
+     * Returns true if there are any code scan issues.
+     */
+    fun hasCodeScanIssues(): Boolean = getCombinedScanIssues().isNotEmpty()
+
+    /**
+     * Clears all filters and updates the code scan issues tree.
+     */
+    fun clearFilters() {
+        selectedSeverityValues.keys.forEach { selectedSeverityValues[it] = true }
+        updateCodeScanIssuesTree()
+    }
+
     /**
      * Triggers a code scan and displays results in the new tab in problems view panel.
      */
-    fun runCodeScan(scope: CodeWhispererConstants.CodeAnalysisScope, isPluginStarting: Boolean = false) {
+    fun runCodeScan(scope: CodeWhispererConstants.CodeAnalysisScope, isPluginStarting: Boolean = false, initiatedByChat: Boolean = false) {
         if (!isQConnected(project)) return
 
         // Return if a scan is already in progress.
-        if (isProjectScanInProgress() && scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) return
+        if (isOnDemandScanInProgress()) return
 
         val connectionExpired = if (isPluginStarting) {
             isQExpired(project)
@@ -160,24 +309,30 @@ class CodeWhispererCodeScanManager(val project: Project) {
             promptReAuth(project)
         }
         if (connectionExpired) {
-            isProjectScanInProgress.set(false)
+            isOnDemandScanInProgress.set(false)
             return
         }
 
         //  If scope is project
         if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
-            // Prepare for a project code scan
-            beforeCodeScan()
             // launch code scan coroutine
-            codeScanJob = launchCodeScanCoroutine(CodeWhispererConstants.CodeAnalysisScope.PROJECT)
+            try {
+                codeScanJob = launchCodeScanCoroutine(CodeWhispererConstants.CodeAnalysisScope.PROJECT, initiatedByChat)
+            } catch (e: CancellationException) {
+                notifyChat(codeScanResponse = null, scope = scope)
+            }
         } else {
-            if (CodeWhispererExplorerActionManager.getInstance().isAutoEnabledForCodeScan() and !isUserBuilderId(project)) {
+            if (CodeWhispererExplorerActionManager.getInstance().isAutoEnabledForCodeScan() and !isUserBuilderId(project) || initiatedByChat) {
                 // cancel if a file scan is running.
-                if (!isProjectScanInProgress() && this::codeScanJob.isInitialized && codeScanJob.isActive) {
+                if (!isOnDemandScanInProgress() && this::codeScanJob.isInitialized && codeScanJob.isActive) {
                     codeScanJob.cancel()
                 }
                 //  Add File Scan
-                codeScanJob = launchCodeScanCoroutine(CodeWhispererConstants.CodeAnalysisScope.FILE)
+                try {
+                    codeScanJob = launchCodeScanCoroutine(CodeWhispererConstants.CodeAnalysisScope.FILE, initiatedByChat)
+                } catch (e: CancellationException) {
+                    notifyChat(codeScanResponse = null, scope = scope)
+                }
             }
         }
     }
@@ -200,25 +355,37 @@ class CodeWhispererCodeScanManager(val project: Project) {
         }
     }
 
-    fun stopCodeScan() {
+    fun stopCodeScan(scope: CodeWhispererConstants.CodeAnalysisScope) {
         // Return if code scan job is not active.
-        if (!codeScanJob.isActive) return
-        if (isProjectScanInProgress() && confirmCancelCodeScan()) {
-            LOG.info { "Security scan stopped by user..." }
+        if (!codeScanJob.isActive) {
+            notifyChat(codeScanResponse = null, scope = scope)
+            return
+        }
+        // TODO: need to check if we need to ask for user's confirmation again
+        if (isOnDemandScanInProgress()) {
+            LOG.info { "Code Review stopped by user..." }
             // Checking `codeScanJob.isActive` to ensure that the job is not already completed by the time user confirms.
             if (codeScanJob.isActive) {
                 codeScanResultsPanel.setStoppingCodeScan()
+                notifyChat(codeScanResponse = null, scope = scope)
                 codeScanJob.cancel(CancellationException("User requested cancellation"))
             }
         }
     }
 
-    private fun confirmCancelCodeScan(): Boolean = MessageDialogBuilder
-        .okCancel(message("codewhisperer.codescan.stop_scan"), message("codewhisperer.codescan.stop_scan_confirm_message"))
-        .yesText(message("codewhisperer.codescan.stop_scan_confirm_button"))
-        .ask(project)
+    private suspend fun isInValidFile(
+        selectedFile: VirtualFile?,
+        language: CodeWhispererProgrammingLanguage,
+        codeScanSessionConfig: CodeScanSessionConfig,
+    ): Boolean =
+        selectedFile == null ||
+            !language.isAutoFileScanSupported() ||
+            !selectedFile.isFile ||
+            selectedFile.fileSystem.protocol == "remoteDeploymentFS" ||
+            readAction { codeScanSessionConfig.fileIndex.isInLibrarySource(selectedFile) }
 
-    private fun launchCodeScanCoroutine(scope: CodeWhispererConstants.CodeAnalysisScope) = projectCoroutineScope(project).launch {
+    private fun launchCodeScanCoroutine(scope: CodeWhispererConstants.CodeAnalysisScope, initiatedByChat: Boolean) = projectCoroutineScope(project).launch {
+        if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT || initiatedByChat) beforeCodeScan()
         var codeScanStatus: Result = Result.Failed
         val startTime = Instant.now().toEpochMilli()
         var codeScanResponseContext = defaultCodeScanResponseContext()
@@ -232,18 +399,14 @@ class CodeWhispererCodeScanManager(val project: Project) {
                 } else {
                     FileEditorManager.getInstance(project).selectedEditor?.file
                 }
-            val codeScanSessionConfig = CodeScanSessionConfig.create(file, project, scope)
+            val codeScanSessionConfig = CodeScanSessionConfig.create(file, project, scope, initiatedByChat)
             val selectedFile = codeScanSessionConfig.getSelectedFile()
             language = codeScanSessionConfig.getProgrammingLanguage()
             if (scope == CodeWhispererConstants.CodeAnalysisScope.FILE &&
-                (
-                    selectedFile == null || !language.isAutoFileScanSupported() || !selectedFile.isFile ||
-                        runReadAction { (codeScanSessionConfig.fileIndex.isInLibrarySource(selectedFile)) } ||
-                        selectedFile.fileSystem.protocol == "remoteDeploymentFS"
-                    )
+                isInValidFile(selectedFile, language, codeScanSessionConfig) && !initiatedByChat
             ) {
                 skipTelemetry = true
-                LOG.debug { "Language is unknown or plaintext, skipping code scan." }
+                LOG.debug { "Language is unknown or plaintext, skipping code review." }
                 codeScanStatus = Result.Cancelled
                 return@launch
             } else {
@@ -257,41 +420,51 @@ class CodeWhispererCodeScanManager(val project: Project) {
                     codeScanResponseContext = codeScanResponse.responseContext
                     when (codeScanResponse) {
                         is CodeScanResponse.Success -> {
-                            val issues = codeScanResponse.issues
+                            if (initiatedByChat) {
+                                ondemandScanIssues = if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
+                                    codeScanResponse.issues
+                                } else {
+                                    ondemandScanIssues + codeScanResponse.issues
+                                }
+                            } else {
+                                autoScanIssues = codeScanResponse.issues
+                            }
                             coroutineContext.ensureActive()
                             renderResponseOnUIThread(
-                                issues,
+                                getCombinedScanIssues(),
                                 codeScanResponse.responseContext.payloadContext.scannedFiles,
                                 scope
                             )
                             codeScanStatus = Result.Succeeded
+                            if (initiatedByChat) {
+                                notifyChat(getChatMessageResponse(codeScanResponse, scope), scope = scope)
+                            }
                         }
 
                         is CodeScanResponse.Failure -> {
                             if (codeScanResponse.failureReason !is TimeoutCancellationException && codeScanResponse.failureReason is CancellationException) {
                                 codeScanStatus = Result.Cancelled
                             }
+                            if (initiatedByChat) {
+                                notifyChat(codeScanResponse, scope = scope)
+                            }
                             throw codeScanResponse.failureReason
                         }
                     }
-                    LOG.info { "Security scan completed for jobID: ${codeScanResponseContext.codeScanJobId}." }
+                    LOG.info { "Code review completed for jobID: ${codeScanResponseContext.codeScanJobId}." }
                 }
             }
         } catch (e: Error) {
-            if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
-                isProjectScanInProgress.set(false)
-            }
-            val errorMessage = handleError(coroutineContext, e, scope)
+            afterCodeScan(scope, initiatedByChat)
+            val errorMessage = handleError(coroutineContext, e)
             codeScanResponseContext = codeScanResponseContext.copy(reason = errorMessage)
         } catch (e: Exception) {
-            if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
-                isProjectScanInProgress.set(false)
-            }
+            afterCodeScan(scope, initiatedByChat)
             val errorMessage = handleException(coroutineContext, e, scope)
             codeScanResponseContext = codeScanResponseContext.copy(reason = errorMessage)
         } finally {
             // After code scan
-            afterCodeScan(scope)
+            afterCodeScan(scope, initiatedByChat)
             if (!skipTelemetry) {
                 launch {
                     val duration = (Instant.now().toEpochMilli() - startTime).toDouble()
@@ -305,13 +478,70 @@ class CodeWhispererCodeScanManager(val project: Project) {
                             scope
                         )
                     )
-                    sendCodeScanTelemetryToServiceAPI(project, language, codeScanResponseContext.codeScanJobId, scope)
+                    sendCodeScanTelemetryToServiceAPI(project, language, codeScanResponseContext, scope)
                 }
             }
         }
     }
 
-    fun handleError(coroutineContext: CoroutineContext, e: Error, scope: CodeWhispererConstants.CodeAnalysisScope): String {
+    private fun getChatMessageResponse(originalResponse: CodeScanResponse.Success, scope: CodeWhispererConstants.CodeAnalysisScope): CodeScanResponse {
+        if (originalResponse.issues.isEmpty()) return originalResponse
+        val chatIssues = if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
+            getCombinedScanIssues()
+        } else {
+            getCombinedScanIssues().filter { issue -> issue.file == originalResponse.issues.first().file }
+        }
+        val finalResponse = originalResponse.copy(issues = chatIssues)
+        return finalResponse
+    }
+
+    private fun refreshUi() {
+        val codeScanTreeModel = CodeWhispererCodeScanTreeModel(codeScanTreeNodeRoot)
+        val totalIssuesCount = codeScanTreeModel.getTotalIssuesCount()
+        if (totalIssuesCount > 0) {
+            codeScanIssuesContent.displayName =
+                message("codewhisperer.codescan.scan_display_with_issues", totalIssuesCount, INACTIVE_TEXT_COLOR)
+        } else {
+            codeScanIssuesContent.displayName = message("codewhisperer.codescan.scan_display")
+        }
+        codeScanResultsPanel.refreshUIWithUpdatedModel(codeScanTreeModel)
+    }
+
+    fun updateIssue(updatedIssue: CodeWhispererCodeScanIssue) {
+        autoScanIssues.find { it.findingId == updatedIssue.findingId }?.let { oldIssue ->
+            val updatedList = autoScanIssues.toMutableList()
+            val index = autoScanIssues.indexOf(oldIssue)
+            updatedList[index] = updatedIssue
+            autoScanIssues = updatedList
+            return
+        }
+        ondemandScanIssues.find { it.findingId == updatedIssue.findingId }?.let { oldIssue ->
+            val updatedList = ondemandScanIssues.toMutableList()
+            val index = ondemandScanIssues.indexOf(oldIssue)
+            updatedList[index] = updatedIssue
+            ondemandScanIssues = updatedList
+        }
+    }
+
+    fun removeIssue(issue: CodeWhispererCodeScanIssue) {
+        autoScanIssues = autoScanIssues.filter { it.findingId != issue.findingId }
+        ondemandScanIssues = ondemandScanIssues.filter { it.findingId != issue.findingId }
+    }
+
+    fun removeIssueByFindingId(issue: CodeWhispererCodeScanIssue, findingId: String) {
+        scanNodesLookup[issue.file]?.forEach { node ->
+            val issueNode = node.userObject as CodeWhispererCodeScanIssue
+            if (issueNode.findingId == findingId) {
+                issueNode.rangeHighlighter?.textAttributes = null
+                issueNode.rangeHighlighter?.dispose()
+                node.removeFromParent()
+                removeIssue(issue)
+            }
+        }
+        refreshUi()
+    }
+
+    fun handleError(coroutineContext: CoroutineContext, e: Error): String {
         val errorMessage = when (e) {
             is NoClassDefFoundError -> {
                 if (e.cause?.message?.contains("com.intellij.openapi.compiler.CompilerPaths") == true) {
@@ -326,9 +556,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
         if (!coroutineContext.isActive) {
             codeScanResultsPanel.setDefaultUI()
         } else {
-            if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
-                codeScanResultsPanel.showError(errorMessage)
-            }
+            codeScanResultsPanel.showError(errorMessage)
         }
 
         return errorMessage
@@ -345,9 +573,13 @@ class CodeWhispererCodeScanManager(val project: Project) {
     }
 
     private fun getCodeScanServerExceptionMessage(e: CodeWhispererCodeScanServerException): String? =
-        e.message?.takeIf { it.startsWith("UploadArtifactToS3Exception:") }
-            ?.let { message("codewhisperer.codescan.upload_to_s3_failed") }
-
+        when {
+            e.message?.startsWith("UploadArtifactToS3Exception:") == true ->
+                message("codewhisperer.codescan.upload_to_s3_failed")
+            e.message?.startsWith("You've reached") == true ->
+                message("codewhisperer.codescan.quota_exceeded")
+            else -> null
+        }
     fun handleException(coroutineContext: CoroutineContext, e: Exception, scope: CodeWhispererConstants.CodeAnalysisScope): String {
         val errorMessage = when (e) {
             is CodeWhispererException -> e.awsErrorDetails().errorMessage() ?: message("codewhisperer.codescan.run_scan_error")
@@ -365,9 +597,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
         if (!coroutineContext.isActive) {
             codeScanResultsPanel.setDefaultUI()
         } else {
-            if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
-                codeScanResultsPanel.showError(errorMessage)
-            }
+            codeScanResultsPanel.showError(errorMessage)
         }
 
         if (
@@ -379,7 +609,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
 
         if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
             LOG.error(e) {
-                "Failed to run security scan and display results. Caused by: $errorMessage, status code: $errorCode, " +
+                "Failed to run code review and display results. Caused by: $errorMessage, status code: $errorCode, " +
                     "exception: ${e::class.simpleName}, request ID: $requestId " +
                     "Jetbrains IDE: ${ApplicationInfo.getInstance().fullApplicationName}, " +
                     "IDE version: ${ApplicationInfo.getInstance().apiVersion}, "
@@ -394,7 +624,10 @@ class CodeWhispererCodeScanManager(val project: Project) {
                 message("codewhisperer.codescan.file_too_large") -> message("codewhisperer.codescan.file_too_large_telemetry")
                 else -> e.message
             }
-            is CodeWhispererCodeScanServerException -> e.message
+            is CodeWhispererCodeScanServerException -> when (e.message) {
+                message("testgen.error.maximum_generations_reach") -> message("codewhisperer.codescan.quota_exceeded")
+                else -> e.message
+            }
             is WaiterTimeoutException, is TimeoutCancellationException -> message("codewhisperer.codescan.scan_timed_out")
             is CancellationException -> message("codewhisperer.codescan.cancelled_by_user_exception")
             else -> e.message
@@ -406,19 +639,22 @@ class CodeWhispererCodeScanManager(val project: Project) {
     /**
      * The initial landing UI for the code scan results view panel.
      * This method adds code content to the problems view if not already added.
-     * When [setSelected] is true, code scan panel is set to be in focus.
      */
-    fun addCodeScanUI(setSelected: Boolean = false) = runInEdt {
-        reset()
+    fun buildCodeScanUI() = runInEdt {
         val problemsWindow = getProblemsWindow()
         if (!problemsWindow.contentManager.contents.contains(codeScanIssuesContent)) {
             problemsWindow.contentManager.addContent(codeScanIssuesContent)
+            codeScanIssuesContent.displayName = message("codewhisperer.codescan.scan_display")
         }
-        codeScanIssuesContent.displayName = message("codewhisperer.codescan.scan_display")
-        if (setSelected) {
-            problemsWindow.contentManager.setSelectedContent(codeScanIssuesContent)
-            problemsWindow.show()
-        }
+    }
+
+    /**
+     * This method shows the code content panel in problems view
+     */
+    fun showCodeScanUI() = runInEdt {
+        val problemsWindow = getProblemsWindow()
+        problemsWindow.contentManager.setSelectedContent(codeScanIssuesContent)
+        problemsWindow.show()
     }
 
     fun removeCodeScanUI() = runInEdt {
@@ -455,6 +691,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
                     getScanTree().model.valueForPathChanged(TreePath(node.path), newIssue)
                     node.userObject = newIssue
                 }
+                updateIssue(newIssue)
             }
         }
     }
@@ -464,9 +701,14 @@ class CodeWhispererCodeScanManager(val project: Project) {
         scanNodesLookup[file]?.forEach { node ->
             val issue = node.userObject as CodeWhispererCodeScanIssue
             if (document.getLineNumber(editedTextRange.startOffset) <= issue.startLine) {
-                issue.startLine = issue.startLine + lineOffset
-                issue.endLine = issue.endLine + lineOffset
-                issue.suggestedFixes = issue.suggestedFixes.map { fix -> offsetSuggestedFix(fix, lineOffset) }
+                val newIssue = issue.copy()
+                newIssue.startLine = issue.startLine + lineOffset
+                newIssue.endLine = issue.endLine + lineOffset
+                newIssue.suggestedFixes = issue.suggestedFixes.map { fix -> offsetSuggestedFix(fix, lineOffset) }.toMutableList()
+                synchronized(node) {
+                    node.userObject = newIssue
+                }
+                updateIssue(issue)
             }
         }
     }
@@ -492,8 +734,9 @@ class CodeWhispererCodeScanManager(val project: Project) {
         synchronized(codeScanTreeNodeRoot) {
             codeScanTreeNodeRoot.removeAllChildren()
         }
-        // Remove previous document listeners before starting a new scan.
-        fileNodeLookup.clear()
+        severityNodeLookup.onEach { (_, node) ->
+            node.removeAllChildren()
+        }
         // Erase all range highlighter before cleaning up.
         scanNodesLookup.apply {
             forEach { (_, nodes) ->
@@ -518,31 +761,80 @@ class CodeWhispererCodeScanManager(val project: Project) {
         }
     }
 
-    private fun beforeCodeScan() {
-        isProjectScanInProgress.set(true)
-        addCodeScanUI(setSelected = true)
+    private suspend fun beforeCodeScan() {
+        isOnDemandScanInProgress.set(true)
         // Show in progress indicator
+        buildCodeScanUI()
         codeScanResultsPanel.showInProgressIndicator()
-        (FileDocumentManagerImpl.getInstance() as FileDocumentManagerImpl).saveAllDocuments(false)
+        withContext(EDT) {
+            FileDocumentManager.getInstance().saveAllDocuments()
+        }
     }
 
-    private fun afterCodeScan(scope: CodeWhispererConstants.CodeAnalysisScope) {
-        if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
-            isProjectScanInProgress.set(false)
+    private fun getUniqueIssues(codeScanResponse: List<CodeWhispererCodeScanIssue>): List<CodeWhispererCodeScanIssue> {
+        val uniqueIssues = codeScanResponse.distinctBy { issue ->
+            Triple(issue.file.path, issue.title, issue.startLine)
+        }
+        val uniqueIssueList: MutableList<CodeWhispererCodeScanIssue> = mutableListOf()
+
+        uniqueIssues.forEach { issue ->
+            val isValid = runReadAction {
+                FileDocumentManager.getInstance().getDocument(issue.file)?.let { document ->
+                    val documentLines = document.getText().split("\n")
+                    val (startLine, endLine) = issue.run { startLine to endLine }
+                    checkIssueCodeSnippet(issue.codeSnippet, startLine, endLine, documentLines)
+                } ?: false
+            }
+            if (isValid) {
+                uniqueIssueList.add(issue)
+            }
+        }
+        return uniqueIssueList
+    }
+
+    private fun afterCodeScan(scope: CodeWhispererConstants.CodeAnalysisScope, initiatedByChat: Boolean) {
+        if (initiatedByChat || scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
+            isOnDemandScanInProgress.set(false)
+            showCodeScanUI()
         }
     }
 
     private fun sendCodeScanTelemetryToServiceAPI(
         project: Project,
         programmingLanguage: CodeWhispererProgrammingLanguage,
-        codeScanJobId: String?,
+        codeScanResponseContext: CodeScanResponseContext,
         scope: CodeWhispererConstants.CodeAnalysisScope,
     ) {
         runIfIdcConnectionOrTelemetryEnabled(project) {
             try {
-                val response = CodeWhispererClientAdaptor.getInstance(project)
-                    .sendCodeScanTelemetry(programmingLanguage, codeScanJobId, scope)
-                LOG.debug { "Successfully sent code scan telemetry. RequestId: ${response.responseMetadata().requestId()} for ${scope.value} scan" }
+                val client = CodeWhispererClientAdaptor.getInstance(project)
+                val response = client.sendCodeScanTelemetry(programmingLanguage, codeScanResponseContext.codeScanJobId, scope)
+                LOG.debug { "Successfully sent code review telemetry. RequestId: ${response.responseMetadata().requestId()} for ${scope.value} scan" }
+
+                if (codeScanResponseContext.reason == "Succeeded") {
+                    val codeScanSuccessResponse = client.sendCodeScanSucceededTelemetry(
+                        programmingLanguage,
+                        codeScanResponseContext.codeScanJobId,
+                        scope,
+                        codeScanResponseContext.codeScanTotalIssues
+                    )
+                    LOG.debug {
+                        "Successfully sent code review succeeded telemetry. RequestId: ${
+                            codeScanSuccessResponse.responseMetadata().requestId()
+                        } for ${scope.value} review"
+                    }
+                } else {
+                    val codeScanFailureResponse = client.sendCodeScanFailedTelemetry(
+                        programmingLanguage,
+                        codeScanResponseContext.codeScanJobId,
+                        scope
+                    )
+                    LOG.debug {
+                        "Successfully sent code review failed telemetry. RequestId: ${
+                            codeScanFailureResponse.responseMetadata().requestId()
+                        } for ${scope.value} review"
+                    }
+                }
             } catch (e: Exception) {
                 val requestId = if (e is CodeWhispererRuntimeException) e.requestId() else null
                 LOG.debug {
@@ -552,7 +844,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
         }
     }
 
-    private val codeScanTreeNodeRoot = DefaultMutableTreeNode("CodeWhisperer Code scan results")
+    private val codeScanTreeNodeRoot = DefaultMutableTreeNode("Amazon Q code review results")
 
     /**
      * Creates a CodeWhisperer code scan issues tree.
@@ -562,112 +854,68 @@ class CodeWhispererCodeScanManager(val project: Project) {
      *   [scanNodesLookup] for receiving the editor events and updating the corresponding scan nodes.
      */
     private fun createCodeScanIssuesTree(codeScanIssues: List<CodeWhispererCodeScanIssue>): DefaultMutableTreeNode {
-        LOG.debug { "Rendering response from the scan API" }
+        LOG.debug { "Rendering response from the code review API" }
 
         synchronized(codeScanTreeNodeRoot) {
             codeScanTreeNodeRoot.removeAllChildren()
         }
-        // clear file node lookup and scan node lookup
-        synchronized(fileNodeLookup) {
-            fileNodeLookup.clear()
-        }
         synchronized(scanNodesLookup) {
             scanNodesLookup.clear()
         }
-
-        codeScanIssues.forEach { issue ->
-            val fileNode = synchronized(fileNodeLookup) {
-                fileNodeLookup.getOrPut(issue.file) {
-                    val node = DefaultMutableTreeNode(issue.file)
-                    synchronized(codeScanTreeNodeRoot) {
-                        codeScanTreeNodeRoot.add(node)
-                    }
-                    node
-                }
+        synchronized(severityNodeLookup) {
+            severityNodeLookup.forEach { (_, node) ->
+                node.removeAllChildren()
             }
-
-            val scanNode = DefaultMutableTreeNode(issue)
-            fileNode.add(scanNode)
-            scanNodesLookup.getOrPut(issue.file) {
-                mutableListOf()
-            }.add(scanNode)
         }
-        return codeScanTreeNodeRoot
-    }
 
-    /**
-     * Updates a CodeWhisperer code scan issues tree for a file
-     * For a given file, looks up its file node:
-     *   1. Remove all its existing children scan nodes
-     *   2. add the new issues as new scan nodes
-     *   [scanNodesLookup] for receiving the editor events and updating the corresponding scan nodes.
-     */
-    fun updateFileIssues(file: VirtualFile, newIssues: List<CodeWhispererCodeScanIssue>): DefaultMutableTreeNode {
-        val fileNode = synchronized(fileNodeLookup) {
-            fileNodeLookup.getOrPut(file) {
-                val node = DefaultMutableTreeNode(file)
+        severityNodeLookup.forEach { (severity, node) ->
+            if (selectedSeverityValues[severity] == true) {
                 synchronized(codeScanTreeNodeRoot) {
                     codeScanTreeNodeRoot.add(node)
                 }
-                node
-            }
-        }
-        // Remove the underline for old issues
-        scanNodesLookup[file]?.forEach { node ->
-            val issue = node.userObject as CodeWhispererCodeScanIssue
-            issue.rangeHighlighter?.textAttributes = null
-            issue.rangeHighlighter?.dispose()
-        }
-        // Remove the old scan nodes from the file node.
-        synchronized(fileNode) {
-            fileNode.removeAllChildren()
-        }
-        // Remove the entry for the file from the scan nodes lookup.
-        synchronized(scanNodesLookup) {
-            if (scanNodesLookup.containsKey(file)) {
-                scanNodesLookup.remove(file)
             }
         }
 
-        // Add new issues to the file node.
-        newIssues.forEach { issue ->
-            val scanNode = DefaultMutableTreeNode(issue)
-            fileNode.add(scanNode)
-            scanNodesLookup.getOrPut(issue.file) {
-                mutableListOf()
-            }.add(scanNode)
-        }
-
-        if (fileNode.childCount == 0) {
-            fileNode.removeFromParent()
-            fileNodeLookup.remove(file)
+        codeScanIssues.forEach { issue ->
+            if (selectedSeverityValues[issue.severity] == true) {
+                val scanNode = DefaultMutableTreeNode(issue)
+                severityNodeLookup[issue.severity]?.add(scanNode)
+                scanNodesLookup.getOrPut(issue.file) {
+                    mutableListOf()
+                }.add(scanNode)
+            }
         }
 
         return codeScanTreeNodeRoot
     }
 
-    fun removeIssueByFindingId(file: VirtualFile, findingId: String) {
-        scanNodesLookup[file]?.forEach { node ->
-            val issue = node.userObject as CodeWhispererCodeScanIssue
-            if (issue.findingId == findingId) {
-                issue.rangeHighlighter?.textAttributes = null
-                issue.rangeHighlighter?.dispose()
-                node.removeFromParent()
+    private fun checkIssueCodeSnippet(codeSnippet: List<CodeLine>, startLine: Int, endLine: Int, documentLines: List<String>): Boolean = try {
+        codeSnippet
+            .asSequence()
+            .filter { it.number in startLine..endLine }
+            .all { codeBlock ->
+                val lineNumber = codeBlock.number - 1
+                val documentLine = documentLines.getOrNull(lineNumber) ?: return@all false
+
+                when {
+                    codeBlock.content.trim().replace(" ", "").all { it == '*' } ->
+                        documentLine.length == codeBlock.content.length
+
+                    else ->
+                        documentLine == codeBlock.content
+                }
             }
-        }
-        fileNodeLookup[file]?.let {
-            if (it.childCount == 0) {
-                it.removeFromParent()
-                fileNodeLookup.remove(file)
-            }
-        }
+    } catch (e: Exception) {
+        false
+    }
+
+    private fun updateCodeScanIssuesTree() {
+        val codeScanTreeNodeRoot = createCodeScanIssuesTree(getCombinedScanIssues())
         val codeScanTreeModel = CodeWhispererCodeScanTreeModel(codeScanTreeNodeRoot)
         val totalIssuesCount = codeScanTreeModel.getTotalIssuesCount()
         if (totalIssuesCount > 0) {
             codeScanIssuesContent.displayName =
                 message("codewhisperer.codescan.scan_display_with_issues", totalIssuesCount, INACTIVE_TEXT_COLOR)
-        } else {
-            codeScanIssuesContent.displayName = message("codewhisperer.codescan.scan_display")
         }
         codeScanResultsPanel.refreshUIWithUpdatedModel(codeScanTreeModel)
     }
@@ -678,15 +926,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
         scope: CodeWhispererConstants.CodeAnalysisScope,
     ) {
         withContext(getCoroutineUiContext()) {
-            var root: DefaultMutableTreeNode? = null
-            when (scope) {
-                CodeWhispererConstants.CodeAnalysisScope.FILE -> {
-                    val file = scannedFiles.first()
-                    root = updateFileIssues(file, issues)
-                } else -> {
-                    root = createCodeScanIssuesTree(issues)
-                }
-            }
+            val root = createCodeScanIssuesTree(issues)
             val codeScanTreeModel = CodeWhispererCodeScanTreeModel(root)
             val totalIssuesCount = codeScanTreeModel.getTotalIssuesCount()
             if (totalIssuesCount > 0) {
@@ -697,10 +937,30 @@ class CodeWhispererCodeScanManager(val project: Project) {
         }
     }
 
+    private fun notifyChat(codeScanResponse: CodeScanResponse?, scope: CodeWhispererConstants.CodeAnalysisScope) {
+        // We can't use CodeScanMessageListener directly since it causes circular dependency between plugin-amazonq and plugin-core
+        // Workaround: send an action performed event to notify Q of scan result
+        val dataContext = SimpleDataContext.builder()
+            .add(scanResultsKey, codeScanResponse)
+            .add(CommonDataKeys.PROJECT, project)
+            .add(scanScopeKey, scope)
+            .build()
+        val actionEvent = AnActionEvent.createFromDataContext("", null, dataContext)
+        ActionManager.getInstance().getAction("aws.amazonq.codeScanComplete").actionPerformed(actionEvent)
+    }
+
     @TestOnly
     suspend fun testRenderResponseOnUIThread(issues: List<CodeWhispererCodeScanIssue>, scannedFiles: List<VirtualFile>) {
         assert(ApplicationManager.getApplication().isUnitTestMode)
         renderResponseOnUIThread(issues, scannedFiles, CodeWhispererConstants.CodeAnalysisScope.PROJECT)
+    }
+
+    fun isInsideWorkTree(): Boolean {
+        val projectDir = project.guessProjectDir() ?: run {
+            LOG.error { "Failed to guess project directory" }
+            return false
+        }
+        return isInsideWorkTree(projectDir)
     }
 
     companion object {
@@ -735,6 +995,7 @@ data class CodeWhispererCodeScanIssue(
     val issueSeverity: HighlightDisplayLevel = HighlightDisplayLevel.WARNING,
     val isInvalid: Boolean = false,
     var rangeHighlighter: RangeHighlighterEx? = null,
+    var isVisible: Boolean = true,
 ) {
     override fun toString(): String = title
 

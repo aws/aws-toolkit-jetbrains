@@ -7,6 +7,9 @@ import com.intellij.diff.comparison.ComparisonManager
 import com.intellij.diff.comparison.ComparisonPolicy
 import com.intellij.diff.fragments.LineFragment
 import com.intellij.openapi.progress.EmptyProgressIndicator
+import io.ktor.utils.io.core.toByteArray
+import java.nio.charset.Charset
+import java.security.MessageDigest
 
 data class DiffMetrics(
     val insertedLines: Int,
@@ -37,7 +40,7 @@ fun getDiffMetrics(before: String, after: String): DiffMetrics {
     val fragments = comparisonManager.compareLines(
         before,
         after,
-        ComparisonPolicy.DEFAULT,
+        ComparisonPolicy.IGNORE_WHITESPACES,
         EmptyProgressIndicator()
     )
 
@@ -70,4 +73,12 @@ fun getDiffMetrics(before: String, after: String): DiffMetrics {
         insertedLines = accLineCount,
         insertedCharacters = accCharCount,
     )
+}
+
+fun getChangeIdentifier(filePath: String, before: String, after: String): String {
+    val hash = MessageDigest.getInstance("SHA-1")
+    hash.update(filePath.toByteArray(Charset.forName("UTF-8")))
+    hash.update(before.toByteArray(Charset.forName("UTF-8")))
+    hash.update(after.toByteArray(Charset.forName("UTF-8")))
+    return hash.digest().joinToString("") { "%02x".format(it) }
 }

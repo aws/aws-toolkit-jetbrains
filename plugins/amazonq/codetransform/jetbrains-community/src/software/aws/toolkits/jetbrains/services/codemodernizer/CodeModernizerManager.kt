@@ -84,7 +84,6 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformBuildSystem
 import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
-import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 import java.io.File
 import java.nio.file.Path
 import java.time.Instant
@@ -576,12 +575,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             resumeJob(session, lastJobId, currentJobResult)
         }
 
-    private fun displayDiffNotificationAction(jobId: JobId): NotificationAction = NotificationAction.createSimple(
-        message("codemodernizer.notification.info.modernize_complete.view_diff")
-    ) {
-        artifactHandler.displayDiffAction(jobId, CodeTransformVCSViewerSrcComponents.ToastNotification)
-    }
-
     private fun displaySummaryNotificationAction(jobId: JobId) =
         NotificationAction.createSimple(message("codemodernizer.notification.info.modernize_complete.view_summary")) {
             artifactHandler.showTransformationSummary(jobId)
@@ -636,9 +629,9 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
             is CodeModernizerJobCompletedResult.JobPartiallySucceeded -> {
                 notifyStickyInfo(
                     message("codemodernizer.notification.info.modernize_partial_complete.title"),
-                    message("codemodernizer.notification.info.modernize_partial_complete.content", result.targetJavaVersion.description),
+                    message("codemodernizer.notification.info.modernize_partial_complete.content"),
                     project,
-                    listOf(displayDiffNotificationAction(result.jobId), displaySummaryNotificationAction(result.jobId), displayFeedbackNotificationAction()),
+                    listOf(displaySummaryNotificationAction(result.jobId), displayFeedbackNotificationAction()),
                 )
                 jobId = result.jobId
             }
@@ -648,7 +641,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                     message("codemodernizer.notification.info.modernize_complete.title"),
                     message("codemodernizer.notification.info.modernize_complete.content"),
                     project,
-                    listOf(displayDiffNotificationAction(result.jobId), displaySummaryNotificationAction(result.jobId)),
+                    listOf(displaySummaryNotificationAction(result.jobId)),
                 )
                 jobId = result.jobId
             }
@@ -774,12 +767,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     fun showTransformationPlan() {
         codeTransformationSession?.tryOpenTransformationPlanEditor()
-    }
-
-    fun showDiff() {
-        val job = codeTransformationSession?.getActiveJobId() ?: return
-        // Use "TreeViewHeader" for Hub
-        artifactHandler.displayDiffAction(job, CodeTransformVCSViewerSrcComponents.TreeViewHeader)
     }
 
     fun handleCredentialsChanged() {

@@ -63,6 +63,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.SSLHandshakeException
 
 const val MAX_ZIP_SIZE = 2000000000 // 2GB
+const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
+const val SELECTIVE_TRANSFORMATION_V1 = "SELECTIVE_TRANSFORMATION_V1"
 
 // constants for handling SDKClientException
 const val CONNECTION_REFUSED_ERROR: String = "Connection refused"
@@ -491,10 +493,7 @@ class CodeModernizerSession(
                     message("codemodernizer.notification.warn.unknown_status_response")
                 )
 
-                result.state == TransformationStatus.PARTIALLY_COMPLETED -> CodeModernizerJobCompletedResult.JobPartiallySucceeded(
-                    jobId,
-                    sessionContext.targetJavaVersion
-                )
+                result.state == TransformationStatus.PARTIALLY_COMPLETED -> CodeModernizerJobCompletedResult.JobPartiallySucceeded(jobId)
 
                 result.state == TransformationStatus.FAILED -> {
                     if (!passedStart) {

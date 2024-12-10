@@ -34,6 +34,12 @@ abstract class CodeWhispererProgrammingLanguage {
 
     open fun toCodeWhispererRuntimeLanguage(): CodeWhispererProgrammingLanguage = this
 
+    open fun lineCommentPrefix(): String? = "//"
+
+    open fun blockCommentPrefix(): String? = "/*"
+
+    open fun blockCommentSuffix(): String? = "*/"
+
     final override fun equals(other: Any?): Boolean {
         if (other !is CodeWhispererProgrammingLanguage) return false
         return this.languageId == other.languageId

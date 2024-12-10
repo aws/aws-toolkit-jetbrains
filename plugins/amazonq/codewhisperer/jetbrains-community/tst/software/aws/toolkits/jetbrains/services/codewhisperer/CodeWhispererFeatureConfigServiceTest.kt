@@ -14,6 +14,7 @@ import org.junit.Rule
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
@@ -80,7 +81,7 @@ class CodeWhispererFeatureConfigServiceTest {
                 listOf(
                     FeatureEvaluation.builder()
                         .feature(CodeWhispererFeatureConfigService.CUSTOMIZATION_ARN_OVERRIDE_NAME)
-                        .variation("customizationARN")
+                        .variation("customization-name")
                         .value(FeatureValue.fromStringValue("test arn"))
                         .build()
                 )
@@ -122,9 +123,10 @@ class CodeWhispererFeatureConfigServiceTest {
         }
 
         if (!isIdc || !isInListAvailableCustomizations) {
-            assertThat(CodeWhispererFeatureConfigService.getInstance().getCustomizationArnOverride()).isEqualTo("")
+            assertThat(CodeWhispererFeatureConfigService.getInstance().getCustomizationFeature()).isNull()
         } else {
-            assertThat(CodeWhispererFeatureConfigService.getInstance().getCustomizationArnOverride()).isEqualTo("test arn")
+            assertThat(CodeWhispererFeatureConfigService.getInstance().getCustomizationFeature()?.value?.stringValue()).isEqualTo("test arn")
+            assertThat(CodeWhispererFeatureConfigService.getInstance().getCustomizationFeature()?.variation).isEqualTo("customization-name")
         }
     }
 

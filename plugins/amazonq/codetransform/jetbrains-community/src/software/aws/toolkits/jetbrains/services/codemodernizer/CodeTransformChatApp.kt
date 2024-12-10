@@ -15,6 +15,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQApp
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
+import software.aws.toolkits.jetbrains.services.amazonqCodeScan.auth.isCodeScanAvailable
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.auth.isCodeTestAvailable
+import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformActionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
@@ -39,6 +42,7 @@ private enum class CodeTransformMessageTypes(val type: String) {
     CodeTransformStop("codetransform-stop"),
     CodeTransformCancel("codetransform-cancel"),
     CodeTransformConfirmSkipTests("codetransform-confirm-skip-tests"),
+    CodeTransformConfirmOneOrMultipleDiffs("codetransform-confirm-one-or-multiple-diffs"),
     CodeTransformNew("codetransform-new"),
     CodeTransformOpenTransformHub("codetransform-open-transform-hub"),
     CodeTransformOpenMvnBuild("codetransform-open-mvn-build"),
@@ -72,6 +76,7 @@ class CodeTransformChatApp : AmazonQApp {
             CodeTransformMessageTypes.CodeTransformCancel.type to IncomingCodeTransformMessage.CodeTransformCancel::class,
             CodeTransformMessageTypes.ChatPrompt.type to IncomingCodeTransformMessage.ChatPrompt::class,
             CodeTransformMessageTypes.CodeTransformConfirmSkipTests.type to IncomingCodeTransformMessage.CodeTransformConfirmSkipTests::class,
+            CodeTransformMessageTypes.CodeTransformConfirmOneOrMultipleDiffs.type to IncomingCodeTransformMessage.CodeTransformConfirmOneOrMultipleDiffs::class,
             CodeTransformMessageTypes.CodeTransformNew.type to IncomingCodeTransformMessage.CodeTransformNew::class,
             CodeTransformMessageTypes.CodeTransformOpenTransformHub.type to IncomingCodeTransformMessage.CodeTransformOpenTransformHub::class,
             CodeTransformMessageTypes.CodeTransformOpenMvnBuild.type to IncomingCodeTransformMessage.CodeTransformOpenMvnBuild::class,
@@ -104,7 +109,10 @@ class CodeTransformChatApp : AmazonQApp {
                         AuthenticationUpdateMessage(
                             featureDevEnabled = isFeatureDevAvailable(context.project),
                             codeTransformEnabled = isCodeTransformAvailable(context.project),
-                            authenticatingTabIDs = chatSessionStorage.getAuthenticatingSessions().map { it.tabId }
+                            codeScanEnabled = isCodeScanAvailable(context.project),
+                            codeTestEnabled = isCodeTestAvailable(context.project),
+                            docEnabled = isDocAvailable(context.project),
+                            authenticatingTabIDs = chatSessionStorage.getAuthenticatingSessions().map { it.tabId },
                         )
                     )
 
@@ -162,10 +170,12 @@ class CodeTransformChatApp : AmazonQApp {
             is IncomingCodeTransformMessage.CodeTransformSelectSQLMetadata -> inboundAppMessagesHandler.processCodeTransformSelectSQLMetadataAction(message)
             is IncomingCodeTransformMessage.CodeTransformSelectSQLModuleSchema ->
                 inboundAppMessagesHandler.processCodeTransformSelectSQLModuleSchemaAction(message)
+
             is IncomingCodeTransformMessage.CodeTransformCancel -> inboundAppMessagesHandler.processCodeTransformCancelAction(message)
             is IncomingCodeTransformMessage.CodeTransformStop -> inboundAppMessagesHandler.processCodeTransformStopAction(message.tabId)
             is IncomingCodeTransformMessage.ChatPrompt -> inboundAppMessagesHandler.processChatPromptMessage(message)
             is IncomingCodeTransformMessage.CodeTransformConfirmSkipTests -> inboundAppMessagesHandler.processCodeTransformConfirmSkipTests(message)
+            is IncomingCodeTransformMessage.CodeTransformConfirmOneOrMultipleDiffs -> inboundAppMessagesHandler.processCodeTransformOneOrMultipleDiffs(message)
             is IncomingCodeTransformMessage.CodeTransformNew -> inboundAppMessagesHandler.processCodeTransformNewAction(message)
             is IncomingCodeTransformMessage.CodeTransformOpenTransformHub -> inboundAppMessagesHandler.processCodeTransformOpenTransformHub(message)
             is IncomingCodeTransformMessage.CodeTransformOpenMvnBuild -> inboundAppMessagesHandler.processCodeTransformOpenMvnBuild(message)

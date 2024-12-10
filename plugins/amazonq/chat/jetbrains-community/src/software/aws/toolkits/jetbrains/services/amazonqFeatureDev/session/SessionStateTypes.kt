@@ -20,8 +20,8 @@ data class Interaction(
     val interactionSucceeded: Boolean,
 )
 
-data class SessionStateInteraction(
-    val nextState: SessionState? = null,
+data class SessionStateInteraction<T : SessionState>(
+    val nextState: T? = null,
     val interaction: Interaction,
 )
 
@@ -76,4 +76,9 @@ data class CodeGenerationStreamResult(
 @Suppress("ConstructorParameterNaming") // Unfortunately, this is exactly how the string json is received and is needed for parsing.
 data class ExportTaskAssistResultArchiveStreamResult(
     var code_generation_result: CodeGenerationStreamResult,
+)
+
+data class DiffMetricsProcessed(
+    var accepted: HashSet<String>,
+    var generated: HashSet<String>,
 )

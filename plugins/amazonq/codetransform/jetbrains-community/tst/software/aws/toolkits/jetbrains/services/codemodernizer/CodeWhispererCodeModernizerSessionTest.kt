@@ -145,7 +145,14 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         assertFalse(roots.isEmpty() || roots.size > 1)
         assert(rootManager.dependencies.isEmpty())
         val root = roots[0]
-        val context = CodeModernizerSessionContext(project, root.children[0], JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11, MAVEN_BUILD_SKIP_UNIT_TESTS)
+        val context = CodeModernizerSessionContext(
+            project,
+            root.children[0],
+            JavaSdkVersion.JDK_1_8,
+            JavaSdkVersion.JDK_11,
+            listOf(EXPLAINABILITY_V1, SELECTIVE_TRANSFORMATION_V1),
+            MAVEN_BUILD_SKIP_UNIT_TESTS
+        )
         val mockFile = mock(File::class.java)
         val mockStringBuilder = mock(StringBuilder::class.java)
         val file = runInEdtAndGet {
@@ -525,7 +532,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
 
         doNothing().whenever(testSessionStateSpy).updateJobHistory(any(), any(), any())
         val result = testSessionSpy.pollUntilJobCompletion(CodeTransformType.LANGUAGE_UPGRADE, jobId) { _, _ -> }
-        assertEquals(CodeModernizerJobCompletedResult.JobPartiallySucceeded(jobId, testSessionContextSpy.targetJavaVersion), result)
+        assertEquals(CodeModernizerJobCompletedResult.JobPartiallySucceeded(jobId), result)
         verify(clientAdaptorSpy, times(4)).getCodeModernizationJob(any())
         verify(clientAdaptorSpy, atLeastOnce()).getCodeModernizationPlan(any())
     }

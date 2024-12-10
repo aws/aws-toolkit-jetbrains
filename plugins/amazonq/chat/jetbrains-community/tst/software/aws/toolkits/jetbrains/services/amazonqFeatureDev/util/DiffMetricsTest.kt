@@ -117,10 +117,19 @@ class DiffMetricsTest : LightPlatformTestCase() {
 
     fun `test leading and trailing whitespace are not counted as characters`() {
         val before = "line1\nline2"
-        val after = "line1\n    line2"
+        val after = "line1\n    after "
 
         val metrics = getDiffMetrics(before, after)
         assertEquals(1, metrics.insertedLines)
         assertEquals(5, metrics.insertedCharacters)
+    }
+
+    fun `test ignore whitespace change when performing diff`() {
+        val before = "line1\nline2"
+        val after = "line1\n    line2"
+
+        val metrics = getDiffMetrics(before, after)
+        assertEquals(0, metrics.insertedLines)
+        assertEquals(0, metrics.insertedCharacters)
     }
 }

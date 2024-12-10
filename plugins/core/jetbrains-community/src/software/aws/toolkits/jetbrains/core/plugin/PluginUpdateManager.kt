@@ -200,7 +200,7 @@ class PluginUpdateManager : Disposable {
         // TODO: Optimize this to only search the result for AWS plugins
         fun getUpdateInfo(): Collection<PluginDownloader> = UpdateChecker.getPluginUpdates() ?: emptyList()
 
-        internal fun updatePlugin(pluginDescriptor: IdeaPluginDescriptor, progressIndicator: ProgressIndicator): Boolean {
+        fun updatePlugin(pluginDescriptor: IdeaPluginDescriptor, progressIndicator: ProgressIndicator): Boolean {
             val pluginName = pluginDescriptor.name
 
             // wasUpdatedWithRestart means that, it was an update and it needs to restart to apply

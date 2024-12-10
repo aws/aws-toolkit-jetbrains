@@ -88,6 +88,16 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
         }
     }
 
+    private fun updateJobId() {
+        try {
+            val jobId = CodeModernizerSessionState.getInstance(project).currentJobId
+            banner.updateJobId(jobId)
+        } catch (e: AlreadyDisposedException) {
+            LOG.warn { "Disposed when about to update the jobId" }
+            return
+        }
+    }
+
     fun setJobStartingUI() = setUI {
         add(BorderLayout.CENTER, fullSizeLoadingPanel)
         banner.clearActions()
@@ -123,6 +133,7 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
     fun setJobRunningUI() = setUI {
         add(BorderLayout.CENTER, buildProgressSplitterPanelManager)
         banner.updateContent(message("codemodernizer.toolwindow.banner.job_is_running"), AllIcons.General.BalloonInformation)
+        updateJobId()
         buildProgressSplitterPanelManager.apply {
             reset()
             statusTreePanel.setDefaultUI()
@@ -208,7 +219,6 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
     private fun setJobCompletedSuccessfullyUI() {
         add(BorderLayout.CENTER, buildProgressSplitterPanelManager)
         buildProgressSplitterPanelManager.apply {
-            addViewDiffToBanner()
             addViewSummaryToBanner()
             banner.updateContent(message("codemodernizer.toolwindow.banner.run_scan_complete"), AllIcons.Actions.Commit)
             setSplitPanelStopView()
@@ -269,8 +279,6 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
     }
 
     fun addPlanToBanner() = banner.updateActions(banner.showPlanAction)
-
-    fun addViewDiffToBanner() = banner.updateActions(banner.showDiffAction)
 
     fun addViewSummaryToBanner() = banner.updateActions(banner.showSummaryAction)
 

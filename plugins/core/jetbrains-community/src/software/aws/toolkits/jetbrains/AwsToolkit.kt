@@ -28,6 +28,7 @@ object AwsToolkit {
 
     const val GITHUB_URL = "https://github.com/aws/aws-toolkit-jetbrains"
     const val AWS_DOCS_URL = "https://docs.aws.amazon.com/console/toolkit-for-jetbrains"
+    const val GITHUB_CHANGELOG = "https://github.com/aws/aws-toolkit-jetbrains/blob/main/CHANGELOG.md"
 }
 
 data class PluginInfo(val id: String, val name: String) {
