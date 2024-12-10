@@ -241,9 +241,9 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                 ),
             )
 
-            doReturn(Unit).`when`(spySession).insertChanges(any(), any(), any())
-            doReturn(Unit).`when`(spySession).insertNewFiles(any())
-            doReturn(Unit).`when`(spySession).applyDeleteFiles(any())
+            doReturn(Unit).whenever(spySession).insertChanges(any(), any(), any())
+            doReturn(Unit).whenever(spySession).insertNewFiles(any())
+            doReturn(Unit).whenever(spySession).applyDeleteFiles(any())
 
             spySession.preloader(userMessage, messenger)
             controller.processFollowupClickedMessage(message)
