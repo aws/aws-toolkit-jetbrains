@@ -21,7 +21,6 @@ import software.aws.toolkits.jetbrains.utils.notifyStickyWithData
 import software.aws.toolkits.telemetry.Component
 import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.ToolkitTelemetry
-import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicBoolean
 
 object NotificationMapperUtil {

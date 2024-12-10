@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.core.utils
 
-import com.intellij.util.io.HttpRequests
 import java.io.FileInputStream
 import java.io.InputStream
 import java.nio.file.Files
@@ -126,13 +125,9 @@ class DefaultRemoteResourceResolver(
 
     private fun getEndpointETag(endpoint: String): String =
         try {
-            HttpRequests.head(endpoint)
-                .userAgent("AWS Toolkit for JetBrains")
-                .connect { request ->
-                    request.connection.headerFields["ETag"]?.firstOrNull().orEmpty()
-                }
+            urlFetcher.getETag(endpoint)
         } catch (e: Exception) {
-            LOG.warn { "Failed to fetch notification ETag: ${e.message}" }
+            LOG.warn(e) { "Failed to fetch ETag: $e.message" }
             throw e
         }
 
@@ -157,6 +152,7 @@ class DefaultRemoteResourceResolver(
 
 interface UrlFetcher {
     fun fetch(url: String, file: Path)
+    fun getETag(url: String): String
 }
 
 /**
