@@ -193,7 +193,7 @@ class Session(val tabID: String, val project: Project) {
         }
     }
 
-// Suppressing because insertNewFiles needs to be a suspend function in order to be tested
+// Suppressing because applyDeleteFiles needs to be a suspend function in order to be tested
     @Suppress("RedundantSuspendModifier")
     suspend fun applyDeleteFiles(
         deletedFiles: List<DeletedFileInfo>,
