@@ -9,15 +9,27 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
+import com.intellij.util.xmlb.Converter
+import com.intellij.util.xmlb.annotations.Attribute
+import com.intellij.util.xmlb.annotations.Property
 import java.time.Duration
 import java.time.Instant
 
+class InstantConverter : Converter<Instant>() {
+    override fun toString(value: Instant): String = value.toEpochMilli().toString()
+
+    override fun fromString(value: String): Instant = Instant.ofEpochMilli(value.toLong())
+}
+
+
 data class DismissedNotification(
-    val id: String,
+    val id: String = "",
+    @Attribute(converter = InstantConverter::class)
     val dismissedAt: Instant = Instant.now()
 )
 
 data class NotificationDismissalConfiguration(
+    @Property
     var dismissedNotifications: MutableSet<DismissedNotification> = mutableSetOf()
 )
 
@@ -40,7 +52,11 @@ class NotificationDismissalState : PersistentStateComponent<NotificationDismissa
     }
 
     fun dismissNotification(notificationId: String) {
-        state.dismissedNotifications.add(DismissedNotification(notificationId))
+        state.dismissedNotifications.add(
+            DismissedNotification(
+                id = notificationId
+            )
+        )
     }
 
     private fun cleanExpiredNotifications() {
