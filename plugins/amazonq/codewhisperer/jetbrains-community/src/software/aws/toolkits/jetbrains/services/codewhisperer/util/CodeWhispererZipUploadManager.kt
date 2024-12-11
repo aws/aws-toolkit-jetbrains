@@ -25,7 +25,9 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanSession.Companion.SERVER_SIDE_ENCRYPTION
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanSession.Companion.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanSession.Companion.SERVER_SIDE_ENCRYPTION_CONTEXT
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.codeScanServerException
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.invalidSourceZipError
+import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.codeTestServerException
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.resources.message
 import java.io.File
@@ -33,6 +35,7 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.util.Base64
+import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.invalidSourceZipError as testGenerationInvalidSourceZipError
 
 @Service
 class CodeWhispererZipUploadManager(private val project: Project) {
@@ -42,16 +45,20 @@ class CodeWhispererZipUploadManager(private val project: Project) {
         artifactType: String,
         taskType: CodeWhispererConstants.UploadTaskType,
         taskName: String,
+        featureUseCase: CodeWhispererConstants.FeatureName,
     ): CreateUploadUrlResponse {
         //  Throw error if zipFile is invalid.
         if (!zipFile.exists()) {
-            invalidSourceZipError()
+            when (featureUseCase) {
+                CodeWhispererConstants.FeatureName.CODE_REVIEW -> invalidSourceZipError()
+                CodeWhispererConstants.FeatureName.TEST_GENERATION -> testGenerationInvalidSourceZipError()
+                else -> throw IllegalArgumentException("Unsupported feature case: $featureUseCase") // Adding else for safety check
+            }
         }
         val fileMd5: String = Base64.getEncoder().encodeToString(DigestUtils.md5(FileInputStream(zipFile)))
-        val createUploadUrlResponse = createUploadUrl(fileMd5, artifactType, taskType, taskName)
+        val createUploadUrlResponse = createUploadUrl(fileMd5, artifactType, taskType, taskName, featureUseCase)
         val url = createUploadUrlResponse.uploadUrl()
-
-        LOG.debug { "Uploading $artifactType using the presigned URL." }
+        LOG.debug { "$featureUseCase: Uploading $artifactType using the presigned URL." }
 
         uploadArtifactToS3(
             url,
@@ -59,7 +66,8 @@ class CodeWhispererZipUploadManager(private val project: Project) {
             zipFile,
             fileMd5,
             createUploadUrlResponse.kmsKeyArn(),
-            createUploadUrlResponse.requestHeaders()
+            createUploadUrlResponse.requestHeaders(),
+            featureUseCase
         )
         return createUploadUrlResponse
     }
@@ -72,6 +80,7 @@ class CodeWhispererZipUploadManager(private val project: Project) {
         md5: String,
         kmsArn: String?,
         requestHeaders: Map<String, String>?,
+        featureUseCase: CodeWhispererConstants.FeatureName,
     ) {
         try {
             val uploadIdJson = """{"uploadId":"$uploadId"}"""
@@ -95,9 +104,18 @@ class CodeWhispererZipUploadManager(private val project: Project) {
                 IoUtils.copy(fileToUpload.inputStream(), connection.outputStream)
             }
         } catch (e: Exception) {
-            LOG.debug { "Artifact failed to upload in the S3 bucket: ${e.message}" }
-            val errorMessage = getTelemetryErrorMessage(e)
-            throw RuntimeException(errorMessage)
+            LOG.debug { "$featureUseCase: Artifact failed to upload in the S3 bucket: ${e.message}" }
+            val errorMessage = getTelemetryErrorMessage(e, featureUseCase)
+            when (featureUseCase) {
+                CodeWhispererConstants.FeatureName.CODE_REVIEW -> throw codeScanServerException("CreateUploadUrlException: $errorMessage")
+                CodeWhispererConstants.FeatureName.TEST_GENERATION -> throw codeTestServerException(
+                    "UploadTestArtifactToS3Error: $errorMessage",
+                    "403",
+                    "UploadTestArtifactToS3Error",
+                    message("testgen.error.generic_technical_error_message")
+                )
+                else -> throw RuntimeException(errorMessage) // Adding else for safety check
+            }
         }
     }
 
@@ -106,6 +124,7 @@ class CodeWhispererZipUploadManager(private val project: Project) {
         artifactType: String,
         uploadTaskType: CodeWhispererConstants.UploadTaskType,
         taskName: String,
+        featureUseCase: CodeWhispererConstants.FeatureName,
     ): CreateUploadUrlResponse = try {
         CodeWhispererClientAdaptor.getInstance(project).createUploadUrl(
             CreateUploadUrlRequest.builder()
@@ -113,6 +132,7 @@ class CodeWhispererZipUploadManager(private val project: Project) {
                 .artifactType(artifactType)
                 .uploadIntent(getUploadIntent(uploadTaskType))
                 .uploadContext(
+                    // For UTG we don't need uploadContext but sending else case as UploadContext
                     if (uploadTaskType == CodeWhispererConstants.UploadTaskType.CODE_FIX) {
                         UploadContext.fromCodeFixUploadContext(CodeFixUploadContext.builder().codeFixName(taskName).build())
                     } else {
@@ -122,9 +142,18 @@ class CodeWhispererZipUploadManager(private val project: Project) {
                 .build()
         )
     } catch (e: Exception) {
-        LOG.debug { "Create Upload URL failed: ${e.message}" }
-        val errorMessage = getTelemetryErrorMessage(e)
-        throw RuntimeException(errorMessage)
+        LOG.debug { "$featureUseCase: Create Upload URL failed: ${e.message}" }
+        val errorMessage = getTelemetryErrorMessage(e, featureUseCase)
+        when (featureUseCase) {
+            CodeWhispererConstants.FeatureName.CODE_REVIEW -> throw codeScanServerException("CreateUploadUrlException: $errorMessage")
+            CodeWhispererConstants.FeatureName.TEST_GENERATION -> throw codeTestServerException(
+                "CreateUploadUrlError: $errorMessage",
+                "500",
+                "CreateUploadUrlError",
+                message("testgen.error.generic_technical_error_message")
+            )
+            else -> throw RuntimeException(errorMessage) // Adding else for safety check
+        }
     }
 
     private fun getUploadIntent(uploadTaskType: CodeWhispererConstants.UploadTaskType): UploadIntent = when (uploadTaskType) {
@@ -140,17 +169,23 @@ class CodeWhispererZipUploadManager(private val project: Project) {
     }
 }
 
-fun getTelemetryErrorMessage(e: Exception): String = when {
+fun getTelemetryErrorMessage(e: Exception, featureUseCase: CodeWhispererConstants.FeatureName): String = when {
     e.message?.contains("Resource not found.") == true -> "Resource not found."
     e.message?.contains("Maximum com.amazon.aws.codewhisperer.StartCodeAnalysis reached for this month.") == true -> message(
         "testgen.error.maximum_generations_reach"
     )
+    e.message?.contains("Maximum com.amazon.aws.codewhisperer.runtime.StartTestGeneration reached for this month.") == true
+    -> "Maximum com.amazon.aws.codewhisperer.runtime.StartTestGeneration reached for this month."
     e.message?.contains("Service returned HTTP status code 407") == true -> "Service returned HTTP status code 407"
     e.message?.contains("Improperly formed request") == true -> "Improperly formed request"
     e.message?.contains("Service returned HTTP status code 403") == true -> "Service returned HTTP status code 403"
+    e.message?.contains("Service returned HTTP status code 503") == true -> "Service returned HTTP status code 503"
     e.message?.contains("invalid_grant: Invalid token provided") == true -> "invalid_grant: Invalid token provided"
     e.message?.contains("Connect timed out") == true -> "Unable to execute HTTP request: Connect timed out" // Error: Connect to host failed
     e.message?.contains("Encountered an unexpected error when processing the request, please try again.") == true ->
         "Encountered an unexpected error when processing the request, please try again."
-    else -> e.message ?: message("codewhisperer.codescan.run_scan_error_telemetry")
+    else -> e.message ?: when (featureUseCase) {
+        CodeWhispererConstants.FeatureName.CODE_REVIEW -> message("codewhisperer.codescan.run_scan_error_telemetry")
+        else -> message("testgen.message.failed")
+    }
 }

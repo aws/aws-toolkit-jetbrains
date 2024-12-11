@@ -291,7 +291,8 @@ class CodeTestChatController(
                     credentialStartUrl = getStartUrl(project),
                     result = MetricResult.Succeeded,
                     perfClientLatency = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration),
-                    requestId = id
+                    requestId = id,
+                    httpStatusCode = "200"
                 )
             }
             session.isGeneratingTests = false
