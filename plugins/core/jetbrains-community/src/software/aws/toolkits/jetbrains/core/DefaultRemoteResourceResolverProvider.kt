@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.core
 
 import com.intellij.openapi.application.PathManager
+import com.intellij.util.io.HttpRequests
 import com.intellij.util.io.createDirectories
 import software.aws.toolkits.core.utils.DefaultRemoteResourceResolver
 import software.aws.toolkits.core.utils.UrlFetcher
@@ -38,6 +39,13 @@ class DefaultRemoteResourceResolverProvider : RemoteResourceResolverProvider {
             override fun fetch(url: String, file: Path) {
                 saveFileFromUrl(url, file)
             }
+
+            override fun getETag(url: String): String =
+                HttpRequests.head(url)
+                    .userAgent("AWS Toolkit for JetBrains")
+                    .connect { request ->
+                        request.connection.headerFields["ETag"]?.firstOrNull().orEmpty()
+                    }
         }
     }
 }
