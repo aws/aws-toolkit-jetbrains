@@ -108,6 +108,18 @@ class Session(val tabID: String, val project: Project) {
         this._codeResultMessageId = messageId
     }
 
+    suspend fun updateFilesPaths(
+        filePaths: List<NewFileZipInfo>,
+        deletedFiles: List<DeletedFileInfo>,
+        messenger: MessagePublisher,
+        disableFileActions: Boolean = false,
+    ) {
+        val codeResultMessageId = this._codeResultMessageId
+        if (codeResultMessageId != null) {
+            messenger.updateFileComponent(this.tabID, filePaths, deletedFiles, codeResultMessageId, disableFileActions)
+        }
+    }
+
     /**
      * Triggered by the Insert code follow-up button to apply code changes.
      */
@@ -115,11 +127,10 @@ class Session(val tabID: String, val project: Project) {
         filePaths: List<NewFileZipInfo>,
         deletedFiles: List<DeletedFileInfo>,
         references: List<CodeReferenceGenerated>,
-        messenger: MessagePublisher,
     ) {
-        val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
         val newFilePaths = filePaths.filter { !it.rejected && !it.changeApplied }
         val newDeletedFiles = deletedFiles.filter { !it.rejected && !it.changeApplied }
+        val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
 
         runCatching {
             var insertedLines = 0
@@ -156,23 +167,39 @@ class Session(val tabID: String, val project: Project) {
             }
         }.onFailure { /* Noop on diff telemetry failure */ }
 
-        newFilePaths.forEach {
-            resolveAndCreateOrUpdateFile(selectedSourceFolder, it.zipFilePath, it.fileContent)
-            it.changeApplied = true
-        }
+        insertNewFiles(newFilePaths)
 
-        newDeletedFiles.forEach {
-            resolveAndDeleteFile(selectedSourceFolder, it.zipFilePath)
-            it.changeApplied = true
-        }
+        applyDeleteFiles(newDeletedFiles)
 
         ReferenceLogController.addReferenceLog(references, project)
 
         // Taken from https://intellij-support.jetbrains.com/hc/en-us/community/posts/206118439-Refresh-after-external-changes-to-project-structure-and-sources
         VfsUtil.markDirtyAndRefresh(true, true, true, context.selectedSourceFolder)
-        val codeResultMessageId = this._codeResultMessageId
-        if (codeResultMessageId != null) {
-            messenger.updateFileComponent(this.tabID, filePaths, deletedFiles, codeResultMessageId)
+    }
+
+// Suppressing because insertNewFiles needs to be a suspend function in order to be tested
+    @Suppress("RedundantSuspendModifier")
+    suspend fun insertNewFiles(
+        filePaths: List<NewFileZipInfo>,
+    ) {
+        val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
+
+        filePaths.forEach {
+            resolveAndCreateOrUpdateFile(selectedSourceFolder, it.zipFilePath, it.fileContent)
+            it.changeApplied = true
+        }
+    }
+
+// Suppressing because applyDeleteFiles needs to be a suspend function in order to be tested
+    @Suppress("RedundantSuspendModifier")
+    suspend fun applyDeleteFiles(
+        deletedFiles: List<DeletedFileInfo>,
+    ) {
+        val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
+
+        deletedFiles.forEach {
+            resolveAndDeleteFile(selectedSourceFolder, it.zipFilePath)
+            it.changeApplied = true
         }
     }
 
@@ -185,10 +212,7 @@ class Session(val tabID: String, val project: Project) {
             return
         }
 
-        val codeResultMessageId = this._codeResultMessageId
-        if (codeResultMessageId != null) {
-            messenger.updateFileComponent(this.tabID, filePaths, deletedFiles, codeResultMessageId, disableFileActions = true)
-        }
+        updateFilesPaths(filePaths, deletedFiles, messenger, disableFileActions = true)
         this._codeResultMessageId = null
     }
 
