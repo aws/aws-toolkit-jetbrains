@@ -36,13 +36,11 @@ class NotificationDismissalState : PersistentStateComponent<NotificationDismissa
     }
 
     fun isDismissed(notificationId: String): Boolean {
-        cleanExpiredNotifications()
         return state.dismissedNotifications.any { it.id == notificationId }
     }
 
     fun dismissNotification(notificationId: String) {
         state.dismissedNotifications.add(DismissedNotification(notificationId))
-        cleanExpiredNotifications()
     }
 
     private fun cleanExpiredNotifications() {
