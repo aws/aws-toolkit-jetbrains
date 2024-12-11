@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
-import kotlinx.coroutines.yield
 import software.aws.toolkits.jetbrains.common.util.resolveAndCreateOrUpdateFile
 import software.aws.toolkits.jetbrains.common.util.resolveAndDeleteFile
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
@@ -181,24 +180,27 @@ class Session(val tabID: String, val project: Project) {
         VfsUtil.markDirtyAndRefresh(true, true, true, context.selectedSourceFolder)
     }
 
+// Suppressing because insertNewFiles needs to be a suspend function in order to be tested
+    @Suppress("RedundantSuspendModifier")
     suspend fun insertNewFiles(
         filePaths: List<NewFileZipInfo>,
     ) {
         val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
 
         filePaths.forEach {
-            yield()
             resolveAndCreateOrUpdateFile(selectedSourceFolder, it.zipFilePath, it.fileContent)
             it.changeApplied = true
         }
     }
+
+// Suppressing because insertNewFiles needs to be a suspend function in order to be tested
+    @Suppress("RedundantSuspendModifier")
     suspend fun applyDeleteFiles(
         deletedFiles: List<DeletedFileInfo>,
     ) {
         val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
 
         deletedFiles.forEach {
-            yield()
             resolveAndDeleteFile(selectedSourceFolder, it.zipFilePath)
             it.changeApplied = true
         }
