@@ -14,6 +14,7 @@ import com.intellij.util.xmlb.annotations.Attribute
 import com.intellij.util.xmlb.annotations.Property
 import java.time.Duration
 import java.time.Instant
+import software.aws.toolkits.core.utils.ETagProvider
 
 class InstantConverter : Converter<Instant>() {
     override fun toString(value: Instant): String = value.toEpochMilli().toString()
@@ -32,6 +33,8 @@ data class NotificationDismissalConfiguration(
     @Property
     var dismissedNotifications: MutableSet<DismissedNotification> = mutableSetOf(),
 )
+
+
 
 @Service
 @State(name = "notificationDismissals", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
@@ -72,8 +75,12 @@ class NotificationDismissalState : PersistentStateComponent<NotificationDismissa
 
 @Service
 @State(name = "notificationEtag", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
-class NotificationEtagState : PersistentStateComponent<NotificationEtagConfiguration> {
+class NotificationEtagState : PersistentStateComponent<NotificationEtagConfiguration>, ETagProvider {
     private val state = NotificationEtagConfiguration()
+
+    override fun updateETag(newETag: String?) {
+        etag = newETag
+    }
 
     override fun getState(): NotificationEtagConfiguration = state
 
@@ -81,7 +88,7 @@ class NotificationEtagState : PersistentStateComponent<NotificationEtagConfigura
         this.state.etag = state.etag
     }
 
-    var etag: String?
+    override var etag: String?
         get() = state.etag
         set(value) {
             state.etag = value
