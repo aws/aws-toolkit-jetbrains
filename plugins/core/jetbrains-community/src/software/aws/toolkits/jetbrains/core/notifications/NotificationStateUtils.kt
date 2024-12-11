@@ -34,8 +34,6 @@ data class NotificationDismissalConfiguration(
     var dismissedNotifications: MutableSet<DismissedNotification> = mutableSetOf(),
 )
 
-
-
 @Service
 @State(name = "notificationDismissals", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
 class NotificationDismissalState : PersistentStateComponent<NotificationDismissalConfiguration> {
