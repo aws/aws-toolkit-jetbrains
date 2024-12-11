@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fix for File Review payload and Regex error for payload generation"
-}

@@ -1,3 +1,11 @@
+# _3.45_ (2024-12-10)
+- **(Feature)** Add acknowledgement button for Amazon Q Chat disclaimer
+- **(Bug Fix)** Chosing cancel on sign out confirmation now cancels the sign out and does not delete profiles from ~/.aws/config ([#5167](https://github.com/aws/aws-toolkit-jetbrains/issues/5167))
+- **(Bug Fix)** Fix `@workspace` missing from the Amazon Q Chat welcome tab
+- **(Bug Fix)** Fix for /review LLM based code issues for file review on windows
+- **(Bug Fix)** Fix for File Review payload and Regex error for payload generation
+- **(Bug Fix)** Amazon Q Code Transformation: show build logs when server-side build fails
+
 # _3.44_ (2024-12-04)
 - **(Feature)** Amazon Q: UI improvements to chat: New splash loader animation, initial streaming card animation, improved button colours
 - **(Feature)** Amazon Q: Navigate through prompt history by using the up/down arrows
