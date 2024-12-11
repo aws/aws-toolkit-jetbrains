@@ -3,7 +3,9 @@
 
 package software.aws.toolkits.jetbrains.core.notifications
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -34,7 +36,7 @@ class NotificationDismissalStateTest {
     }
 
     @Test
-fun `notifications older than 2 months are removed`() {
+    fun `notifications older than 2 months are removed`() {
         val oldNotification = DismissedNotification(
             id = "old-notification",
             dismissedAt = Instant.now().minus(61, ChronoUnit.DAYS)

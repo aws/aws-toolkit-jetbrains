@@ -21,16 +21,16 @@ class InstantConverter : Converter<Instant>() {
     override fun fromString(value: String): Instant = Instant.ofEpochMilli(value.toLong())
 }
 
-
 data class DismissedNotification(
+    @Attribute
     val id: String = "",
     @Attribute(converter = InstantConverter::class)
-    val dismissedAt: Instant = Instant.now()
+    val dismissedAt: Instant = Instant.now(),
 )
 
 data class NotificationDismissalConfiguration(
     @Property
-    var dismissedNotifications: MutableSet<DismissedNotification> = mutableSetOf()
+    var dismissedNotifications: MutableSet<DismissedNotification> = mutableSetOf(),
 )
 
 @Service
@@ -47,9 +47,8 @@ class NotificationDismissalState : PersistentStateComponent<NotificationDismissa
         cleanExpiredNotifications()
     }
 
-    fun isDismissed(notificationId: String): Boolean {
-        return state.dismissedNotifications.any { it.id == notificationId }
-    }
+    fun isDismissed(notificationId: String): Boolean =
+        state.dismissedNotifications.any { it.id == notificationId }
 
     fun dismissNotification(notificationId: String) {
         state.dismissedNotifications.add(
@@ -70,7 +69,6 @@ class NotificationDismissalState : PersistentStateComponent<NotificationDismissa
         fun getInstance(): NotificationDismissalState = service()
     }
 }
-
 
 @Service
 @State(name = "notificationEtag", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
