@@ -71,6 +71,9 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
         )
         editorPane.revalidate()
         editorPane.repaint()
+        runInEdt {
+            editorPane.scrollToReference("fixLoadingSection")
+        }
 
         val codeFixResponse: AmazonQCodeFixSession.CodeFixResponse = amazonQCodeFixSession.runCodeFixWorkflow(issue)
         if (codeFixResponse.failureResponse != null) {
@@ -81,6 +84,9 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
                 )
                 revalidate()
                 repaint()
+                runInEdt {
+                    scrollToReference("fixFailureSection")
+                }
             }
         } else {
             val isReferenceAllowed = CodeWhispererSettings.getInstance().isIncludeCodeWithReference()
@@ -115,6 +121,9 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
                 )
                 revalidate()
                 repaint()
+                runInEdt {
+                    scrollToReference("codeFixActions")
+                }
             }
 
             buttonPane.apply {
