@@ -9,8 +9,9 @@ on:
     branches: [ main, feature/* ]
     # PRs only need to run this if the SSM plugin logic has changed
     paths:
-      - 'jetbrains-core/src/software/aws/toolkits/jetbrains/services/ssm/SsmPlugin.kt'
-      - 'jetbrains-core/it/software/aws/toolkits/jetbrains/services/ssm/SsmPluginTest.kt'
+      - '.github/workflows/ssm-integ.yml'
+      - 'plugins/core/jetbrains-core/src/software/aws/toolkits/jetbrains/services/ssm/SsmPlugin.kt'
+      - 'plugins/core/jetbrains-core/it/software/aws/toolkits/jetbrains/services/ssm/SsmPluginTest.kt'
 
 jobs:
   build:
