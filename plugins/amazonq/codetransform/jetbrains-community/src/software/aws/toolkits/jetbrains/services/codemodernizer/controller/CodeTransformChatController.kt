@@ -61,6 +61,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildSt
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformAwaitUserInputChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformBeginChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformDependencyErrorChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformFailedChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformFindingLocalAlternativeDependencyChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformInProgressChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformResultChatContent
@@ -183,7 +184,7 @@ class CodeTransformChatController(
     private suspend fun getUserObjective(tabId: String) {
         codeTransformChatHelper.addNewMessage(buildChooseTransformationObjectiveChatContent())
         codeTransformChatHelper.sendChatInputEnabledMessage(tabId, true)
-        codeTransformChatHelper.sendUpdatePlaceholderMessage(tabId, message("codemodernizer.chat.message.choose_objective"))
+        codeTransformChatHelper.sendUpdatePlaceholderMessage(tabId, message("codemodernizer.chat.message.choose_objective_placeholder"))
     }
 
     private suspend fun validateAndReplyOnError(transformationType: CodeTransformType): ValidationResult? {
@@ -398,6 +399,7 @@ class CodeTransformChatController(
                 EXPLAINABILITY_V1
             )
         }
+        telemetry.submitSelection(message.oneOrMultipleDiffsSelection)
         codeTransformChatHelper.addNewMessage(buildUserOneOrMultipleDiffsSelectionChatContent(message.oneOrMultipleDiffsSelection))
         codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
         codeModernizerManager.codeTransformationSession?.let {
@@ -457,7 +459,7 @@ class CodeTransformChatController(
     }
 
     override suspend fun processCodeTransformStopAction(tabId: String) {
-        if (!checkForAuth(tabId)) {
+        if (!checkForAuth(tabId) || !codeModernizerManager.isModernizationJobActive()) {
             return
         }
 
@@ -665,9 +667,21 @@ class CodeTransformChatController(
         codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
     }
 
+    private suspend fun handleCodeTransformJobFailed(failureReason: String) {
+        codeTransformChatHelper.updateLastPendingMessage(buildTransformFailedChatContent(failureReason))
+        codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
+    }
+
+    private suspend fun handleCodeTransformJobFailedPreBuild(result: CodeModernizerJobCompletedResult.JobFailedInitialBuild) =
+        codeTransformChatHelper.addNewMessage(
+            buildTransformResultChatContent(result)
+        )
+
     private suspend fun handleCodeTransformResult(result: CodeModernizerJobCompletedResult) {
         when (result) {
             is CodeModernizerJobCompletedResult.Stopped, CodeModernizerJobCompletedResult.JobAbortedBeforeStarting -> handleCodeTransformStoppedByUser()
+            is CodeModernizerJobCompletedResult.JobFailed -> handleCodeTransformJobFailed(result.failureReason)
+            is CodeModernizerJobCompletedResult.JobFailedInitialBuild -> handleCodeTransformJobFailedPreBuild(result)
             else -> {
                 if (result is CodeModernizerJobCompletedResult.ZipUploadFailed && result.failureReason is UploadFailureReason.CREDENTIALS_EXPIRED) {
                     return

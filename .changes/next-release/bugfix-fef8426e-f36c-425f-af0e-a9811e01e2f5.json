@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Reduce frequency of system information query"
+}

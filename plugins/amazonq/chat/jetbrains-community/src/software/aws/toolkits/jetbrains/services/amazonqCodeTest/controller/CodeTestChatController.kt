@@ -282,14 +282,18 @@ class CodeTestChatController(
             val request = requestData.toChatRequest()
             client.generateAssistantResponse(request, responseHandler).await()
             // TODO: Need to send isCodeBlockSelected field
-            AmazonqTelemetry.utgGenerateTests(
-                cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
-                hasUserPromptSupplied = session.hasUserPromptSupplied,
-                isSupportedLanguage = false,
-                credentialStartUrl = getStartUrl(project),
-                result = MetricResult.Succeeded,
-                perfClientLatency = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration)
-            )
+            requestId.let { id ->
+                LOG.debug { "$FEATURE_NAME: Unit test generation requestId: $id" }
+                AmazonqTelemetry.utgGenerateTests(
+                    cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
+                    hasUserPromptSupplied = session.hasUserPromptSupplied,
+                    isSupportedLanguage = false,
+                    credentialStartUrl = getStartUrl(project),
+                    result = MetricResult.Succeeded,
+                    perfClientLatency = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration),
+                    requestId = id
+                )
+            }
             session.isGeneratingTests = false
             codeTestChatHelper.updateUI(
                 loadingChat = false,
@@ -599,7 +603,8 @@ class CodeTestChatController(
                     isCodeBlockSelected = session.isCodeBlockSelected,
                     artifactsUploadDuration = session.artifactUploadDuration,
                     buildPayloadBytes = session.srcPayloadSize,
-                    buildZipFileBytes = session.srcZipFileSize
+                    buildZipFileBytes = session.srcZipFileSize,
+                    requestId = session.startTestGenerationRequestId
                 )
                 codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
@@ -792,7 +797,8 @@ class CodeTestChatController(
                     isCodeBlockSelected = session.isCodeBlockSelected,
                     artifactsUploadDuration = session.artifactUploadDuration,
                     buildPayloadBytes = session.srcPayloadSize,
-                    buildZipFileBytes = session.srcZipFileSize
+                    buildZipFileBytes = session.srcZipFileSize,
+                    requestId = session.startTestGenerationRequestId
                 )
                 sessionCleanUp(message.tabId)
             }

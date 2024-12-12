@@ -25,7 +25,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.cannotFin
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileTooLarge
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.noFileOpenError
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.noSupportedFilesError
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.AmazonQCodeReviewGitUtils.getGitRepositoryRoot
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.AmazonQCodeReviewGitUtils.getUnstagedFiles
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.AmazonQCodeReviewGitUtils.isGitRoot
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.AmazonQCodeReviewGitUtils.runGitDiffHead
@@ -163,40 +162,17 @@ class CodeScanSessionConfig(
             return ""
         }
         try {
-            getGitRepositoryRoot(file)?.let { root ->
-                // If it's a git repo, use git logic
-                val relativePath = runCatching {
-                    file.toNioPath().relativeTo(root.toNioPath()).pathString
-                }.getOrElse {
-                    LOG.debug { "Failed to calculate relative path: ${it.message}" }
-                    return ""
-                }
+            val projectRootNio = projectRoot.toNioPath()
+            val fileNio = file.toNioPath()
 
-                return runGitDiffHead(
-                    projectName = project.name,
-                    root = root,
-                    relativeFilePath = relativePath,
-                    newFile = true
-                )
-            } ?: run {
-                // For non-git repos, use project root as base
-                val projectRootPath = projectRoot.toNioPath()
-                val relativePath = runCatching {
-                    file.toNioPath().relativeTo(projectRootPath).pathString
-                }.getOrElse {
-                    LOG.debug { "Failed to calculate relative path from project root: ${it.message}" }
-                    return ""
-                }
-
-                return runGitDiffHead(
-                    projectName = project.name,
-                    root = projectRoot,
-                    relativeFilePath = relativePath,
-                    newFile = true // Always treat as new file for non-git repos
-                )
+            return buildString {
+                append("+++ b/")
+                append(project.name)
+                append('/')
+                append(fileNio.relativeTo(projectRootNio).toString().replace(File.separator, "/"))
             }
         } catch (e: Exception) {
-            LOG.debug { "Failed to create git diff: ${e.message}" }
+            LOG.debug(e) { "Failed to create git diff" }
             return ""
         }
     }
