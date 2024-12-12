@@ -358,13 +358,14 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project, pr
                         cell.icon = obj.fileType.icon
                     }
                     is CodeWhispererCodeScanIssue -> {
-                        val cellText = "${obj.title.trimEnd('.')}: ${obj.file.name} "
+                        val cellText = obj.title.trimEnd('.')
+                        val cellDescription = "${obj.file.name} ${obj.displayTextRange()}"
                         if (obj.isInvalid) {
-                            cell.text = message("codewhisperer.codescan.scan_recommendation_invalid", obj.title, obj.displayTextRange(), INACTIVE_TEXT_COLOR)
+                            cell.text = message("codewhisperer.codescan.scan_recommendation_invalid", obj.title, cellDescription, INACTIVE_TEXT_COLOR)
                             cell.toolTipText = message("codewhisperer.codescan.scan_recommendation_invalid.tooltip_text")
                             cell.icon = AllIcons.General.Information
                         } else {
-                            cell.text = message("codewhisperer.codescan.scan_recommendation", cellText, obj.displayTextRange(), INACTIVE_TEXT_COLOR)
+                            cell.text = message("codewhisperer.codescan.scan_recommendation", cellText, cellDescription, INACTIVE_TEXT_COLOR)
                             cell.toolTipText = cellText
                             cell.icon = obj.issueSeverity.icon
                         }
