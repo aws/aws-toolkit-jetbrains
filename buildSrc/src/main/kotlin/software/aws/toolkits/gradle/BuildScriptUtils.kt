@@ -44,21 +44,8 @@ fun<T : Any> Project.withCurrentProfileName(consumer: (String) -> T): Provider<T
     }
 }
 
-fun Project.buildMetadata() =
-    try {
-        val git = Git.open(rootDir)
-        val currentShortHash = git.repository.findRef("HEAD").objectId.abbreviate(7).name()
-        val isDirty = git.status().call().hasUncommittedChanges()
-
-        buildString {
-            append(currentShortHash)
-
-            if (isDirty) {
-                append(".modified")
-            }
-        }
-    } catch(e: Exception) {
-        logger.warn("Could not determine current commit", e)
-
-        "unknownCommit"
+fun Project.buildMetadata() = providers.of(GitShortHashValueSource::class.java) {
+    parameters {
+        gitRootDir.set(rootDir)
     }
+}
