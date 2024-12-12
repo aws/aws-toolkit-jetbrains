@@ -18,7 +18,7 @@ interface ChatPayload {
 export interface ConnectorProps {
     sendMessageToExtension: (message: ExtensionMessage) => void
     onMessageReceived?: (tabID: string, messageData: any, needToShowAPIDocsTab: boolean) => void
-    onAsyncEventProgress: (tabID: string, inProgress: boolean, message: string) => void
+    onAsyncEventProgress: (tabID: string, inProgress: boolean, message: string, cancelButtonWhenLoading?: boolean) => void
     onChatAnswerReceived?: (tabID: string, message: ChatItem) => void
     onChatAnswerUpdated?: (tabID: string, message: ChatItem) => void
     sendFeedback?: (tabId: string, feedbackPayload: FeedbackPayload) => void | undefined
@@ -249,7 +249,7 @@ export class Connector {
         }
 
         if (messageData.type === 'asyncEventProgressMessage') {
-            this.onAsyncEventProgress(messageData.tabID, messageData.inProgress, messageData.message ?? undefined)
+            this.onAsyncEventProgress(messageData.tabID, messageData.inProgress, messageData.message ?? undefined, true)
             return
         }
 

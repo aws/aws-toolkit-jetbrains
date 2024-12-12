@@ -184,12 +184,12 @@ export const createMynahUI = (
                 promptInputDisabledState: tabsStorage.isTabDead(tabID) || !enabled,
             })
         },
-        onAsyncEventProgress: (tabID: string, inProgress: boolean, message: string | undefined) => {
+        onAsyncEventProgress: (tabID: string, inProgress: boolean, message: string | undefined, cancelButtonWhenLoading: boolean = false) => {
             if (inProgress) {
                 mynahUI.updateStore(tabID, {
                     loadingChat: true,
                     promptInputDisabledState: true,
-                    cancelButtonWhenLoading: true,
+                    cancelButtonWhenLoading,
                 })
                 if (message) {
                     mynahUI.updateLastChatAnswer(tabID, {
