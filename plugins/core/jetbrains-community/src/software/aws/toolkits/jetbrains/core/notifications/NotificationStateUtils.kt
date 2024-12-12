@@ -12,9 +12,9 @@ import com.intellij.openapi.components.service
 import com.intellij.util.xmlb.Converter
 import com.intellij.util.xmlb.annotations.Attribute
 import com.intellij.util.xmlb.annotations.Property
+import software.aws.toolkits.core.utils.ETagProvider
 import java.time.Duration
 import java.time.Instant
-import software.aws.toolkits.core.utils.ETagProvider
 
 class InstantConverter : Converter<Instant>() {
     override fun toString(value: Instant): String = value.toEpochMilli().toString()
