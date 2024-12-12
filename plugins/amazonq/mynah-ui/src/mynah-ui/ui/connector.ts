@@ -512,8 +512,12 @@ export class Connector {
             case 'featuredev':
                 this.featureDevChatConnector.onOpenDiff(tabID, filePath, deleted)
                 break
+            /*
+            TODO: This is for temporary solution to show correct viewdiff panel by clicking the filename
+            Would re-factor it later for the next task
+             */
             case 'codetest':
-                this.codeTestChatConnector.onFileClick(tabID, filePath, deleted, messageId)
+                this.codeTestChatConnector.onFormButtonClick(tabID, messageId ?? '', {id: "utg_view_diff"})
                 break
         }
     }
