@@ -51,7 +51,6 @@ import javax.swing.JEditorPane
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.ScrollPaneConstants
-import javax.swing.SwingUtilities
 import javax.swing.event.HyperlinkEvent
 import javax.swing.text.html.HTMLEditorKit
 
@@ -72,7 +71,7 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
         )
         editorPane.revalidate()
         editorPane.repaint()
-        SwingUtilities.invokeLater {
+        runInEdt {
             editorPane.scrollToReference("fixLoadingSection")
         }
 
@@ -85,7 +84,7 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
                 )
                 revalidate()
                 repaint()
-                SwingUtilities.invokeLater {
+                runInEdt {
                     scrollToReference("fixFailureSection")
                 }
             }
@@ -122,7 +121,7 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
                 )
                 revalidate()
                 repaint()
-                SwingUtilities.invokeLater {
+                runInEdt {
                     scrollToReference("codeFixActions")
                 }
             }
