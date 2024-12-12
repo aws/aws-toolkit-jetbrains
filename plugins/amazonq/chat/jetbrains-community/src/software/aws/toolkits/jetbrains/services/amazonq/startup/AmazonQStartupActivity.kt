@@ -17,8 +17,8 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.core.gettingstarted.emitUserState
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindow
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
@@ -35,9 +35,15 @@ class AmazonQStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
         if (ApplicationManager.getApplication().isUnitTestMode) return
 
+        // Turn on project context if a user is in treatment group and prompt UI to notify them
         ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let {
-            if (it is AwsBearerTokenConnection && isInternalUser(it.startUrl)) {
+            if (it is AwsBearerTokenConnection &&
+                CodeWhispererFeatureConfigService.getInstance().getWorkspaceContext() &&
+                !CodeWhispererSettings.getInstance().isProjectContextEnabled()
+            ) {
                 CodeWhispererSettings.getInstance().toggleProjectContextEnabled(value = true, passive = true)
+
+                // TODO: toast notification UI
             }
         }
 

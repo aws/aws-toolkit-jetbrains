@@ -115,6 +115,8 @@ class CodeWhispererFeatureConfigService {
 
     fun getInlineCompletion(): Boolean = getFeatureValueForKey(INLINE_COMPLETION).stringValue() == "TREATMENT"
 
+    fun getWorkspaceContext(): Boolean = getFeatureValueForKey(WORKSPACE_CONTEXT_FEATURE).stringValue() == "TREATMENT"
+
     // Get the feature value for the given key.
     // In case of a misconfiguration, it will return a default feature value of Boolean false.
     private fun getFeatureValueForKey(name: String): FeatureValue =
@@ -133,6 +135,7 @@ class CodeWhispererFeatureConfigService {
         private const val INLINE_COMPLETION = "ProjectContextV2"
         const val CUSTOMIZATION_ARN_OVERRIDE_NAME = "customizationArnOverride"
         private const val NEW_AUTO_TRIGGER_UX = "newAutoTriggerUX"
+        private const val WORKSPACE_CONTEXT_FEATURE = "WorkspaceContext"
         private val LOG = getLogger<CodeWhispererFeatureConfigService>()
 
         // TODO: add real feature later
@@ -156,6 +159,11 @@ class CodeWhispererFeatureConfigService {
             ),
             INLINE_COMPLETION to FeatureContext(
                 INLINE_COMPLETION,
+                "CONTROL",
+                FeatureValue.builder().stringValue("CONTROL").build()
+            ),
+            WORKSPACE_CONTEXT_FEATURE to FeatureContext(
+                WORKSPACE_CONTEXT_FEATURE,
                 "CONTROL",
                 FeatureValue.builder().stringValue("CONTROL").build()
             )
