@@ -528,22 +528,16 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 launchTestGenFlow(prompt, codeTestChatHelper, previousIterationContext, selectionRange)
             } catch (e: Exception) {
                 // Add an answer for displaying error message
-                var errorMessage = e.message
-                if (e is JsonParseException) {
-                    errorMessage = message("testgen.error.generic_technical_error_message")
-                }
-                if (e is CodeTestException) {
-                    errorMessage = e.uiMessage
+                val errorMessage = when {
+                    e is CodeTestException && e.statusCode == "400" &&
+                        e.message?.startsWith("CreateTestJobError: Maximum com.amazon.aws.codewhisperer.runtime.StartTestGeneration reached for this month.") == true ->
+                        message("testgen.error.maximum_generations_reach")
+
+                    e is CodeTestException -> e.uiMessage
+                    e is JsonParseException -> message("testgen.error.generic_technical_error_message")
+                    else -> e.message
                 }
 
-                if (e is CodeTestException && e.statusCode == "400" &&
-                    e.message?.startsWith(
-                        "CreateTestJobError: Maximum com.amazon.aws.codewhisperer.runtime.StartTestGeneration " +
-                            "reached for this month."
-                    ) != false
-                ) {
-                    errorMessage = message("testgen.error.maximum_generations_reach")
-                }
                 codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
                         message = errorMessage,
