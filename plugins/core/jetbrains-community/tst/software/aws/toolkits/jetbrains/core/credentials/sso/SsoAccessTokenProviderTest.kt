@@ -479,6 +479,39 @@ class SsoAccessTokenProviderTest {
         verify(ssoCache).invalidateAccessToken(ssoUrl)
     }
 
+    @Test
+    fun `refreshToken invalidates tokens when client registration not found during refresh`() {
+        setPkceTrue()
+
+        val accessToken = PKCEAuthorizationGrantToken(
+            ssoUrl,
+            ssoRegion,
+            "dummyToken",
+            "refreshToken",
+            clock.instant(),
+            clock.instant()
+        )
+
+        ssoCache.stub {
+            on(ssoCache.loadAccessToken(any<PKCEAccessTokenCacheKey>()))
+                .thenReturn(accessToken)
+            on(
+                ssoCache.loadClientRegistration(
+                    any<PKCEClientRegistrationCacheKey>(),
+                    eq(SsoAccessTokenProvider.SourceOfLoadRegistration.REFRESH_TOKEN.toString())
+                )
+            ).thenThrow(ClientRegistrationNotFoundException())
+        }
+
+        assertThatThrownBy {
+            runBlocking {
+                sut.refreshToken(sut.accessToken())
+            }
+        }.isInstanceOf(InvalidClientException::class.java)
+
+        verify(ssoCache, times(2)).invalidateAccessToken(any<AccessTokenCacheKey>())
+    }
+
     private fun setupCacheStub(expirationClientRegistration: Instant) {
         setupCacheStub(DeviceAuthorizationClientRegistration(clientId, clientSecret, expirationClientRegistration))
     }

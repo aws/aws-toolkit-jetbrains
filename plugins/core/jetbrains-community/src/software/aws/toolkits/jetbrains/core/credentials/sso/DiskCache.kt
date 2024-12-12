@@ -324,4 +324,4 @@ class DiskCache(
     }
 }
 
-class ClientRegistrationNotFoundException : Exception("Client registration file not found")
+class ClientRegistrationNotFoundException : RuntimeException("Client registration file not found")
