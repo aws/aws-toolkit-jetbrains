@@ -83,7 +83,7 @@ class SessionTest : FeatureDevTestBase() {
         whenever(session.context.selectedSourceFolder.toNioPath()).thenReturn(Path(""))
 
         runBlocking {
-            session.insertChanges(mockNewFile, mockDeletedFile, emptyList(), messenger)
+            session.insertChanges(mockNewFile, mockDeletedFile, emptyList())
         }
 
         verify(exactly = 1) { resolveAndDeleteFile(any(), "deletedTest.ts") }
