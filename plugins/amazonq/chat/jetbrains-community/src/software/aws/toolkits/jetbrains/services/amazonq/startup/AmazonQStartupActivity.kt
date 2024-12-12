@@ -46,11 +46,13 @@ class AmazonQStartupActivity : ProjectActivity {
                 CodeWhispererSettings.getInstance().toggleProjectContextEnabled(value = true, passive = true)
 
                 // TODO: finalize and localize strings
-                notifyInfo(
-                    title = "Amazon Q",
-                    content = "Amazon Q is now enabling workspace indexing",
-                    notificationActions = listOf(CodeWhispererShowSettingsAction())
-                )
+                runInEdt {
+                    notifyInfo(
+                        title = "Amazon Q",
+                        content = "Amazon Q is now enabling workspace indexing",
+                        notificationActions = listOf(CodeWhispererShowSettingsAction())
+                    )
+                }
             }
         }
 
