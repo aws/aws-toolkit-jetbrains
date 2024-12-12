@@ -61,7 +61,7 @@ export interface ConnectorProps {
     onCodeTransformMessageUpdate: (tabID: string, messageId: string, chatItem: Partial<ChatItem>) => void
     onRunTestMessageReceived?: (tabID: string, showRunTestMessage: boolean) => void
     onWelcomeFollowUpClicked: (tabID: string, welcomeFollowUpType: WelcomeFollowupType) => void
-    onAsyncEventProgress: (tabID: string, inProgress: boolean, message: string | undefined) => void
+    onAsyncEventProgress: (tabID: string, inProgress: boolean, message: string | undefined, cancelButtonWhenLoading?: boolean) => void
     onCWCContextCommandMessage: (message: ChatItem, command?: string) => string | undefined
     onCWCOnboardingPageInteractionMessage: (message: ChatItem) => string | undefined
     onOpenSettingsMessage: (tabID: string) => void
