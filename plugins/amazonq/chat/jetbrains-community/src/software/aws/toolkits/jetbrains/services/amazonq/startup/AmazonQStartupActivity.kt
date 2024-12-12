@@ -22,9 +22,11 @@ import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConf
 import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindow
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
+import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererShowSettingsAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.cwc.inline.InlineChatController
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 import java.lang.management.ManagementFactory
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
@@ -43,7 +45,12 @@ class AmazonQStartupActivity : ProjectActivity {
             ) {
                 CodeWhispererSettings.getInstance().toggleProjectContextEnabled(value = true, passive = true)
 
-                // TODO: toast notification UI
+                // TODO: localize strings
+                notifyInfo(
+                    title = "Amazon Q",
+                    content = "Amazon Q is now enabling workspace indexing",
+                    notificationActions = listOf(CodeWhispererShowSettingsAction())
+                )
             }
         }
 
