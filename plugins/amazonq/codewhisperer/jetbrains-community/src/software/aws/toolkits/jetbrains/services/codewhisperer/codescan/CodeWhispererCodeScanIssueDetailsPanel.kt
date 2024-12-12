@@ -51,6 +51,7 @@ import javax.swing.JEditorPane
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.ScrollPaneConstants
+import javax.swing.SwingUtilities
 import javax.swing.event.HyperlinkEvent
 import javax.swing.text.html.HTMLEditorKit
 
@@ -71,6 +72,9 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
         )
         editorPane.revalidate()
         editorPane.repaint()
+        SwingUtilities.invokeLater {
+            editorPane.scrollToReference("fixLoadingSection")
+        }
 
         val codeFixResponse: AmazonQCodeFixSession.CodeFixResponse = amazonQCodeFixSession.runCodeFixWorkflow(issue)
         if (codeFixResponse.failureResponse != null) {
@@ -81,6 +85,9 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
                 )
                 revalidate()
                 repaint()
+                SwingUtilities.invokeLater {
+                    scrollToReference("fixFailureSection")
+                }
             }
         } else {
             val isReferenceAllowed = CodeWhispererSettings.getInstance().isIncludeCodeWithReference()
@@ -115,6 +122,9 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
                 )
                 revalidate()
                 repaint()
+                SwingUtilities.invokeLater {
+                    scrollToReference("codeFixActions")
+                }
             }
 
             buttonPane.apply {
