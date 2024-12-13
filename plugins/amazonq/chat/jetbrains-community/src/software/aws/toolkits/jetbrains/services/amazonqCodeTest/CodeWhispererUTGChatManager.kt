@@ -134,7 +134,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
             val errorMessage = getTelemetryErrorMessage(e, CodeWhispererConstants.FeatureName.TEST_GENERATION)
             throw codeTestServerException(
                 "CreateTestJobError: $errorMessage",
-                "400",
+                "500",
                 "CreateTestJobError",
                 message("testgen.error.generic_technical_error_message")
             )
