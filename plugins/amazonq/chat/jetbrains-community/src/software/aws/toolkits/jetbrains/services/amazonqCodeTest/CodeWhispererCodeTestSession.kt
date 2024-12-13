@@ -114,7 +114,7 @@ class CodeWhispererCodeTestSession(val sessionContext: CodeTestSessionContext) {
 
             return codeTestResponseContext
         } catch (e: Exception) {
-            LOG.debug(e) { "Error when creating tests for the current file" }
+            LOG.debug(e) { "Error while creating zip and uploading to S3" }
             throw e
         }
     }

@@ -24,6 +24,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionco
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadMetadata
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.cannotFindBuildArtifacts
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.cannotFindFile
+import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.cannotFindValidFile
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.fileTooLarge
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.noFileOpenError
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
@@ -218,7 +219,7 @@ class CodeTestSessionConfig(
 
         if (maxCountLanguage == null) {
             programmingLanguage = CodeWhispererUnknownLanguage.INSTANCE
-            throw RuntimeException("Amazon Q: doesn't contain valid files to generate tests")
+            throw cannotFindValidFile("Amazon Q: doesn't contain valid files to generate tests")
         }
         programmingLanguage = maxCountLanguage
         return PayloadMetadata(files, currentTotalFileSize, currentTotalLines, maxCountLanguage.toTelemetryType())
