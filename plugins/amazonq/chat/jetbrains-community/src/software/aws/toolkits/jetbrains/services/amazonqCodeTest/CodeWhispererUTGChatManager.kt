@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Range
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTestGenerationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.TargetCode
 import software.amazon.awssdk.services.codewhispererruntime.model.TestGenerationJobStatus
+import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportIntent
 import software.aws.toolkits.core.utils.debug
@@ -71,7 +72,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
 
     private fun throwIfCancelled(session: Session) {
         if (!session.isGeneratingTests) {
-            throw testGenStoppedError()
+            testGenStoppedError()
         }
     }
 
@@ -128,13 +129,15 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 userInput = prompt
             )
         } catch (e: Exception) {
-            LOG.error(e) { "Failed to create test generation job" }
-            // TODO: Not able to emit e.statusCode directly as statusCode is private property
-            // Cannot access 'statusCode': it is invisible (private in a supertype) in 'ThrottlingException'
+            val statusCode = when {
+                e is ThrottlingException -> e.statusCode()
+                else -> 500
+            }
+            LOG.error(e) { "Unexpected error while creating test generation job" }
             val errorMessage = getTelemetryErrorMessage(e, CodeWhispererConstants.FeatureName.TEST_GENERATION)
-            throw codeTestServerException(
+            codeTestServerException(
                 "CreateTestJobError: $errorMessage",
-                "500",
+                statusCode,
                 "CreateTestJobError",
                 message("testgen.error.generic_technical_error_message")
             )
@@ -191,9 +194,9 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     // update test summary card
                 } else {
                     // If job status is Completed and has no ShortAnswer then there might be some issue in the backend.
-                    throw codeTestServerException(
+                    codeTestServerException(
                         "TestGenFailedError: " + message("testgen.message.failed"),
-                        "500",
+                        500,
                         "TestGenFailedError",
                         message("testgen.error.generic_technical_error_message")
                     )
@@ -206,15 +209,14 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 if (testGenerationResponse.testGenerationJob().shortAnswer() != null) {
                     shortAnswer = parseShortAnswerString(testGenerationResponse.testGenerationJob().shortAnswer())
                     if (shortAnswer.stopIteration == "true") {
-                        throw Exception("${shortAnswer.planSummary}")
-                        throw codeTestServerException("TestGenFailedError: ${shortAnswer.planSummary}", "400", "TestGenFailedError", shortAnswer.planSummary)
+                        codeTestServerException("TestGenFailedError: ${shortAnswer.planSummary}", 400, "TestGenFailedError", shortAnswer.planSummary)
                     }
                 }
 
                 // If job status is Failed and has no ShortAnswer then there might be some issue in the backend.
-                throw codeTestServerException(
+                codeTestServerException(
                     "TestGenFailedError: " + message("testgen.message.failed"),
-                    "500",
+                    500,
                     "TestGenFailedError",
                     message("testgen.error.generic_technical_error_message")
                 )
@@ -229,7 +231,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 if (previousIterationContext == null && testGenerationResponse.testGenerationJob().shortAnswer() != null) {
                     shortAnswer = parseShortAnswerString(testGenerationResponse.testGenerationJob().shortAnswer())
                     if (shortAnswer.stopIteration == "true") {
-                        throw codeTestServerException("TestGenFailedError: ${shortAnswer.planSummary}", "400", "TestGenFailedError", shortAnswer.planSummary)
+                        codeTestServerException("TestGenFailedError: ${shortAnswer.planSummary}", 400, "TestGenFailedError", shortAnswer.planSummary)
                     }
                     codeTestChatHelper.updateAnswer(
                         CodeTestChatMessageContent(
@@ -261,9 +263,9 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
             },
             { e ->
                 LOG.error(e) { "ExportResultArchive failed: ${e.message}" }
-                throw codeTestServerException(
+                codeTestServerException(
                     "ExportResultsArchiveError: ${e.message}",
-                    "500",
+                    500,
                     "ExportResultsArchiveError",
                     message("testgen.error.generic_technical_error_message")
                 )
@@ -529,7 +531,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
             } catch (e: Exception) {
                 // Add an answer for displaying error message
                 val errorMessage = when {
-                    e is CodeTestException && e.statusCode == "400" &&
+                    e is CodeTestException && e.statusCode == 400 &&
                         e.message?.startsWith("CreateTestJobError: Maximum") == true ->
                         message("testgen.error.maximum_generations_reach")
 
@@ -556,7 +558,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     result = if (e.message == message("testgen.message.cancelled")) MetricResult.Cancelled else MetricResult.Failed,
                     reason = (e as CodeTestException).code ?: "DefaultError",
                     reasonDesc = if (e.message == message("testgen.message.cancelled")) "${e.code}: ${e.message}" else e.message,
-                    httpStatusCode = e.statusCode ?: "400",
+                    httpStatusCode = e.statusCode.toString(),
                     perfClientLatency = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration),
                     isCodeBlockSelected = session.isCodeBlockSelected,
                     artifactsUploadDuration = session.artifactUploadDuration,

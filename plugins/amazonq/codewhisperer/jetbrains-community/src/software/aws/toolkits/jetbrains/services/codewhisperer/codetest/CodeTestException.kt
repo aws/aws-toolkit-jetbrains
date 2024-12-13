@@ -7,7 +7,7 @@ import software.aws.toolkits.resources.message
 
 open class CodeTestException(
     override val message: String?,
-    val statusCode: String? = "400",
+    val statusCode: Int = 400,
     val code: String? = "DefaultError",
     val uiMessage: String? = message(
         "testgen.error.generic_error_message"
@@ -15,26 +15,26 @@ open class CodeTestException(
 ) : RuntimeException()
 
 internal fun noFileOpenError(): Nothing =
-    throw CodeTestException(message("codewhisperer.codescan.no_file_open"), "400", "ProjectZipError")
+    throw CodeTestException(message("codewhisperer.codescan.no_file_open"), 400, "ProjectZipError")
 
 internal fun fileTooLarge(): Nothing =
-    throw CodeTestException(message("codewhisperer.codescan.file_too_large_telemetry"), "400", "ProjectZipError")
+    throw CodeTestException(message("codewhisperer.codescan.file_too_large_telemetry"), 400, "ProjectZipError")
 
 internal fun cannotFindFile(errorMessage: String, filepath: String): Nothing =
     error(message("codewhisperer.codescan.file_not_found", filepath, errorMessage))
 
 internal fun cannotFindValidFile(errorMessage: String): Nothing =
-    throw CodeTestException(errorMessage, "400", "ProjectZipError")
+    throw CodeTestException(errorMessage, 400, "ProjectZipError")
 
 internal fun cannotFindBuildArtifacts(errorMessage: String): Nothing =
-    throw CodeTestException(errorMessage, "400", "ProjectZipError")
+    throw CodeTestException(errorMessage, 400, "ProjectZipError")
 
 internal fun invalidSourceZipError(): Nothing =
-    throw CodeTestException(message("codewhisperer.codescan.invalid_source_zip_telemetry"), "400", "InvalidSourceZipError")
+    throw CodeTestException(message("codewhisperer.codescan.invalid_source_zip_telemetry"), 400, "InvalidSourceZipError")
 
 fun codeTestServerException(
     errorMessage: String,
-    statusCode: String?,
+    statusCode: Int,
     code: String? = "DefaultError",
     uiMessage: String? = message(
         "testgen.error.generic_technical_error_message"
@@ -43,4 +43,4 @@ fun codeTestServerException(
     throw CodeTestException(errorMessage, statusCode, code, uiMessage)
 
 fun testGenStoppedError(): Nothing =
-    throw CodeTestException(message("testgen.message.cancelled"), "400", "TestGenCancelled", message("testgen.message.cancelled"))
+    throw CodeTestException(message("testgen.message.cancelled"), 400, "TestGenCancelled", message("testgen.message.cancelled"))

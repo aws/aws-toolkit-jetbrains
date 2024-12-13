@@ -95,7 +95,7 @@ class CodeTestSessionConfig(
                 else -> e.message
             }
             LOG.debug { "Error creating payload metadata: $errorMessage" }
-            throw cannotFindBuildArtifacts(errorMessage ?: message("testgen.message.failed"))
+            cannotFindBuildArtifacts(errorMessage ?: message("testgen.message.failed"))
         }
 
         // Copy all the included source files to the source zip
@@ -219,7 +219,7 @@ class CodeTestSessionConfig(
 
         if (maxCountLanguage == null) {
             programmingLanguage = CodeWhispererUnknownLanguage.INSTANCE
-            throw cannotFindValidFile("Amazon Q: doesn't contain valid files to generate tests")
+            cannotFindValidFile("Amazon Q: doesn't contain valid files to generate tests")
         }
         programmingLanguage = maxCountLanguage
         return PayloadMetadata(files, currentTotalFileSize, currentTotalLines, maxCountLanguage.toTelemetryType())

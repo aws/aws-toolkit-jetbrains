@@ -107,10 +107,10 @@ class CodeWhispererZipUploadManager(private val project: Project) {
             LOG.debug { "$featureUseCase: Artifact failed to upload in the S3 bucket: ${e.message}" }
             val errorMessage = getTelemetryErrorMessage(e, featureUseCase)
             when (featureUseCase) {
-                CodeWhispererConstants.FeatureName.CODE_REVIEW -> throw codeScanServerException("CreateUploadUrlException: $errorMessage")
-                CodeWhispererConstants.FeatureName.TEST_GENERATION -> throw codeTestServerException(
+                CodeWhispererConstants.FeatureName.CODE_REVIEW -> codeScanServerException("CreateUploadUrlException: $errorMessage")
+                CodeWhispererConstants.FeatureName.TEST_GENERATION -> codeTestServerException(
                     "UploadTestArtifactToS3Error: $errorMessage",
-                    "403",
+                    403,
                     "UploadTestArtifactToS3Error",
                     message("testgen.error.generic_technical_error_message")
                 )
@@ -145,10 +145,10 @@ class CodeWhispererZipUploadManager(private val project: Project) {
         LOG.debug { "$featureUseCase: Create Upload URL failed: ${e.message}" }
         val errorMessage = getTelemetryErrorMessage(e, featureUseCase)
         when (featureUseCase) {
-            CodeWhispererConstants.FeatureName.CODE_REVIEW -> throw codeScanServerException("CreateUploadUrlException: $errorMessage")
-            CodeWhispererConstants.FeatureName.TEST_GENERATION -> throw codeTestServerException(
+            CodeWhispererConstants.FeatureName.CODE_REVIEW -> codeScanServerException("CreateUploadUrlException: $errorMessage")
+            CodeWhispererConstants.FeatureName.TEST_GENERATION -> codeTestServerException(
                 "CreateUploadUrlError: $errorMessage",
-                "500",
+                500,
                 "CreateUploadUrlError",
                 message("testgen.error.generic_technical_error_message")
             )

@@ -605,7 +605,8 @@ class CodeTestChatController(
                     artifactsUploadDuration = session.artifactUploadDuration,
                     buildPayloadBytes = session.srcPayloadSize,
                     buildZipFileBytes = session.srcZipFileSize,
-                    requestId = session.startTestGenerationRequestId
+                    requestId = session.startTestGenerationRequestId,
+                    httpStatusCode = "200"
                 )
                 codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
@@ -799,7 +800,8 @@ class CodeTestChatController(
                     artifactsUploadDuration = session.artifactUploadDuration,
                     buildPayloadBytes = session.srcPayloadSize,
                     buildZipFileBytes = session.srcZipFileSize,
-                    requestId = session.startTestGenerationRequestId
+                    requestId = session.startTestGenerationRequestId,
+                    httpStatusCode = "200"
                 )
                 sessionCleanUp(message.tabId)
             }
