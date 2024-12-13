@@ -27,6 +27,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhisp
 import software.aws.toolkits.jetbrains.services.cwc.inline.InlineChatController
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.resources.AmazonQBundle.message
 import java.lang.management.ManagementFactory
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
@@ -45,11 +46,11 @@ class AmazonQStartupActivity : ProjectActivity {
             ) {
                 CodeWhispererSettings.getInstance().toggleProjectContextEnabled(value = true, passive = true)
 
-                // TODO: finalize and localize strings
+                // TODO: finalize strings
                 runInEdt {
                     notifyInfo(
-                        title = "Amazon Q",
-                        content = "Workspace index is now enabled. You can disable it in the Amazon Q settings.",
+                        title = message("amazonq.brand.title"),
+                        content = message("amazonq.chat.workspacecontext.enable.message"),
                         notificationActions = listOf(CodeWhispererShowSettingsAction())
                     )
                 }
