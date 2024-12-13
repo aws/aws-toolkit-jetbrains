@@ -49,7 +49,7 @@ class AmazonQStartupActivity : ProjectActivity {
                 runInEdt {
                     notifyInfo(
                         title = "Amazon Q",
-                        content = "Amazon Q is now enabling workspace indexing",
+                        content = "Workspace index is now enabled. You can disable it in the Amazon Q settings.",
                         notificationActions = listOf(CodeWhispererShowSettingsAction())
                     )
                 }
