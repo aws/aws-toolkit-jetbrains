@@ -219,6 +219,10 @@ class Session(val tabID: String, val project: Project) {
         this._codeResultMessageId = null
     }
 
+    fun sendMetricDataTelemetry(operationName: String, result: String) {
+        featureDevService.sendFeatureDevMetricData(operationName, result)
+    }
+
     suspend fun send(msg: String): Interaction {
         // When the task/"thing to do" hasn't been set yet, we want it to be the incoming message
         if (task.isEmpty() && msg.isNotEmpty()) {
