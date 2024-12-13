@@ -535,7 +535,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
 
                     e is CodeTestException -> e.uiMessage
                     e is JsonParseException -> message("testgen.error.generic_technical_error_message")
-                    else -> e.message
+                    else -> message("testgen.error.generic_error_message")
                 }
 
                 codeTestChatHelper.addAnswer(
