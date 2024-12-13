@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.util.StdDateFormat
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.deleteIfExists
 import software.aws.toolkits.core.utils.getLogger
@@ -32,9 +33,15 @@ import software.aws.toolkits.core.utils.touch
 import software.aws.toolkits.core.utils.tryDirOp
 import software.aws.toolkits.core.utils.tryFileOp
 import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.telemetry.scrubNames
+import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.resources.AwsCoreBundle.message
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.Result
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.file.Path
@@ -46,6 +53,7 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter.ISO_INSTANT
 import java.util.TimeZone
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Caches the [AccessToken] to disk to allow it to be re-used with other tools such as the CLI.
@@ -98,25 +106,52 @@ class DiskCache(
 
     override fun invalidateClientRegistration(ssoRegion: String) {
         LOG.info { "invalidateClientRegistration for $ssoRegion" }
+        InMemoryCache.remove(clientRegistrationCache(ssoRegion).toString())
         clientRegistrationCache(ssoRegion).tryDeleteIfExists()
     }
 
     override fun loadClientRegistration(cacheKey: ClientRegistrationCacheKey, source: String): ClientRegistration? {
         LOG.info { "loadClientRegistration:$source for $cacheKey" }
-        val inputStream = clientRegistrationCache(cacheKey).tryInputStreamIfExists()
-        if (inputStream == null) {
-            val stage = LoadCredentialStage.ACCESS_FILE
-            LOG.info { "Failed to load Client Registration: cache file does not exist" }
-            AuthTelemetry.modifyConnection(
-                action = "Load cache file",
-                source = "loadClientRegistration:$source",
-                result = Result.Failed,
-                reason = "Failed to load Client Registration",
-                reasonDesc = "Load Step:$stage failed. Cache file does not exist"
-            )
-            return null
+        val cacheFile = clientRegistrationCache(cacheKey)
+        val diskData = cacheFile.tryInputStreamIfExists()?.use { it.readBytes() }
+        val memoryData = InMemoryCache.get(cacheFile.toString())
+
+        when {
+            diskData != null && memoryData != null -> {
+                // Both disk and memory have data, compare them
+                if (!diskData.contentEquals(memoryData)) {
+                    LOG.info { "Inconsistency detected between disk and memory cache" }
+                    // Prefer disk data as it's considered more up-to-date
+                    InMemoryCache.put(cacheFile.toString(), diskData)
+                    return loadClientRegistration(ByteArrayInputStream(diskData))
+                }
+                // If they're the same, use memory data for performance
+                return loadClientRegistration(ByteArrayInputStream(memoryData))
+            }
+            diskData != null -> {
+                // Only disk has data, update memory and use disk data
+                InMemoryCache.put(cacheFile.toString(), diskData)
+                return loadClientRegistration(ByteArrayInputStream(diskData))
+            }
+            memoryData != null -> {
+                // Only memory has data, unusual case, log warning and use memory data
+                LOG.info { "Client registration found in memory but not on disk" }
+                return loadClientRegistration(ByteArrayInputStream(memoryData))
+            }
+            else -> {
+                // Neither disk nor memory has data
+                LOG.info { "Failed to load Client Registration: not found in disk or memory cache" }
+                val stage = LoadCredentialStage.ACCESS_FILE
+                AuthTelemetry.modifyConnection(
+                    action = "Load cache file",
+                    source = "loadClientRegistration:$source",
+                    result = Result.Failed,
+                    reason = "Failed to load Client Registration",
+                    reasonDesc = "Load Step:$stage failed. Cache file does not exist"
+                )
+                return null
+            }
         }
-        return loadClientRegistration(inputStream)
     }
 
     override fun saveClientRegistration(cacheKey: ClientRegistrationCacheKey, registration: ClientRegistration) {
@@ -130,6 +165,7 @@ class DiskCache(
     override fun invalidateClientRegistration(cacheKey: ClientRegistrationCacheKey) {
         LOG.info { "invalidateClientRegistration for $cacheKey" }
         try {
+            InMemoryCache.remove(clientRegistrationCache(cacheKey).toString())
             clientRegistrationCache(cacheKey).tryDeleteIfExists()
         } catch (e: Exception) {
             AuthTelemetry.modifyConnection(
@@ -146,6 +182,7 @@ class DiskCache(
     override fun invalidateAccessToken(ssoUrl: String) {
         LOG.info { "invalidateAccessToken for $ssoUrl" }
         try {
+            InMemoryCache.remove(accessTokenCache(ssoUrl).toString())
             accessTokenCache(ssoUrl).tryDeleteIfExists()
         } catch (e: Exception) {
             AuthTelemetry.modifyConnection(
@@ -162,11 +199,45 @@ class DiskCache(
     override fun loadAccessToken(cacheKey: AccessTokenCacheKey): AccessToken? {
         LOG.info { "loadAccessToken for $cacheKey" }
         val cacheFile = accessTokenCache(cacheKey)
-        val inputStream = cacheFile.tryInputStreamIfExists() ?: return null
+        val diskData = cacheFile.tryInputStreamIfExists()?.use { it.readBytes() }
+        val memoryData = InMemoryCache.get(cacheFile.toString())
 
-        val token = loadAccessToken(inputStream)
-
-        return token
+        when {
+            diskData != null && memoryData != null -> {
+                // Both disk and memory have data, compare them
+                if (!diskData.contentEquals(memoryData)) {
+                    LOG.info { "Inconsistency detected between disk and memory cache" }
+                    // Prefer disk data as it's considered more up-to-date
+                    InMemoryCache.put(cacheFile.toString(), diskData)
+                    return loadAccessToken(ByteArrayInputStream(diskData))
+                }
+                // If they're the same, use memory data for performance
+                return loadAccessToken(ByteArrayInputStream(memoryData))
+            }
+            diskData != null -> {
+                // Only disk has data, update memory and use disk data
+                InMemoryCache.put(cacheFile.toString(), diskData)
+                return loadAccessToken(ByteArrayInputStream(diskData))
+            }
+            memoryData != null -> {
+                // Only memory has data, unusual case, log warning and use memory data
+                LOG.info { "Access Token found in memory but not on disk" }
+                return loadAccessToken(ByteArrayInputStream(memoryData))
+            }
+            else -> {
+                // Neither disk nor memory has data
+                LOG.info { "Failed to load Access Token: not found in disk or memory cache" }
+                val stage = LoadCredentialStage.ACCESS_FILE
+                AuthTelemetry.modifyConnection(
+                    action = "Load cache file",
+                    source = "loadAccessToken",
+                    result = Result.Failed,
+                    reason = "Failed to load Access Token",
+                    reasonDesc = "Load Step:$stage failed. Cache file does not exist"
+                )
+                return null
+            }
+        }
     }
 
     override fun saveAccessToken(cacheKey: AccessTokenCacheKey, accessToken: AccessToken) {
@@ -180,6 +251,7 @@ class DiskCache(
     override fun invalidateAccessToken(cacheKey: AccessTokenCacheKey) {
         LOG.info { "invalidateAccessToken for $cacheKey" }
         try {
+            InMemoryCache.remove(accessTokenCache(cacheKey).toString())
             accessTokenCache(cacheKey).tryDeleteIfExists()
         } catch (e: Exception) {
             AuthTelemetry.modifyConnection(
@@ -278,6 +350,18 @@ class DiskCache(
                 outputStream().use(consumer)
             }
         } catch (e: Exception) {
+            when {
+                e is IOException -> {
+                    if (e.message?.contains("No space left on device") == true) {
+                        LOG.warn { "Disk space full. Storing credentials in memory for this session" }
+                        storeInMemory(path, consumer)
+                        notifyInfo(
+                            title = message("disk.full.notification.title"),
+                            content = message("disk.full.notification.body")
+                        )
+                    }
+                }
+            }
             AuthTelemetry.modifyConnection(
                 action = "Write file",
                 source = "writeKey",
@@ -293,6 +377,28 @@ class DiskCache(
     private fun Instant.isNotExpired(): Boolean = this.isAfter(Instant.now(clock).plus(EXPIRATION_THRESHOLD))
 
     private fun AccessToken.isDefinitelyExpired(): Boolean = refreshToken == null && !expiresAt.isNotExpired()
+
+    private fun storeInMemory(path: Path, consumer: (OutputStream) -> Unit) {
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        consumer(byteArrayOutputStream)
+        val data = byteArrayOutputStream.toByteArray()
+        InMemoryCache.put(path.toString(), data)
+    }
+
+    @VisibleForTesting
+    internal object InMemoryCache {
+        private val cache = ConcurrentHashMap<String, ByteArray>()
+
+        fun put(key: String, value: ByteArray) {
+            cache[key] = value
+        }
+
+        fun get(key: String): ByteArray? = cache[key]
+
+        fun remove(key: String) {
+            cache.remove(key)
+        }
+    }
 
     private class CliCompatibleInstantDeserializer : StdDeserializer<Instant>(Instant::class.java) {
         override fun deserialize(parser: JsonParser, context: DeserializationContext): Instant {
