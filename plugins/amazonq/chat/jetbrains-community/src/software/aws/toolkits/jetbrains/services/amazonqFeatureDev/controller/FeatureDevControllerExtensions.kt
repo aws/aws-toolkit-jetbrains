@@ -6,6 +6,14 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.controller
 import com.intellij.notification.NotificationAction
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATION_RETRY_LIMIT
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.EmptyPatchException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.GuardrailsException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataOperationName
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataResult
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PromptRefusalException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ThrottlingException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUp
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUpStatusType
@@ -62,6 +70,11 @@ suspend fun FeatureDevController.onCodeGeneration(
         }
 
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.generating_code"))
+
+        session.sendMetricDataTelemetry(
+            MetricDataOperationName.START_CODE_GENERATION.toString(),
+            MetricDataResult.SUCCESS.toString()
+        )
 
         session.send(message) // Trigger code generation
 
@@ -135,7 +148,57 @@ suspend fun FeatureDevController.onCodeGeneration(
 
         messenger.sendSystemPrompt(tabId = tabId, followUp = getFollowUpOptions(session.sessionState.phase, InsertAction.ALL))
 
+        session.sendMetricDataTelemetry(
+            MetricDataOperationName.END_CODE_GENERATION.toString(),
+            MetricDataResult.SUCCESS.toString()
+        )
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
+    } catch (err: FeatureDevException) {
+        when (true) {
+            (err is GuardrailsException) -> {
+                session.sendMetricDataTelemetry(
+                    MetricDataOperationName.END_CODE_GENERATION.toString(),
+                    MetricDataResult.ERROR.toString()
+                )
+            }
+            (err is PromptRefusalException) -> {
+                session.sendMetricDataTelemetry(
+                    MetricDataOperationName.END_CODE_GENERATION.toString(),
+                    MetricDataResult.ERROR.toString()
+                )
+            }
+            (err is EmptyPatchException) -> {
+                session.sendMetricDataTelemetry(
+                    MetricDataOperationName.END_CODE_GENERATION.toString(),
+                    MetricDataResult.LLMFAILURE.toString()
+                )
+            }
+            (err is NoChangeRequiredException) -> {
+                session.sendMetricDataTelemetry(
+                    MetricDataOperationName.END_CODE_GENERATION.toString(),
+                    MetricDataResult.ERROR.toString()
+                )
+            }
+            (err is ThrottlingException) -> {
+                session.sendMetricDataTelemetry(
+                    MetricDataOperationName.END_CODE_GENERATION.toString(),
+                    MetricDataResult.ERROR.toString()
+                )
+            }
+            else -> {
+                session.sendMetricDataTelemetry(
+                    MetricDataOperationName.END_CODE_GENERATION.toString(),
+                    MetricDataResult.FAULT.toString()
+                )
+            }
+        }
+        throw err
+    } catch (err: Exception) {
+        session.sendMetricDataTelemetry(
+            MetricDataOperationName.END_CODE_GENERATION.toString(),
+            MetricDataResult.FAULT.toString()
+        )
+        throw err
     } finally {
         if (session.sessionState.token
                 ?.token
