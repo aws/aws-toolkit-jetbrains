@@ -14,15 +14,6 @@ open class CodeTestException(
     ),
 ) : RuntimeException()
 
-open class CodeTestServerException(
-    override val message: String?,
-    val statusCode: String? = "400",
-    val code: String? = "DefaultError",
-    val uiMessage: String? = message(
-        "testgen.error.generic_technical_error_message"
-    ),
-) : RuntimeException()
-
 internal fun noFileOpenError(): Nothing =
     throw CodeTestException(message("codewhisperer.codescan.no_file_open"), "400", "ProjectZipError")
 
@@ -41,8 +32,15 @@ internal fun cannotFindBuildArtifacts(errorMessage: String): Nothing =
 internal fun invalidSourceZipError(): Nothing =
     throw CodeTestException(message("codewhisperer.codescan.invalid_source_zip_telemetry"), "400", "InvalidSourceZipError")
 
-fun codeTestServerException(errorMessage: String, statusCode: String?, code: String?, uiMessage: String?): Nothing =
-    throw CodeTestServerException(errorMessage, statusCode, code, uiMessage)
+fun codeTestServerException(
+    errorMessage: String,
+    statusCode: String?,
+    code: String? = "DefaultError",
+    uiMessage: String? = message(
+        "testgen.error.generic_technical_error_message"
+    ),
+): Nothing =
+    throw CodeTestException(errorMessage, statusCode, code, uiMessage)
 
 fun testGenStoppedError(): Nothing =
     throw CodeTestException(message("testgen.message.cancelled"), "400", "TestGenCancelled", message("testgen.message.cancelled"))
