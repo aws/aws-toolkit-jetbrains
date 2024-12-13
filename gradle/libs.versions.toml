@@ -1,6 +1,6 @@
 [versions]
 apache-commons-collections = "4.4"
-apache-commons-io = "2.16.0"
+apache-commons-io = "2.16.1"
 apache-commons-text = "1.12.0"
 assertJ = "3.26.3"
 # match with <root>/settings.gradle.kts
