@@ -104,7 +104,10 @@ export class TabsStorage {
 
     public updateTabTypeFromUnknown(tabID: string, tabType: TabType) {
         const currentTabValue = this.tabs.get(tabID)
-        if (currentTabValue === undefined || currentTabValue.type !== 'unknown') {
+        if (
+            currentTabValue === undefined ||
+            (currentTabValue.type !== 'unknown' && currentTabValue.type !== 'welcome')
+        ) {
             return
         }
 
