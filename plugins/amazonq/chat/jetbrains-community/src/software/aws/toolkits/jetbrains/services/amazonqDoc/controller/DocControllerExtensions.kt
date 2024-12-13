@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonqDoc.controller
 
 import com.intellij.notification.NotificationAction
+import software.aws.toolkits.jetbrains.services.amazonqDoc.inProgress
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.DocMessageType
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.FollowUp
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.FollowUpStatusType
@@ -14,19 +15,27 @@ import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendChatInpu
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendCodeResult
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendSystemPrompt
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePlaceholder
+import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePromptProgress
 import software.aws.toolkits.jetbrains.services.amazonqDoc.session.DocSession
 import software.aws.toolkits.jetbrains.services.amazonqDoc.session.PrepareDocGenerationState
+import software.aws.toolkits.jetbrains.services.amazonqDoc.util.getFollowUpOptions
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendSystemPrompt
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.InsertAction
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 
 suspend fun DocController.onCodeGeneration(session: DocSession, message: String, tabId: String, mode: Mode) {
     try {
+        messenger.sendAsyncEventProgress(tabId, inProgress = true)
+        messenger.sendUpdatePromptProgress(tabId, inProgress(progress = 10, message("amazonqDoc.progress_message.scanning")))
+        messenger.sendAnswer(
+            message = docGenerationProgressMessage(DocGenerationStep.UPLOAD_TO_S3, this.mode),
+            messageType = DocMessageType.AnswerPart,
+            tabId = tabId,
+        )
+
         val sessionMessage = if (mode == Mode.CREATE) {
             message(
                 "amazonqDoc.session.create"
@@ -80,25 +89,27 @@ suspend fun DocController.onCodeGeneration(session: DocSession, message: String,
             return
         }
 
+        messenger.sendAnswer(
+            message = docGenerationProgressMessage(DocGenerationStep.COMPLETE, mode),
+            messageType = DocMessageType.AnswerPart,
+            tabId = tabId,
+        )
+
         messenger.sendCodeResult(tabId = tabId, uploadId = uploadId, filePaths = filePaths, deletedFiles = deletedFiles, references = references)
 
         if (remainingIterations != null && totalIterations != null) {
             messenger.sendAnswer(
                 tabId = tabId,
                 messageType = DocMessageType.Answer,
-                message = if (remainingIterations == 0) {
-                    message("amazonqFeatureDev.code_generation.iteration_zero")
+                message = if (this.mode === Mode.CREATE) {
+                    message("amazonqDoc.answer.readmeCreated")
                 } else {
-                    message(
-                        "amazonqFeatureDev.code_generation.iteration_counts",
-                        remainingIterations,
-                        totalIterations
-                    )
+                    "${message("amazonqDoc.answer.readmeUpdated")} ${message("amazonqDoc.answer.codeResult")}"
                 }
             )
         }
 
-        messenger.sendSystemPrompt(tabId = tabId, followUp = getFollowUpOptions(session.sessionState.phase, InsertAction.ALL))
+        messenger.sendSystemPrompt(tabId = tabId, followUp = getFollowUpOptions(session.sessionState.phase))
 
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
     } finally {

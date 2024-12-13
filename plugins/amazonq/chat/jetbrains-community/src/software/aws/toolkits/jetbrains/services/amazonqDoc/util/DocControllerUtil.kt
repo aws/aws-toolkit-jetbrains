@@ -15,19 +15,29 @@ fun getFollowUpOptions(phase: SessionStatePhase?): List<FollowUp> {
         SessionStatePhase.CODEGEN -> {
             return listOf(
                 FollowUp(
-                    pillText = message("amazonqDoc.follow_up.insert_code"),
-                    type = FollowUpTypes.INSERT_CODE,
+                    pillText = message("amazonqDoc.prompt.review.accept"),
+                    prompt = message("amazonqDoc.prompt.review.accept"),
+                    status = FollowUpStatusType.Success,
+                    type = FollowUpTypes.ACCEPT_CHANGES,
                     icon = FollowUpIcons.Ok,
-                    status = FollowUpStatusType.Success
                 ),
                 FollowUp(
-                    pillText = message("amazonqDoc.follow_up.provide_feedback_and_regenerate"),
-                    type = FollowUpTypes.PROVIDE_FEEDBACK_AND_REGENERATE_CODE,
-                    icon = FollowUpIcons.Refresh,
-                    status = FollowUpStatusType.Info
+                    pillText = message("amazonqDoc.prompt.review.changes"),
+                    prompt = message("amazonqDoc.prompt.review.changes"),
+                    status = FollowUpStatusType.Info,
+                    type = FollowUpTypes.MAKE_CHANGES,
+                    icon = FollowUpIcons.Info,
+                ),
+                FollowUp(
+                    pillText = message("general.reject"),
+                    prompt = message("general.reject"),
+                    status = FollowUpStatusType.Error,
+                    type = FollowUpTypes.REJECT_CHANGES,
+                    icon = FollowUpIcons.Cancel,
                 )
             )
         }
+
         else -> return emptyList()
     }
 }
