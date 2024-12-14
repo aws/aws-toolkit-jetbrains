@@ -111,6 +111,8 @@ class CodeWhispererFeatureConfigService {
 
     fun getCustomizationFeature(): FeatureContext? = getFeature(CUSTOMIZATION_ARN_OVERRIDE_NAME)
 
+    fun getHighlightCommandFeature(): FeatureContext? = getFeature(HIGHLIGHT_COMMAND_NAME)
+
     fun getNewAutoTriggerUX(): Boolean = getFeatureValueForKey(NEW_AUTO_TRIGGER_UX).stringValue() == "TREATMENT"
 
     fun getInlineCompletion(): Boolean = getFeatureValueForKey(INLINE_COMPLETION).stringValue() == "TREATMENT"
@@ -131,7 +133,8 @@ class CodeWhispererFeatureConfigService {
         fun getInstance(): CodeWhispererFeatureConfigService = service()
         private const val TEST_FEATURE_NAME = "testFeature"
         private const val INLINE_COMPLETION = "ProjectContextV2"
-        const val CUSTOMIZATION_ARN_OVERRIDE_NAME = "customizationArnOverride"
+        private const val CUSTOMIZATION_ARN_OVERRIDE_NAME = "customizationArnOverride"
+        private const val HIGHLIGHT_COMMAND_NAME = "highlightCommand"
         private const val NEW_AUTO_TRIGGER_UX = "newAutoTriggerUX"
         private val LOG = getLogger<CodeWhispererFeatureConfigService>()
 
