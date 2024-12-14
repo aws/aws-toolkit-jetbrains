@@ -32,15 +32,5 @@ internal fun cannotFindBuildArtifacts(errorMessage: String): Nothing =
 internal fun invalidSourceZipError(): Nothing =
     throw CodeTestException(message("codewhisperer.codescan.invalid_source_zip_telemetry"), 400, "InvalidSourceZipError")
 
-fun codeTestServerException(
-    errorMessage: String,
-    statusCode: Int,
-    code: String? = "DefaultError",
-    uiMessage: String? = message(
-        "testgen.error.generic_technical_error_message"
-    ),
-): Nothing =
-    throw CodeTestException(errorMessage, statusCode, code, uiMessage)
-
 fun testGenStoppedError(): Nothing =
     throw CodeTestException(message("testgen.message.cancelled"), 400, "TestGenCancelled", message("testgen.message.cancelled"))

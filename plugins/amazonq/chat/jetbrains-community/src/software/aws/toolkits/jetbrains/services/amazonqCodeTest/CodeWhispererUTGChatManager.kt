@@ -39,7 +39,6 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.Session
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.utils.combineBuildAndExecuteLogFiles
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.CodeTestException
-import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.codeTestServerException
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.sessionconfig.CodeTestSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.testGenStoppedError
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
@@ -135,7 +134,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
             }
             LOG.error(e) { "Unexpected error while creating test generation job" }
             val errorMessage = getTelemetryErrorMessage(e, CodeWhispererConstants.FeatureName.TEST_GENERATION)
-            codeTestServerException(
+            throw CodeTestException(
                 "CreateTestJobError: $errorMessage",
                 statusCode,
                 "CreateTestJobError",
@@ -194,7 +193,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     // update test summary card
                 } else {
                     // If job status is Completed and has no ShortAnswer then there might be some issue in the backend.
-                    codeTestServerException(
+                    throw CodeTestException(
                         "TestGenFailedError: " + message("testgen.message.failed"),
                         500,
                         "TestGenFailedError",
@@ -209,12 +208,12 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 if (testGenerationResponse.testGenerationJob().shortAnswer() != null) {
                     shortAnswer = parseShortAnswerString(testGenerationResponse.testGenerationJob().shortAnswer())
                     if (shortAnswer.stopIteration == "true") {
-                        codeTestServerException("TestGenFailedError: ${shortAnswer.planSummary}", 400, "TestGenFailedError", shortAnswer.planSummary)
+                        throw CodeTestException("TestGenFailedError: ${shortAnswer.planSummary}", 400, "TestGenFailedError", shortAnswer.planSummary)
                     }
                 }
 
                 // If job status is Failed and has no ShortAnswer then there might be some issue in the backend.
-                codeTestServerException(
+                throw CodeTestException(
                     "TestGenFailedError: " + message("testgen.message.failed"),
                     500,
                     "TestGenFailedError",
@@ -231,7 +230,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 if (previousIterationContext == null && testGenerationResponse.testGenerationJob().shortAnswer() != null) {
                     shortAnswer = parseShortAnswerString(testGenerationResponse.testGenerationJob().shortAnswer())
                     if (shortAnswer.stopIteration == "true") {
-                        codeTestServerException("TestGenFailedError: ${shortAnswer.planSummary}", 400, "TestGenFailedError", shortAnswer.planSummary)
+                        throw CodeTestException("TestGenFailedError: ${shortAnswer.planSummary}", 400, "TestGenFailedError", shortAnswer.planSummary)
                     }
                     codeTestChatHelper.updateAnswer(
                         CodeTestChatMessageContent(
@@ -263,7 +262,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
             },
             { e ->
                 LOG.error(e) { "ExportResultArchive failed: ${e.message}" }
-                codeTestServerException(
+                throw CodeTestException(
                     "ExportResultsArchiveError: ${e.message}",
                     500,
                     "ExportResultsArchiveError",

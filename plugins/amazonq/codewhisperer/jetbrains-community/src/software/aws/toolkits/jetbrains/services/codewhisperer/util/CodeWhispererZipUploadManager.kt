@@ -27,7 +27,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanSession.Companion.SERVER_SIDE_ENCRYPTION_CONTEXT
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.codeScanServerException
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.invalidSourceZipError
-import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.codeTestServerException
+import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.CodeTestException
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.resources.message
 import java.io.File
@@ -108,7 +108,7 @@ class CodeWhispererZipUploadManager(private val project: Project) {
             val errorMessage = getTelemetryErrorMessage(e, featureUseCase)
             when (featureUseCase) {
                 CodeWhispererConstants.FeatureName.CODE_REVIEW -> codeScanServerException("CreateUploadUrlException: $errorMessage")
-                CodeWhispererConstants.FeatureName.TEST_GENERATION -> codeTestServerException(
+                CodeWhispererConstants.FeatureName.TEST_GENERATION -> throw CodeTestException(
                     "UploadTestArtifactToS3Error: $errorMessage",
                     403,
                     "UploadTestArtifactToS3Error",
@@ -146,7 +146,7 @@ class CodeWhispererZipUploadManager(private val project: Project) {
         val errorMessage = getTelemetryErrorMessage(e, featureUseCase)
         when (featureUseCase) {
             CodeWhispererConstants.FeatureName.CODE_REVIEW -> codeScanServerException("CreateUploadUrlException: $errorMessage")
-            CodeWhispererConstants.FeatureName.TEST_GENERATION -> codeTestServerException(
+            CodeWhispererConstants.FeatureName.TEST_GENERATION -> throw CodeTestException(
                 "CreateUploadUrlError: $errorMessage",
                 500,
                 "CreateUploadUrlError",
