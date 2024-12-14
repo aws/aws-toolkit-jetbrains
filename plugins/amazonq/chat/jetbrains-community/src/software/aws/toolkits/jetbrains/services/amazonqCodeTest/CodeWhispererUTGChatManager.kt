@@ -16,12 +16,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTestGenerationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.Range
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTestGenerationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.TargetCode
 import software.amazon.awssdk.services.codewhispererruntime.model.TestGenerationJobStatus
-import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportIntent
 import software.aws.toolkits.core.utils.debug
@@ -129,8 +129,8 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
             )
         } catch (e: Exception) {
             val statusCode = when {
-                e is ThrottlingException -> e.statusCode()
-                else -> 500
+                e is SdkServiceException -> e.statusCode()
+                else -> 400
             }
             LOG.error(e) { "Unexpected error while creating test generation job" }
             val errorMessage = getTelemetryErrorMessage(e, CodeWhispererConstants.FeatureName.TEST_GENERATION)
