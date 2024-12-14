@@ -110,7 +110,6 @@ class CodeWhispererZipUploadManager(private val project: Project) {
                 CodeWhispererConstants.FeatureName.CODE_REVIEW -> codeScanServerException("CreateUploadUrlException: $errorMessage")
                 CodeWhispererConstants.FeatureName.TEST_GENERATION -> throw CodeTestException(
                     "UploadTestArtifactToS3Error: $errorMessage",
-                    403,
                     "UploadTestArtifactToS3Error",
                     message("testgen.error.generic_technical_error_message")
                 )
@@ -148,7 +147,6 @@ class CodeWhispererZipUploadManager(private val project: Project) {
             CodeWhispererConstants.FeatureName.CODE_REVIEW -> codeScanServerException("CreateUploadUrlException: $errorMessage")
             CodeWhispererConstants.FeatureName.TEST_GENERATION -> throw CodeTestException(
                 "CreateUploadUrlError: $errorMessage",
-                500,
                 "CreateUploadUrlError",
                 message("testgen.error.generic_technical_error_message")
             )
