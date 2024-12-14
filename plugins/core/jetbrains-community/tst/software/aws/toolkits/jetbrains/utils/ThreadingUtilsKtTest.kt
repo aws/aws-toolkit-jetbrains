@@ -91,5 +91,7 @@ class ThreadingUtilsKtTest {
         pluginAwareExecuteOnPooledThread {
             assertEquals(PluginResolver.fromCurrentThread().product, AWSProduct.AMAZON_Q_FOR_JET_BRAINS)
         }.get()
+
+        PluginResolver.setThreadLocal(PluginResolver.fromStackTrace(Thread.currentThread().stackTrace))
     }
 }
