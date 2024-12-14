@@ -3,10 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.webview
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
+import software.aws.toolkits.jetbrains.services.amazonq.util.HighlightCommand
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
 
@@ -25,6 +27,7 @@ class Browser(parent: Disposable) : Disposable {
         isDocAvailable: Boolean,
         isCodeScanAvailable: Boolean,
         isCodeTestAvailable: Boolean,
+        highlightCommand: HighlightCommand?,
     ) {
         // register the scheme handler to route http://mynah/ URIs to the resources/assets directory on classpath
         CefApp.getInstance()
@@ -34,7 +37,7 @@ class Browser(parent: Disposable) : Disposable {
                 AssetResourceHandler.AssetResourceHandlerFactory(),
             )
 
-        loadWebView(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable)
+        loadWebView(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable, highlightCommand)
     }
 
     override fun dispose() {
@@ -55,12 +58,15 @@ class Browser(parent: Disposable) : Disposable {
         isDocAvailable: Boolean,
         isCodeScanAvailable: Boolean,
         isCodeTestAvailable: Boolean,
+        highlightCommand: HighlightCommand?,
     ) {
         // setup empty state. The message request handlers use this for storing state
         // that's persistent between page loads.
         jcefBrowser.setProperty("state", "")
         // load the web app
-        jcefBrowser.loadHTML(getWebviewHTML(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable))
+        jcefBrowser.loadHTML(
+            getWebviewHTML(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable, highlightCommand)
+        )
     }
 
     /**
@@ -73,6 +79,7 @@ class Browser(parent: Disposable) : Disposable {
         isDocAvailable: Boolean,
         isCodeScanAvailable: Boolean,
         isCodeTestAvailable: Boolean,
+        highlightCommand: HighlightCommand?,
     ): String {
         val postMessageToJavaJsCode = receiveMessageQuery.inject("JSON.stringify(message)")
 
@@ -92,7 +99,8 @@ class Browser(parent: Disposable) : Disposable {
                         $isCodeTransformAvailable, // whether /transform is available
                         $isDocAvailable, // whether /doc is available
                         $isCodeScanAvailable, // whether /scan is available
-                        $isCodeTestAvailable // whether /test is available
+                        $isCodeTestAvailable, // whether /test is available
+                        ${OBJECT_MAPPER.writeValueAsString(highlightCommand)}
                     );
                 }
             </script>        
@@ -114,5 +122,6 @@ class Browser(parent: Disposable) : Disposable {
     companion object {
         private const val WEB_SCRIPT_URI = "http://mynah/js/mynah-ui.js"
         private const val MAX_ONBOARDING_PAGE_COUNT = 3
+        private val OBJECT_MAPPER = jacksonObjectMapper()
     }
 }
