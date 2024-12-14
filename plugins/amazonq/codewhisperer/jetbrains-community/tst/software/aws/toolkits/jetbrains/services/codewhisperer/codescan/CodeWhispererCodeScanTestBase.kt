@@ -109,7 +109,7 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
         doNothing().whenever(scanManagerSpy).showCodeScanUI()
 
         zipUploadManagerSpy = spy(CodeWhispererZipUploadManager.getInstance(project))
-        doNothing().whenever(zipUploadManagerSpy).uploadArtifactToS3(any(), any(), any(), any(), isNull(), any())
+        doNothing().whenever(zipUploadManagerSpy).uploadArtifactToS3(any(), any(), any(), any(), isNull(), any(), any())
         projectRule.project.replaceService(CodeWhispererZipUploadManager::class.java, zipUploadManagerSpy, disposableRule.disposable)
 
         mockClient = mock<CodeWhispererClientAdaptor>().also {
