@@ -291,8 +291,7 @@ class CodeTestChatController(
                     credentialStartUrl = getStartUrl(project),
                     result = MetricResult.Succeeded,
                     perfClientLatency = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration),
-                    requestId = id,
-                    httpStatusCode = "200"
+                    requestId = id
                 )
             }
             session.isGeneratingTests = false
@@ -604,8 +603,7 @@ class CodeTestChatController(
                     artifactsUploadDuration = session.artifactUploadDuration,
                     buildPayloadBytes = session.srcPayloadSize,
                     buildZipFileBytes = session.srcZipFileSize,
-                    requestId = session.startTestGenerationRequestId,
-                    httpStatusCode = "200"
+                    requestId = session.startTestGenerationRequestId
                 )
                 codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
@@ -799,8 +797,7 @@ class CodeTestChatController(
                     artifactsUploadDuration = session.artifactUploadDuration,
                     buildPayloadBytes = session.srcPayloadSize,
                     buildZipFileBytes = session.srcZipFileSize,
-                    requestId = session.startTestGenerationRequestId,
-                    httpStatusCode = "200"
+                    requestId = session.startTestGenerationRequestId
                 )
                 sessionCleanUp(message.tabId)
             }
