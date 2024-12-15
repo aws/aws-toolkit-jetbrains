@@ -61,6 +61,7 @@ import java.util.Base64
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.SSLHandshakeException
+import kotlin.math.pow
 
 const val MAX_ZIP_SIZE = 2000000000 // 2GB
 const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
@@ -394,17 +395,24 @@ class CodeModernizerSession(
             throw AlreadyDisposedException("Disposed when about to upload project artifact to s3")
         }
         val uploadStartTime = Instant.now()
-        try {
-            clientAdaptor.uploadArtifactToS3(
-                createUploadUrlResponse.uploadUrl(),
-                payload,
-                sha256checksum,
-                createUploadUrlResponse.kmsKeyArn().orEmpty(),
-            ) { shouldStop.get() }
-        } catch (e: Exception) {
-            LOG.error { "Unexpected error when uploading project artifact to S3: $e" }
-            throw e // pass along error to callee
+        for (i in 0..2) {
+            try {
+                clientAdaptor.uploadArtifactToS3(
+                    createUploadUrlResponse.uploadUrl(),
+                    payload,
+                    sha256checksum,
+                    createUploadUrlResponse.kmsKeyArn().orEmpty(),
+                ) { shouldStop.get() }
+                break
+            } catch (e: Exception) {
+                LOG.error { "Unexpected error when uploading project artifact to S3 on attempt ${i+1}/3: ${e.localizedMessage}" }
+                if (i == 2) {
+                    throw e
+                }
+                Thread.sleep((1000 * 2.0.pow(i)).toLong())
+            }
         }
+        LOG.info { "Upload to S3 succeeded" }
         if (!shouldStop.get()) {
             LOG.info { "Uploaded artifact. Latency: ${calculateTotalLatency(uploadStartTime, Instant.now())}ms" }
         }
