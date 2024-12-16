@@ -405,7 +405,7 @@ class CodeModernizerSession(
                 ) { shouldStop.get() }
                 break
             } catch (e: Exception) {
-                LOG.error { "Unexpected error when uploading project artifact to S3 on attempt ${i+1}/3: ${e.localizedMessage}" }
+                LOG.error { "Unexpected error when uploading project artifact to S3 on attempt ${i + 1}/3: ${e.localizedMessage}" }
                 if (i == 2) {
                     throw e
                 }
