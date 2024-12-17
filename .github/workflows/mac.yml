@@ -13,7 +13,7 @@ jobs:
   build:
     name: Mac
 
-    runs-on: codebuild-JB-linux-runner-${{ github.run_id }}-${{ github.run_attempt }}
+    runs-on: macos-latest
 
     steps:
     - uses: actions/checkout@v2
