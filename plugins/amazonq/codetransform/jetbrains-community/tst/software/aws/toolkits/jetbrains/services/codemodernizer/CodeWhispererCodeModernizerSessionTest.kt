@@ -458,8 +458,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         doReturn(ZipCreationResult.Succeeded(File("./tst-resources/codemodernizer/test.txt")))
             .whenever(testSessionContextSpy).createZipWithModuleFiles(any())
         doReturn(exampleCreateUploadUrlResponse).whenever(clientAdaptorSpy).createGumbyUploadUrl(any())
-        doAnswer { throw HttpRequests.HttpStatusException("mock error", 403, "mock url") }
-            .whenever(clientAdaptorSpy).uploadArtifactToS3(any(), any(), any(), any(), any())
+        doAnswer { throw HttpRequests.HttpStatusException("mock error", 403, "mock url") }.whenever(testSessionSpy).uploadPayload(any())
         val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
         assertEquals(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.PRESIGNED_URL_EXPIRED), result)
         verify(testSessionStateSpy, times(1)).putJobHistory(any(), eq(TransformationStatus.FAILED), any(), any())
@@ -471,8 +470,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         doReturn(ZipCreationResult.Succeeded(File("./tst-resources/codemodernizer/test.txt")))
             .whenever(testSessionContextSpy).createZipWithModuleFiles(any())
         doReturn(exampleCreateUploadUrlResponse).whenever(clientAdaptorSpy).createGumbyUploadUrl(any())
-        doAnswer { throw HttpRequests.HttpStatusException("mock error", 407, "mock url") }
-            .whenever(clientAdaptorSpy).uploadArtifactToS3(any(), any(), any(), any(), any())
+        doAnswer { throw HttpRequests.HttpStatusException("mock error", 407, "mock url") }.whenever(testSessionSpy).uploadPayload(any())
         val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
         assertEquals(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.HTTP_ERROR(407)), result)
         verify(testSessionStateSpy, times(1)).putJobHistory(any(), eq(TransformationStatus.FAILED), any(), any())
@@ -496,7 +494,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         doReturn(ZipCreationResult.Succeeded(File("./tst-resources/codemodernizer/test.txt")))
             .whenever(testSessionContextSpy).createZipWithModuleFiles(any())
         doReturn(exampleCreateUploadUrlResponse).whenever(clientAdaptorSpy).createGumbyUploadUrl(any())
-        doAnswer { throw ConnectException("mock exception") }.whenever(clientAdaptorSpy).uploadArtifactToS3(any(), any(), any(), any(), any())
+        doAnswer { throw ConnectException("mock exception") }.whenever(testSessionSpy).uploadPayload(any())
         val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
         assertEquals(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CONNECTION_REFUSED), result)
         verify(testSessionStateSpy, times(1)).putJobHistory(any(), eq(TransformationStatus.FAILED), any(), any())
