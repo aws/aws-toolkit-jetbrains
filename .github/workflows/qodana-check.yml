@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   qodana:
-    runs-on: ubuntu-latest
+    runs-on: codebuild-JB-ubuntu-runner-${{ github.run_id }}-${{ github.run_attempt }}
     permissions:
       contents: read
       # PR check

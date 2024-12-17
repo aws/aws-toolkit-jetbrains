@@ -13,7 +13,7 @@ jobs:
     permissions:
       issues: write # to label, comment and close issues (aws-actions/stale-issue-cleanup)
 
-    runs-on: ubuntu-latest
+    runs-on: codebuild-JB-ubuntu-runner-${{ github.run_id }}-${{ github.run_attempt }}
     name: Stale issues
     steps:
       - uses: aws-actions/stale-issue-cleanup@v6

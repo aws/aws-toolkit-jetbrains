@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         supported_versions: [ '2024.1', '2024.2', '2024.3' ]
-    runs-on: ubuntu-latest
+    runs-on: codebuild-JB-ubuntu-runner-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,7 +50,7 @@ jobs:
     strategy:
       matrix:
         supported_versions: [ '2024.1', '2024.2', '2024.3' ]
-    runs-on: ubuntu-latest
+    runs-on: codebuild-JB-ubuntu-runner-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -79,7 +79,7 @@ jobs:
     strategy:
       matrix:
         supported_versions: [ '2024.1', '2024.2', '2024.3' ]
-    runs-on: ubuntu-latest
+    runs-on: codebuild-JB-ubuntu-runner-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -106,7 +106,7 @@ jobs:
           retention-days: 1
 
   generate_changelog:
-    runs-on: ubuntu-latest
+    runs-on: codebuild-JB-ubuntu-runner-${{ github.run_id }}-${{ github.run_attempt }}
     outputs:
       feature: ${{ steps.assign_output.outputs.feature }}
       tagname: ${{ steps.assign_output.outputs.tagname }}
@@ -157,7 +157,7 @@ jobs:
       AWS_TOOLKIT_VERSION: ${{ needs.generate_changelog.outputs.version }}
       BRANCH: ${{ github.ref_name }}
       AWS_TOOLKIT_CHANGES: ${{ needs.generate_changelog.outputs.changes }}
-    runs-on: ubuntu-latest
+    runs-on: codebuild-JB-ubuntu-runner-${{ github.run_id }}-${{ github.run_attempt }}
     permissions:
       contents: write
     steps:
