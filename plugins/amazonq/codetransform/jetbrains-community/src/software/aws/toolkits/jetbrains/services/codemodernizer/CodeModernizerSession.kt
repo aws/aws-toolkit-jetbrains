@@ -7,7 +7,6 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.runInEdt
 import com.intellij.serviceContainer.AlreadyDisposedException
 import com.intellij.util.io.HttpRequests
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.apache.commons.codec.digest.DigestUtils
@@ -28,6 +27,7 @@ import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerException
@@ -383,9 +383,11 @@ class CodeModernizerSession(
      * Adapted from [CodeWhispererCodeScanSession]
      */
     suspend fun uploadPayload(payload: File): String {
-        val sha256checksum: String = Base64.getEncoder().encodeToString(withContext(Dispatchers.IO) {
-            DigestUtils.sha256(FileInputStream(payload))
-        })
+        val sha256checksum: String = Base64.getEncoder().encodeToString(
+            withContext(getCoroutineBgContext()) {
+                DigestUtils.sha256(FileInputStream(payload))
+            }
+        )
         if (isDisposed.get()) {
             throw AlreadyDisposedException("Disposed when about to create upload URL")
         }
@@ -401,15 +403,14 @@ class CodeModernizerSession(
             throw AlreadyDisposedException("Disposed when about to upload project artifact to s3")
         }
         val uploadStartTime = Instant.now()
-        waitUntil (
+        waitUntil(
             exceptionsToIgnore = setOf(
                 UnknownHostException::class,
                 SocketTimeoutException::class,
                 HttpRequests.HttpStatusException::class,
                 ConnectException::class
             )
-        )
-        {
+        ) {
             clientAdaptor.uploadArtifactToS3(
                 createUploadUrlResponse.uploadUrl(),
                 payload,
