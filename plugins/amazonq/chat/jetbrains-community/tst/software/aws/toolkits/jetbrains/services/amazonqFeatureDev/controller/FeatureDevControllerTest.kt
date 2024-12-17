@@ -434,7 +434,46 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         }
 
     @Test
-    fun `test handleChat onCodeGeneration sends correct metrics for different errors`() = runTest {
+    fun `test handleChat onCodeGeneration sends success metrics`() = runTest {
+        val mockSession = mock<Session>()
+        val featureDevService = mockk<FeatureDevService>()
+        val repoContext = mock<FeatureDevSessionContext>()
+        val sessionStateConfig = SessionStateConfig(testConversationId, repoContext, featureDevService)
+        val mockInteraction = mock<Interaction>()
+        whenever(mockSession.send(userMessage)).thenReturn(mockInteraction)
+        whenever(mockSession.sessionState).thenReturn(
+            PrepareCodeGenerationState(
+                testTabId,
+                CancellationTokenSource(),
+                "test-command",
+                sessionStateConfig,
+                newFileContents,
+                deletedFiles,
+                testReferences,
+                testUploadId,
+                0,
+                messenger,
+                diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
+            ),
+        )
+
+        controller.onCodeGeneration(mockSession, userMessage, testTabId)
+
+        val mockInOrder = inOrder(mockSession)
+
+        mockInOrder.verify(mockSession).sendMetricDataTelemetry(
+            MetricDataOperationName.START_CODE_GENERATION.toString(),
+            MetricDataResult.SUCCESS.toString()
+
+        )
+        mockInOrder.verify(mockSession).sendMetricDataTelemetry(
+            MetricDataOperationName.END_CODE_GENERATION.toString(),
+            MetricDataResult.SUCCESS.toString()
+        )
+    }
+
+    @Test
+    fun `test handleChat onCodeGeneration sends correct failure metrics for different errors`() = runTest {
         data class ErrorTestCase(
             val error: Exception,
             val expectedMetricResult: MetricDataResult,
