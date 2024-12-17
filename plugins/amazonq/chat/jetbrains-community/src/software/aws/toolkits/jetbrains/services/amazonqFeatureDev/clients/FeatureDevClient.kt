@@ -98,7 +98,7 @@ class FeatureDevClient(
                         .metricName("Operation")
                         .metricValue(1.0)
                         .timestamp(Instant.now())
-                        .product("Amazon Q For JetBrains")
+                        .product("FeatureDev")
                         .dimensions(
                             listOf(
                                 Dimension.builder()
