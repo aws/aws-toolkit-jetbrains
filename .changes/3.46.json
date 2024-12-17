@@ -1,0 +1,26 @@
+{
+  "date" : "2024-12-17",
+  "version" : "3.46",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "/review: Code fix automatically scrolls into view after generation."
+  }, {
+    "type" : "feature",
+    "description" : "Chat: improve font size and line-height in footer (below prompt input field)"
+  }, {
+    "type" : "feature",
+    "description" : "Adds capability to send new context commands to AB groups"
+  }, {
+    "type" : "bugfix",
+    "description" : "Chat: When writing a prompt without sending it, navigating via up/down arrows sometimes deletes the unsent prompt."
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix chat not retaining history when interaction is through onboarding tab type (#5189)"
+  }, {
+    "type" : "bugfix",
+    "description" : "Chat: When navigating to previous prompts, code attachments are sometimes displayed incorrectly"
+  }, {
+    "type" : "bugfix",
+    "description" : "Reduce frequency of system information query"
+  } ]
+}
