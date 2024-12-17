@@ -18,7 +18,6 @@ import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.testFramework.utils.io.createFile
 import com.intellij.util.io.HttpRequests
 import com.intellij.util.io.delete
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.apache.commons.codec.digest.DigestUtils
 import org.assertj.core.api.Assertions.assertThat
