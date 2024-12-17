@@ -9,6 +9,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
+import software.aws.toolkits.core.utils.ETagProvider
 
 @Service
 @State(name = "notificationDismissals", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
@@ -41,8 +42,12 @@ data class NotificationDismissalConfiguration(
 
 @Service
 @State(name = "notificationEtag", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
-class NotificationEtagState : PersistentStateComponent<NotificationEtagConfiguration> {
+class NotificationEtagState : PersistentStateComponent<NotificationEtagConfiguration>, ETagProvider {
     private val state = NotificationEtagConfiguration()
+
+    override fun updateETag(newETag: String?) {
+        etag = newETag
+    }
 
     override fun getState(): NotificationEtagConfiguration = state
 
@@ -50,7 +55,7 @@ class NotificationEtagState : PersistentStateComponent<NotificationEtagConfigura
         this.state.etag = state.etag
     }
 
-    var etag: String?
+    override var etag: String?
         get() = state.etag
         set(value) {
             state.etag = value
