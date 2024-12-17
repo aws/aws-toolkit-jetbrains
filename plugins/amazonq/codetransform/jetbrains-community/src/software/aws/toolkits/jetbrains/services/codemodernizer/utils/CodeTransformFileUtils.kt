@@ -28,7 +28,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DependencyUpdatesReport
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_CONFIGURATION_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ORACLE_DB
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.POSTGRESQL_DB
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.RDS_DB
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.SctMetadata
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.SqlMetadataValidationResult
@@ -168,7 +167,7 @@ fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {
 
         val targetDbServer = projectModel.entities.targets.dbServer
         val targetVendor = targetDbServer.vendor.trim().uppercase()
-        if (targetVendor != AURORA_DB && targetVendor != RDS_DB && targetVendor != POSTGRESQL_DB) {
+        if (targetVendor != AURORA_DB && targetVendor != RDS_DB) {
             return SqlMetadataValidationResult(false, message("codemodernizer.chat.message.validation.error.invalid_target_db"))
         }
 
