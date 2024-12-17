@@ -7,7 +7,9 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.runInEdt
 import com.intellij.serviceContainer.AlreadyDisposedException
 import com.intellij.util.io.HttpRequests
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import org.apache.commons.codec.digest.DigestUtils
 import software.amazon.awssdk.core.exception.SdkClientException
 import software.amazon.awssdk.services.codewhispererruntime.model.ResumeTransformationResponse
@@ -20,6 +22,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationUserActionStatus
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
+import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
@@ -55,13 +58,14 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.nio.file.Path
 import java.time.Instant
 import java.util.Base64
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.SSLHandshakeException
-import kotlin.math.pow
 
 const val MAX_ZIP_SIZE = 2000000000 // 2GB
 const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
@@ -143,7 +147,7 @@ class CodeModernizerSession(
      *
      *  Based on [CodeWhispererCodeScanSession]
      */
-    fun createModernizationJob(copyResult: MavenCopyCommandsResult?): CodeModernizerStartJobResult {
+    suspend fun createModernizationJob(copyResult: MavenCopyCommandsResult?): CodeModernizerStartJobResult {
         LOG.info { "Compressing local project" }
         val payload: File?
         var payloadSize = 0
@@ -378,8 +382,10 @@ class CodeModernizerSession(
     /**
      * Adapted from [CodeWhispererCodeScanSession]
      */
-    fun uploadPayload(payload: File): String {
-        val sha256checksum: String = Base64.getEncoder().encodeToString(DigestUtils.sha256(FileInputStream(payload)))
+    suspend fun uploadPayload(payload: File): String {
+        val sha256checksum: String = Base64.getEncoder().encodeToString(withContext(Dispatchers.IO) {
+            DigestUtils.sha256(FileInputStream(payload))
+        })
         if (isDisposed.get()) {
             throw AlreadyDisposedException("Disposed when about to create upload URL")
         }
@@ -395,22 +401,21 @@ class CodeModernizerSession(
             throw AlreadyDisposedException("Disposed when about to upload project artifact to s3")
         }
         val uploadStartTime = Instant.now()
-        for (i in 0..2) {
-            try {
-                clientAdaptor.uploadArtifactToS3(
-                    createUploadUrlResponse.uploadUrl(),
-                    payload,
-                    sha256checksum,
-                    createUploadUrlResponse.kmsKeyArn().orEmpty(),
-                ) { shouldStop.get() }
-                break
-            } catch (e: Exception) {
-                LOG.error { "Unexpected error when uploading project artifact to S3 on attempt ${i + 1}/3: ${e.localizedMessage}" }
-                if (i == 2) {
-                    throw e
-                }
-                Thread.sleep((1000 * 2.0.pow(i)).toLong())
-            }
+        waitUntil (
+            exceptionsToIgnore = setOf(
+                UnknownHostException::class,
+                SocketTimeoutException::class,
+                HttpRequests.HttpStatusException::class,
+                ConnectException::class
+            )
+        )
+        {
+            clientAdaptor.uploadArtifactToS3(
+                createUploadUrlResponse.uploadUrl(),
+                payload,
+                sha256checksum,
+                createUploadUrlResponse.kmsKeyArn().orEmpty(),
+            ) { shouldStop.get() }
         }
         LOG.info { "Upload to S3 succeeded" }
         if (!shouldStop.get()) {
