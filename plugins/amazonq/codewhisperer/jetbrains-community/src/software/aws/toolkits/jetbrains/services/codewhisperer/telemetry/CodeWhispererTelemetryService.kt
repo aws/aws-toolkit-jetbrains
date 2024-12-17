@@ -49,6 +49,7 @@ import software.aws.toolkits.telemetry.CodewhispererTelemetry
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import software.aws.toolkits.telemetry.Component
 import software.aws.toolkits.telemetry.CredentialSourceId
+import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Result
 import java.time.Duration
 import java.time.Instant
@@ -382,6 +383,8 @@ class CodeWhispererTelemetryService {
         component: Component,
         issue: CodeWhispererCodeScanIssue,
         isRefresh: Boolean,
+        result: MetricResult,
+        reason: String? = null,
     ) {
         CodewhispererTelemetry.codeScanIssueGenerateFix(
             component = component,
@@ -389,7 +392,9 @@ class CodeWhispererTelemetryService {
             findingId = issue.findingId,
             detectorId = issue.detectorId,
             ruleId = issue.ruleId,
-            variant = if (isRefresh) "refresh" else null
+            variant = if (isRefresh) "refresh" else null,
+            result = result,
+            reason = reason
         )
     }
 
