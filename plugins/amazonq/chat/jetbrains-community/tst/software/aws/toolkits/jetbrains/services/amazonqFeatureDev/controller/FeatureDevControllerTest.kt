@@ -462,13 +462,13 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         val mockInOrder = inOrder(mockSession)
 
         mockInOrder.verify(mockSession).sendMetricDataTelemetry(
-            MetricDataOperationName.START_CODE_GENERATION.toString(),
-            MetricDataResult.SUCCESS.toString()
+            MetricDataOperationName.START_CODE_GENERATION,
+            MetricDataResult.SUCCESS
 
         )
         mockInOrder.verify(mockSession).sendMetricDataTelemetry(
-            MetricDataOperationName.END_CODE_GENERATION.toString(),
-            MetricDataResult.SUCCESS.toString()
+            MetricDataOperationName.END_CODE_GENERATION,
+            MetricDataResult.SUCCESS
         )
     }
 
@@ -530,13 +530,13 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             val mockInOrder = inOrder(mockSession)
 
             mockInOrder.verify(mockSession).sendMetricDataTelemetry(
-                MetricDataOperationName.START_CODE_GENERATION.toString(),
-                MetricDataResult.SUCCESS.toString()
+                MetricDataOperationName.START_CODE_GENERATION,
+                MetricDataResult.SUCCESS
 
             )
             mockInOrder.verify(mockSession).sendMetricDataTelemetry(
-                MetricDataOperationName.END_CODE_GENERATION.toString(),
-                expectedResult.toString()
+                MetricDataOperationName.END_CODE_GENERATION,
+                expectedResult
             )
         }
     }

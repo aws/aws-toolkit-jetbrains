@@ -14,6 +14,8 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATIO
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ConversationIdNotFoundException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MAX_PROJECT_SIZE_BYTES
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataOperationName
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataResult
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.IncomingFeatureDevMessage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAsyncEventProgress
@@ -219,8 +221,8 @@ class Session(val tabID: String, val project: Project) {
         this._codeResultMessageId = null
     }
 
-    fun sendMetricDataTelemetry(operationName: String, result: String) {
-        featureDevService.sendFeatureDevMetricData(operationName, result)
+    fun sendMetricDataTelemetry(operationName: MetricDataOperationName, result: MetricDataResult) {
+        featureDevService.sendFeatureDevMetricData(operationName.toString(), result.toString())
     }
 
     suspend fun send(msg: String): Interaction {

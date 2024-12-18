@@ -72,8 +72,8 @@ suspend fun FeatureDevController.onCodeGeneration(
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.generating_code"))
 
         session.sendMetricDataTelemetry(
-            MetricDataOperationName.START_CODE_GENERATION.toString(),
-            MetricDataResult.SUCCESS.toString()
+            MetricDataOperationName.START_CODE_GENERATION,
+            MetricDataResult.SUCCESS
         )
 
         session.send(message) // Trigger code generation
@@ -147,56 +147,51 @@ suspend fun FeatureDevController.onCodeGeneration(
         }
 
         messenger.sendSystemPrompt(tabId = tabId, followUp = getFollowUpOptions(session.sessionState.phase, InsertAction.ALL))
-
-        session.sendMetricDataTelemetry(
-            MetricDataOperationName.END_CODE_GENERATION.toString(),
-            MetricDataResult.SUCCESS.toString()
-        )
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
     } catch (err: FeatureDevException) {
         when (true) {
             (err is GuardrailsException) -> {
                 session.sendMetricDataTelemetry(
-                    MetricDataOperationName.END_CODE_GENERATION.toString(),
-                    MetricDataResult.ERROR.toString()
+                    MetricDataOperationName.END_CODE_GENERATION,
+                    MetricDataResult.ERROR
                 )
             }
             (err is PromptRefusalException) -> {
                 session.sendMetricDataTelemetry(
-                    MetricDataOperationName.END_CODE_GENERATION.toString(),
-                    MetricDataResult.ERROR.toString()
+                    MetricDataOperationName.END_CODE_GENERATION,
+                    MetricDataResult.ERROR
                 )
             }
             (err is EmptyPatchException) -> {
                 session.sendMetricDataTelemetry(
-                    MetricDataOperationName.END_CODE_GENERATION.toString(),
-                    MetricDataResult.LLMFAILURE.toString()
+                    MetricDataOperationName.END_CODE_GENERATION,
+                    MetricDataResult.LLMFAILURE
                 )
             }
             (err is NoChangeRequiredException) -> {
                 session.sendMetricDataTelemetry(
-                    MetricDataOperationName.END_CODE_GENERATION.toString(),
-                    MetricDataResult.ERROR.toString()
+                    MetricDataOperationName.END_CODE_GENERATION,
+                    MetricDataResult.ERROR
                 )
             }
             (err is ThrottlingException) -> {
                 session.sendMetricDataTelemetry(
-                    MetricDataOperationName.END_CODE_GENERATION.toString(),
-                    MetricDataResult.ERROR.toString()
+                    MetricDataOperationName.END_CODE_GENERATION,
+                    MetricDataResult.ERROR
                 )
             }
             else -> {
                 session.sendMetricDataTelemetry(
-                    MetricDataOperationName.END_CODE_GENERATION.toString(),
-                    MetricDataResult.FAULT.toString()
+                    MetricDataOperationName.END_CODE_GENERATION,
+                    MetricDataResult.FAULT
                 )
             }
         }
         throw err
     } catch (err: Exception) {
         session.sendMetricDataTelemetry(
-            MetricDataOperationName.END_CODE_GENERATION.toString(),
-            MetricDataResult.FAULT.toString()
+            MetricDataOperationName.END_CODE_GENERATION,
+            MetricDataResult.FAULT
         )
         throw err
     } finally {
@@ -218,6 +213,11 @@ suspend fun FeatureDevController.onCodeGeneration(
             )
         }
     }
+
+    session.sendMetricDataTelemetry(
+        MetricDataOperationName.END_CODE_GENERATION,
+        MetricDataResult.SUCCESS
+    )
 }
 
 private suspend fun disposeToken(
