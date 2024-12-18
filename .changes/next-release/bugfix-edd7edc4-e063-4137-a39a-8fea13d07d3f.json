@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Chat: When writing a prompt without sending it, navigating via up/down arrows sometimes deletes the unsent prompt."
-}
