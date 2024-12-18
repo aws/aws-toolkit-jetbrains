@@ -7,7 +7,6 @@ import com.intellij.notification.NotificationAction
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATION_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.EmptyPatchException
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.GuardrailsException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataOperationName
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataResult
@@ -72,8 +71,8 @@ suspend fun FeatureDevController.onCodeGeneration(
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.generating_code"))
 
         session.sendMetricDataTelemetry(
-            MetricDataOperationName.START_CODE_GENERATION,
-            MetricDataResult.SUCCESS
+            MetricDataOperationName.StartCodeGeneration,
+            MetricDataResult.Success
         )
 
         session.send(message) // Trigger code generation
@@ -148,50 +147,32 @@ suspend fun FeatureDevController.onCodeGeneration(
 
         messenger.sendSystemPrompt(tabId = tabId, followUp = getFollowUpOptions(session.sessionState.phase, InsertAction.ALL))
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
-    } catch (err: FeatureDevException) {
-        when (true) {
-            (err is GuardrailsException) -> {
+    } catch (err: Exception) {
+        when (err) {
+            is GuardrailsException, is NoChangeRequiredException, is PromptRefusalException, is ThrottlingException -> {
                 session.sendMetricDataTelemetry(
-                    MetricDataOperationName.END_CODE_GENERATION,
-                    MetricDataResult.ERROR
+                    MetricDataOperationName.EndCodeGeneration,
+                    MetricDataResult.Error
                 )
             }
-            (err is PromptRefusalException) -> {
+            is EmptyPatchException -> {
                 session.sendMetricDataTelemetry(
-                    MetricDataOperationName.END_CODE_GENERATION,
-                    MetricDataResult.ERROR
-                )
-            }
-            (err is EmptyPatchException) -> {
-                session.sendMetricDataTelemetry(
-                    MetricDataOperationName.END_CODE_GENERATION,
-                    MetricDataResult.LLMFAILURE
-                )
-            }
-            (err is NoChangeRequiredException) -> {
-                session.sendMetricDataTelemetry(
-                    MetricDataOperationName.END_CODE_GENERATION,
-                    MetricDataResult.ERROR
-                )
-            }
-            (err is ThrottlingException) -> {
-                session.sendMetricDataTelemetry(
-                    MetricDataOperationName.END_CODE_GENERATION,
-                    MetricDataResult.ERROR
+                    MetricDataOperationName.EndCodeGeneration,
+                    MetricDataResult.LlmFailure
                 )
             }
             else -> {
                 session.sendMetricDataTelemetry(
-                    MetricDataOperationName.END_CODE_GENERATION,
-                    MetricDataResult.FAULT
+                    MetricDataOperationName.EndCodeGeneration,
+                    MetricDataResult.Fault
                 )
             }
         }
         throw err
     } catch (err: Exception) {
         session.sendMetricDataTelemetry(
-            MetricDataOperationName.END_CODE_GENERATION,
-            MetricDataResult.FAULT
+            MetricDataOperationName.EndCodeGeneration,
+            MetricDataResult.Fault
         )
         throw err
     } finally {
@@ -215,8 +196,8 @@ suspend fun FeatureDevController.onCodeGeneration(
     }
 
     session.sendMetricDataTelemetry(
-        MetricDataOperationName.END_CODE_GENERATION,
-        MetricDataResult.SUCCESS
+        MetricDataOperationName.EndCodeGeneration,
+        MetricDataResult.Success
     )
 }
 
