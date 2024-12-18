@@ -462,13 +462,13 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         val mockInOrder = inOrder(mockSession)
 
         mockInOrder.verify(mockSession).sendMetricDataTelemetry(
-            MetricDataOperationName.START_CODE_GENERATION,
-            MetricDataResult.SUCCESS
+            MetricDataOperationName.StartCodeGeneration,
+            MetricDataResult.Success
 
         )
         mockInOrder.verify(mockSession).sendMetricDataTelemetry(
-            MetricDataOperationName.END_CODE_GENERATION,
-            MetricDataResult.SUCCESS
+            MetricDataOperationName.EndCodeGeneration,
+            MetricDataResult.Success
         )
     }
 
@@ -482,27 +482,27 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         val testCases = listOf(
             ErrorTestCase(
                 EmptyPatchException("EmptyPatchException", "Empty patch"),
-                MetricDataResult.LLMFAILURE
+                MetricDataResult.LlmFailure
             ),
             ErrorTestCase(
                 GuardrailsException(operation = "GenerateCode", desc = "Failed guardrails"),
-                MetricDataResult.ERROR
+                MetricDataResult.Error
             ),
             ErrorTestCase(
                 PromptRefusalException(operation = "GenerateCode", desc = "Prompt refused"),
-                MetricDataResult.ERROR
+                MetricDataResult.Error
             ),
             ErrorTestCase(
                 NoChangeRequiredException(operation = "GenerateCode", desc = "No changes needed"),
-                MetricDataResult.ERROR
+                MetricDataResult.Error
             ),
             ErrorTestCase(
                 ThrottlingException(operation = "GenerateCode", desc = "Request throttled"),
-                MetricDataResult.ERROR
+                MetricDataResult.Error
             ),
             ErrorTestCase(
                 RuntimeException("Unknown error"),
-                MetricDataResult.FAULT
+                MetricDataResult.Fault
             )
         )
 
@@ -530,12 +530,12 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             val mockInOrder = inOrder(mockSession)
 
             mockInOrder.verify(mockSession).sendMetricDataTelemetry(
-                MetricDataOperationName.START_CODE_GENERATION,
-                MetricDataResult.SUCCESS
+                MetricDataOperationName.StartCodeGeneration,
+                MetricDataResult.Success
 
             )
             mockInOrder.verify(mockSession).sendMetricDataTelemetry(
-                MetricDataOperationName.END_CODE_GENERATION,
+                MetricDataOperationName.EndCodeGeneration,
                 expectedResult
             )
         }

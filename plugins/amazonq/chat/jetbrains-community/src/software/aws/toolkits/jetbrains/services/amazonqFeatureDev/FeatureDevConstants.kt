@@ -40,18 +40,18 @@ enum class FeatureDevOperation(private val operationName: String) {
 }
 
 enum class MetricDataOperationName(private val operationName: String) {
-    START_CODE_GENERATION("StartCodeGeneration"),
-    END_CODE_GENERATION("EndCodeGeneration"),
+    StartCodeGeneration("StartCodeGeneration"),
+    EndCodeGeneration("EndCodeGeneration"),
     ;
 
     override fun toString(): String = operationName
 }
 
 enum class MetricDataResult(private val resultName: String) {
-    SUCCESS("Success"),
-    FAULT("Fault"),
-    ERROR("Error"),
-    LLMFAILURE("LLMFailure"),
+    Success("Success"),
+    Fault("Fault"),
+    Error("Error"),
+    LlmFailure("LLMFailure"),
     ;
 
     override fun toString(): String = resultName
