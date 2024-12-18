@@ -148,6 +148,7 @@ class GumbyClient(private val project: Project) {
         var result: CodeWhispererRuntimeResponse? = null
         try {
             result = apiCall()
+            LOG.info { "$apiName request ID: ${result.responseMetadata()?.requestId()}" }
             return result
         } catch (e: Exception) {
             LOG.error(e) { "$apiName failed: ${e.message}" }
