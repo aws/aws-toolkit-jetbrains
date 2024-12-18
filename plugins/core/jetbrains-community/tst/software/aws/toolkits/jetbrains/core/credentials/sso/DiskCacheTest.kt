@@ -5,11 +5,13 @@ package software.aws.toolkits.jetbrains.core.credentials.sso
 
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.io.NioFiles
+import com.intellij.testFramework.ApplicationExtension
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledOnOs
 import org.junit.jupiter.api.condition.OS
+import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.io.TempDir
 import software.aws.toolkits.core.utils.readText
 import software.aws.toolkits.core.utils.test.assertPosixPermissions
@@ -27,6 +29,7 @@ import java.time.temporal.ChronoUnit
 import kotlin.io.path.setPosixFilePermissions
 
 class DiskCacheTest {
+    @ExtendWith(ApplicationExtension::class)
     private val now = Instant.now()
     private val clock = Clock.fixed(now, ZoneOffset.UTC)
 
@@ -54,7 +57,8 @@ class DiskCacheTest {
                     startUrl = ssoUrl,
                     scopes = scopes,
                     region = ssoRegion
-                )
+                ),
+                "testSource"
             )
         ).isNull()
     }
@@ -68,7 +72,7 @@ class DiskCacheTest {
         )
         cacheLocation.resolve("223224b6f0b4702c1a984be8284fe2c9d9718759.json").writeText("badData")
 
-        assertThat(sut.loadClientRegistration(key)).isNull()
+        assertThat(sut.loadClientRegistration(key, "testSource")).isNull()
     }
 
     @Test
@@ -88,7 +92,7 @@ class DiskCacheTest {
             """.trimIndent()
         )
 
-        assertThat(sut.loadClientRegistration(key)).isNull()
+        assertThat(sut.loadClientRegistration(key, "testSource")).isNull()
     }
 
     @Test
@@ -109,7 +113,7 @@ class DiskCacheTest {
             """.trimIndent()
         )
 
-        assertThat(sut.loadClientRegistration(key)).isNull()
+        assertThat(sut.loadClientRegistration(key, "testSource")).isNull()
     }
 
     @Test
@@ -131,7 +135,7 @@ class DiskCacheTest {
             """.trimIndent()
         )
 
-        assertThat(sut.loadClientRegistration(key))
+        assertThat(sut.loadClientRegistration(key, "testSource"))
             .usingRecursiveComparison()
             .isEqualTo(
                 DeviceAuthorizationClientRegistration(
@@ -214,7 +218,7 @@ class DiskCacheTest {
                 """.trimIndent()
             )
 
-        assertThat(sut.loadClientRegistration(key))
+        assertThat(sut.loadClientRegistration(key, "testSource"))
             .usingRecursiveComparison()
             .isEqualTo(
                 PKCEClientRegistration(
@@ -320,10 +324,10 @@ class DiskCacheTest {
             )
         )
 
-        assertThat(sut.loadClientRegistration(key1))
+        assertThat(sut.loadClientRegistration(key1, "testSource"))
             .usingRecursiveComparison()
             .isEqualTo(
-                sut.loadClientRegistration(key2)
+                sut.loadClientRegistration(key2, "testSource")
             )
     }
 
@@ -347,11 +351,11 @@ class DiskCacheTest {
             region = ssoRegion
         )
 
-        assertThat(sut.loadClientRegistration(key)).isNotNull()
+        assertThat(sut.loadClientRegistration(key, "testSource")).isNotNull()
 
         sut.invalidateClientRegistration(key)
 
-        assertThat(sut.loadClientRegistration(key)).isNull()
+        assertThat(sut.loadClientRegistration(key, "testSource")).isNull()
         assertThat(cacheFile).doesNotExist()
     }
 
@@ -616,7 +620,7 @@ class DiskCacheTest {
         registration.setPosixFilePermissions(emptySet())
         assertPosixPermissions(registration, "---------")
 
-        assertThat(sut.loadClientRegistration(key)).isNotNull()
+        assertThat(sut.loadClientRegistration(key, "testSource")).isNotNull()
 
         assertPosixPermissions(registration, "rw-------")
     }

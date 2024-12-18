@@ -7,10 +7,12 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererstreaming.model.CodeWhispererStreamingException
 import software.aws.toolkits.core.utils.convertMarkdownToHTML
+import software.aws.toolkits.core.utils.extractCodeBlockLanguage
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatResponseEvent
@@ -33,6 +35,8 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
     private val codeReferences = mutableListOf<CodeReference>()
     private var requestId: String = ""
     private var statusCode: Int = 0
+    private val defaultTestGenResponseLanguage: String = "plaintext"
+    private var codeBlockLanguage: String = defaultTestGenResponseLanguage
 
     companion object {
         private val CODE_BLOCK_PATTERN = Regex("<pre>\\s*<code")
@@ -52,6 +56,7 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
         data: ChatRequestData,
         sessionInfo: ChatSessionInfo,
         shouldAddIndexInProgressMessage: Boolean,
+        isInlineChat: Boolean = false,
     ) = flow {
         val session = sessionInfo.session
         session.chat(data)
@@ -132,14 +137,19 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                     )
                 }
             }
+            .onEach { responseEvent ->
+                if (isInlineChat) processChatEvent(tabId, triggerId, data, responseEvent, shouldAddIndexInProgressMessage)?.let { emit(it) }
+            }
             .collect { responseEvent ->
-                processChatEvent(
-                    tabId,
-                    triggerId,
-                    data,
-                    responseEvent,
-                    shouldAddIndexInProgressMessage
-                )?.let { emit(it) }
+                if (!isInlineChat) {
+                    processChatEvent(
+                        tabId,
+                        triggerId,
+                        data,
+                        responseEvent,
+                        shouldAddIndexInProgressMessage
+                    )?.let { emit(it) }
+                }
             }
     }
 
@@ -209,6 +219,10 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
             } else {
                 responseText.toString()
             }
+            if (codeBlockLanguage == defaultTestGenResponseLanguage) {
+                // To get the language of generated code in Q chat.
+                codeBlockLanguage = extractCodeBlockLanguage(message)
+            }
             ChatMessage(
                 tabId = tabId,
                 triggerId = triggerId,
@@ -217,6 +231,7 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                 message = message,
                 codeReference = codeReferences,
                 userIntent = data.userIntent,
+                codeBlockLanguage = codeBlockLanguage,
             )
         } else {
             null

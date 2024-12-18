@@ -1,83 +1,19 @@
 {
     "types": [
         {
-            "name": "codecatalyst_createDevEnvironmentRepoType",
-            "type": "string",
-            "description": "Type of Git repository provided to the Amazon CodeCatalyst dev environment create wizard",
-            "allowedValues": [
-                "linked",
-                "unlinked",
-                "none"
-            ]
-        },
-        {
-            "name": "codecatalyst_updateDevEnvironmentLocationType",
-            "type": "string",
-            "description": "Locality of the Amazon CodeCatalyst update dev environment request (i.e., from the thin client or the local IDE instance)",
-            "allowedValues": [
-                "remote",
-                "local"
-            ]
-        },
-        {
-            "name": "userId",
-            "type": "string",
-            "description": "Opaque AWS ID identifier"
-        },
-        {
-            "name": "codecatalyst_devEnvironmentWorkflowError",
-            "type": "string",
-            "description": "Workflow error name"
-        },
-        {
-            "name": "codecatalyst_devEnvironmentWorkflowStep",
-            "type": "string",
-            "description": "Workflow step name"
-        },
-        {
-            "name": "cwsprChatTriggerInteraction",
-            "type": "string",
-            "allowedValues": [
-                "hotkeys",
-                "click",
-                "contextMenu"
-            ],
-            "description": "Identifies the specific interaction that opens the chat panel"
-        },
-        {
-            "name": "cwsprChatConversationId",
-            "type": "string",
-            "description": "Unique identifier for each conversation"
-        },
-        {
-            "name": "cwsprChatUserIntent",
-            "type": "string",
-            "allowedValues": [
-                "suggestAlternateImplementation",
-                "applyCommonBestPractices",
-                "improveCode",
-                "showExample",
-                "citeSources",
-                "explainLineByLine",
-                "explainCodeSelection",
-                "generateUnitTests"
-            ],
-            "description": "Explict user intent associated with a chat message"
-        },
-        {
-            "name": "cwsprChatHasCodeSnippet",
-            "type": "boolean",
-            "description": "true if user has selected code snippet, false otherwise."
-        },
-        {
-            "name": "cwsprChatHasProjectContext",
-            "type": "boolean",
-            "description": "true if query has project level context."
-        },
-        {
-            "name": "cwsprChatProjectContextQueryMs",
+            "name": "acceptedCharactersCount",
             "type": "int",
-            "description": "query latency in ms for local project context"
+            "description": "The number of accepted characters"
+        },
+        {
+            "name": "acceptedCount",
+            "type": "int",
+            "description": "The number of accepted cases"
+        },
+        {
+            "name": "acceptedLinesCount",
+            "type": "int",
+            "description": "The number of accepted lines of code"
         },
         {
             "name": "amazonqIndexFileSizeInMB",
@@ -100,9 +36,69 @@
             "description": "Cpu usage of LSP server"
         },
         {
-            "name": "cwsprChatProgrammingLanguage",
+            "name": "authRefreshSource",
             "type": "string",
-            "description": "Programming language associated with the message"
+            "description": "Source triggering token refresh"
+        },
+        {
+            "name": "buildPayloadBytes",
+            "type": "int",
+            "description": "The uncompressed payload size in bytes of the source files in customer project context"
+        },
+        {
+            "name": "buildZipFileBytes",
+            "type": "int",
+            "description": "The compressed payload size of source files in bytes of customer project context sent"
+        },
+        {
+            "name": "component",
+            "allowedValues": [
+                "editor",
+                "viewer",
+                "filesystem",
+                "explorer",
+                "infobar",
+                "hover",
+                "webview",
+                "quickfix",
+                "Manage Extensions",
+                "Got It",
+                "Read More",
+                "Install",
+                "Dismiss"
+            ],
+            "description": "The IDE or OS component used for the action. (Examples: S3 download to filesystem, S3 upload from editor, ...)"
+        },
+        {
+            "name": "connectionState",
+            "type": "string",
+            "description": "A detailed state of a specific auth connection. Use `authStatus` for a higher level view of an extension's general connection."
+        },
+        {
+            "name": "cwsprChatActiveEditorImportCount",
+            "type": "int",
+            "description": "Number of import statements in the active editor"
+        },
+        {
+            "name": "cwsprChatActiveEditorTotalCharacters",
+            "type": "int",
+            "description": "Total number of characters in the active editor"
+        },
+        {
+            "name": "cwsprChatCommandName",
+            "type": "string",
+            "description": "Type of chat command name executed"
+        },
+        {
+            "name": "cwsprChatCommandType",
+            "type": "string",
+            "allowedValues": [
+                "clear",
+                "help",
+                "transform",
+                "auth"
+            ],
+            "description": "Type of chat command (/command) executed"
         },
         {
             "name": "cwsprChatConversationType",
@@ -115,34 +111,14 @@
             "description": "Identifies the type of conversation"
         },
         {
-            "name": "cwsprChatMessageId",
-            "type": "string",
-            "description": "Unique identifier for each message in an conversation"
+            "name": "cwsprChatHasCodeSnippet",
+            "type": "boolean",
+            "description": "true if user has selected code snippet, false otherwise."
         },
         {
-            "name": "cwsprChatActiveEditorTotalCharacters",
-            "type": "int",
-            "description": "Total number of characters in the active editor"
-        },
-        {
-            "name": "cwsprChatActiveEditorImportCount",
-            "type": "int",
-            "description": "Number of import statements in the active editor"
-        },
-        {
-            "name": "cwsprChatResponseCodeSnippetCount",
-            "type": "int",
-            "description": "Number of code snippets in response"
-        },
-        {
-            "name": "cwsprChatResponseCode",
-            "type": "int",
-            "description": "HTTP response code for message API invocation"
-        },
-        {
-            "name": "cwsprChatSourceLinkCount",
-            "type": "int",
-            "description": "Number of links in response"
+            "name": "cwsprChatModificationPercentage",
+            "type": "double",
+            "description": "Percentage of characters edited by user after copying/inserting code from a message"
         },
         {
             "name": "cwsprChatReferencesCount",
@@ -170,6 +146,11 @@
             "description": "Time taken to get the full response in ms"
         },
         {
+            "name": "cwsprChatProjectContextQueryMs",
+            "type": "int",
+            "description": "query latency in ms for local project context"
+        },
+        {
             "name": "cwsprChatResponseLength",
             "type": "int",
             "description": "Number of characters in response"
@@ -180,122 +161,74 @@
             "description": "Number of characters in request"
         },
         {
-            "name": "cwsprChatInteractionType",
+            "name": "cwsprChatResponseCode",
+            "type": "int",
+            "description": "HTTP response code for message API invocation"
+        },
+        {
+            "name": "cwsprChatResponseCodeSnippetCount",
+            "type": "int",
+            "description": "Number of code snippets in response"
+        },
+        {
+            "name": "cwsprChatSourceLinkCount",
+            "type": "int",
+            "description": "Number of links in response"
+        },
+        {
+            "name": "cwsprChatTriggerInteraction",
+            "type": "string",
             "allowedValues": [
-                "insertAtCursor",
-                "copySnippet",
-                "copy",
-                "clickLink",
-                "clickFollowUp",
-                "hoverReference",
-                "upvote",
-                "downvote",
-                "clickBodyLink"
+                "hotkeys",
+                "click",
+                "contextMenu"
             ],
-            "type": "string",
-            "description": "Indicates the specific interaction type with a message in a conversation"
+            "description": "Identifies the specific interaction that opens the chat panel"
         },
         {
-            "name": "cwsprChatInteractionTarget",
-            "type": "string",
-            "description": "Identifies the entity within the message that user interacts with."
-        },
-        {
-            "name": "cwsprChatCodeBlockIndex",
+            "name": "executedCount",
             "type": "int",
-            "description": "Index of the code block inside a message in the conversation."
+            "description": "The number of executed operations"
         },
         {
-            "name": "cwsprChatTotalCodeBlocks",
+            "name": "generatedCharactersCount",
             "type": "int",
-            "description": "Total number of code blocks inside a message in the conversation."
+            "description": "Number of characters of code generated"
         },
         {
-            "name": "cwsprChatAcceptedCharactersLength",
+            "name": "generatedCount",
             "type": "int",
-            "description": "Count of code characters copied to the editor"
+            "description": "The number of generated cases"
         },
         {
-            "name": "cwsprChatAcceptedNumberOfLines",
+            "name": "generatedLinesCount",
             "type": "int",
-            "description": "Count of lines of code copied to the editor"
+            "description": "The number of generated lines of code"
         },
         {
-            "name": "cwsprChatHasReference",
+            "name": "hasUserPromptSupplied",
             "type": "boolean",
-            "description": "True if the code snippet that user interacts with has a reference."
+            "description": "True if user supplied prompt message as input else false"
         },
         {
-            "name": "cwsprChatModificationPercentage",
-            "type": "double",
-            "description": "Percentage of characters edited by user after copying/inserting code from a message"
+            "name": "isCodeBlockSelected",
+            "type": "boolean",
+            "description": "True if user selected code snippet as input else false"
         },
         {
-            "name": "cwsprChatCommandType",
+            "name": "isSupportedLanguage",
+            "type": "boolean",
+            "description": "Indicate if the language is supported"
+        },
+        {
+            "name": "jobGroup",
             "type": "string",
-            "allowedValues": [
-                "clear",
-                "help",
-                "transform",
-                "auth"
-            ],
-            "description": "Type of chat command (/command) executed"
+            "description": "Job group name used in the operation"
         },
         {
-            "name": "cwsprChatCommandName",
+            "name": "jobId",
             "type": "string",
-            "description": "Type of chat command name executed"
-        },
-        {
-            "name": "featureId",
-            "type": "string",
-            "description": "The id of the feature the user is interacting in.",
-            "allowedValues": [
-                "awsExplorer",
-                "codewhisperer",
-                "codecatalyst",
-                "q",
-                "codewhispererQ"
-            ]
-        },
-        {
-            "name": "authStatus",
-            "type": "string",
-            "allowedValues": [
-                "connected",
-                "notConnected",
-                "expired"
-            ],
-            "description": "Status of the an auth connection."
-        },
-        {
-            "name": "authEnabledFeatures",
-            "type": "string",
-            "description": "Comma-delimited list of features for which auth is enabled."
-        },
-        {
-            "name": "authEnabledConnections",
-            "type": "string",
-            "description": "Comma-delimited list of enabled auths."
-        },
-        {
-            "name": "component",
-            "allowedValues": [
-                "editor",
-                "viewer",
-                "filesystem",
-                "explorer",
-                "infobar",
-                "hover",
-                "webview",
-                "quickfix",
-                "Manage Extensions",
-                "Got It",
-                "Read More",
-                "Install",
-                "Dismiss"
-            ],
-            "description": "The IDE or OS component used for the action. (Examples: S3 download to filesystem, S3 upload from editor, ...)"
+            "description": "Job id used in the operation"
         },
         {
             "name": "reAuth",
@@ -309,176 +242,9 @@
                 "reloaded"
             ],
             "description": "Toolkit run state."
-        },
-        {
-            "name": "authType",
-            "allowedValues": [
-                "PKCE",
-                "DeviceCode",
-                "IAM"
-            ],
-            "description": "Login is with Legacy device code or newer PKCE flow"
         }
     ],
     "metrics": [
-        {
-            "name": "aws_openLocalTerminal",
-            "description": "Open local terminal with aws connection injected",
-            "metadata": [
-                {
-                    "type": "result"
-                }
-            ]
-        },
-        {
-            "name": "codecatalyst_createDevEnvironment",
-            "description": "Create an Amazon CodeCatalyst Dev Environment",
-            "metadata": [
-                {
-                    "type": "userId"
-                },
-                {
-                    "type": "result"
-                },
-                {
-                    "type": "codecatalyst_createDevEnvironmentRepoType",
-                    "required": false
-                }
-            ]
-        },
-        {
-            "name": "codecatalyst_updateDevEnvironmentSettings",
-            "description": "Update properties of a Amazon CodeCatalyst Dev Environment",
-            "metadata": [
-                {
-                    "type": "userId"
-                },
-                {
-                    "type": "result"
-                },
-                {
-                    "type": "codecatalyst_updateDevEnvironmentLocationType"
-                }
-            ]
-        },
-        {
-            "name": "codecatalyst_updateDevfile",
-            "description": "Trigger a devfile update on a Amazon CodeCatalyst dev environment",
-            "metadata": [
-                {
-                    "type": "userId"
-                },
-                {
-                    "type": "result"
-                }
-            ]
-        },
-        {
-            "name": "codecatalyst_localClone",
-            "description": "Clone a Amazon CodeCatalyst code repository locally",
-            "metadata": [
-                {
-                    "type": "userId"
-                },
-                {
-                    "type": "result"
-                }
-            ]
-        },
-        {
-            "name": "codecatalyst_connect",
-            "description": "Connect to a Amazon CodeCatalyst dev environment",
-            "metadata": [
-                {
-                    "type": "userId"
-                },
-                {
-                    "type": "result"
-                },
-                {
-                    "type": "reason",
-                    "required": false
-                }
-            ]
-        },
-        {
-            "name": "codecatalyst_devEnvironmentWorkflowStatistic",
-            "description": "Workflow statistic for connecting to a dev environment",
-            "passive": true,
-            "metadata": [
-                {
-                    "type": "userId"
-                },
-                {
-                    "type": "result"
-                },
-                {
-                    "type": "duration"
-                },
-                {
-                    "type": "codecatalyst_devEnvironmentWorkflowStep"
-                },
-                {
-                    "type": "codecatalyst_devEnvironmentWorkflowError",
-                    "required": false
-                }
-            ]
-        },
-        {
-            "name": "amazonq_openChat",
-            "description": "When user opens CWSPR chat panel"
-        },
-        {
-            "name": "amazonq_enterFocusChat",
-            "description": "When chat panel comes into focus"
-        },
-        {
-            "name": "amazonq_exitFocusChat",
-            "description": "When chat panel goes out of focus"
-        },
-        {
-            "name": "amazonq_closeChat",
-            "description": "When chat panel is closed"
-        },
-        {
-            "name": "amazonq_startConversation",
-            "description": "When user starts a new conversation",
-            "metadata": [
-                {
-                    "type": "cwsprChatConversationId"
-                },
-                {
-                    "type": "cwsprChatTriggerInteraction"
-                },
-                {
-                    "type": "cwsprChatUserIntent",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatHasCodeSnippet",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatProgrammingLanguage",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatConversationType"
-                },
-                {
-                    "type": "credentialStartUrl",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatHasProjectContext",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatProjectContextQueryMs",
-                    "required": false
-                }
-            ]
-        },
         {
             "name": "amazonq_addMessage",
             "description": "When a message is added to the conversation",
@@ -599,6 +365,55 @@
             ]
         },
         {
+            "name": "amazonq_modifyCode",
+            "description": "Percentage of code modified by the user after copying/inserting code from a message",
+            "metadata": [
+                {
+                    "type": "cwsprChatConversationId"
+                },
+                {
+                    "type": "cwsprChatMessageId"
+                },
+                {
+                    "type": "cwsprChatModificationPercentage"
+                },
+                {
+                    "type": "credentialStartUrl",
+                    "required": false
+                }
+            ]
+        },
+        {
+            "name": "amazonq_closeChat",
+            "description": "When chat panel is closed"
+        },
+        {
+            "name": "amazonq_enterFocusChat",
+            "description": "When chat panel comes into focus"
+        },
+        {
+            "name": "amazonq_enterFocusConversation",
+            "description": "When a conversation comes into focus",
+            "metadata": [
+                {
+                    "type": "cwsprChatConversationId"
+                }
+            ]
+        },
+        {
+            "name": "amazonq_exitFocusChat",
+            "description": "When chat panel goes out of focus"
+        },
+        {
+            "name": "amazonq_exitFocusConversation",
+            "description": "When a conversation goes out of focus",
+            "metadata": [
+                {
+                    "type": "cwsprChatConversationId"
+                }
+            ]
+        },
+        {
             "name": "amazonq_messageResponseError",
             "description": "When an error has occured in response to a prompt",
             "metadata": [
@@ -645,92 +460,8 @@
             ]
         },
         {
-            "name": "amazonq_interactWithMessage",
-            "description": "When a user interacts with a message in the conversation",
-            "metadata": [
-                {
-                    "type": "cwsprChatConversationId"
-                },
-                {
-                    "type": "cwsprChatMessageId"
-                },
-                {
-                    "type": "cwsprChatUserIntent",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatInteractionType"
-                },
-                {
-                    "type": "cwsprChatInteractionTarget",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatCodeBlockIndex",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatTotalCodeBlocks",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatAcceptedCharactersLength",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatAcceptedNumberOfLines",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatHasReference",
-                    "required": false
-                },
-                {
-                    "type": "credentialStartUrl",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatHasProjectContext",
-                    "required": false
-                }
-            ]
-        },
-        {
-            "name": "amazonq_modifyCode",
-            "description": "Percentage of code modified by the user after copying/inserting code from a message",
-            "metadata": [
-                {
-                    "type": "cwsprChatConversationId"
-                },
-                {
-                    "type": "cwsprChatMessageId"
-                },
-                {
-                    "type": "cwsprChatModificationPercentage"
-                },
-                {
-                    "type": "credentialStartUrl",
-                    "required": false
-                }
-            ]
-        },
-        {
-            "name": "amazonq_enterFocusConversation",
-            "description": "When a conversation comes into focus",
-            "metadata": [
-                {
-                    "type": "cwsprChatConversationId"
-                }
-            ]
-        },
-        {
-            "name": "amazonq_exitFocusConversation",
-            "description": "When a conversation goes out of focus",
-            "metadata": [
-                {
-                    "type": "cwsprChatConversationId"
-                }
-            ]
+            "name": "amazonq_openChat",
+            "description": "When user opens CWSPR chat panel"
         },
         {
             "name": "amazonq_runCommand",
@@ -750,23 +481,195 @@
             ]
         },
         {
-            "name": "auth_userState",
-            "description": "The state of the user's authentication.",
+            "name": "amazonq_startConversation",
+            "description": "When user starts a new conversation",
             "metadata": [
+                {
+                    "type": "cwsprChatConversationId"
+                },
+                {
+                    "type": "cwsprChatTriggerInteraction"
+                },
+                {
+                    "type": "cwsprChatUserIntent",
+                    "required": false
+                },
+                {
+                    "type": "cwsprChatHasCodeSnippet",
+                    "required": false
+                },
+                {
+                    "type": "cwsprChatProgrammingLanguage",
+                    "required": false
+                },
+                {
+                    "type": "cwsprChatConversationType"
+                },
+                {
+                    "type": "credentialStartUrl",
+                    "required": false
+                },
+                {
+                    "type": "cwsprChatHasProjectContext",
+                    "required": false
+                },
+                {
+                    "type": "cwsprChatProjectContextQueryMs",
+                    "required": false
+                }
+            ]
+        },
+        {
+            "name": "amazonq_utgGenerateTests",
+            "description": "Client side invocation of the AmazonQ Unit Test Generation",
+            "metadata": [
+                {
+                    "type": "acceptedCharactersCount",
+                    "required": false
+                },
+                {
+                    "type": "acceptedCount",
+                    "required": false
+                },
+                {
+                    "type": "acceptedLinesCount",
+                    "required": false
+                },
+                {
+                    "type": "artifactsUploadDuration",
+                    "required": false
+                },
+                {
+                    "type": "buildPayloadBytes",
+                    "required": false
+                },
+                {
+                    "type": "buildZipFileBytes",
+                    "required": false
+                },
+                {
+                    "type": "credentialStartUrl",
+                    "required": false
+                },
+                {
+                    "type": "cwsprChatProgrammingLanguage"
+                },
+                {
+                    "type": "generatedCharactersCount",
+                    "required": false
+                },
+                {
+                    "type": "generatedCount",
+                    "required": false
+                },
+                {
+                    "type": "generatedLinesCount",
+                    "required": false
+                },
+                {
+                    "type": "hasUserPromptSupplied"
+                },
+                {
+                    "type": "isCodeBlockSelected",
+                    "required": false
+                },
+                {
+                    "type": "isSupportedLanguage"
+                },
+                {
+                    "type": "jobGroup",
+                    "required": false
+                },
+                {
+                    "type": "jobId",
+                    "required": false
+                },
+                {
+                    "type": "perfClientLatency",
+                    "required": false
+                },
+                {
+                    "type": "result"
+                },
+                {
+                    "type": "reason",
+                    "required": false
+                },
+                {
+                    "type": "reasonDesc",
+                    "required": false
+                },
+                {
+                    "type": "source",
+                    "required": false
+                }
+            ]
+        },
+        {
+            "name": "auth_modifyConnection",
+            "description": "An auth connection was modified in some way, e.g. deleted, updated",
+            "metadata": [
+                {
+                    "type": "action",
+                    "required": true
+                },
+                {
+                    "type": "authScopes",
+                    "required": false
+                },
+                {
+                    "type": "authStatus",
+                    "required": false
+                },
+                {
+                    "type": "connectionState",
+                    "required": false
+                },
+                {
+                    "type": "credentialStartUrl",
+                    "required": false
+                },
+                {
+                    "type": "sessionDuration",
+                    "required": false
+                },
                 {
                     "type": "source",
                     "required": true
                 },
                 {
-                    "type": "authStatus",
-                    "required": true
+                    "type": "ssoRegistrationClientId",
+                    "required": false
                 },
                 {
-                    "type": "authEnabledConnections",
-                    "required": true
+                    "type": "ssoRegistrationExpiresAt",
+                    "required": false
+                },
+                {
+                    "type": "id",
+                    "required": false
                 }
             ],
             "passive": true
+        },
+        {
+            "name": "auth_sourceOfRefresh",
+            "description": "Source of user triggered refresh",
+            "metadata": [
+                {
+                    "type": "authRefreshSource",
+                    "required": false
+                }
+            ]
+        },
+        {
+            "name": "aws_openLocalTerminal",
+            "description": "Open local terminal with aws connection injected",
+            "metadata": [
+                {
+                    "type": "result"
+                }
+            ]
         },
         {
             "name": "webview_amazonqSignInOpened",
@@ -778,38 +681,6 @@
                 }
             ],
             "passive": true
-        },
-        {
-            "name": "aws_loginWithBrowser",
-            "description": "Called when a connection requires login using the browser",
-            "metadata": [
-                {
-                    "type": "credentialSourceId",
-                    "required": false
-                },
-                {
-                    "type": "credentialStartUrl",
-                    "required": false
-                },
-                {
-                    "type": "credentialType",
-                    "required": false
-                },
-                {
-                    "type": "isReAuth",
-                    "required": false
-                },
-                {
-                    "type": "reason",
-                    "required": false
-                },
-                {
-                    "type": "result"
-                },
-                {
-                    "type": "authType"
-                }
-            ]
         }
     ]
 }

@@ -11,6 +11,9 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQApp
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
+import software.aws.toolkits.jetbrains.services.amazonqCodeScan.auth.isCodeScanAvailable
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.auth.isCodeTestAvailable
+import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.controller.FeatureDevController
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.AuthenticationUpdateMessage
@@ -41,7 +44,9 @@ class FeatureDevApp : AmazonQApp {
             "response-body-link-click" to IncomingFeatureDevMessage.ClickedLink::class,
             "insert_code_at_cursor_position" to IncomingFeatureDevMessage.InsertCodeAtCursorPosition::class,
             "open-diff" to IncomingFeatureDevMessage.OpenDiff::class,
-            "file-click" to IncomingFeatureDevMessage.FileClicked::class
+            "file-click" to IncomingFeatureDevMessage.FileClicked::class,
+            "stop-response" to IncomingFeatureDevMessage.StopResponse::class,
+            "store-code-result-message-id" to IncomingFeatureDevMessage.StoreMessageIdMessage::class
         )
 
         scope.launch {
@@ -60,7 +65,10 @@ class FeatureDevApp : AmazonQApp {
                             AuthenticationUpdateMessage(
                                 featureDevEnabled = isFeatureDevAvailable(context.project),
                                 codeTransformEnabled = isCodeTransformAvailable(context.project),
-                                authenticatingTabIDs = chatSessionStorage.getAuthenticatingSessions().map { it.tabID }
+                                codeScanEnabled = isCodeScanAvailable(context.project),
+                                codeTestEnabled = isCodeTestAvailable(context.project),
+                                docEnabled = isDocAvailable(context.project),
+                                authenticatingTabIDs = chatSessionStorage.getAuthenticatingSessions().map { it.tabID },
                             )
                         )
                     }
@@ -82,6 +90,8 @@ class FeatureDevApp : AmazonQApp {
             is IncomingFeatureDevMessage.InsertCodeAtCursorPosition -> inboundAppMessagesHandler.processInsertCodeAtCursorPosition(message)
             is IncomingFeatureDevMessage.OpenDiff -> inboundAppMessagesHandler.processOpenDiff(message)
             is IncomingFeatureDevMessage.FileClicked -> inboundAppMessagesHandler.processFileClicked(message)
+            is IncomingFeatureDevMessage.StopResponse -> inboundAppMessagesHandler.processStopMessage(message)
+            is IncomingFeatureDevMessage.StoreMessageIdMessage -> inboundAppMessagesHandler.processStoreCodeResultMessageId(message)
         }
     }
 

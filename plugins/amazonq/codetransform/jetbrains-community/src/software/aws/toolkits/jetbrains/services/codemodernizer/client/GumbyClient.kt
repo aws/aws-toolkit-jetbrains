@@ -16,6 +16,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformat
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationPlanResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.IdeCategory
 import software.amazon.awssdk.services.codewhispererruntime.model.ResumeTransformationRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.ResumeTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTransformationRequest
@@ -46,8 +47,11 @@ import software.aws.toolkits.jetbrains.services.amazonq.CONTENT_SHA256
 import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION
 import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID
 import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
+import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerMetrics
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
 import java.io.File
 import java.net.HttpURLConnection
 import java.time.Instant
@@ -208,6 +212,26 @@ class GumbyClient(private val project: Project) {
                     }
                 }
             }
+    }
+
+    fun sendTransformTelemetryEvent(job: JobId, metrics: CodeModernizerMetrics) {
+        bearerClient().sendTelemetryEvent { requestBuilder ->
+            requestBuilder.telemetryEvent { telemetryEventBuilder ->
+                telemetryEventBuilder.transformEvent {
+                    it.jobId(job.id)
+                    it.timestamp(Instant.now())
+                    it.ideCategory(IdeCategory.JETBRAINS)
+                    it.programmingLanguage { language ->
+                        language.languageName(metrics.programmingLanguage?.lowercase())
+                    }
+                    it.linesOfCodeChanged(metrics.linesOfCodeChanged)
+                    it.charsOfCodeChanged(metrics.charactersOfCodeChanged)
+                    it.linesOfCodeSubmitted(metrics.linesOfCodeSubmitted) // currently unavailable for SQL conversions
+                }
+            }
+            requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+            requestBuilder.userContext(codeWhispererUserContext())
+        }
     }
 
     companion object {

@@ -101,7 +101,7 @@ object IdeVersions {
         Profile(
             name = "2024.2",
             gateway = ProductProfile(
-                sdkVersion = "242.20224-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "242.23726-EAP-CANDIDATE-SNAPSHOT",
                 bundledPlugins = listOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
@@ -132,11 +132,52 @@ object IdeVersions {
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2024.2-EAP7-SNAPSHOT",
+                sdkVersion = "2024.2",
                 bundledPlugins = commonPlugins,
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2024.1.1",
-                nugetVersion = " 2024.2.0-eap07"
+                nugetVersion = " 2024.2.0"
+            )
+        ),
+        Profile(
+            name = "2024.3",
+            gateway = ProductProfile(
+                sdkVersion = "243.21565.196-CUSTOM-SNAPSHOT",
+                bundledPlugins = listOf("org.jetbrains.plugins.terminal")
+            ),
+            community = ProductProfile(
+                sdkVersion = "2024.3",
+                bundledPlugins = commonPlugins + listOf(
+                    "com.intellij.java",
+                    "com.intellij.gradle",
+                    "org.jetbrains.idea.maven",
+                ),
+                marketplacePlugins = listOf(
+                    "org.toml.lang:243.21565.122",
+                    "PythonCore:243.21565.211",
+                    "Docker:243.21565.204"
+                )
+            ),
+            ultimate = ProductProfile(
+                sdkVersion = "2024.3",
+                bundledPlugins = commonPlugins + listOf(
+                    "JavaScript",
+                    "JavaScriptDebugger",
+                    "com.intellij.database",
+                    "com.jetbrains.codeWithMe",
+                ),
+                marketplacePlugins = listOf(
+                    "org.toml.lang:243.21565.122",
+                    "Pythonid:243.21565.211",
+                    "org.jetbrains.plugins.go:243.21565.211",
+                )
+            ),
+            rider = RiderProfile(
+                sdkVersion = "2024.3",
+                bundledPlugins = commonPlugins,
+                netFrameworkTarget = "net472",
+                rdGenVersion = "2024.3.0",
+                nugetVersion = " 2024.3.0"
             )
         ),
 

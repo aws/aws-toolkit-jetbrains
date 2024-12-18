@@ -27,6 +27,7 @@ import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.Login
+import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
@@ -35,6 +36,7 @@ import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
+import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
@@ -99,16 +101,17 @@ abstract class LoginBrowser(
                         result = Result.Failed,
                         reason = "Browser authentication idle for more than 15min",
                         credentialSourceId = if (startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter,
-                        authType = getAuthType(ssoRegion)
+                        authType = getAuthType(ssoRegion),
+                        source = SourceOfEntry.LOGIN_BROWSER.toString(),
                     )
                     AuthTelemetry.addConnection(
                         result = Result.Failed,
                         reason = "Browser authentication idle for more than 15min",
                         credentialSourceId = if (startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter,
                         isAggregated = false,
-                        source = SourceOfEntry.LOGIN_BROWSER.toString(),
                         featureId = getFeatureId(scopes),
-                        isReAuth = isReAuth(scopes, startUrl)
+                        isReAuth = isReAuth(scopes, startUrl),
+                        source = SourceOfEntry.LOGIN_BROWSER.toString(),
                     )
                     stopAndClearBrowserOpenTimer()
                 }
@@ -127,6 +130,7 @@ abstract class LoginBrowser(
 
     protected val onPendingToken: (InteractiveBearerTokenProvider) -> Unit = { provider ->
         startBrowserOpenTimer(provider.startUrl, provider.region, provider.scopes)
+
         projectCoroutineScope(project).launch {
             val authorization = pollForAuthorization(provider)
             if (authorization != null) {
@@ -196,7 +200,8 @@ abstract class LoginBrowser(
                 reason = e.message,
                 credentialSourceId = CredentialSourceId.AwsId,
                 isReAuth = isReauth,
-                authType = getAuthType()
+                authType = getAuthType(SONO_REGION),
+                source = SourceOfEntry.LOGIN_BROWSER.toString(),
             )
             AuthTelemetry.addConnection(
                 result = Result.Failed,
@@ -216,7 +221,8 @@ abstract class LoginBrowser(
                 result = Result.Succeeded,
                 credentialSourceId = CredentialSourceId.AwsId,
                 isReAuth = isReauth,
-                authType = getAuthType()
+                authType = getAuthType(SONO_REGION),
+                source = SourceOfEntry.LOGIN_BROWSER.toString(),
             )
             AuthTelemetry.addConnection(
                 result = Result.Succeeded,
@@ -274,7 +280,8 @@ abstract class LoginBrowser(
                 result = result,
                 reason = message,
                 credentialSourceId = CredentialSourceId.IamIdentityCenter,
-                authType = getAuthType(region.name)
+                authType = getAuthType(region.name),
+                source = SourceOfEntry.LOGIN_BROWSER.toString()
             )
             AuthTelemetry.addConnection(
                 result = result,
@@ -295,7 +302,8 @@ abstract class LoginBrowser(
                 credentialType = CredentialType.BearerToken,
                 credentialStartUrl = url,
                 credentialSourceId = CredentialSourceId.IamIdentityCenter,
-                authType = getAuthType(region.name)
+                authType = getAuthType(region.name),
+                source = SourceOfEntry.LOGIN_BROWSER.toString(),
             )
             AuthTelemetry.addConnection(
                 project = null,
@@ -322,7 +330,8 @@ abstract class LoginBrowser(
                         result = Result.Failed,
                         reason = error.message,
                         credentialType = CredentialType.StaticProfile,
-                        authType = AuthType.IAM
+                        authType = AuthType.IAM,
+                        source = SourceOfEntry.LOGIN_BROWSER.toString(),
                     )
                     LOG.error(error) { "Profile file error" }
                     Messages.showErrorDialog(jcefBrowser.component, error.message, AwsCoreBundle.message("gettingstarted.auth.failed"))
@@ -332,7 +341,8 @@ abstract class LoginBrowser(
                         project = null,
                         result = Result.Failed,
                         reason = "Profile already exists",
-                        authType = AuthType.IAM
+                        authType = AuthType.IAM,
+                        source = SourceOfEntry.LOGIN_BROWSER.toString(),
                     )
                 },
                 { error ->
@@ -341,7 +351,8 @@ abstract class LoginBrowser(
                         project = null,
                         result = Result.Failed,
                         reason = reason,
-                        authType = AuthType.IAM
+                        authType = AuthType.IAM,
+                        source = SourceOfEntry.LOGIN_BROWSER.toString(),
                     )
                     LOG.error(error) { reason }
                     Messages.showErrorDialog(jcefBrowser.component, error.message, AwsCoreBundle.message("gettingstarted.auth.failed"))
@@ -354,7 +365,8 @@ abstract class LoginBrowser(
                     project = null,
                     result = Result.Succeeded,
                     credentialType = CredentialType.StaticProfile,
-                    authType = AuthType.IAM
+                    authType = AuthType.IAM,
+                    source = SourceOfEntry.LOGIN_BROWSER.toString(),
                 )
             }
         }
@@ -380,7 +392,7 @@ abstract class LoginBrowser(
     protected fun reauth(connection: ToolkitConnection?) {
         if (connection is AwsBearerTokenConnection) {
             loginWithBackgroundContext {
-                reauthConnectionIfNeeded(project, connection, onPendingToken, isReAuth = true)
+                reauthConnectionIfNeeded(project, connection, onPendingToken, isReAuth = true, reauthSource = ReauthSource.LOGIN_BROWSER)
             }
             stopAndClearBrowserOpenTimer()
         }

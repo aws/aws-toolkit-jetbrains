@@ -31,7 +31,11 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.AccessToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.PKCEAuthorizationGrantToken
 import software.aws.toolkits.jetbrains.core.credentials.sso.PKCEClientRegistration
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.buildUnmanagedSsoOidcClient
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.SourceOfEntry
 import software.aws.toolkits.resources.AwsCoreBundle
+import software.aws.toolkits.telemetry.AuthType
+import software.aws.toolkits.telemetry.AwsTelemetry
+import software.aws.toolkits.telemetry.MetricResult
 import java.math.BigInteger
 import java.time.Instant
 import java.util.Base64
@@ -189,12 +193,23 @@ internal class ToolkitOAuthCallbackHandler : OAuthCallbackHandlerBase() {
                 "scopes" to ApplicationNamesInfo.getInstance().fullProductName
             )
         } else {
-            val (error, errorDescription) = (oAuthResult.request as? ToolkitOAuthRequest)?.error ?: OAuthError(null, null)
+            val toolkitRequest = (oAuthResult.request as? ToolkitOAuthRequest)
+            val (error, errorDescription) = toolkitRequest?.error ?: OAuthError(null, null)
             val errorString = if (error != null && errorDescription != null) {
                 "$error: $errorDescription"
             } else {
                 errorDescription ?: error ?: AwsCoreBundle.message("general.unknown_error")
             }
+
+            AwsTelemetry.loginWithBrowser(
+                project = null,
+                credentialStartUrl = toolkitRequest?.registration?.issuerUrl,
+                result = MetricResult.Failed,
+                reason = error,
+                reasonDesc = errorDescription,
+                authType = AuthType.PKCE,
+                source = SourceOfEntry.UNKNOWN.toString(),
+            )
 
             mapOf(
                 "error" to errorString

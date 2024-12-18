@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.IncomingFeatureDevMessage
 
 interface InboundAppMessagesHandler {
+
     suspend fun processPromptChatMessage(message: IncomingFeatureDevMessage.ChatPrompt)
     suspend fun processNewTabCreatedMessage(message: IncomingFeatureDevMessage.NewTabCreated)
     suspend fun processTabRemovedMessage(message: IncomingFeatureDevMessage.TabRemoved)
@@ -17,4 +18,6 @@ interface InboundAppMessagesHandler {
     suspend fun processInsertCodeAtCursorPosition(message: IncomingFeatureDevMessage.InsertCodeAtCursorPosition)
     suspend fun processOpenDiff(message: IncomingFeatureDevMessage.OpenDiff)
     suspend fun processFileClicked(message: IncomingFeatureDevMessage.FileClicked)
+    suspend fun processStopMessage(message: IncomingFeatureDevMessage.StopResponse)
+    suspend fun processStoreCodeResultMessageId(message: IncomingFeatureDevMessage.StoreMessageIdMessage)
 }

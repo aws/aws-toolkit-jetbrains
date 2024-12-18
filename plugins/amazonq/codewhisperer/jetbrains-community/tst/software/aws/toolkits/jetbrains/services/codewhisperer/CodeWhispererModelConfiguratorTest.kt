@@ -22,6 +22,7 @@ import org.mockito.kotlin.stub
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.Customization
+import software.amazon.awssdk.services.codewhispererruntime.model.FeatureValue
 import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsResponse
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
@@ -37,10 +38,11 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
+import software.aws.toolkits.jetbrains.services.amazonq.FeatureContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomizationState
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.DefaultCodeWhispererModelConfigurator
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.utils.xmlElement
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible
@@ -100,7 +102,7 @@ class CodeWhispererModelConfiguratorTest {
         }
 
         abManager = mock {
-            on { getCustomizationArnOverride() }.thenReturn("")
+            on { getCustomizationFeature() }.thenReturn(null)
         }
 
         ApplicationManager.getApplication().replaceService(
@@ -119,9 +121,9 @@ class CodeWhispererModelConfiguratorTest {
         assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(CodeWhispererCustomization("foo", "customization_1", "description_1"))
 
         abManager.stub {
-            on { getCustomizationArnOverride() }.thenReturn("bar")
+            on { getCustomizationFeature() }.thenReturn(FeatureContext("customizationArnOverride", "foo", FeatureValue.builder().stringValue("bar").build()))
         }
-        assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(CodeWhispererCustomization("bar", "customization_1", "description_1"))
+        assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(CodeWhispererCustomization("bar", "foo", "description_1"))
     }
 
     @Test

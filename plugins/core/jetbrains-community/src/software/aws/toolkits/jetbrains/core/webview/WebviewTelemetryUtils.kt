@@ -9,7 +9,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.telemetry.AuthType
 import software.aws.toolkits.telemetry.FeatureId
 
-fun getAuthType(region: String = "us-east-1"): AuthType {
+fun getAuthType(region: String): AuthType {
     val isCommercialRegion = !region.startsWith("us-gov") && !region.startsWith("us-iso") && !region.startsWith("cn")
     if (!Registry.`is`("aws.dev.useDAG") && isCommercialRegion) {
         return AuthType.PKCE
@@ -20,7 +20,7 @@ fun getAuthType(region: String = "us-east-1"): AuthType {
 
 fun getFeatureId(scopes: List<String>): FeatureId =
     if (scopes.intersect(Q_SCOPES.toSet()).isNotEmpty()) {
-        FeatureId.Q
+        FeatureId.AmazonQ
     } else if (scopes.intersect(CODECATALYST_SCOPES.toSet()).isNotEmpty()) {
         FeatureId.Codecatalyst
     } else {

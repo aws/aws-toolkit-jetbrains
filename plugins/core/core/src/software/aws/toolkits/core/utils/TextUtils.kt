@@ -17,6 +17,25 @@ fun convertMarkdownToHTML(markdown: String): String {
     return htmlRenderer.render(document)
 }
 
+fun extractCodeBlockLanguage(message: String): String {
+    // This fulfills both the cases of unit test generation(java, python) and general use case(Non java and Non python) languages.
+    val defaultTestGenResponseLanguage = "plaintext"
+    val indexStart = 3
+    val codeBlockStart = message.indexOf("```")
+    if (codeBlockStart == -1) {
+        return defaultTestGenResponseLanguage
+    }
+
+    val languageStart = codeBlockStart + indexStart
+    val languageEnd = message.indexOf('\n', languageStart)
+
+    if (languageEnd == -1) {
+        return defaultTestGenResponseLanguage
+    }
+
+    return message.substring(languageStart, languageEnd).trim().ifEmpty { defaultTestGenResponseLanguage }
+}
+
 class CodeBlockRenderer(private val html: HtmlWriter) : NodeRenderer {
     override fun getNodeTypes(): Set<Class<out Node>> = setOf(FencedCodeBlock::class.java)
     override fun render(node: Node?) {

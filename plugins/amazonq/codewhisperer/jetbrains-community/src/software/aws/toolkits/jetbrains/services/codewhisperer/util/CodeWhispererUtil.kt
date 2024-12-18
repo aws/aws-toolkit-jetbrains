@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
+import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.ide.BrowserUtil
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
@@ -12,6 +13,8 @@ import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.wm.WindowManager
+import com.intellij.ui.ComponentUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -23,6 +26,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.maybeReauthProviderIfNeeded
@@ -30,6 +34,10 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererCon
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnection
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnectionType
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererManager.Companion.taskTypeToFilename
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
@@ -46,27 +54,7 @@ import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
-
-fun <T> calculateIfIamIdentityCenterConnection(project: Project, calculationTask: (connection: ToolkitConnection) -> T): T? =
-    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
-        calculateIfIamIdentityCenterConnection(it, calculationTask)
-    }
-
-fun <T> calculateIfIamIdentityCenterConnection(connection: ToolkitConnection, calculationTask: (connection: ToolkitConnection) -> T): T? =
-    if (connection.isSono()) {
-        null
-    } else {
-        calculationTask(connection)
-    }
-
-fun <T> calculateIfBIDConnection(project: Project, calculationTask: (connection: ToolkitConnection) -> T): T? =
-    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let {
-        if (it.isSono()) {
-            calculationTask(it)
-        } else {
-            null
-        }
-    }
+import software.aws.toolkits.telemetry.CredentialSourceId
 
 // Controls the condition to send telemetry event to CodeWhisperer service, currently:
 // 1. It will be sent for Builder ID users, only if they have optin telemetry sharing.
@@ -119,6 +107,17 @@ suspend fun String.toCodeChunk(path: String): List<Chunk> {
             nextChunk = nextChunkContent
         )
     }
+}
+
+fun getAuthType(project: Project): CredentialSourceId? {
+    val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
+    var authType: CredentialSourceId? = null
+    if (connection.connectionType == ActiveConnectionType.IAM_IDC && connection is ActiveConnection.ValidBearer) {
+        authType = CredentialSourceId.IamIdentityCenter
+    } else if (connection.connectionType == ActiveConnectionType.BUILDER_ID && connection is ActiveConnection.ValidBearer) {
+        authType = CredentialSourceId.AwsId
+    }
+    return authType
 }
 
 // we refer 10 lines of code as "Code Chunk"
@@ -189,7 +188,7 @@ object CodeWhispererUtil {
         if (!isQExpired(project)) return false
         val tokenProvider = tokenProvider(project) ?: return false
         return try {
-            maybeReauthProviderIfNeeded(project, tokenProvider) {
+            maybeReauthProviderIfNeeded(project, ReauthSource.CODEWHISPERER, tokenProvider) {
                 runInEdt {
                     if (!CodeWhispererService.hasReAuthPromptBeenShown()) {
                         notifyConnectionExpiredRequestReauth(project)
@@ -274,7 +273,7 @@ object CodeWhispererUtil {
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
         if (connection !is ManagedBearerSsoConnection) return
         pluginAwareExecuteOnPooledThread {
-            reauthConnectionIfNeeded(project, connection, isReAuth = true)
+            reauthConnectionIfNeeded(project, connection, isReAuth = true, reauthSource = ReauthSource.CODEWHISPERER)
         }
     }
 
@@ -321,6 +320,12 @@ object CodeWhispererUtil {
 
     private fun getEditDistance(modifiedString: String, originalString: String): Double =
         levenshteinChecker.distance(modifiedString, originalString)
+
+    fun setIntelliSensePopupAlpha(editor: Editor, alpha: Float) {
+        ComponentUtil.getWindow(LookupManager.getActiveLookup(editor)?.component)?.let {
+            WindowManager.getInstance().setAlphaModeRatio(it, alpha)
+        }
+    }
 }
 
 enum class CaretMovement {

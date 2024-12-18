@@ -13,6 +13,7 @@ import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.runs
 import io.mockk.verify
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -22,11 +23,11 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import software.aws.toolkits.jetbrains.common.util.resolveAndCreateOrUpdateFile
+import software.aws.toolkits.jetbrains.common.util.resolveAndDeleteFile
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.resolveAndCreateOrUpdateFile
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.resolveAndDeleteFile
 import software.aws.toolkits.jetbrains.services.cwc.controller.ReferenceLogController
 import kotlin.io.path.Path
 
@@ -71,17 +72,19 @@ class SessionTest : FeatureDevTestBase() {
         mockkObject(ReferenceLogController)
         every { ReferenceLogController.addReferenceLog(any(), any()) } just runs
 
-        mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FileUtilsKt")
+        mockkStatic("software.aws.toolkits.jetbrains.common.util.FileUtilsKt")
         every { resolveAndDeleteFile(any(), any()) } just runs
         every { resolveAndCreateOrUpdateFile(any(), any(), any()) } just runs
 
-        val mockNewFile = listOf(NewFileZipInfo("test.ts", "testContent", false))
-        val mockDeletedFile = listOf(DeletedFileInfo("deletedTest.ts", false))
+        val mockNewFile = listOf(NewFileZipInfo("test.ts", "testContent", rejected = false, changeApplied = false))
+        val mockDeletedFile = listOf(DeletedFileInfo("deletedTest.ts", rejected = false, changeApplied = false))
 
         session.context.selectedSourceFolder = mock()
         whenever(session.context.selectedSourceFolder.toNioPath()).thenReturn(Path(""))
 
-        session.insertChanges(mockNewFile, mockDeletedFile, emptyList())
+        runBlocking {
+            session.insertChanges(mockNewFile, mockDeletedFile, emptyList())
+        }
 
         verify(exactly = 1) { resolveAndDeleteFile(any(), "deletedTest.ts") }
         verify(exactly = 1) { resolveAndCreateOrUpdateFile(any(), "test.ts", "testContent") }

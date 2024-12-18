@@ -13,9 +13,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.panels.Wrapper
+import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.dsl.gridLayout.HorizontalAlign
-import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
 import software.aws.toolkits.core.utils.error
@@ -54,8 +53,7 @@ class QWebviewPanel private constructor(val project: Project) : Disposable {
     val component = panel {
         row {
             cell(webviewContainer)
-                .horizontalAlign(HorizontalAlign.FILL)
-                .verticalAlign(VerticalAlign.FILL)
+                .align(Align.FILL)
         }.resizableRow()
 
         if (isDeveloperMode()) {
@@ -69,8 +67,7 @@ class QWebviewPanel private constructor(val project: Project) : Disposable {
                         )
                     },
                 )
-                    .horizontalAlign(HorizontalAlign.CENTER)
-                    .verticalAlign(VerticalAlign.BOTTOM)
+                    .align(Align.FILL)
             }
         }
     }
@@ -148,7 +145,7 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
 
         when (message) {
             is BrowserMessage.PrepareUi -> {
-                this.prepareBrowser(BrowserState(FeatureId.Q, false))
+                this.prepareBrowser(BrowserState(FeatureId.AmazonQ, false))
                 WebviewTelemetry.amazonqSignInOpened(
                     project,
                     reAuth = isQExpired(project)

@@ -17,6 +17,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererR
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanIssue
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
@@ -27,17 +28,17 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.Recommendati
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCodeWhispererStartUrl
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getConnectionStartUrl
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getGettingStartedTaskType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.settings.AwsSettings
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
+import software.aws.toolkits.telemetry.CodeFixAction
 import software.aws.toolkits.telemetry.CodewhispererCodeScanScope
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
@@ -47,6 +48,8 @@ import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTelemetry
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import software.aws.toolkits.telemetry.Component
+import software.aws.toolkits.telemetry.CredentialSourceId
+import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Result
 import java.time.Duration
 import java.time.Instant
@@ -228,7 +231,8 @@ class CodeWhispererTelemetryService {
                             suggestionState,
                             suggestionReferenceCount,
                             generatedLineCount,
-                            recommendationContext.details.size
+                            recommendationContext.details.size,
+                            acceptedCharCount
                         )
                     LOG.debug {
                         "Successfully sent user trigger decision telemetry. RequestId: ${response.responseMetadata().requestId()}"
@@ -341,7 +345,7 @@ class CodeWhispererTelemetryService {
         )
     }
 
-    fun sendCodeScanIssueApplyFixEvent(issue: CodeWhispererCodeScanIssue, result: Result, reason: String? = null) {
+    fun sendCodeScanIssueApplyFixEvent(issue: CodeWhispererCodeScanIssue, result: Result, reason: String? = null, codeFixAction: CodeFixAction?) {
         CodewhispererTelemetry.codeScanIssueApplyFix(
             findingId = issue.findingId,
             detectorId = issue.detectorId,
@@ -349,7 +353,48 @@ class CodeWhispererTelemetryService {
             component = Component.Hover,
             result = result,
             reason = reason,
-            credentialStartUrl = getCodeWhispererStartUrl(issue.project)
+            credentialStartUrl = getCodeWhispererStartUrl(issue.project),
+            codeFixAction = codeFixAction
+        )
+    }
+
+    fun sendCodeScanNewTabEvent(credentialSourceId: CredentialSourceId?) {
+        CodewhispererTelemetry.codeScanChatNewTab(
+            credentialSourceId = credentialSourceId
+        )
+    }
+
+    fun sendCodeScanIssueIgnore(
+        component: Component,
+        issue: CodeWhispererCodeScanIssue,
+        isIgnoreAll: Boolean,
+    ) {
+        CodewhispererTelemetry.codeScanIssueIgnore(
+            component = component,
+            credentialStartUrl = getCodeWhispererStartUrl(issue.project),
+            findingId = issue.findingId,
+            detectorId = issue.detectorId,
+            ruleId = issue.ruleId,
+            variant = if (isIgnoreAll) "all" else null
+        )
+    }
+
+    fun sendCodeScanIssueGenerateFix(
+        component: Component,
+        issue: CodeWhispererCodeScanIssue,
+        isRefresh: Boolean,
+        result: MetricResult,
+        reason: String? = null,
+    ) {
+        CodewhispererTelemetry.codeScanIssueGenerateFix(
+            component = component,
+            credentialStartUrl = getCodeWhispererStartUrl(issue.project),
+            findingId = issue.findingId,
+            detectorId = issue.detectorId,
+            ruleId = issue.ruleId,
+            variant = if (isRefresh) "refresh" else null,
+            result = result,
+            reason = reason
         )
     }
 

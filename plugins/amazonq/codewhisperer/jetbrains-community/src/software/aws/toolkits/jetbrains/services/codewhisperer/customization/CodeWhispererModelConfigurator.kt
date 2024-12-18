@@ -20,10 +20,10 @@ import com.intellij.util.xmlb.annotations.Property
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
+import software.aws.toolkits.jetbrains.services.amazonq.calculateIfIamIdentityCenterConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.calculateIfIamIdentityCenterConnection
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
@@ -161,11 +161,11 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
         val result = calculateIfIamIdentityCenterConnection(project) { connectionIdToActiveCustomizationArn[it.id] }
 
         // A/B case
-        val customizationArnFromAB = CodeWhispererFeatureConfigService.getInstance().getCustomizationArnOverride()
-        if (customizationArnFromAB.isEmpty()) return result
+        val customizationFeature = CodeWhispererFeatureConfigService.getInstance().getCustomizationFeature()
+        if (customizationFeature == null || customizationFeature.value.stringValue().isEmpty()) return result
         return CodeWhispererCustomization(
-            arn = customizationArnFromAB,
-            name = result?.name.orEmpty(),
+            arn = customizationFeature.value.stringValue(),
+            name = customizationFeature.variation,
             description = result?.description
         )
     }

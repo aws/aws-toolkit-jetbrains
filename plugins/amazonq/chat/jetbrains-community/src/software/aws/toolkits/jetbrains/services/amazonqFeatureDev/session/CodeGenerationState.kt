@@ -19,10 +19,15 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PromptRefusalE
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ThrottlingException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendUpdatePlaceholder
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getChangeIdentifier
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getDiffMetrics
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.readFileToString
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
-import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.MetricResult
+import java.util.UUID
 
 private val logger = getLogger<CodeGenerationState>()
 
@@ -31,67 +36,116 @@ class CodeGenerationState(
     override var approach: String,
     val config: SessionStateConfig,
     val uploadId: String,
-    val currentIteration: Int,
+    override var currentIteration: Int? = 0,
     val repositorySize: Double,
     val messenger: MessagePublisher,
-    var codeGenerationRemainingIterationCount: Int? = null,
-    var codeGenerationTotalIterationCount: Int? = null,
+    override var codeGenerationRemainingIterationCount: Int? = null,
+    override var codeGenerationTotalIterationCount: Int? = null,
+    var currentCodeGenerationId: String? = "EMPTY_CURRENT_CODE_GENERATION_ID",
+    override var token: CancellationTokenSource?,
+    override var diffMetricsProcessed: DiffMetricsProcessed,
 ) : SessionState {
     override val phase = SessionStatePhase.CODEGEN
 
-    override suspend fun interact(action: SessionStateAction): SessionStateInteraction {
+    override suspend fun interact(action: SessionStateAction): SessionStateInteraction<SessionState> {
         val startTime = System.currentTimeMillis()
-        var result: Result = Result.Succeeded
+        var result: MetricResult = MetricResult.Succeeded
         var failureReason: String? = null
         var failureReasonDesc: String? = null
         var codeGenerationWorkflowStatus: CodeGenerationWorkflowStatus = CodeGenerationWorkflowStatus.COMPLETE
         var numberOfReferencesGenerated: Int? = null
         var numberOfFilesGenerated: Int? = null
         try {
-            val response = config.featureDevService.startTaskAssistCodeGeneration(
-                conversationId = config.conversationId,
-                uploadId = uploadId,
-                message = action.msg
-            )
+            val codeGenerationId = UUID.randomUUID()
+
+            val response =
+                config.featureDevService.startTaskAssistCodeGeneration(
+                    conversationId = config.conversationId,
+                    uploadId = uploadId,
+                    message = action.msg,
+                    codeGenerationId = codeGenerationId.toString(),
+                    currentCodeGenerationId = currentCodeGenerationId.toString(),
+                )
+
+            if (action.token?.token?.isCancellationRequested() != true) {
+                this.currentCodeGenerationId = codeGenerationId.toString()
+            }
 
             messenger.sendAnswerPart(
                 tabId = tabID,
-                message = message("amazonqFeatureDev.code_generation.generating_code")
+                message = message("amazonqFeatureDev.code_generation.generating_code"),
             )
             messenger.sendUpdatePlaceholder(
                 tabId = tabID,
-                newPlaceholder = message("amazonqFeatureDev.code_generation.generating_code")
+                newPlaceholder = message("amazonqFeatureDev.code_generation.generating_code"),
             )
-
-            val codeGenerationResult = generateCode(codeGenerationId = response.codeGenerationId(), messenger = messenger)
+            val codeGenerationResult = generateCode(codeGenerationId = response.codeGenerationId(), messenger = messenger, token = action.token)
             numberOfReferencesGenerated = codeGenerationResult.references.size
             numberOfFilesGenerated = codeGenerationResult.newFiles.size
             codeGenerationRemainingIterationCount = codeGenerationResult.codeGenerationRemainingIterationCount
             codeGenerationTotalIterationCount = codeGenerationResult.codeGenerationTotalIterationCount
 
-            val nextState = PrepareCodeGenerationState(
-                tabID = tabID,
-                approach = approach,
-                config = config,
-                filePaths = codeGenerationResult.newFiles,
-                deletedFiles = codeGenerationResult.deletedFiles,
-                references = codeGenerationResult.references,
-                currentIteration = currentIteration + 1,
-                uploadId = uploadId,
-                messenger = messenger,
-                codeGenerationRemainingIterationCount = codeGenerationRemainingIterationCount,
-                codeGenerationTotalIterationCount = codeGenerationTotalIterationCount
-            )
+            runCatching {
+                var insertedLines = 0
+                var insertedCharacters = 0
+                codeGenerationResult.newFiles.forEach { file ->
+                    // FIXME: Ideally, the before content should be read from the uploaded context instead of from disk, to avoid drift
+                    val before = config.repoContext.selectedSourceFolder
+                        .toNioPath()
+                        .resolve(file.zipFilePath)
+                        .toFile()
+                        .let { f ->
+                            if (f.exists() && f.canRead()) {
+                                readFileToString(f)
+                            } else {
+                                ""
+                            }
+                        }
+
+                    val changeIdentifier = getChangeIdentifier(file.zipFilePath, before, file.fileContent)
+
+                    if (!diffMetricsProcessed.generated.contains(changeIdentifier)) {
+                        val diffMetrics = getDiffMetrics(before, file.fileContent)
+                        insertedLines += diffMetrics.insertedLines
+                        insertedCharacters += diffMetrics.insertedCharacters
+                        diffMetricsProcessed.generated.add(changeIdentifier)
+                    }
+                }
+                if (insertedLines > 0) {
+                    config.featureDevService.sendFeatureDevCodeGenerationEvent(
+                        conversationId = config.conversationId,
+                        linesOfCodeGenerated = insertedLines,
+                        charactersOfCodeGenerated = insertedCharacters,
+                    )
+                }
+            }.onFailure { /* Noop on diff telemetry failure */ }
+
+            val nextState =
+                PrepareCodeGenerationState(
+                    tabID = tabID,
+                    approach = approach,
+                    config = config,
+                    filePaths = codeGenerationResult.newFiles,
+                    deletedFiles = codeGenerationResult.deletedFiles,
+                    references = codeGenerationResult.references,
+                    currentIteration = currentIteration?.plus(1),
+                    uploadId = uploadId,
+                    messenger = messenger,
+                    codeGenerationRemainingIterationCount = codeGenerationRemainingIterationCount,
+                    codeGenerationTotalIterationCount = codeGenerationTotalIterationCount,
+                    token = this.token,
+                    diffMetricsProcessed = diffMetricsProcessed,
+                )
 
             // It is not needed to interact right away with the PrepareCodeGeneration.
             // returns therefore a SessionStateInteraction object to be handled by the controller.
             return SessionStateInteraction(
                 nextState = nextState,
-                interaction = Interaction(content = "", interactionSucceeded = true)
+                interaction = Interaction(content = "", interactionSucceeded = true),
             )
         } catch (e: Exception) {
             logger.warn(e) { "$FEATURE_NAME: Code generation failed: ${e.message}" }
-            result = Result.Failed
+            result = MetricResult.Failed
             failureReason = e.javaClass.simpleName
             if (e is FeatureDevException) {
                 failureReason = e.reason()
@@ -101,39 +155,50 @@ class CodeGenerationState(
 
             throw e
         } finally {
-            AmazonqTelemetry.codeGenerationInvoke(
-                amazonqConversationId = config.conversationId,
-                amazonqCodeGenerationResult = codeGenerationWorkflowStatus.toString(),
-                amazonqGenerateCodeIteration = currentIteration.toDouble(),
-                amazonqNumberOfReferences = numberOfReferencesGenerated?.toDouble(),
-                amazonqGenerateCodeResponseLatency = (System.currentTimeMillis() - startTime).toDouble(),
-                amazonqNumberOfFilesGenerated = numberOfFilesGenerated?.toDouble(),
-                amazonqRepositorySize = repositorySize,
-                result = result,
-                reason = failureReason,
-                reasonDesc = failureReasonDesc,
-                duration = (System.currentTimeMillis() - startTime).toDouble(),
-                credentialStartUrl = getStartUrl(config.featureDevService.project)
-            )
+            currentIteration?.let {
+                AmazonqTelemetry.codeGenerationInvoke(
+                    amazonqConversationId = config.conversationId,
+                    amazonqCodeGenerationResult = codeGenerationWorkflowStatus.toString(),
+                    amazonqGenerateCodeIteration = it.toDouble(),
+                    amazonqNumberOfReferences = numberOfReferencesGenerated?.toDouble(),
+                    amazonqGenerateCodeResponseLatency = (System.currentTimeMillis() - startTime).toDouble(),
+                    amazonqNumberOfFilesGenerated = numberOfFilesGenerated?.toDouble(),
+                    amazonqRepositorySize = repositorySize,
+                    result = result,
+                    reason = failureReason,
+                    reasonDesc = failureReasonDesc,
+                    duration = (System.currentTimeMillis() - startTime).toDouble(),
+                    credentialStartUrl = getStartUrl(config.featureDevService.project),
+                )
+            }
         }
     }
 }
 
-private suspend fun CodeGenerationState.generateCode(codeGenerationId: String, messenger: MessagePublisher): CodeGenerationResult {
-    val pollCount = 180
-    val requestDelay = 10000L
+private suspend fun CodeGenerationState.generateCode(
+    codeGenerationId: String,
+    messenger: MessagePublisher,
+    token: CancellationTokenSource?,
+): CodeGenerationResult {
+    val pollCount = 360
+    val requestDelay = 5000L
 
     repeat(pollCount) {
-        val codeGenerationResultState = config.featureDevService.getTaskAssistCodeGeneration(
-            conversationId = config.conversationId,
-            codeGenerationId = codeGenerationId,
-        )
+        if (token?.token?.isCancellationRequested() == true) {
+            return CodeGenerationResult(emptyList(), emptyList(), emptyList())
+        }
+        val codeGenerationResultState =
+            config.featureDevService.getTaskAssistCodeGeneration(
+                conversationId = config.conversationId,
+                codeGenerationId = codeGenerationId,
+            )
 
         when (codeGenerationResultState.codeGenerationStatus().status()) {
             CodeGenerationWorkflowStatus.COMPLETE -> {
-                val codeGenerationStreamResult = config.featureDevService.exportTaskAssistArchiveResult(
-                    conversationId = config.conversationId
-                )
+                val codeGenerationStreamResult =
+                    config.featureDevService.exportTaskAssistArchiveResult(
+                        conversationId = config.conversationId,
+                    )
 
                 val newFileInfo = registerNewFiles(newFileContents = codeGenerationStreamResult.new_file_contents)
                 val deletedFileInfo = registerDeletedFiles(deletedFiles = codeGenerationStreamResult.deleted_files)
@@ -143,15 +208,16 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String, m
                     deletedFiles = deletedFileInfo,
                     references = codeGenerationStreamResult.references,
                     codeGenerationRemainingIterationCount = codeGenerationResultState.codeGenerationRemainingIterationCount(),
-                    codeGenerationTotalIterationCount = codeGenerationResultState.codeGenerationTotalIterationCount()
+                    codeGenerationTotalIterationCount = codeGenerationResultState.codeGenerationTotalIterationCount(),
                 )
             }
             CodeGenerationWorkflowStatus.IN_PROGRESS -> {
                 if (codeGenerationResultState.codeGenerationStatusDetail() != null) {
                     messenger.sendAnswerPart(
                         tabId = tabID,
-                        message = message("amazonqFeatureDev.code_generation.generating_code") +
-                            "\n\n" + codeGenerationResultState.codeGenerationStatusDetail()
+                        message =
+                        message("amazonqFeatureDev.code_generation.generating_code") +
+                            "\n\n" + codeGenerationResultState.codeGenerationStatusDetail(),
                     )
                 }
                 delay(requestDelay)
@@ -159,15 +225,15 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String, m
             CodeGenerationWorkflowStatus.FAILED -> {
                 when (true) {
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
-                        "Guardrails"
+                        "Guardrails",
                     ),
                     -> throw GuardrailsException(operation = FeatureDevOperation.GenerateCode.toString(), desc = "Failed guardrails")
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
-                        "PromptRefusal"
+                        "PromptRefusal",
                     ),
                     -> throw PromptRefusalException(operation = FeatureDevOperation.GenerateCode.toString(), desc = "Prompt refusal")
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
-                        "EmptyPatch"
+                        "EmptyPatch",
                     ),
                     -> {
                         if (codeGenerationResultState.codeGenerationStatusDetail().contains("NO_CHANGE_REQUIRED")) {
@@ -176,7 +242,7 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String, m
                         throw EmptyPatchException(operation = FeatureDevOperation.GenerateCode.toString(), desc = "Empty patch")
                     }
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
-                        "Throttling"
+                        "Throttling",
                     ),
                     -> throw ThrottlingException(operation = FeatureDevOperation.GenerateCode.toString(), desc = "Request throttled")
                     else -> throw CodeGenerationException(operation = FeatureDevOperation.GenerateCode.toString(), desc = null)
@@ -189,17 +255,23 @@ private suspend fun CodeGenerationState.generateCode(codeGenerationId: String, m
     return CodeGenerationResult(emptyList(), emptyList(), emptyList())
 }
 
-fun registerNewFiles(newFileContents: Map<String, String>): List<NewFileZipInfo> = newFileContents.map {
-    NewFileZipInfo(
-        zipFilePath = it.key,
-        fileContent = it.value,
-        rejected = false
-    )
-}
+fun registerNewFiles(newFileContents: Map<String, String>): List<NewFileZipInfo> =
+    newFileContents.map {
+        NewFileZipInfo(
+            // Note: When managing file state, we normalize file paths returned from the agent in order to ensure they are handled as relative paths.
+            zipFilePath = it.key.removePrefix("/"),
+            fileContent = it.value,
+            rejected = false,
+            changeApplied = false
+        )
+    }
 
-fun registerDeletedFiles(deletedFiles: List<String>): List<DeletedFileInfo> = deletedFiles.map {
-    DeletedFileInfo(
-        zipFilePath = it,
-        rejected = false
-    )
-}
+fun registerDeletedFiles(deletedFiles: List<String>): List<DeletedFileInfo> =
+    deletedFiles.map {
+        DeletedFileInfo(
+            // Note: When managing file state, we normalize file paths returned from the agent in order to ensure they are handled as relative paths.
+            zipFilePath = it.removePrefix("/"),
+            rejected = false,
+            changeApplied = false
+        )
+    }

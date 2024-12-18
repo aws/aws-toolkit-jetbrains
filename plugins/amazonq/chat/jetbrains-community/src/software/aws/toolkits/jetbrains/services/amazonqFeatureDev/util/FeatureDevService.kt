@@ -65,7 +65,14 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
                 errMssg = e.awsErrorDetails().errorMessage()
                 logger.warn(e) { "Start conversation failed for request: ${e.requestId()}" }
 
-                if (e is software.amazon.awssdk.services.codewhispererruntime.model.ServiceQuotaExceededException) {
+                // BE service will throw ServiceQuota if conversation limit is reached. API Front-end will throw Throttling with this message if conversation limit is reached
+                if (
+                    e is software.amazon.awssdk.services.codewhispererruntime.model.ServiceQuotaExceededException ||
+                    (
+                        e is software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException &&
+                            e.message?.contains("reached for this month.") == true
+                        )
+                ) {
                     throw MonthlyConversationLimitError(errMssg, operation = FeatureDevOperation.CreateConversation.toString(), desc = null, cause = e.cause)
                 }
             }
@@ -82,17 +89,18 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
         }
     }
 
-    fun createUploadUrl(conversationId: String, contentChecksumSha256: String, contentLength: Long):
+    fun createUploadUrl(conversationId: String, contentChecksumSha256: String, contentLength: Long, uploadId: String):
         CreateUploadUrlResponse {
         try {
             logger.debug { "Executing createUploadUrl with conversationId $conversationId" }
             val uploadUrlResponse = proxyClient.createTaskAssistUploadUrl(
                 conversationId,
                 contentChecksumSha256,
-                contentLength
+                contentLength,
+                uploadId
             )
             logger.debug {
-                "$FEATURE_NAME: Created upload url: {uploadId: ${uploadUrlResponse.uploadId()}, requestId: ${uploadUrlResponse.responseMetadata().requestId()}}"
+                "$FEATURE_NAME: Created upload url: {uploadId: $uploadId, requestId: ${uploadUrlResponse.responseMetadata().requestId()}}"
             }
             return uploadUrlResponse
         } catch (e: Exception) {
@@ -111,14 +119,16 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
         }
     }
 
-    fun startTaskAssistCodeGeneration(conversationId: String, uploadId: String, message: String):
+    fun startTaskAssistCodeGeneration(conversationId: String, uploadId: String, message: String, codeGenerationId: String?, currentCodeGenerationId: String?):
         StartTaskAssistCodeGenerationResponse {
         try {
             logger.debug { "Executing startTaskAssistCodeGeneration with conversationId: $conversationId , uploadId: $uploadId" }
             val startCodeGenerationResponse = proxyClient.startTaskAssistCodeGeneration(
                 conversationId,
                 uploadId,
-                message
+                message,
+                codeGenerationId,
+                currentCodeGenerationId ?: "EMPTY_CURRENT_CODE_GENERATION_ID"
             )
 
             logger.debug { "$FEATURE_NAME: Started code generation with requestId: ${startCodeGenerationResponse.responseMetadata().requestId()}" }
@@ -131,10 +141,19 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
                 errMssg = e.awsErrorDetails().errorMessage()
                 logger.warn(e) { "StartTaskAssistCodeGeneration failed for request: ${e.requestId()}" }
 
-                if (e is software.amazon.awssdk.services.codewhispererruntime.model.ServiceQuotaExceededException || (
-                        e is software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException && e.message?.contains(
-                            "limit for number of iterations on a code generation"
-                        ) == true
+                // API Front-end will throw Throttling if conversation limit is reached. API Front-end monitors StartCodeGeneration for throttling
+                if (e is software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException &&
+                    e.message?.contains("StartTaskAssistCodeGeneration reached for this month.") == true
+                ) {
+                    throw MonthlyConversationLimitError(errMssg, operation = FeatureDevOperation.StartTaskAssistCodeGeneration.toString(), desc = null, e.cause)
+                }
+                // BE service will throw ServiceQuota if code generation iteration limit is reached
+                else if (e is software.amazon.awssdk.services.codewhispererruntime.model.ServiceQuotaExceededException || (
+                        e is software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException && (
+                            e.message?.contains(
+                                "limit for number of iterations on a code generation"
+                            ) == true
+                            )
                         )
                 ) {
                     throw CodeIterationLimitException(operation = FeatureDevOperation.StartTaskAssistCodeGeneration.toString(), desc = null, e.cause)
@@ -210,6 +229,34 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
             }
         } catch (e: Exception) {
             logger.warn(e) { "$FEATURE_NAME: failed to send feature dev telemetry" }
+        }
+    }
+
+    fun sendFeatureDevCodeGenerationEvent(conversationId: String, linesOfCodeGenerated: Int, charactersOfCodeGenerated: Int) {
+        val sendFeatureDevTelemetryEventResponse: SendTelemetryEventResponse
+        try {
+            sendFeatureDevTelemetryEventResponse = proxyClient
+                .sendFeatureDevCodeGenerationEvent(conversationId, linesOfCodeGenerated, charactersOfCodeGenerated)
+            val requestId = sendFeatureDevTelemetryEventResponse.responseMetadata().requestId()
+            logger.debug {
+                "$FEATURE_NAME: successfully sent feature dev code generation telemetry: ConversationId: $conversationId RequestId: $requestId"
+            }
+        } catch (e: Exception) {
+            logger.warn(e) { "$FEATURE_NAME: failed to send feature dev code generation telemetry" }
+        }
+    }
+
+    fun sendFeatureDevCodeAcceptanceEvent(conversationId: String, linesOfCodeAccepted: Int, charactersOfCodeAccepted: Int) {
+        val sendFeatureDevTelemetryEventResponse: SendTelemetryEventResponse
+        try {
+            sendFeatureDevTelemetryEventResponse = proxyClient
+                .sendFeatureDevCodeAcceptanceEvent(conversationId, linesOfCodeAccepted, charactersOfCodeAccepted)
+            val requestId = sendFeatureDevTelemetryEventResponse.responseMetadata().requestId()
+            logger.debug {
+                "$FEATURE_NAME: successfully sent feature dev code acceptance telemetry: ConversationId: $conversationId RequestId: $requestId"
+            }
+        } catch (e: Exception) {
+            logger.warn(e) { "$FEATURE_NAME: failed to send feature dev code acceptance telemetry" }
         }
     }
 }

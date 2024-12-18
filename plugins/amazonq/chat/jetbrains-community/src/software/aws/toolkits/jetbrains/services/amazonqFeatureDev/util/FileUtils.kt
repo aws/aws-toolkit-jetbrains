@@ -6,7 +6,10 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.CharsetToolkit
 import com.intellij.openapi.vfs.VirtualFile
+import java.io.File
+import java.nio.charset.Charset
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteIfExists
@@ -32,4 +35,10 @@ fun resolveAndDeleteFile(projectRootPath: Path, relativePath: String) {
 fun selectFolder(project: Project, openOn: VirtualFile): VirtualFile? {
     val fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor()
     return FileChooser.chooseFile(fileChooserDescriptor, project, openOn)
+}
+
+fun readFileToString(file: File): String {
+    val charsetToolkit = CharsetToolkit(file.readBytes(), Charset.forName("UTF-8"), false)
+    val charset = charsetToolkit.guessEncoding(4096)
+    return file.readText(charset)
 }

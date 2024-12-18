@@ -5,18 +5,21 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.controller
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.diff.DiffContentFactory
-import com.intellij.diff.DiffManager
+import com.intellij.diff.chains.SimpleDiffRequestChain
 import com.intellij.diff.contents.EmptyContent
+import com.intellij.diff.editor.ChainDiffVirtualFile
+import com.intellij.diff.editor.DiffEditorTabFilesManager
 import com.intellij.diff.requests.SimpleDiffRequest
-import com.intellij.diff.util.DiffUserDataKeys
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.wm.ToolWindowManager
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.aws.toolkits.core.utils.debug
@@ -24,6 +27,7 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.common.util.selectFolder
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.amazonq.RepoSizeError
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
@@ -65,7 +69,9 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Prepar
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Session
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStatePhase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.storage.ChatSessionStorage
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.selectFolder
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.InsertAction
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.content
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.FeedbackComment
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
@@ -74,6 +80,7 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.UiTelemetry
 import java.util.UUID
 
 class FeatureDevController(
@@ -85,11 +92,21 @@ class FeatureDevController(
     val messenger = context.messagesFromAppToUi
     val toolWindow = ToolWindowManager.getInstance(context.project).getToolWindow(AmazonQToolWindowFactory.WINDOW_ID)
 
+    private val diffVirtualFiles = mutableMapOf<String, ChainDiffVirtualFile>()
+
     override suspend fun processPromptChatMessage(message: IncomingFeatureDevMessage.ChatPrompt) {
         handleChat(
             tabId = message.tabId,
             message = message.chatMessage
         )
+    }
+
+    override suspend fun processStoreCodeResultMessageId(message: IncomingFeatureDevMessage.StoreMessageIdMessage) {
+        storeCodeResultMessageId(message)
+    }
+
+    override suspend fun processStopMessage(message: IncomingFeatureDevMessage.StopResponse) {
+        handleStopMessage(message)
     }
 
     override suspend fun processNewTabCreatedMessage(message: IncomingFeatureDevMessage.NewTabCreated) {
@@ -121,6 +138,7 @@ class FeatureDevController(
 
     override suspend fun processChatItemVotedMessage(message: IncomingFeatureDevMessage.ChatItemVotedMessage) {
         logger.debug { "$FEATURE_NAME: Processing ChatItemVotedMessage: $message" }
+        this.disablePreviousFileList(message.tabId)
 
         val session = chatSessionStorage.getSession(message.tabId, context.project)
         when (message.vote) {
@@ -187,6 +205,18 @@ class FeatureDevController(
         }
     }
 
+    private fun putDiff(filePath: String, request: SimpleDiffRequest) {
+        // Close any existing diff and open a new diff, as the diff virtual file does not appear to allow replacing content directly:
+        val existingDiff = diffVirtualFiles[filePath]
+        if (existingDiff != null) {
+            FileEditorManager.getInstance(context.project).closeFile(existingDiff)
+        }
+
+        val newDiff = ChainDiffVirtualFile(SimpleDiffRequestChain(request), filePath)
+        DiffEditorTabFilesManager.getInstance(context.project).showDiffFile(newDiff, true)
+        diffVirtualFiles[filePath] = newDiff
+    }
+
     override suspend fun processOpenDiff(message: IncomingFeatureDevMessage.OpenDiff) {
         val session = getSessionInfo(message.tabId)
 
@@ -218,10 +248,7 @@ class FeatureDevController(
                         DiffContentFactory.getInstance().create(newFileContent)
                     }
 
-                    val request = SimpleDiffRequest(message.filePath, leftDiffContent, rightDiffContent, null, null)
-                    request.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true)
-
-                    DiffManager.getInstance().showDiff(project, request)
+                    putDiff(message.filePath, SimpleDiffRequest(message.filePath, leftDiffContent, rightDiffContent, null, null))
                 }
             }
             else -> {
@@ -240,21 +267,79 @@ class FeatureDevController(
         val fileToUpdate = message.filePath
         val session = getSessionInfo(message.tabId)
         val messageId = message.messageId
+        val action = message.actionName
 
         var filePaths: List<NewFileZipInfo> = emptyList()
         var deletedFiles: List<DeletedFileInfo> = emptyList()
+        var references: List<CodeReferenceGenerated> = emptyList()
         when (val state = session.sessionState) {
             is PrepareCodeGenerationState -> {
                 filePaths = state.filePaths
                 deletedFiles = state.deletedFiles
+                references = state.references
             }
         }
 
-        // Mark the file as rejected or not depending on the previous state
-        filePaths.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
-        deletedFiles.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
+        fun insertAction(): InsertAction =
+            if (filePaths.all { it.changeApplied } && deletedFiles.all { it.changeApplied }) {
+                InsertAction.AUTO_CONTINUE
+            } else if (filePaths.all { it.changeApplied || it.rejected } && deletedFiles.all { it.changeApplied || it.rejected }) {
+                InsertAction.CONTINUE
+            } else if (filePaths.any { it.changeApplied || it.rejected } || deletedFiles.any { it.changeApplied || it.rejected }) {
+                InsertAction.REMAINING
+            } else {
+                InsertAction.ALL
+            }
+
+        val prevInsertAction = insertAction()
+
+        if (action == "accept-change") {
+            session.insertChanges(
+                filePaths = filePaths.filter { it.zipFilePath == fileToUpdate },
+                deletedFiles = deletedFiles.filter { it.zipFilePath == fileToUpdate },
+                references = references, // Add all references (not attributed per-file)
+            )
+
+            AmazonqTelemetry.isAcceptedCodeChanges(
+                amazonqNumberOfFilesAccepted = 1.0,
+                amazonqConversationId = session.conversationId,
+                enabled = true,
+                credentialStartUrl = getStartUrl(project = context.project)
+            )
+        } else {
+            // Mark the file as rejected or not depending on the previous state
+            filePaths.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
+            deletedFiles.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
+        }
 
         messenger.updateFileComponent(message.tabId, filePaths, deletedFiles, messageId)
+
+        // Then, if the accepted file is not a deletion, open a diff to show the changes are applied:
+        if (action == "accept-change" && deletedFiles.none { it.zipFilePath == fileToUpdate }) {
+            var pollAttempt = 0
+            val pollDelayMs = 10L
+            while (pollAttempt < 5) {
+                val file = VfsUtil.findRelativeFile(message.filePath, session.context.selectedSourceFolder)
+                // Wait for the file to be created and/or updated to the new content:
+                if (file != null && file.content() == filePaths.find { it.zipFilePath == fileToUpdate }?.fileContent) {
+                    // Open a diff, showing the changes have been applied and the file now has identical left/right state:
+                    this.processOpenDiff(IncomingFeatureDevMessage.OpenDiff(message.tabId, fileToUpdate, false))
+                    break
+                } else {
+                    pollAttempt++
+                    delay(pollDelayMs)
+                }
+            }
+        }
+
+        val nextInsertAction = insertAction()
+        if (nextInsertAction == InsertAction.AUTO_CONTINUE) {
+            // Insert remaining changes (noop, as there are none), and advance to the next prompt:
+            insertCode(message.tabId)
+        } else if (nextInsertAction != prevInsertAction) {
+            // Update the action displayed to the customer based on the current state:
+            messenger.sendSystemPrompt(message.tabId, getFollowUpOptions(session.sessionState.phase, nextInsertAction))
+        }
     }
 
     private suspend fun newTabOpened(tabId: String) {
@@ -284,7 +369,28 @@ class FeatureDevController(
         }
     }
 
-    private suspend fun insertCode(tabId: String) {
+    private suspend fun handleStopMessage(message: IncomingFeatureDevMessage.StopResponse) {
+        val session: Session?
+        UiTelemetry.click(null as Project?, "amazonq_stopCodeGeneration")
+        messenger.sendAnswer(
+            tabId = message.tabId,
+            message("amazonqFeatureDev.code_generation.stopping_code_generation"),
+            messageType = FeatureDevMessageType.Answer,
+            canBeVoted = false
+        )
+        messenger.sendUpdatePlaceholder(
+            tabId = message.tabId,
+            newPlaceholder = message("amazonqFeatureDev.code_generation.stopping_code_generation")
+        )
+        messenger.sendChatInputEnabledMessage(tabId = message.tabId, enabled = false)
+        session = getSessionInfo(message.tabId)
+
+        if (session.sessionState.token?.token !== null) {
+            session.sessionState.token?.cancel()
+        }
+    }
+
+    suspend fun insertCode(tabId: String) {
         var session: Session? = null
         try {
             session = getSessionInfo(tabId)
@@ -301,17 +407,26 @@ class FeatureDevController(
                 }
             }
 
+            val rejectedFilesCount = filePaths.count { it.rejected } + deletedFiles.count { it.rejected }
+            val acceptedFilesCount = filePaths.count { it.changeApplied } + filePaths.count { it.changeApplied }
+            val remainingFilesCount = filePaths.count() + deletedFiles.count() - acceptedFilesCount - rejectedFilesCount
+
             AmazonqTelemetry.isAcceptedCodeChanges(
-                amazonqNumberOfFilesAccepted = (filePaths.filterNot { it.rejected }.size + deletedFiles.filterNot { it.rejected }.size) * 1.0,
+                amazonqNumberOfFilesAccepted = remainingFilesCount.toDouble(),
                 amazonqConversationId = session.conversationId,
                 enabled = true,
                 credentialStartUrl = getStartUrl(project = context.project)
             )
 
             session.insertChanges(
-                filePaths = filePaths.filterNot { it.rejected },
-                deletedFiles = deletedFiles.filterNot { it.rejected },
+                filePaths = filePaths,
+                deletedFiles = deletedFiles,
                 references = references
+            )
+            session.updateFilesPaths(
+                filePaths = filePaths,
+                deletedFiles = deletedFiles,
+                messenger
             )
 
             messenger.sendAnswer(
@@ -353,8 +468,11 @@ class FeatureDevController(
     }
 
     private suspend fun newTask(tabId: String, isException: Boolean? = false) {
+        this.disablePreviousFileList(tabId)
+
         val session = getSessionInfo(tabId)
         val sessionLatency = System.currentTimeMillis() - session.sessionStartTime
+
         AmazonqTelemetry.endChat(
             amazonqConversationId = session.conversationId,
             amazonqEndOfTheConversationLatency = sessionLatency.toDouble(),
@@ -375,6 +493,7 @@ class FeatureDevController(
     }
 
     private suspend fun closeSession(tabId: String) {
+        this.disablePreviousFileList(tabId)
         messenger.sendAnswer(
             tabId = tabId,
             messageType = FeatureDevMessageType.Answer,
@@ -479,7 +598,7 @@ class FeatureDevController(
                     tabId = tabId,
                     followUp = listOf(
                         FollowUp(
-                            pillText = message("amazonqFeatureDev.follow_up.insert_code"),
+                            pillText = message("amazonqFeatureDev.follow_up.insert_all_code"),
                             type = FollowUpTypes.INSERT_CODE,
                             icon = FollowUpIcons.Ok,
                             status = FollowUpStatusType.Success,
@@ -522,11 +641,28 @@ class FeatureDevController(
         }
     }
 
+    private suspend fun disablePreviousFileList(tabId: String) {
+        val session = getSessionInfo(tabId)
+        when (val sessionState = session.sessionState) {
+            is PrepareCodeGenerationState -> {
+                session.disableFileList(sessionState.filePaths, sessionState.deletedFiles, messenger)
+            }
+        }
+    }
+
+    private fun storeCodeResultMessageId(message: IncomingFeatureDevMessage.StoreMessageIdMessage) {
+        val tabId = message.tabId
+        val session = getSessionInfo(tabId)
+        session.storeCodeResultMessageId(message)
+    }
+
     private suspend fun handleChat(
         tabId: String,
         message: String,
     ) {
         var session: Session? = null
+
+        this.disablePreviousFileList(tabId)
         try {
             logger.debug { "$FEATURE_NAME: Processing message: $message" }
             session = getSessionInfo(tabId)

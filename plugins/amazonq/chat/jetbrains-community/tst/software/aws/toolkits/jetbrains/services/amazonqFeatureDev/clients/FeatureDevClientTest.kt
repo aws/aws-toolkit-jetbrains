@@ -44,6 +44,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
 import software.aws.toolkits.jetbrains.settings.AwsSettings
+import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 class FeatureDevClientTest : FeatureDevTestBase() {
@@ -124,7 +125,7 @@ class FeatureDevClientTest : FeatureDevTestBase() {
     fun `check createTaskAssistUploadUrl`() {
         val testContentLength: Long = 42
 
-        val actual = featureDevClient.createTaskAssistUploadUrl(testConversationId, "test-sha", testContentLength)
+        val actual = featureDevClient.createTaskAssistUploadUrl(testConversationId, "test-sha", testContentLength, "uploadId")
 
         argumentCaptor<CreateUploadUrlRequest>().apply {
             verify(bearerClient).createUploadUrl(capture())
@@ -137,7 +138,14 @@ class FeatureDevClientTest : FeatureDevTestBase() {
 
     @Test
     fun `check startTaskAssistCodeGeneration`() {
-        val actual = featureDevClient.startTaskAssistCodeGeneration(testConversationId, "test-upload-id", "test-user-message")
+        val actual = featureDevClient.startTaskAssistCodeGeneration(
+            testConversationId,
+            "test-upload-id",
+            "test-user-message",
+            currentCodeGenerationId = UUID.randomUUID()
+                .toString(),
+            codeGenerationId = codeGenerationId
+        )
 
         argumentCaptor<StartTaskAssistCodeGenerationRequest>().apply {
             verify(bearerClient).startTaskAssistCodeGeneration(capture())

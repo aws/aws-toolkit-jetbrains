@@ -8,6 +8,7 @@ import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ProfileSsoManagedBearerSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
@@ -15,6 +16,7 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.SourceOfEntry
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getAuthScopes
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getAuthStatus
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionCount
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getEnabledConnections
@@ -185,7 +187,7 @@ fun requestCredentialsForQ(
         scopes = Q_SCOPES,
         promptForIdcPermissionSet = false,
         sourceOfEntry = SourceOfEntry.Q,
-        featureId = FeatureId.Q, // TODO: Update Q  in common
+        featureId = FeatureId.AmazonQ,
         connectionInitiatedFromQChatPanel = connectionInitiatedFromQChatPanel
     )
 
@@ -194,7 +196,7 @@ fun requestCredentialsForQ(
         AuthTelemetry.addConnection(
             project,
             source = getSourceOfEntry(SourceOfEntry.Q, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel),
-            featureId = FeatureId.Q,
+            featureId = FeatureId.AmazonQ,
             credentialSourceId = authenticationDialog.authType,
             isAggregated = true,
             attempts = authenticationDialog.attempts + 1,
@@ -215,7 +217,7 @@ fun requestCredentialsForQ(
         AuthTelemetry.addConnection(
             project,
             source = getSourceOfEntry(SourceOfEntry.Q, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel),
-            featureId = FeatureId.Q,
+            featureId = FeatureId.AmazonQ,
             credentialSourceId = authenticationDialog.authType,
             isAggregated = false,
             attempts = authenticationDialog.attempts + 1,
@@ -230,17 +232,17 @@ fun reauthenticateWithQ(project: Project) {
     val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
     if (connection !is ManagedBearerSsoConnection) return
     pluginAwareExecuteOnPooledThread {
-        reauthConnectionIfNeeded(project, connection, isReAuth = true)
+        reauthConnectionIfNeeded(project, connection, isReAuth = true, reauthSource = ReauthSource.Q_CHAT)
     }
 }
 
 fun emitUserState(project: Project) {
     AuthTelemetry.userState(
         project,
-        source = getStartupState().toString(),
         authEnabledConnections = getEnabledConnections(project),
+        authScopes = getAuthScopes(project),
         authStatus = getAuthStatus(project),
-        passive = true
+        source = getStartupState().toString()
     )
 }
 

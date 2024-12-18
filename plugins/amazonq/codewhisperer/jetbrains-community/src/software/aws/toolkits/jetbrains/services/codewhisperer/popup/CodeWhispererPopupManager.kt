@@ -51,7 +51,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhisper
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.inlineLabelConstraints
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContextNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.PreviewContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererEditorActionHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupBackspaceHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupEnterHandler
@@ -232,15 +235,17 @@ class CodeWhispererPopupManager {
         // emit any events.
         // 4. User navigating through the completions or typing as the completion shows. We should not update the latency
         // end time and should not emit any events in this case.
+        if (!CodeWhispererInvocationStatus.getInstance().isPopupActive()) {
+            states.requestContext.latencyContext.codewhispererPostprocessingEnd = System.nanoTime()
+            states.requestContext.latencyContext.codewhispererEndToEndEnd = System.nanoTime()
+            states.requestContext.latencyContext.perceivedLatency =
+                states.requestContext.latencyContext.getPerceivedLatency(states.requestContext.triggerTypeInfo.triggerType)
+        }
         if (!isRecommendationAdded) {
             showPopup(states, sessionContext, states.popup, caretPoint, overlappingLinesCount)
-            if (!isScrolling) {
-                states.requestContext.latencyContext.codewhispererPostprocessingEnd = System.nanoTime()
-                states.requestContext.latencyContext.codewhispererEndToEndEnd = System.nanoTime()
-            }
         }
         if (isScrolling ||
-            CodeWhispererInvocationStatus.getInstance().hasExistingInvocation() ||
+            CodeWhispererInvocationStatus.getInstance().hasExistingServiceInvocation() ||
             !sessionContext.isFirstTimeShowingPopup
         ) {
             return
@@ -545,7 +550,7 @@ class CodeWhispererPopupManager {
     }
 
     private fun updateSelectedRecommendationLabelText(validSelectedIndex: Int, validCount: Int) {
-        if (CodeWhispererInvocationStatus.getInstance().hasExistingInvocation()) {
+        if (CodeWhispererInvocationStatus.getInstance().hasExistingServiceInvocation()) {
             popupComponents.recommendationInfoLabel.text = message("codewhisperer.popup.pagination_info")
             LOG.debug { "Pagination in progress. Current total: $validCount" }
         } else {
@@ -696,6 +701,10 @@ interface CodeWhispererPopupStateChangeListener {
     fun stateChanged(states: InvocationContext, sessionContext: SessionContext) {}
     fun scrolled(states: InvocationContext, sessionContext: SessionContext) {}
     fun recommendationAdded(states: InvocationContext, sessionContext: SessionContext) {}
+
+    fun stateChanged(sessionContext: SessionContextNew) {}
+    fun scrolled(sessionContext: SessionContextNew) {}
+    fun recommendationAdded(states: InvocationContextNew, sessionContext: SessionContextNew) {}
 }
 
 interface CodeWhispererUserActionListener {
@@ -706,4 +715,12 @@ interface CodeWhispererUserActionListener {
     fun navigateNext(states: InvocationContext) {}
     fun beforeAccept(states: InvocationContext, sessionContext: SessionContext) {}
     fun afterAccept(states: InvocationContext, sessionContext: SessionContext, rangeMarker: RangeMarker) {}
+
+    fun backspace(sessionContext: SessionContextNew, diff: String) {}
+    fun enter(sessionContext: SessionContextNew, diff: String) {}
+    fun type(sessionContext: SessionContextNew, diff: String) {}
+    fun navigatePrevious(sessionContext: SessionContextNew) {}
+    fun navigateNext(sessionContext: SessionContextNew) {}
+    fun beforeAccept(sessionContext: SessionContextNew) {}
+    fun afterAccept(states: InvocationContextNew, previews: List<PreviewContext>, sessionContext: SessionContextNew, rangeMarker: RangeMarker) {}
 }

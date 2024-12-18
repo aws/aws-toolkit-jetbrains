@@ -32,19 +32,22 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
 import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
+import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
+import software.aws.toolkits.jetbrains.services.amazonq.CHAT_IMPLICIT_PROJECT_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
+import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
+import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
+import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererUserModificationTracker
 import software.aws.toolkits.jetbrains.services.cwc.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
@@ -65,8 +68,6 @@ import software.aws.toolkits.jetbrains.services.cwc.controller.chat.userIntent.U
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContext
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContextExtractor
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTriggerType
-import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.ProjectContextController
-import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.cwc.messages.AuthNeededException
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
@@ -79,9 +80,16 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.OnboardingPageInter
 import software.aws.toolkits.jetbrains.services.cwc.messages.OpenSettingsMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.QuickActionMessage
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.CwsprChatCommandType
 import java.time.Instant
 import java.util.UUID
+
+data class TestCommandMessage(
+    val sender: String = "codetest",
+    val command: String = "test",
+    val type: String = "addAnswer",
+) : AmazonQMessage
 
 class ChatController private constructor(
     private val context: AmazonQAppInitContext,
@@ -92,7 +100,8 @@ class ChatController private constructor(
 ) : InboundAppMessagesHandler {
 
     private val messagePublisher: MessagePublisher = context.messagesFromAppToUi
-    private val telemetryHelper = TelemetryHelper(context, chatSessionStorage)
+    private val telemetryHelper = TelemetryHelper(context.project, chatSessionStorage)
+
     constructor(
         context: AmazonQAppInitContext,
     ) : this(
@@ -129,7 +138,6 @@ class ChatController private constructor(
         val triggerId = UUID.randomUUID().toString()
         var shouldAddIndexInProgressMessage: Boolean = false
         var shouldUseWorkspaceContext: Boolean = false
-        val isDataCollectionGroup = CodeWhispererFeatureConfigService.getInstance().getIsDataCollectionEnabled()
         val startUrl = getStartUrl(context.project)
 
         if (prompt.contains("@workspace")) {
@@ -137,15 +145,19 @@ class ChatController private constructor(
                 shouldUseWorkspaceContext = true
                 prompt = prompt.replace("@workspace", "")
                 val projectContextController = ProjectContextController.getInstance(context.project)
-                queryResult = projectContextController.query(prompt)
+                queryResult = projectContextController.query(prompt, timeout = null)
                 if (!projectContextController.getProjectContextIndexComplete()) shouldAddIndexInProgressMessage = true
                 logger.info { "project context relevant document count: ${queryResult.size}" }
             } else {
                 sendOpenSettingsMessage(message.tabId)
             }
-        } else if (CodeWhispererSettings.getInstance().isProjectContextEnabled() && isDataCollectionGroup) {
-            val projectContextController = ProjectContextController.getInstance(context.project)
-            queryResult = projectContextController.query(prompt)
+        } else if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
+            if (ProjectContextController.getInstance(context.project).getProjectContextIndexComplete()) {
+                val projectContextController = ProjectContextController.getInstance(context.project)
+                queryResult = projectContextController.query(prompt, timeout = CHAT_IMPLICIT_PROJECT_CONTEXT_TIMEOUT)
+            } else {
+                logger.debug { "skipping implicit workspace context as index is not ready" }
+            }
         }
 
         handleChat(
@@ -153,7 +165,7 @@ class ChatController private constructor(
             triggerId = triggerId,
             message = prompt,
             activeFileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ChatMessage),
-            userIntent = intentRecognizer.getUserIntentFromPromptChatMessage(message.chatMessage, startUrl),
+            userIntent = intentRecognizer.getUserIntentFromPromptChatMessage(message.chatMessage),
             TriggerType.Click,
             projectContextQueryResult = queryResult,
             shouldAddIndexInProgressMessage = shouldAddIndexInProgressMessage,
@@ -217,7 +229,7 @@ class ChatController private constructor(
 
                     editor.document.insertString(offset, message.code)
 
-                    ReferenceLogController.addReferenceLog(message.code, message.codeReference, editor, context.project)
+                    ReferenceLogController.addReferenceLog(message.code, message.codeReference, editor, context.project, null)
 
                     CodeWhispererUserModificationTracker.getInstance(context.project).enqueue(
                         InsertedCodeModificationEntry(
@@ -294,7 +306,7 @@ class ChatController private constructor(
     }
 
     override suspend fun processCodeScanIssueAction(message: CodeScanIssueActionMessage) {
-        logger.info { "Code Scan Explain issue with Q message received for issue: ${message.issue["title"]}" }
+        logger.info { "Code Review Explain issue with Q message received for issue: ${message.issue["title"]}" }
         // Extract context
         val fileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.CodeScanButton)
         val triggerId = UUID.randomUUID().toString()
@@ -332,15 +344,15 @@ class ChatController private constructor(
             )
             return
         }
-
-        // Create prompt
-        val prompt = if (EditorContextCommand.GenerateUnitTests == message.command) {
-            "${message.command.verb} the following part of my code for me: $codeSelection"
+        if (message.command == EditorContextCommand.GenerateUnitTests) {
+            // Publish an event to "codetest" tab with command as "test" and type as "addAnswer"
+            val messageToPublish = TestCommandMessage()
+            context.messagesFromAppToUi.publish(messageToPublish)
         } else {
-            "${message.command} the following part of my code for me: $codeSelection"
+            // Create prompt
+            val prompt = "${message.command} the following part of my code for me: $codeSelection"
+            processPromptActions(prompt, message, triggerId, fileContext)
         }
-
-        processPromptActions(prompt, message, triggerId, fileContext)
     }
 
     private suspend fun processPromptActions(
@@ -380,7 +392,11 @@ class ChatController private constructor(
     }
 
     override suspend fun processLinkClick(message: IncomingCwcMessage.ClickedLink) {
-        BrowserUtil.browse(message.link)
+        processLinkClick(message, message.link)
+    }
+
+    private suspend fun processLinkClick(message: IncomingCwcMessage, link: String) {
+        BrowserUtil.browse(link)
         telemetryHelper.recordInteractWithMessage(message)
     }
 

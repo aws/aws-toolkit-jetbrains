@@ -22,7 +22,7 @@ reported the issue. Please try to include as much information as you can. Detail
 
 ### Requirements
 
-* [Java 17](https://docs.aws.amazon.com/corretto/latest/corretto-17-ug/downloads-list.html)
+* [Java 21](https://docs.aws.amazon.com/corretto/latest/corretto-21-ug/downloads-list.html)
 * [Git](https://git-scm.com/)
 * .NET 6
   * In theory, you can use a higher version, however we build with .NET 6 in CI
@@ -35,7 +35,7 @@ reported the issue. Please try to include as much information as you can. Detail
 ### Instructions
 
 1. Clone the github repository.
-2. To manually build a plugin distribution, run the `buildPlugin` task on the relevant Gradle project. 
+2. To manually build a plugin distribution, run the global task, `./gradlew buildPlugin` to build all plugins, or on specific subproject if you want a specific plugin
    - For example, `./gradlew :plugin-toolkit:intellij-standalone:buildPlugin` will produce a plugin zip under `plugins/toolkit/intellij-standalone/build/distributions`.
    - You can also run the `:plugin-core:buildPlugin` and `:plugin-amazonq:buildPlugin` tasks 
    - Use the `-PideProfileName={JETBRAINS_VERSION}` option to build the plugin for a particular IDE version (e.g `./gradlew :plugin-toolkit:intellij-standalone:buildPlugin -PideProfileName=2024.1`)

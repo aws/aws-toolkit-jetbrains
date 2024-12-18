@@ -5,12 +5,14 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
 import com.fasterxml.jackson.annotation.JsonValue
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
 import software.aws.toolkits.jetbrains.services.cwc.messages.RecommendationContentSpan
 
 data class SessionStateAction(
     val task: String,
     val msg: String,
+    val token: CancellationTokenSource? = null,
 )
 
 data class Interaction(
@@ -18,8 +20,8 @@ data class Interaction(
     val interactionSucceeded: Boolean,
 )
 
-data class SessionStateInteraction(
-    val nextState: SessionState? = null,
+data class SessionStateInteraction<T : SessionState>(
+    val nextState: T? = null,
     val interaction: Interaction,
 )
 
@@ -40,11 +42,13 @@ data class NewFileZipInfo(
     val zipFilePath: String,
     val fileContent: String,
     var rejected: Boolean,
+    var changeApplied: Boolean,
 )
 
 data class DeletedFileInfo(
     val zipFilePath: String, // The string is the path of the file to be deleted
     var rejected: Boolean,
+    var changeApplied: Boolean,
 )
 
 data class CodeGenerationResult(
@@ -72,4 +76,9 @@ data class CodeGenerationStreamResult(
 @Suppress("ConstructorParameterNaming") // Unfortunately, this is exactly how the string json is received and is needed for parsing.
 data class ExportTaskAssistResultArchiveStreamResult(
     var code_generation_result: CodeGenerationStreamResult,
+)
+
+data class DiffMetricsProcessed(
+    var accepted: HashSet<String>,
+    var generated: HashSet<String>,
 )

@@ -9,6 +9,7 @@ import org.jetbrains.annotations.VisibleForTesting
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.Span
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationChunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCompletionType
 import kotlin.math.max
@@ -17,6 +18,38 @@ import kotlin.math.min
 @Service
 class CodeWhispererRecommendationManager {
     fun reformatReference(requestContext: RequestContext, recommendation: Completion): Completion {
+        // startOffset is the offset at the start of user input since invocation
+        val invocationStartOffset = requestContext.caretPosition.offset
+
+        val startOffsetSinceUserInput = requestContext.editor.caretModel.offset
+        val endOffset = invocationStartOffset + recommendation.content().length
+
+        if (startOffsetSinceUserInput > endOffset) return recommendation
+
+        val reformattedReferences = recommendation.references().filter {
+            val referenceStart = invocationStartOffset + it.recommendationContentSpan().start()
+            val referenceEnd = invocationStartOffset + it.recommendationContentSpan().end()
+            referenceStart < endOffset && referenceEnd > startOffsetSinceUserInput
+        }.map {
+            val referenceStart = invocationStartOffset + it.recommendationContentSpan().start()
+            val referenceEnd = invocationStartOffset + it.recommendationContentSpan().end()
+            val updatedReferenceStart = max(referenceStart, startOffsetSinceUserInput)
+            val updatedReferenceEnd = min(referenceEnd, endOffset)
+            it.toBuilder().recommendationContentSpan(
+                Span.builder()
+                    .start(updatedReferenceStart - invocationStartOffset)
+                    .end(updatedReferenceEnd - invocationStartOffset)
+                    .build()
+            ).build()
+        }
+
+        return Completion.builder()
+            .content(recommendation.content())
+            .references(reformattedReferences)
+            .build()
+    }
+
+    fun reformatReference(requestContext: RequestContextNew, recommendation: Completion): Completion {
         // startOffset is the offset at the start of user input since invocation
         val invocationStartOffset = requestContext.caretPosition.offset
 
@@ -126,11 +159,93 @@ class CodeWhispererRecommendationManager {
                 overlap,
                 getCompletionType(it)
             )
-        }
+        }.toMutableList()
+    }
+
+    fun buildDetailContext(
+        requestContext: RequestContextNew,
+        userInput: String,
+        recommendations: List<Completion>,
+        requestId: String,
+    ): MutableList<DetailContextNew> {
+        val seen = mutableSetOf<String>()
+        return recommendations.map {
+            val isDiscardedByUserInput = !it.content().startsWith(userInput) || it.content() == userInput
+            if (isDiscardedByUserInput) {
+                return@map DetailContextNew(
+                    requestId,
+                    it,
+                    it,
+                    isDiscarded = true,
+                    isTruncatedOnRight = false,
+                    rightOverlap = "",
+                    getCompletionType(it)
+                )
+            }
+
+            val overlap = findRightContextOverlap(requestContext, it)
+            val overlapIndex = it.content().lastIndexOf(overlap)
+            val truncatedContent =
+                if (overlap.isNotEmpty() && overlapIndex >= 0) {
+                    it.content().substring(0, overlapIndex)
+                } else {
+                    it.content()
+                }
+            val truncated = it.toBuilder()
+                .content(truncatedContent)
+                .build()
+            val isDiscardedByUserInputForTruncated = !truncated.content().startsWith(userInput) || truncated.content() == userInput
+            if (isDiscardedByUserInputForTruncated) {
+                return@map DetailContextNew(
+                    requestId,
+                    it,
+                    truncated,
+                    isDiscarded = true,
+                    isTruncatedOnRight = true,
+                    rightOverlap = overlap,
+                    getCompletionType(it)
+                )
+            }
+
+            val isDiscardedByRightContextTruncationDedupe = !seen.add(truncated.content())
+            val isDiscardedByBlankAfterTruncation = truncated.content().isBlank()
+            if (isDiscardedByRightContextTruncationDedupe || isDiscardedByBlankAfterTruncation) {
+                return@map DetailContextNew(
+                    requestId,
+                    it,
+                    truncated,
+                    isDiscarded = true,
+                    truncated.content().length != it.content().length,
+                    overlap,
+                    getCompletionType(it)
+                )
+            }
+            val reformatted = reformatReference(requestContext, truncated)
+            DetailContextNew(
+                requestId,
+                it,
+                reformatted,
+                isDiscarded = false,
+                truncated.content().length != it.content().length,
+                overlap,
+                getCompletionType(it)
+            )
+        }.toMutableList()
     }
 
     fun findRightContextOverlap(
         requestContext: RequestContext,
+        recommendation: Completion,
+    ): String {
+        val document = requestContext.editor.document
+        val caret = requestContext.editor.caretModel.primaryCaret
+        val rightContext = document.charsSequence.subSequence(caret.offset, document.charsSequence.length).toString()
+        val recommendationContent = recommendation.content()
+        return findRightContextOverlap(rightContext, recommendationContent)
+    }
+
+    fun findRightContextOverlap(
+        requestContext: RequestContextNew,
         recommendation: Completion,
     ): String {
         val document = requestContext.editor.document
