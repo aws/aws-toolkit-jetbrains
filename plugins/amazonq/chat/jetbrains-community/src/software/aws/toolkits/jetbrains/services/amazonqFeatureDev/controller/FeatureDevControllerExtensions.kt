@@ -169,12 +169,6 @@ suspend fun FeatureDevController.onCodeGeneration(
             }
         }
         throw err
-    } catch (err: Exception) {
-        session.sendMetricDataTelemetry(
-            MetricDataOperationName.EndCodeGeneration,
-            MetricDataResult.Fault
-        )
-        throw err
     } finally {
         if (session.sessionState.token
                 ?.token
