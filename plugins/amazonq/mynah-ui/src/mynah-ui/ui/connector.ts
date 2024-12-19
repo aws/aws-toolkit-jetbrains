@@ -61,7 +61,7 @@ export interface ConnectorProps {
     onCodeTransformMessageUpdate: (tabID: string, messageId: string, chatItem: Partial<ChatItem>) => void
     onRunTestMessageReceived?: (tabID: string, showRunTestMessage: boolean) => void
     onWelcomeFollowUpClicked: (tabID: string, welcomeFollowUpType: WelcomeFollowupType) => void
-    onAsyncEventProgress: (tabID: string, inProgress: boolean, message: string | undefined) => void
+    onAsyncEventProgress: (tabID: string, inProgress: boolean, message: string | undefined, cancelButtonWhenLoading?: boolean) => void
     onCWCContextCommandMessage: (message: ChatItem, command?: string) => string | undefined
     onCWCOnboardingPageInteractionMessage: (message: ChatItem) => string | undefined
     onOpenSettingsMessage: (tabID: string) => void
@@ -512,8 +512,12 @@ export class Connector {
             case 'featuredev':
                 this.featureDevChatConnector.onOpenDiff(tabID, filePath, deleted)
                 break
+            /*
+            TODO: This is for temporary solution to show correct viewdiff panel by clicking the filename
+            Would re-factor it later for the next task
+             */
             case 'codetest':
-                this.codeTestChatConnector.onFileClick(tabID, filePath, deleted, messageId)
+                this.codeTestChatConnector.onFormButtonClick(tabID, messageId ?? '', {id: "utg_view_diff"})
                 break
         }
     }

@@ -66,6 +66,7 @@ import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.updateFileCo
 import software.aws.toolkits.jetbrains.services.amazonqDoc.session.DocSession
 import software.aws.toolkits.jetbrains.services.amazonqDoc.session.PrepareDocGenerationState
 import software.aws.toolkits.jetbrains.services.amazonqDoc.storage.ChatSessionStorage
+import software.aws.toolkits.jetbrains.services.amazonqDoc.util.getFollowUpOptions
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
@@ -308,7 +309,7 @@ class DocController(
         try {
             messenger.sendFolderConfirmationMessage(
                 tabId = tabId,
-                message = if (mode == Mode.CREATE) message("amazonqDoc.prompt.create") else message("amazonqDoc.prompt.update"),
+                message = if (mode == Mode.CREATE) message("amazonqDoc.prompt.create.confirmation") else message("amazonqDoc.prompt.update"),
                 folderPath = currentSourceFolder.name,
                 followUps = listOf(
                     FollowUp(
@@ -813,7 +814,6 @@ class DocController(
 
             when (session.sessionState.phase) {
                 SessionStatePhase.CODEGEN -> {
-                    messenger.sendUpdatePromptProgress(tabId, inProgress(progress = 10))
                     onCodeGeneration(session, message, tabId, mode)
                 }
                 else -> null
@@ -904,29 +904,7 @@ class DocController(
             messenger.sendAnswer(
                 messageType = DocMessageType.SystemPrompt,
                 tabId = followUpMessage.tabId,
-                followUp = listOf(
-                    FollowUp(
-                        pillText = message("amazonqDoc.prompt.review.accept"),
-                        prompt = message("amazonqDoc.prompt.review.accept"),
-                        status = FollowUpStatusType.Success,
-                        type = FollowUpTypes.ACCEPT_CHANGES,
-                        icon = FollowUpIcons.Ok,
-                    ),
-                    FollowUp(
-                        pillText = message("amazonqDoc.prompt.review.changes"),
-                        prompt = message("amazonqDoc.prompt.review.changes"),
-                        status = FollowUpStatusType.Info,
-                        type = FollowUpTypes.MAKE_CHANGES,
-                        icon = FollowUpIcons.Info,
-                    ),
-                    FollowUp(
-                        pillText = message("general.reject"),
-                        prompt = message("general.reject"),
-                        status = FollowUpStatusType.Error,
-                        type = FollowUpTypes.REJECT_CHANGES,
-                        icon = FollowUpIcons.Cancel,
-                    )
-                )
+                followUp = getFollowUpOptions(session.sessionState.phase)
             )
 
             processOpenDiff(

@@ -24,6 +24,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessageConnector
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
+import software.aws.toolkits.jetbrains.services.amazonq.util.highlightCommand
 import software.aws.toolkits.jetbrains.services.amazonq.webview.BrowserConnector
 import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapter
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.EditorThemeAdapter
@@ -125,7 +126,8 @@ class AmazonQToolWindow private constructor(
             isFeatureDevAvailable = isFeatureDevAvailable(project),
             isCodeScanAvailable = isCodeScanAvailable(project),
             isCodeTestAvailable = isCodeTestAvailable(project),
-            isDocAvailable = isDocAvailable(project)
+            isDocAvailable = isDocAvailable(project),
+            highlightCommand = highlightCommand()
         )
 
         scope.launch {

@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : " Chosing cancel on sign out confirmation now cancels the sign out and does not delete profiles from ~/.aws/config (#5167)"
-}
