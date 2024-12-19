@@ -4,49 +4,36 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.telemetry
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.event.DocumentEvent
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Key
-import com.intellij.openapi.util.TextRange
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
-import info.debatty.java.stringsimilarity.Levenshtein
-import org.assertj.core.util.VisibleForTesting
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererLanguageManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker.Companion
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getConnectionStartUrl
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getUnmodifiedAcceptedCharsCount
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
-import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.InsertedCodeModificationEntry
-import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.settings.AwsSettings
-import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
-import software.aws.toolkits.telemetry.AmazonqTelemetry
-import software.aws.toolkits.telemetry.CodewhispererLanguage
-import software.aws.toolkits.telemetry.CodewhispererTelemetry
 import java.time.Duration
-import java.time.Instant
-import java.util.concurrent.LinkedBlockingDeque
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 
 @Service(Service.Level.PROJECT)
 class UserWrittenCodeTracker(private val project: Project) : Disposable {
-    private val userWrittenCodePerLanguage = mutableMapOf<String, Int>()
+    private val userWrittenCodeLineCount = mutableMapOf<CodeWhispererProgrammingLanguage, Long>()
+    private val userWrittenCodeCharacterCount = mutableMapOf<CodeWhispererProgrammingLanguage, Long>()
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
 
     private val isShuttingDown = AtomicBoolean(false)
+    private val qInvocationCount: AtomicInteger = AtomicInteger(0)
+    private val isQMakingEdits = AtomicBoolean(false)
 
     init {
         scheduleTracker()
@@ -60,22 +47,35 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
 
     private fun isTelemetryEnabled(): Boolean = AwsSettings.getInstance().isTelemetryEnabled
 
+    fun onQFeatureInvoked() {
+        qInvocationCount.incrementAndGet()
+    }
+
+    fun onQStartsMakingEdits() {
+        isQMakingEdits.set(true)
+    }
+
+    fun onQFinishesMakingEdits() {
+        isQMakingEdits.set(false)
+    }
 
     private fun flush() {
         try {
-            if (!isTelemetryEnabled()) {
+            if (!isTelemetryEnabled() || qInvocationCount.get() <= 0) {
                 return
             }
-            for ((language, userWrittenCode) in userWrittenCodePerLanguage) {
-
-            }
-
+            emitCodeWhispererCodeContribution()
         } finally {
             scheduleTracker()
         }
     }
 
     internal fun documentChanged(event: DocumentEvent) {
+        // do not listen to document changed made by Amazon Q itself
+        if (isQMakingEdits.get()) {
+            return
+        }
+
         // When open a file for the first time, IDE will also emit DocumentEvent for loading with `isWholeTextReplaced = true`
         // Added this condition to filter out those events
         if (event.isWholeTextReplaced) {
@@ -88,45 +88,48 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
         // edge case: event can be from user hit enter with indentation where change is \n\t\t, count as 1 char increase in total chars
         // when event is auto closing [{(', there will be 2 separated events, both count as 1 char increase in total chars
         val text = event.newFragment.toString()
+        val lines = text.split('\n').size - 1
         if (event.newLength < DOCUMENT_COPY_THRESSHOLD && text.trim().isNotEmpty()) {
             // count doc changes from <50 multi character input as total user written code
             // ignore all white space changes, this usually comes from IntelliJ formatting
-            val language = ""
-            val newUserWrittenCode = userWrittenCodePerLanguage.getOrDefault(language, 0) + event.newLength
-            userWrittenCodePerLanguage.set(language, newUserWrittenCode)
+            val language = PsiDocumentManager.getInstance(project).getPsiFile(event.document)?.programmingLanguage()
+            if (language != null) {
+                userWrittenCodeLineCount.set(language, userWrittenCodeLineCount.getOrDefault(language, 0) + lines)
+                userWrittenCodeCharacterCount.set(language, userWrittenCodeCharacterCount.getOrDefault(language, 0) + event.newLength)
+            }
         }
     }
 
-    private fun sendUserModificationTelemetryToServiceAPI(
-        suggestion: AcceptedSuggestionEntry,
-    ) {
-        runIfIdcConnectionOrTelemetryEnabled(project) {
-            try {
-                // should be impossible from the caller logic
-                if (suggestion.vFile == null) return@runIfIdcConnectionOrTelemetryEnabled
-                val document = runReadAction {
-                    FileDocumentManager.getInstance().getDocument(suggestion.vFile)
-                }
-                val modifiedSuggestion = document?.getText(
-                    TextRange(suggestion.range.startOffset, suggestion.range.endOffset)
-                ).orEmpty()
-                val response = CodeWhispererClientAdaptor.getInstance(project)
-                    .sendUserModificationTelemetry(
-                        suggestion.sessionId,
-                        suggestion.requestId,
-                        CodeWhispererLanguageManager.getInstance().getLanguage(suggestion.vFile),
-                        CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn.orEmpty(),
-                        suggestion.suggestion.length,
-                        getUnmodifiedAcceptedCharsCount(suggestion.suggestion, modifiedSuggestion)
+
+    internal fun emitCodeWhispererCodeContribution() {
+        val customizationArn: String? = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn
+        for ((language, _) in userWrittenCodeCharacterCount) {
+            if (userWrittenCodeCharacterCount.getOrDefault(language, 0) <= 0 ) {
+                continue
+            }
+            runIfIdcConnectionOrTelemetryEnabled(project) {
+                // here acceptedTokensSize is the count of accepted chars post user modification
+                try {
+                    val response = CodeWhispererClientAdaptor.getInstance(project).sendCodePercentageTelemetry(
+                        language,
+                        customizationArn,
+                        0,
+                        0,
+                        0,
+                        userWrittenCodeCharacterCount = userWrittenCodeCharacterCount.get(language),
+                        userWrittenCodeLineCount = userWrittenCodeLineCount.get((language))
                     )
-                LOG.debug { "Successfully sent user modification telemetry. RequestId: ${response.responseMetadata().requestId()}" }
-            } catch (e: Exception) {
-                val requestId = if (e is CodeWhispererRuntimeException) e.requestId() else null
-                LOG.debug {
-                    "Failed to send user modification telemetry. RequestId: $requestId, ErrorMessage: ${e.message}"
+                    LOG.debug { "Successfully sent code percentage telemetry. RequestId: ${response.responseMetadata().requestId()}" }
+                } catch (e: Exception) {
+                    val requestId = if (e is CodeWhispererRuntimeException) e.requestId() else null
+                    LOG.debug {
+                        "Failed to send code percentage telemetry. RequestId: $requestId, ErrorMessage: ${e.message}"
+                    }
                 }
             }
         }
+
+
     }
 
     companion object {
