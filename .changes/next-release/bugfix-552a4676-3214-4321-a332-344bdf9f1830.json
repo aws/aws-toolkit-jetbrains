@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Amazon Q Code Transformation: retry initial project upload"
+  "description" : "Amazon Q Code Transformation: retry initial project upload on failure"
 }
