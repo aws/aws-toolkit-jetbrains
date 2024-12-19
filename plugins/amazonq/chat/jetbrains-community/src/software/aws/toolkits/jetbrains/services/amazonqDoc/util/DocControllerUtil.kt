@@ -26,7 +26,7 @@ fun getFollowUpOptions(phase: SessionStatePhase?): List<FollowUp> {
                     prompt = message("amazonqDoc.prompt.review.changes"),
                     status = FollowUpStatusType.Info,
                     type = FollowUpTypes.MAKE_CHANGES,
-                    icon = FollowUpIcons.Info,
+                    icon = FollowUpIcons.Refresh,
                 ),
                 FollowUp(
                     pillText = message("general.reject"),
