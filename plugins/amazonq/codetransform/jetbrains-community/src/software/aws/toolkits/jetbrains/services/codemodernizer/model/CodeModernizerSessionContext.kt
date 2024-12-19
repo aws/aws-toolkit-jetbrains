@@ -58,7 +58,7 @@ const val INVALID_SUFFIX_SHA = "sha1"
 const val INVALID_SUFFIX_REPOSITORIES = "repositories"
 const val ORACLE_DB = "ORACLE"
 const val AURORA_DB = "AURORA_POSTGRESQL"
-const val RDS_DB = "RDS_POSTGRESQL"
+const val RDS_DB = "POSTGRESQL"
 data class CodeModernizerSessionContext(
     val project: Project,
     var configurationFile: VirtualFile? = null, // used to ZIP module
