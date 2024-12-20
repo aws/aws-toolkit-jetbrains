@@ -17,6 +17,8 @@ sourceSets {
 }
 
 dependencies {
+    implementation(libs.bundles.kotlin)
+
     testImplementation(libs.junit4)
     testRuntimeOnly(libs.junit5.jupiterVintage)
 }
