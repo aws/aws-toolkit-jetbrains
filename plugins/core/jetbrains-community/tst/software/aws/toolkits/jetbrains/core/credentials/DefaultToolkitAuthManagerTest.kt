@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.ProjectExtension
@@ -451,6 +452,22 @@ class DefaultToolkitAuthManagerTest {
         assertThat(metricCaptor.allValues).allSatisfy { event ->
             assertThat(event.data.all { it.metadata["source"] == "fooSourceId" }).isTrue()
         }
+    }
+
+    @Test
+    fun `serializing LegacyManagedBearerSsoConnection does not include connectionSettings`() {
+        val profile = ManagedSsoProfile("us-east-1", "startUrl000", listOf("scopes"))
+        val connection = sut.createConnection(profile) as LegacyManagedBearerSsoConnection
+
+        assertThat(jacksonObjectMapper().writeValueAsString(connection)).doesNotContain("connectionSettings")
+    }
+
+    @Test
+    fun `serializing ProfileSsoManagedBearerSsoConnection does not include connectionSettings`() {
+        val profile = UserConfigSsoSessionProfile("sessionName", "us-east-1", "startUrl000", listOf("scopes"))
+        val connection = sut.createConnection(profile) as ProfileSsoManagedBearerSsoConnection
+
+        assertThat(jacksonObjectMapper().writeValueAsString(connection)).doesNotContain("connectionSettings")
     }
 
     private companion object {
