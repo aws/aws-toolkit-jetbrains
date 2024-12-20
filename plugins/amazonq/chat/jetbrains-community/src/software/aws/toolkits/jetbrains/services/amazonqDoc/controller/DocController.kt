@@ -309,7 +309,7 @@ class DocController(
         try {
             messenger.sendFolderConfirmationMessage(
                 tabId = tabId,
-                message = if (mode == Mode.CREATE) message("amazonqDoc.prompt.create") else message("amazonqDoc.prompt.update"),
+                message = if (mode == Mode.CREATE) message("amazonqDoc.prompt.create.confirmation") else message("amazonqDoc.prompt.update"),
                 folderPath = currentSourceFolder.name,
                 followUps = listOf(
                     FollowUp(
