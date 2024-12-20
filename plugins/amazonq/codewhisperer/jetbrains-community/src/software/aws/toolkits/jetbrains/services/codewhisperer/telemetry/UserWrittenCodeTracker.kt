@@ -34,19 +34,30 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
     private val isShuttingDown = AtomicBoolean(false)
     private val qInvocationCount: AtomicInteger = AtomicInteger(0)
     private val isQMakingEdits = AtomicBoolean(false)
+    private val isActive: AtomicBoolean = AtomicBoolean(false)
 
-    init {
+    @Synchronized
+    fun activateTrackerIfNotActive() {
+        // tracker will only be activated if and only if IsTelemetryEnabled = true && isActive = false
+        if (!isTelemetryEnabled() || isActive.getAndSet(true)) return
         scheduleTracker()
     }
 
-    private fun scheduleTracker() {
-        if (!alarm.isDisposed && !isShuttingDown.get()) {
-            alarm.addRequest({ flush() }, DEFAULT_CHECK_INTERVAL.toMillis())
-        }
+    private fun reset() {
+        userWrittenCodeLineCount.clear()
+        userWrittenCodeCharacterCount.clear()
+        qInvocationCount.set(0)
+        isQMakingEdits.set(false)
+        isActive.set(false)
+        isShuttingDown.set(false)
     }
-
     private fun isTelemetryEnabled(): Boolean = AwsSettings.getInstance().isTelemetryEnabled
 
+    private fun scheduleTracker() {
+        if (!alarm.isDisposed && !isShuttingDown.get()) {
+            alarm.addRequest({ flush() }, Duration.ofSeconds(DEFAULT_MODIFICATION_INTERVAL_IN_SECONDS).toMillis())
+        }
+    }
     fun onQFeatureInvoked() {
         qInvocationCount.incrementAndGet()
     }
@@ -66,6 +77,7 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
             }
             emitCodeWhispererCodeContribution()
         } finally {
+            reset()
             scheduleTracker()
         }
     }
@@ -89,19 +101,19 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
         // when event is auto closing [{(', there will be 2 separated events, both count as 1 char increase in total chars
         val text = event.newFragment.toString()
         val lines = text.split('\n').size - 1
-        if (event.newLength < DOCUMENT_COPY_THRESSHOLD && text.trim().isNotEmpty()) {
+        if (event.newLength < COPY_THRESHOLD && text.trim().isNotEmpty()) {
             // count doc changes from <50 multi character input as total user written code
             // ignore all white space changes, this usually comes from IntelliJ formatting
             val language = PsiDocumentManager.getInstance(project).getPsiFile(event.document)?.programmingLanguage()
             if (language != null) {
-                userWrittenCodeLineCount.set(language, userWrittenCodeLineCount.getOrDefault(language, 0) + lines)
-                userWrittenCodeCharacterCount.set(language, userWrittenCodeCharacterCount.getOrDefault(language, 0) + event.newLength)
+                userWrittenCodeLineCount[language] = userWrittenCodeLineCount.getOrDefault(language, 0) + lines
+                userWrittenCodeCharacterCount[language] = userWrittenCodeCharacterCount.getOrDefault(language, 0) + event.newLength
             }
         }
     }
 
 
-    internal fun emitCodeWhispererCodeContribution() {
+    private fun emitCodeWhispererCodeContribution() {
         val customizationArn: String? = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn
         for ((language, _) in userWrittenCodeCharacterCount) {
             if (userWrittenCodeCharacterCount.getOrDefault(language, 0) <= 0 ) {
@@ -116,8 +128,8 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
                         0,
                         0,
                         0,
-                        userWrittenCodeCharacterCount = userWrittenCodeCharacterCount.get(language),
-                        userWrittenCodeLineCount = userWrittenCodeLineCount.get((language))
+                        userWrittenCodeCharacterCount = userWrittenCodeCharacterCount[language],
+                        userWrittenCodeLineCount = userWrittenCodeLineCount[(language)]
                     )
                     LOG.debug { "Successfully sent code percentage telemetry. RequestId: ${response.responseMetadata().requestId()}" }
                 } catch (e: Exception) {
@@ -129,14 +141,12 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
             }
         }
 
-
     }
 
     companion object {
-        private val DEFAULT_CHECK_INTERVAL = Duration.ofMinutes(1)
-        private const val DEFAULT_MODIFICATION_INTERVAL_IN_SECONDS = 300 // 5 minutes
+        private const val DEFAULT_MODIFICATION_INTERVAL_IN_SECONDS = 300L // 5 minutes
 
-        private const val DOCUMENT_COPY_THRESSHOLD = 50
+        private const val COPY_THRESHOLD = 50
         private val LOG = getLogger<UserWrittenCodeTracker>()
 
         fun getInstance(project: Project) = project.service<UserWrittenCodeTracker>()
@@ -146,7 +156,6 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
         if (isShuttingDown.getAndSet(true)) {
             return
         }
-
         flush()
     }
 }
