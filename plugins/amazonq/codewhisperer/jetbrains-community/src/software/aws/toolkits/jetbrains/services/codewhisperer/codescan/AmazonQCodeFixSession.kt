@@ -72,7 +72,8 @@ class AmazonQCodeFixSession(val project: Project) {
                     sourceZip,
                     "SourceCode",
                     CodeWhispererConstants.UploadTaskType.CODE_FIX,
-                    codeFixName
+                    codeFixName,
+                    CodeWhispererConstants.FeatureName.CODE_REVIEW
                 )
 
             /**
@@ -149,7 +150,7 @@ class AmazonQCodeFixSession(val project: Project) {
         )
     } catch (e: Exception) {
         LOG.debug { "Create Upload URL failed: ${e.message}" }
-        val errorMessage = getTelemetryErrorMessage(e)
+        val errorMessage = getTelemetryErrorMessage(e, featureUseCase = CodeWhispererConstants.FeatureName.CODE_REVIEW)
         throw codeScanServerException("CreateUploadUrlException: $errorMessage")
     }
 

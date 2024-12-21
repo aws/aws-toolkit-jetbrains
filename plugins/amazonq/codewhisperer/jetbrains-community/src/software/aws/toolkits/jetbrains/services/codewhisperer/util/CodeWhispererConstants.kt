@@ -127,6 +127,11 @@ object CodeWhispererConstants {
         PROJECT("PROJECT"),
     }
 
+    enum class FeatureName(val value: String) {
+        TEST_GENERATION("TEST_GENERATION"),
+        CODE_REVIEW("CODE_REVIEW"),
+    }
+
     enum class UploadTaskType(val value: String) {
         SCAN_FILE("SCAN_FILE"),
         SCAN_PROJECT("SCAN_PROJECT"),

@@ -117,7 +117,8 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                     sourceZip,
                     "SourceCode",
                     taskType,
-                    codeScanName
+                    codeScanName,
+                    CodeWhispererConstants.FeatureName.CODE_REVIEW
                 )
             if (isProjectScope()) {
                 LOG.debug {
@@ -272,7 +273,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             )
         } catch (e: Exception) {
             LOG.debug { "Creating code review failed: ${e.message}" }
-            val errorMessage = getTelemetryErrorMessage(e)
+            val errorMessage = getTelemetryErrorMessage(e, featureUseCase = CodeWhispererConstants.FeatureName.CODE_REVIEW)
             throw codeScanServerException(errorMessage)
         }
     }
@@ -285,7 +286,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         )
     } catch (e: Exception) {
         LOG.debug { "Getting code review failed: ${e.message}" }
-        val errorMessage = getTelemetryErrorMessage(e)
+        val errorMessage = getTelemetryErrorMessage(e, featureUseCase = CodeWhispererConstants.FeatureName.CODE_REVIEW)
         throw codeScanServerException("GetCodeReviewException: $errorMessage")
     }
 
@@ -299,7 +300,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         )
     } catch (e: Exception) {
         LOG.debug { "Listing code review failed: ${e.message}" }
-        val errorMessage = getTelemetryErrorMessage(e)
+        val errorMessage = getTelemetryErrorMessage(e, featureUseCase = CodeWhispererConstants.FeatureName.CODE_REVIEW)
         throw codeScanServerException("ListCodeReviewFindingsException: $errorMessage")
     }
 
