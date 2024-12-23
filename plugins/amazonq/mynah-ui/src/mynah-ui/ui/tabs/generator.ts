@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ChatItemType, MynahUIDataModel, QuickActionCommandGroup } from '@aws/mynah-ui-chat'
+import { ChatItemType, MynahUIDataModel, QuickActionCommandGroup, QuickActionCommand } from '@aws/mynah-ui-chat'
 import { TabType } from '../storages/tabsStorage'
 import { FollowUpGenerator } from '../followUps/generator'
 import { QuickActionGenerator } from '../quickActions/generator'
@@ -15,11 +15,13 @@ export interface TabDataGeneratorProps {
     isDocEnabled: boolean
     isCodeScanEnabled: boolean
     isCodeTestEnabled: boolean
+    highlightCommand?: QuickActionCommand
 }
 
 export class TabDataGenerator {
     private followUpsGenerator: FollowUpGenerator
     public quickActionsGenerator: QuickActionGenerator
+    private highlightCommand?: QuickActionCommand
 
     private tabTitle: Map<TabType, string> = new Map([
         ['unknown', 'Chat'],
@@ -88,6 +90,7 @@ What would you like to work on?`,
             isCodeScanEnabled: props.isCodeScanEnabled,
             isCodeTestEnabled: props.isCodeTestEnabled,
         })
+        this.highlightCommand = props.highlightCommand
     }
 
     public getTabData(tabType: TabType, needWelcomeMessages: boolean, taskName?: string): MynahUIDataModel {
@@ -97,7 +100,7 @@ What would you like to work on?`,
                 'Amazon Q Developer uses generative AI. You may need to verify responses. See the [AWS Responsible AI Policy](https://aws.amazon.com/machine-learning/responsible-ai/policy/).',
             quickActionCommands: this.quickActionsGenerator.generateForTab(tabType),
             promptInputPlaceholder: this.tabInputPlaceholder.get(tabType),
-            contextCommands: this.tabContextCommand.get(tabType),
+            contextCommands: this.getContextCommands(tabType),
             chatItems: needWelcomeMessages
                 ? [
                       {
@@ -111,5 +114,24 @@ What would you like to work on?`,
                   ]
                 : [],
         }
+    }
+
+    private getContextCommands(tabType: TabType): QuickActionCommandGroup[] | undefined {
+        const contextCommands = this.tabContextCommand.get(tabType)
+
+        if (this.highlightCommand) {
+            const commandHighlight: QuickActionCommandGroup = {
+                groupName: 'Additional Commands',
+                commands: [this.highlightCommand],
+            }
+
+            if (contextCommands !== undefined) {
+                return [...contextCommands, commandHighlight]
+            }
+
+            return [commandHighlight]
+        }
+
+        return contextCommands
     }
 }

@@ -10,7 +10,7 @@ import {
     MynahUI,
     MynahUIDataModel,
     NotificationType,
-    ProgressField,
+    ProgressField, QuickActionCommand,
     ReferenceTrackerInformation
 } from '@aws/mynah-ui-chat'
 import './styles/dark.scss'
@@ -40,7 +40,8 @@ export const createMynahUI = (
     codeTransformInitEnabled: boolean,
     docInitEnabled: boolean,
     codeScanEnabled: boolean,
-    codeTestEnabled: boolean
+    codeTestEnabled: boolean,
+    highlightCommand?: QuickActionCommand,
 ) => {
     let disclaimerCardActive = !disclaimerAcknowledged
 
@@ -87,6 +88,7 @@ export const createMynahUI = (
         isDocEnabled,
         isCodeScanEnabled,
         isCodeTestEnabled,
+        highlightCommand
     })
 
     // eslint-disable-next-line prefer-const
