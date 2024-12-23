@@ -73,6 +73,8 @@ dependencies {
     testFixturesApi(libs.wiremock) {
         // conflicts with transitive inclusion from docker plugin
         exclude(group = "org.apache.httpcomponents.client5")
+        // provided by IDE
+        exclude(group = "commons-io")
     }
 
     testImplementation(project(":plugin-core:core"))

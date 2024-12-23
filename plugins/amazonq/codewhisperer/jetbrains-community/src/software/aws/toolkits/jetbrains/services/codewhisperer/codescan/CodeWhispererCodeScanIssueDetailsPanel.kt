@@ -40,6 +40,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Component
+import software.aws.toolkits.telemetry.MetricResult
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.datatransfer.StringSelection
@@ -71,6 +72,9 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
         )
         editorPane.revalidate()
         editorPane.repaint()
+        runInEdt {
+            editorPane.scrollToReference("fixLoadingSection")
+        }
 
         val codeFixResponse: AmazonQCodeFixSession.CodeFixResponse = amazonQCodeFixSession.runCodeFixWorkflow(issue)
         if (codeFixResponse.failureResponse != null) {
@@ -81,7 +85,17 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
                 )
                 revalidate()
                 repaint()
+                runInEdt {
+                    scrollToReference("fixFailureSection")
+                }
             }
+            CodeWhispererTelemetryService.getInstance().sendCodeScanIssueGenerateFix(
+                Component.Webview,
+                issue,
+                isRegenerate,
+                MetricResult.Failed,
+                codeFixResponse.failureResponse
+            )
         } else {
             val isReferenceAllowed = CodeWhispererSettings.getInstance().isIncludeCodeWithReference()
             var suggestedFix = SuggestedFix(
@@ -115,6 +129,9 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
                 )
                 revalidate()
                 repaint()
+                runInEdt {
+                    scrollToReference("codeFixActions")
+                }
             }
 
             buttonPane.apply {
@@ -132,7 +149,7 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
                 if (suggestedFix.code.isNotBlank()) {
                     sendCodeFixGeneratedTelemetryToServiceAPI(issue, false)
                 }
-                CodeWhispererTelemetryService.getInstance().sendCodeScanIssueGenerateFix(Component.Webview, issue, isRegenerate)
+                CodeWhispererTelemetryService.getInstance().sendCodeScanIssueGenerateFix(Component.Webview, issue, isRegenerate, MetricResult.Succeeded)
             }
         }
     }
