@@ -21,6 +21,7 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifierSso
+import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileWatcher
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants.SSO_SESSION_SECTION_NAME
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
@@ -206,14 +207,9 @@ fun loginSso(
 
 @Suppress("UnusedParameter")
 fun logoutFromSsoConnection(project: Project?, connection: AwsBearerTokenConnection, callback: () -> Unit = {}) {
-    try {
-        ToolkitAuthManager.getInstance().deleteConnection(connection.id)
-        if (connection is ProfileSsoManagedBearerSsoConnection) {
-            deleteSsoConnection(connection)
-        }
-    } finally {
-        callback()
-    }
+    ToolkitAuthManager.getInstance().deleteConnection(connection.id)
+    ProfileWatcher.getInstance().forceRefresh()
+    callback()
 }
 
 fun lazyGetUnauthedBearerConnections() =
