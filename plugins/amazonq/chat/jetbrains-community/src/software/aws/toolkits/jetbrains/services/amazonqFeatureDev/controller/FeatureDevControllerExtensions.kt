@@ -159,19 +159,20 @@ suspend fun FeatureDevController.onCodeGeneration(
         messenger.sendSystemPrompt(tabId = tabId, followUp = getFollowUpOptions(session.sessionState.phase, InsertAction.ALL))
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
     } catch (err: Exception) {
-        var result: MetricDataResult
-        when (err) {
+        val result: MetricDataResult = when (err) {
             is GuardrailsException, is NoChangeRequiredException, is PromptRefusalException, is ThrottlingException,
             is ContentLengthException, is MonthlyConversationLimitError, is CodeIterationLimitException,
             is RepoSizeLimitError, is UploadURLExpired,
-            -> {
-                result = MetricDataResult.Error
+                -> {
+                MetricDataResult.Error
             }
+
             is EmptyPatchException -> {
-                result = MetricDataResult.LlmFailure
+                MetricDataResult.LlmFailure
             }
+
             else -> {
-                result = MetricDataResult.Fault
+                MetricDataResult.Fault
             }
         }
 
