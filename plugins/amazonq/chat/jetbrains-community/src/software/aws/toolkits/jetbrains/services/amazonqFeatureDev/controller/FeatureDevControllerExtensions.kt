@@ -158,7 +158,7 @@ suspend fun FeatureDevController.onCodeGeneration(
             is GuardrailsException, is NoChangeRequiredException, is PromptRefusalException, is ThrottlingException,
             is ContentLengthException, is MonthlyConversationLimitError, is CodeIterationLimitException,
             is RepoSizeLimitError, is UploadURLExpired,
-                -> {
+            -> {
                 MetricDataResult.Error
             }
 
