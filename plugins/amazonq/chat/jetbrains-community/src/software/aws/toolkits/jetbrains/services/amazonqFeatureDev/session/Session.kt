@@ -219,8 +219,8 @@ class Session(val tabID: String, val project: Project) {
         this._codeResultMessageId = null
     }
 
-    fun sendMetricDataTelemetry(operationName: MetricDataOperationName, result: MetricDataResult) {
-        featureDevService.sendFeatureDevMetricData(operationName.toString(), result.toString())
+    fun sendMetricDataTelemetry(operationName: MetricDataOperationName, result: MetricDataResult, log: String?) {
+        featureDevService.sendFeatureDevMetricData(operationName.toString(), result.toString(), log)
     }
 
     suspend fun send(msg: String): Interaction {

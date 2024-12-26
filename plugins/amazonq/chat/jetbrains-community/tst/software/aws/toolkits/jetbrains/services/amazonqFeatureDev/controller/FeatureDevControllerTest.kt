@@ -24,8 +24,10 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
@@ -34,18 +36,26 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.common.util.selectFolder
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
+import software.aws.toolkits.jetbrains.services.amazonq.RepoSizeLimitError
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededStates
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.EmptyPatchException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ExportParseException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.GuardrailsException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataOperationName
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataResult
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PromptRefusalException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ThrottlingException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.UploadCodeException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.UploadURLExpired
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileCorruptedException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUp
@@ -74,6 +84,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDe
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.InsertAction
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.uploadArtifactToS3
+import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import org.mockito.kotlin.verify as mockitoVerify
@@ -578,12 +589,13 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
 
         mockInOrder.verify(mockSession).sendMetricDataTelemetry(
             MetricDataOperationName.StartCodeGeneration,
-            MetricDataResult.Success
-
+            MetricDataResult.Success,
+            null
         )
         mockInOrder.verify(mockSession).sendMetricDataTelemetry(
             MetricDataOperationName.EndCodeGeneration,
-            MetricDataResult.Success
+            MetricDataResult.Success,
+            null
         )
     }
 
@@ -596,24 +608,56 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
 
         val testCases = listOf(
             ErrorTestCase(
-                EmptyPatchException("EmptyPatchException", "Empty patch"),
+                EmptyPatchException("EmptyPatchException", null),
                 MetricDataResult.LlmFailure
             ),
             ErrorTestCase(
-                GuardrailsException(operation = "GenerateCode", desc = "Failed guardrails"),
+                GuardrailsException(operation = "GenerateCode", desc = null),
                 MetricDataResult.Error
             ),
             ErrorTestCase(
-                PromptRefusalException(operation = "GenerateCode", desc = "Prompt refused"),
+                PromptRefusalException(operation = "GenerateCode", desc = null),
                 MetricDataResult.Error
             ),
             ErrorTestCase(
-                NoChangeRequiredException(operation = "GenerateCode", desc = "No changes needed"),
+                NoChangeRequiredException(operation = "GenerateCode", desc = null),
                 MetricDataResult.Error
             ),
             ErrorTestCase(
-                ThrottlingException(operation = "GenerateCode", desc = "Request throttled"),
+                ThrottlingException(operation = "GenerateCode", desc = null),
                 MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                ContentLengthException(operation = "GenerateCode", desc = null),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                MonthlyConversationLimitError(message = "", operation = "GenerateCode", desc = null),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                CodeIterationLimitException(operation = "GenerateCode", desc = null),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                RepoSizeLimitError(AwsCoreBundle.message("amazonqFeatureDev.content_length.error_text")),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                UploadURLExpired(operation = "GenerateCode", desc = null),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                ZipFileCorruptedException(operation = "GenerateCode", desc = null),
+                MetricDataResult.Fault
+            ),
+            ErrorTestCase(
+                ExportParseException(operation = "GenerateCode", desc = null),
+                MetricDataResult.Fault
+            ),
+            ErrorTestCase(
+                UploadCodeException(operation = "GenerateCode", desc = null),
+                MetricDataResult.Fault
             ),
             ErrorTestCase(
                 RuntimeException("Unknown error"),
@@ -646,12 +690,15 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
 
             mockInOrder.verify(mockSession).sendMetricDataTelemetry(
                 MetricDataOperationName.StartCodeGeneration,
-                MetricDataResult.Success
-
+                MetricDataResult.Success,
+                null
             )
             mockInOrder.verify(mockSession).sendMetricDataTelemetry(
-                MetricDataOperationName.EndCodeGeneration,
-                expectedResult
+                eq(MetricDataOperationName.EndCodeGeneration),
+                eq(expectedResult),
+
+                // Stack trace should include the name of junit
+                argThat { this?.contains("junit") ?: false }
             )
         }
     }
