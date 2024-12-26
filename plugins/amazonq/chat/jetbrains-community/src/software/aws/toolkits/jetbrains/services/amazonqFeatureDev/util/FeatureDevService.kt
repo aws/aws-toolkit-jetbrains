@@ -232,6 +232,19 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
         }
     }
 
+    fun sendFeatureDevMetricData(operationName: String, result: String) {
+        val sendFeatureDevTelemetryEventResponse: SendTelemetryEventResponse
+        try {
+            sendFeatureDevTelemetryEventResponse = proxyClient.sendFeatureDevMetricData(operationName, result)
+            val requestId = sendFeatureDevTelemetryEventResponse.responseMetadata().requestId()
+            logger.debug {
+                "$FEATURE_NAME: succesfully sent feature dev metric data: OperationName: $operationName Result: $result RequestId: $requestId"
+            }
+        } catch (e: Exception) {
+            logger.warn(e) { "$FEATURE_NAME: failed to send feature dev metric data" }
+        }
+    }
+
     fun sendFeatureDevCodeGenerationEvent(conversationId: String, linesOfCodeGenerated: Int, charactersOfCodeGenerated: Int) {
         val sendFeatureDevTelemetryEventResponse: SendTelemetryEventResponse
         try {
