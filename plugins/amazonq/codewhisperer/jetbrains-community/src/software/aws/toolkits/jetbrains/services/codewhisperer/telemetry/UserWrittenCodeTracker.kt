@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.telemetry
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.event.DocumentEvent
@@ -11,6 +12,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
+import com.intellij.util.messages.Topic
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -40,6 +42,21 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
     fun activateTrackerIfNotActive() {
         // tracker will only be activated if and only if IsTelemetryEnabled = true && isActive = false
         if (!isTelemetryEnabled() || isActive.getAndSet(true)) return
+
+        // count q service invocations
+        val conn = ApplicationManager.getApplication().messageBus.connect()
+        conn.subscribe(
+            Q_FEATURE_TOPIC,
+            object : QFeatureListener {
+                override fun onEvent(event: QFeatureEvent) {
+                    when(event) {
+                        QFeatureEvent.INVOCATION -> qInvocationCount.getAndIncrement()
+                        QFeatureEvent.STARTS_EDITING -> isQMakingEdits.set(true)
+                        QFeatureEvent.FINISHES_EDITING -> isQMakingEdits.set(false)
+                    }
+                }
+            }
+        )
         scheduleTracker()
     }
 
@@ -57,17 +74,6 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
         if (!alarm.isDisposed && !isShuttingDown.get()) {
             alarm.addRequest({ flush() }, Duration.ofSeconds(DEFAULT_MODIFICATION_INTERVAL_IN_SECONDS).toMillis())
         }
-    }
-    fun onQFeatureInvoked() {
-        qInvocationCount.incrementAndGet()
-    }
-
-    fun onQStartsMakingEdits() {
-        isQMakingEdits.set(true)
-    }
-
-    fun onQFinishesMakingEdits() {
-        isQMakingEdits.set(false)
     }
 
     private fun flush() {
@@ -150,6 +156,12 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
         private val LOG = getLogger<UserWrittenCodeTracker>()
 
         fun getInstance(project: Project) = project.service<UserWrittenCodeTracker>()
+
+        val Q_FEATURE_TOPIC: Topic<QFeatureListener> = Topic.create(
+            "Q service events",
+            QFeatureListener::class.java
+        )
+
     }
 
     override fun dispose() {
@@ -159,3 +171,14 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
         flush()
     }
 }
+
+enum class QFeatureEvent {
+    INVOCATION,
+    STARTS_EDITING,
+    FINISHES_EDITING
+}
+
+interface QFeatureListener {
+    fun onEvent(event: QFeatureEvent)
+}
+

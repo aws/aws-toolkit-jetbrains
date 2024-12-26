@@ -49,6 +49,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextCo
 import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererUserModificationTracker
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserWrittenCodeTracker.Companion.Q_FEATURE_TOPIC
 import software.aws.toolkits.jetbrains.services.cwc.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
@@ -215,6 +217,9 @@ class ChatController private constructor(
     }
 
     override suspend fun processInsertCodeAtCursorPosition(message: IncomingCwcMessage.InsertCodeAtCursorPosition) {
+
+        ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
+            .onEvent(QFeatureEvent.STARTS_EDITING)
         withContext(EDT) {
             val editor: Editor = FileEditorManager.getInstance(context.project).selectedTextEditor ?: return@withContext
 
@@ -245,6 +250,9 @@ class ChatController private constructor(
             }
         }
         telemetryHelper.recordInteractWithMessage(message)
+
+        ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
+            .onEvent(QFeatureEvent.FINISHES_EDITING)
     }
 
     override suspend fun processStopResponseMessage(message: IncomingCwcMessage.StopResponse) {
@@ -438,7 +446,8 @@ class ChatController private constructor(
         sessionInfo.history.add(requestData)
         telemetryHelper.recordEnterFocusConversation(tabId)
         telemetryHelper.recordStartConversation(tabId, requestData)
-
+        ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
+            .onEvent(QFeatureEvent.INVOCATION)
         // Send the request to the API and publish the responses back to the UI.
         // This is launched in a scope attached to the sessionInfo so that the Job can be cancelled on a per-session basis.
         ChatPromptHandler(telemetryHelper).handle(tabId, triggerId, requestData, sessionInfo, shouldAddIndexInProgressMessage)
@@ -558,5 +567,8 @@ class ChatController private constructor(
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+
+
     }
 }
+
