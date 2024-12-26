@@ -10,6 +10,7 @@ import com.intellij.diff.contents.EmptyContent
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.diff.util.DiffUserDataKeys
 import com.intellij.ide.BrowserUtil
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
@@ -74,6 +75,8 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Delete
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStatePhase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserWrittenCodeTracker.Companion.Q_FEATURE_TOPIC
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.FeedbackComment
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
@@ -398,6 +401,8 @@ class DocController(
         logger.debug { "$FEATURE_NAME: Processing InsertCodeAtCursorPosition: $message" }
 
         withContext(EDT) {
+            ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
+                .onEvent(QFeatureEvent.STARTS_EDITING)
             val editor: Editor = FileEditorManager.getInstance(context.project).selectedTextEditor ?: return@withContext
 
             val caret: Caret = editor.caretModel.primaryCaret
@@ -409,6 +414,8 @@ class DocController(
                 }
                 editor.document.insertString(offset, message.code)
             }
+            ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
+                .onEvent(QFeatureEvent.FINISHES_EDITING)
         }
     }
 

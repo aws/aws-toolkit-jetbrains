@@ -193,7 +193,6 @@ class InlineChatController(
 
     private fun addPopupListeners(popup: JBPopup, editor: Editor) {
         val popupListener = object : JBPopupListener {
-
             override fun onClosed(event: LightweightWindowEvent) {
                 if (canPopupAbort.get() && event.asPopup().isDisposed) {
                     popupCancelHandler.invoke(editor)
@@ -536,6 +535,8 @@ class InlineChatController(
     private fun insertString(editor: Editor, offset: Int, text: String): RangeMarker {
         lateinit var rangeMarker: RangeMarker
 
+        ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
+            .onEvent(QFeatureEvent.STARTS_EDITING)
         ApplicationManager.getApplication().invokeAndWait {
             CommandProcessor.getInstance().runUndoTransparentAction {
                 WriteCommandAction.runWriteCommandAction(project) {
@@ -545,11 +546,15 @@ class InlineChatController(
                 highlightCodeWithBackgroundColor(editor, rangeMarker.startOffset, rangeMarker.endOffset, true)
             }
         }
-
+        ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
+            .onEvent(QFeatureEvent.FINISHES_EDITING)
         return rangeMarker
     }
 
     private fun replaceString(document: Document, start: Int, end: Int, text: String) {
+
+        ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
+            .onEvent(QFeatureEvent.STARTS_EDITING)
         ApplicationManager.getApplication().invokeAndWait {
             CommandProcessor.getInstance().runUndoTransparentAction {
                 WriteCommandAction.runWriteCommandAction(project) {
@@ -557,6 +562,8 @@ class InlineChatController(
                 }
             }
         }
+        ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
+            .onEvent(QFeatureEvent.FINISHES_EDITING)
     }
 
     private fun highlightString(editor: Editor, start: Int, end: Int, isInsert: Boolean) {

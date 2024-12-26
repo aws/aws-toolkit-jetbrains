@@ -68,6 +68,7 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
         isActive.set(false)
         isShuttingDown.set(false)
     }
+
     private fun isTelemetryEnabled(): Boolean = AwsSettings.getInstance().isTelemetryEnabled
 
     private fun scheduleTracker() {
