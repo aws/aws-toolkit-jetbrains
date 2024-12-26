@@ -830,7 +830,8 @@ class DocController(
                 is PrepareDocGenerationState -> state.filePaths
                 else -> emptyList()
             }
-
+            ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
+                .onEvent(QFeatureEvent.INVOCATION)
             processOpenDiff(
                 message = IncomingDocMessage.OpenDiff(tabId = tabId, filePath = filePaths[0].zipFilePath, deleted = false)
             )

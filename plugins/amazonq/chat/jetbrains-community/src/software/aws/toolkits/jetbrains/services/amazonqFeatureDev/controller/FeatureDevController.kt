@@ -686,7 +686,8 @@ class FeatureDevController(
             }
 
             session.preloader(message, messenger)
-
+            ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
+                .onEvent(QFeatureEvent.INVOCATION)
             when (session.sessionState.phase) {
                 SessionStatePhase.CODEGEN -> onCodeGeneration(session, message, tabId)
                 else -> null
