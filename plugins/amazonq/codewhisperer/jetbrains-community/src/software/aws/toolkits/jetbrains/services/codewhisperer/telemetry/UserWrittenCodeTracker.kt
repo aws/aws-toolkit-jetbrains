@@ -42,8 +42,8 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
     @Synchronized
     fun activateTrackerIfNotActive() {
         // tracker will only be activated if and only if IsTelemetryEnabled = true && isActive = false
-        if (!isTelemetryEnabled() || isActive.getAndSet(true)) return
-
+        if (!isTelemetryEnabled() || isActive.get()) return
+        isActive.set(true)
         // count q service invocations
         val conn = ApplicationManager.getApplication().messageBus.connect()
         conn.subscribe(
@@ -92,7 +92,7 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
 
     internal fun documentChanged(event: DocumentEvent) {
         // do not listen to document changed made by Amazon Q itself
-        if (isQMakingEdits.get()) {
+        if (isQMakingEdits.get() || !isActive.get()) {
             return
         }
 
@@ -109,7 +109,7 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
         // when event is auto closing [{(', there will be 2 separated events, both count as 1 char increase in total chars
         val text = event.newFragment.toString()
         val lines = text.split('\n').size - 1
-        if (event.newLength < COPY_THRESHOLD && text.trim().isNotEmpty()) {
+        if (event.newLength < COPY_THRESHOLD && !isIntelliJMultiSpacesInsert(text)) {
             // count doc changes from <50 multi character input as total user written code
             // ignore all white space changes, this usually comes from IntelliJ formatting
             val language = PsiDocumentManager.getInstance(project).getPsiFile(event.document)?.programmingLanguage()
@@ -118,6 +118,11 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
                 userWrittenCodeCharacterCount[language] = userWrittenCodeCharacterCount.getOrDefault(language, 0) + event.newLength
             }
         }
+    }
+
+    // intelliJ sometimes insert multi spaces for indentation, this is not user written code
+    private fun isIntelliJMultiSpacesInsert(text: String): Boolean {
+        return text.trim { it == ' ' }.isEmpty() && text.length > 1
     }
 
 
@@ -136,8 +141,8 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
                         0,
                         0,
                         0,
-                        userWrittenCodeCharacterCount = userWrittenCodeCharacterCount[language],
-                        userWrittenCodeLineCount = userWrittenCodeLineCount[(language)]
+                        userWrittenCodeCharacterCount = userWrittenCodeCharacterCount.getOrDefault(language, 0),
+                        userWrittenCodeLineCount = userWrittenCodeLineCount.getOrDefault(language, 0)
                     )
                     LOG.debug { "Successfully sent code percentage telemetry. RequestId: ${response.responseMetadata().requestId()}" }
                 } catch (e: Exception) {
