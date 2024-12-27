@@ -13,6 +13,7 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
 import com.intellij.util.messages.Topic
+import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -29,12 +30,12 @@ import java.util.concurrent.atomic.AtomicInteger
 
 @Service(Service.Level.PROJECT)
 class UserWrittenCodeTracker(private val project: Project) : Disposable {
-    private val userWrittenCodeLineCount = mutableMapOf<CodeWhispererProgrammingLanguage, Long>()
-    private val userWrittenCodeCharacterCount = mutableMapOf<CodeWhispererProgrammingLanguage, Long>()
+    val userWrittenCodeLineCount = mutableMapOf<CodeWhispererProgrammingLanguage, Long>()
+    val userWrittenCodeCharacterCount = mutableMapOf<CodeWhispererProgrammingLanguage, Long>()
     private val alarm = AlarmFactory.getInstance().create(Alarm.ThreadToUse.POOLED_THREAD, this)
 
     private val isShuttingDown = AtomicBoolean(false)
-    private val qInvocationCount: AtomicInteger = AtomicInteger(0)
+    val qInvocationCount: AtomicInteger = AtomicInteger(0)
     private val isQMakingEdits = AtomicBoolean(false)
     private val isActive: AtomicBoolean = AtomicBoolean(false)
 
@@ -60,7 +61,7 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
         scheduleTracker()
     }
 
-    private fun reset() {
+    fun reset() {
         userWrittenCodeLineCount.clear()
         userWrittenCodeCharacterCount.clear()
         qInvocationCount.set(0)
@@ -170,6 +171,11 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
             return
         }
         flush()
+    }
+
+    @TestOnly
+    fun forceTrackerFlush() {
+        alarm.drainRequestsInTest()
     }
 }
 
