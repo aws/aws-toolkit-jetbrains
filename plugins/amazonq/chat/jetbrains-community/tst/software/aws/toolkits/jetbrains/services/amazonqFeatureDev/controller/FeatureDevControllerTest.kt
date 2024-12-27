@@ -698,7 +698,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                 eq(expectedResult),
 
                 // Stack trace should include the name of junit
-                argThat { this?.contains("junit") ?: false }
+                argThat { this.contains("junit") ?: false }
             )
         }
     }
