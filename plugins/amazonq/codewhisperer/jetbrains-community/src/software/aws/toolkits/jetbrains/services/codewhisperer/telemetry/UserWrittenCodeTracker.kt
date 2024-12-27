@@ -109,7 +109,7 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
         // when event is auto closing [{(', there will be 2 separated events, both count as 1 char increase in total chars
         val text = event.newFragment.toString()
         val lines = text.split('\n').size - 1
-        if (event.newLength < COPY_THRESHOLD && !isIntelliJMultiSpacesInsert(text)) {
+        if (event.newLength < COPY_THRESHOLD && !isIntelliJMultiSpacesInsert(text) && text.isNotEmpty()) {
             // count doc changes from <50 multi character input as total user written code
             // ignore all white space changes, this usually comes from IntelliJ formatting
             val language = PsiDocumentManager.getInstance(project).getPsiFile(event.document)?.programmingLanguage()
