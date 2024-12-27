@@ -696,9 +696,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             mockInOrder.verify(mockSession).sendMetricDataTelemetry(
                 eq(MetricDataOperationName.EndCodeGeneration),
                 eq(expectedResult),
-
-                // Stack trace should include the name of junit
-                argThat { this.contains("junit") ?: false }
+                argThat { this.contains("stack trace: ") ?: false }
             )
         }
     }

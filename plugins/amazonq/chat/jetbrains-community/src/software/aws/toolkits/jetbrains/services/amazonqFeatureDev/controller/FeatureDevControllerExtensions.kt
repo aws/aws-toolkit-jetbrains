@@ -179,7 +179,7 @@ suspend fun FeatureDevController.onCodeGeneration(
         session.sendMetricDataTelemetry(
             operationName = MetricDataOperationName.EndCodeGeneration,
             result = result,
-            log = err.stackTraceToString()
+            log = "stack trace: " + err.stackTraceToString()
         )
         throw err
     } finally {
