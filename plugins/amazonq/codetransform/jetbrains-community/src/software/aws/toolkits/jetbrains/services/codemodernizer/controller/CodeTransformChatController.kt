@@ -679,7 +679,7 @@ class CodeTransformChatController(
         )
 
     private suspend fun handleCodeTransformResult(result: CodeModernizerJobCompletedResult) {
-        LOG.info { "CodeModernizerJobCompletedResult: $result"}
+        LOG.info { "CodeModernizerJobCompletedResult: $result" }
         when (result) {
             is CodeModernizerJobCompletedResult.Stopped, CodeModernizerJobCompletedResult.JobAbortedBeforeStarting -> handleCodeTransformStoppedByUser()
             is CodeModernizerJobCompletedResult.JobFailed -> handleCodeTransformJobFailed(result.failureReason)
@@ -692,7 +692,7 @@ class CodeTransformChatController(
                         CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId,
                         TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS
                     )
-                    LOG.info { "Download result: $downloadResult"}
+                    LOG.info { "Download result: $downloadResult" }
                     when (downloadResult) {
                         is DownloadArtifactResult.Success -> {
                             if (downloadResult.artifact !is CodeModernizerArtifact) return artifactHandler.notifyUnableToApplyPatch("")
