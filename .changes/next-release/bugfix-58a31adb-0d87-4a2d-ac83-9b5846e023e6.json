@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "/transform: use correct doc link in SQL conversion help message"
+}
