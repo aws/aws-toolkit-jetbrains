@@ -210,6 +210,7 @@ class CodeTransformChatController(
     }
 
     private suspend fun handleSQLConversion() {
+        telemetry.submitSelection("sql conversion")
         this.validateAndReplyOnError(CodeTransformType.SQL_CONVERSION) ?: return
         codeTransformChatHelper.addNewMessage(
             buildUserInputSQLConversionMetadataChatContent()
@@ -217,6 +218,7 @@ class CodeTransformChatController(
     }
 
     private suspend fun handleLanguageUpgrade() {
+        telemetry.submitSelection("language upgrade")
         val validationResult = this.validateAndReplyOnError(CodeTransformType.LANGUAGE_UPGRADE) ?: return
         codeTransformChatHelper.updateLastPendingMessage(
             buildLanguageUpgradeProjectValidChatContent()
