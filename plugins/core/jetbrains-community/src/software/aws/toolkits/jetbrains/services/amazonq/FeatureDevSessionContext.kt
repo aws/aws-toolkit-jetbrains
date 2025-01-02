@@ -10,7 +10,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.openapi.vfs.isFile
 import com.intellij.platform.ide.progress.withBackgroundProgress
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
@@ -214,8 +213,8 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
                     val externalFilePath = Path(file.path)
                     val externalFilePermissions = externalFilePath.getPosixFilePermissions()
                     val relativePath = Path(file.path).relativeTo(projectRoot.toNioPath())
-                    val zipfsPath = zipfs.getPath("/${relativePath}")
-                    withContext(Dispatchers.IO) {
+                    val zipfsPath = zipfs.getPath("/$relativePath")
+                    withContext(getCoroutineBgContext()) {
                         zipfsPath.createParentDirectories()
                         Files.copy(externalFilePath, zipfsPath, StandardCopyOption.REPLACE_EXISTING)
                         Files.setAttribute(zipfsPath, "zip:permissions", externalFilePermissions)
@@ -229,7 +228,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     private suspend fun createTemporaryZipFileAsync(block: suspend (FileSystem) -> Unit): Path = withContext(EDT) {
         // Don't use Files.createTempFile since the file must not be created for ZipFS to work
         val tempFilePath: Path = Paths.get(FileUtils.getTempDirectory().absolutePath, "${UUID.randomUUID()}.zip")
-        val uri = URI.create("jar:file:${tempFilePath}")
+        val uri = URI.create("jar:file:$tempFilePath")
         val env = hashMapOf("create" to "true")
         val zipfs = FileSystems.newFileSystem(uri, env)
         zipfs.use {
