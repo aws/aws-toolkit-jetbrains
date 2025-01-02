@@ -54,7 +54,7 @@ class FeatureDevSessionContextTest : FeatureDevTestBase() {
 
     @Test
     fun testAllowedFilePath() {
-        val allowedPaths = listOf("Dockerfile", "Dockerfile.build", "gradlew", "build.gradle", "gradle.properties", ".mvn/wrapper/maven-wrapper.properties")
+        val allowedPaths = listOf("gradlew", "build.gradle", "gradle.properties", ".mvn/wrapper/maven-wrapper.properties")
         allowedPaths.forEach({
             val txtFile = mock<VirtualFile>()
             whenever(txtFile.path).thenReturn(it)

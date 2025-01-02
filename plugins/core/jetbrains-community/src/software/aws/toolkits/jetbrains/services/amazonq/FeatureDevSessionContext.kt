@@ -218,7 +218,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
                     withContext(Dispatchers.IO) {
                         zipfsPath.createParentDirectories()
                         Files.copy(externalFilePath, zipfsPath, StandardCopyOption.REPLACE_EXISTING)
-                        Files.setAttribute(zipfsPath, "zip:permissions", externalFilePermissions);
+                        Files.setAttribute(zipfsPath, "zip:permissions", externalFilePermissions)
                     }
                 }
             }
@@ -228,7 +228,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
 
     private suspend fun createTemporaryZipFileAsync(block: suspend (FileSystem) -> Unit): Path = withContext(EDT) {
         // Don't use Files.createTempFile since the file must not be created for ZipFS to work
-        val tempFilePath: Path = Paths.get(FileUtils.getTempDirectory().getAbsolutePath(), "${UUID.randomUUID()}.zip")
+        val tempFilePath: Path = Paths.get(FileUtils.getTempDirectory().absolutePath, "${UUID.randomUUID()}.zip")
         val uri = URI.create("jar:file:${tempFilePath}")
         val env = hashMapOf("create" to "true")
         val zipfs = FileSystems.newFileSystem(uri, env)
