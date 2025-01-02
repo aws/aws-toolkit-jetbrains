@@ -93,6 +93,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransfo
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArtifactResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.InvalidTelemetryReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_RUN_UNIT_TESTS
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_SKIP_UNIT_TESTS
@@ -113,6 +114,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 
 class CodeTransformChatController(
@@ -297,14 +299,19 @@ class CodeTransformChatController(
         val moduleVirtualFile: VirtualFile = modulePath.toVirtualFile() as VirtualFile
         val moduleName = context.project.getModuleOrProjectNameForFile(moduleVirtualFile)
 
-        codeTransformChatHelper.addNewMessage(buildUserLanguageUpgradeSelectionSummaryChatContent(moduleName))
+        codeTransformChatHelper.addNewMessage(buildUserLanguageUpgradeSelectionSummaryChatContent(moduleName, targetVersion))
 
         val sourceJdk = getSourceJdk(moduleVirtualFile)
+
+        if (sourceJdk == JavaSdkVersion.JDK_21 && targetVersion == "17") {
+            codeTransformChatHelper.addNewMessage(buildProjectInvalidChatContent(ValidationResult(false, InvalidTelemetryReason(CodeTransformPreValidationError.JavaDowngradeAttempt))))
+            return
+        }
 
         val selection = CustomerSelection(
             configurationFile = moduleVirtualFile,
             sourceJavaVersion = sourceJdk,
-            targetJavaVersion = JavaSdkVersion.JDK_17,
+            targetJavaVersion = if (targetVersion == "17") JavaSdkVersion.JDK_17 else JavaSdkVersion.JDK_21,
         )
 
         // Create and set a session
