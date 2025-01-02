@@ -304,7 +304,14 @@ class CodeTransformChatController(
         val sourceJdk = getSourceJdk(moduleVirtualFile)
 
         if (sourceJdk == JavaSdkVersion.JDK_21 && targetVersion == "17") {
-            codeTransformChatHelper.addNewMessage(buildProjectInvalidChatContent(ValidationResult(false, InvalidTelemetryReason(CodeTransformPreValidationError.JavaDowngradeAttempt))))
+            codeTransformChatHelper.addNewMessage(
+                buildProjectInvalidChatContent(
+                    ValidationResult(
+                        false,
+                        InvalidTelemetryReason(CodeTransformPreValidationError.JavaDowngradeAttempt)
+                    )
+                )
+            )
             return
         }
 
