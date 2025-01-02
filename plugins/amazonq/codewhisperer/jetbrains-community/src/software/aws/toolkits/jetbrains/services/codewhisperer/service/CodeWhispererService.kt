@@ -74,6 +74,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeI
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.WorkerContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserWrittenCodeTracker.Companion.Q_FEATURE_TOPIC
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeInsightsSettingsFacade
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
@@ -261,6 +263,8 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     lastRecommendationIndex += response.completions().size
                     ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_CODE_COMPLETION_PERFORMED)
                         .onSuccess(requestContext.fileContextInfo)
+                    ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
+                        .onEvent(QFeatureEvent.INVOCATION)
                     CodeWhispererTelemetryService.getInstance().sendServiceInvocationEvent(
                         requestId,
                         requestContext,

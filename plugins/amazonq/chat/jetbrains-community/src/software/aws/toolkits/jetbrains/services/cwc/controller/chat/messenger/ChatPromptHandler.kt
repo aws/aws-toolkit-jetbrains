@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.controller.chat.messenger
 
+import com.intellij.openapi.application.ApplicationManager
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
@@ -13,6 +14,8 @@ import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererstreaming.model.CodeWhispererStreamingException
 import software.aws.toolkits.core.utils.convertMarkdownToHTML
 import software.aws.toolkits.core.utils.extractCodeBlockLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserWrittenCodeTracker.Companion.Q_FEATURE_TOPIC
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatResponseEvent
@@ -115,6 +118,9 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                 )
                 telemetryHelper.recordAddMessage(data, response, responseText.length, statusCode, countTotalNumberOfCodeBlocks(responseText))
                 emit(response)
+
+                ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
+                    .onEvent(QFeatureEvent.INVOCATION)
             }
             .catch { exception ->
                 val statusCode = if (exception is AwsServiceException) exception.statusCode() else 0

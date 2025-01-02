@@ -15,6 +15,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationCo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserWrittenCodeTracker.Companion.Q_FEATURE_TOPIC
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PAIRED_BRACKETS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PAIRED_QUOTES
@@ -44,9 +46,14 @@ class CodeWhispererEditorManager {
         val endOffsetToReplace = if (insertEndOffset != -1) insertEndOffset else primaryCaret.offset
 
         WriteCommandAction.runWriteCommandAction(project) {
+            ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
+                .onEvent(QFeatureEvent.STARTS_EDITING)
             document.replaceString(originalOffset, endOffsetToReplace, reformatted)
             PsiDocumentManager.getInstance(project).commitDocument(document)
             primaryCaret.moveToOffset(endOffset + detail.rightOverlap.length)
+
+            ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
+                .onEvent(QFeatureEvent.FINISHES_EDITING)
         }
 
         ApplicationManager.getApplication().invokeLater {

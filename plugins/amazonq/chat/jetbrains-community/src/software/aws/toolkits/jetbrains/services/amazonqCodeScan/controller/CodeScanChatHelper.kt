@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqCodeScan.controller
 
+import com.intellij.openapi.application.ApplicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.buildClearPromptProgressMessage
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.buildPromptProgressMessage
@@ -11,6 +12,8 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeScan.messages.CodeSca
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.messages.CodeScanChatMessageContent
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.messages.UpdatePlaceholderMessage
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.storage.ChatSessionStorage
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserWrittenCodeTracker.Companion.Q_FEATURE_TOPIC
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import java.util.UUID
 
@@ -34,7 +37,8 @@ class CodeScanChatHelper(
         clearPreviousItemButtons: Boolean? = false,
     ) {
         if (isInValidSession()) return
-
+        ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
+            .onEvent(QFeatureEvent.INVOCATION)
         messagePublisher.publish(
             CodeScanChatMessage(
                 tabId = activeCodeScanTabId as String,

@@ -16,6 +16,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispere
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManagerNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererServiceNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryServiceNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserWrittenCodeTracker.Companion.Q_FEATURE_TOPIC
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PAIRED_BRACKETS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PAIRED_QUOTES
@@ -51,9 +53,15 @@ class CodeWhispererEditorManagerNew {
         preview.detail.isAccepted = true
 
         WriteCommandAction.runWriteCommandAction(project) {
+
+            ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
+                .onEvent(QFeatureEvent.STARTS_EDITING)
             document.replaceString(originalOffset, endOffsetToReplace, reformatted)
             PsiDocumentManager.getInstance(project).commitDocument(document)
             primaryCaret.moveToOffset(endOffset + detail.rightOverlap.length)
+
+            ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
+                .onEvent(QFeatureEvent.FINISHES_EDITING)
         }
 
         ApplicationManager.getApplication().invokeLater {

@@ -15,6 +15,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmi
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatusNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserWrittenCodeTracker
 
 class CodeWhispererEditorListener : EditorFactoryListener {
     override fun editorCreated(event: EditorFactoryEvent) {
@@ -37,6 +38,10 @@ class CodeWhispererEditorListener : EditorFactoryListener {
                         CodeWhispererInvocationStatus.getInstance().documentChanged()
                     }
                     CodeWhispererCodeCoverageTracker.getInstance(project, language).apply {
+                        activateTrackerIfNotActive()
+                        documentChanged(event)
+                    }
+                    UserWrittenCodeTracker.getInstance(project).apply {
                         activateTrackerIfNotActive()
                         documentChanged(event)
                     }
