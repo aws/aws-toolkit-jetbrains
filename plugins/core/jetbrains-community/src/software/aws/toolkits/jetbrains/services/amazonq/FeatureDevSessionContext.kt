@@ -10,14 +10,14 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.openapi.vfs.isFile
 import com.intellij.platform.ide.progress.withBackgroundProgress
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.apache.commons.codec.digest.DigestUtils
-import software.aws.toolkits.core.utils.outputStream
-import software.aws.toolkits.core.utils.putNextEntry
+import org.apache.commons.io.FileUtils
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.services.telemetry.ALLOWED_CODE_EXTENSIONS
@@ -25,12 +25,19 @@ import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import java.io.File
 import java.io.FileInputStream
+import java.net.URI
+import java.nio.file.FileSystem
+import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
 import java.util.Base64
-import java.util.zip.ZipOutputStream
+import java.util.UUID
 import kotlin.coroutines.coroutineContext
 import kotlin.io.path.Path
+import kotlin.io.path.createParentDirectories
+import kotlin.io.path.getPosixFilePermissions
 import kotlin.io.path.relativeTo
 
 interface RepoSizeError {
@@ -74,6 +81,12 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         "Dockerfile.build"
     )
 
+    // patterns to explicitly allow unless matched with gitignore rules
+    private val allowedPatterns = setOf(
+        ".*mvn.*",
+        ".*gradle.*",
+    ).map { Regex(it) }
+
     // projectRoot: is the directory where the project is located when selected to open a project.
     val projectRoot = project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
 
@@ -108,7 +121,10 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     fun isFileExtensionAllowed(file: VirtualFile): Boolean {
         // if it is a directory, it is allowed
         if (file.isDirectory) return true
-
+        val explicitAllowed = allowedPatterns.map { pattern -> pattern.matches(file.path) }.any { it }
+        if (explicitAllowed) {
+            return true
+        }
         val extension = file.extension ?: return false
         return ALLOWED_CODE_EXTENSIONS.contains(extension)
     }
@@ -122,7 +138,12 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         // this method reads like something a JS dev would write and doesn't do what the author thinks
         val deferredResults = ignorePatternsWithGitIgnore.map { pattern ->
             withContext(coroutineContext) {
-                async { pattern.containsMatchIn(path) }
+                // avoid partial match (pattern.containsMatchIn) since it causes us matching files
+                // against folder patterns. (e.g. settings.gradle ignored by .gradle rule!)
+                // we convert the glob rules to regex, add a trailing /* to all rules and then match
+                // entries against them by adding a trailing /.
+                // TODO: Add unit tests for gitignore matching
+                async { pattern.matches("$path/") }
             }
         }
 
@@ -187,18 +208,34 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
             }
         }
 
-        createTemporaryZipFileAsync { zipOutput ->
+        val zipFilePath = createTemporaryZipFileAsync { zipfs ->
             filesToIncludeFlow.collect { file ->
-                val relativePath = Path(file.path).relativeTo(projectRoot.toNioPath())
-                zipOutput.putNextEntry(relativePath.toString(), Path(file.path))
+                if (!file.isDirectory) {
+                    val externalFilePath = Path(file.path)
+                    val externalFilePermissions = externalFilePath.getPosixFilePermissions()
+                    val relativePath = Path(file.path).relativeTo(projectRoot.toNioPath())
+                    val zipfsPath = zipfs.getPath("/${relativePath}")
+                    withContext(Dispatchers.IO) {
+                        zipfsPath.createParentDirectories()
+                        Files.copy(externalFilePath, zipfsPath, StandardCopyOption.REPLACE_EXISTING)
+                        Files.setAttribute(zipfsPath, "zip:permissions", externalFilePermissions);
+                    }
+                }
             }
         }
+        zipFilePath
     }.toFile()
 
-    private suspend fun createTemporaryZipFileAsync(block: suspend (ZipOutputStream) -> Unit): Path = withContext(EDT) {
-        val file = Files.createTempFile(null, ".zip")
-        ZipOutputStream(file.outputStream()).use { zipOutput -> block(zipOutput) }
-        file
+    private suspend fun createTemporaryZipFileAsync(block: suspend (FileSystem) -> Unit): Path = withContext(EDT) {
+        // Don't use Files.createTempFile since the file must not be created for ZipFS to work
+        val tempFilePath: Path = Paths.get(FileUtils.getTempDirectory().getAbsolutePath(), "${UUID.randomUUID()}.zip")
+        val uri = URI.create("jar:file:${tempFilePath}")
+        val env = hashMapOf("create" to "true")
+        val zipfs = FileSystems.newFileSystem(uri, env)
+        zipfs.use {
+            block(zipfs)
+        }
+        tempFilePath
     }
 
     private fun parseGitIgnore(): Set<String> {
@@ -216,7 +253,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     private fun convertGitIgnorePatternToRegex(pattern: String): String = pattern
         .replace(".", "\\.")
         .replace("*", ".*")
-        .let { if (it.endsWith("/")) "$it?" else it } // Handle directory-specific patterns by optionally matching trailing slash
+        .let { if (it.endsWith("/")) "$it.*" else "$it/.*" } // Add a trailing /* to all patterns. (we add a trailing / to all files when matching)
 
     var selectedSourceFolder: VirtualFile
         set(newRoot) {

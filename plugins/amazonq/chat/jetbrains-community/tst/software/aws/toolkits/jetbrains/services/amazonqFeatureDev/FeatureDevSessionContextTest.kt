@@ -40,6 +40,7 @@ class FeatureDevSessionContextTest : FeatureDevTestBase() {
     fun testWithValidFile() {
         val ktFile = mock<VirtualFile>()
         whenever(ktFile.extension).thenReturn("kt")
+        whenever(ktFile.path).thenReturn("code.kt")
         assertTrue(featureDevSessionContext.isFileExtensionAllowed(ktFile))
     }
 
@@ -47,6 +48,17 @@ class FeatureDevSessionContextTest : FeatureDevTestBase() {
     fun testWithInvalidFile() {
         val txtFile = mock<VirtualFile>()
         whenever(txtFile.extension).thenReturn("txt")
+        whenever(txtFile.path).thenReturn("file.txt")
         assertFalse(featureDevSessionContext.isFileExtensionAllowed(txtFile))
+    }
+
+    @Test
+    fun testAllowedFilePath() {
+        val allowedPaths = listOf("Dockerfile", "Dockerfile.build", "gradlew", "build.gradle", "gradle.properties", ".mvn/wrapper/maven-wrapper.properties")
+        allowedPaths.forEach({
+            val txtFile = mock<VirtualFile>()
+            whenever(txtFile.path).thenReturn(it)
+            assertTrue(featureDevSessionContext.isFileExtensionAllowed(txtFile))
+        })
     }
 }
