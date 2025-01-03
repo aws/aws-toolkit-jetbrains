@@ -36,7 +36,6 @@ import java.util.Base64
 @Service(Service.Level.PROJECT)
 class CodeTransformTelemetryManager(private val project: Project) {
     private val sessionId get() = CodeTransformTelemetryState.instance.getSessionId()
-    private val currentJobStatus get() = CodeModernizerSessionState.getInstance(project).currentJobStatus.toString()
 
     fun initiateTransform(telemetryErrorMessage: String? = null) {
         CodetransformTelemetry.initiateTransform(
