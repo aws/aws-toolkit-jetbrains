@@ -475,7 +475,8 @@ class CodeWhispererCodeScanManager(val project: Project) {
                             codeScanStatus,
                             codeScanResponseContext.payloadContext.srcPayloadSize.toDouble() ?: 0.0,
                             connection,
-                            scope
+                            scope,
+                            initiatedByChat
                         )
                     )
                     sendCodeScanTelemetryToServiceAPI(project, language, codeScanResponseContext, scope)
