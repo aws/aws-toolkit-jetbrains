@@ -47,32 +47,33 @@ class RepoSizeLimitError(override val message: String) : RuntimeException(), Rep
 class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Long? = null) {
     // TODO: Need to correct this class location in the modules going further to support both amazonq and codescan.
 
-    private val ignorePatterns = setOf(
-        "\\.aws-sam",
-        "\\.svn",
-        "\\.hg/?",
-        "\\.rvm",
-        "\\.git/?",
-        "\\.gitignore",
-        "\\.project",
-        "\\.gem",
-        "/\\.idea/?",
-        "\\.zip$",
-        "\\.bin$",
-        "\\.png$",
-        "\\.jpg$",
-        "\\.svg$",
-        "\\.pyc$",
-        "/license\\.txt$",
-        "/License\\.txt$",
-        "/LICENSE\\.txt$",
-        "/license\\.md$",
-        "/License\\.md$",
-        "/LICENSE\\.md$",
-        "node_modules/?",
-        "build/?",
-        "dist/?"
-    ).map { Regex(it) }
+    private val additionalGitIgnoreRules = setOf(
+        ".aws-sam",
+        ".gem",
+        ".git",
+        ".gitignore",
+        ".gradle",
+        ".hg",
+        ".idea",
+        ".project",
+        ".rvm",
+        ".svn",
+        "*.zip",
+        "*.bin",
+        "*.png",
+        "*.jpg",
+        "*.svg",
+        "*.pyc",
+        "license.txt",
+        "License.txt",
+        "LICENSE.txt",
+        "license.md",
+        "License.md",
+        "LICENSE.md",
+        "node_modules",
+        "build",
+        "dist"
+    )
 
     // well known source files that do not have extensions
     private val wellKnownSourceFiles = setOf(
@@ -88,6 +89,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
 
     // projectRoot: is the directory where the project is located when selected to open a project.
     val projectRoot = project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
+    private val projectRootPath = Paths.get(projectRoot.path) ?: error("Can not find project root path")
 
     // selectedSourceFolder": is the directory selected in replacement of the root, this happens when the project is too big to bundle for uploading.
     private var _selectedSourceFolder = projectRoot
@@ -97,10 +99,10 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     init {
         ignorePatternsWithGitIgnore = try {
             buildList {
-                addAll(ignorePatterns)
-                parseGitIgnore().mapNotNull { pattern ->
-                    runCatching { Regex(pattern) }.getOrNull()
-                }.let { addAll(it) }
+                addAll(additionalGitIgnoreRules.map { convertGitIgnorePatternToRegex(it) })
+                addAll(parseGitIgnore())
+            }.mapNotNull { pattern ->
+                runCatching { Regex(pattern) }.getOrNull()
             }
         } catch (e: Exception) {
             emptyList()
@@ -142,7 +144,8 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
                 // we convert the glob rules to regex, add a trailing /* to all rules and then match
                 // entries against them by adding a trailing /.
                 // TODO: Add unit tests for gitignore matching
-                async { pattern.matches("$path/") }
+                val relative = if (path.startsWith(projectRootPath.toString())) Paths.get(path).relativeTo(projectRootPath) else path
+                async { pattern.matches("$relative/") }
             }
         }
 
@@ -212,9 +215,9 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
                 if (!file.isDirectory) {
                     val externalFilePath = Path(file.path)
                     val externalFilePermissions = externalFilePath.getPosixFilePermissions()
-                    val relativePath = Path(file.path).relativeTo(projectRoot.toNioPath())
+                    val relativePath = Path(file.path).relativeTo(projectRootPath)
                     val zipfsPath = zipfs.getPath("/$relativePath")
-                    withContext(getCoroutineBgContext()) {
+                    withContext(EDT) {
                         zipfsPath.createParentDirectories()
                         Files.copy(externalFilePath, zipfsPath, StandardCopyOption.REPLACE_EXISTING)
                         Files.setAttribute(zipfsPath, "zip:permissions", externalFilePermissions)
