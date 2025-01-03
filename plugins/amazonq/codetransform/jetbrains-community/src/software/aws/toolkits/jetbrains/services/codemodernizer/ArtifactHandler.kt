@@ -312,8 +312,7 @@ class ArtifactHandler(
             dialog.isModal = true
 
             if (dialog.showAndGet()) {
-                telemetry.submitSelection("Submit-${diffDescription?.name}")
-                telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Submit", source)
+                telemetry.submitSelection("Submit-${diffDescription?.name}", jobId.toString())
                 if (diffDescription == null) {
                     val resultContent = CodeTransformChatMessageContent(
                         type = CodeTransformChatMessageType.PendingAnswer,
@@ -352,7 +351,7 @@ class ArtifactHandler(
                     }
                 }
             } else {
-                telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Cancel", source)
+                telemetry.submitSelection("Cancel", jobId.toString())
             }
         }
     }
