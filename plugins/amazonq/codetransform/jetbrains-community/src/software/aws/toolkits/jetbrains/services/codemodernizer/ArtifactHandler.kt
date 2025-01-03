@@ -56,7 +56,6 @@ import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformArtifactType
-import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -93,17 +92,17 @@ class ArtifactHandler(
     private var totalPatchFiles: Int = 0
     private var sharedPatchIndex: Int = 0
 
-    internal suspend fun displayDiff(job: JobId, source: CodeTransformVCSViewerSrcComponents) {
+    internal suspend fun displayDiff(job: JobId) {
         if (isCurrentlyDownloading.get()) return
         when (val result = downloadArtifact(job, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS)) {
             is DownloadArtifactResult.Success -> {
                 if (result.artifact !is CodeModernizerArtifact) return notifyUnableToApplyPatch("")
                 totalPatchFiles = result.artifact.patches.size
                 if (result.artifact.description == null) {
-                    displayDiffUsingPatch(result.artifact.patches.first(), totalPatchFiles, null, job, source)
+                    displayDiffUsingPatch(result.artifact.patches.first(), totalPatchFiles, null, job)
                 } else {
                     val diffDescription = result.artifact.description[getCurrentPatchIndex()]
-                    displayDiffUsingPatch(result.artifact.patches[getCurrentPatchIndex()], totalPatchFiles, diffDescription, job, source)
+                    displayDiffUsingPatch(result.artifact.patches[getCurrentPatchIndex()], totalPatchFiles, diffDescription, job)
                 }
             }
             is DownloadArtifactResult.ParseZipFailure -> notifyUnableToApplyPatch(result.failureReason.errorMessage)
@@ -285,7 +284,6 @@ class ArtifactHandler(
         totalPatchFiles: Int,
         diffDescription: PatchInfo?,
         jobId: JobId,
-        source: CodeTransformVCSViewerSrcComponents,
     ) {
         withContext(EDT) {
             val dialog = ApplyPatchDifferentiatedDialog(
@@ -464,9 +462,9 @@ class ArtifactHandler(
         )
     }
 
-    fun displayDiffAction(jobId: JobId, source: CodeTransformVCSViewerSrcComponents) = runReadAction {
+    fun displayDiffAction(jobId: JobId) = runReadAction {
         projectCoroutineScope(project).launch {
-            displayDiff(jobId, source)
+            displayDiff(jobId)
         }
     }
 

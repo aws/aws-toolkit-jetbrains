@@ -24,7 +24,6 @@ import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformJavaSourceVersionsAllowed
 import software.aws.toolkits.telemetry.CodeTransformJavaTargetVersionsAllowed
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
-import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 import software.aws.toolkits.telemetry.CodetransformTelemetry
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Result
