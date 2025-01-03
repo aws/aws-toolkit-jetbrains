@@ -56,6 +56,7 @@ object RulesEngine {
         if (notificationExtension.isNullOrEmpty()) return true
         val extensionsToBeChecked = notificationExtension.map { it.id }
         val pluginVersions = actualPluginVersions.filterKeys { extensionsToBeChecked.contains(it) }
+        if (pluginVersions.isEmpty()) return false
         return notificationExtension.all { extension ->
             val actualVersion = pluginVersions[extension.id]
             if (actualVersion == null) {

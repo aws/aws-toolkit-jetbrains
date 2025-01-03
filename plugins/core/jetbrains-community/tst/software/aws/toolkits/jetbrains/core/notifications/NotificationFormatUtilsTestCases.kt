@@ -360,3 +360,29 @@ val invalidIdeTypeAndVersionData = NotificationData(
         )
     )
 )
+
+val pluginNotPresentData = NotificationData(
+    id = "example_id_12344",
+    schedule = NotificationSchedule(type = "StartUp"),
+    severity = "Critical",
+    condition = NotificationDisplayCondition(
+        compute = null,
+        os = null,
+        ide = null,
+        extension = mutableListOf(
+            ExtensionType(
+                "amazon.q",
+                version = NotificationExpression.NotEqualsCondition("1.3334")
+            )
+        ),
+        authx = null
+
+    ),
+    actions = emptyList(),
+    content = NotificationContentDescriptionLocale(
+        NotificationContentDescription(
+            title = "Look at this!",
+            description = "Some bug is there"
+        )
+    )
+)

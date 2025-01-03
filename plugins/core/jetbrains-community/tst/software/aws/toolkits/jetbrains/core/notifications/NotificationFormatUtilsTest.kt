@@ -36,6 +36,7 @@ class NotificationFormatUtilsTest {
     val projectRule = ProjectRule()
 
     private lateinit var mockSystemDetails: SystemDetails
+    private lateinit var mockSystemDetailsWithNoPlugin: SystemDetails
     private lateinit var exampleNotification: InputStream
 
     @BeforeEach
@@ -50,6 +51,18 @@ class NotificationFormatUtilsTest {
             pluginVersions = mapOf(
                 "aws.toolkit" to "1.0",
                 "amazon.q" to "2.0"
+            )
+        )
+
+        mockSystemDetailsWithNoPlugin = SystemDetails(
+            computeType = "Local",
+            computeArchitecture = "x86_64",
+            osType = "Linux",
+            osVersion = "5.4.0",
+            ideType = "IC",
+            ideVersion = "2023.1",
+            pluginVersions = mapOf(
+                "aws.toolkit" to "1.0",
             )
         )
 
@@ -96,6 +109,13 @@ class NotificationFormatUtilsTest {
         assertDoesNotThrow {
             mapper.readValue<NotificationsList>(exampleNotificationWithoutNotification)
         }
+    }
+
+    @Test
+    fun `If plugin is not present, notification is not shown`() {
+        every { getCurrentSystemAndConnectionDetails() } returns mockSystemDetailsWithNoPlugin
+        val shouldShow = RulesEngine.displayNotification(projectRule.project, pluginNotPresentData)
+        assertThat(shouldShow).isFalse
     }
 
     @ParameterizedTest
