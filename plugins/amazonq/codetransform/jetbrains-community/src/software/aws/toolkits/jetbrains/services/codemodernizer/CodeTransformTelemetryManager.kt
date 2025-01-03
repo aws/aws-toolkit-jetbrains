@@ -26,6 +26,7 @@ import software.aws.toolkits.telemetry.CodeTransformJavaTargetVersionsAllowed
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 import software.aws.toolkits.telemetry.CodetransformTelemetry
+import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Result
 import java.time.Instant
 import java.util.Base64
@@ -196,12 +197,12 @@ class CodeTransformTelemetryManager(private val project: Project) {
 
     fun logHil(jobId: String, metaData: HilTelemetryMetaData, success: Boolean, reason: String) {
         CodetransformTelemetry.humanInTheLoop(
-            project,
-            jobId,
-            metaData.toString(),
-            sessionId,
-            reason,
-            success,
+            project = project,
+            codeTransformJobId = jobId,
+            codeTransformMetadata = metaData.toString(),
+            codeTransformSessionId = sessionId,
+            reason = reason,
+            result = if (success) MetricResult.Succeeded else MetricResult.Failed,
         )
     }
 

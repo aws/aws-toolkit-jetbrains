@@ -176,8 +176,12 @@ private val selectTargetVersionFormItem = FormItem(
     mandatory = true,
     options = listOf(
         FormItemOption(
-            label = "JDK17",
+            label = "17",
             value = "17",
+        ),
+        FormItemOption(
+            label = "21",
+            value = "21",
         )
     )
 )
@@ -226,14 +230,14 @@ private val selectOneOrMultipleDiffsFlagFormItem = FormItem(
     )
 )
 
-private fun getUserLanguageUpgradeSelectionFormattedMarkdown(moduleName: String): String = """
+private fun getUserLanguageUpgradeSelectionFormattedMarkdown(moduleName: String, targetJdkVersion: String): String = """
         ### ${message("codemodernizer.chat.prompt.title.details")}
         -------------
 
         | | |
         | :------------------- | -------: |
         | **${message("codemodernizer.chat.prompt.label.module")}**             |   $moduleName   |
-        | **${message("codemodernizer.chat.prompt.label.target_version")}** |  JDK17   |
+        | **${message("codemodernizer.chat.prompt.label.target_version")}** |  $targetJdkVersion   |
 """.trimIndent()
 
 private fun getUserSQLConversionSelectionFormattedMarkdown(moduleName: String, schema: String) = """
@@ -286,6 +290,7 @@ fun buildProjectInvalidChatContent(validationResult: ValidationResult): CodeTran
         CodeTransformPreValidationError.EmptyProject -> message("codemodernizer.notification.warn.invalid_project.description.reason.missing_content_roots")
         CodeTransformPreValidationError.UnsupportedBuildSystem -> message("codemodernizer.chat.message.validation.error.no_pom")
         CodeTransformPreValidationError.NoJavaProject -> message("codemodernizer.chat.message.validation.error.no_java_project")
+        CodeTransformPreValidationError.JavaDowngradeAttempt -> message("codemodernizer.chat.message.validation.error.downgrade_attempt")
         else -> message("codemodernizer.chat.message.validation.error.other")
     }
 
@@ -441,9 +446,9 @@ fun buildUserSQLConversionSelectionSummaryChatContent(moduleName: String, schema
     message = getUserSQLConversionSelectionFormattedMarkdown(moduleName, schema)
 )
 
-fun buildUserLanguageUpgradeSelectionSummaryChatContent(moduleName: String) = CodeTransformChatMessageContent(
+fun buildUserLanguageUpgradeSelectionSummaryChatContent(moduleName: String, targetJdkVersion: String) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.Prompt,
-    message = getUserLanguageUpgradeSelectionFormattedMarkdown(moduleName)
+    message = getUserLanguageUpgradeSelectionFormattedMarkdown(moduleName, targetJdkVersion)
 )
 
 fun buildCompileLocalInProgressChatContent() = CodeTransformChatMessageContent(
