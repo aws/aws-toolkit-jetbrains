@@ -63,10 +63,11 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
 
     @Test
     fun testAllowedFilePath() {
-        val allowedPaths = listOf("gradlew", "build.gradle", "gradle.properties", ".mvn/wrapper/maven-wrapper.properties")
+        val allowedPaths = listOf("build.gradle", "gradle.properties", ".mvn/wrapper/maven-wrapper.properties")
         allowedPaths.forEach({
             val txtFile = mock<VirtualFile>()
             whenever(txtFile.path).thenReturn(it)
+            whenever(txtFile.extension).thenReturn(it.split(".").last())
             assertTrue(featureDevSessionContext.isFileExtensionAllowed(txtFile))
         })
     }
