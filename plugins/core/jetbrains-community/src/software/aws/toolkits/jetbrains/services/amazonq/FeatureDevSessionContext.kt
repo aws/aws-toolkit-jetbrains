@@ -202,7 +202,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         }
 
         val zipFilePath = createTemporaryZipFileAsync { zipfs ->
-            val isPosix = FileSystems.getDefault().supportedFileAttributeViews().contains("posix");
+            val isPosix = FileSystems.getDefault().supportedFileAttributeViews().contains("posix")
             filesToIncludeFlow.collect { file ->
                 if (!file.isDirectory) {
                     val externalFilePath = Path(file.path)

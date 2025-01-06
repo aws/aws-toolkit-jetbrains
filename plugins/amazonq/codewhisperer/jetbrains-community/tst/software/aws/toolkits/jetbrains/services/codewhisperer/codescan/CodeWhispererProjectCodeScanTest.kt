@@ -19,6 +19,7 @@ import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import software.aws.toolkits.jetbrains.utils.rules.addModule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.BufferedInputStream
+import java.io.File
 import java.util.zip.ZipInputStream
 import kotlin.io.path.relativeTo
 import kotlin.test.assertNotNull
@@ -109,11 +110,12 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
     }
 
     private fun setupCsharpProject() {
+        val fileSeparator = File.separator
         val testModule = projectRule.fixture.addModule("testModule")
         val testModule2 = projectRule.fixture.addModule("testModule2")
         testCs = projectRule.fixture.addFileToModule(
             testModule,
-            "/Test.cs",
+            "${fileSeparator}Test.cs",
             """
             using Utils;
             using Helpers.Helper;
@@ -131,7 +133,7 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
 
         utilsCs = projectRule.fixture.addFileToModule(
             testModule,
-            "/Utils.cs",
+            "${fileSeparator}Utils.cs",
             """
             public static class Utils
             {
@@ -157,7 +159,7 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
 
         helperCs = projectRule.fixture.addFileToModule(
             testModule,
-            "/Helpers/Helper.cs",
+            "${fileSeparator}Helpers${fileSeparator}Helper.cs",
             """
             public static class Helper
             {
@@ -201,7 +203,7 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
 
         helpGo = projectRule.fixture.addFileToModule(
             testModule,
-            "/help.go",
+            "${fileSeparator}help.go",
             """
                 package main
 
@@ -217,7 +219,7 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
 
         utilsJs = projectRule.fixture.addFileToModule(
             testModule,
-            "/utils.js",
+            "${fileSeparator}utils.js",
             """
             function add(num1, num2) {
               return num1 + num2;
@@ -247,7 +249,7 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
 
         testJson = projectRule.fixture.addFileToModule(
             testModule,
-            "/helpers/test3Json.json",
+            "${fileSeparator}helpers${fileSeparator}test3Json.json",
             """
                 {
                     "AWSTemplateFormatVersion": "2010-09-09",
@@ -303,7 +305,7 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
 
         helperPy = projectRule.fixture.addFileToModule(
             testModule,
-            "/helpers/helper.py",
+            "${fileSeparator}helpers${fileSeparator}helper.py",
             """
             from helpers import helper as h
             def subtract(num1, num2)
@@ -319,13 +321,13 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
         totalSize += helperPy.length
         totalLines += helperPy.toNioPath().toFile().readLines().size
 
-        readMeMd = projectRule.fixture.addFileToModule(testModule, "/ReadMe.md", "### Now included").virtualFile
+        readMeMd = projectRule.fixture.addFileToModule(testModule, "${fileSeparator}ReadMe.md", "### Now included").virtualFile
         totalSize += readMeMd.length
         totalLines += readMeMd.toNioPath().toFile().readLines().size
 
         testTf = projectRule.fixture.addFileToModule(
             testModule2,
-            "/testTf.tf",
+            "${fileSeparator}testTf.tf",
             """
                 # Create example resource for three S3 buckets using for_each, where the bucket prefix are in variable with list containing [prod, staging, dev]
                 
@@ -345,7 +347,7 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
 
         testYaml = projectRule.fixture.addFileToModule(
             testModule2,
-            "/testYaml.yaml",
+            "${fileSeparator}testYaml.yaml",
             """
                 AWSTemplateFormatVersion: "2010-09-09"
                 
@@ -371,7 +373,7 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
 
         // Adding gitignore file and gitignore file member for testing.
         // The tests include the markdown file but not these two files.
-        projectRule.fixture.addFileToProject("/.gitignore", "node_modules\n.idea\n.vscode\n.DS_Store").virtualFile
-        projectRule.fixture.addFileToProject("/.idea/ref", "ref: refs/heads/main")
+        projectRule.fixture.addFileToProject("${fileSeparator}.gitignore", "node_modules\n.idea\n.vscode\n.DS_Store").virtualFile
+        projectRule.fixture.addFileToProject("${fileSeparator}.idea${fileSeparator}ref", "ref: refs/heads/main")
     }
 }
