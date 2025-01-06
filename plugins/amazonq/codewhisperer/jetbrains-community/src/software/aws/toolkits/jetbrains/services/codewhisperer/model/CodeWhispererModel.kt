@@ -254,6 +254,7 @@ data class CodeScanTelemetryEvent(
     val totalProjectSizeInBytes: Double?,
     val connection: ToolkitConnection?,
     val codeAnalysisScope: CodeWhispererConstants.CodeAnalysisScope,
+    val initiatedByChat: Boolean = false,
 )
 
 data class CreateUploadUrlServiceInvocationContext(
