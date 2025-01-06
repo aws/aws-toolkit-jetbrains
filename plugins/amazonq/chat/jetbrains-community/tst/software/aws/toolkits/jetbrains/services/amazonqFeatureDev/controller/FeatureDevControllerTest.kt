@@ -22,9 +22,11 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.spy
@@ -36,7 +38,14 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitConte
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededStates
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.EmptyPatchException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.GuardrailsException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataOperationName
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataResult
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PromptRefusalException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ThrottlingException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUp
@@ -50,6 +59,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendC
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendSystemPrompt
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendUpdatePlaceholder
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.updateFileComponent
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeGenerationState
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DiffMetricsProcessed
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Interaction
@@ -241,7 +251,9 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                 ),
             )
 
-            doReturn(Unit).`when`(spySession).insertChanges(any(), any(), any(), any())
+            doReturn(Unit).whenever(spySession).insertChanges(any(), any(), any())
+            doReturn(Unit).whenever(spySession).insertNewFiles(any())
+            doReturn(Unit).whenever(spySession).applyDeleteFiles(any())
 
             spySession.preloader(userMessage, messenger)
             controller.processFollowupClickedMessage(message)
@@ -249,13 +261,23 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             mockitoVerify(
                 spySession,
                 times(1),
-            ).insertChanges(listOf(newFileContents[0]), listOf(deletedFiles[0]), testReferences, messenger) // insert changes for only non rejected files
+            ).insertChanges(newFileContents, deletedFiles, testReferences) // updates for all files
             coVerifyOrder {
                 AmazonqTelemetry.isAcceptedCodeChanges(
                     amazonqNumberOfFilesAccepted = 2.0, // it should be 2 files per test setup
                     amazonqConversationId = spySession.conversationId,
                     enabled = true,
                     createTime = any(),
+                )
+
+                // insert changes for only non rejected files
+                spySession.insertNewFiles(listOf(newFileContents[0]))
+                spySession.applyDeleteFiles(listOf(deletedFiles[0]))
+
+                spySession.updateFilesPaths(
+                    filePaths = newFileContents,
+                    deletedFiles = deletedFiles,
+                    messenger
                 )
                 messenger.sendAnswer(
                     tabId = testTabId,
@@ -412,6 +434,114 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         }
 
     @Test
+    fun `test handleChat onCodeGeneration sends success metrics`() = runTest {
+        val mockSession = mock<Session>()
+        val featureDevService = mockk<FeatureDevService>()
+        val repoContext = mock<FeatureDevSessionContext>()
+        val sessionStateConfig = SessionStateConfig(testConversationId, repoContext, featureDevService)
+        val mockInteraction = mock<Interaction>()
+        whenever(mockSession.send(userMessage)).thenReturn(mockInteraction)
+        whenever(mockSession.sessionState).thenReturn(
+            PrepareCodeGenerationState(
+                testTabId,
+                CancellationTokenSource(),
+                "test-command",
+                sessionStateConfig,
+                newFileContents,
+                deletedFiles,
+                testReferences,
+                testUploadId,
+                0,
+                messenger,
+                diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
+            ),
+        )
+
+        controller.onCodeGeneration(mockSession, userMessage, testTabId)
+
+        val mockInOrder = inOrder(mockSession)
+
+        mockInOrder.verify(mockSession).sendMetricDataTelemetry(
+            MetricDataOperationName.StartCodeGeneration,
+            MetricDataResult.Success
+
+        )
+        mockInOrder.verify(mockSession).sendMetricDataTelemetry(
+            MetricDataOperationName.EndCodeGeneration,
+            MetricDataResult.Success
+        )
+    }
+
+    @Test
+    fun `test handleChat onCodeGeneration sends correct failure metrics for different errors`() = runTest {
+        data class ErrorTestCase(
+            val error: Exception,
+            val expectedMetricResult: MetricDataResult,
+        )
+
+        val testCases = listOf(
+            ErrorTestCase(
+                EmptyPatchException("EmptyPatchException", "Empty patch"),
+                MetricDataResult.LlmFailure
+            ),
+            ErrorTestCase(
+                GuardrailsException(operation = "GenerateCode", desc = "Failed guardrails"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                PromptRefusalException(operation = "GenerateCode", desc = "Prompt refused"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                NoChangeRequiredException(operation = "GenerateCode", desc = "No changes needed"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                ThrottlingException(operation = "GenerateCode", desc = "Request throttled"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                RuntimeException("Unknown error"),
+                MetricDataResult.Fault
+            )
+        )
+
+        testCases.forEach { (error, expectedResult) ->
+            val mockSession = mock<Session>()
+            whenever(mockSession.send(userMessage)).thenThrow(error)
+            whenever(mockSession.sessionState).thenReturn(
+                CodeGenerationState(
+                    testTabId,
+                    "",
+                    mock(),
+                    testUploadId,
+                    0,
+                    0.0,
+                    messenger,
+                    token = CancellationTokenSource(),
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet())
+                )
+            )
+
+            assertThrows<Exception> {
+                controller.onCodeGeneration(mockSession, userMessage, testTabId)
+            }
+
+            val mockInOrder = inOrder(mockSession)
+
+            mockInOrder.verify(mockSession).sendMetricDataTelemetry(
+                MetricDataOperationName.StartCodeGeneration,
+                MetricDataResult.Success
+
+            )
+            mockInOrder.verify(mockSession).sendMetricDataTelemetry(
+                MetricDataOperationName.EndCodeGeneration,
+                expectedResult
+            )
+        }
+    }
+
+    @Test
     fun `test processFileClicked handles file rejection`() =
         runTest {
             val message = IncomingFeatureDevMessage.FileClicked(testTabId, newFileContents[0].zipFilePath, "", "reject-change")
@@ -468,7 +598,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                 ),
             )
             doReturn(testConversationId).`when`(spySession).conversationId
-            doReturn(Unit).`when`(spySession).insertChanges(any(), any(), any(), any())
+            doReturn(Unit).`when`(spySession).insertChanges(any(), any(), any())
 
             mockkObject(AmazonqTelemetry)
             every {
@@ -491,7 +621,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             mockitoVerify(
                 spySession,
                 times(1),
-            ).insertChanges(listOf(newFileContents[0]), listOf(), testReferences, messenger)
+            ).insertChanges(listOf(newFileContents[0]), listOf(), testReferences)
 
             // Does not continue automatically, because files are remaining:
             mockitoVerify(
@@ -525,7 +655,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                 ),
             )
             doReturn(testConversationId).`when`(spySession).conversationId
-            doReturn(Unit).`when`(spySession).insertChanges(any(), any(), any(), any())
+            doReturn(Unit).`when`(spySession).insertChanges(any(), any(), any())
 
             mockkObject(AmazonqTelemetry)
             every {

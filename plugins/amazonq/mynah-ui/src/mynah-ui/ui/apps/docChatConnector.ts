@@ -19,7 +19,7 @@ export interface ConnectorProps {
     sendMessageToExtension: (message: ExtensionMessage) => void
     onMessageReceived?: (tabID: string, messageData: any, needToShowAPIDocsTab: boolean) => void
     onUpdatePromptProgress: (tabID: string, progressField: ProgressField) => void
-    onAsyncEventProgress: (tabID: string, inProgress: boolean, message: string) => void
+    onAsyncEventProgress: (tabID: string, inProgress: boolean, message: string, cancelButtonWhenLoading?: boolean) => void
     onChatAnswerReceived?: (tabID: string, message: ChatItem) => void
     sendFeedback?: (tabId: string, feedbackPayload: FeedbackPayload) => void | undefined
     onError: (tabID: string, message: string, title: string) => void

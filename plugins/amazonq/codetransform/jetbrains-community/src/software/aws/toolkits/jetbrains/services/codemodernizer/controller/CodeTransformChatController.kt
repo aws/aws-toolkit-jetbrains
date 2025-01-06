@@ -25,6 +25,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthFollowUpType
 import software.aws.toolkits.jetbrains.services.codemodernizer.ArtifactHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager.Companion.LOG
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.EXPLAINABILITY_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.HilTelemetryMetaData
@@ -209,6 +210,7 @@ class CodeTransformChatController(
     }
 
     private suspend fun handleSQLConversion() {
+        telemetry.submitSelection("sql conversion")
         this.validateAndReplyOnError(CodeTransformType.SQL_CONVERSION) ?: return
         codeTransformChatHelper.addNewMessage(
             buildUserInputSQLConversionMetadataChatContent()
@@ -216,6 +218,7 @@ class CodeTransformChatController(
     }
 
     private suspend fun handleLanguageUpgrade() {
+        telemetry.submitSelection("language upgrade")
         val validationResult = this.validateAndReplyOnError(CodeTransformType.LANGUAGE_UPGRADE) ?: return
         codeTransformChatHelper.updateLastPendingMessage(
             buildLanguageUpgradeProjectValidChatContent()
@@ -678,6 +681,7 @@ class CodeTransformChatController(
         )
 
     private suspend fun handleCodeTransformResult(result: CodeModernizerJobCompletedResult) {
+        LOG.info { "CodeModernizerJobCompletedResult: $result" }
         when (result) {
             is CodeModernizerJobCompletedResult.Stopped, CodeModernizerJobCompletedResult.JobAbortedBeforeStarting -> handleCodeTransformStoppedByUser()
             is CodeModernizerJobCompletedResult.JobFailed -> handleCodeTransformJobFailed(result.failureReason)
@@ -690,6 +694,7 @@ class CodeTransformChatController(
                         CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId,
                         TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS
                     )
+                    LOG.info { "Download result: $downloadResult" }
                     when (downloadResult) {
                         is DownloadArtifactResult.Success -> {
                             if (downloadResult.artifact !is CodeModernizerArtifact) return artifactHandler.notifyUnableToApplyPatch("")
