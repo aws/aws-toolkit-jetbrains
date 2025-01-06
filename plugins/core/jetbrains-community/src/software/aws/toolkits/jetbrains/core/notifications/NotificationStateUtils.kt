@@ -10,6 +10,8 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.util.xmlb.Converter
+import com.intellij.util.xmlb.annotations.Attribute
+import com.intellij.util.xmlb.annotations.Property
 import software.aws.toolkits.core.utils.ETagProvider
 import java.time.Duration
 import java.time.Instant
@@ -21,11 +23,14 @@ class InstantConverter : Converter<Instant>() {
 }
 
 data class DismissedNotification(
+    @Attribute
     val id: String = "",
+    @Attribute(converter = InstantConverter::class)
     val dismissedAt: Instant = Instant.now(),
 )
 
 data class NotificationDismissalConfiguration(
+    @Property
     val dismissedNotifications: MutableSet<DismissedNotification> = mutableSetOf(),
 )
 
