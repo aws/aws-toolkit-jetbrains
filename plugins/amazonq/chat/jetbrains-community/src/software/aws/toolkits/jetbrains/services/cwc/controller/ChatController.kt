@@ -217,7 +217,6 @@ class ChatController private constructor(
     }
 
     override suspend fun processInsertCodeAtCursorPosition(message: IncomingCwcMessage.InsertCodeAtCursorPosition) {
-
         ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
             .onEvent(QFeatureEvent.STARTS_EDITING)
         withContext(EDT) {
@@ -567,8 +566,5 @@ class ChatController private constructor(
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-
-
     }
 }
-

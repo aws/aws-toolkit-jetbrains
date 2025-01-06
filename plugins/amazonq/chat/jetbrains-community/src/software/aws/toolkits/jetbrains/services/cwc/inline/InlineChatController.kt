@@ -552,7 +552,6 @@ class InlineChatController(
     }
 
     private fun replaceString(document: Document, start: Int, end: Int, text: String) {
-
         ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
             .onEvent(QFeatureEvent.STARTS_EDITING)
         ApplicationManager.getApplication().invokeAndWait {
