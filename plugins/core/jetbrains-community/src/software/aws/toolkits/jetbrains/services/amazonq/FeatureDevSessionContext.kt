@@ -146,7 +146,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         return deferredResults.any { it.await() }
     }
 
-    private fun wellKnown(file: VirtualFile): Boolean = wellKnownSourceFiles.contains(file.name)
+    fun wellKnown(file: VirtualFile): Boolean = wellKnownSourceFiles.contains(file.name)
 
     suspend fun zipFiles(projectRoot: VirtualFile): File = withContext(getCoroutineBgContext()) {
         val files = mutableListOf<VirtualFile>()
@@ -222,7 +222,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     private suspend fun createTemporaryZipFileAsync(block: suspend (FileSystem) -> Unit): Path = withContext(getCoroutineBgContext()) {
         // Don't use Files.createTempFile since the file must not be created for ZipFS to work
         val tempFilePath: Path = Paths.get(FileUtils.getTempDirectory().absolutePath, "${UUID.randomUUID()}.zip")
-        val uri = URI.create("jar:file:$tempFilePath")
+        val uri = URI.create("jar:${tempFilePath.toUri()}")
         val env = hashMapOf("create" to "true")
         val zipfs = FileSystems.newFileSystem(uri, env)
         zipfs.use {
