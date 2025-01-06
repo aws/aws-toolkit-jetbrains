@@ -1,10 +1,7 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import com.intellij.openapi.project.guessProjectDir
-import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.testFramework.RuleChain
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -18,11 +15,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTest
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
-import java.nio.file.Paths
 import java.util.zip.ZipFile
-import kotlin.io.path.Path
-import kotlin.io.path.relativeTo
-
 
 class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTestFixtureRule()) {
 
