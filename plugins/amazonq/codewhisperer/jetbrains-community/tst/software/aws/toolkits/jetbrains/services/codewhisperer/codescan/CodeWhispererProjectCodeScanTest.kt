@@ -373,7 +373,7 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
 
         // Adding gitignore file and gitignore file member for testing.
         // The tests include the markdown file but not these two files.
-        projectRule.fixture.addFileToProject("${fileSeparator}.gitignore", "node_modules\n.idea\n.vscode\n.DS_Store").virtualFile
-        projectRule.fixture.addFileToProject("${fileSeparator}.idea${fileSeparator}ref", "ref: refs/heads/main")
+        projectRule.fixture.addFileToProject("$fileSeparator.gitignore", "node_modules\n.idea\n.vscode\n.DS_Store").virtualFile
+        projectRule.fixture.addFileToProject("$fileSeparator.idea${fileSeparator}ref", "ref: refs/heads/main")
     }
 }
