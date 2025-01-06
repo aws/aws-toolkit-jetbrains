@@ -1,0 +1,23 @@
+{
+  "date" : "2024-12-10",
+  "version" : "3.45",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Add acknowledgement button for Amazon Q Chat disclaimer"
+  }, {
+    "type" : "bugfix",
+    "description" : " Chosing cancel on sign out confirmation now cancels the sign out and does not delete profiles from ~/.aws/config (#5167)"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix `@workspace` missing from the Amazon Q Chat welcome tab"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix for /review LLM based code issues for file review on windows"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix for File Review payload and Regex error for payload generation"
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q Code Transformation: show build logs when server-side build fails"
+  } ]
+}

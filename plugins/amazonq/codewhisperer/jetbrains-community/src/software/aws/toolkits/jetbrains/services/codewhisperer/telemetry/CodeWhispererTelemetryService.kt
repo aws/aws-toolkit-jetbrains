@@ -38,6 +38,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
+import software.aws.toolkits.telemetry.CodeFixAction
 import software.aws.toolkits.telemetry.CodewhispererCodeScanScope
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
@@ -47,6 +48,8 @@ import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTelemetry
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import software.aws.toolkits.telemetry.Component
+import software.aws.toolkits.telemetry.CredentialSourceId
+import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Result
 import java.time.Duration
 import java.time.Instant
@@ -280,6 +283,18 @@ class CodeWhispererTelemetryService {
         )
     }
 
+    private fun mapToTelemetryScope(codeAnalysisScope: CodeWhispererConstants.CodeAnalysisScope, initiatedByChat: Boolean): CodewhispererCodeScanScope =
+        when (codeAnalysisScope) {
+            CodeWhispererConstants.CodeAnalysisScope.FILE -> {
+                if (initiatedByChat) {
+                    CodewhispererCodeScanScope.FILEONDEMAND
+                } else {
+                    CodewhispererCodeScanScope.FILEAUTO
+                }
+            }
+            CodeWhispererConstants.CodeAnalysisScope.PROJECT -> CodewhispererCodeScanScope.PROJECT
+        }
+
     fun sendSecurityScanEvent(codeScanEvent: CodeScanTelemetryEvent, project: Project? = null) {
         val payloadContext = codeScanEvent.codeScanResponseContext.payloadContext
         val serviceInvocationContext = codeScanEvent.codeScanResponseContext.serviceInvocationContext
@@ -288,8 +303,9 @@ class CodeWhispererTelemetryService {
         val issuesWithFixes = codeScanEvent.codeScanResponseContext.codeScanIssuesWithFixes
         val reason = codeScanEvent.codeScanResponseContext.reason
         val startUrl = getConnectionStartUrl(codeScanEvent.connection)
-        val codeAnalysisScope = codeScanEvent.codeAnalysisScope
-        val passive = codeAnalysisScope == CodeWhispererConstants.CodeAnalysisScope.FILE
+        val codeAnalysisScope = mapToTelemetryScope(codeScanEvent.codeAnalysisScope, codeScanEvent.initiatedByChat)
+        val passive = codeAnalysisScope == CodewhispererCodeScanScope.FILEAUTO
+        val source = if (codeScanEvent.initiatedByChat) "chat" else "menu"
 
         LOG.debug {
             "Recording code security scan event. \n" +
@@ -306,8 +322,9 @@ class CodeWhispererTelemetryService {
                 "Service invocation duration in milliseconds: ${serviceInvocationContext.serviceInvocationDuration}, \n" +
                 "Total number of lines scanned: ${payloadContext.totalLines}, \n" +
                 "Reason: $reason \n" +
-                "Scope: ${codeAnalysisScope.value} \n" +
-                "Passive: $passive \n"
+                "Scope: $codeAnalysisScope \n" +
+                "Passive: $passive \n" +
+                "Source: $source \n"
         }
         CodewhispererTelemetry.securityScan(
             project = project,
@@ -327,8 +344,9 @@ class CodeWhispererTelemetryService {
             reason = reason,
             result = codeScanEvent.result,
             credentialStartUrl = startUrl,
-            codewhispererCodeScanScope = CodewhispererCodeScanScope.from(codeAnalysisScope.value),
-            passive = passive
+            codewhispererCodeScanScope = codeAnalysisScope,
+            passive = passive,
+            source = source
         )
     }
 
@@ -342,7 +360,7 @@ class CodeWhispererTelemetryService {
         )
     }
 
-    fun sendCodeScanIssueApplyFixEvent(issue: CodeWhispererCodeScanIssue, result: Result, reason: String? = null) {
+    fun sendCodeScanIssueApplyFixEvent(issue: CodeWhispererCodeScanIssue, result: Result, reason: String? = null, codeFixAction: CodeFixAction?) {
         CodewhispererTelemetry.codeScanIssueApplyFix(
             findingId = issue.findingId,
             detectorId = issue.detectorId,
@@ -350,7 +368,48 @@ class CodeWhispererTelemetryService {
             component = Component.Hover,
             result = result,
             reason = reason,
-            credentialStartUrl = getCodeWhispererStartUrl(issue.project)
+            credentialStartUrl = getCodeWhispererStartUrl(issue.project),
+            codeFixAction = codeFixAction
+        )
+    }
+
+    fun sendCodeScanNewTabEvent(credentialSourceId: CredentialSourceId?) {
+        CodewhispererTelemetry.codeScanChatNewTab(
+            credentialSourceId = credentialSourceId
+        )
+    }
+
+    fun sendCodeScanIssueIgnore(
+        component: Component,
+        issue: CodeWhispererCodeScanIssue,
+        isIgnoreAll: Boolean,
+    ) {
+        CodewhispererTelemetry.codeScanIssueIgnore(
+            component = component,
+            credentialStartUrl = getCodeWhispererStartUrl(issue.project),
+            findingId = issue.findingId,
+            detectorId = issue.detectorId,
+            ruleId = issue.ruleId,
+            variant = if (isIgnoreAll) "all" else null
+        )
+    }
+
+    fun sendCodeScanIssueGenerateFix(
+        component: Component,
+        issue: CodeWhispererCodeScanIssue,
+        isRefresh: Boolean,
+        result: MetricResult,
+        reason: String? = null,
+    ) {
+        CodewhispererTelemetry.codeScanIssueGenerateFix(
+            component = component,
+            credentialStartUrl = getCodeWhispererStartUrl(issue.project),
+            findingId = issue.findingId,
+            detectorId = issue.detectorId,
+            ruleId = issue.ruleId,
+            variant = if (isRefresh) "refresh" else null,
+            result = result,
+            reason = reason
         )
     }
 

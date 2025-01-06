@@ -1,6 +1,6 @@
 [versions]
 apache-commons-collections = "4.4"
-apache-commons-io = "2.16.0"
+apache-commons-io = "2.16.1"
 apache-commons-text = "1.12.0"
 assertJ = "3.26.3"
 # match with <root>/settings.gradle.kts
@@ -10,7 +10,7 @@ detekt = "1.23.7"
 diff-util = "4.12"
 intellijExt = "1.1.8"
 # match with <root>/settings.gradle.kts
-intellijGradle = "2.2.0-SNAPSHOT"
+intellijGradle = "2.2.1"
 intellijRemoteRobot = "0.11.22"
 jackson = "2.17.2"
 jacoco = "0.8.12"
@@ -27,7 +27,7 @@ mockitoKotlin = "5.4.0"
 mockk = "1.13.10"
 nimbus-jose-jwt = "9.40"
 node-gradle = "7.0.2"
-telemetryGenerator = "1.0.278"
+telemetryGenerator = "1.0.284"
 testLogger = "4.0.0"
 testRetry = "1.5.10"
 # test-only; platform provides slf4j transitively at runtime
@@ -91,11 +91,13 @@ jackson-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xm
 jackson-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
 jacoco = { module = "org.jacoco:org.jacoco.core", version.ref = "jacoco" }
 jgit = { module = "org.eclipse.jgit:org.eclipse.jgit", version.ref = "jgit" }
+
+# platfom launcher version selected by BOM
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+
 junit4 = { module = "junit:junit", version.ref = "junit4" }
 junit5-bom = { module = "org.junit:junit-bom", version.ref = "junit5" }
-junit5-jupiterApi = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit5" }
-junit5-jupiterEngine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit5" }
-junit5-jupiterParams = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit5" }
+junit5-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit5" }
 junit5-jupiterVintage = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit5" }
 kotlin-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinCoroutines" }
 kotlin-coroutinesDebug = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-debug", version.ref = "kotlinCoroutines" }

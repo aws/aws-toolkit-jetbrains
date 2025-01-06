@@ -181,6 +181,9 @@ data class AuthenticationUpdateMessage(
     val authenticatingTabIDs: List<String>,
     val featureDevEnabled: Boolean,
     val codeTransformEnabled: Boolean,
+    val codeScanEnabled: Boolean,
+    val codeTestEnabled: Boolean,
+    val docEnabled: Boolean,
     val message: String? = null,
     val messageId: String = UUID.randomUUID().toString(),
 

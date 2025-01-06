@@ -68,6 +68,12 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         "dist/?"
     ).map { Regex(it) }
 
+    // well known source files that do not have extensions
+    private val wellKnownSourceFiles = setOf(
+        "Dockerfile",
+        "Dockerfile.build"
+    )
+
     // projectRoot: is the directory where the project is located when selected to open a project.
     val projectRoot = project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
 
@@ -77,7 +83,16 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     private val gitIgnoreFile = File(selectedSourceFolder.path, ".gitignore")
 
     init {
-        ignorePatternsWithGitIgnore = (ignorePatterns + parseGitIgnore().map { Regex(it) }).toList()
+        ignorePatternsWithGitIgnore = try {
+            buildList {
+                addAll(ignorePatterns)
+                parseGitIgnore().mapNotNull { pattern ->
+                    runCatching { Regex(pattern) }.getOrNull()
+                }.let { addAll(it) }
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 
     fun getProjectZip(): ZipCreationResult {
@@ -117,6 +132,8 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         return deferredResults.any { it.await() }
     }
 
+    private fun wellKnown(file: VirtualFile): Boolean = wellKnownSourceFiles.contains(file.name)
+
     suspend fun zipFiles(projectRoot: VirtualFile): File = withContext(getCoroutineBgContext()) {
         val files = mutableListOf<VirtualFile>()
         val ignoredExtensionMap = mutableMapOf<String, Long>().withDefault { 0L }
@@ -126,8 +143,9 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
             projectRoot,
             object : VirtualFileVisitor<Unit>() {
                 override fun visitFile(file: VirtualFile): Boolean {
+                    val isWellKnown = runBlocking { wellKnown(file) }
                     val isFileIgnoredByExtension = runBlocking { ignoreFileByExtension(file) }
-                    if (isFileIgnoredByExtension) {
+                    if (!isWellKnown && isFileIgnoredByExtension) {
                         val extension = file.extension.orEmpty()
                         ignoredExtensionMap[extension] = (ignoredExtensionMap[extension] ?: 0) + 1
                         return false

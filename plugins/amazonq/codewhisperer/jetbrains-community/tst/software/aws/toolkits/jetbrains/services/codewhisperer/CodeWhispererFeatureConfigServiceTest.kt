@@ -14,6 +14,7 @@ import org.junit.Rule
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
@@ -25,6 +26,8 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableC
 import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEvaluationsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEvaluationsResponse
 import software.amazon.awssdk.services.codewhispererruntime.paginators.ListAvailableCustomizationsIterable
+import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -58,6 +61,44 @@ class CodeWhispererFeatureConfigServiceTest {
     }
 
     @Test
+    fun `test highlightCommand returns non-empty`() {
+        mockClientManagerRule.create<CodeWhispererRuntimeClient>().stub {
+            on { listFeatureEvaluations(any<ListFeatureEvaluationsRequest>()) } doReturn ListFeatureEvaluationsResponse.builder().featureEvaluations(
+                listOf(
+                    FeatureEvaluation.builder()
+                        .feature("highlightCommand")
+                        .variation("a new command")
+                        .value(FeatureValue.fromStringValue("@highlight"))
+                        .build()
+                )
+            ).build()
+        }
+
+        val mockTokenSettings = mock<TokenConnectionSettings> {
+            on { providerId } doReturn "mock"
+            on { region } doReturn AwsRegion.GLOBAL
+        }
+
+        val mockSsoConnection = mock<LegacyManagedBearerSsoConnection> {
+            on { startUrl } doReturn "fake sso url"
+            on { getConnectionSettings() } doReturn mockTokenSettings
+        }
+
+        projectRule.project.replaceService(
+            ToolkitConnectionManager::class.java,
+            mock { on { activeConnectionForFeature(eq(QConnection.getInstance())) } doReturn mockSsoConnection },
+            disposableRule.disposable
+        )
+
+        runBlocking {
+            CodeWhispererFeatureConfigService.getInstance().fetchFeatureConfigs(projectRule.project)
+        }
+
+        assertThat(CodeWhispererFeatureConfigService.getInstance().getHighlightCommandFeature()?.value?.stringValue()).isEqualTo("@highlight")
+        assertThat(CodeWhispererFeatureConfigService.getInstance().getHighlightCommandFeature()?.variation).isEqualTo("a new command")
+    }
+
+    @Test
     fun `test customizationArnOverride returns empty for BID users`() {
         testCustomizationArnOverrideABHelper(isIdc = false, isInListAvailableCustomizations = false)
         testCustomizationArnOverrideABHelper(isIdc = false, isInListAvailableCustomizations = true)
@@ -79,8 +120,8 @@ class CodeWhispererFeatureConfigServiceTest {
             on { listFeatureEvaluations(any<ListFeatureEvaluationsRequest>()) } doReturn ListFeatureEvaluationsResponse.builder().featureEvaluations(
                 listOf(
                     FeatureEvaluation.builder()
-                        .feature(CodeWhispererFeatureConfigService.CUSTOMIZATION_ARN_OVERRIDE_NAME)
-                        .variation("customizationARN")
+                        .feature("customizationArnOverride")
+                        .variation("customization-name")
                         .value(FeatureValue.fromStringValue("test arn"))
                         .build()
                 )
@@ -122,9 +163,10 @@ class CodeWhispererFeatureConfigServiceTest {
         }
 
         if (!isIdc || !isInListAvailableCustomizations) {
-            assertThat(CodeWhispererFeatureConfigService.getInstance().getCustomizationArnOverride()).isEqualTo("")
+            assertThat(CodeWhispererFeatureConfigService.getInstance().getCustomizationFeature()).isNull()
         } else {
-            assertThat(CodeWhispererFeatureConfigService.getInstance().getCustomizationArnOverride()).isEqualTo("test arn")
+            assertThat(CodeWhispererFeatureConfigService.getInstance().getCustomizationFeature()?.value?.stringValue()).isEqualTo("test arn")
+            assertThat(CodeWhispererFeatureConfigService.getInstance().getCustomizationFeature()?.variation).isEqualTo("customization-name")
         }
     }
 

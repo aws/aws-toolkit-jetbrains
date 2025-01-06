@@ -12,7 +12,7 @@ class AmazonQToolWindowListener : ToolWindowManagerListener {
 
     override fun toolWindowShown(toolWindow: ToolWindow) {
         if (toolWindow.id == AmazonQToolWindowFactory.WINDOW_ID) {
-            TelemetryHelper.recordOpenChat()
+            TelemetryHelper.recordOpenChat(toolWindow.project)
         }
     }
 
@@ -26,7 +26,7 @@ class AmazonQToolWindowListener : ToolWindowManagerListener {
         }
 
         if (changeType == ToolWindowManagerListener.ToolWindowManagerEventType.HideToolWindow) {
-            TelemetryHelper.recordCloseChat()
+            TelemetryHelper.recordCloseChat(toolWindow.project)
         }
     }
 }

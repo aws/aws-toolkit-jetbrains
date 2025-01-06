@@ -18,7 +18,7 @@ interface ChatPayload {
 export interface ConnectorProps {
     sendMessageToExtension: (message: ExtensionMessage) => void
     onMessageReceived?: (tabID: string, messageData: any, needToShowAPIDocsTab: boolean) => void
-    onAsyncEventProgress: (tabID: string, inProgress: boolean, message: string) => void
+    onAsyncEventProgress: (tabID: string, inProgress: boolean, message: string, cancelButtonWhenLoading?: boolean) => void
     onChatAnswerReceived?: (tabID: string, message: ChatItem) => void
     onChatAnswerUpdated?: (tabID: string, message: ChatItem) => void
     sendFeedback?: (tabId: string, feedbackPayload: FeedbackPayload) => void | undefined
@@ -26,7 +26,14 @@ export interface ConnectorProps {
     onWarning: (tabID: string, message: string, title: string) => void
     onUpdatePlaceholder: (tabID: string, newPlaceholder: string) => void
     onChatInputEnabled: (tabID: string, enabled: boolean) => void
-    onUpdateAuthentication: (featureDevEnabled: boolean, codeTransformEnabled: boolean, authenticatingTabIDs: string[]) => void
+    onUpdateAuthentication: (
+        featureDevEnabled: boolean,
+        codeTransformEnabled: boolean,
+        docEnabled: boolean,
+        codeScanEnabled: boolean,
+        codeTestEnabled: boolean,
+        authenticatingTabIDs: string[]
+    ) => void
     onNewTab: (tabType: TabType) => void
     tabsStorage: TabsStorage
     onFileComponentUpdate: (tabID: string, filePaths: DiffTreeFileInfo[], deletedFiles: DiffTreeFileInfo[], messageId: string, disableFileActions: boolean) => void
@@ -196,6 +203,7 @@ export class Connector {
             relatedContent: undefined,
             canBeVoted: messageData.canBeVoted ?? undefined,
             snapToTop: messageData.snapToTop ?? undefined,
+            informationCard: messageData.informationCard ?? undefined,
             followUp:
                 messageData.followUps !== undefined && Array.isArray(messageData.followUps)
                     ? {
@@ -241,7 +249,7 @@ export class Connector {
         }
 
         if (messageData.type === 'asyncEventProgressMessage') {
-            this.onAsyncEventProgress(messageData.tabID, messageData.inProgress, messageData.message ?? undefined)
+            this.onAsyncEventProgress(messageData.tabID, messageData.inProgress, messageData.message ?? undefined, true)
             return
         }
 
@@ -256,7 +264,14 @@ export class Connector {
         }
 
         if (messageData.type === 'authenticationUpdateMessage') {
-            this.onUpdateAuthentication(messageData.featureDevEnabled, messageData.codeTransformEnabled, messageData.authenticatingTabIDs)
+            this.onUpdateAuthentication(
+                messageData.featureDevEnabled,
+                messageData.codeTransformEnabled,
+                messageData.docEnabled,
+                messageData.codeScanEnabled,
+                messageData.codeTestEnabled,
+                messageData.authenticatingTabIDs
+            )
             return
         }
 

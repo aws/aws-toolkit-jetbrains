@@ -16,10 +16,8 @@ import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
-import org.mockito.kotlin.isNull
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
@@ -103,7 +101,8 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
             CodeScanSessionConfig.create(
                 pyPsiFile.virtualFile,
                 project,
-                CodeWhispererConstants.CodeAnalysisScope.FILE
+                CodeWhispererConstants.CodeAnalysisScope.FILE,
+                false
             )
         )
         setupResponse(pyPsiFile.virtualFile.toNioPath().relativeTo(pySession.projectRoot.toNioPath()))
@@ -115,7 +114,6 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
         // Mock CodeWhispererClient needs to be setup before initializing CodeWhispererCodeScanSession
         val pySessionContext = CodeScanSessionContext(project, pySession, CodeWhispererConstants.CodeAnalysisScope.FILE)
         codeScanSessionSpy = spy(CodeWhispererCodeScanSession(pySessionContext))
-        doNothing().whenever(codeScanSessionSpy).uploadArtifactToS3(any(), any(), any(), any(), isNull(), any())
 
         mockClient.stub {
             // setupResponse dynamically modifies these fake responses so this is very hard to follow and makes me question if we even need this
@@ -136,13 +134,13 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
             CodeScanSessionConfig.create(
                 psiFile.virtualFile,
                 project,
-                CodeWhispererConstants.CodeAnalysisScope.FILE
+                CodeWhispererConstants.CodeAnalysisScope.FILE,
+                false
             )
         )
         setupResponse(psiFile.virtualFile.toNioPath().relativeTo(sessionConfig.projectRoot.toNioPath()))
         val sessionContext = CodeScanSessionContext(project, sessionConfig, CodeWhispererConstants.CodeAnalysisScope.FILE)
         val session = spy(CodeWhispererCodeScanSession(sessionContext))
-        doNothing().whenever(session).uploadArtifactToS3(any(), any(), any(), any(), isNull(), any())
 
         // Set up CPU and Memory monitoring
         val runtime = Runtime.getRuntime()
@@ -186,13 +184,13 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
             CodeScanSessionConfig.create(
                 psiFile.virtualFile,
                 project,
-                CodeWhispererConstants.CodeAnalysisScope.FILE
+                CodeWhispererConstants.CodeAnalysisScope.FILE,
+                false
             )
         )
         setupResponse(psiFile.virtualFile.toNioPath().relativeTo(sessionConfig.projectRoot.toNioPath()))
         val sessionContext = CodeScanSessionContext(project, sessionConfig, CodeWhispererConstants.CodeAnalysisScope.FILE)
         val session = spy(CodeWhispererCodeScanSession(sessionContext))
-        doNothing().whenever(session).uploadArtifactToS3(any(), any(), any(), any(), isNull(), any())
 
         // Set up CPU and Memory monitoring
         val runtime = Runtime.getRuntime()
@@ -230,16 +228,26 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     fun `test createUploadUrlAndUpload()`() {
         val file = pyPsiFile.virtualFile.toNioPath().toFile()
         val fileMd5: String = Base64.getEncoder().encodeToString(DigestUtils.md5(FileInputStream(file)))
-        codeScanSessionSpy.stub {
-            onGeneric { codeScanSessionSpy.createUploadUrl(any(), any(), any()) }
+        zipUploadManagerSpy.stub {
+            onGeneric { zipUploadManagerSpy.createUploadUrl(any(), any(), any(), any()) }
                 .thenReturn(fakeCreateUploadUrlResponse)
         }
 
-        codeScanSessionSpy.createUploadUrlAndUpload(file, "artifactType", codeScanName)
+        zipUploadManagerSpy.createUploadUrlAndUpload(
+            file,
+            "artifactType",
+            CodeWhispererConstants.UploadTaskType.SCAN_FILE,
+            codeScanName
+        )
 
-        val inOrder = inOrder(codeScanSessionSpy)
-        inOrder.verify(codeScanSessionSpy).createUploadUrl(eq(fileMd5), eq("artifactType"), any())
-        inOrder.verify(codeScanSessionSpy).uploadArtifactToS3(
+        val inOrder = inOrder(zipUploadManagerSpy)
+        inOrder.verify(zipUploadManagerSpy).createUploadUrl(
+            eq(fileMd5),
+            eq("artifactType"),
+            eq(CodeWhispererConstants.UploadTaskType.SCAN_FILE),
+            any()
+        )
+        inOrder.verify(zipUploadManagerSpy).uploadArtifactToS3(
             eq(fakeCreateUploadUrlResponse.uploadUrl()),
             eq(fakeCreateUploadUrlResponse.uploadId()),
             eq(file),
@@ -251,7 +259,12 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
 
     @Test
     fun `test createUploadUrl()`() {
-        val response = codeScanSessionSpy.createUploadUrl("md5", "type", codeScanName)
+        val response = zipUploadManagerSpy.createUploadUrl(
+            "md5",
+            "type",
+            CodeWhispererConstants.UploadTaskType.SCAN_FILE,
+            codeScanName
+        )
 
         argumentCaptor<CreateUploadUrlRequest>().apply {
             verify(mockClient).createUploadUrl(capture())
@@ -268,7 +281,7 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
             fakeListCodeScanFindingsResponse.codeScanFindings(),
             getFakeRecommendationsOnNonExistentFile()
         )
-        val res = codeScanSessionSpy.mapToCodeScanIssues(recommendations)
+        val res = codeScanSessionSpy.mapToCodeScanIssues(recommendations, project)
         assertThat(res).hasSize(2)
     }
 
@@ -284,8 +297,8 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
             assertThat(it.responseContext.codeScanJobId).isEqualTo("jobId")
         }
 
+        verify(zipUploadManagerSpy, times(1)).createUploadUrlAndUpload(eq(file), eq("SourceCode"), any(), anyString())
         val inOrder = inOrder(codeScanSessionSpy)
-        inOrder.verify(codeScanSessionSpy, times(1)).createUploadUrlAndUpload(eq(file), eq("SourceCode"), anyString())
         inOrder.verify(codeScanSessionSpy, times(1)).createCodeScan(eq(CodewhispererLanguage.Python.toString()), anyString())
         inOrder.verify(codeScanSessionSpy, times(1)).getCodeScan(any())
         inOrder.verify(codeScanSessionSpy, times(1)).listCodeScanFindings(eq("jobId"), eq(null))
@@ -311,7 +324,8 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
             CodeScanSessionConfig.create(
                 externalFile.virtualFile,
                 project,
-                CodeWhispererConstants.CodeAnalysisScope.FILE
+                CodeWhispererConstants.CodeAnalysisScope.FILE,
+                false
             )
         )
 
@@ -337,8 +351,7 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
 
         scanManagerSpy.runCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE)
         // verify that function was run but none of the results/error handling methods were called.
-        verify(scanManagerSpy, times(0)).updateFileIssues(any(), any())
-        verify(scanManagerSpy, times(0)).handleError(any(), any(), any())
+        verify(scanManagerSpy, times(0)).handleError(any(), any())
         verify(scanManagerSpy, times(0)).handleException(any(), any(), any())
     }
 
@@ -347,7 +360,7 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
         assertNotNull(pySession)
 
         mockClient.stub {
-            onGeneric { codeScanSessionSpy.createUploadUrlAndUpload(any(), any(), any()) }.thenThrow(
+            onGeneric { zipUploadManagerSpy.createUploadUrlAndUpload(any(), any(), any(), any()) }.thenThrow(
                 CodeWhispererException.builder()
                     .message("File Scan Monthly Exceeded")
                     .requestId("abc123")

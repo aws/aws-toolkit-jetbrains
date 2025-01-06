@@ -9,12 +9,15 @@ on:
   push:
     branches: [ main, feature/* ]
 
+concurrency:
+  group: ${{ github.workflow }}${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   generate_artifact_toolkit_standalone:
     strategy:
       matrix:
-        supported_versions: [ '2023.3', '2024.1', '2024.2', '2024.3' ]
+        supported_versions: [ '2024.1', '2024.2', '2024.3' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -46,7 +49,7 @@ jobs:
   generate_artifact_q:
     strategy:
       matrix:
-        supported_versions: [ '2023.3', '2024.1', '2024.2', '2024.3' ]
+        supported_versions: [ '2024.1', '2024.2', '2024.3' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -75,7 +78,7 @@ jobs:
   generate_artifact_core:
     strategy:
       matrix:
-        supported_versions: [ '2023.3', '2024.1', '2024.2', '2024.3' ]
+        supported_versions: [ '2024.1', '2024.2', '2024.3' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

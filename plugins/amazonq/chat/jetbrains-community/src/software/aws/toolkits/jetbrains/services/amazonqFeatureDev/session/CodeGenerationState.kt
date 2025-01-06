@@ -20,10 +20,13 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ThrottlingExce
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendUpdatePlaceholder
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getChangeIdentifier
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getDiffMetrics
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.readFileToString
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
-import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.MetricResult
 import java.util.UUID
 
 private val logger = getLogger<CodeGenerationState>()
@@ -40,12 +43,13 @@ class CodeGenerationState(
     override var codeGenerationTotalIterationCount: Int? = null,
     var currentCodeGenerationId: String? = "EMPTY_CURRENT_CODE_GENERATION_ID",
     override var token: CancellationTokenSource?,
+    override var diffMetricsProcessed: DiffMetricsProcessed,
 ) : SessionState {
     override val phase = SessionStatePhase.CODEGEN
 
-    override suspend fun interact(action: SessionStateAction): SessionStateInteraction {
+    override suspend fun interact(action: SessionStateAction): SessionStateInteraction<SessionState> {
         val startTime = System.currentTimeMillis()
-        var result: Result = Result.Succeeded
+        var result: MetricResult = MetricResult.Succeeded
         var failureReason: String? = null
         var failureReasonDesc: String? = null
         var codeGenerationWorkflowStatus: CodeGenerationWorkflowStatus = CodeGenerationWorkflowStatus.COMPLETE
@@ -81,6 +85,41 @@ class CodeGenerationState(
             codeGenerationRemainingIterationCount = codeGenerationResult.codeGenerationRemainingIterationCount
             codeGenerationTotalIterationCount = codeGenerationResult.codeGenerationTotalIterationCount
 
+            runCatching {
+                var insertedLines = 0
+                var insertedCharacters = 0
+                codeGenerationResult.newFiles.forEach { file ->
+                    // FIXME: Ideally, the before content should be read from the uploaded context instead of from disk, to avoid drift
+                    val before = config.repoContext.selectedSourceFolder
+                        .toNioPath()
+                        .resolve(file.zipFilePath)
+                        .toFile()
+                        .let { f ->
+                            if (f.exists() && f.canRead()) {
+                                readFileToString(f)
+                            } else {
+                                ""
+                            }
+                        }
+
+                    val changeIdentifier = getChangeIdentifier(file.zipFilePath, before, file.fileContent)
+
+                    if (!diffMetricsProcessed.generated.contains(changeIdentifier)) {
+                        val diffMetrics = getDiffMetrics(before, file.fileContent)
+                        insertedLines += diffMetrics.insertedLines
+                        insertedCharacters += diffMetrics.insertedCharacters
+                        diffMetricsProcessed.generated.add(changeIdentifier)
+                    }
+                }
+                if (insertedLines > 0) {
+                    config.featureDevService.sendFeatureDevCodeGenerationEvent(
+                        conversationId = config.conversationId,
+                        linesOfCodeGenerated = insertedLines,
+                        charactersOfCodeGenerated = insertedCharacters,
+                    )
+                }
+            }.onFailure { /* Noop on diff telemetry failure */ }
+
             val nextState =
                 PrepareCodeGenerationState(
                     tabID = tabID,
@@ -95,6 +134,7 @@ class CodeGenerationState(
                     codeGenerationRemainingIterationCount = codeGenerationRemainingIterationCount,
                     codeGenerationTotalIterationCount = codeGenerationTotalIterationCount,
                     token = this.token,
+                    diffMetricsProcessed = diffMetricsProcessed,
                 )
 
             // It is not needed to interact right away with the PrepareCodeGeneration.
@@ -105,7 +145,7 @@ class CodeGenerationState(
             )
         } catch (e: Exception) {
             logger.warn(e) { "$FEATURE_NAME: Code generation failed: ${e.message}" }
-            result = Result.Failed
+            result = MetricResult.Failed
             failureReason = e.javaClass.simpleName
             if (e is FeatureDevException) {
                 failureReason = e.reason()
@@ -218,7 +258,8 @@ private suspend fun CodeGenerationState.generateCode(
 fun registerNewFiles(newFileContents: Map<String, String>): List<NewFileZipInfo> =
     newFileContents.map {
         NewFileZipInfo(
-            zipFilePath = it.key,
+            // Note: When managing file state, we normalize file paths returned from the agent in order to ensure they are handled as relative paths.
+            zipFilePath = it.key.removePrefix("/"),
             fileContent = it.value,
             rejected = false,
             changeApplied = false
@@ -228,7 +269,8 @@ fun registerNewFiles(newFileContents: Map<String, String>): List<NewFileZipInfo>
 fun registerDeletedFiles(deletedFiles: List<String>): List<DeletedFileInfo> =
     deletedFiles.map {
         DeletedFileInfo(
-            zipFilePath = it,
+            // Note: When managing file state, we normalize file paths returned from the agent in order to ensure they are handled as relative paths.
+            zipFilePath = it.removePrefix("/"),
             rejected = false,
             changeApplied = false
         )

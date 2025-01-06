@@ -1,3 +1,60 @@
+# _3.46_ (2024-12-17)
+- **(Feature)** /review: Code fix automatically scrolls into view after generation.
+- **(Feature)** Chat: improve font size and line-height in footer (below prompt input field)
+- **(Feature)** Adds capability to send new context commands to AB groups
+- **(Bug Fix)** Chat: When writing a prompt without sending it, navigating via up/down arrows sometimes deletes the unsent prompt.
+- **(Bug Fix)** Fix chat not retaining history when interaction is through onboarding tab type ([#5189](https://github.com/aws/aws-toolkit-jetbrains/issues/5189))
+- **(Bug Fix)** Chat: When navigating to previous prompts, code attachments are sometimes displayed incorrectly
+- **(Bug Fix)** Reduce frequency of system information query
+
+# _3.45_ (2024-12-10)
+- **(Feature)** Add acknowledgement button for Amazon Q Chat disclaimer
+- **(Bug Fix)** Chosing cancel on sign out confirmation now cancels the sign out and does not delete profiles from ~/.aws/config ([#5167](https://github.com/aws/aws-toolkit-jetbrains/issues/5167))
+- **(Bug Fix)** Fix `@workspace` missing from the Amazon Q Chat welcome tab
+- **(Bug Fix)** Fix for /review LLM based code issues for file review on windows
+- **(Bug Fix)** Fix for File Review payload and Regex error for payload generation
+- **(Bug Fix)** Amazon Q Code Transformation: show build logs when server-side build fails
+
+# _3.44_ (2024-12-04)
+- **(Feature)** Amazon Q: UI improvements to chat: New splash loader animation, initial streaming card animation, improved button colours
+- **(Feature)** Amazon Q: Navigate through prompt history by using the up/down arrows
+- **(Bug Fix)** Fix issue where Amazon Q Code Transform is unable to start
+- **(Bug Fix)** Fix DynamoDB viewer throwing 'ActionGroup should be registered using <group> tag' on IDE start ([#5012](https://github.com/aws/aws-toolkit-jetbrains/issues/5012)) ([#5120](https://github.com/aws/aws-toolkit-jetbrains/issues/5120))
+- **(Bug Fix)** Amazon Q: Fix chat syntax highlighting when using several different themes
+
+# _3.43_ (2024-12-03)
+- **(Feature)** `/review` in Q chat to scan your code for vulnerabilities and quality issues, and generate fixes
+- **(Feature)** `/test` in Q chat to generate unit tests for java and python
+- **(Feature)** `/doc` in Q chat to generate and update documentation for your project
+- **(Feature)** Added system notifications to inform users about critical plugin updates and potential issues with available workarounds
+
+# _3.42_ (2024-11-27)
+- **(Feature)** Amazon Q /dev: support `Dockerfile` files
+- **(Feature)** Feature(Amazon Q Code Transformation): allow users to view results in 5 smaller diffs
+- **(Feature)** Introduce @workspace command to enhance chat context fetching for Chat
+- **(Bug Fix)** Correct search text for Amazon Q inline suggestion keybindings
+- **(Bug Fix)** Fix(Amazon Q Code Transformation): always show user latest/correct transformation results
+- **(Bug Fix)** Amazon Q /dev: Fix error when accepting changes if leading slash is present.
+
+# _3.41_ (2024-11-22)
+- **(Feature)** Amazon Q /dev: support `.gradle` files
+- **(Feature)** Inline Auto trigger will now happen more consistently and will not conflict with JetBrains code completion.
+- **(Feature)** Uses AB variation as the name for overriden customizations
+- **(Feature)** Code Transform: Enable support for Java 17 projects.
+- **(Feature)** The key shortcuts for Q inline suggestions are now configurable from keymap settings. Default key shortcuts for navigating through suggestions are changed from left/right arrow keys to option(alt) + [ and option(alt) + ], respectively.
+- **(Feature)** The Q suggestion inline popup will now hide by default and will show when the user hovers over the suggestion text, the IDE code suggestion popup will also appear to be more transparent to unblock seeing the multi-line suggestions.
+- **(Feature)** Feature(Amazon Q Code Transformation): support conversions of embedded SQL from Oracle to PostgreSQL
+- **(Bug Fix)** Amazon Q chat: `@workspace` command shown in all tab types
+- **(Bug Fix)** Amazon Q Feature Dev: display limit reached error message
+- **(Bug Fix)** Amazon Q Chat: Changed default info color on dark themes to be blue, instead of gray
+- **(Removal)** Removed support for Gateway 2024.2
+- **(Removal)** Removed support for 2023.3.x IDEs
+
+# _3.40_ (2024-11-14)
+- **(Feature)** Amazon Q /dev: Add an action to accept individual files
+- **(Bug Fix)** Fix a bug when Amazon Q responds with still indexing message even when `@workspace` index is done
+- **(Bug Fix)** Fix issue where Amazon Q inline chat can be invoked from non-editor windows
+
 # _3.39_ (2024-11-12)
 - **(Bug Fix)** Fix poor inline suggestions from Amazon Q caused by improperly formatted supplemental context
 
