@@ -1,7 +1,10 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.testFramework.RuleChain
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -13,8 +16,21 @@ import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
+import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
+import java.nio.file.Paths
+import java.util.zip.ZipFile
+import kotlin.io.path.Path
+import kotlin.io.path.relativeTo
 
-class FeatureDevSessionContextTest : FeatureDevTestBase() {
+
+class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTestFixtureRule()) {
+
+    private fun addFilesToProjectModule(vararg path: String) {
+        val module = projectRule.module
+        path.forEach { projectRule.fixture.addFileToModule(module, it, it) }
+    }
+
     @Rule
     @JvmField
     val ruleChain = RuleChain(projectRule, disposableRule)
@@ -60,5 +76,43 @@ class FeatureDevSessionContextTest : FeatureDevTestBase() {
             whenever(txtFile.path).thenReturn(it)
             assertTrue(featureDevSessionContext.isFileExtensionAllowed(txtFile))
         })
+    }
+
+    @Test
+    fun testZipProject() {
+        addFilesToProjectModule(
+            ".gradle/cached.jar",
+            "src/MyClass.java",
+            "gradlew",
+            "gradlew.bat",
+            "README.md",
+            "settings.gradle",
+            "build.gradle",
+            "gradle/wrapper/gradle-wrapper.properties",
+        )
+
+        val zipResult = featureDevSessionContext.getProjectZip()
+        val zipPath = zipResult.payload.path
+
+        val zippedFiles = mutableSetOf<String>()
+        ZipFile(zipPath).use { zipFile ->
+            for (entry in zipFile.entries()) {
+                if (!entry.name.endsWith("/")) {
+                    zippedFiles.add(entry.name)
+                }
+            }
+        }
+
+        val expectedFiles = setOf(
+            "src/MyClass.java",
+            "gradlew",
+            "gradlew.bat",
+            "README.md",
+            "settings.gradle",
+            "build.gradle",
+            "gradle/wrapper/gradle-wrapper.properties",
+        )
+
+        assertTrue(zippedFiles == expectedFiles)
     }
 }

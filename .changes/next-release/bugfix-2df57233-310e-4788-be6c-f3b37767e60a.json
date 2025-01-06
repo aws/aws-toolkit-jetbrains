@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Preserve file permissions in the zip archive, fix bugs in gitignore matching and keep mvm and gradle files"
+  "description" : "Amazon Q can update mvn and gradle build files"
 }

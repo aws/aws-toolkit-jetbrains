@@ -17,7 +17,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.FileUtils
-import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.services.telemetry.ALLOWED_CODE_EXTENSIONS
 import software.aws.toolkits.resources.AwsCoreBundle
@@ -78,14 +77,10 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     // well known source files that do not have extensions
     private val wellKnownSourceFiles = setOf(
         "Dockerfile",
-        "Dockerfile.build"
+        "Dockerfile.build",
+        "gradlew",
+        "mvnw"
     )
-
-    // patterns to explicitly allow unless matched with gitignore rules
-    private val allowedPatterns = setOf(
-        ".*mvn.*",
-        ".*gradle.*",
-    ).map { Regex(it) }
 
     // projectRoot: is the directory where the project is located when selected to open a project.
     val projectRoot = project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
@@ -122,10 +117,6 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     fun isFileExtensionAllowed(file: VirtualFile): Boolean {
         // if it is a directory, it is allowed
         if (file.isDirectory) return true
-        val explicitAllowed = allowedPatterns.map { pattern -> pattern.matches(file.path) }.any { it }
-        if (explicitAllowed) {
-            return true
-        }
         val extension = file.extension ?: return false
         return ALLOWED_CODE_EXTENSIONS.contains(extension)
     }
@@ -217,7 +208,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
                     val externalFilePermissions = externalFilePath.getPosixFilePermissions()
                     val relativePath = Path(file.path).relativeTo(projectRootPath)
                     val zipfsPath = zipfs.getPath("/$relativePath")
-                    withContext(EDT) {
+                    runBlocking {
                         zipfsPath.createParentDirectories()
                         Files.copy(externalFilePath, zipfsPath, StandardCopyOption.REPLACE_EXISTING)
                         Files.setAttribute(zipfsPath, "zip:permissions", externalFilePermissions)
@@ -228,7 +219,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         zipFilePath
     }.toFile()
 
-    private suspend fun createTemporaryZipFileAsync(block: suspend (FileSystem) -> Unit): Path = withContext(EDT) {
+    private suspend fun createTemporaryZipFileAsync(block: suspend (FileSystem) -> Unit): Path = withContext(getCoroutineBgContext()) {
         // Don't use Files.createTempFile since the file must not be created for ZipFS to work
         val tempFilePath: Path = Paths.get(FileUtils.getTempDirectory().absolutePath, "${UUID.randomUUID()}.zip")
         val uri = URI.create("jar:file:$tempFilePath")
