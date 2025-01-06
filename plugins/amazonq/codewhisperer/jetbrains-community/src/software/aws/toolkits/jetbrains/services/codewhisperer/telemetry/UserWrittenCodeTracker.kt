@@ -27,7 +27,6 @@ import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
-
 @Service(Service.Level.PROJECT)
 class UserWrittenCodeTracker(private val project: Project) : Disposable {
     val userWrittenCodeLineCount = mutableMapOf<CodeWhispererProgrammingLanguage, Long>()
@@ -50,7 +49,7 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
             Q_FEATURE_TOPIC,
             object : QFeatureListener {
                 override fun onEvent(event: QFeatureEvent) {
-                    when(event) {
+                    when (event) {
                         QFeatureEvent.INVOCATION -> qInvocationCount.getAndIncrement()
                         QFeatureEvent.STARTS_EDITING -> isQMakingEdits.set(true)
                         QFeatureEvent.FINISHES_EDITING -> isQMakingEdits.set(false)
@@ -121,15 +120,12 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
     }
 
     // intelliJ sometimes insert multi spaces for indentation, this is not user written code
-    private fun isIntelliJMultiSpacesInsert(text: String): Boolean {
-        return text.trim { it == ' ' }.isEmpty() && text.length > 1
-    }
-
+    private fun isIntelliJMultiSpacesInsert(text: String) = text.trim { it == ' ' }.isEmpty() && text.length > 1
 
     private fun emitCodeWhispererCodeContribution() {
         val customizationArn: String? = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn
         for ((language, _) in userWrittenCodeCharacterCount) {
-            if (userWrittenCodeCharacterCount.getOrDefault(language, 0) <= 0 ) {
+            if (userWrittenCodeCharacterCount.getOrDefault(language, 0) <= 0) {
                 continue
             }
             runIfIdcConnectionOrTelemetryEnabled(project) {
@@ -153,7 +149,6 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
                 }
             }
         }
-
     }
 
     companion object {
@@ -168,7 +163,6 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
             "Q service events",
             QFeatureListener::class.java
         )
-
     }
 
     override fun dispose() {
@@ -187,10 +181,9 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
 enum class QFeatureEvent {
     INVOCATION,
     STARTS_EDITING,
-    FINISHES_EDITING
+    FINISHES_EDITING,
 }
 
 interface QFeatureListener {
     fun onEvent(event: QFeatureEvent)
 }
-

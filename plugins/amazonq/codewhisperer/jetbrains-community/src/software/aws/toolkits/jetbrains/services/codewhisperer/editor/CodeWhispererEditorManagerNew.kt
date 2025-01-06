@@ -53,7 +53,6 @@ class CodeWhispererEditorManagerNew {
         preview.detail.isAccepted = true
 
         WriteCommandAction.runWriteCommandAction(project) {
-
             ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
                 .onEvent(QFeatureEvent.STARTS_EDITING)
             document.replaceString(originalOffset, endOffsetToReplace, reformatted)

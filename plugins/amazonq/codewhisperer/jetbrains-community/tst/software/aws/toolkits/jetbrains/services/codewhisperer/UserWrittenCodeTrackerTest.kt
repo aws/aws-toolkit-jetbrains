@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.codewhisperer
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
@@ -17,13 +16,10 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.mockito.internal.verification.Times
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
-import org.mockito.kotlin.verify
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
@@ -44,7 +40,7 @@ import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureR
 
 internal class UserWrittenCodeTrackerTest {
 
-    protected class TestTelemetryService(
+    internal class TestTelemetryService(
         publisher: TelemetryPublisher = NoOpPublisher(),
         batcher: TelemetryBatcher,
     ) : TelemetryService(publisher, batcher)
@@ -61,12 +57,12 @@ internal class UserWrittenCodeTrackerTest {
     @JvmField
     val mockClientManagerRule = MockClientManagerRule()
 
-    protected lateinit var project: Project
-    protected lateinit var fixture: CodeInsightTestFixture
-    protected lateinit var telemetryServiceSpy: TelemetryService
-    protected lateinit var batcher: TelemetryBatcher
-    protected lateinit var exploreActionManagerMock: CodeWhispererExplorerActionManager
-    protected lateinit var sut: UserWrittenCodeTracker
+    lateinit var project: Project
+    lateinit var fixture: CodeInsightTestFixture
+    lateinit var telemetryServiceSpy: TelemetryService
+    lateinit var batcher: TelemetryBatcher
+    lateinit var exploreActionManagerMock: CodeWhispererExplorerActionManager
+    lateinit var sut: UserWrittenCodeTracker
 
     init {
         this.projectRule = PythonCodeInsightTestFixtureRule()
@@ -113,7 +109,6 @@ internal class UserWrittenCodeTrackerTest {
         assertThat(sut.qInvocationCount.get()).isEqualTo(2)
     }
 
-
     @Test
     fun `test tracker is not listening to multi char input more than 50, but works for less than 50, and will not increment totalTokens - add new code`() {
         sut = UserWrittenCodeTracker.getInstance(project)
@@ -153,7 +148,6 @@ internal class UserWrittenCodeTrackerTest {
         assertThat(sut.userWrittenCodeCharacterCount.getOrDefault(CodeWhispererPython.INSTANCE, 0)).isEqualTo(0)
     }
 
-
     @Test
     fun `test tracker is listening to document changes only when Q is not editing`() {
         sut = UserWrittenCodeTracker.getInstance(project)
@@ -180,7 +174,6 @@ internal class UserWrittenCodeTrackerTest {
         }
         assertThat(sut.userWrittenCodeCharacterCount[CodeWhispererPython.INSTANCE]).isEqualTo(newCode.length.toLong())
         assertThat(sut.userWrittenCodeLineCount[CodeWhispererPython.INSTANCE]).isEqualTo(1)
-
     }
 
     private fun Editor.appendString(string: String) {
@@ -188,5 +181,4 @@ internal class UserWrittenCodeTrackerTest {
         document.insertString(currentOffset, string)
         caretModel.moveToOffset(currentOffset + string.length)
     }
-
 }
