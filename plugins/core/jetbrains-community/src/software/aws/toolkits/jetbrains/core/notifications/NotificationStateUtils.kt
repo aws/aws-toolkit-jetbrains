@@ -10,8 +10,6 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.util.xmlb.Converter
-import com.intellij.util.xmlb.annotations.Attribute
-import com.intellij.util.xmlb.annotations.Property
 import software.aws.toolkits.core.utils.ETagProvider
 import java.time.Duration
 import java.time.Instant
@@ -23,15 +21,12 @@ class InstantConverter : Converter<Instant>() {
 }
 
 data class DismissedNotification(
-    @Attribute
     val id: String = "",
-    @Attribute(converter = InstantConverter::class)
     val dismissedAt: Instant = Instant.now(),
 )
 
 data class NotificationDismissalConfiguration(
-    @Property
-    var dismissedNotifications: MutableSet<DismissedNotification> = mutableSetOf(),
+    val dismissedNotifications: MutableSet<DismissedNotification> = mutableSetOf(),
 )
 
 @Service
@@ -43,7 +38,6 @@ class NotificationDismissalState : PersistentStateComponent<NotificationDismissa
     override fun getState(): NotificationDismissalConfiguration = state
 
     override fun loadState(state: NotificationDismissalConfiguration) {
-        this.state.dismissedNotifications.clear()
         this.state.dismissedNotifications.addAll(state.dismissedNotifications)
         cleanExpiredNotifications()
     }
