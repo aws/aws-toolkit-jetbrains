@@ -137,6 +137,7 @@ fun getCodeScanIssueDetailsHtml(
     }
 
     val fixLoadingSection = """
+        <a name="fixLoadingSection"></a>
         <div align="center" bgcolor="#2b2b2b" style="margin: 20px;">
             <font size="7" color="#ffffff" face="Arial">
                 &nbsp;&nbsp;&nbsp;&nbsp;...&nbsp;&nbsp;&nbsp;&nbsp;
@@ -145,6 +146,7 @@ fun getCodeScanIssueDetailsHtml(
     """.trimIndent()
 
     val fixFailureSection = """
+        <a name="fixFailureSection"></a>
         <div align="center" bgcolor="#2b2b2b" style="margin: 20px;">
             <font size="4" color="#e6e6e6" face="Arial">
                 <br>Amazon Q failed to generate fix. Please try again<br>
@@ -192,6 +194,7 @@ private fun createSuggestedFixSection(issue: CodeWhispererCodeScanIssue, suggest
             |${it.code.trim()}
             |``` 
             |</div>
+            |<a name="codeFixActions"></a>
             |<div>
             |    <a href="amazonq://issue/openDiff-${issue.findingId}">
             |        <font size="+1"><i>&#x2194;</i></font> <b>Open Diff</b>

@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ContentChecksu
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateTaskAssistConversationRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateTaskAssistConversationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.Dimension
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTaskAssistCodeGenerationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.IdeCategory
 import software.amazon.awssdk.services.codewhispererruntime.model.OperatingSystem
@@ -83,6 +84,33 @@ class FeatureDevClient(
             requestBuilder.telemetryEvent { telemetryEventBuilder ->
                 telemetryEventBuilder.featureDevEvent {
                     it.conversationId(conversationId)
+                }
+            }
+            requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+            requestBuilder.userContext(featureDevUserContext)
+        }
+
+    fun sendFeatureDevMetricData(operationName: String, result: String): SendTelemetryEventResponse =
+        bearerClient().sendTelemetryEvent { requestBuilder ->
+            requestBuilder.telemetryEvent { telemetryEventBuilder ->
+                telemetryEventBuilder.metricData {
+                    it
+                        .metricName("Operation")
+                        .metricValue(1.0)
+                        .timestamp(Instant.now())
+                        .product("FeatureDev")
+                        .dimensions(
+                            listOf(
+                                Dimension.builder()
+                                    .name("operationName")
+                                    .value(operationName)
+                                    .build(),
+                                Dimension.builder()
+                                    .name("result")
+                                    .value(result)
+                                    .build()
+                            )
+                        )
                 }
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())

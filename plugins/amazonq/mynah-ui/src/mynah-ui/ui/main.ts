@@ -10,7 +10,7 @@ import {
     MynahUI,
     MynahUIDataModel,
     NotificationType,
-    ProgressField,
+    ProgressField, QuickActionCommand,
     ReferenceTrackerInformation
 } from '@aws/mynah-ui-chat'
 import './styles/dark.scss'
@@ -40,7 +40,8 @@ export const createMynahUI = (
     codeTransformInitEnabled: boolean,
     docInitEnabled: boolean,
     codeScanEnabled: boolean,
-    codeTestEnabled: boolean
+    codeTestEnabled: boolean,
+    highlightCommand?: QuickActionCommand,
 ) => {
     let disclaimerCardActive = !disclaimerAcknowledged
 
@@ -87,6 +88,7 @@ export const createMynahUI = (
         isDocEnabled,
         isCodeScanEnabled,
         isCodeTestEnabled,
+        highlightCommand
     })
 
     // eslint-disable-next-line prefer-const
@@ -184,12 +186,12 @@ export const createMynahUI = (
                 promptInputDisabledState: tabsStorage.isTabDead(tabID) || !enabled,
             })
         },
-        onAsyncEventProgress: (tabID: string, inProgress: boolean, message: string | undefined) => {
+        onAsyncEventProgress: (tabID: string, inProgress: boolean, message: string | undefined, cancelButtonWhenLoading: boolean = false) => {
             if (inProgress) {
                 mynahUI.updateStore(tabID, {
                     loadingChat: true,
                     promptInputDisabledState: true,
-                    cancelButtonWhenLoading: true,
+                    cancelButtonWhenLoading,
                 })
                 if (message) {
                     mynahUI.updateLastChatAnswer(tabID, {
