@@ -28,9 +28,7 @@ class NotificationDismissalState : PersistentStateComponent<NotificationDismissa
     private var state = NotificationDismissalConfiguration()
     private val retentionPeriod = Duration.ofDays(60) // 2 months
 
-    override fun getState(): NotificationDismissalConfiguration {
-        return state
-    }
+    override fun getState(): NotificationDismissalConfiguration = state
 
     override fun loadState(state: NotificationDismissalConfiguration) {
         this.state = state
