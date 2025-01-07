@@ -54,6 +54,7 @@ val ALLOWED_CODE_EXTENSIONS = setOf(
     "f77",
     "f90",
     "f95",
+    "feature",
     "flow",
     "for",
     "fs",
