@@ -157,17 +157,24 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
             return@calculateIfIamIdentityCenterConnection customizationUiItems
         }
 
+    /**
+     * Gets the active customization for a user. If a user has manually selected a customization,
+     * respect that choice. If a user has not selected a customization, check if they have a customization
+     * assigned to them via an AB feature. If so, use that customization.
+     */
     override fun activeCustomization(project: Project): CodeWhispererCustomization? {
-        val result = calculateIfIamIdentityCenterConnection(project) { connectionIdToActiveCustomizationArn[it.id] }
+        val selectedCustomization = calculateIfIamIdentityCenterConnection(project) { connectionIdToActiveCustomizationArn[it.id] }
 
-        // A/B case
-        val customizationFeature = CodeWhispererFeatureConfigService.getInstance().getCustomizationFeature()
-        if (customizationFeature == null || customizationFeature.value.stringValue().isEmpty()) return result
-        return CodeWhispererCustomization(
-            arn = customizationFeature.value.stringValue(),
-            name = customizationFeature.variation,
-            description = result?.description
-        )
+        if (selectedCustomization != null) {
+            return selectedCustomization
+        } else {
+            val customizationOverride = CodeWhispererFeatureConfigService.getInstance().getCustomizationFeature()
+            if (customizationOverride == null || customizationOverride.value.stringValue().isEmpty()) return null
+            return CodeWhispererCustomization(
+                arn = customizationOverride.value.stringValue(),
+                name = customizationOverride.variation,
+            )
+        }
     }
 
     override fun switchCustomization(project: Project, newCustomization: CodeWhispererCustomization?) {
