@@ -15,7 +15,7 @@ import java.time.Instant
 
 data class DismissedNotification(
     var id: String = "",
-    var dismissedAt: String = Instant.now().toEpochMilli().toString()
+    var dismissedAt: String = Instant.now().toEpochMilli().toString(),
 )
 
 data class NotificationDismissalConfiguration(
