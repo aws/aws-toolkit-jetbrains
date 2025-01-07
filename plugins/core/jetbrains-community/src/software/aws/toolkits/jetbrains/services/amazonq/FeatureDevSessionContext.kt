@@ -189,8 +189,12 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
 
         createTemporaryZipFileAsync { zipOutput ->
             filesToIncludeFlow.collect { file ->
-                val relativePath = Path(file.path).relativeTo(projectRoot.toNioPath())
-                zipOutput.putNextEntry(relativePath.toString(), Path(file.path))
+                try {
+                    val relativePath = Path(file.path).relativeTo(projectRoot.toNioPath())
+                    zipOutput.putNextEntry(relativePath.toString(), Path(file.path))
+                } catch (e: NoSuchFileException) {
+                    // Noop: Skip if file was deleted
+                }
             }
         }
     }.toFile()

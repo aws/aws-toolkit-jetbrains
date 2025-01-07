@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Amazon Q Code Transformation: allow PostgreSQL as target DB for SQL conversions"
+}
