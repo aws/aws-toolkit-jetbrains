@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.core.notifications
 
 import com.intellij.openapi.components.PersistentStateComponent
-import com.intellij.openapi.components.RoamingType
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
@@ -59,7 +58,7 @@ class NotificationDismissalState : PersistentStateComponent<NotificationDismissa
 }
 
 @Service
-@State(name = "notificationEtag", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
+@State(name = "notificationEtag", storages = [Storage("aws.xml")])
 class NotificationEtagState : PersistentStateComponent<NotificationEtagConfiguration>, ETagProvider {
     private val state = NotificationEtagConfiguration()
 
