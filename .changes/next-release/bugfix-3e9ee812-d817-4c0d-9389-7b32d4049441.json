@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Corrects an issue where documentation updating progress text was erroneously replaced with generation flow text."
+}
