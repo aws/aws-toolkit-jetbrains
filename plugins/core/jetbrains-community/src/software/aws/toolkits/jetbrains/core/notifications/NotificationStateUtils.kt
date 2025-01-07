@@ -9,41 +9,31 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
-import com.intellij.util.xmlb.Converter
-import com.intellij.util.xmlb.annotations.Attribute
-import com.intellij.util.xmlb.annotations.Property
 import software.aws.toolkits.core.utils.ETagProvider
 import java.time.Duration
 import java.time.Instant
 
-class InstantConverter : Converter<Instant>() {
-    override fun toString(value: Instant): String = value.toEpochMilli().toString()
-
-    override fun fromString(value: String): Instant = Instant.ofEpochMilli(value.toLong())
-}
-
 data class DismissedNotification(
-    @Attribute
-    val id: String = "",
-    @Attribute(converter = InstantConverter::class)
-    val dismissedAt: Instant = Instant.now(),
+    var id: String = "",
+    var dismissedAt: String = Instant.now().toEpochMilli().toString()
 )
 
 data class NotificationDismissalConfiguration(
-    @Property
-    val dismissedNotifications: MutableSet<DismissedNotification> = mutableSetOf(),
+    var dismissedNotifications: MutableSet<DismissedNotification> = mutableSetOf(),
 )
 
 @Service
-@State(name = "notificationDismissals", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
+@State(name = "notificationDismissals", storages = [Storage("aws.xml")])
 class NotificationDismissalState : PersistentStateComponent<NotificationDismissalConfiguration> {
-    private val state = NotificationDismissalConfiguration()
+    private var state = NotificationDismissalConfiguration()
     private val retentionPeriod = Duration.ofDays(60) // 2 months
 
-    override fun getState(): NotificationDismissalConfiguration = state
+    override fun getState(): NotificationDismissalConfiguration {
+        return state
+    }
 
     override fun loadState(state: NotificationDismissalConfiguration) {
-        this.state.dismissedNotifications.addAll(state.dismissedNotifications)
+        this.state = state
         cleanExpiredNotifications()
     }
 
@@ -61,7 +51,7 @@ class NotificationDismissalState : PersistentStateComponent<NotificationDismissa
     private fun cleanExpiredNotifications() {
         val now = Instant.now()
         state.dismissedNotifications.removeAll { notification ->
-            Duration.between(notification.dismissedAt, now) > retentionPeriod
+            Duration.between(Instant.ofEpochMilli(notification.dismissedAt.toLong()), now) > retentionPeriod
         }
     }
 

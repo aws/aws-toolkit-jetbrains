@@ -23,7 +23,7 @@ class NotificationDismissalStateTest {
     fun `notifications less than 2 months old are not removed`() {
         val recentNotification = DismissedNotification(
             id = "recent-notification",
-            dismissedAt = Instant.now().minus(30, ChronoUnit.DAYS)
+            dismissedAt = Instant.now().minus(30, ChronoUnit.DAYS).toEpochMilli().toString()
         )
 
         state.loadState(NotificationDismissalConfiguration(mutableSetOf(recentNotification)))
@@ -39,7 +39,7 @@ class NotificationDismissalStateTest {
     fun `notifications older than 2 months are removed`() {
         val oldNotification = DismissedNotification(
             id = "old-notification",
-            dismissedAt = Instant.now().minus(61, ChronoUnit.DAYS)
+            dismissedAt = Instant.now().minus(61, ChronoUnit.DAYS).toEpochMilli().toString()
         )
 
         state.loadState(NotificationDismissalConfiguration(mutableSetOf(oldNotification)))
@@ -54,11 +54,11 @@ class NotificationDismissalStateTest {
     fun `mixed age notifications are handled correctly`() {
         val recentNotification = DismissedNotification(
             id = "recent-notification",
-            dismissedAt = Instant.now().minus(30, ChronoUnit.DAYS)
+            dismissedAt = Instant.now().minus(30, ChronoUnit.DAYS).toEpochMilli().toString()
         )
         val oldNotification = DismissedNotification(
             id = "old-notification",
-            dismissedAt = Instant.now().minus(61, ChronoUnit.DAYS)
+            dismissedAt = Instant.now().minus(61, ChronoUnit.DAYS).toEpochMilli().toString()
         )
 
         state.loadState(
@@ -85,11 +85,11 @@ class NotificationDismissalStateTest {
     fun `clean up happens on load state`() {
         val oldNotification = DismissedNotification(
             id = "old-notification",
-            dismissedAt = Instant.now().minus(61, ChronoUnit.DAYS)
+            dismissedAt = Instant.now().minus(61, ChronoUnit.DAYS).toEpochMilli().toString()
         )
         val recentNotification = DismissedNotification(
             id = "recent-notification",
-            dismissedAt = Instant.now()
+            dismissedAt = Instant.now().toEpochMilli().toString()
         )
 
         state.loadState(
