@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Amazon Q: Fix context menu displaying when typing @, even though input is disallowed"
+}
