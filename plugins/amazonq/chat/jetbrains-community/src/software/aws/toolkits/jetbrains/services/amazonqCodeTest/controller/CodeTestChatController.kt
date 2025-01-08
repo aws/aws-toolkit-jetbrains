@@ -299,7 +299,8 @@ class CodeTestChatController(
                 AmazonqTelemetry.utgGenerateTests(
                     cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
                     hasUserPromptSupplied = session.hasUserPromptSupplied,
-                    isSupportedLanguage = false,
+                    isSupportedFile = fileInfo.filePath.startsWith(projectRoot.toString()),
+                    isSupportedLanguage = isLanguageSupported(fileInfo.fileLanguage.languageId),
                     credentialStartUrl = getStartUrl(project),
                     result = MetricResult.Succeeded,
                     perfClientLatency = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration),
@@ -600,6 +601,7 @@ class CodeTestChatController(
                 AmazonqTelemetry.utgGenerateTests(
                     cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
                     hasUserPromptSupplied = session.hasUserPromptSupplied,
+                    isSupportedFile = true,
                     isSupportedLanguage = true,
                     credentialStartUrl = getStartUrl(project = context.project),
                     jobGroup = session.testGenerationJobGroupName,
@@ -794,6 +796,7 @@ class CodeTestChatController(
                 AmazonqTelemetry.utgGenerateTests(
                     cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
                     hasUserPromptSupplied = session.hasUserPromptSupplied,
+                    isSupportedFile = true,
                     isSupportedLanguage = true,
                     credentialStartUrl = getStartUrl(project = context.project),
                     jobGroup = session.testGenerationJobGroupName,

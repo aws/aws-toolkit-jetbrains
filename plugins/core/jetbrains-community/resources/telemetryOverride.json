@@ -216,6 +216,11 @@
             "description": "True if user selected code snippet as input else false"
         },
         {
+            "name": "isSupportedFile",
+            "type": "boolean",
+            "description": "Indicate if the file is supported based on file path"
+        },
+        {
             "name": "isSupportedLanguage",
             "type": "boolean",
             "description": "Indicate if the language is supported"
@@ -572,6 +577,9 @@
                 {
                     "type": "isCodeBlockSelected",
                     "required": false
+                },
+                {
+                    "type": "isSupportedFile"
                 },
                 {
                     "type": "isSupportedLanguage"
