@@ -697,12 +697,15 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             LOG.debug("No nextInvocationContext found, nothing to promote.")
             return
         }
+        //check whether select index is 0
 
         nextInvocationContext = null
 
         val newPopup = CodeWhispererPopupManager.getInstance().initPopup()
-
         val updatedNextStates = nextStates.copy(popup = newPopup)
+        addPopupChildDisposables(nextStates.popup)
+        Disposer.register(newPopup, updatedNextStates)
+        CodeWhispererPopupManager.getInstance().initPopupListener(updatedNextStates)
 
         runInEdt {
             CodeWhispererPopupManager.getInstance().changeStates(
@@ -713,6 +716,8 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 false //
             )
         }
+
+        prefetchNextInvocationAsync(updatedNextStates)
 
         LOG.debug("Promoted nextInvocationContext to current session and displayed next recommendation.")
     }

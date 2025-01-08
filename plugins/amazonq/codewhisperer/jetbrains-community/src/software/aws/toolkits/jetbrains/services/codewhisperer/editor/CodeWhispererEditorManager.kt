@@ -65,8 +65,10 @@ class CodeWhispererEditorManager {
                     selectedIndex,
                     detail.completionType
                 )
-                val service = CodeWhispererService.getInstance()
-                service.promoteNextInvocationIfAvailable()
+                if (selectedIndex == 0) {
+                    val service = CodeWhispererService.getInstance()
+                    service.promoteNextInvocationIfAvailable()
+                }
                 ApplicationManager.getApplication().messageBus.syncPublisher(
                     CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
                 ).afterAccept(states, sessionContext, rangeMarker)
