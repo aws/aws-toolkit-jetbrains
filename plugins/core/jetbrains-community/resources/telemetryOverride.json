@@ -216,6 +216,11 @@
             "description": "True if user selected code snippet as input else false"
         },
         {
+            "name": "isFileInWorkspace",
+            "type": "boolean",
+            "description": "Indicate if the file is in the current workspace."
+        },
+        {
             "name": "isSupportedLanguage",
             "type": "boolean",
             "description": "Indicate if the language is supported"
@@ -572,6 +577,9 @@
                 {
                     "type": "isCodeBlockSelected",
                     "required": false
+                },
+                {
+                    "type": "isFileInWorkspace"
                 },
                 {
                     "type": "isSupportedLanguage"
