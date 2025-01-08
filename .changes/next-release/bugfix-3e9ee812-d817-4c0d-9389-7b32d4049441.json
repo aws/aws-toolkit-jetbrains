@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix incorrect text shown while updating documentation in /doc"
+}
