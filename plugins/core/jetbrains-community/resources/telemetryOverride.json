@@ -216,7 +216,7 @@
             "description": "True if user selected code snippet as input else false"
         },
         {
-            "name": "isSupportedFile",
+            "name": "isFileInWorkspace",
             "type": "boolean",
             "description": "Indicate if the file is supported based on file path"
         },
@@ -579,7 +579,7 @@
                     "required": false
                 },
                 {
-                    "type": "isSupportedFile"
+                    "type": "isFileInWorkspace"
                 },
                 {
                     "type": "isSupportedLanguage"
