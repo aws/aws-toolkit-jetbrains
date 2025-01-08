@@ -12,6 +12,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
@@ -158,6 +159,10 @@ class CodeTestChatController(
         // check if IDE has active file open, yes return (fileName and filePath) else return null
         val project = context.project
         val fileInfo = checkActiveFileInIDE(project, message) ?: return
+        val projectRoot = Path.of(
+            project.basePath ?: project.guessProjectDir()?.path
+                ?: error("Cannot guess base directory for project ${project.name}")
+        )
         session.programmingLanguage = fileInfo.fileLanguage
         if (session.isGeneratingTests === true) {
             return
@@ -185,7 +190,8 @@ class CodeTestChatController(
             message.tabId,
             false
         )
-        if (isLanguageSupported(fileInfo.fileLanguage.languageId)) {
+        val supported = fileInfo.filePath.startsWith(projectRoot.toString()) && isLanguageSupported(fileInfo.fileLanguage.languageId)
+        if (supported) {
             // Send Capability card to chat
             codeTestChatHelper.addNewMessage(
                 CodeTestChatMessageContent(informationCard = true, message = null, type = ChatMessageType.Answer, canBeVoted = false),
@@ -231,9 +237,15 @@ class CodeTestChatController(
                 }
                 .build()
 
-            val messageContent = "<span style=\"color: #EE9D28;\">&#9888;<b> ${fileInfo.fileLanguage.languageId} is not a " +
-                "language I support specialized unit test generation for at the moment.</b><br></span>The languages " +
-                "I support now are Python and Java. I can still provide examples, instructions and code suggestions."
+            val messageContent = if (fileInfo.filePath.startsWith(projectRoot.toString())) {
+                "<span style=\"color: #EE9D28;\">&#9888;<b> ${fileInfo.fileLanguage.languageId} is not a " +
+                    "language I support specialized unit test generation for at the moment.</b><br></span>The languages " +
+                    "I support now are Python and Java. I can still provide examples, instructions and code suggestions."
+            } else {
+                "<span style=\"color: #EE9D28;\">&#9888;<b> I can't generate tests for ${fileInfo.fileName}" +
+                    " because it's outside the project directory.</b><br></span> " +
+                    "I can still provide examples, instructions and code suggestions."
+            }
 
             codeTestChatHelper.addNewMessage(
                 CodeTestChatMessageContent(
@@ -288,7 +300,8 @@ class CodeTestChatController(
                 AmazonqTelemetry.utgGenerateTests(
                     cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
                     hasUserPromptSupplied = session.hasUserPromptSupplied,
-                    isSupportedLanguage = false,
+                    isFileInWorkspace = fileInfo.filePath.startsWith(projectRoot.toString()),
+                    isSupportedLanguage = isLanguageSupported(fileInfo.fileLanguage.languageId),
                     credentialStartUrl = getStartUrl(project),
                     result = MetricResult.Succeeded,
                     perfClientLatency = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration),
@@ -590,6 +603,7 @@ class CodeTestChatController(
                 AmazonqTelemetry.utgGenerateTests(
                     cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
                     hasUserPromptSupplied = session.hasUserPromptSupplied,
+                    isFileInWorkspace = true,
                     isSupportedLanguage = true,
                     credentialStartUrl = getStartUrl(project = context.project),
                     jobGroup = session.testGenerationJobGroupName,
@@ -785,6 +799,7 @@ class CodeTestChatController(
                 AmazonqTelemetry.utgGenerateTests(
                     cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
                     hasUserPromptSupplied = session.hasUserPromptSupplied,
+                    isFileInWorkspace = true,
                     isSupportedLanguage = true,
                     credentialStartUrl = getStartUrl(project = context.project),
                     jobGroup = session.testGenerationJobGroupName,
