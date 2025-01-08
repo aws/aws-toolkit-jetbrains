@@ -113,17 +113,37 @@ class CodeWhispererModelConfiguratorTest {
     }
 
     @Test
-    fun `should override customization arn if there is one under AB test`() {
+    fun `should not override customization arn if there is one under AB test and manual selection has been made`() {
         val ssoConn = spy(LegacyManagedBearerSsoConnection(region = "us-east-1", startUrl = "url 1", scopes = Q_SCOPES))
         ToolkitConnectionManager.getInstance(projectRule.project).switchConnection(ssoConn)
 
-        sut.switchCustomization(projectRule.project, CodeWhispererCustomization("foo", "customization_1", "description_1"))
-        assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(CodeWhispererCustomization("foo", "customization_1", "description_1"))
+        sut.switchCustomization(projectRule.project, CodeWhispererCustomization("selectedCustomizationArn", "customization_1", "description_1"))
+        assertThat(sut.activeCustomization(projectRule.project))
+            .isEqualTo(CodeWhispererCustomization("selectedCustomizationArn", "customization_1", "description_1"))
 
         abManager.stub {
             on { getCustomizationFeature() }.thenReturn(FeatureContext("customizationArnOverride", "foo", FeatureValue.builder().stringValue("bar").build()))
         }
-        assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(CodeWhispererCustomization("bar", "foo", "description_1"))
+        assertThat(sut.activeCustomization(projectRule.project))
+            .isEqualTo(CodeWhispererCustomization("selectedCustomizationArn", "customization_1", "description_1"))
+    }
+
+    @Test
+    fun `should override customization arn if there is one under AB test and manual selection has not been made`() {
+        val ssoConn = spy(LegacyManagedBearerSsoConnection(region = "us-east-1", startUrl = "url 1", scopes = Q_SCOPES))
+        ToolkitConnectionManager.getInstance(projectRule.project).switchConnection(ssoConn)
+
+        sut.switchCustomization(projectRule.project, CodeWhispererCustomization("selectedCustomizationArn", "customization_1", "description_1"))
+        assertThat(sut.activeCustomization(projectRule.project))
+            .isEqualTo(CodeWhispererCustomization("selectedCustomizationArn", "customization_1", "description_1"))
+        sut.invalidateCustomization("selectedCustomizationArn")
+
+        abManager.stub {
+            on { getCustomizationFeature() }.thenReturn(
+                FeatureContext("customizationArnOverride", "foo", FeatureValue.builder().stringValue("overrideArn").build())
+            )
+        }
+        assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(CodeWhispererCustomization("overrideArn", "foo", null))
     }
 
     @Test
