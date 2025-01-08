@@ -124,7 +124,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     private fun ignoreFileByExtension(file: VirtualFile) =
         !isFileExtensionAllowed(file)
 
-    suspend fun ignoreFile(file: VirtualFile): Boolean = ignoreFile(file.path)
+    suspend fun ignoreFile(file: VirtualFile): Boolean = ignoreFile(file.presentableUrl)
 
     suspend fun ignoreFile(path: String): Boolean {
         // this method reads like something a JS dev would write and doesn't do what the author thinks
