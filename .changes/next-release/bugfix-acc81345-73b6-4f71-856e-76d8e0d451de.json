@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix incorrect accept and reject buttons shows up while hovering over the generated file"
+}
