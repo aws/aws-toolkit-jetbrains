@@ -512,6 +512,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 AmazonqTelemetry.utgGenerateTests(
                     cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
                     hasUserPromptSupplied = session.hasUserPromptSupplied,
+                    isSupportedFile = true,
                     isSupportedLanguage = true,
                     credentialStartUrl = getStartUrl(project),
                     jobGroup = session.testGenerationJobGroupName,
