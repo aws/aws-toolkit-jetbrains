@@ -44,6 +44,13 @@ suspend fun DocController.onCodeGeneration(session: DocSession, message: String,
 
         session.send(sessionMessage) // Trigger code generation
 
+        if (session.sessionState.token
+                ?.token
+                ?.isCancellationRequested() == true
+        ) {
+            return
+        }
+
         val state = session.sessionState
 
         var filePaths: List<NewFileZipInfo> = emptyList()

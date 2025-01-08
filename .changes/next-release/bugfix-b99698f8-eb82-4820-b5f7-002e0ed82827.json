@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "/doc: Fix code generation error when cancelling a documentation task"
+}
