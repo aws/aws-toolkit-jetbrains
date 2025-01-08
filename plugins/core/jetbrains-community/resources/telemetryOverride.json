@@ -218,7 +218,7 @@
         {
             "name": "isFileInWorkspace",
             "type": "boolean",
-            "description": "Indicate if the file is supported based on file path"
+            "description": "Indicate if the file is in the current workspace."
         },
         {
             "name": "isSupportedLanguage",
