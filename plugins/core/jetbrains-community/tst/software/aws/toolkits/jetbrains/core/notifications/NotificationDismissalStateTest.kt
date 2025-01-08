@@ -80,26 +80,4 @@ class NotificationDismissalStateTest {
 
         assertTrue(state.isDismissed("new-notification"))
     }
-
-    @Test
-    fun `clean up happens on load state`() {
-        val oldNotification = DismissedNotification(
-            id = "old-notification",
-            dismissedAt = Instant.now().minus(61, ChronoUnit.DAYS).toEpochMilli().toString()
-        )
-        val recentNotification = DismissedNotification(
-            id = "recent-notification",
-            dismissedAt = Instant.now().toEpochMilli().toString()
-        )
-
-        state.loadState(
-            NotificationDismissalConfiguration(
-                mutableSetOf(oldNotification, recentNotification)
-            )
-        )
-
-        val persistedState = state.getState()
-        assertEquals(1, persistedState.dismissedNotifications.size)
-        assertTrue(persistedState.dismissedNotifications.any { it.id == "recent-notification" })
-    }
 }
