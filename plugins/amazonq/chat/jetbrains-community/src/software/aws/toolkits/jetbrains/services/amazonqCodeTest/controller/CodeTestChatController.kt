@@ -23,6 +23,7 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
+import software.amazon.awssdk.services.codewhispererruntime.model.IdeCategory
 import software.amazon.awssdk.services.codewhispererruntime.model.Position
 import software.amazon.awssdk.services.codewhispererruntime.model.Range
 import software.amazon.awssdk.services.codewhispererruntime.model.Reference
@@ -584,6 +585,7 @@ class CodeTestChatController(
                     session.testGenerationJob,
                     session.testGenerationJobGroupName,
                     session.programmingLanguage,
+                    IdeCategory.JETBRAINS,
                     session.numberOfUnitTestCasesGenerated,
                     session.numberOfUnitTestCasesGenerated,
                     session.linesOfCodeGenerated,
@@ -780,6 +782,7 @@ class CodeTestChatController(
                     session.testGenerationJob,
                     session.testGenerationJobGroupName,
                     session.programmingLanguage,
+                    IdeCategory.JETBRAINS,
                     session.numberOfUnitTestCasesGenerated,
                     0,
                     session.linesOfCodeGenerated,
