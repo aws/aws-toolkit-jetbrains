@@ -829,7 +829,7 @@ class DocController(
                 else -> emptyList()
             }
 
-            if (!filePaths.isEmpty()) {
+            if (filePaths.isNotEmpty()) {
                 processOpenDiff(
                     message = IncomingDocMessage.OpenDiff(tabId = tabId, filePath = filePaths[0].zipFilePath, deleted = false)
                 )
