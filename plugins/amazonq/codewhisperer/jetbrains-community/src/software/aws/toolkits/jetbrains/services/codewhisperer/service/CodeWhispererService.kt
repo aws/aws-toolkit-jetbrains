@@ -16,11 +16,13 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.VisualPosition
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
+import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.messages.Topic
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
@@ -62,6 +64,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhisper
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJson
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
@@ -96,6 +99,7 @@ import java.util.concurrent.TimeUnit
 class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
     private val codeInsightSettingsFacade = CodeInsightsSettingsFacade()
     private var refreshFailure: Int = 0
+    private var nextInvocationContext: InvocationContext? = null
 
     init {
         Disposer.register(this, codeInsightSettingsFacade)
@@ -524,6 +528,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 return null
             }
         } else {
+            prefetchNextInvocationAsync(nextStates)
             updateCodeWhisperer(nextStates, isPopupShowing)
         }
         return nextStates
@@ -616,6 +621,135 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
 
     private fun updateCodeWhisperer(states: InvocationContext, recommendationAdded: Boolean) {
         CodeWhispererPopupManager.getInstance().changeStates(states, 0, "", true, recommendationAdded)
+    }
+
+    private fun prefetchNextInvocationAsync(currStates: InvocationContext) {
+        val firstValidRecommendation =
+            currStates.recommendationContext.details.firstOrNull { !it.isDiscarded && it.recommendation.content().isNotEmpty() }
+        if (firstValidRecommendation == null) return;
+        cs.launch(getCoroutineBgContext()) {
+
+            val nextCaretPosition = calculateNextCaretPosition(currStates.requestContext, firstValidRecommendation)
+            val nextFileContextInfo = createNextFileContextInfo(currStates.requestContext, firstValidRecommendation)
+
+            //TODO yifan reconstruct requestContext
+            val nextRequestContext =  RequestContext(
+                project = currStates.requestContext.project,
+                editor = currStates.requestContext.editor,
+                triggerTypeInfo = currStates.requestContext.triggerTypeInfo,
+                caretPosition = nextCaretPosition,
+                fileContextInfo = nextFileContextInfo,
+                supplementalContextDeferred = CompletableDeferred<SupplementalContextInfo?>().apply { complete(null) },
+                connection = currStates.requestContext.connection,
+                latencyContext = currStates.requestContext.latencyContext,
+                customizationArn = currStates.requestContext.customizationArn
+            )
+
+            LOG.warn("nextRequestContext is: $nextRequestContext")
+            val newVisualPosition = withContext(EDT){
+                runReadAction {
+                    nextRequestContext.editor.offsetToVisualPosition(nextRequestContext.caretPosition.offset)
+                }
+            }
+            try {
+                val responseIterable = CodeWhispererClientAdaptor.getInstance(nextRequestContext.project)
+                    .generateCompletionsPaginator(
+                        buildCodeWhispererRequest(
+                            nextRequestContext.fileContextInfo,
+                            nextRequestContext.awaitSupplementalContext(),
+                            nextRequestContext.customizationArn
+                        )
+                    )
+                val firstResponse = responseIterable.firstOrNull()
+                if (firstResponse != null) {
+                    LOG.warn("next recommendation is: ${firstResponse.completions().first().content()} ")
+                    val validatedResponse = validateResponse(firstResponse)
+                    val responseContext = ResponseContext(
+                        firstResponse.sdkHttpResponse().headers()
+                            .getOrDefault(KET_SESSION_ID, listOf(firstResponse.responseMetadata().requestId()))[0]
+                    )
+                    val detailContexts = withContext(EDT) {
+                        runReadAction {
+                            CodeWhispererRecommendationManager.getInstance().buildDetailContext(
+                                nextRequestContext,
+                                "",
+                                validatedResponse.completions(),
+                                validatedResponse.responseMetadata().requestId()
+                            )
+                        }
+                    }
+                    val recommendationContext = RecommendationContext(detailContexts, "","", newVisualPosition)
+                    val JBPopup = withContext(EDT) {
+                        JBPopupFactory.getInstance().createMessage("dummy popup")
+                    }
+                    val nextStates = InvocationContext(nextRequestContext, responseContext, recommendationContext, JBPopup)
+                    nextInvocationContext = nextStates
+                    LOG.debug("Prefetched next invocation stored in nextInvocationContext")
+                }
+            } catch (ex: Exception) {
+                LOG.warn("Failed to prefetch next codewhisperer invocation: ${ex.message}")
+            }
+        }
+    }
+
+    fun promoteNextInvocationIfAvailable() {
+        val nextStates = nextInvocationContext ?: run {
+            LOG.debug("No nextInvocationContext found, nothing to promote.")
+            return
+        }
+
+        nextInvocationContext = null
+
+        val newPopup = CodeWhispererPopupManager.getInstance().initPopup()
+
+        val updatedNextStates = nextStates.copy(popup = newPopup)
+
+        runInEdt {
+            CodeWhispererPopupManager.getInstance().changeStates(
+                updatedNextStates,
+                0,
+                "",
+                true,
+                false //
+            )
+        }
+
+        LOG.debug("Promoted nextInvocationContext to current session and displayed next recommendation.")
+    }
+
+    private fun calculateNextCaretPosition(
+        currentRequestContext: RequestContext,
+        firstValidRecommendation: DetailContext
+    ): CaretPosition {
+        val lastLine = currentRequestContext.fileContextInfo.caretContext.leftContextOnCurrentLine
+        val indentation = lastLine.takeWhile { it == ' ' || it == '\t' }
+        val recommendedText = buildString {
+            val original = firstValidRecommendation.recommendation.content()
+            append(indentation)
+            append(original)
+            if (!original.endsWith("\n")) {
+                append("\n")
+            }
+        }
+
+        val lines = recommendedText.split("\n")
+        val lineCount = lines.size - 1
+        val lastLineLength = if (lines.size > 1) lines[lines.size - 2].length else 0
+
+        val newLine = currentRequestContext.caretPosition.line + lineCount
+        val newOffset = currentRequestContext.caretPosition.offset + lastLineLength
+
+        return CaretPosition(line = newLine, offset = newOffset)
+    }
+
+    private fun createNextFileContextInfo(
+        requestContext: RequestContext,
+        firstValidRecommendation: DetailContext
+    ): FileContextInfo {
+        val caretContext = requestContext.fileContextInfo.caretContext.copy(
+            leftFileContext = requestContext.fileContextInfo.caretContext.leftFileContext + firstValidRecommendation.recommendation.content()
+        )
+        return requestContext.fileContextInfo.copy(caretContext = caretContext)
     }
 
     private fun sendDiscardedUserDecisionEventForAll(
