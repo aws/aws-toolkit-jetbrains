@@ -110,7 +110,7 @@ fun getIconForStep(targetStep: DocGenerationStep, currentStep: DocGenerationStep
     else -> checkIcons["wait"]
 }
 
-fun docGenerationProgressMessage(currentStep: DocGenerationStep, mode: Mode): String {
+fun docGenerationProgressMessage(currentStep: DocGenerationStep, mode: Mode?): String {
     val isCreationMode = mode == Mode.CREATE
     val baseLine = if (isCreationMode) message("amazonqDoc.progress_message.creating") else message("amazonqDoc.progress_message.updating")
 

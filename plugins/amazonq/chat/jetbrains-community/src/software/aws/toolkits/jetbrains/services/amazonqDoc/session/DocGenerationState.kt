@@ -60,8 +60,8 @@ class DocGenerationState(
                 message = action.msg,
                 intent = Intent.DOC
             )
-
-            val codeGenerationResult = generateCode(codeGenerationId = response.codeGenerationId(), token)
+            val mode = if (action.msg == message("amazonqDoc.session.create")) Mode.CREATE else null
+            val codeGenerationResult = generateCode(codeGenerationId = response.codeGenerationId(), mode, token)
             numberOfReferencesGenerated = codeGenerationResult.references.size
             numberOfFilesGenerated = codeGenerationResult.newFiles.size
             codeGenerationRemainingIterationCount = codeGenerationResult.codeGenerationRemainingIterationCount
@@ -134,7 +134,7 @@ fun getFileSummaryPercentage(input: String): Double {
     return percentage
 }
 
-private suspend fun DocGenerationState.generateCode(codeGenerationId: String, token: CancellationTokenSource?): CodeGenerationResult {
+private suspend fun DocGenerationState.generateCode(codeGenerationId: String, mode: Mode?, token: CancellationTokenSource?): CodeGenerationResult {
     val pollCount = 180
     val requestDelay = 10000L
 
@@ -192,7 +192,7 @@ private suspend fun DocGenerationState.generateCode(codeGenerationId: String, to
                             } else {
                                 DocGenerationStep.GENERATING_ARTIFACTS
                             },
-                            mode = Mode.CREATE
+                            mode
                         )
                     )
                 }
