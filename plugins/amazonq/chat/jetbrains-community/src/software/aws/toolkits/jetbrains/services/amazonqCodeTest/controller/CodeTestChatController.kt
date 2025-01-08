@@ -241,7 +241,7 @@ class CodeTestChatController(
                     "language I support specialized unit test generation for at the moment.</b><br></span>The languages " +
                     "I support now are Python and Java. I can still provide examples, instructions and code suggestions."
             } else {
-                "<span style=\"color: #EE9D28;\">&#9888;<b> I can't generate tests for ${fileInfo.fileName} because it's outside the project directory. I can still provide examples, instructions and code suggestions."
+                "<span style=\"color: #EE9D28;\">&#9888;<b> I can't generate tests for ${fileInfo.fileName} because it's outside the project directory.</b><br></span> I can still provide examples, instructions and code suggestions."
             }
 
             codeTestChatHelper.addNewMessage(
