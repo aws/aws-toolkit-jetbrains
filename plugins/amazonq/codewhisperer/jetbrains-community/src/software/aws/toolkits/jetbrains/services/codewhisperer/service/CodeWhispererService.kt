@@ -482,6 +482,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         if (currStates == null) {
             // first response
             nextStates = initStates(requestContext, responseContext, response, caretMovement, popup)
+            nextStates?.let { prefetchNextInvocationAsync(it) }
             isPopupShowing = false
 
             // receiving a null state means caret has moved backward or there's a conflict with
@@ -527,7 +528,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 return null
             }
         } else {
-            prefetchNextInvocationAsync(nextStates)
             updateCodeWhisperer(nextStates, isPopupShowing)
         }
         return nextStates
@@ -664,7 +664,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 return@launch
             }
 
-            LOG.warn("nextRequestContext is: $nextRequestContext")
+//            LOG.warn("nextRequestContext is: $nextRequestContext")
             val newVisualPosition = withContext(EDT) {
                 runReadAction {
                     nextRequestContext.editor.offsetToVisualPosition(nextRequestContext.caretPosition.offset)
@@ -679,15 +679,30 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                             nextRequestContext.customizationArn
                         )
                     )
+                var startTime = System.nanoTime()
+                nextRequestContext.latencyContext.codewhispererPreprocessingEnd = System.nanoTime()
+                nextRequestContext.latencyContext.paginationAllCompletionsStart = System.nanoTime()
+                CodeWhispererInvocationStatus.getInstance().setInvocationStart()
                 val firstResponse = responseIterable.firstOrNull()
-
                 firstResponse?.let {
-                    LOG.warn("next recommendation is: ${it.completions().first().content()} ")
-                    val validatedResponse = validateResponse(it)
+                    val endTime = System.nanoTime()
+                    val latency = TimeUnit.NANOSECONDS.toMillis(endTime - startTime).toDouble()
+//                    LOG.warn("next recommendation is: ${it.completions().first().content()} ")
+
                     val responseContext = ResponseContext(
                         it.sdkHttpResponse().headers()
                             .getOrDefault(KET_SESSION_ID, listOf(it.responseMetadata().requestId()))[0]
                     )
+                    CodeWhispererTelemetryService.getInstance().sendServiceInvocationEvent(
+                        firstResponse.responseMetadata().requestId(),
+                        nextRequestContext,
+                        responseContext,
+                        firstResponse.completions().size,
+                        true,
+                        latency,
+                        null
+                    )
+                    val validatedResponse = validateResponse(it)
                     val detailContexts = withContext(EDT) {
                         runReadAction {
                             CodeWhispererRecommendationManager.getInstance().buildDetailContext(
@@ -706,6 +721,23 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     val nextStates = InvocationContext(nextRequestContext, responseContext, recommendationContext, popup)
                     nextInvocationContext = nextStates
                     LOG.debug("Prefetched next invocation stored in nextInvocationContext")
+
+
+                    val recommendationLogs = firstResponse.completions().map { it.content().trimEnd() }
+                        .reduceIndexedOrNull { index, acc, recommendation -> "$acc\n[${index + 1}]\n$recommendation" }
+                    println(
+                        "SessionId: ${responseContext.sessionId}, " +
+                            "RequestId: ${validatedResponse.responseMetadata().requestId()}, " +
+                            "Jetbrains IDE: ${ApplicationInfo.getInstance().fullApplicationName}, " +
+                            "IDE version: ${ApplicationInfo.getInstance().apiVersion}, " +
+                            "Filename: ${nextRequestContext.fileContextInfo.filename}, " +
+                            "Left context of current line: ${nextRequestContext.fileContextInfo.caretContext.leftContextOnCurrentLine}, " +
+                            "Cursor line: ${nextRequestContext.caretPosition.line}, " +
+                            "Caret offset: ${nextRequestContext.caretPosition.offset}, " +
+                            (latency?.let { "Latency: $latency, " } ?: "") +
+                            "Recommendations size: ${firstResponse.completions().size},${validatedResponse.completions().size} " +
+                            "Recommendations: \n${recommendationLogs ?: "None"}"
+                    )
                 }
             } catch (ex: Exception) {
                 LOG.warn("Failed to prefetch next codewhisperer invocation: ${ex.message}")
@@ -724,6 +756,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         Disposer.register(newPopup, updatedNextStates)
         CodeWhispererPopupManager.getInstance().initPopupListener(updatedNextStates)
 
+        println("sessionId: ${updatedNextStates.responseContext.sessionId}, rec size: ${updatedNextStates.recommendationContext.details.size}")
         runInEdt {
             CodeWhispererPopupManager.getInstance().changeStates(
                 updatedNextStates,
