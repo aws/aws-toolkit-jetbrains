@@ -64,7 +64,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhisper
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJson
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
@@ -624,29 +623,49 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
     }
 
     private fun prefetchNextInvocationAsync(currStates: InvocationContext) {
-        val firstValidRecommendation =
-            currStates.recommendationContext.details.firstOrNull { !it.isDiscarded && it.recommendation.content().isNotEmpty() }
-        if (firstValidRecommendation == null) return;
+        val firstValidRecommendation = currStates.recommendationContext.details
+            .firstOrNull { !it.isDiscarded && it.recommendation.content().isNotEmpty() }
+            ?: return
+
         cs.launch(getCoroutineBgContext()) {
+            val psiFile =
+                runReadAction { PsiDocumentManager.getInstance(currStates.requestContext.project).getPsiFile(currStates.requestContext.editor.document) }
+            if (psiFile == null) {
+                LOG.debug { "No PSI file for the current document" }
+                if (currStates.requestContext.triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
+                    showCodeWhispererInfoHint(currStates.requestContext.editor, message("codewhisperer.trigger.document.unsupported"))
+                }
+                return@launch
+            }
+
+            val latencyContext = LatencyContext().apply {
+                codewhispererPreprocessingStart = System.nanoTime()
+                codewhispererEndToEndStart = System.nanoTime()
+            }
 
             val nextCaretPosition = calculateNextCaretPosition(currStates.requestContext, firstValidRecommendation)
             val nextFileContextInfo = createNextFileContextInfo(currStates.requestContext, firstValidRecommendation)
 
-            //TODO yifan reconstruct requestContext
-            val nextRequestContext =  RequestContext(
-                project = currStates.requestContext.project,
-                editor = currStates.requestContext.editor,
-                triggerTypeInfo = currStates.requestContext.triggerTypeInfo,
-                caretPosition = nextCaretPosition,
-                fileContextInfo = nextFileContextInfo,
-                supplementalContextDeferred = CompletableDeferred<SupplementalContextInfo?>().apply { complete(null) },
-                connection = currStates.requestContext.connection,
-                latencyContext = currStates.requestContext.latencyContext,
-                customizationArn = currStates.requestContext.customizationArn
-            )
+            val nextRequestContext = try {
+                getRequestContext(
+                    currStates.requestContext.triggerTypeInfo,
+                    currStates.requestContext.editor,
+                    currStates.requestContext.project,
+                    psiFile,
+                    latencyContext
+                ).copy(
+                    caretPosition = nextCaretPosition,
+                    fileContextInfo = nextFileContextInfo,
+                    latencyContext = latencyContext
+                )
+            } catch (e: Exception) {
+                LOG.debug { e.message.toString() }
+                CodeWhispererTelemetryService.getInstance().sendFailedServiceInvocationEvent(currStates.requestContext.project, e::class.simpleName)
+                return@launch
+            }
 
             LOG.warn("nextRequestContext is: $nextRequestContext")
-            val newVisualPosition = withContext(EDT){
+            val newVisualPosition = withContext(EDT) {
                 runReadAction {
                     nextRequestContext.editor.offsetToVisualPosition(nextRequestContext.caretPosition.offset)
                 }
@@ -661,12 +680,13 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                         )
                     )
                 val firstResponse = responseIterable.firstOrNull()
-                if (firstResponse != null) {
-                    LOG.warn("next recommendation is: ${firstResponse.completions().first().content()} ")
-                    val validatedResponse = validateResponse(firstResponse)
+
+                firstResponse?.let {
+                    LOG.warn("next recommendation is: ${it.completions().first().content()} ")
+                    val validatedResponse = validateResponse(it)
                     val responseContext = ResponseContext(
-                        firstResponse.sdkHttpResponse().headers()
-                            .getOrDefault(KET_SESSION_ID, listOf(firstResponse.responseMetadata().requestId()))[0]
+                        it.sdkHttpResponse().headers()
+                            .getOrDefault(KET_SESSION_ID, listOf(it.responseMetadata().requestId()))[0]
                     )
                     val detailContexts = withContext(EDT) {
                         runReadAction {
@@ -678,11 +698,12 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                             )
                         }
                     }
-                    val recommendationContext = RecommendationContext(detailContexts, "","", newVisualPosition)
-                    val JBPopup = withContext(EDT) {
+                    val recommendationContext = RecommendationContext(detailContexts, "", "", newVisualPosition)
+                    val popup = withContext(EDT) {
                         JBPopupFactory.getInstance().createMessage("dummy popup")
                     }
-                    val nextStates = InvocationContext(nextRequestContext, responseContext, recommendationContext, JBPopup)
+
+                    val nextStates = InvocationContext(nextRequestContext, responseContext, recommendationContext, popup)
                     nextInvocationContext = nextStates
                     LOG.debug("Prefetched next invocation stored in nextInvocationContext")
                 }
@@ -693,11 +714,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
     }
 
     fun promoteNextInvocationIfAvailable() {
-        val nextStates = nextInvocationContext ?: run {
-            LOG.debug("No nextInvocationContext found, nothing to promote.")
-            return
-        }
-        //check whether select index is 0
+        val nextStates = nextInvocationContext ?: return LOG.debug("No nextInvocationContext found, nothing to promote.")
 
         nextInvocationContext = null
 
@@ -718,7 +735,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         }
 
         prefetchNextInvocationAsync(updatedNextStates)
-
         LOG.debug("Promoted nextInvocationContext to current session and displayed next recommendation.")
     }
 
