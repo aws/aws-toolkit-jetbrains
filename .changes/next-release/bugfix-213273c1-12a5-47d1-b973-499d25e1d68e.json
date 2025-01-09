@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fix issue where users are unable to login to Amazon Q if they have previously authenticated (#5214)"
-}
