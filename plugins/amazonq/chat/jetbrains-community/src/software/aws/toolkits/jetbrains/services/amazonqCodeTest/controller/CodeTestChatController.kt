@@ -89,6 +89,7 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.UiTelemetry
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -159,10 +160,6 @@ class CodeTestChatController(
         // check if IDE has active file open, yes return (fileName and filePath) else return null
         val project = context.project
         val fileInfo = checkActiveFileInIDE(project, message) ?: return
-        val projectRoot = Path.of(
-            project.basePath ?: project.guessProjectDir()?.path
-                ?: error("Cannot guess base directory for project ${project.name}")
-        )
         session.programmingLanguage = fileInfo.fileLanguage
         if (session.isGeneratingTests === true) {
             return
@@ -190,8 +187,7 @@ class CodeTestChatController(
             message.tabId,
             false
         )
-        val supported = fileInfo.filePath.startsWith(projectRoot.toString()) && isLanguageSupported(fileInfo.fileLanguage.languageId)
-        if (supported) {
+        if (fileInfo.fileInWorkspace && isLanguageSupported(fileInfo.fileLanguage.languageId)) {
             // Send Capability card to chat
             codeTestChatHelper.addNewMessage(
                 CodeTestChatMessageContent(informationCard = true, message = null, type = ChatMessageType.Answer, canBeVoted = false),
@@ -237,7 +233,7 @@ class CodeTestChatController(
                 }
                 .build()
 
-            val messageContent = if (fileInfo.filePath.startsWith(projectRoot.toString())) {
+            val messageContent = if (fileInfo.fileInWorkspace) {
                 "<span style=\"color: #EE9D28;\">&#9888;<b> ${fileInfo.fileLanguage.languageId} is not a " +
                     "language I support specialized unit test generation for at the moment.</b><br></span>The languages " +
                     "I support now are Python and Java. I can still provide examples, instructions and code suggestions."
@@ -300,7 +296,7 @@ class CodeTestChatController(
                 AmazonqTelemetry.utgGenerateTests(
                     cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
                     hasUserPromptSupplied = session.hasUserPromptSupplied,
-                    isFileInWorkspace = fileInfo.filePath.startsWith(projectRoot.toString()),
+                    isFileInWorkspace = fileInfo.fileInWorkspace,
                     isSupportedLanguage = isLanguageSupported(fileInfo.fileLanguage.languageId),
                     credentialStartUrl = getStartUrl(project),
                     result = MetricResult.Succeeded,
@@ -1129,6 +1125,7 @@ class CodeTestChatController(
         val filePath: String,
         val fileName: String,
         val fileLanguage: CodeWhispererProgrammingLanguage,
+        val fileInWorkspace: Boolean = true,
     )
 
     private suspend fun updateUIState() {
@@ -1160,6 +1157,9 @@ class CodeTestChatController(
             val fileEditorManager = FileEditorManager.getInstance(project)
             val activeEditor = fileEditorManager.selectedEditor
             val activeFile = fileEditorManager.selectedFiles.firstOrNull()
+            val projectRoot = project.basePath?.let { Path.of(it) }?.toFile()?.toVirtualFile() ?: run {
+                project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
+            }
 
             if (activeEditor == null || activeFile == null) {
                 handleInvalidFileState(message.tabId)
@@ -1174,6 +1174,7 @@ class CodeTestChatController(
                 filePath = activeFile.path,
                 fileName = activeFile.name,
                 fileLanguage = programmingLanguage,
+                fileInWorkspace = activeFile.path.startsWith(projectRoot.path)
             )
         } catch (e: Exception) {
             LOG.debug { "Error checking active file: $e" }
@@ -1186,6 +1187,8 @@ class CodeTestChatController(
             return null
         }
     }
+
+    private fun File.toVirtualFile() = LocalFileSystem.getInstance().findFileByIoFile(this)
 
     /* UTG Tab Chat input use cases:
      * 1. If User exits the flow and want to start a new generate unit test cycle.
