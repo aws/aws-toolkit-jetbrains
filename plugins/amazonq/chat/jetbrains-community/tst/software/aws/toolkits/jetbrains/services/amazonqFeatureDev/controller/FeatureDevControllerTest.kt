@@ -22,9 +22,11 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.spy
@@ -36,7 +38,14 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitConte
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededStates
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.EmptyPatchException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.GuardrailsException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataOperationName
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataResult
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PromptRefusalException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ThrottlingException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUp
@@ -50,6 +59,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendC
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendSystemPrompt
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendUpdatePlaceholder
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.updateFileComponent
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeGenerationState
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DiffMetricsProcessed
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Interaction
@@ -422,6 +432,114 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                 messenger.sendChatInputEnabledMessage(testTabId, false)
             }
         }
+
+    @Test
+    fun `test handleChat onCodeGeneration sends success metrics`() = runTest {
+        val mockSession = mock<Session>()
+        val featureDevService = mockk<FeatureDevService>()
+        val repoContext = mock<FeatureDevSessionContext>()
+        val sessionStateConfig = SessionStateConfig(testConversationId, repoContext, featureDevService)
+        val mockInteraction = mock<Interaction>()
+        whenever(mockSession.send(userMessage)).thenReturn(mockInteraction)
+        whenever(mockSession.sessionState).thenReturn(
+            PrepareCodeGenerationState(
+                testTabId,
+                CancellationTokenSource(),
+                "test-command",
+                sessionStateConfig,
+                newFileContents,
+                deletedFiles,
+                testReferences,
+                testUploadId,
+                0,
+                messenger,
+                diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
+            ),
+        )
+
+        controller.onCodeGeneration(mockSession, userMessage, testTabId)
+
+        val mockInOrder = inOrder(mockSession)
+
+        mockInOrder.verify(mockSession).sendMetricDataTelemetry(
+            MetricDataOperationName.StartCodeGeneration,
+            MetricDataResult.Success
+
+        )
+        mockInOrder.verify(mockSession).sendMetricDataTelemetry(
+            MetricDataOperationName.EndCodeGeneration,
+            MetricDataResult.Success
+        )
+    }
+
+    @Test
+    fun `test handleChat onCodeGeneration sends correct failure metrics for different errors`() = runTest {
+        data class ErrorTestCase(
+            val error: Exception,
+            val expectedMetricResult: MetricDataResult,
+        )
+
+        val testCases = listOf(
+            ErrorTestCase(
+                EmptyPatchException("EmptyPatchException", "Empty patch"),
+                MetricDataResult.LlmFailure
+            ),
+            ErrorTestCase(
+                GuardrailsException(operation = "GenerateCode", desc = "Failed guardrails"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                PromptRefusalException(operation = "GenerateCode", desc = "Prompt refused"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                NoChangeRequiredException(operation = "GenerateCode", desc = "No changes needed"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                ThrottlingException(operation = "GenerateCode", desc = "Request throttled"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                RuntimeException("Unknown error"),
+                MetricDataResult.Fault
+            )
+        )
+
+        testCases.forEach { (error, expectedResult) ->
+            val mockSession = mock<Session>()
+            whenever(mockSession.send(userMessage)).thenThrow(error)
+            whenever(mockSession.sessionState).thenReturn(
+                CodeGenerationState(
+                    testTabId,
+                    "",
+                    mock(),
+                    testUploadId,
+                    0,
+                    0.0,
+                    messenger,
+                    token = CancellationTokenSource(),
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet())
+                )
+            )
+
+            assertThrows<Exception> {
+                controller.onCodeGeneration(mockSession, userMessage, testTabId)
+            }
+
+            val mockInOrder = inOrder(mockSession)
+
+            mockInOrder.verify(mockSession).sendMetricDataTelemetry(
+                MetricDataOperationName.StartCodeGeneration,
+                MetricDataResult.Success
+
+            )
+            mockInOrder.verify(mockSession).sendMetricDataTelemetry(
+                MetricDataOperationName.EndCodeGeneration,
+                expectedResult
+            )
+        }
+    }
 
     @Test
     fun `test processFileClicked handles file rejection`() =

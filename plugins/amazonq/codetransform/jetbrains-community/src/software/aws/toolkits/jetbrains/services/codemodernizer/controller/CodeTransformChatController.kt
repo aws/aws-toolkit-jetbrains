@@ -25,6 +25,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthFollowUpType
 import software.aws.toolkits.jetbrains.services.codemodernizer.ArtifactHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager.Companion.LOG
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.EXPLAINABILITY_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.HilTelemetryMetaData
@@ -112,7 +113,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 
 class CodeTransformChatController(
     private val context: AmazonQAppInitContext,
@@ -272,7 +272,7 @@ class CodeTransformChatController(
 
     override suspend fun processCodeTransformCancelAction(message: IncomingCodeTransformMessage.CodeTransformCancel) {
         if (!checkForAuth(message.tabId)) {
-            telemetry.submitSelection("Cancel", null, "User is not authenticated")
+            telemetry.submitSelection("Cancel", null, null, "User is not authenticated")
             return
         }
 
@@ -287,7 +287,7 @@ class CodeTransformChatController(
 
     override suspend fun processCodeTransformStartAction(message: IncomingCodeTransformMessage.CodeTransformStart) {
         if (!checkForAuth(message.tabId)) {
-            telemetry.submitSelection("Confirm", null, "User is not authenticated")
+            telemetry.submitSelection("Confirm", null, null, "User is not authenticated")
             return
         }
 
@@ -310,7 +310,7 @@ class CodeTransformChatController(
         codeModernizerManager.createCodeModernizerSession(selection, context.project)
 
         // Publish metric to capture user selection before local build starts
-        telemetry.submitSelection("Confirm-Java", selection)
+        telemetry.submitSelection("Confirm-Java", null, selection)
 
         codeTransformChatHelper.run {
             addNewMessage(buildUserInputSkipTestsFlagChatIntroContent())
@@ -342,7 +342,7 @@ class CodeTransformChatController(
 
             unzipFile(selectedZipFile.toNioPath(), extractedZip.toPath(), true)
 
-            val sctFile = extractedZip.listFiles { file -> file.name.endsWith(".sct") }.firstOrNull()
+            val sctFile = extractedZip.listFiles { file -> file.name.endsWith(".sct") }?.firstOrNull()
 
             val metadataValidationResult = validateSctMetadata(sctFile)
 
@@ -372,7 +372,7 @@ class CodeTransformChatController(
                 sqlMetadataZip = extractedZip,
             )
             codeModernizerManager.createCodeModernizerSession(selection, context.project)
-            telemetry.submitSelection("Confirm-SQL", selection)
+            telemetry.submitSelection("Confirm-SQL", null, selection)
         }
     }
 
@@ -493,7 +493,6 @@ class CodeTransformChatController(
     override suspend fun processCodeTransformViewDiff(message: IncomingCodeTransformMessage.CodeTransformViewDiff) {
         artifactHandler.displayDiffAction(
             CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId,
-            CodeTransformVCSViewerSrcComponents.Chat
         )
     }
 
@@ -680,6 +679,7 @@ class CodeTransformChatController(
         )
 
     private suspend fun handleCodeTransformResult(result: CodeModernizerJobCompletedResult) {
+        LOG.info { "CodeModernizerJobCompletedResult: $result" }
         when (result) {
             is CodeModernizerJobCompletedResult.Stopped, CodeModernizerJobCompletedResult.JobAbortedBeforeStarting -> handleCodeTransformStoppedByUser()
             is CodeModernizerJobCompletedResult.JobFailed -> handleCodeTransformJobFailed(result.failureReason)
@@ -692,6 +692,7 @@ class CodeTransformChatController(
                         CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId,
                         TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS
                     )
+                    LOG.info { "Download result: $downloadResult" }
                     when (downloadResult) {
                         is DownloadArtifactResult.Success -> {
                             if (downloadResult.artifact !is CodeModernizerArtifact) return artifactHandler.notifyUnableToApplyPatch("")

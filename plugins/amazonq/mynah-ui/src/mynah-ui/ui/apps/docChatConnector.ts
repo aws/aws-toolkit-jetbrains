@@ -196,7 +196,6 @@ export class Connector {
 
     private processCodeResultMessage = async (messageData: any): Promise<void> => {
         if (this.onChatAnswerReceived !== undefined) {
-            const actions = getActions([...messageData.filePaths, ...messageData.deletedFiles])
             const answer: ChatItem = {
                 type: ChatItemType.ANSWER,
                 relatedContent: undefined,
@@ -209,8 +208,7 @@ export class Connector {
                     fileTreeTitle: 'Documents ready',
                     rootFolderTitle: 'Generated documentation',
                     filePaths: (messageData.filePaths as DiffTreeFileInfo[]).map(path => path.zipFilePath),
-                    deletedFiles: (messageData.deletedFiles as DiffTreeFileInfo[]).map(path => path.zipFilePath),
-                    actions,
+                    deletedFiles: (messageData.deletedFiles as DiffTreeFileInfo[]).map(path => path.zipFilePath)
                 },
                 body: '',
             }
