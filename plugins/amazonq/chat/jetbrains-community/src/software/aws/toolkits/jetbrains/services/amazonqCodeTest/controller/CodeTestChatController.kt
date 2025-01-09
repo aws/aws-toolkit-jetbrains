@@ -12,6 +12,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
@@ -22,6 +23,7 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
+import software.amazon.awssdk.services.codewhispererruntime.model.IdeCategory
 import software.amazon.awssdk.services.codewhispererruntime.model.Position
 import software.amazon.awssdk.services.codewhispererruntime.model.Range
 import software.amazon.awssdk.services.codewhispererruntime.model.Reference
@@ -89,6 +91,7 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.UiTelemetry
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -186,7 +189,7 @@ class CodeTestChatController(
             message.tabId,
             false
         )
-        if (isLanguageSupported(fileInfo.fileLanguage.languageId)) {
+        if (fileInfo.fileInWorkspace && isLanguageSupported(fileInfo.fileLanguage.languageId)) {
             // Send Capability card to chat
             codeTestChatHelper.addNewMessage(
                 CodeTestChatMessageContent(informationCard = true, message = null, type = ChatMessageType.Answer, canBeVoted = false),
@@ -232,9 +235,15 @@ class CodeTestChatController(
                 }
                 .build()
 
-            val messageContent = "<span style=\"color: #EE9D28;\">&#9888;<b> ${fileInfo.fileLanguage.languageId} is not a " +
-                "language I support specialized unit test generation for at the moment.</b><br></span>The languages " +
-                "I support now are Python and Java. I can still provide examples, instructions and code suggestions."
+            val messageContent = if (fileInfo.fileInWorkspace) {
+                "<span style=\"color: #EE9D28;\">&#9888;<b> ${fileInfo.fileLanguage.languageId} is not a " +
+                    "language I support specialized unit test generation for at the moment.</b><br></span>The languages " +
+                    "I support now are Python and Java. I can still provide examples, instructions and code suggestions."
+            } else {
+                "<span style=\"color: #EE9D28;\">&#9888;<b> I can't generate tests for ${fileInfo.fileName}" +
+                    " because it's outside the project directory.</b><br></span> " +
+                    "I can still provide examples, instructions and code suggestions."
+            }
 
             codeTestChatHelper.addNewMessage(
                 CodeTestChatMessageContent(
@@ -289,7 +298,8 @@ class CodeTestChatController(
                 AmazonqTelemetry.utgGenerateTests(
                     cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
                     hasUserPromptSupplied = session.hasUserPromptSupplied,
-                    isSupportedLanguage = false,
+                    isFileInWorkspace = fileInfo.fileInWorkspace,
+                    isSupportedLanguage = isLanguageSupported(fileInfo.fileLanguage.languageId),
                     credentialStartUrl = getStartUrl(project),
                     result = MetricResult.Succeeded,
                     perfClientLatency = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration),
@@ -573,6 +583,7 @@ class CodeTestChatController(
                     session.testGenerationJob,
                     session.testGenerationJobGroupName,
                     session.programmingLanguage,
+                    IdeCategory.JETBRAINS,
                     session.numberOfUnitTestCasesGenerated,
                     session.numberOfUnitTestCasesGenerated,
                     session.linesOfCodeGenerated,
@@ -590,6 +601,7 @@ class CodeTestChatController(
                 AmazonqTelemetry.utgGenerateTests(
                     cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
                     hasUserPromptSupplied = session.hasUserPromptSupplied,
+                    isFileInWorkspace = true,
                     isSupportedLanguage = true,
                     credentialStartUrl = getStartUrl(project = context.project),
                     jobGroup = session.testGenerationJobGroupName,
@@ -768,6 +780,7 @@ class CodeTestChatController(
                     session.testGenerationJob,
                     session.testGenerationJobGroupName,
                     session.programmingLanguage,
+                    IdeCategory.JETBRAINS,
                     session.numberOfUnitTestCasesGenerated,
                     0,
                     session.linesOfCodeGenerated,
@@ -784,6 +797,7 @@ class CodeTestChatController(
                 AmazonqTelemetry.utgGenerateTests(
                     cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
                     hasUserPromptSupplied = session.hasUserPromptSupplied,
+                    isFileInWorkspace = true,
                     isSupportedLanguage = true,
                     credentialStartUrl = getStartUrl(project = context.project),
                     jobGroup = session.testGenerationJobGroupName,
@@ -1113,6 +1127,7 @@ class CodeTestChatController(
         val filePath: String,
         val fileName: String,
         val fileLanguage: CodeWhispererProgrammingLanguage,
+        val fileInWorkspace: Boolean = true,
     )
 
     private suspend fun updateUIState() {
@@ -1144,6 +1159,9 @@ class CodeTestChatController(
             val fileEditorManager = FileEditorManager.getInstance(project)
             val activeEditor = fileEditorManager.selectedEditor
             val activeFile = fileEditorManager.selectedFiles.firstOrNull()
+            val projectRoot = project.basePath?.let { Path.of(it) }?.toFile()?.toVirtualFile() ?: run {
+                project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
+            }
 
             if (activeEditor == null || activeFile == null) {
                 handleInvalidFileState(message.tabId)
@@ -1158,6 +1176,7 @@ class CodeTestChatController(
                 filePath = activeFile.path,
                 fileName = activeFile.name,
                 fileLanguage = programmingLanguage,
+                fileInWorkspace = activeFile.path.startsWith(projectRoot.path)
             )
         } catch (e: Exception) {
             LOG.debug { "Error checking active file: $e" }
@@ -1170,6 +1189,8 @@ class CodeTestChatController(
             return null
         }
     }
+
+    private fun File.toVirtualFile() = LocalFileSystem.getInstance().findFileByIoFile(this)
 
     /* UTG Tab Chat input use cases:
      * 1. If User exits the flow and want to start a new generate unit test cycle.

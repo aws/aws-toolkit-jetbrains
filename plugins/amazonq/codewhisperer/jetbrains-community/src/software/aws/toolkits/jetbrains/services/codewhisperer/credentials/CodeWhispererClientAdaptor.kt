@@ -27,6 +27,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.GenerateComple
 import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeFixJobRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeFixJobResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTestGenerationResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.IdeCategory
 import software.amazon.awssdk.services.codewhispererruntime.model.InlineChatUserDecision
 import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEvaluationsResponse
@@ -201,6 +202,7 @@ interface CodeWhispererClientAdaptor : Disposable {
         jobId: String,
         groupName: String,
         language: CodeWhispererProgrammingLanguage?,
+        ideCategory: IdeCategory?,
         numberOfUnitTestCasesGenerated: Int?,
         numberOfUnitTestCasesAccepted: Int?,
         linesOfCodeGenerated: Int?,
@@ -674,6 +676,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         jobId: String,
         groupName: String,
         language: CodeWhispererProgrammingLanguage?,
+        ideCategory: IdeCategory?,
         numberOfUnitTestCasesGenerated: Int?,
         numberOfUnitTestCasesAccepted: Int?,
         linesOfCodeGenerated: Int?,
@@ -688,6 +691,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 }
                 it.jobId(jobId)
                 it.groupName(groupName)
+                it.ideCategory(ideCategory)
                 it.numberOfUnitTestCasesGenerated(numberOfUnitTestCasesGenerated)
                 it.numberOfUnitTestCasesAccepted(numberOfUnitTestCasesAccepted)
                 it.linesOfCodeGenerated(linesOfCodeGenerated)
