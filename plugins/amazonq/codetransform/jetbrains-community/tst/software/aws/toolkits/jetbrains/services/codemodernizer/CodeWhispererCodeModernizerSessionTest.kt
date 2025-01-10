@@ -478,11 +478,11 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
     }
 
     @Test
-    fun `CodeModernizer cannot upload payload due to unknown issue`() = runTest {
+    fun `CodeModernizer cannot upload payload due to client-side issue`() = runTest {
         doReturn(ZipCreationResult.Succeeded(File("./tst-resources/codemodernizer/test.txt")))
             .whenever(testSessionContextSpy).createZipWithModuleFiles(any())
         doReturn(exampleCreateUploadUrlResponse).whenever(clientAdaptorSpy).createGumbyUploadUrl(any())
-        doAnswer { throw IOException("mock exception") }.whenever(clientAdaptorSpy).uploadArtifactToS3(any(), any(), any(), any(), any())
+        doAnswer { throw Exception("mock client-side exception") }.whenever(clientAdaptorSpy).uploadArtifactToS3(any(), any(), any(), any(), any())
         val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
         assertEquals(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER("mock exception")), result)
         verify(testSessionStateSpy, times(1)).putJobHistory(any(), eq(TransformationStatus.FAILED), any(), any())
