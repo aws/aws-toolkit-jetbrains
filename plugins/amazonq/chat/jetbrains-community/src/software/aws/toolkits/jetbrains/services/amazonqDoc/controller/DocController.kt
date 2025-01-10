@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqDoc.controller
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
 import com.intellij.diff.contents.EmptyContent
@@ -11,17 +10,12 @@ import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.diff.util.DiffUserDataKeys
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.command.WriteCommandAction
-import com.intellij.openapi.editor.Caret
-import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.wm.ToolWindowManager
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.codewhispererruntime.model.DocGenerationFolderLevel
 import software.amazon.awssdk.services.codewhispererruntime.model.DocGenerationInteractionType
 import software.amazon.awssdk.services.codewhispererruntime.model.DocGenerationUserDecision
-import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -37,7 +31,6 @@ import software.aws.toolkits.jetbrains.services.amazonqDoc.DEFAULT_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqDoc.DocException
 import software.aws.toolkits.jetbrains.services.amazonqDoc.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqDoc.InboundAppMessagesHandler
-import software.aws.toolkits.jetbrains.services.amazonqDoc.ModifySourceFolderErrorReason
 import software.aws.toolkits.jetbrains.services.amazonqDoc.ZipFileError
 import software.aws.toolkits.jetbrains.services.amazonqDoc.cancellingProgressField
 import software.aws.toolkits.jetbrains.services.amazonqDoc.createUserFacingErrorMessage
@@ -74,13 +67,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Delete
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStatePhase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
-import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.FeedbackComment
-import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
-import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
-import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.AmazonqTelemetry
-import software.aws.toolkits.telemetry.Result
 import java.util.UUID
 
 enum class DocGenerationStep {
@@ -346,83 +333,12 @@ class DocController(
         }
     }
 
-    override suspend fun processChatItemVotedMessage(message: IncomingDocMessage.ChatItemVotedMessage) {
-        logger.debug { "$FEATURE_NAME: Processing ChatItemVotedMessage: $message" }
-
-        val session = chatSessionStorage.getSession(message.tabId, context.project)
-        when (message.vote) {
-            "upvote" -> {
-                AmazonqTelemetry.codeGenerationThumbsUp(
-                    amazonqConversationId = session.conversationId,
-                    credentialStartUrl = getStartUrl(project = context.project)
-                )
-            }
-
-            "downvote" -> {
-                AmazonqTelemetry.codeGenerationThumbsDown(
-                    amazonqConversationId = session.conversationId,
-                    credentialStartUrl = getStartUrl(project = context.project)
-                )
-            }
-        }
-    }
-
-    override suspend fun processChatItemFeedbackMessage(message: IncomingDocMessage.ChatItemFeedbackMessage) {
-        logger.debug { "$FEATURE_NAME: Processing ChatItemFeedbackMessage: ${message.comment}" }
-
-        val session = getSessionInfo(message.tabId)
-
-        val comment = FeedbackComment(
-            conversationId = session.conversationId,
-            userComment = message.comment.orEmpty(),
-            reason = message.selectedOption,
-            messageId = message.messageId,
-            type = "doc-chat-answer-feedback"
-        )
-
-        try {
-            TelemetryService.getInstance().sendFeedback(
-                sentiment = Sentiment.NEGATIVE,
-                comment = objectMapper.writeValueAsString(comment),
-            )
-            logger.info { "$FEATURE_NAME answer feedback sent: \"Negative\"" }
-        } catch (e: Throwable) {
-            e.notifyError(message("feedback.submit_failed", e))
-            logger.warn(e) { "Failed to submit feedback" }
-            return
-        }
-    }
-
     override suspend fun processLinkClick(message: IncomingDocMessage.ClickedLink) {
         BrowserUtil.browse(message.link)
     }
 
-    override suspend fun processInsertCodeAtCursorPosition(message: IncomingDocMessage.InsertCodeAtCursorPosition) {
-        logger.debug { "$FEATURE_NAME: Processing InsertCodeAtCursorPosition: $message" }
-
-        withContext(EDT) {
-            val editor: Editor = FileEditorManager.getInstance(context.project).selectedTextEditor ?: return@withContext
-
-            val caret: Caret = editor.caretModel.primaryCaret
-            val offset: Int = caret.offset
-
-            WriteCommandAction.runWriteCommandAction(context.project) {
-                if (caret.hasSelection()) {
-                    editor.document.deleteString(caret.selectionStart, caret.selectionEnd)
-                }
-                editor.document.insertString(offset, message.code)
-            }
-        }
-    }
-
     override suspend fun processOpenDiff(message: IncomingDocMessage.OpenDiff) {
         val session = getSessionInfo(message.tabId)
-
-        AmazonqTelemetry.isReviewedChanges(
-            amazonqConversationId = session.conversationId,
-            enabled = true,
-            credentialStartUrl = getStartUrl(project = context.project)
-        )
 
         val project = context.project
         val sessionState = session.sessionState
@@ -531,13 +447,6 @@ class DocController(
                 }
             }
 
-            AmazonqTelemetry.isAcceptedCodeChanges(
-                amazonqNumberOfFilesAccepted = (filePaths.filterNot { it.rejected }.size + deletedFiles.filterNot { it.rejected }.size) * 1.0,
-                amazonqConversationId = session.conversationId,
-                enabled = true,
-                credentialStartUrl = getStartUrl(project = context.project)
-            )
-
             session.insertChanges(
                 filePaths = filePaths.filterNot { it.rejected },
                 deletedFiles = deletedFiles.filterNot { it.rejected }
@@ -575,14 +484,7 @@ class DocController(
     }
 
     private suspend fun newTask(tabId: String) {
-        val session = getSessionInfo(tabId)
-        val sessionLatency = System.currentTimeMillis() - session.sessionStartTime
         docGenerationTask = DocGenerationTask()
-        AmazonqTelemetry.endChat(
-            amazonqConversationId = session.conversationId,
-            amazonqEndOfTheConversationLatency = sessionLatency.toDouble(),
-            credentialStartUrl = getStartUrl(project = context.project)
-        )
         chatSessionStorage.deleteSession(tabId)
 
         messenger.sendAnswer(
@@ -632,25 +534,9 @@ class DocController(
 
         messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = false)
         docGenerationTask.reset()
-
-        val session = getSessionInfo(tabId)
-        val sessionLatency = System.currentTimeMillis() - session.sessionStartTime
-        AmazonqTelemetry.endChat(
-            amazonqConversationId = session.conversationId,
-            amazonqEndOfTheConversationLatency = sessionLatency.toDouble(),
-            credentialStartUrl = getStartUrl(project = context.project)
-        )
     }
 
     private suspend fun provideFeedbackAndRegenerateCode(tabId: String) {
-        val session = getSessionInfo(tabId)
-
-        AmazonqTelemetry.isProvideFeedbackForCodeGen(
-            amazonqConversationId = session.conversationId,
-            enabled = true,
-            credentialStartUrl = getStartUrl(project = context.project)
-        )
-
         // Unblock the message button
         messenger.sendAsyncEventProgress(tabId = tabId, inProgress = false)
 
@@ -1014,16 +900,11 @@ class DocController(
         val currentSourceFolder = session.context.selectedSourceFolder
         val projectRoot = session.context.projectRoot
 
-        var result: Result = Result.Failed
-        var reason: ModifySourceFolderErrorReason? = null
-
         withContext(EDT) {
             val selectedFolder = selectFolder(context.project, currentSourceFolder)
             // No folder was selected
             if (selectedFolder == null) {
                 logger.info { "Cancelled dialog and not selected any folder" }
-
-                reason = ModifySourceFolderErrorReason.ClosedBeforeSelection
                 return@withContext
             }
 
@@ -1036,8 +917,6 @@ class DocController(
                     messageType = DocMessageType.Answer,
                     message = message("amazonqFeatureDev.follow_up.incorrect_source_folder"),
                 )
-
-                reason = ModifySourceFolderErrorReason.NotInWorkspaceFolder
                 return@withContext
             }
             if (selectedFolder.path == projectRoot.path) {
@@ -1049,7 +928,6 @@ class DocController(
             logger.info { "Selected correct folder inside workspace: ${selectedFolder.path}" }
 
             session.context.selectedSourceFolder = selectedFolder
-            result = Result.Succeeded
 
             promptForDocTarget(tabId)
 
@@ -1057,13 +935,6 @@ class DocController(
 
             messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqDoc.prompt.placeholder"))
         }
-
-        AmazonqTelemetry.modifySourceFolder(
-            amazonqConversationId = session.conversationId,
-            credentialStartUrl = getStartUrl(project = context.project),
-            result = result,
-            reason = reason?.toString()
-        )
     }
 
     private fun sendDocGenerationTelemetry(tabId: String) {
@@ -1093,7 +964,5 @@ class DocController(
 
     companion object {
         private val logger = getLogger<DocController>()
-
-        private val objectMapper = jacksonObjectMapper()
     }
 }
