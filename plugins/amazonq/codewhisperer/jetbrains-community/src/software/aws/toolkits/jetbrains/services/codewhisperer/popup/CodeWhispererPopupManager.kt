@@ -68,6 +68,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.Co
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererPrevButtonActionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererScrollListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_DIM_HEX
@@ -167,6 +168,7 @@ class CodeWhispererPopupManager {
         if (selectedIndex == -1 || !isValidRecommendation(details[selectedIndex], userInput, typeaheadOriginal)) {
             LOG.debug { "None of the recommendation is valid at this point, cancelling the popup" }
             cancelPopup(popup)
+            CodeWhispererService.getInstance().sendUserDecisionForNextSession()
             return
         }
         val typeahead = resolveTypeahead(states, selectedIndex, typeaheadOriginal)

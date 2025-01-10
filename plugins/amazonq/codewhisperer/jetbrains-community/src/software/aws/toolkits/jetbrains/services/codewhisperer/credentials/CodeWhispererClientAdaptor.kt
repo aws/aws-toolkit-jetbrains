@@ -75,6 +75,10 @@ interface CodeWhispererClientAdaptor : Disposable {
         firstRequest: GenerateCompletionsRequest,
     ): Sequence<GenerateCompletionsResponse>
 
+    fun generateCompletions(firstRequest: GenerateCompletionsRequest
+    ): GenerateCompletionsResponse
+
+
     fun createUploadUrl(
         request: CreateUploadUrlRequest,
     ): CreateUploadUrlResponse
@@ -318,6 +322,8 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             yield(response)
         } while (!nextToken.isNullOrEmpty())
     }
+    override fun generateCompletions(firstRequest: GenerateCompletionsRequest): GenerateCompletionsResponse =
+           bearerClient().generateCompletions(firstRequest)
 
     override fun createUploadUrl(request: CreateUploadUrlRequest): CreateUploadUrlResponse =
         bearerClient().createUploadUrl(request)

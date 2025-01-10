@@ -670,7 +670,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             }
             try {
                 val responseIterable = CodeWhispererClientAdaptor.getInstance(nextRequestContext.project)
-                    .generateCompletionsPaginator(
+                    .generateCompletions(
                         buildCodeWhispererRequest(
                             nextRequestContext.fileContextInfo,
                             nextRequestContext.awaitSupplementalContext(),
@@ -681,7 +681,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 nextRequestContext.latencyContext.codewhispererPreprocessingEnd = System.nanoTime()
                 nextRequestContext.latencyContext.paginationAllCompletionsStart = System.nanoTime()
                 CodeWhispererInvocationStatus.getInstance().setInvocationStart()
-                val firstResponse = responseIterable.firstOrNull()
+                val firstResponse = responseIterable
                 firstResponse?.let {
                     val endTime = System.nanoTime()
                     val latency = TimeUnit.NANOSECONDS.toMillis(endTime - startTime).toDouble()
@@ -720,13 +720,26 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                         JBPopupFactory.getInstance().createMessage("dummy popup")
                     }
 
-                    val nextStates = InvocationContext(nextRequestContext, responseContext, recommendationContext, popup)
-                    nextInvocationContext = nextStates
+                    // send userDecision and trigger decision when next recommendation haven't been seen
+                    if (currStates.popup.isDisposed){
+                        CodeWhispererTelemetryService.getInstance().sendUserDecisionEventForAll(
+                            nextRequestContext,
+                            responseContext,
+                            recommendationContext,
+                            SessionContext(),
+                            false
+                        )
+                    }
+                    else{
+                        val nextStates = InvocationContext(nextRequestContext, responseContext, recommendationContext, popup)
+                        nextInvocationContext = nextStates
+                    }
                     LOG.debug("Prefetched next invocation stored in nextInvocationContext")
 
 
                     val recommendationLogs = firstResponse.completions().map { it.content().trimEnd() }
                         .reduceIndexedOrNull { index, acc, recommendation -> "$acc\n[${index + 1}]\n$recommendation" }
+                    println("popup status:${currStates.popup.isDisposed}")
                     println(
                         "SessionId: ${responseContext.sessionId}, " +
                             "RequestId: ${validatedResponse.responseMetadata().requestId()}, " +
@@ -797,6 +810,16 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         val newOffset = currentRequestContext.caretPosition.offset + lastLineLength
 
         return CaretPosition(line = newLine, offset = newOffset)
+    }
+
+    fun sendUserDecisionForNextSession() {
+        nextInvocationContext?.let{
+        CodeWhispererTelemetryService.getInstance().sendUserDecisionEventForAll(
+            nextInvocationContext!!.requestContext,
+            nextInvocationContext!!.responseContext,
+            nextInvocationContext!!.recommendationContext,
+            SessionContext(),
+            false)}
     }
 
     private fun createNextFileContextInfo(
