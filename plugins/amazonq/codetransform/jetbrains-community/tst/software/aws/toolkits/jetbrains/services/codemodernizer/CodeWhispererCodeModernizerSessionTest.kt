@@ -67,7 +67,6 @@ import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtu
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import java.io.File
 import java.io.FileInputStream
-import java.io.IOException
 import java.net.ConnectException
 import java.util.Base64
 import java.util.zip.ZipFile
