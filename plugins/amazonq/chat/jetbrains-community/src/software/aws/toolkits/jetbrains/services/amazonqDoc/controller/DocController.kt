@@ -15,6 +15,9 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.wm.ToolWindowManager
 import kotlinx.coroutines.withContext
@@ -81,6 +84,7 @@ import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.Result
+import java.nio.file.Paths
 import java.util.UUID
 
 enum class DocGenerationStep {
@@ -674,7 +678,7 @@ class DocController(
                     tabId = tabId,
                     followUp = listOf(
                         FollowUp(
-                            pillText = message("amazonqFeatureDev.follow_up.modify_source_folder"),
+                            pillText = message("amazonqDoc.prompt.folder.change"),
                             type = FollowUpTypes.MODIFY_DEFAULT_SOURCE_FOLDER,
                             status = FollowUpStatusType.Info,
                         )
@@ -1002,6 +1006,15 @@ class DocController(
         }
     }
 
+    private fun isFolderPathInProjectModules(project: Project, folderPath: String): Boolean {
+        val path = Paths.get(folderPath)
+        val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(path.toFile()) ?: return false
+
+        val projectFileIndex = ProjectRootManager.getInstance(project).fileIndex
+
+        return projectFileIndex.isInProject(virtualFile)
+    }
+
     private suspend fun modifyDefaultSourceFolder(tabId: String) {
         val session = getSessionInfo(tabId)
         val currentSourceFolder = session.context.selectedSourceFolder
@@ -1012,6 +1025,7 @@ class DocController(
 
         withContext(EDT) {
             val selectedFolder = selectFolder(context.project, currentSourceFolder)
+
             // No folder was selected
             if (selectedFolder == null) {
                 logger.info { "Cancelled dialog and not selected any folder" }
@@ -1020,19 +1034,31 @@ class DocController(
                 return@withContext
             }
 
-            // The folder is not in the workspace
-            if (!selectedFolder.path.startsWith(projectRoot.path)) {
+            val isFolderPathInProject = isFolderPathInProjectModules(context.project, selectedFolder.path)
+
+            if (!isFolderPathInProject) {
                 logger.info { "Selected folder not in workspace: ${selectedFolder.path}" }
 
                 messenger.sendAnswer(
                     tabId = tabId,
                     messageType = DocMessageType.Answer,
                     message = message("amazonqFeatureDev.follow_up.incorrect_source_folder"),
+                    followUp = listOf(
+                        FollowUp(
+                            pillText = message("amazonqDoc.prompt.folder.change"),
+                            type = FollowUpTypes.MODIFY_DEFAULT_SOURCE_FOLDER,
+                            status = FollowUpStatusType.Info,
+                        )
+                    ),
+                    snapToTop = true
                 )
+
+                messenger.sendChatInputEnabledMessage(tabId, enabled = false)
 
                 reason = ModifySourceFolderErrorReason.NotInWorkspaceFolder
                 return@withContext
             }
+
             if (selectedFolder.path == projectRoot.path) {
                 docGenerationTask.folderLevel = DocGenerationFolderLevel.ENTIRE_WORKSPACE
             } else {
