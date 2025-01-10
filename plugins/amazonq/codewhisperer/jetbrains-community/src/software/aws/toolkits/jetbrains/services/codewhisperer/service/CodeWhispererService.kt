@@ -627,6 +627,10 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             .firstOrNull { !it.isDiscarded && it.recommendation.content().isNotEmpty() }
             ?: return
 
+        val latencyContext = LatencyContext().apply {
+            codewhispererPreprocessingStart = System.nanoTime()
+            codewhispererEndToEndStart = System.nanoTime()
+        }
         cs.launch(getCoroutineBgContext()) {
             val psiFile =
                 runReadAction { PsiDocumentManager.getInstance(currStates.requestContext.project).getPsiFile(currStates.requestContext.editor.document) }
@@ -637,12 +641,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 }
                 return@launch
             }
-
-            val latencyContext = LatencyContext().apply {
-                codewhispererPreprocessingStart = System.nanoTime()
-                codewhispererEndToEndStart = System.nanoTime()
-            }
-
             val nextCaretPosition = calculateNextCaretPosition(currStates.requestContext, firstValidRecommendation)
             val nextFileContextInfo = createNextFileContextInfo(currStates.requestContext, firstValidRecommendation)
 
@@ -689,10 +687,14 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     val latency = TimeUnit.NANOSECONDS.toMillis(endTime - startTime).toDouble()
 //                    LOG.warn("next recommendation is: ${it.completions().first().content()} ")
 
-                    val responseContext = ResponseContext(
-                        it.sdkHttpResponse().headers()
-                            .getOrDefault(KET_SESSION_ID, listOf(it.responseMetadata().requestId()))[0]
-                    )
+                    val requestId = firstResponse.responseMetadata().requestId();
+                    val sessionId = firstResponse.sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
+                    nextRequestContext.latencyContext.codewhispererPostprocessingStart = System.nanoTime()
+                    nextRequestContext.latencyContext.paginationFirstCompletionTime =
+                        (endTime - nextRequestContext.latencyContext.codewhispererEndToEndStart).toDouble()
+                    nextRequestContext.latencyContext.firstRequestId = requestId
+                    CodeWhispererInvocationStatus.getInstance().setInvocationSessionId(sessionId)
+                    val responseContext = ResponseContext(sessionId)
                     CodeWhispererTelemetryService.getInstance().sendServiceInvocationEvent(
                         firstResponse.responseMetadata().requestId(),
                         nextRequestContext,
@@ -738,6 +740,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                             "Recommendations size: ${firstResponse.completions().size},${validatedResponse.completions().size} " +
                             "Recommendations: \n${recommendationLogs ?: "None"}"
                     )
+                    println("recmmentdation context: $recommendationContext")
                 }
             } catch (ex: Exception) {
                 LOG.warn("Failed to prefetch next codewhisperer invocation: ${ex.message}")
@@ -756,7 +759,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         Disposer.register(newPopup, updatedNextStates)
         CodeWhispererPopupManager.getInstance().initPopupListener(updatedNextStates)
 
-        println("sessionId: ${updatedNextStates.responseContext.sessionId}, rec size: ${updatedNextStates.recommendationContext.details.size}")
+//        println("sessionId: ${updatedNextStates.responseContext.sessionId}, rec size: ${updatedNextStates.recommendationContext.details.size}")
         runInEdt {
             CodeWhispererPopupManager.getInstance().changeStates(
                 updatedNextStates,
