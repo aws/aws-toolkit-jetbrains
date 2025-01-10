@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.credentials
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import software.aws.toolkits.core.TokenConnectionSettings
@@ -73,6 +74,7 @@ sealed class ManagedBearerSsoConnection(
             region
         )
 
+    @JsonIgnore
     override fun getConnectionSettings(): TokenConnectionSettings = provider
 
     override fun dispose() {
@@ -99,6 +101,7 @@ class DetectedDiskSsoSessionConnection(
             region
         )
 
+    @JsonIgnore
     override fun getConnectionSettings(): TokenConnectionSettings = provider
 
     override fun dispose() {
