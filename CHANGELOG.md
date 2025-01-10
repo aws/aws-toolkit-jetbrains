@@ -1,3 +1,15 @@
+# _3.47_ (2025-01-09)
+- **(Bug Fix)** Fix issue where users are unable to login to Amazon Q if they have previously authenticated ([#5214](https://github.com/aws/aws-toolkit-jetbrains/issues/5214))
+- **(Bug Fix)** Fix incorrect text shown while updating documentation in /doc
+- **(Bug Fix)** Amazon Q Code Transformation: retry initial project upload on failure
+- **(Bug Fix)** /transform: use correct doc link in SQL conversion help message
+- **(Bug Fix)** Amazon Q /dev: Fix issue when files are deleted while preparing context
+- **(Bug Fix)** Amazon Q /test: Test generation fails for files outside the project
+- **(Bug Fix)** Amazon Q Code Transformation: allow PostgreSQL as target DB for SQL conversions
+- **(Bug Fix)** Fix incorrect accept and reject buttons shows up while hovering over the generated file
+- **(Bug Fix)** Prevent customization override if user has manually selected a customization
+- **(Bug Fix)** Align UX text of document generation flow with vs code version
+
 # _3.46_ (2024-12-17)
 - **(Feature)** /review: Code fix automatically scrolls into view after generation.
 - **(Feature)** Chat: improve font size and line-height in footer (below prompt input field)
