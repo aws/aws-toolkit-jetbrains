@@ -400,8 +400,9 @@ class CodeTransformChatController(
         codeModernizerManager.codeTransformationSession?.let {
             it.sessionContext.customBuildCommand = customBuildCommand
         }
+        val targetJdkVersion = codeModernizerManager.codeTransformationSession?.sessionContext?.targetJavaVersion?.name ?: ""
         codeTransformChatHelper.run {
-            addNewMessage(buildUserInputOneOrMultipleDiffsChatIntroContent())
+            addNewMessage(buildUserInputOneOrMultipleDiffsChatIntroContent(targetJdkVersion))
             addNewMessage(buildUserInputOneOrMultipleDiffsFlagChatContent())
         }
     }

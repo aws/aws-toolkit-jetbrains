@@ -323,9 +323,9 @@ fun buildUserInputSkipTestsFlagChatContent(): CodeTransformChatMessageContent =
         formItems = listOf(selectSkipTestsFlagFormItem),
         type = CodeTransformChatMessageType.FinalizedAnswer,
     )
-fun buildUserInputOneOrMultipleDiffsChatIntroContent(): CodeTransformChatMessageContent =
+fun buildUserInputOneOrMultipleDiffsChatIntroContent(version: String): CodeTransformChatMessageContent =
     CodeTransformChatMessageContent(
-        message = message("codemodernizer.chat.message.one_or_multiple_diffs"),
+        message = message("codemodernizer.chat.message.one_or_multiple_diffs", version.substring(4)), // extract "17" / "21" from "JDK_17" / "JDK_21"
         type = CodeTransformChatMessageType.FinalizedAnswer,
     )
 fun buildUserInputOneOrMultipleDiffsFlagChatContent(): CodeTransformChatMessageContent =
