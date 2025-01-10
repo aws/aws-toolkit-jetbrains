@@ -30,10 +30,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Sessio
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.registerDeletedFiles
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.registerNewFiles
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
-import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.AmazonqTelemetry
-import software.aws.toolkits.telemetry.MetricResult
 
 private val logger = getLogger<DocGenerationState>()
 
@@ -43,7 +40,6 @@ class DocGenerationState(
     val config: SessionStateConfig,
     val uploadId: String,
     val currentIteration: Int,
-    val repositorySize: Double,
     val messenger: MessagePublisher,
     var codeGenerationRemainingIterationCount: Int? = null,
     var codeGenerationTotalIterationCount: Int? = null,
@@ -51,12 +47,6 @@ class DocGenerationState(
     override var token: CancellationTokenSource?,
 ) : SessionState {
     override suspend fun interact(action: SessionStateAction): SessionStateInteraction<SessionState> {
-        val startTime = System.currentTimeMillis()
-        var result: MetricResult = MetricResult.Succeeded
-        var failureReason: String? = null
-        var codeGenerationWorkflowStatus: CodeGenerationWorkflowStatus = CodeGenerationWorkflowStatus.COMPLETE
-        var numberOfReferencesGenerated: Int? = null
-        var numberOfFilesGenerated: Int? = null
         try {
             val response = config.amazonQCodeGenService.startTaskAssistCodeGeneration(
                 conversationId = config.conversationId,
@@ -66,8 +56,6 @@ class DocGenerationState(
             )
             val mode = if (action.msg == message("amazonqDoc.session.create")) Mode.CREATE else null
             val codeGenerationResult = generateCode(codeGenerationId = response.codeGenerationId(), mode, token)
-            numberOfReferencesGenerated = codeGenerationResult.references.size
-            numberOfFilesGenerated = codeGenerationResult.newFiles.size
             codeGenerationRemainingIterationCount = codeGenerationResult.codeGenerationRemainingIterationCount
             codeGenerationTotalIterationCount = codeGenerationResult.codeGenerationTotalIterationCount
 
@@ -94,25 +82,7 @@ class DocGenerationState(
             )
         } catch (e: Exception) {
             logger.warn(e) { "$FEATURE_NAME: Code generation failed: ${e.message}" }
-            result = MetricResult.Failed
-            failureReason = e.javaClass.simpleName
-            codeGenerationWorkflowStatus = CodeGenerationWorkflowStatus.FAILED
-
             throw e
-        } finally {
-            AmazonqTelemetry.codeGenerationInvoke(
-                amazonqConversationId = config.conversationId,
-                amazonqCodeGenerationResult = codeGenerationWorkflowStatus.toString(),
-                amazonqGenerateCodeIteration = currentIteration.toDouble(),
-                amazonqNumberOfReferences = numberOfReferencesGenerated?.toDouble(),
-                amazonqGenerateCodeResponseLatency = (System.currentTimeMillis() - startTime).toDouble(),
-                amazonqNumberOfFilesGenerated = numberOfFilesGenerated?.toDouble(),
-                amazonqRepositorySize = repositorySize,
-                result = result,
-                reason = failureReason,
-                duration = (System.currentTimeMillis() - startTime).toDouble(),
-                credentialStartUrl = getStartUrl(config.amazonQCodeGenService.project)
-            )
         }
     }
 }
