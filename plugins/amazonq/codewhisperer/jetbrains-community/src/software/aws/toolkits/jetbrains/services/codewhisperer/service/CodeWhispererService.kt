@@ -735,25 +735,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                         nextInvocationContext = nextStates
                     }
                     LOG.debug("Prefetched next invocation stored in nextInvocationContext")
-
-
-                    val recommendationLogs = firstResponse.completions().map { it.content().trimEnd() }
-                        .reduceIndexedOrNull { index, acc, recommendation -> "$acc\n[${index + 1}]\n$recommendation" }
-                    println("popup status:${currStates.popup.isDisposed}")
-                    println(
-                        "SessionId: ${responseContext.sessionId}, " +
-                            "RequestId: ${validatedResponse.responseMetadata().requestId()}, " +
-                            "Jetbrains IDE: ${ApplicationInfo.getInstance().fullApplicationName}, " +
-                            "IDE version: ${ApplicationInfo.getInstance().apiVersion}, " +
-                            "Filename: ${nextRequestContext.fileContextInfo.filename}, " +
-                            "Left context of current line: ${nextRequestContext.fileContextInfo.caretContext.leftContextOnCurrentLine}, " +
-                            "Cursor line: ${nextRequestContext.caretPosition.line}, " +
-                            "Caret offset: ${nextRequestContext.caretPosition.offset}, " +
-                            (latency?.let { "Latency: $latency, " } ?: "") +
-                            "Recommendations size: ${firstResponse.completions().size},${validatedResponse.completions().size} " +
-                            "Recommendations: \n${recommendationLogs ?: "None"}"
-                    )
-                    println("recmmentdation context: $recommendationContext")
                 }
             } catch (ex: Exception) {
                 LOG.warn("Failed to prefetch next codewhisperer invocation: ${ex.message}")
@@ -772,7 +753,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         Disposer.register(newPopup, updatedNextStates)
         CodeWhispererPopupManager.getInstance().initPopupListener(updatedNextStates)
 
-//        println("sessionId: ${updatedNextStates.responseContext.sessionId}, rec size: ${updatedNextStates.recommendationContext.details.size}")
         runInEdt {
             CodeWhispererPopupManager.getInstance().changeStates(
                 updatedNextStates,
