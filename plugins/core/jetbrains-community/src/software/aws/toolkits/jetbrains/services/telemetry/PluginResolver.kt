@@ -45,7 +45,7 @@ class PluginResolver private constructor(callerStackTrace: Array<StackTraceEleme
          * Sets a PluginResolver instance to a thread-local for the current thread.
          * This value will be retrieved by subsequent calls to fromCurrentThread.
          */
-        fun setThreadLocal(value: PluginResolver) {
+        fun setThreadLocal(value: PluginResolver?) {
             threadLocalResolver.set(value)
         }
     }
