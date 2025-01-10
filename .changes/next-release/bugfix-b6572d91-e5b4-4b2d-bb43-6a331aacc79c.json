@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Prevent customization override if user has manually selected a customization"
-}
