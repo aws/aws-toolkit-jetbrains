@@ -632,14 +632,12 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         }
         cs.launch(getCoroutineBgContext()) {
             val psiFile =
-                runReadAction { PsiDocumentManager.getInstance(currStates.requestContext.project).getPsiFile(currStates.requestContext.editor.document) }
-            if (psiFile == null) {
-                LOG.debug { "No PSI file for the current document" }
-                if (currStates.requestContext.triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
-                    showCodeWhispererInfoHint(currStates.requestContext.editor, message("codewhisperer.trigger.document.unsupported"))
+                runReadAction {
+                    PsiDocumentManager.getInstance(currStates.requestContext.project).getPsiFile(currStates.requestContext.editor.document)
+                } ?: run {
+                    LOG.debug { "No PSI file for the current document" }
+                    return@launch
                 }
-                return@launch
-            }
             val nextCaretPosition = calculateNextCaretPosition(currStates.requestContext, firstValidRecommendation)
             val nextFileContextInfo = createNextFileContextInfo(currStates.requestContext, firstValidRecommendation)
 
@@ -652,8 +650,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     latencyContext
                 ).copy(
                     caretPosition = nextCaretPosition,
-                    fileContextInfo = nextFileContextInfo,
-                    latencyContext = latencyContext
+                    fileContextInfo = nextFileContextInfo
                 )
             } catch (e: Exception) {
                 LOG.debug { e.message.toString() }
@@ -661,14 +658,13 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 return@launch
             }
 
-//            LOG.warn("nextRequestContext is: $nextRequestContext")
             val newVisualPosition = withContext(EDT) {
                 runReadAction {
                     nextRequestContext.editor.offsetToVisualPosition(nextRequestContext.caretPosition.offset)
                 }
             }
             try {
-                val responseIterable = CodeWhispererClientAdaptor.getInstance(nextRequestContext.project)
+                val nextResponse = CodeWhispererClientAdaptor.getInstance(nextRequestContext.project)
                     .generateCompletions(
                         buildCodeWhispererRequest(
                             nextRequestContext.fileContextInfo,
@@ -676,27 +672,30 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                             nextRequestContext.customizationArn
                         )
                     )
-                var startTime = System.nanoTime()
+                val startTime = System.nanoTime()
                 nextRequestContext.latencyContext.codewhispererPreprocessingEnd = System.nanoTime()
                 nextRequestContext.latencyContext.paginationAllCompletionsStart = System.nanoTime()
                 CodeWhispererInvocationStatus.getInstance().setInvocationStart()
-                val firstResponse = responseIterable
-                firstResponse?.let {
+                nextResponse.let {
                     val endTime = System.nanoTime()
                     val latency = TimeUnit.NANOSECONDS.toMillis(endTime - startTime).toDouble()
-                    val requestId = firstResponse.responseMetadata().requestId()
-                    val sessionId = firstResponse.sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
-                    nextRequestContext.latencyContext.codewhispererPostprocessingStart = System.nanoTime()
-                    nextRequestContext.latencyContext.paginationFirstCompletionTime =
-                        (endTime - nextRequestContext.latencyContext.codewhispererEndToEndStart).toDouble()
-                    nextRequestContext.latencyContext.firstRequestId = requestId
+                    val requestId = nextResponse.responseMetadata().requestId()
+                    val sessionId = nextResponse.sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
+
+                    nextRequestContext.latencyContext.apply {
+                        codewhispererPostprocessingStart = System.nanoTime()
+                        paginationFirstCompletionTime = (endTime - codewhispererEndToEndStart).toDouble()
+                        firstRequestId = requestId
+                    }
+
                     CodeWhispererInvocationStatus.getInstance().setInvocationSessionId(sessionId)
-                    val responseContext = ResponseContext(sessionId)
+
+                    val nextResponseContext = ResponseContext(sessionId)
                     CodeWhispererTelemetryService.getInstance().sendServiceInvocationEvent(
-                        firstResponse.responseMetadata().requestId(),
+                        nextResponse.responseMetadata().requestId(),
                         nextRequestContext,
-                        responseContext,
-                        firstResponse.completions().size,
+                        nextResponseContext,
+                        nextResponse.completions().size,
                         true,
                         latency,
                         null
@@ -712,7 +711,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                             )
                         }
                     }
-                    val recommendationContext = RecommendationContext(detailContexts, "", "", newVisualPosition)
+                    val nextRecommendationContext = RecommendationContext(detailContexts, "", "", newVisualPosition)
                     val popup = withContext(EDT) {
                         JBPopupFactory.getInstance().createMessage("dummy popup")
                     }
@@ -721,14 +720,13 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     if (currStates.popup.isDisposed) {
                         CodeWhispererTelemetryService.getInstance().sendUserDecisionEventForAll(
                             nextRequestContext,
-                            responseContext,
-                            recommendationContext,
+                            nextResponseContext,
+                            nextRecommendationContext,
                             SessionContext(),
                             false
                         )
                     } else {
-                        val nextStates = InvocationContext(nextRequestContext, responseContext, recommendationContext, popup)
-                        nextInvocationContext = nextStates
+                        nextInvocationContext = InvocationContext(nextRequestContext, nextResponseContext, nextRecommendationContext, popup)
                     }
                     LOG.debug("Prefetched next invocation stored in nextInvocationContext")
                 }
@@ -744,9 +742,10 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         nextInvocationContext = null
 
         val newPopup = CodeWhispererPopupManager.getInstance().initPopup()
-        val updatedNextStates = nextStates.copy(popup = newPopup)
-        addPopupChildDisposables(nextStates.popup)
-        Disposer.register(newPopup, updatedNextStates)
+        val updatedNextStates = nextStates.copy(popup = newPopup).also {
+            addPopupChildDisposables(it.popup)
+            Disposer.register(newPopup, it)
+        }
         CodeWhispererPopupManager.getInstance().initPopupListener(updatedNextStates)
 
         runInEdt {
@@ -754,8 +753,8 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 updatedNextStates,
                 0,
                 "",
-                true,
-                false //
+                typeaheadAdded = true,
+                recommendationAdded = false
             )
         }
 
@@ -768,12 +767,11 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         firstValidRecommendation: DetailContext,
     ): CaretPosition {
         val lastLine = currentRequestContext.fileContextInfo.caretContext.leftContextOnCurrentLine
-        val indentation = lastLine.takeWhile { it == ' ' || it == '\t' }
+        val indentation = lastLine.takeWhile { it.isWhitespace() }
         val recommendedText = buildString {
-            val original = firstValidRecommendation.recommendation.content()
             append(indentation)
-            append(original)
-            if (!original.endsWith("\n")) {
+            append(firstValidRecommendation.recommendation.content())
+            if (!endsWith("\n")) {
                 append("\n")
             }
         }
@@ -782,18 +780,18 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         val lineCount = lines.size - 1
         val lastLineLength = if (lines.size > 1) lines[lines.size - 2].length else 0
 
-        val newLine = currentRequestContext.caretPosition.line + lineCount
-        val newOffset = currentRequestContext.caretPosition.offset + lastLineLength
-
-        return CaretPosition(line = newLine, offset = newOffset)
+        return CaretPosition(
+            line = currentRequestContext.caretPosition.line + lineCount,
+            offset = currentRequestContext.caretPosition.offset + lastLineLength
+        )
     }
 
     fun sendUserDecisionForNextSession() {
-        nextInvocationContext?.let {
+        nextInvocationContext?.let { context ->
             CodeWhispererTelemetryService.getInstance().sendUserDecisionEventForAll(
-                nextInvocationContext!!.requestContext,
-                nextInvocationContext!!.responseContext,
-                nextInvocationContext!!.recommendationContext,
+                context.requestContext,
+                context.responseContext,
+                context.recommendationContext,
                 SessionContext(),
                 false
             )
@@ -804,10 +802,10 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         requestContext: RequestContext,
         firstValidRecommendation: DetailContext,
     ): FileContextInfo {
-        val caretContext = requestContext.fileContextInfo.caretContext.copy(
+        val updatedCaretContext = requestContext.fileContextInfo.caretContext.copy(
             leftFileContext = requestContext.fileContextInfo.caretContext.leftFileContext + firstValidRecommendation.recommendation.content()
         )
-        return requestContext.fileContextInfo.copy(caretContext = caretContext)
+        return requestContext.fileContextInfo.copy(caretContext = updatedCaretContext)
     }
 
     private fun sendDiscardedUserDecisionEventForAll(
