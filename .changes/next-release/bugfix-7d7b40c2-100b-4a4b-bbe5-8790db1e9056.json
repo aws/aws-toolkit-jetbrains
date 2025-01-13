@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "/transform: automatically open pre-build error logs when available"
+}
