@@ -491,9 +491,6 @@ class CodeTestChatController(
                     numberOfCharsSelected = selectedFileContent.length
                     charDifference = numberOfCharsGenerated - numberOfCharsSelected
 
-                    println("lineDifference" + lineDifference)
-                    println("charDifference" + charDifference)
-
                     session.linesOfCodeGenerated = lineDifference.coerceAtLeast(0)
                     session.charsOfCodeGenerated = charDifference.coerceAtLeast(0)
                     latencyOfTestGeneration = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration)
