@@ -793,6 +793,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 false
             )
         }
+        nextInvocationContext = null
     }
 
     private fun createNextFileContextInfo(
