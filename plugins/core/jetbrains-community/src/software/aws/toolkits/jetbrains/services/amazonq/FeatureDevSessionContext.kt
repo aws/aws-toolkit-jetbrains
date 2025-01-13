@@ -202,19 +202,21 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         }
 
         val zipFilePath = createTemporaryZipFileAsync { zipfs ->
-            val isPosix = FileSystems.getDefault().supportedFileAttributeViews().contains("posix")
+            val posixFileAttributeSubstr = "posix"
+            val isPosix = FileSystems.getDefault().supportedFileAttributeViews().contains(posixFileAttributeSubstr)
             filesToIncludeFlow.collect { file ->
 
                 if (!file.isDirectory) {
                     val externalFilePath = Path(file.path)
                     val relativePath = Path(file.path).relativeTo(projectRootPath)
                     val zipfsPath = zipfs.getPath("/$relativePath")
-                    runBlocking {
+                    withContext(getCoroutineBgContext()) {
                         zipfsPath.createParentDirectories()
                         try {
                             Files.copy(externalFilePath, zipfsPath, StandardCopyOption.REPLACE_EXISTING)
                             if (isPosix) {
-                                Files.setAttribute(zipfsPath, "zip:permissions", externalFilePath.getPosixFilePermissions())
+                                val zipPermissionAttributeName = "zip:permissions"
+                                Files.setAttribute(zipfsPath, zipPermissionAttributeName, externalFilePath.getPosixFilePermissions())
                             }
                         } catch (e: NoSuchFileException) {
                             // Noop: Skip if file was deleted
