@@ -771,14 +771,11 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         val recommendedText = buildString {
             append(indentation)
             append(firstValidRecommendation.recommendation.content())
-            if (!endsWith("\n")) {
-                append("\n")
-            }
         }
 
         val lines = recommendedText.split("\n")
         val lineCount = lines.size - 1
-        val lastLineLength = if (lines.size > 1) lines[lines.size - 2].length else 0
+        val lastLineLength = if (lines.size > 1) lines[lines.size - 1].length else 0
 
         return CaretPosition(
             line = currentRequestContext.caretPosition.line + lineCount,
