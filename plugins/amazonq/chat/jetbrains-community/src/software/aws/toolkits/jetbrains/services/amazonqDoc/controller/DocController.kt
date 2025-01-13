@@ -226,6 +226,9 @@ class DocController(
         if (session.sessionState.token?.token !== null) {
             session.sessionState.token?.cancel()
         }
+
+        docGenerationTask.reset()
+        newTask(message.tabId)
     }
 
     private suspend fun updateDocumentation(tabId: String) {
@@ -490,6 +493,8 @@ class DocController(
             message = message("amazonqFeatureDev.chat_message.ask_for_new_task")
         )
 
+        messenger.sendUpdatePromptProgress(tabId, null)
+
         messenger.sendUpdatePlaceholder(
             tabId = tabId,
             newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation")
@@ -710,9 +715,11 @@ class DocController(
                 else -> emptyList()
             }
 
-            processOpenDiff(
-                message = IncomingDocMessage.OpenDiff(tabId = tabId, filePath = filePaths[0].zipFilePath, deleted = false)
-            )
+            if (filePaths.isNotEmpty()) {
+                processOpenDiff(
+                    message = IncomingDocMessage.OpenDiff(tabId = tabId, filePath = filePaths[0].zipFilePath, deleted = false)
+                )
+            }
         } catch (err: Exception) {
             processErrorChatMessage(err, session, tabId)
 
