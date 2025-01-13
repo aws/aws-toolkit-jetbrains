@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Amazon Q /dev: Fix issue when files are deleted while preparing context"
-}

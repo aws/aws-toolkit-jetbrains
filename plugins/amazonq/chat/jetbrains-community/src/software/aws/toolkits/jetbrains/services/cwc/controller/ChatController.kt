@@ -147,7 +147,7 @@ class ChatController private constructor(
                 shouldUseWorkspaceContext = true
                 prompt = prompt.replace("@workspace", "")
                 val projectContextController = ProjectContextController.getInstance(context.project)
-                queryResult = projectContextController.query(prompt, timeout = null)
+                queryResult = projectContextController.queryChat(prompt, timeout = null)
                 if (!projectContextController.getProjectContextIndexComplete()) shouldAddIndexInProgressMessage = true
                 logger.info { "project context relevant document count: ${queryResult.size}" }
             } else {
@@ -156,7 +156,7 @@ class ChatController private constructor(
         } else if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
             if (ProjectContextController.getInstance(context.project).getProjectContextIndexComplete()) {
                 val projectContextController = ProjectContextController.getInstance(context.project)
-                queryResult = projectContextController.query(prompt, timeout = CHAT_IMPLICIT_PROJECT_CONTEXT_TIMEOUT)
+                queryResult = projectContextController.queryChat(prompt, timeout = CHAT_IMPLICIT_PROJECT_CONTEXT_TIMEOUT)
             } else {
                 logger.debug { "skipping implicit workspace context as index is not ready" }
             }
