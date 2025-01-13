@@ -31,7 +31,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESH
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_DOWNLOAD_EXPIRED
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildStartNewTransformFollowup
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.createViewDiffButton
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.getDownloadedArtifactTextFromType
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.viewSummaryButton
