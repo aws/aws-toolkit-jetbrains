@@ -9,7 +9,6 @@ import com.intellij.diff.DiffManagerEx
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
@@ -486,8 +485,6 @@ class CodeTestChatController(
                     numberOfLinesGenerated = generatedFileContent.lines().size
                     numberOfLinesSelected = selectedFileContent.lines().size
                     lineDifference = numberOfLinesGenerated - numberOfLinesSelected
-
-
 
                     // Character difference calculation: charsOfCodeGenerated = number of characters in generated test file - number of characters in original test file
                     numberOfCharsGenerated = generatedFileContent.length
@@ -1075,8 +1072,9 @@ class CodeTestChatController(
     }
 
     // Return generated test file content
-    private fun getGeneratedFileContent( session: Session): String {
-        return session.generatedTestDiffs[session.testFileRelativePathToProjectRoot].toString()
+    private fun getGeneratedFileContent(session: Session): String {
+        val generateFileContent = session.generatedTestDiffs[session.testFileRelativePathToProjectRoot].toString()
+        return generateFileContent
     }
 
     /*
