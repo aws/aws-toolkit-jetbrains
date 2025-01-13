@@ -17,10 +17,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Sessio
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.deleteUploadArtifact
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.uploadArtifactToS3
-import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
-import software.aws.toolkits.telemetry.AmazonqTelemetry
-import software.aws.toolkits.telemetry.AmazonqUploadIntent
-import software.aws.toolkits.telemetry.Result
 
 private val logger = getLogger<PrepareDocGenerationState>()
 
@@ -40,10 +36,6 @@ class PrepareDocGenerationState(
 ) : SessionState {
     override val phase = SessionStatePhase.CODEGEN
     override suspend fun interact(action: SessionStateAction): SessionStateInteraction<SessionState> {
-        val startTime = System.currentTimeMillis()
-        var result: Result = Result.Succeeded
-        var failureReason: String? = null
-        var failureReasonDesc: String? = null
         var zipFileLength: Long? = null
         val nextState: SessionState
         try {
@@ -76,30 +68,14 @@ class PrepareDocGenerationState(
                 config = this.config,
                 uploadId = this.uploadId,
                 currentIteration = this.currentIteration,
-                repositorySize = zipFileLength.toDouble(),
                 messenger = messenger,
                 phase = phase,
                 token = this.token
             )
         } catch (e: Exception) {
-            result = Result.Failed
-            failureReason = e.javaClass.simpleName
-            failureReasonDesc = e.message
             logger.warn(e) { "$FEATURE_NAME: Code uploading failed: ${e.message}" }
             throw e
-        } finally {
-            AmazonqTelemetry.createUpload(
-                amazonqConversationId = config.conversationId,
-                amazonqRepositorySize = zipFileLength?.toDouble(),
-                amazonqUploadIntent = AmazonqUploadIntent.TASKASSISTPLANNING,
-                result = result,
-                reason = failureReason,
-                reasonDesc = failureReasonDesc,
-                duration = (System.currentTimeMillis() - startTime).toDouble(),
-                credentialStartUrl = getStartUrl(config.amazonQCodeGenService.project)
-            )
         }
-        // It is essential to interact with the next state outside of try-catch block for  the telemetry to capture events for the states separately
         return nextState.interact(action)
     }
 }
