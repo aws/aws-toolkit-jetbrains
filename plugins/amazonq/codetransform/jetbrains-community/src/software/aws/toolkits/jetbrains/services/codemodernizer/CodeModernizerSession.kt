@@ -8,6 +8,7 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.serviceContainer.AlreadyDisposedException
 import com.intellij.util.io.HttpRequests
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import org.apache.commons.codec.digest.DigestUtils
 import software.amazon.awssdk.core.exception.SdkClientException
 import software.amazon.awssdk.services.codewhispererruntime.model.ResumeTransformationResponse
@@ -20,11 +21,13 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationUserActionStatus
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
+import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerException
@@ -55,7 +58,10 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.nio.file.Path
+import java.time.Duration
 import java.time.Instant
 import java.util.Base64
 import java.util.concurrent.CancellationException
@@ -142,7 +148,7 @@ class CodeModernizerSession(
      *
      *  Based on [CodeWhispererCodeScanSession]
      */
-    fun createModernizationJob(copyResult: MavenCopyCommandsResult?): CodeModernizerStartJobResult {
+    suspend fun createModernizationJob(copyResult: MavenCopyCommandsResult?): CodeModernizerStartJobResult {
         LOG.info { "Compressing local project" }
         val payload: File?
         var payloadSize = 0
@@ -377,8 +383,12 @@ class CodeModernizerSession(
     /**
      * Adapted from [CodeWhispererCodeScanSession]
      */
-    fun uploadPayload(payload: File): String {
-        val sha256checksum: String = Base64.getEncoder().encodeToString(DigestUtils.sha256(FileInputStream(payload)))
+    suspend fun uploadPayload(payload: File): String {
+        val sha256checksum: String = Base64.getEncoder().encodeToString(
+            withContext(getCoroutineBgContext()) {
+                DigestUtils.sha256(FileInputStream(payload))
+            }
+        )
         if (isDisposed.get()) {
             throw AlreadyDisposedException("Disposed when about to create upload URL")
         }
@@ -394,17 +404,24 @@ class CodeModernizerSession(
             throw AlreadyDisposedException("Disposed when about to upload project artifact to s3")
         }
         val uploadStartTime = Instant.now()
-        try {
+        waitUntil(
+            exceptionsToIgnore = setOf(
+                UnknownHostException::class,
+                SocketTimeoutException::class,
+                HttpRequests.HttpStatusException::class,
+                ConnectException::class,
+                IOException::class,
+            ),
+            maxDuration = Duration.ofMinutes(5)
+        ) {
             clientAdaptor.uploadArtifactToS3(
                 createUploadUrlResponse.uploadUrl(),
                 payload,
                 sha256checksum,
                 createUploadUrlResponse.kmsKeyArn().orEmpty(),
             ) { shouldStop.get() }
-        } catch (e: Exception) {
-            LOG.error { "Unexpected error when uploading project artifact to S3: $e" }
-            throw e // pass along error to callee
         }
+        LOG.info { "Upload to S3 succeeded" }
         if (!shouldStop.get()) {
             LOG.info { "Uploaded artifact. Latency: ${calculateTotalLatency(uploadStartTime, Instant.now())}ms" }
         }

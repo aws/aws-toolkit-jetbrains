@@ -1,3 +1,24 @@
+# _3.47_ (2025-01-09)
+- **(Bug Fix)** Fix issue where users are unable to login to Amazon Q if they have previously authenticated ([#5214](https://github.com/aws/aws-toolkit-jetbrains/issues/5214))
+- **(Bug Fix)** Fix incorrect text shown while updating documentation in /doc
+- **(Bug Fix)** Amazon Q Code Transformation: retry initial project upload on failure
+- **(Bug Fix)** /transform: use correct doc link in SQL conversion help message
+- **(Bug Fix)** Amazon Q /dev: Fix issue when files are deleted while preparing context
+- **(Bug Fix)** Amazon Q /test: Test generation fails for files outside the project
+- **(Bug Fix)** Amazon Q Code Transformation: allow PostgreSQL as target DB for SQL conversions
+- **(Bug Fix)** Fix incorrect accept and reject buttons shows up while hovering over the generated file
+- **(Bug Fix)** Prevent customization override if user has manually selected a customization
+- **(Bug Fix)** Align UX text of document generation flow with vs code version
+
+# _3.46_ (2024-12-17)
+- **(Feature)** /review: Code fix automatically scrolls into view after generation.
+- **(Feature)** Chat: improve font size and line-height in footer (below prompt input field)
+- **(Feature)** Adds capability to send new context commands to AB groups
+- **(Bug Fix)** Chat: When writing a prompt without sending it, navigating via up/down arrows sometimes deletes the unsent prompt.
+- **(Bug Fix)** Fix chat not retaining history when interaction is through onboarding tab type ([#5189](https://github.com/aws/aws-toolkit-jetbrains/issues/5189))
+- **(Bug Fix)** Chat: When navigating to previous prompts, code attachments are sometimes displayed incorrectly
+- **(Bug Fix)** Reduce frequency of system information query
+
 # _3.45_ (2024-12-10)
 - **(Feature)** Add acknowledgement button for Amazon Q Chat disclaimer
 - **(Bug Fix)** Chosing cancel on sign out confirmation now cancels the sign out and does not delete profiles from ~/.aws/config ([#5167](https://github.com/aws/aws-toolkit-jetbrains/issues/5167))

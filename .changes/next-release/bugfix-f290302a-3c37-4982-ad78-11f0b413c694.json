@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fix chat not retaining history when interaction is through onboarding tab type (#5189)"
-}

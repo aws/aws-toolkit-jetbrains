@@ -47,7 +47,7 @@ class ProjectContextController(private val project: Project, private val cs: Cor
 
     fun getProjectContextIndexComplete() = projectContextProvider.isIndexComplete.get()
 
-    suspend fun query(prompt: String, timeout: Long?): List<RelevantDocument> {
+    suspend fun queryChat(prompt: String, timeout: Long?): List<RelevantDocument> {
         try {
             return projectContextProvider.query(prompt, timeout)
         } catch (e: Exception) {
