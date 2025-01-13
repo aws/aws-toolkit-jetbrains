@@ -474,15 +474,13 @@ class CodeTestChatController(
                     )
                     session.openedDiffFile = FileEditorManager.getInstance(context.project).selectedEditor?.file
                     ApplicationManager.getApplication().runReadAction {
-                        generatedFileContent = getFileContentAtTestFilePath(
-                            session.projectRoot,
-                            session.testFileRelativePathToProjectRoot
-                        )
-                        val selectedFile = FileEditorManager.getInstance(context.project).selectedEditor?.file
-                        selectedFileContent = selectedFile?.let {
-                            FileDocumentManager.getInstance().getDocument(it)?.text
-                        }.orEmpty()
+                        generatedFileContent = getGeneratedFileContent(session)
                     }
+
+                    selectedFileContent = getFileContentAtTestFilePath(
+                        session.projectRoot,
+                        session.testFileRelativePathToProjectRoot,
+                    )
 
                     // Line difference calculation: linesOfCodeGenerated = number of lines in generated test file - number of lines in original test file
                     numberOfLinesGenerated = generatedFileContent.lines().size
@@ -1074,6 +1072,11 @@ class CodeTestChatController(
         } else {
             "" // Return an empty string if the file does not exist
         }
+    }
+
+    // Return generated test file content
+    private fun getGeneratedFileContent( session: Session): String {
+        return session.generatedTestDiffs[session.testFileRelativePathToProjectRoot].toString()
     }
 
     /*
