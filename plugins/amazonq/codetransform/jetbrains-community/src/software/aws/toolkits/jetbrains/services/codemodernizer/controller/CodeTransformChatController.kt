@@ -113,6 +113,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
+import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 
@@ -302,7 +303,12 @@ class CodeTransformChatController(
 
         val sourceJdk = getSourceJdk(moduleVirtualFile)
 
-        if (sourceJdk == JavaSdkVersion.JDK_21 && targetVersion == "17") {
+        val sourceVersion = sourceJdk.toString()
+
+        notifyStickyInfo("sourceJdk is", sourceJdk.toString())
+        notifyStickyInfo("targetVersion is", targetVersion)
+
+        if (sourceVersion == JavaSdkVersion.JDK_21.toString() && targetVersion == JavaSdkVersion.JDK_17.toString()) {
             codeTransformChatHelper.addNewMessage(
                 buildProjectInvalidChatContent(
                     ValidationResult(
@@ -317,8 +323,10 @@ class CodeTransformChatController(
         val selection = CustomerSelection(
             configurationFile = moduleVirtualFile,
             sourceJavaVersion = sourceJdk,
-            targetJavaVersion = if (targetVersion == "17") JavaSdkVersion.JDK_17 else JavaSdkVersion.JDK_21,
+            targetJavaVersion = if (targetVersion == JavaSdkVersion.JDK_17.toString()) JavaSdkVersion.JDK_17 else JavaSdkVersion.JDK_21,
         )
+
+        notifyStickyInfo("customerSelection is", selection.toString())
 
         // Create and set a session
         codeModernizerManager.createCodeModernizerSession(selection, context.project)
@@ -399,7 +407,7 @@ class CodeTransformChatController(
         codeModernizerManager.codeTransformationSession?.let {
             it.sessionContext.customBuildCommand = customBuildCommand
         }
-        val targetJdkVersion = codeModernizerManager.codeTransformationSession?.sessionContext?.targetJavaVersion?.name ?: ""
+        val targetJdkVersion = codeModernizerManager.codeTransformationSession?.sessionContext?.targetJavaVersion?.name.orEmpty()
         codeTransformChatHelper.run {
             addNewMessage(buildUserInputOneOrMultipleDiffsChatIntroContent(targetJdkVersion))
             addNewMessage(buildUserInputOneOrMultipleDiffsFlagChatContent())

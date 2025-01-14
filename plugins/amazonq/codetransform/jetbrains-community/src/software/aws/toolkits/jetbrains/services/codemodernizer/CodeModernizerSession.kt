@@ -309,8 +309,8 @@ class CodeModernizerSession(
     }
 
     private fun startJob(uploadId: String): StartTransformationResponse {
-        notifyStickyInfo("sourceLanguage", sessionContext.sourceJavaVersion.name)
-        notifyStickyInfo("targetLanguage", sessionContext.targetJavaVersion.name)
+        notifyStickyInfo("sourceLanguage", sessionContext.sourceJavaVersion.name.toTransformationLanguage().toString())
+        notifyStickyInfo("targetLanguage", sessionContext.targetJavaVersion.name.toTransformationLanguage().toString())
         val sourceLanguage = sessionContext.sourceJavaVersion.name.toTransformationLanguage()
         val targetLanguage = sessionContext.targetJavaVersion.name.toTransformationLanguage()
         if (sourceLanguage == TransformationLanguage.UNKNOWN_TO_SDK_VERSION) {

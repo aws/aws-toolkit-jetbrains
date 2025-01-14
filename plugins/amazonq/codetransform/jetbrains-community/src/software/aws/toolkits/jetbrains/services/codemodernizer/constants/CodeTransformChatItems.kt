@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.constants
 
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_PREREQUISITES
@@ -176,12 +177,12 @@ private val selectTargetVersionFormItem = FormItem(
     mandatory = true,
     options = listOf(
         FormItemOption(
-            label = "17",
-            value = "17",
+            label = JavaSdkVersion.JDK_17.toString(),
+            value = JavaSdkVersion.JDK_17.toString(),
         ),
         FormItemOption(
-            label = "21",
-            value = "21",
+            label = JavaSdkVersion.JDK_21.toString(),
+            value = JavaSdkVersion.JDK_21.toString(),
         )
     )
 )
