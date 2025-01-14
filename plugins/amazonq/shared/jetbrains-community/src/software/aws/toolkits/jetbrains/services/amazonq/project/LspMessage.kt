@@ -52,7 +52,7 @@ data class QueryChatRequest(
 data class QueryInlineCompletionRequest(
     val query: String,
     val filePath: String,
-    val target: String
+    val target: String,
 ) : LspRequest
 
 data class LspResponse(
@@ -76,9 +76,7 @@ enum class InlineContextTarget(private val v: String) {
     CODEMAP("codemap"),
     BM25("bm25"), ;
 
-    override fun toString(): String {
-        return this.v
-    }
+    override fun toString(): String = this.v
 }
 
 // TODO: unify with [software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk]

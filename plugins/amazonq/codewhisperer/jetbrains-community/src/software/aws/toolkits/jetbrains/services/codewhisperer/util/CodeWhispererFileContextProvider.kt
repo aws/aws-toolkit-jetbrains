@@ -146,18 +146,20 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 val latency = System.currentTimeMillis() - startFetchingTimestamp
                 if (it.contents.isNotEmpty()) {
                     val logStr = buildString {
-                        append("""Q inline completion supplemental context: 
+                        append(
+                            """Q inline completion supplemental context: 
                             | Strategy: ${it.strategy},
                             | Latency: $latency ms,
                             | Contents: ${it.contents.size} chunks,
                             | ContentLength: ${it.contentLength} chars,
                             | TargetFile: ${it.targetFileName},
-                        """.trimMargin())
+                            """.trimMargin()
+                        )
                         it.contents.forEachIndexed { index, chunk ->
                             append(
                                 """
                             |
-                            | Chunk ${index}:
+                            | Chunk $index:
                             |    path = ${chunk.path},
                             |    score = ${chunk.score},
                             |    contentLength = ${chunk.content.length}

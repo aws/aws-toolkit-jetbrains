@@ -22,7 +22,7 @@ enum class CrossFileStrategy : SupplementalContextStrategy {
     OpenTabsBM25,
     Empty,
     ProjectContext,
-    Codemap
+    Codemap,
     ;
 
     override fun toString() = when (this) {
