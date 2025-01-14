@@ -10,7 +10,8 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.util.concurrency.AppExecutorUtil
 import io.mockk.every
-import io.mockk.mockk
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit4.MockKRule
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -25,6 +26,12 @@ class ThreadingUtilsKtTest {
     @Rule
     @JvmField
     val application = ApplicationRule()
+
+    @get:Rule
+    val mockkRule = MockKRule(this)
+
+    @MockK
+    private lateinit var pluginResolver: PluginResolver
 
     @Test
     fun `computeOnEdt runs on edt`() {
@@ -78,13 +85,13 @@ class ThreadingUtilsKtTest {
 
     @Test
     fun `pluginAwareExecuteOnPooledThread inherits plugin resolver`() {
-        val pluginResolver = mockk<PluginResolver> {
-            every { product } returns AWSProduct.AMAZON_Q_FOR_JET_BRAINS
-        }
+        every { pluginResolver.product } returns AWSProduct.AMAZON_Q_FOR_JET_BRAINS
         PluginResolver.setThreadLocal(pluginResolver)
 
         pluginAwareExecuteOnPooledThread {
             assertEquals(PluginResolver.fromCurrentThread().product, AWSProduct.AMAZON_Q_FOR_JET_BRAINS)
         }.get()
+
+        PluginResolver.setThreadLocal(PluginResolver.fromStackTrace(Thread.currentThread().stackTrace))
     }
 }

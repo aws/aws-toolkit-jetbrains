@@ -6,26 +6,23 @@ package software.aws.toolkits.jetbrains.services.telemetry
 import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.ide.plugins.PluginManagerCore
 import io.mockk.called
-import io.mockk.clearAllMocks
 import io.mockk.every
+import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.verify
 import junit.framework.TestCase.assertEquals
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
 
+@ExtendWith(MockKExtension::class)
 class PluginResolverTest {
     @BeforeEach
     fun setup() {
+        PluginResolver.setThreadLocal(null)
         mockkStatic(PluginManagerCore::class)
-    }
-
-    @AfterEach
-    fun tearDown() {
-        clearAllMocks()
     }
 
     @Test
