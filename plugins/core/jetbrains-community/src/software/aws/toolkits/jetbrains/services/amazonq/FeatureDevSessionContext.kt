@@ -44,28 +44,16 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     private val ignorePatterns = setOf(
         "\\.aws-sam",
         "\\.svn",
-        "\\.hg/?",
-        "\\.rvm",
-        "\\.git/?",
-        "\\.gitignore",
-        "\\.project",
-        "\\.gem",
-        "/\\.idea/?",
-        "\\.zip$",
-        "\\.bin$",
-        "\\.png$",
-        "\\.jpg$",
-        "\\.svg$",
-        "\\.pyc$",
-        "/license\\.txt$",
-        "/License\\.txt$",
-        "/LICENSE\\.txt$",
-        "/license\\.md$",
-        "/License\\.md$",
-        "/LICENSE\\.md$",
-        "node_modules/?",
-        "build/?",
-        "dist/?"
+        "/\\.(?:hg|git)/?", // Combine version control system patterns
+        "\\.(?:rvm|gem)", // Combine Ruby-related patterns
+        "/?\\.(?:gitignore|project|idea/?)", // Combine project config patterns
+        "\\.(?:zip|bin)$", // Combine binary file patterns
+        "\\.(?:png|jpg|svg)$", // Combine image file patterns
+        "\\.pyc$", // Python compiled files
+        "/[Ll][Ii][Cc][Ee][Nn][Ss][Ee]\\.(txt|md)$", // Case-insensitive license files
+        "(?:^|.*/?)node_modules(?:/.*)?\$",
+        "(?:^|.*/?)build(?:/.*)?\$",
+        "(?:^|.*/?)dist(?:/.*)?\$"
     ).map { Regex(it) }
 
     // well known source files that do not have extensions
@@ -218,9 +206,39 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
 
     // gitignore patterns are not regex, method update needed.
     private fun convertGitIgnorePatternToRegex(pattern: String): String = pattern
+        // Escape special regex characters except * and ?
         .replace(".", "\\.")
-        .replace("*", ".*")
-        .let { if (it.endsWith("/")) "$it?" else it } // Handle directory-specific patterns by optionally matching trailing slash
+        .replace("+", "\\+")
+        .replace("(", "\\(")
+        .replace(")", "\\)")
+        .replace("[", "\\[")
+        .replace("]", "\\]")
+        .replace("{", "\\{")
+        .replace("}", "\\}")
+        .replace(",", "\\,")
+        .replace("^", "\\^")
+        .replace("$", "\\$")
+        .replace("|", "\\|")
+        // Convert gitignore glob patterns to regex
+        .replace("**", ".*?") // Match any directory depth
+        .replace("*", "[^/]*?") // Match any character except path separator
+        .replace("?", "[^/]") // Match single character except path separator
+        .let { pattern ->
+            when {
+                // If pattern starts with '/', anchor it to the start of the path
+                pattern.startsWith("/") -> "^${pattern.substring(1)}"
+                // If pattern doesn't start with '/', it can match anywhere in the path
+                else -> "(?:^|.*/?)$pattern"
+            }
+        }
+        .let { pattern ->
+            when {
+                // If pattern ends with '/', it should match directories
+                pattern.endsWith("/") -> "$pattern.*"
+                // Otherwise match exactly or with a trailing slash for directories
+                else -> "$pattern(?:/.*)?$"
+            }
+        }
 
     var selectedSourceFolder: VirtualFile
         set(newRoot) {

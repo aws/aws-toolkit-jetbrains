@@ -140,7 +140,7 @@ class CodeTestSessionConfig(
         }
 
         // 2. Add the "utgRequiredArtifactsDir" directory
-        val utgDir = "utgRequiredArtifactsDir"
+        val utgDir = "utgRequiredArtifactsDir/" // Note the trailing slash which adds it as a directory and not a file
         LOG.debug { "Adding directory to ZIP: $utgDir" }
         val utgEntry = ZipEntry(utgDir)
         it.putNextEntry(utgEntry)
@@ -149,7 +149,7 @@ class CodeTestSessionConfig(
         val buildAndExecuteLogDir = "buildAndExecuteLogDir"
         val subDirs = listOf(buildAndExecuteLogDir, "repoMapData", "testCoverageDir")
         subDirs.forEach { subDir ->
-            val subDirPathString = Path.of(utgDir, subDir).name
+            val subDirPathString = Path.of(utgDir, subDir).toString() + "/" // Added trailing slash similar to utgRequiredArtifactsDir
             LOG.debug { "Adding empty directory to ZIP: $subDirPathString" }
             val zipEntry = ZipEntry(subDirPathString)
             it.putNextEntry(zipEntry)
@@ -167,6 +167,18 @@ class CodeTestSessionConfig(
         var currentTotalLines = 0L
         val languageCounts = mutableMapOf<CodeWhispererProgrammingLanguage, Int>()
 
+        // Adding Target File to make sure target file doesn't get filtered out.
+        selectedFile?.let { selected ->
+            files.add(selected.path)
+            currentTotalFileSize += selected.length
+            currentTotalLines += countLinesInVirtualFile(selected)
+            selected.programmingLanguage().let { language ->
+                if (language !is CodeWhispererUnknownLanguage) {
+                    languageCounts[language] = (languageCounts[language] ?: 0) + 1
+                }
+            }
+        }
+
         moduleLoop@ for (module in project.modules) {
             val changeListManager = ChangeListManager.getInstance(module.project)
             if (module.guessModuleDir() != null) {
@@ -175,7 +187,8 @@ class CodeTestSessionConfig(
                     val current = stack.pop()
 
                     if (!current.isDirectory) {
-                        if (current.isFile && !changeListManager.isIgnoredFile(current) &&
+                        if (current.isFile && current.path != selectedFile?.path &&
+                            !changeListManager.isIgnoredFile(current) &&
                             runBlocking { !featureDevSessionContext.ignoreFile(current) } &&
                             runReadAction { !fileIndex.isInLibrarySource(current) }
                         ) {
