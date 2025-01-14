@@ -29,6 +29,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionConte
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
@@ -498,6 +499,10 @@ class CodeWhispererTelemetryService {
             previousUserTriggerDecisions.add(this)
             // we need this as well because AutotriggerService will reset the queue periodically
             CodeWhispererAutoTriggerService.getInstance().addPreviousDecision(this)
+            // send possible next session event if current action is reject and next popup haven't shown up
+            if (CodewhispererSuggestionState.Reject == CodewhispererSuggestionState.from(this.toString())) {
+                CodeWhispererService.getInstance().sendUserDecisionForNextSession()
+            }
         }
     }
 
