@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix doc generation for modules that are a part of the project"
+}
