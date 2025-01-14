@@ -325,14 +325,16 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
             else -> SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
         }
 
-        var c = contextBeforeTruncation.contents
+        return truncateContext(contextBeforeTruncation)
+    }
+
+    fun truncateContext(context: SupplementalContextInfo): SupplementalContextInfo {
+        var c = context.contents
         while (c.sumOf { it.content.length } >= CodeWhispererConstants.CrossFile.MAX_TOTAL_LENGTH) {
             c = c.dropLast(1)
         }
 
-        val contextAfterTruncation = contextBeforeTruncation.copy(contents = c)
-
-        return contextAfterTruncation
+        return context.copy(contents = c)
     }
 
     @VisibleForTesting
