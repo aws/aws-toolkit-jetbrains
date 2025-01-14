@@ -728,16 +728,16 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     } else {
                         nextInvocationContext = InvocationContext(nextRequestContext, nextResponseContext, nextRecommendationContext, popup)
                     }
-                    LOG.debug("Prefetched next invocation stored in nextInvocationContext")
+                    LOG.debug { "Prefetched next invocation stored in nextInvocationContext" }
                 }
             } catch (ex: Exception) {
-                LOG.warn("Failed to prefetch next codewhisperer invocation: ${ex.message}")
+                LOG.warn { "Failed to prefetch next codewhisperer invocation: ${ex.message}" }
             }
         }
     }
 
     fun promoteNextInvocationIfAvailable() {
-        val nextStates = nextInvocationContext ?: return LOG.debug("No nextInvocationContext found, nothing to promote.")
+        val nextStates = nextInvocationContext ?: return LOG.debug { "No nextInvocationContext found, nothing to promote." }
 
         nextInvocationContext = null
 
@@ -759,7 +759,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         }
 
         prefetchNextInvocationAsync(updatedNextStates)
-        LOG.debug("Promoted nextInvocationContext to current session and displayed next recommendation.")
+        LOG.debug { "Promoted nextInvocationContext to current session and displayed next recommendation." }
     }
 
     private fun calculateNextCaretPosition(
