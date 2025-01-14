@@ -95,7 +95,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
     fun `test createUploadUrlAndUpload()`() {
         val fileMd5: String = Base64.getEncoder().encodeToString(DigestUtils.md5(FileInputStream(file)))
         zipUploadManagerSpy.stub {
-            onGeneric { zipUploadManagerSpy.createUploadUrl(any(), any(), any(), any()) }
+            onGeneric { zipUploadManagerSpy.createUploadUrl(any(), any(), any(), any(), any()) }
                 .thenReturn(fakeCreateUploadUrlResponse)
         }
 
@@ -103,17 +103,19 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
             file,
             "artifactType",
             CodeWhispererConstants.UploadTaskType.SCAN_FILE,
-            codeScanName
+            codeScanName,
+            CodeWhispererConstants.FeatureName.CODE_REVIEW
         )
 
         val inOrder = inOrder(zipUploadManagerSpy)
-        inOrder.verify(zipUploadManagerSpy).createUploadUrl(eq(fileMd5), eq("artifactType"), any(), any())
+        inOrder.verify(zipUploadManagerSpy).createUploadUrl(eq(fileMd5), eq("artifactType"), any(), any(), any())
         inOrder.verify(zipUploadManagerSpy).uploadArtifactToS3(
             eq(fakeCreateUploadUrlResponse.uploadUrl()),
             eq(fakeCreateUploadUrlResponse.uploadId()),
             eq(file),
             eq(fileMd5),
             eq(null),
+            any(),
             any()
         )
     }
@@ -127,7 +129,8 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
                 invalidZipFile,
                 "artifactType",
                 CodeWhispererConstants.UploadTaskType.SCAN_FILE,
-                codeScanName
+                codeScanName,
+                CodeWhispererConstants.FeatureName.CODE_REVIEW
             )
         }
     }
@@ -138,7 +141,8 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
             "md5",
             "type",
             CodeWhispererConstants.UploadTaskType.SCAN_FILE,
-            codeScanName
+            codeScanName,
+            featureUseCase = CodeWhispererConstants.FeatureName.CODE_REVIEW
         )
 
         argumentCaptor<CreateUploadUrlRequest>().apply {
@@ -194,7 +198,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
         )
 
         exceptions.forEachIndexed { index, exception ->
-            val actualMessage = getTelemetryErrorMessage(exception)
+            val actualMessage = getTelemetryErrorMessage(exception, featureUseCase = CodeWhispererConstants.FeatureName.CODE_REVIEW)
             assertThat(expectedMessages[index]).isEqualTo(actualMessage)
         }
     }
@@ -209,7 +213,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
             assertThat(it.responseContext.codeScanJobId).isEqualTo("jobId")
         }
 
-        verify(zipUploadManagerSpy, times(1)).createUploadUrlAndUpload(eq(file), eq("SourceCode"), any(), anyString())
+        verify(zipUploadManagerSpy, times(1)).createUploadUrlAndUpload(eq(file), eq("SourceCode"), any(), anyString(), any())
         val inOrder = inOrder(codeScanSessionSpy)
         inOrder.verify(codeScanSessionSpy, Times(1)).createCodeScan(eq(CodewhispererLanguage.Python.toString()), anyString())
         inOrder.verify(codeScanSessionSpy, Times(1)).getCodeScan(any())
@@ -221,7 +225,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
         assertNotNull(sessionConfigSpy)
 
         mockClient.stub {
-            onGeneric { zipUploadManagerSpy.createUploadUrlAndUpload(any(), any(), any(), any()) }.thenThrow(
+            onGeneric { zipUploadManagerSpy.createUploadUrlAndUpload(any(), any(), any(), any(), any()) }.thenThrow(
                 CodeWhispererException.builder()
                     .message("Project Review Monthly Exceeded")
                     .requestId("abc123")

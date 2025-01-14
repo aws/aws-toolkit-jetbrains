@@ -171,9 +171,9 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }.await()
     }
 
-    suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> = withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
+    suspend fun queryInline(query: String, filePath: String, target: InlineContextTarget): List<InlineBm25Chunk> = withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
         cs.async {
-            val encrypted = encryptRequest(QueryInlineCompletionRequest(query, filePath))
+            val encrypted = encryptRequest(QueryInlineCompletionRequest(query, filePath, target.toString()))
             val r = sendMsgToLsp(LspMessage.QueryInlineCompletion, encrypted)
             return@async mapper.readValue<List<InlineBm25Chunk>>(r.responseBody)
         }.await()
