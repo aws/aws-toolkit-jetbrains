@@ -14,8 +14,17 @@ import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
+import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
+import java.util.zip.ZipFile
 
-class FeatureDevSessionContextTest : FeatureDevTestBase() {
+class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTestFixtureRule()) {
+
+    private fun addFilesToProjectModule(vararg path: String) {
+        val module = projectRule.module
+        path.forEach { projectRule.fixture.addFileToModule(module, it, it) }
+    }
+
     @Rule
     @JvmField
     val ruleChain = RuleChain(projectRule, disposableRule)
@@ -41,6 +50,7 @@ class FeatureDevSessionContextTest : FeatureDevTestBase() {
     fun testWithValidFile() {
         val ktFile = mock<VirtualFile>()
         whenever(ktFile.extension).thenReturn("kt")
+        whenever(ktFile.path).thenReturn("code.kt")
         assertTrue(featureDevSessionContext.isFileExtensionAllowed(ktFile))
     }
 
@@ -52,9 +62,51 @@ class FeatureDevSessionContextTest : FeatureDevTestBase() {
     }
 
     @Test
-    fun `testWithGradleWrapperJarFile`() = runTest {
-        projectRule.fixture.addFileToProject("/.gitignore", "node_modules\n.idea\n.vscode\n.DS_Store\ngradle/wrapper/gradle-wrapper.jar").virtualFile
-        projectRule.fixture.addFileToProject("gradle/wrapper/gradle-wrapper.jar", "")
-        assertFalse(featureDevSessionContext.ignoreFile("gradle/wrapper/gradle-wrapper.jar"))
+    fun testAllowedFilePath() {
+        val allowedPaths = listOf("build.gradle", "gradle.properties", ".mvn/wrapper/maven-wrapper.properties")
+        allowedPaths.forEach({
+            val txtFile = mock<VirtualFile>()
+            whenever(txtFile.path).thenReturn(it)
+            whenever(txtFile.extension).thenReturn(it.split(".").last())
+            assertTrue(featureDevSessionContext.isFileExtensionAllowed(txtFile))
+        })
+    }
+
+    @Test
+    fun testZipProject() {
+        addFilesToProjectModule(
+            ".gradle/cached.jar",
+            "src/MyClass.java",
+            "gradlew",
+            "gradlew.bat",
+            "README.md",
+            "settings.gradle",
+            "build.gradle",
+            "gradle/wrapper/gradle-wrapper.properties",
+        )
+
+        val zipResult = featureDevSessionContext.getProjectZip()
+        val zipPath = zipResult.payload.path
+
+        val zippedFiles = mutableSetOf<String>()
+        ZipFile(zipPath).use { zipFile ->
+            for (entry in zipFile.entries()) {
+                if (!entry.name.endsWith("/")) {
+                    zippedFiles.add(entry.name)
+                }
+            }
+        }
+
+        val expectedFiles = setOf(
+            "src/MyClass.java",
+            "gradlew",
+            "gradlew.bat",
+            "README.md",
+            "settings.gradle",
+            "build.gradle",
+            "gradle/wrapper/gradle-wrapper.properties",
+        )
+
+        assertTrue(zippedFiles == expectedFiles)
     }
 }

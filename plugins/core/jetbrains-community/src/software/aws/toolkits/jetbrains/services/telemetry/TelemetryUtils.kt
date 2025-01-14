@@ -16,6 +16,7 @@ val ALLOWED_CODE_EXTENSIONS = setOf(
     "bash",
     "bat",
     "boo",
+    "bms",
     "c",
     "cbl",
     "cc",
@@ -28,6 +29,7 @@ val ALLOWED_CODE_EXTENSIONS = setOf(
     "cljs",
     "cls",
     "cmake",
+    "cmd",
     "cob",
     "cobra",
     "coffee",
@@ -128,11 +130,13 @@ val ALLOWED_CODE_EXTENSIONS = setOf(
     "pike",
     "pir",
     "pl",
+    "pli",
     "pm",
     "pmod",
     "pp",
     "pro",
     "prolog",
+    "properties",
     "ps1",
     "psd1",
     "psm1",
@@ -209,7 +213,7 @@ val ALLOWED_CODE_EXTENSIONS = setOf(
     "xml",
     "yaml",
     "yml",
-    "zig"
+    "zig",
 )
 
 fun scrubNames(messageToBeScrubbed: String, username: String? = getSystemUserName()): String {
