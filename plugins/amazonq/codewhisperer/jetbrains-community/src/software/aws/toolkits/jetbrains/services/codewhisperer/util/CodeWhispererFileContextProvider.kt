@@ -43,6 +43,7 @@ import java.io.DataInput
 import java.io.DataOutput
 import java.util.Collections
 import kotlin.coroutines.coroutineContext
+import kotlin.time.measureTimedValue
 
 private val contentRootPathProvider = CopyContentRootPathProvider()
 
@@ -227,12 +228,11 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
         val contexts = withContext(coroutineContext) {
             val projectContextDeferred1 = async {
-                val t0 = System.currentTimeMillis()
-                val codemapContext = fetchProjectContext(query, psiFile, targetContext)
-                val t1 = System.currentTimeMillis()
+                val timedCodemapContext = measureTimedValue { fetchProjectContext(query, psiFile, targetContext) }
+                val codemapContext = timedCodemapContext.value
                 LOG.debug {
                     buildString {
-                        append("time elapse for fetching project context=${t1 - t0}ms; ")
+                        append("time elapse for fetching project context=${timedCodemapContext.duration.inWholeMilliseconds}ms; ")
                         append("numberOfChunks=${codemapContext.contents.size}; ")
                         append("totalLength=${codemapContext.contentLength}")
                     }
@@ -242,12 +242,11 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
             }
 
             val openTabsContextDeferred1 = async {
-                val t0 = System.currentTimeMillis()
-                val opentabContext = fetchOpenTabsContext(query, psiFile, targetContext)
-                val t1 = System.currentTimeMillis()
+                val timedOpentabContext = measureTimedValue { fetchOpenTabsContext(query, psiFile, targetContext) }
+                val opentabContext = timedOpentabContext.value
                 LOG.debug {
                     buildString {
-                        append("time elapse for open tabs context=${t1 - t0}ms; ")
+                        append("time elapse for open tabs context=${timedOpentabContext.duration.inWholeMilliseconds}ms; ")
                         append("numberOfChunks=${opentabContext.contents.size}; ")
                         append("totalLength=${opentabContext.contentLength}")
                     }
