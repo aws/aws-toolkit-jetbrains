@@ -164,7 +164,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 return if (javaModules.isNotEmpty()) {
                     ValidationResult(
                         true,
-                        metadata = "Found ${javaModules.size} modules with SQL"
+                        metadata = "found ${javaModules.size} modules with SQL"
                     )
                 } else {
                     ValidationResult(
