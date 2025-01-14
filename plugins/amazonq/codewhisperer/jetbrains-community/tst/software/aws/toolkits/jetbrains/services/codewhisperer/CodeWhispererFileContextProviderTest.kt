@@ -419,7 +419,7 @@ class CodeWhispererFileContextProviderTest {
     }
 
     @Test
-    fun `extractSupplementalFileContext from src file should extract src`() = runTest {
+    fun `extractSupplementalFileContext should return opentabs context if project context is empty`() = runTest {
         mockProjectContext.stub { onBlocking { queryInline(any(), any()) }.doReturn(emptyList()) }
         val files = NaiveSampleCase.setupFixture(fixture)
         val queryPsi = files[0]
@@ -437,6 +437,10 @@ class CodeWhispererFileContextProviderTest {
         assertThat(supplementalContext?.contents)
             .isNotNull
             .isNotEmpty
+
+        assertThat(supplementalContext?.strategy)
+            .isNotNull
+            .isEqualTo(CrossFileStrategy.OpenTabsBM25)
         verify(sut).extractSupplementalFileContextForSrc(any(), any())
         verify(sut, times(0)).extractSupplementalFileContextForTst(any(), any())
     }
