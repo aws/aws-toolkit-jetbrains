@@ -34,9 +34,6 @@ class CodeWhispererCodeTestSession(val sessionContext: CodeTestSessionContext) {
      * Run UTG sessions are follow steps:
      * 1. Zipping project
      * 2. Creating Upload url & Upload to S3 bucket
-     * 3. StartTestGeneration API -> Get JobId
-     * 4. GetTestGeneration API
-     * 5. ExportResultsArchieve API
      */
     suspend fun run(codeTestChatHelper: CodeTestChatHelper, previousIterationContext: PreviousUTGIterationContext?): CodeTestResponseContext {
         try {
@@ -94,7 +91,8 @@ class CodeWhispererCodeTestSession(val sessionContext: CodeTestSessionContext) {
                     sourceZip,
                     "SourceCode",
                     CodeWhispererConstants.UploadTaskType.UTG,
-                    taskName
+                    taskName,
+                    CodeWhispererConstants.FeatureName.TEST_GENERATION
                 )
 
             sourceZipUploadResponse.uploadId()
@@ -113,11 +111,10 @@ class CodeWhispererCodeTestSession(val sessionContext: CodeTestSessionContext) {
                 sourceZipUploadResponse,
                 testSummaryMessageId
             )
-            // TODO send telemetry for upload duration
 
             return codeTestResponseContext
         } catch (e: Exception) {
-            LOG.debug(e) { "Error when creating tests for the current file" }
+            LOG.debug(e) { "Error while creating zip and uploading to S3" }
             throw e
         }
     }
