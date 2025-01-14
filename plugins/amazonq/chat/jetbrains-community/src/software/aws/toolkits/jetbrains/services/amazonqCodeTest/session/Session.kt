@@ -28,6 +28,7 @@ data class Session(val tabId: String) {
     var linesOfCodeGenerated: Int? = null
     var charsOfCodeGenerated: Int? = null
     var startTimeOfTestGeneration: Double = 0.0
+    var latencyOfTestGeneration: Double = 0.0
     var isCodeBlockSelected: Boolean = false
     var srcPayloadSize: Long = 0
     var srcZipFileSize: Long = 0

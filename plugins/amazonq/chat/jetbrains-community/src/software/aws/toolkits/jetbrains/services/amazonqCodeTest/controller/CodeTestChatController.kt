@@ -452,7 +452,6 @@ class CodeTestChatController(
         var charDifference = 0
         var generatedFileContent = ""
         var selectedFileContent = ""
-        var latencyOfTestGeneration = 0.0
 
         when (message.actionID) {
             "utg_view_diff" -> {
@@ -496,7 +495,7 @@ class CodeTestChatController(
 
                     session.linesOfCodeGenerated = lineDifference.coerceAtLeast(0)
                     session.charsOfCodeGenerated = charDifference.coerceAtLeast(0)
-                    latencyOfTestGeneration = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration)
+                    session.latencyOfTestGeneration = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration)
                     UiTelemetry.click(null as Project?, "unitTestGeneration_viewDiff")
 
                     val buttonList = mutableListOf<Button>()
@@ -611,7 +610,7 @@ class CodeTestChatController(
                     acceptedCharactersCount = session.charsOfCodeGenerated?.toLong(),
                     generatedCharactersCount = session.charsOfCodeGenerated?.toLong(),
                     result = MetricResult.Succeeded,
-                    perfClientLatency = latencyOfTestGeneration,
+                    perfClientLatency = session.latencyOfTestGeneration,
                     isCodeBlockSelected = session.isCodeBlockSelected,
                     artifactsUploadDuration = session.artifactUploadDuration,
                     buildPayloadBytes = session.srcPayloadSize,
@@ -807,7 +806,7 @@ class CodeTestChatController(
                     acceptedCharactersCount = 0,
                     generatedCharactersCount = session.charsOfCodeGenerated?.toLong(),
                     result = MetricResult.Succeeded,
-                    perfClientLatency = latencyOfTestGeneration,
+                    perfClientLatency = session.latencyOfTestGeneration,
                     isCodeBlockSelected = session.isCodeBlockSelected,
                     artifactsUploadDuration = session.artifactUploadDuration,
                     buildPayloadBytes = session.srcPayloadSize,
