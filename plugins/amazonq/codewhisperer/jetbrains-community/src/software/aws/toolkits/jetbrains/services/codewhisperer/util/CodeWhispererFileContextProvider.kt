@@ -228,32 +228,32 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         val contexts = withContext(coroutineContext) {
             val projectContextDeferred1 = async {
                 val t0 = System.currentTimeMillis()
-                val r = fetchProjectContext(query, psiFile, targetContext)
+                val codemapContext = fetchProjectContext(query, psiFile, targetContext)
                 val t1 = System.currentTimeMillis()
                 LOG.debug {
                     buildString {
                         append("time elapse for fetching project context=${t1 - t0}ms; ")
-                        append("numberOfChunks=${r.contents.size}; ")
-                        append("totalLength=${r.contentLength}")
+                        append("numberOfChunks=${codemapContext.contents.size}; ")
+                        append("totalLength=${codemapContext.contentLength}")
                     }
                 }
 
-                r
+                codemapContext
             }
 
             val openTabsContextDeferred1 = async {
                 val t0 = System.currentTimeMillis()
-                val r = fetchOpenTabsContext(query, psiFile, targetContext)
+                val opentabContext = fetchOpenTabsContext(query, psiFile, targetContext)
                 val t1 = System.currentTimeMillis()
                 LOG.debug {
                     buildString {
                         append("time elapse for open tabs context=${t1 - t0}ms; ")
-                        append("numberOfChunks=${r.contents.size}; ")
-                        append("totalLength=${r.contentLength}")
+                        append("numberOfChunks=${opentabContext.contents.size}; ")
+                        append("totalLength=${opentabContext.contentLength}")
                     }
                 }
 
-                r
+                opentabContext
             }
 
             awaitAll(projectContextDeferred1, openTabsContextDeferred1)
