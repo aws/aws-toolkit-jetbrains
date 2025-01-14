@@ -262,7 +262,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         val projectContext = contexts.find { it.strategy == CrossFileStrategy.Codemap }
         val openTabsContext = contexts.find { it.strategy == CrossFileStrategy.OpenTabsBM25 }
 
-        return when {
+        val contextBeforeTruncation = when {
             projectContext == null && openTabsContext == null -> SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
 
             projectContext != null && openTabsContext != null -> {
@@ -316,6 +316,16 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
 
             else -> SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
         }
+
+        val contextAfterTruncation = if (contextBeforeTruncation.contentLength >= CodeWhispererConstants.CrossFile.MAX_TOTAL_LENGTH) {
+            contextBeforeTruncation.copy(
+                contents = contextBeforeTruncation.contents.dropLast(1)
+            )
+        } else {
+            contextBeforeTruncation
+        }
+
+        return contextAfterTruncation
     }
 
     @VisibleForTesting
