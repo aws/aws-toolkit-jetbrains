@@ -12,8 +12,8 @@ enum class UtgStrategy : SupplementalContextStrategy {
     ;
 
     override fun toString() = when (this) {
-        ByName -> "byname"
-        ByContent -> "bycontent"
+        ByName -> "byName"
+        ByContent -> "byContent"
         Empty -> "empty"
     }
 }
@@ -28,7 +28,7 @@ enum class CrossFileStrategy : SupplementalContextStrategy {
     override fun toString() = when (this) {
         OpenTabsBM25 -> "opentabs"
         Empty -> "empty"
-        ProjectContext -> "projectcontext"
+        ProjectContext -> "projectContext"
         Codemap -> "codemap"
     }
 }
