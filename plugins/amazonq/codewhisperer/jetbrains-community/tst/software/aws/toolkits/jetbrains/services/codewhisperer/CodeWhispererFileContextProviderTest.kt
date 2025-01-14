@@ -49,7 +49,9 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTsx
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTypeScript
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.DefaultCodeWhispererFileContextProvider
@@ -481,6 +483,28 @@ class CodeWhispererFileContextProviderTest {
 
         verify(sut, times(0)).extractSupplementalFileContextForSrc(any(), any())
         verify(sut).extractSupplementalFileContextForTst(any(), any())
+    }
+
+    @Test
+    fun `truncate context should make context length fit in 20480 cap`() {
+        val supplementalContext = SupplementalContextInfo(
+            isUtg = false,
+            contents = listOf(
+                Chunk(content = "a".repeat(10000), path = "a.java"),
+                Chunk(content = "b".repeat(10000), path = "b.java"),
+                Chunk(content = "c".repeat(10000), path = "c.java"),
+                Chunk(content = "d".repeat(10000), path = "d.java"),
+                Chunk(content = "e".repeat(10000), path = "e.java"),
+            ),
+            targetFileName = "foo",
+            strategy = CrossFileStrategy.Codemap
+        )
+
+        val r = sut.truncateContext(supplementalContext)
+        assertThat(r.contents).hasSize(2)
+        assertThat(r.contentLength).isEqualTo(20000)
+        assertThat(r.strategy).isEqualTo(CrossFileStrategy.Codemap)
+        assertThat(r.targetFileName).isEqualTo("foo")
     }
 
     private fun setupFixture(fixture: JavaCodeInsightTestFixture): List<PsiFile> {
