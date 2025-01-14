@@ -52,6 +52,7 @@ data class QueryChatRequest(
 data class QueryInlineCompletionRequest(
     val query: String,
     val filePath: String,
+    val target: String
 ) : LspRequest
 
 data class LspResponse(
@@ -68,6 +69,16 @@ enum class IndexUpdateMode(val command: String) {
 enum class IndexOption(val command: String) {
     ALL("all"),
     DEFAULT("default"),
+}
+
+enum class InlineContextTarget(private val v: String) {
+    DEFAULT("default"),
+    CODEMAP("codemap"),
+    BM25("bm25"), ;
+
+    override fun toString(): String {
+        return this.v
+    }
 }
 
 // TODO: unify with [software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk]

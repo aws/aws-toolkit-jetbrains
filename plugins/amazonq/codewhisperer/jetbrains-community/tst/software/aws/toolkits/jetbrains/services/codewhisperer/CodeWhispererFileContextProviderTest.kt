@@ -208,7 +208,7 @@ class CodeWhispererFileContextProviderTest {
                 assertThat(providerContext.constructed()).hasSize(1)
                 assertThat(serverContext.constructed()).hasSize(1)
 
-                whenever(providerContext.constructed()[0].queryInline(any(), any())).thenThrow(RuntimeException("mock exception"))
+                whenever(providerContext.constructed()[0].queryInline(any(), any(), any())).thenThrow(RuntimeException("mock exception"))
 
                 val result = controller.queryInline("query", "filePath")
                 assertThat(result).isEmpty()
