@@ -161,6 +161,24 @@ class CodeWhispererFileContextProviderTest {
     }
 
     @Test
+    fun `should return empty if both project context and opentabs context return empty`() = runTest {
+        sut = spy(sut)
+
+        mockProjectContext.stub { onBlocking { queryInline(any(), any()) }.doReturn(emptyList()) }
+        val queryPsi = projectRule.fixture.addFileToProject("Foo.java", "public Foo {}")
+        val mockFileContext = aFileContextInfo(CodeWhispererJava.INSTANCE)
+
+        val result = sut.extractSupplementalFileContextForSrc(queryPsi, mockFileContext)
+
+        verify(sut, times(1)).fetchProjectContext(any(), any(), any())
+        verify(sut, times(1)).fetchOpenTabsContext(any(), any(), any())
+
+        assertThat(result.isUtg).isFalse
+        assertThat(result.strategy).isEqualTo(CrossFileStrategy.Empty)
+        assertThat(result.contents).isEmpty()
+    }
+
+    @Test
     fun `should only use openTabsContext if projectContext is empty`() = runTest {
         mockProjectContext.stub { onBlocking { queryInline(any(), any()) }.doReturn(emptyList()) }
         featureConfigService.stub { on { getInlineCompletion() } doReturn false }
