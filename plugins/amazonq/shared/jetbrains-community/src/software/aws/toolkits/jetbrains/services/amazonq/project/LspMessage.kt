@@ -72,9 +72,9 @@ enum class IndexOption(val command: String) {
 }
 
 enum class InlineContextTarget(private val v: String) {
-    DEFAULT("default"),
     CODEMAP("codemap"),
-    BM25("bm25"), ;
+    BM25("bm25"),
+    DEFAULT("default"), ;
 
     override fun toString(): String = this.v
 }
