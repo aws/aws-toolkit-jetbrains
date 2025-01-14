@@ -262,6 +262,14 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         val projectContext = contexts.find { it.strategy == CrossFileStrategy.Codemap }
         val openTabsContext = contexts.find { it.strategy == CrossFileStrategy.OpenTabsBM25 }
 
+        /**
+         * We're using both codemap and opentabs context
+         * 1. If both are present, codemap should live in the first of supplemental context list, i.e [codemap, opentabs_0, opentabs_1...] with strategy name codemap
+         * 2. If only one is present, return the one present with corresponding strategy name, either codemap or opentabs
+         * 3. If none is present, return empty list with strategy name empty
+         *
+         * Service will throw 400 error when context length is greater than 20480, drop the last chunk until the total length fits in the cap
+         */
         val contextBeforeTruncation = when {
             projectContext == null && openTabsContext == null -> SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
 
@@ -317,13 +325,12 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
             else -> SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
         }
 
-        val contextAfterTruncation = if (contextBeforeTruncation.contentLength >= CodeWhispererConstants.CrossFile.MAX_TOTAL_LENGTH) {
-            contextBeforeTruncation.copy(
-                contents = contextBeforeTruncation.contents.dropLast(1)
-            )
-        } else {
-            contextBeforeTruncation
+        var c = contextBeforeTruncation.contents
+        while (c.sumOf { it.content.length } >= CodeWhispererConstants.CrossFile.MAX_TOTAL_LENGTH) {
+            c = c.dropLast(1)
         }
+
+        val contextAfterTruncation = contextBeforeTruncation.copy(contents = c)
 
         return contextAfterTruncation
     }
