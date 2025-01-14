@@ -600,6 +600,7 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult, to
         } else {
             null
         },
+        followUps = listOf(startNewTransformFollowUp),
     )
 }
 
