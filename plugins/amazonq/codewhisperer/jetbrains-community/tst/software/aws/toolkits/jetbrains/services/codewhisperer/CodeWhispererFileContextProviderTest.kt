@@ -137,7 +137,7 @@ class CodeWhispererFileContextProviderTest {
 
     @Test
     fun `extractSupplementalFileContext should timeout 50ms`() = runTest {
-        featureConfigService.stub { on { getInlineCompletion() } doReturn false }
+        mockProjectContext.stub { onBlocking { queryInline(any(), any()) }.doReturn(emptyList()) }
         sut = spy(sut)
 
         val files = NaiveSampleCase.setupFixture(fixture)
@@ -159,7 +159,8 @@ class CodeWhispererFileContextProviderTest {
     }
 
     @Test
-    fun `should only call and use openTabsContext if projectContext is disabled`() = runTest {
+    fun `should only use openTabsContext if projectContext is empty`() = runTest {
+        mockProjectContext.stub { onBlocking { queryInline(any(), any()) }.doReturn(emptyList()) }
         featureConfigService.stub { on { getInlineCompletion() } doReturn false }
         sut = spy(sut)
 
@@ -169,7 +170,7 @@ class CodeWhispererFileContextProviderTest {
 
         val result = sut.extractSupplementalFileContextForSrc(queryPsi, mockFileContext)
 
-        verify(sut, times(0)).fetchProjectContext(any(), any(), any())
+        verify(sut, times(1)).fetchProjectContext(any(), any(), any())
         verify(sut, times(1)).fetchOpenTabsContext(any(), any(), any())
 
         assertThat(result.isUtg).isFalse
@@ -217,19 +218,16 @@ class CodeWhispererFileContextProviderTest {
     }
 
     @Test
-    fun `should use project context if it is present`() = runTest {
+    fun `should use both project context and open tabs if both are present`() = runTest {
         mockProjectContext.stub {
             runBlocking {
                 doReturn(
                     listOf(
                         InlineBm25Chunk("project_context1", "path1", 0.0),
-                        InlineBm25Chunk("project_context2", "path2", 0.0),
-                        InlineBm25Chunk("project_context3", "path3", 0.0),
                     )
                 ).whenever(it).queryInline(any(), any())
             }
         }
-        featureConfigService.stub { on { getInlineCompletion() } doReturn true }
         sut = spy(sut)
         val files = NaiveSampleCase.setupFixture(fixture)
         val queryPsi = files[0]
@@ -238,8 +236,8 @@ class CodeWhispererFileContextProviderTest {
         val result = sut.extractSupplementalFileContextForSrc(queryPsi, mockFileContext)
 
         assertThat(result.isUtg).isFalse
-        assertThat(result.strategy).isEqualTo(CrossFileStrategy.ProjectContext)
-        assertThat(result.contents).hasSize(3)
+        assertThat(result.strategy).isEqualTo(CrossFileStrategy.Codemap)
+        assertThat(result.contents).hasSize(4)
     }
 
     @Test
@@ -420,6 +418,7 @@ class CodeWhispererFileContextProviderTest {
 
     @Test
     fun `extractSupplementalFileContext from src file should extract src`() = runTest {
+        mockProjectContext.stub { onBlocking { queryInline(any(), any()) }.doReturn(emptyList()) }
         val files = NaiveSampleCase.setupFixture(fixture)
         val queryPsi = files[0]
 
