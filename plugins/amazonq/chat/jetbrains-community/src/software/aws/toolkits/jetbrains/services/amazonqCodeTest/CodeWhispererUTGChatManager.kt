@@ -16,7 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
+import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTestGenerationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.Range
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTestGenerationResponse
@@ -38,9 +38,13 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.BuildAnd
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.Session
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.utils.combineBuildAndExecuteLogFiles
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
+import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.CodeTestException
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.sessionconfig.CodeTestSessionConfig
+import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.testGenStoppedError
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getTelemetryErrorMessage
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
@@ -67,7 +71,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
 
     private fun throwIfCancelled(session: Session) {
         if (!session.isGeneratingTests) {
-            error(message("testgen.message.cancelled"))
+            testGenStoppedError()
         }
     }
 
@@ -104,24 +108,38 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         }
 
         // 2nd API call: StartTestGeneration
-        val startTestGenerationResponse = startTestGeneration(
-            uploadId = createUploadUrlResponse.uploadId(),
-            targetCode = listOf(
-                TargetCode.builder()
-                    .relativeTargetPath(codeTestResponseContext.currentFileRelativePath.toString())
-                    .targetLineRangeList(
-                        if (selectionRange != null) {
-                            listOf(
-                                selectionRange
-                            )
-                        } else {
-                            emptyList()
-                        }
-                    )
-                    .build()
-            ),
-            userInput = prompt
-        )
+        val startTestGenerationResponse = try {
+            startTestGeneration(
+                uploadId = createUploadUrlResponse.uploadId(),
+                targetCode = listOf(
+                    TargetCode.builder()
+                        .relativeTargetPath(codeTestResponseContext.currentFileRelativePath.toString())
+                        .targetLineRangeList(
+                            if (selectionRange != null) {
+                                listOf(
+                                    selectionRange
+                                )
+                            } else {
+                                emptyList()
+                            }
+                        )
+                        .build()
+                ),
+                userInput = prompt
+            )
+        } catch (e: Exception) {
+            val statusCode = when {
+                e is SdkServiceException -> e.statusCode()
+                else -> 400
+            }
+            LOG.error(e) { "Unexpected error while creating test generation job" }
+            val errorMessage = getTelemetryErrorMessage(e, CodeWhispererConstants.FeatureName.TEST_GENERATION)
+            throw CodeTestException(
+                "CreateTestJobError: $errorMessage",
+                "CreateTestJobError",
+                message("testgen.error.generic_technical_error_message")
+            )
+        }
 
         val job = startTestGenerationResponse.testGenerationJob()
         session.startTestGenerationRequestId = startTestGenerationResponse.responseMetadata().requestId()
@@ -173,7 +191,12 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     }
                     // update test summary card
                 } else {
-                    throw Exception(message("testgen.message.failed"))
+                    // If job status is Completed and has no ShortAnswer then there might be some issue in the backend.
+                    throw CodeTestException(
+                        "TestGenFailedError: " + message("testgen.message.failed"),
+                        "TestGenFailedError",
+                        message("testgen.error.generic_technical_error_message")
+                    )
                 }
             } else if (status == TestGenerationJobStatus.FAILED) {
                 LOG.debug {
@@ -183,12 +206,16 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 if (testGenerationResponse.testGenerationJob().shortAnswer() != null) {
                     shortAnswer = parseShortAnswerString(testGenerationResponse.testGenerationJob().shortAnswer())
                     if (shortAnswer.stopIteration == "true") {
-                        throw Exception("${shortAnswer.planSummary}")
+                        throw CodeTestException("TestGenFailedError: ${shortAnswer.planSummary}", "TestGenFailedError", shortAnswer.planSummary)
                     }
                 }
 
-                // TODO: Modify text according to FnF
-                throw Exception(message("testgen.message.failed"))
+                // If job status is Failed and has no ShortAnswer then there might be some issue in the backend.
+                throw CodeTestException(
+                    "TestGenFailedError: " + message("testgen.message.failed"),
+                    "TestGenFailedError",
+                    message("testgen.error.generic_technical_error_message")
+                )
             } else {
                 // In progress
                 LOG.debug {
@@ -200,7 +227,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 if (previousIterationContext == null && testGenerationResponse.testGenerationJob().shortAnswer() != null) {
                     shortAnswer = parseShortAnswerString(testGenerationResponse.testGenerationJob().shortAnswer())
                     if (shortAnswer.stopIteration == "true") {
-                        throw Exception("${shortAnswer.planSummary}")
+                        throw CodeTestException("TestGenFailedError: ${shortAnswer.planSummary}", "TestGenFailedError", shortAnswer.planSummary)
                     }
                     codeTestChatHelper.updateAnswer(
                         CodeTestChatMessageContent(
@@ -232,6 +259,11 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
             },
             { e ->
                 LOG.error(e) { "ExportResultArchive failed: ${e.message}" }
+                throw CodeTestException(
+                    "ExportResultsArchiveError: ${e.message}",
+                    "ExportResultsArchiveError",
+                    message("testgen.error.generic_technical_error_message")
+                )
             },
             { startTime ->
                 LOG.info { "ExportResultArchive latency: ${calculateTotalLatency(startTime, Instant.now())}" }
@@ -493,14 +525,16 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 launchTestGenFlow(prompt, codeTestChatHelper, previousIterationContext, selectionRange)
             } catch (e: Exception) {
                 // Add an answer for displaying error message
-                var errorMessage = e.message
-                if (e is JsonParseException) {
-                    errorMessage = message("testgen.error.generic_error_message")
+                val errorMessage = when {
+                    e is CodeTestException &&
+                        e.message?.startsWith("CreateTestJobError: Maximum") == true ->
+                        message("testgen.error.maximum_generations_reach")
+
+                    e is CodeTestException -> e.uiMessage
+                    e is JsonParseException -> message("testgen.error.generic_technical_error_message")
+                    else -> message("testgen.error.generic_error_message")
                 }
 
-                if (e is CodeWhispererRuntimeException) {
-                    errorMessage = message("testgen.error.maximum_generations_reach")
-                }
                 codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
                         message = errorMessage,
@@ -518,8 +552,8 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     jobGroup = session.testGenerationJobGroupName,
                     jobId = session.testGenerationJob,
                     result = if (e.message == message("testgen.message.cancelled")) MetricResult.Cancelled else MetricResult.Failed,
-                    reason = e.javaClass.name,
-                    reasonDesc = e.message,
+                    reason = (e as CodeTestException).code ?: "DefaultError",
+                    reasonDesc = if (e.message == message("testgen.message.cancelled")) "${e.code}: ${e.message}" else e.message,
                     perfClientLatency = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration),
                     isCodeBlockSelected = session.isCodeBlockSelected,
                     artifactsUploadDuration = session.artifactUploadDuration,
