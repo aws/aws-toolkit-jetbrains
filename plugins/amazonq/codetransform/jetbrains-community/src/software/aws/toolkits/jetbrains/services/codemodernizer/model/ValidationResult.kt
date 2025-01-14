@@ -13,5 +13,5 @@ data class ValidationResult(
     val validatedBuildFiles: List<VirtualFile> = emptyList(),
     val buildSystem: CodeTransformBuildSystem = CodeTransformBuildSystem.Unknown,
     val buildSystemVersion: String = "",
-    val metadata: String = "",
+    val metadata: String? = null,
 )
