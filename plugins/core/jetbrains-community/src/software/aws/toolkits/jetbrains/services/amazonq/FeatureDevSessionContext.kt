@@ -112,6 +112,11 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     suspend fun ignoreFile(file: VirtualFile): Boolean = ignoreFile(file.path)
 
     suspend fun ignoreFile(path: String): Boolean {
+        // explicitly allow the Gradle wrapper JAR file
+        if (path.endsWith("gradle/wrapper/gradle-wrapper.jar")) {
+            return false
+        }
+
         // this method reads like something a JS dev would write and doesn't do what the author thinks
         val deferredResults = ignorePatternsWithGitIgnore.map { pattern ->
             withContext(coroutineContext) {
