@@ -485,10 +485,15 @@ class CodeTestChatController(
                     numberOfLinesSelected = selectedFileContent.lines().size
                     lineDifference = numberOfLinesGenerated - numberOfLinesSelected
 
+
+
                     // Character difference calculation: charsOfCodeGenerated = number of characters in generated test file - number of characters in original test file
                     numberOfCharsGenerated = generatedFileContent.length
                     numberOfCharsSelected = selectedFileContent.length
                     charDifference = numberOfCharsGenerated - numberOfCharsSelected
+
+                    println("lineDifference" + lineDifference)
+                    println("charDifference" + charDifference)
 
                     session.linesOfCodeGenerated = lineDifference.coerceAtLeast(0)
                     session.charsOfCodeGenerated = charDifference.coerceAtLeast(0)
