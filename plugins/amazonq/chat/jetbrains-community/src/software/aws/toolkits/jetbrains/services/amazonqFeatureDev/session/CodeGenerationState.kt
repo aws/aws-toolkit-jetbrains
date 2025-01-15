@@ -85,8 +85,8 @@ class CodeGenerationState(
             codeGenerationRemainingIterationCount = codeGenerationResult.codeGenerationRemainingIterationCount
             codeGenerationTotalIterationCount = codeGenerationResult.codeGenerationTotalIterationCount
             currentIteration =
-                if (codeGenerationRemainingIterationCount != null || codeGenerationTotalIterationCount != null) {
-                    codeGenerationTotalIterationCount!! - codeGenerationRemainingIterationCount!!
+                if (codeGenerationRemainingIterationCount != null && codeGenerationTotalIterationCount != null) {
+                    codeGenerationTotalIterationCount?.let { total -> codeGenerationRemainingIterationCount?.let { remaining -> total - remaining } }
                 } else {
                     currentIteration?.plus(1)
                 }
