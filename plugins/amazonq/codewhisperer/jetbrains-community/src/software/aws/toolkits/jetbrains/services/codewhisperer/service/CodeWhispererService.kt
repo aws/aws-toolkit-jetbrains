@@ -738,17 +738,16 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
 
     fun promoteNextInvocationIfAvailable() {
         val nextStates = nextInvocationContext ?: return LOG.debug { "No nextInvocationContext found, nothing to promote." }
-
+        nextInvocationContext!!.popup.let { Disposer.dispose(it) }
         nextInvocationContext = null
 
-        val newPopup = CodeWhispererPopupManager.getInstance().initPopup()
-        val updatedNextStates = nextStates.copy(popup = newPopup).also {
-            addPopupChildDisposables(it.popup)
-            Disposer.register(newPopup, it)
-        }
-        CodeWhispererPopupManager.getInstance().initPopupListener(updatedNextStates)
-
         runInEdt {
+            val newPopup = CodeWhispererPopupManager.getInstance().initPopup()
+            val updatedNextStates = nextStates.copy(popup = newPopup).also {
+                addPopupChildDisposables(it.popup)
+                Disposer.register(newPopup, it)
+            }
+            CodeWhispererPopupManager.getInstance().initPopupListener(updatedNextStates)
             CodeWhispererPopupManager.getInstance().changeStates(
                 updatedNextStates,
                 0,
@@ -756,9 +755,9 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 typeaheadAdded = true,
                 recommendationAdded = false
             )
+            prefetchNextInvocationAsync(updatedNextStates)
         }
 
-        prefetchNextInvocationAsync(updatedNextStates)
         LOG.debug { "Promoted nextInvocationContext to current session and displayed next recommendation." }
     }
 

@@ -14,7 +14,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPositio
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PAIRED_BRACKETS
@@ -65,10 +64,6 @@ class CodeWhispererEditorManager {
                     selectedIndex,
                     detail.completionType
                 )
-                if (selectedIndex == 0) {
-                    val service = CodeWhispererService.getInstance()
-                    service.promoteNextInvocationIfAvailable()
-                }
                 ApplicationManager.getApplication().messageBus.syncPublisher(
                     CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
                 ).afterAccept(states, sessionContext, rangeMarker)
