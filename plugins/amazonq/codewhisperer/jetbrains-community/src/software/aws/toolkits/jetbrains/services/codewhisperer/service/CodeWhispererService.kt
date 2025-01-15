@@ -765,20 +765,20 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         currentRequestContext: RequestContext,
         firstValidRecommendation: DetailContext,
     ): CaretPosition {
-        val lastLine = currentRequestContext.fileContextInfo.caretContext.leftContextOnCurrentLine
-        val indentation = lastLine.takeWhile { it.isWhitespace() }
+        val indent = currentRequestContext.fileContextInfo.caretContext.leftContextOnCurrentLine
+            .takeWhile { it.isWhitespace() }
         val recommendedText = buildString {
-            append(indentation)
+            append(indent)
             append(firstValidRecommendation.recommendation.content())
+            if (!endsWith("\n")) {
+                append("\n")
+            }
         }
-
-        val lines = recommendedText.split("\n")
-        val lineCount = lines.size - 1
-        val lastLineLength = if (lines.size > 1) lines[lines.size - 1].length else 0
+        val lineCount = recommendedText.count { it == '\n' }
 
         return CaretPosition(
             line = currentRequestContext.caretPosition.line + lineCount,
-            offset = currentRequestContext.caretPosition.offset + lastLineLength
+            offset = currentRequestContext.caretPosition.offset + recommendedText.length
         )
     }
 
