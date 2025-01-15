@@ -524,6 +524,8 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
             try {
                 launchTestGenFlow(prompt, codeTestChatHelper, previousIterationContext, selectionRange)
             } catch (e: Exception) {
+                // reset number of unitTestGenerated to null
+                session.numberOfUnitTestCasesGenerated = null
                 // Add an answer for displaying error message
                 val errorMessage = when {
                     e is CodeTestException &&
