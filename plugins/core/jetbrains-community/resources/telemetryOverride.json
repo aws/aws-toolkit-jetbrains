@@ -177,6 +177,21 @@
                 "reloaded"
             ],
             "description": "Toolkit run state."
+        },
+        {
+            "name": "filePath",
+            "type": "string",
+            "description": "The path of the file"
+        },
+        {
+            "name": "workspaceRoot",
+            "type": "string",
+            "description": "The path of the project root"
+        },
+        {
+            "name": "relativePath",
+            "type": "string",
+            "description": "The relative path of the file"
         }
     ],
     "metrics": [
@@ -530,6 +545,24 @@
                 }
             ],
             "passive": true
+        },
+        {
+            "name": "codewhisperer_invalidZip",
+            "description": "Invalid zip file",
+            "metadata": [
+                {
+                    "type": "filePath",
+                    "required": true
+                },
+                {
+                    "type": "workspaceRoot",
+                    "required": true
+                },
+                {
+                    "type": "relativePath",
+                    "required": true
+                }
+            ]
         }
     ]
 }
