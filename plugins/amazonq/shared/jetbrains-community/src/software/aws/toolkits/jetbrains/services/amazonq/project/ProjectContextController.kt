@@ -58,7 +58,7 @@ class ProjectContextController(private val project: Project, private val cs: Cor
 
     suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> =
         try {
-            projectContextProvider.queryInline(query, filePath)
+            projectContextProvider.queryInline(query, filePath, InlineContextTarget.CODEMAP)
         } catch (e: Exception) {
             var logStr = "error while querying inline for project context $e.message"
             if (e is TimeoutCancellationException || e is TimeoutException) {

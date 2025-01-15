@@ -17,10 +17,6 @@ import software.aws.toolkits.jetbrains.services.amazonqDoc.controller.Mode
 import software.aws.toolkits.jetbrains.services.amazonqDoc.controller.docGenerationProgressMessage
 import software.aws.toolkits.jetbrains.services.amazonqDoc.docServiceError
 import software.aws.toolkits.jetbrains.services.amazonqDoc.inProgress
-import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.DocMessageType
-import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.FollowUp
-import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.FollowUpTypes
-import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendAnswer
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendAnswerPart
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePromptProgress
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeGenerationResult
@@ -114,24 +110,6 @@ private suspend fun DocGenerationState.generateCode(codeGenerationId: String, mo
 
     repeat(pollCount) {
         if (token?.token?.isCancellationRequested() == true) {
-            // This should be switched to newTask or something. Looks different than previously and may need to clean up previous run
-            messenger.sendUpdatePromptProgress(tabId = tabID, null)
-            messenger.sendAnswer(
-                messageType = DocMessageType.SystemPrompt,
-                tabId = tabID,
-                followUp = listOf(
-                    FollowUp(
-                        pillText = message("amazonqDoc.prompt.create"),
-                        prompt = message("amazonqDoc.prompt.create"),
-                        type = FollowUpTypes.CREATE_DOCUMENTATION,
-                    ),
-                    FollowUp(
-                        pillText = message("amazonqDoc.prompt.update"),
-                        prompt = message("amazonqDoc.prompt.update"),
-                        type = FollowUpTypes.UPDATE_DOCUMENTATION,
-                    )
-                )
-            )
             return CodeGenerationResult(emptyList(), emptyList(), emptyList())
         }
 
@@ -200,6 +178,11 @@ private suspend fun DocGenerationState.generateCode(codeGenerationId: String, mo
                         "README_TOO_LARGE"
                     ),
                     -> docServiceError(message("amazonqDoc.exception.readme_too_large"))
+
+                    codeGenerationResultState.codeGenerationStatusDetail()?.contains(
+                        "README_UPDATE_TOO_LARGE"
+                    ),
+                    -> docServiceError(message("amazonqDoc.exception.readme_update_too_large"))
 
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "WORKSPACE_TOO_LARGE"
