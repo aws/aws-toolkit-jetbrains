@@ -31,7 +31,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESH
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_DOWNLOAD_EXPIRED
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildStartNewTransformFollowup
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.createViewDiffButton
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.getDownloadedArtifactTextFromType
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.viewSummaryButton
@@ -317,7 +316,6 @@ class ArtifactHandler(
                         message = message("codemodernizer.chat.message.changes_applied"),
                     )
                     codeTransformChatHelper?.updateLastPendingMessage(resultContent)
-                    codeTransformChatHelper?.addNewMessage(buildStartNewTransformFollowup())
                 } else {
                     if (getCurrentPatchIndex() < totalPatchFiles) {
                         val message = "I applied the changes in diff patch ${getCurrentPatchIndex() + 1} of $totalPatchFiles. " +
@@ -331,7 +329,6 @@ class ArtifactHandler(
                             codeTransformChatHelper?.updateLastPendingMessage(
                                 CodeTransformChatMessageContent(type = CodeTransformChatMessageType.PendingAnswer, message = message)
                             )
-                            codeTransformChatHelper?.addNewMessage(buildStartNewTransformFollowup())
                         } else {
                             codeTransformChatHelper?.updateLastPendingMessage(
                                 CodeTransformChatMessageContent(
@@ -345,7 +342,7 @@ class ArtifactHandler(
                             )
                         }
                     } else {
-                        codeTransformChatHelper?.addNewMessage(buildStartNewTransformFollowup())
+                        // no-op; start a new transformation button already visible at this point
                     }
                 }
             } else {

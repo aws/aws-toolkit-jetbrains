@@ -127,6 +127,11 @@ object CodeWhispererConstants {
         PROJECT("PROJECT"),
     }
 
+    enum class FeatureName(val value: String) {
+        TEST_GENERATION("TEST_GENERATION"),
+        CODE_REVIEW("CODE_REVIEW"),
+    }
+
     enum class UploadTaskType(val value: String) {
         SCAN_FILE("SCAN_FILE"),
         SCAN_PROJECT("SCAN_PROJECT"),
@@ -172,6 +177,7 @@ object CodeWhispererConstants {
         const val CHUNK_SIZE = 60
         const val NUMBER_OF_LINE_IN_CHUNK = 50
         const val NUMBER_OF_CHUNK_TO_FETCH = 3
+        const val MAX_TOTAL_LENGTH = 20480
     }
 
     object Utg {
