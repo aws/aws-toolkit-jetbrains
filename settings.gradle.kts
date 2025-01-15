@@ -98,6 +98,7 @@ include("detekt-rules")
 include("ui-tests")
 include("sandbox-all")
 include("ui-tests-starter")
+include("coverage-report")
 when (providers.gradleProperty("ideProfileName").get()) {
     // FIX_WHEN_MIN_IS_242: `tmp-all` test module no longer needed in 242+
     "2023.3", "2024.1" -> {
