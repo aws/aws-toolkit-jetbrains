@@ -738,7 +738,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
 
     fun promoteNextInvocationIfAvailable() {
         val nextStates = nextInvocationContext ?: return LOG.debug { "No nextInvocationContext found, nothing to promote." }
-        nextInvocationContext!!.popup.let { Disposer.dispose(it) }
+        nextInvocationContext?.popup?.let { Disposer.dispose(it) }
         nextInvocationContext = null
 
         runInEdt {
