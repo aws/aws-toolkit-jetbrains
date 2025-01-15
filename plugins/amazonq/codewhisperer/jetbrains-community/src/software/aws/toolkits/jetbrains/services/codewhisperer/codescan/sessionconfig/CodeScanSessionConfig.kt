@@ -196,7 +196,7 @@ class CodeScanSessionConfig(
         files.forEach { file ->
             try {
                 val relativePath = "${project.name}/${file.relativeTo(projectRoot.toNioPath())}"
-                if (relativePath.contains("../")) {
+                if (relativePath.contains("../") || relativePath.contains("..\\")) {
                     CodeWhispererTelemetryService.getInstance().sendInvalidZipEvent(file, projectRoot.toNioPath(), relativePath)
                 }
                 LOG.debug { "Selected file for truncation: $file" }
