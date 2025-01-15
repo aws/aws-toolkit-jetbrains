@@ -254,7 +254,7 @@ private suspend fun disposeToken(
             tabId = tabId,
             messageType = FeatureDevMessageType.Answer,
             message =
-            message("amazonqFeatureDev.code_generation.stopped_code_generation_no_iteration_count",),
+            message("amazonqFeatureDev.code_generation.stopped_code_generation_no_iteration_count_display",),
         )
     }
 
