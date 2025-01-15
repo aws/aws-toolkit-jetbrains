@@ -58,6 +58,7 @@ class CodeTransformTelemetryManager(private val project: Project) {
             codeTransformPreValidationError = validationError,
             codeTransformBuildSystem = validationResult.buildSystem,
             codeTransformSessionId = sessionId,
+            codeTransformMetadata = validationResult.metadata,
             result = if (validationResult.valid) Result.Succeeded else Result.Failed,
             reason = if (validationResult.valid) null else validationResult.invalidTelemetryReason.additionalInfo,
         )
