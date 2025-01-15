@@ -51,9 +51,11 @@ import software.aws.toolkits.telemetry.Component
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Result
+import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
 import java.util.Queue
+import kotlin.io.path.pathString
 
 @Service
 class CodeWhispererTelemetryService {
@@ -608,6 +610,14 @@ class CodeWhispererTelemetryService {
     fun previousDecisions(): Queue<CodewhispererPreviousSuggestionState> {
         assert(ApplicationManager.getApplication().isUnitTestMode)
         return this.previousUserTriggerDecisions
+    }
+
+    fun sendInvalidZipEvent(filePath: Path, projectRoot: Path, relativePath: String) {
+        CodewhispererTelemetry.invalidZip(
+            filePath = filePath.pathString,
+            workspaceRoot = projectRoot.pathString,
+            relativePath = relativePath
+        )
     }
 }
 
