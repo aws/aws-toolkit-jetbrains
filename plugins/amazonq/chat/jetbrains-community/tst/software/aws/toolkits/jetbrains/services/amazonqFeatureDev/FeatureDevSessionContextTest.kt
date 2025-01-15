@@ -85,7 +85,7 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
             "settings.gradle",
             "build.gradle",
             "gradle/wrapper/gradle-wrapper.properties",
-            "builder/GetTestBuilder.java",
+            "builder/GetTestBuilder.java", //check for false positives
             ".aws-sam/build/function1",
             ".gem/specs.rb",
             "archive.zip",
