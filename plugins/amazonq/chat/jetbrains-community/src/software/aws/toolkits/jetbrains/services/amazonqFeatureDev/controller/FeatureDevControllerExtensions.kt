@@ -133,7 +133,7 @@ suspend fun FeatureDevController.onCodeGeneration(
                 messageType = FeatureDevMessageType.Answer,
                 message =
                 if (remainingIterations > 2) {
-                    message("amazonqFeatureDev.code_generation.ask_to_add_code_or_feedback")
+                    message("amazonqFeatureDev.code_generation.iteration_counts_ask_to_add_code_or_feedback")
                 } else if (remainingIterations > 0) {
                     message(
                         "amazonqFeatureDev.code_generation.iteration_counts",
@@ -142,7 +142,7 @@ suspend fun FeatureDevController.onCodeGeneration(
                     )
                 } else {
                     message(
-                        "amazonqFeatureDev.code_generation.ask_to_add_code",
+                        "amazonqFeatureDev.code_generation.iteration_counts_ask_to_add_code",
                         remainingIterations,
                         totalIterations,
                     )
