@@ -88,7 +88,11 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
             "settings.gradle",
             "build.gradle",
             "gradle/wrapper/gradle-wrapper.properties",
+            "gradle/wrapper/gradle-wrapper.jar",
+            "/.idea/ref",
         )
+        val module = projectRule.module
+        projectRule.fixture.addFileToModule(module, "/.gitignore", "node_modules\n.idea\n.vscode\n.DS_Store\ngradle/wrapper/gradle-wrapper.jar")
 
         val isAutoBuildFeatureEnabled = CodeWhispererSettings.getInstance().isAutoBuildFeatureEnabled(config.repoContext.getWorkspaceRoot())
         val zipResult = featureDevSessionContext.getProjectZip(isAutoBuildFeatureEnabled = isAutoBuildFeatureEnabled)
@@ -111,6 +115,7 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
             "settings.gradle",
             "build.gradle",
             "gradle/wrapper/gradle-wrapper.properties",
+            "gradle/wrapper/gradle-wrapper.jar",
         )
 
         assertTrue(zippedFiles == expectedFiles)
