@@ -264,8 +264,9 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         if (pattern.length > MAX_PATTERN_LENGTH) {
             return null
         }
-        return pattern
-            // Escape special regex characters except * and ?
+
+        // Escape special regex characters except * and ?
+        var result = pattern
             .replace(".", "\\.")
             .replace("+", "\\+")
             .replace("(", "\\(")
@@ -278,28 +279,29 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
             .replace("^", "\\^")
             .replace("$", "\\$")
             .replace("|", "\\|")
-            // Convert gitignore glob patterns to regex
+
+        // Convert gitignore glob patterns to regex
+        result = result
             .replace("**", ".*?") // Match any directory depth
             .replace("*", "[^/]*?") // Match any character except path separator
             .replace("?", "[^/]") // Match single character except path separator
-            .let { pattern ->
-                when {
-                    // If pattern starts with '/', anchor it to the start of the path
-                    pattern.startsWith("/") -> "^${pattern.substring(1)}"
-                    // If pattern doesn't start with '/', it can match anywhere in the path
-                    else -> "(?:^|.*/?)$pattern"
-                }
-            }
-            .let { pattern ->
-                when {
-                    // If pattern ends with '/', it should match directories
-                    pattern.endsWith("/") -> "$pattern.*"
-                    // Otherwise match exactly or with a trailing slash for directories
-                    else -> "$pattern(?:/.*)?$"
-                }
-            }
-    }
 
+        // Handle start of pattern
+        result = if (result.startsWith("/")) {
+            "^${result.substring(1)}"
+        } else {
+            "(?:^|.*/?)$result"
+        }
+
+        // Handle end of pattern
+        result = if (result.endsWith("/")) {
+            "$result.*"
+        } else {
+            "$result(?:/.*)?$"
+        }
+
+        return result
+    }
     var selectedSourceFolder: VirtualFile
         set(newRoot) {
             _selectedSourceFolder = newRoot
