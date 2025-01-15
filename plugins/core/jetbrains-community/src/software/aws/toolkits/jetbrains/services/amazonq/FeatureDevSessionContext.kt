@@ -308,7 +308,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
 
     companion object {
         private const val MAX_PATTERN_LENGTH = 256 // Maximum allowed pattern length
-        private const val REGEX_TIMEOUT_MS = 100L  // Timeout for regex operations in milliseconds
+        private const val REGEX_TIMEOUT_MS = 100L // Timeout for regex operations in milliseconds
     }
 }
 
