@@ -31,6 +31,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.Ama
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CodeAnalysisScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
@@ -195,6 +196,9 @@ class CodeScanSessionConfig(
         files.forEach { file ->
             try {
                 val relativePath = "${project.name}/${file.relativeTo(projectRoot.toNioPath())}"
+                if (relativePath.contains("../")) {
+                    CodeWhispererTelemetryService.getInstance().sendInvalidZipEvent(file, projectRoot.toNioPath(), relativePath)
+                }
                 LOG.debug { "Selected file for truncation: $file" }
                 it.putNextEntry(relativePath.toString(), file)
             } catch (e: Exception) {
