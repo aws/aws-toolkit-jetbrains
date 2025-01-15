@@ -84,6 +84,12 @@ class CodeGenerationState(
             numberOfFilesGenerated = codeGenerationResult.newFiles.size
             codeGenerationRemainingIterationCount = codeGenerationResult.codeGenerationRemainingIterationCount
             codeGenerationTotalIterationCount = codeGenerationResult.codeGenerationTotalIterationCount
+            currentIteration =
+                if (codeGenerationRemainingIterationCount != null || codeGenerationTotalIterationCount != null) {
+                    codeGenerationTotalIterationCount!! - codeGenerationRemainingIterationCount!!
+                } else {
+                    currentIteration?.plus(1)
+                }
 
             runCatching {
                 var insertedLines = 0
@@ -128,7 +134,7 @@ class CodeGenerationState(
                     filePaths = codeGenerationResult.newFiles,
                     deletedFiles = codeGenerationResult.deletedFiles,
                     references = codeGenerationResult.references,
-                    currentIteration = currentIteration?.plus(1),
+                    currentIteration = currentIteration,
                     uploadId = uploadId,
                     messenger = messenger,
                     codeGenerationRemainingIterationCount = codeGenerationRemainingIterationCount,
@@ -182,16 +188,21 @@ private suspend fun CodeGenerationState.generateCode(
 ): CodeGenerationResult {
     val pollCount = 360
     val requestDelay = 5000L
+    var codeGenerationRemainingIterationCount: Int? = null
+    var codeGenerationTotalIterationCount: Int? = null
 
     repeat(pollCount) {
         if (token?.token?.isCancellationRequested() == true) {
-            return CodeGenerationResult(emptyList(), emptyList(), emptyList())
+            return CodeGenerationResult(emptyList(), emptyList(), emptyList(), codeGenerationRemainingIterationCount, codeGenerationTotalIterationCount)
         }
         val codeGenerationResultState =
             config.featureDevService.getTaskAssistCodeGeneration(
                 conversationId = config.conversationId,
                 codeGenerationId = codeGenerationId,
             )
+
+        codeGenerationRemainingIterationCount = codeGenerationResultState.codeGenerationRemainingIterationCount()
+        codeGenerationTotalIterationCount = codeGenerationResultState.codeGenerationTotalIterationCount()
 
         when (codeGenerationResultState.codeGenerationStatus().status()) {
             CodeGenerationWorkflowStatus.COMPLETE -> {
@@ -207,8 +218,8 @@ private suspend fun CodeGenerationState.generateCode(
                     newFiles = newFileInfo,
                     deletedFiles = deletedFileInfo,
                     references = codeGenerationStreamResult.references,
-                    codeGenerationRemainingIterationCount = codeGenerationResultState.codeGenerationRemainingIterationCount(),
-                    codeGenerationTotalIterationCount = codeGenerationResultState.codeGenerationTotalIterationCount(),
+                    codeGenerationRemainingIterationCount = codeGenerationRemainingIterationCount,
+                    codeGenerationTotalIterationCount = codeGenerationTotalIterationCount,
                 )
             }
             CodeGenerationWorkflowStatus.IN_PROGRESS -> {
@@ -252,7 +263,7 @@ private suspend fun CodeGenerationState.generateCode(
         }
     }
 
-    return CodeGenerationResult(emptyList(), emptyList(), emptyList())
+    return CodeGenerationResult(emptyList(), emptyList(), emptyList(), codeGenerationRemainingIterationCount, codeGenerationTotalIterationCount)
 }
 
 fun registerNewFiles(newFileContents: Map<String, String>): List<NewFileZipInfo> =

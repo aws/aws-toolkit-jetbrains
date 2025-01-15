@@ -28,7 +28,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Delete
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.PrepareCodeGenerationState
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Session
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionState
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.InsertAction
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
@@ -64,7 +63,7 @@ suspend fun FeatureDevController.onCodeGeneration(
         var totalIterations: Int? = state.codeGenerationTotalIterationCount
 
         if (state.token?.token?.isCancellationRequested() == true) {
-            disposeToken(state, messenger, tabId, state.currentIteration?.let { CODE_GENERATION_RETRY_LIMIT.minus(it) }, CODE_GENERATION_RETRY_LIMIT)
+            disposeToken(messenger, tabId, state.codeGenerationRemainingIterationCount, state.codeGenerationTotalIterationCount)
             return
         }
 
@@ -96,7 +95,7 @@ suspend fun FeatureDevController.onCodeGeneration(
         }
 
         if (state.token?.token?.isCancellationRequested() == true) {
-            disposeToken(state, messenger, tabId, state.currentIteration?.let { CODE_GENERATION_RETRY_LIMIT.minus(it) }, CODE_GENERATION_RETRY_LIMIT)
+            disposeToken(messenger, tabId, state.codeGenerationRemainingIterationCount, state.codeGenerationTotalIterationCount)
             return
         }
 
@@ -133,11 +132,17 @@ suspend fun FeatureDevController.onCodeGeneration(
                 tabId = tabId,
                 messageType = FeatureDevMessageType.Answer,
                 message =
-                if (remainingIterations == 0) {
-                    message("amazonqFeatureDev.code_generation.iteration_zero")
-                } else {
+                if (remainingIterations > 2) {
+                    message("amazonqFeatureDev.code_generation.iteration_or_feedback")
+                } else if (remainingIterations > 0) {
                     message(
                         "amazonqFeatureDev.code_generation.iteration_counts",
+                        remainingIterations,
+                        totalIterations,
+                    )
+                } else {
+                    message(
+                        "amazonqFeatureDev.code_generation.iteration_no_display",
                         remainingIterations,
                         totalIterations,
                     )
@@ -196,7 +201,6 @@ suspend fun FeatureDevController.onCodeGeneration(
 }
 
 private suspend fun disposeToken(
-    state: SessionState,
     messenger: MessagePublisher,
     tabId: String,
     remainingIterations: Int?,
@@ -234,16 +238,25 @@ private suspend fun disposeToken(
         return
     }
 
-    messenger.sendAnswer(
-        tabId = tabId,
-        messageType = FeatureDevMessageType.Answer,
-        message =
-        message(
-            "amazonqFeatureDev.code_generation.stopped_code_generation",
-            remainingIterations ?: state.currentIteration?.let { CODE_GENERATION_RETRY_LIMIT - it } as Any,
-            totalIterations ?: CODE_GENERATION_RETRY_LIMIT,
-        ),
-    )
+    if (remainingIterations !== null && totalIterations !== null && remainingIterations <= 2) {
+        messenger.sendAnswer(
+            tabId = tabId,
+            messageType = FeatureDevMessageType.Answer,
+            message =
+            message(
+                "amazonqFeatureDev.code_generation.stopped_code_generation",
+                remainingIterations,
+                totalIterations,
+            ),
+        )
+    } else {
+        messenger.sendAnswer(
+            tabId = tabId,
+            messageType = FeatureDevMessageType.Answer,
+            message =
+            message("amazonqFeatureDev.code_generation.stopped_code_generation_no_display",),
+        )
+    }
 
     messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = true)
 
