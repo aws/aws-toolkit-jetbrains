@@ -3,6 +3,7 @@
 
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.RuleChain
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -75,6 +76,7 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
     @Test
     fun testZipProject() {
         addFilesToProjectModule(
+            ".gitignore",
             ".gradle/cached.jar",
             "src/MyClass.java",
             "gradlew",
@@ -83,6 +85,19 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
             "settings.gradle",
             "build.gradle",
             "gradle/wrapper/gradle-wrapper.properties",
+            "builder/GetTestBuilder.java",
+            ".aws-sam/build/function1",
+            ".gem/specs.rb",
+            "archive.zip",
+            "output.bin",
+            "images/logo.png",
+            "assets/header.jpg",
+            "icons/menu.svg",
+            "license.txt",
+            "License.md",
+            "node_modules/express",
+            "build/outputs",
+            "dist/bundle.js"
         )
 
         val zipResult = featureDevSessionContext.getProjectZip()
@@ -102,11 +117,73 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
             "gradlew",
             "gradlew.bat",
             "README.md",
-            "settings.gradle",
-            "build.gradle",
             "gradle/wrapper/gradle-wrapper.properties",
+            "builder/GetTestBuilder.java"
         )
 
         assertTrue(zippedFiles == expectedFiles)
+    }
+
+    @Test
+    fun `test basic pattern conversion`() {
+        val input = "*.txt"
+        val expected = "(?:^|.*/?)[^/]*[^/]\\.txt(?:/.*)?\$"
+        assertEquals(expected, featureDevSessionContext.convertGitIgnorePatternToRegex(input))
+    }
+
+    @Test
+    fun `test pattern with special characters`() {
+        val input = "test[abc].txt"
+        val expected = "(?:^|.*/?)test\\[abc\\]\\.txt(?:/.*)?$"
+        assertEquals(expected, featureDevSessionContext.convertGitIgnorePatternToRegex(input))
+    }
+
+    @Test
+    fun `test pattern with double asterisk`() {
+        val input = "**/build"
+        val expected = "(?:^|.*/?).[^/]*[^/][^/]/build(?:/.*)?\$"
+        assertEquals(expected, featureDevSessionContext.convertGitIgnorePatternToRegex(input))
+    }
+
+    @Test
+    fun `test pattern starting with slash`() {
+        val input = "/root/file.txt"
+        val expected = "^root/file\\.txt(?:/.*)?$"
+        assertEquals(expected, featureDevSessionContext.convertGitIgnorePatternToRegex(input))
+    }
+
+    @Test
+    fun `test pattern ending with slash`() {
+        val input = "build/"
+        val expected = "(?:^|.*/?)build/.*"
+        assertEquals(expected, featureDevSessionContext.convertGitIgnorePatternToRegex(input))
+    }
+
+    @Test
+    fun `test pattern with question mark`() {
+        val input = "file?.txt"
+        val expected = "(?:^|.*/?)file[^/]\\.txt(?:/.*)?$"
+        assertEquals(expected, featureDevSessionContext.convertGitIgnorePatternToRegex(input))
+    }
+
+    @Test
+    fun `test complex pattern with multiple special characters`() {
+        val input = "**/test-[0-9]*.{java,kt}"
+        val expected = "(?:^|.*/?).[^/]*[^/][^/]/test-\\[0-9\\][^/]*[^/]\\.\\{java\\,kt\\}(?:/.*)?\$"
+        assertEquals(expected, featureDevSessionContext.convertGitIgnorePatternToRegex(input))
+    }
+
+    @Test
+    fun `test empty pattern`() {
+        val input = ""
+        val expected = "(?:^|.*/?)(?:/.*)?$"
+        assertEquals(expected, featureDevSessionContext.convertGitIgnorePatternToRegex(input))
+    }
+
+    @Test
+    fun `test pattern with all special regex characters`() {
+        val input = ".$+()[]{}^|"
+        val expected = "(?:^|.*/?)\\.\\\$\\+\\(\\)\\[\\]\\{\\}\\^\\|(?:/.*)?$"
+        assertEquals(expected, featureDevSessionContext.convertGitIgnorePatternToRegex(input))
     }
 }

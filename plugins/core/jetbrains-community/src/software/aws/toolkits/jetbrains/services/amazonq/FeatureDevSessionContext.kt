@@ -45,21 +45,34 @@ class RepoSizeLimitError(override val message: String) : RuntimeException(), Rep
 
 class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Long? = null) {
     // TODO: Need to correct this class location in the modules going further to support both amazonq and codescan.
-  
+
     private val additionalGitIgnoreRules = setOf(
-        "\\.aws-sam",
-        "\\.svn",
-        "/\\.(?:hg|git)/?", // Combine version control system patterns
-        "\\.(?:rvm|gem)", // Combine Ruby-related patterns
-        "/?\\.(?:gitignore|project|idea/?)", // Combine project config patterns
-        "\\.(?:zip|bin)$", // Combine binary file patterns
-        "\\.(?:png|jpg|svg)$", // Combine image file patterns
-        "\\.pyc$", // Python compiled files
-        "/[Ll][Ii][Cc][Ee][Nn][Ss][Ee]\\.(txt|md)$", // Case-insensitive license files
-        "(?:^|.*/?)node_modules(?:/.*)?\$",
-        "(?:^|.*/?)build(?:/.*)?\$",
-        "(?:^|.*/?)dist(?:/.*)?\$"
-    ).map { Regex(it) }
+        ".aws-sam",
+        ".gem",
+        ".git",
+        ".gitignore",
+        ".gradle",
+        ".hg",
+        ".idea",
+        ".project",
+        ".rvm",
+        ".svn",
+        "*.zip",
+        "*.bin",
+        "*.png",
+        "*.jpg",
+        "*.svg",
+        "*.pyc",
+        "license.txt",
+        "License.txt",
+        "LICENSE.txt",
+        "license.md",
+        "License.md",
+        "LICENSE.md",
+        "node_modules",
+        "build",
+        "dist"
+    )
 
     // well known source files that do not have extensions
     private val wellKnownSourceFiles = setOf(
@@ -81,7 +94,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     init {
         ignorePatternsWithGitIgnore = try {
             buildList {
-                addAll(additionalGitIgnoreRules)
+                addAll(additionalGitIgnoreRules.map { convertGitIgnorePatternToRegex(it) })
                 addAll(parseGitIgnore())
             }.mapNotNull { pattern ->
                 runCatching { Regex(pattern) }.getOrNull()
@@ -239,7 +252,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     }
 
     // gitignore patterns are not regex, method update needed.
-    private fun convertGitIgnorePatternToRegex(pattern: String): String = pattern
+    fun convertGitIgnorePatternToRegex(pattern: String): String = pattern
         // Escape special regex characters except * and ?
         .replace(".", "\\.")
         .replace("+", "\\+")
