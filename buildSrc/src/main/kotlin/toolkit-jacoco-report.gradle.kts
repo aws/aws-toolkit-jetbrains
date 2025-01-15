@@ -1,3 +1,6 @@
+import org.gradle.api.plugins.jvm.internal.JvmPluginServices
+import org.gradle.kotlin.dsl.support.serviceOf
+
 // Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -21,26 +24,27 @@ val aggregateCoverage by configurations.creating {
     isCanBeConsumed = false
 }
 
-// Resolvable configuration to resolve the classes of all dependencies
-val classPath by configurations.creating {
+val aggregateCoverageReportResults by configurations.creating {
     isVisible = false
-    isCanBeResolved = true
-    isCanBeConsumed = false
     extendsFrom(aggregateCoverage)
+}
+// magic to resolve all project dependencies transitively
+serviceOf<JvmPluginServices>().configureAsRuntimeClasspath(aggregateCoverageReportResults)
+
+
+// view to resolve the classes of all dependencies
+val classPath = aggregateCoverageReportResults.incoming.artifactView {
+    componentFilter { it is ProjectComponentIdentifier }
     attributes {
-        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
-        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.LIBRARY))
         attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements.CLASSES))
-        attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
     }
 }
 
-// A resolvable configuration to collect source code
-val sourcesPath by configurations.creating {
-    isVisible = false
-    isCanBeResolved = true
-    isCanBeConsumed = false
-    extendsFrom(aggregateCoverage)
+
+// view to collect source code
+val sourcesPath = aggregateCoverageReportResults.incoming.artifactView {
+    withVariantReselection()
+    componentFilter { it is ProjectComponentIdentifier }
     attributes {
         attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.VERIFICATION))
         attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
@@ -49,29 +53,27 @@ val sourcesPath by configurations.creating {
 }
 
 // A resolvable configuration to collect JaCoCo coverage data
-val coverageDataPath by configurations.creating {
-    isVisible = false
-    isCanBeResolved = true
-    isCanBeConsumed = false
-    extendsFrom(aggregateCoverage)
+val coverageDataPath = aggregateCoverageReportResults.incoming.artifactView {
+    withVariantReselection()
+    componentFilter { it is ProjectComponentIdentifier }
     attributes {
-        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
-        attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named("jacoco-coverage-data"))
-        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.VERIFICATION))
+        attribute(VerificationType.VERIFICATION_TYPE_ATTRIBUTE, objects.named(VerificationType.JACOCO_RESULTS))
+        attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, ArtifactTypeDefinition.BINARY_DATA_TYPE)
     }
 }
 
 // Register a code coverage report task to generate the aggregated report
 tasks.register<JacocoReport>("coverageReport") {
     additionalClassDirs(
-        classPath.filter { it.isDirectory }.asFileTree.matching {
+        classPath.files.filter { it.isDirectory }.asFileTree.matching {
             include("**/software/aws/toolkits/**")
             exclude("**/software/aws/toolkits/telemetry/**")
         }
     )
 
-    additionalSourceDirs(sourcesPath.incoming.artifactView { lenient(true) }.files)
-    executionData(coverageDataPath.incoming.artifactView { lenient(true) }.files.filter { it.exists() && it.extension == "exec" })
+    additionalSourceDirs(sourcesPath.files)
+    executionData(coverageDataPath.files)
 
     reports {
         html.required.set(true)
