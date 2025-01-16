@@ -13,6 +13,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFil
 import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
 import software.aws.toolkits.jetbrains.services.cwc.messages.RecommendationContentSpan
 import software.aws.toolkits.resources.message
+import java.util.Collections
 import java.util.UUID
 
 suspend fun MessagePublisher.sendAnswer(
@@ -113,6 +114,7 @@ suspend fun MessagePublisher.sendChatInputEnabledMessage(tabId: String, enabled:
     this.publish(chatInputEnabledMessage)
 }
 
+
 suspend fun MessagePublisher.sendError(tabId: String, errMessage: String?, retries: Int, conversationId: String? = null, showDefaultMessage: Boolean? = false) {
     val conversationIdText = if (conversationId == null) "" else "\n\nConversation ID: **$conversationId**"
 
@@ -146,6 +148,47 @@ suspend fun MessagePublisher.sendError(tabId: String, errMessage: String?, retri
                 status = FollowUpStatusType.Warning
             )
         ),
+    )
+}
+
+
+suspend fun MessagePublisher.sendErrorToUser(
+    tabId: String,
+    errMessage: String?,
+    conversationId: String? = null,
+    isEnableChatInput: Boolean = false
+) {
+    val conversationIdText = if (conversationId == null) "" else "\n\nConversation ID: **$conversationId**"
+
+    var followUps = listOf(
+        FollowUp(
+            pillText = message("amazonqDoc.prompt.reject.new_task"),
+            type = FollowUpTypes.NEW_TASK,
+            status = FollowUpStatusType.Info
+        ),
+        FollowUp(
+            pillText = message("amazonqDoc.prompt.reject.close_session"),
+            type = FollowUpTypes.CLOSE_SESSION,
+            status = FollowUpStatusType.Info
+        )
+    );
+
+    this.sendChatInputEnabledMessage(tabId, enabled = isEnableChatInput)
+    if (isEnableChatInput) {
+        this.sendUpdatePlaceholder(tabId, message("amazonqDoc.edit.placeholder"))
+        followUps = Collections.emptyList()
+    }
+
+    this.sendAnswer(
+        tabId = tabId,
+        messageType = DocMessageType.Answer,
+        message = errMessage + conversationIdText,
+    )
+
+    this.sendAnswer(
+        tabId = tabId,
+        messageType = DocMessageType.SystemPrompt,
+        followUp = followUps
     )
 }
 

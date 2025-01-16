@@ -5,17 +5,17 @@ package software.aws.toolkits.jetbrains.services.amazonqDoc
 
 import software.aws.toolkits.resources.message
 
-open class DocException(override val message: String?, override val cause: Throwable? = null) : RuntimeException()
+open class DocException(
+    override val message: String?,
+    override val cause: Throwable? = null,
+    val remainingIterations: Int? = null) : RuntimeException()
 
 class ZipFileError(override val message: String, override val cause: Throwable?) : RuntimeException()
 
 class CodeIterationLimitError(override val message: String, override val cause: Throwable?) : RuntimeException()
 
-internal fun docServiceError(message: String?): Nothing =
-    throw DocException(message)
-
-internal fun codeGenerationFailedError(): Nothing =
-    throw DocException(message("amazonqFeatureDev.code_generation.failed_generation"))
+internal fun docServiceError(message: String?, cause: Throwable? = null, remainingIterations: Int? = null): Nothing =
+    throw DocException(message, cause, remainingIterations)
 
 internal fun conversationIdNotFound(): Nothing =
     throw DocException(message("amazonqFeatureDev.exception.conversation_not_found"))

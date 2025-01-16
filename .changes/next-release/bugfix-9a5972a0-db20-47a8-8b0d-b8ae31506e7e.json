@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "AmazonQ doc agent: Enable text input in edit mode for retries and use it instead of retry button"
+}

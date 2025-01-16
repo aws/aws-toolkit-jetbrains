@@ -172,17 +172,18 @@ private suspend fun DocGenerationState.generateCode(codeGenerationId: String, mo
 
             CodeGenerationWorkflowStatus.FAILED -> {
                 messenger.sendUpdatePromptProgress(tabId = tabID, progressField = null)
+                val remainingIterations = codeGenerationResultState.codeGenerationRemainingIterationCount()
 
                 when (true) {
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "README_TOO_LARGE"
                     ),
-                    -> docServiceError(message("amazonqDoc.exception.readme_too_large"))
+                    -> docServiceError(message("amazonqDoc.exception.readme_too_large"), remainingIterations=remainingIterations)
 
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "README_UPDATE_TOO_LARGE"
                     ),
-                    -> docServiceError(message("amazonqDoc.exception.readme_update_too_large"))
+                    -> docServiceError(message("amazonqDoc.exception.readme_update_too_large"), remainingIterations=remainingIterations)
 
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "WORKSPACE_TOO_LARGE"
@@ -197,17 +198,17 @@ private suspend fun DocGenerationState.generateCode(codeGenerationId: String, mo
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "PROMPT_UNRELATED"
                     ),
-                    -> docServiceError(message("amazonqDoc.exception.prompt_unrelated"))
+                    -> docServiceError(message("amazonqDoc.exception.prompt_unrelated"), remainingIterations = remainingIterations)
 
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "PROMPT_TOO_VAGUE"
                     ),
-                    -> docServiceError(message("amazonqDoc.exception.prompt_too_vague"))
+                    -> docServiceError(message("amazonqDoc.exception.prompt_too_vague"), remainingIterations=remainingIterations)
 
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "PromptRefusal"
                     ),
-                    -> docServiceError(message("amazonqFeatureDev.exception.prompt_refusal"))
+                    -> docServiceError(message("amazonqFeatureDev.exception.prompt_refusal"), remainingIterations=remainingIterations)
 
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "Guardrails"
