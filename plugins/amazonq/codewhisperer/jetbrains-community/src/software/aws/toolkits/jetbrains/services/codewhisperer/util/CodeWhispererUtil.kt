@@ -12,6 +12,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.ui.ComponentUtil
@@ -150,6 +151,10 @@ fun VirtualFile.toCodeChunk(path: String): Sequence<Chunk> = sequence {
             yield(Chunk(content = lastChunk, path = path, nextChunk = lastChunk))
         }
     }
+}
+
+fun VirtualFile.isWithin(ancestor: VirtualFile): Boolean {
+    return VfsUtilCore.isAncestor(ancestor, this, false)
 }
 
 object CodeWhispererUtil {
