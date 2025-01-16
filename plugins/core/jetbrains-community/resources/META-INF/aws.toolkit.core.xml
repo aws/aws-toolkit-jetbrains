@@ -26,7 +26,8 @@
                             serviceImplementation="software.aws.toolkits.jetbrains.core.credentials.DefaultCredentialManager"
                             testServiceImplementation="software.aws.toolkits.jetbrains.core.credentials.MockCredentialsManager"/>
         <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.services.telemetry.TelemetryService"
-                            serviceImplementation="software.aws.toolkits.jetbrains.services.telemetry.DefaultTelemetryService"/>
+                            serviceImplementation="software.aws.toolkits.jetbrains.services.telemetry.DefaultTelemetryService"
+                            testServiceImplementation="software.aws.toolkits.jetbrains.services.telemetry.NoOpTelemetryService"/>
         <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.core.AwsResourceCache"
                             serviceImplementation="software.aws.toolkits.jetbrains.core.DefaultAwsResourceCache"
                             testServiceImplementation="software.aws.toolkits.jetbrains.core.MockResourceCache"/>
