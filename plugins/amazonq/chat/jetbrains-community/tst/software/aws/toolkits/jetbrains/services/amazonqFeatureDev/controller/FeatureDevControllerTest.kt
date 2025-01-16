@@ -494,7 +494,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         val totalIterations = 10
 
         for (remainingIterations in -1 until totalIterations) {
-            // remainingIterations < 0 to represent the null case
+            // remainingIterations < 0 is to represent the null case
             val message = if (remainingIterations > 2 || remainingIterations < 0) {
                 message("amazonqFeatureDev.code_generation.stopped_code_generation_no_iteration_count_display")
             } else if (remainingIterations > 0) {
