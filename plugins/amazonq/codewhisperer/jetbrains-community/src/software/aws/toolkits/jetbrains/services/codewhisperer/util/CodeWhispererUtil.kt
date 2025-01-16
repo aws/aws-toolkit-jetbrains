@@ -153,9 +153,7 @@ fun VirtualFile.toCodeChunk(path: String): Sequence<Chunk> = sequence {
     }
 }
 
-fun VirtualFile.isWithin(ancestor: VirtualFile): Boolean {
-    return VfsUtilCore.isAncestor(ancestor, this, false)
-}
+fun VirtualFile.isWithin(ancestor: VirtualFile): Boolean = VfsUtilCore.isAncestor(ancestor, this, false)
 
 object CodeWhispererUtil {
     fun getCompletionType(completion: Completion): CodewhispererCompletionType {
