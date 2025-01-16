@@ -9,8 +9,8 @@ class ConversationNotStartedState(
     override var approach: String,
     override val tabID: String,
     override var token: CancellationTokenSource?,
-    override var codeGenerationRemainingIterationCount: Int?,
-    override var codeGenerationTotalIterationCount: Int?,
+    override var codeGenerationRemainingIterationCount: Int? = null,
+    override var codeGenerationTotalIterationCount: Int? = null,
     override var currentIteration: Int?,
     override var diffMetricsProcessed: DiffMetricsProcessed,
 ) : SessionState {
