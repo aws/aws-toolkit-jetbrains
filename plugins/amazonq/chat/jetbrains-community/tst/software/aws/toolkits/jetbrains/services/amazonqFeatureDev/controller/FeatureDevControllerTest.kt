@@ -434,6 +434,121 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         }
 
     @Test
+    fun `test handleChat onCodeGeneration sends correct add code messages`() = runTest {
+        val totalIterations = 10
+
+        for (remainingIterations in 0 until totalIterations) {
+            val message = if (remainingIterations > 2) {
+                message("amazonqFeatureDev.code_generation.iteration_counts_ask_to_add_code_or_feedback")
+            } else if (remainingIterations > 0) {
+                message(
+                    "amazonqFeatureDev.code_generation.iteration_counts",
+                    remainingIterations,
+                    totalIterations,
+                )
+            } else {
+                message(
+                    "amazonqFeatureDev.code_generation.iteration_counts_ask_to_add_code",
+                    remainingIterations,
+                    totalIterations,
+                )
+            }
+            val mockSession = mock<Session>()
+            val featureDevService = mockk<FeatureDevService>()
+            val repoContext = mock<FeatureDevSessionContext>()
+            val sessionStateConfig = SessionStateConfig(testConversationId, repoContext, featureDevService)
+            val mockInteraction = mock<Interaction>()
+            whenever(mockSession.send(userMessage)).thenReturn(mockInteraction)
+            whenever(mockSession.sessionState).thenReturn(
+                PrepareCodeGenerationState(
+                    testTabId,
+                    CancellationTokenSource(),
+                    "test-command",
+                    sessionStateConfig,
+                    newFileContents,
+                    deletedFiles,
+                    testReferences,
+                    testUploadId,
+                    1,
+                    messenger,
+                    remainingIterations,
+                    totalIterations,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
+                ),
+            )
+
+            controller.onCodeGeneration(mockSession, userMessage, testTabId)
+
+            coVerify {
+                messenger.sendAnswer(
+                    tabId = testTabId,
+                    messageType = FeatureDevMessageType.Answer,
+                    message = message
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `test handleChat onCodeGeneration sends correct messages after cancellation`() = runTest {
+        val totalIterations = 10
+
+        for (remainingIterations in -1 until totalIterations) {
+            // remainingIterations < 0 to represent the null case
+            val message = if (remainingIterations > 2 || remainingIterations < 0) {
+                message("amazonqFeatureDev.code_generation.stopped_code_generation_no_iteration_count_display")
+            } else if (remainingIterations > 0) {
+                message(
+                    "amazonqFeatureDev.code_generation.stopped_code_generation",
+                    remainingIterations,
+                    totalIterations,
+                )
+            } else {
+                message(
+                    "amazonqFeatureDev.code_generation.stopped_code_generation_no_iterations",
+                    remainingIterations,
+                    totalIterations,
+                )
+            }
+            val mockSession = mock<Session>()
+            val featureDevService = mockk<FeatureDevService>()
+            val repoContext = mock<FeatureDevSessionContext>()
+            val sessionStateConfig = SessionStateConfig(testConversationId, repoContext, featureDevService)
+            val mockInteraction = mock<Interaction>()
+            val token = CancellationTokenSource()
+            token.cancel()
+            whenever(mockSession.send(userMessage)).thenReturn(mockInteraction)
+            whenever(mockSession.sessionState).thenReturn(
+                PrepareCodeGenerationState(
+                    testTabId,
+                    token,
+                    "test-command",
+                    sessionStateConfig,
+                    newFileContents,
+                    deletedFiles,
+                    testReferences,
+                    testUploadId,
+                    1,
+                    messenger,
+                    (if (remainingIterations < 0) null else remainingIterations),
+                    totalIterations,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
+                ),
+            )
+
+            controller.onCodeGeneration(mockSession, userMessage, testTabId)
+
+            coVerify {
+                messenger.sendAnswer(
+                    tabId = testTabId,
+                    messageType = FeatureDevMessageType.Answer,
+                    message = message
+                )
+            }
+        }
+    }
+
+    @Test
     fun `test handleChat onCodeGeneration sends success metrics`() = runTest {
         val mockSession = mock<Session>()
         val featureDevService = mockk<FeatureDevService>()
