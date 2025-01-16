@@ -138,7 +138,6 @@ class CodeWhispererFeatureConfigService {
         private const val NEW_AUTO_TRIGGER_UX = "newAutoTriggerUX"
         private val LOG = getLogger<CodeWhispererFeatureConfigService>()
 
-        // TODO: add real feature later
         // Also serve as default values in case server-side config isn't there yet
         val FEATURE_DEFINITIONS = mapOf(
             TEST_FEATURE_NAME to FeatureContext(

@@ -3,21 +3,27 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.editor
 
+import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiDocumentManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PAIRED_BRACKETS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.PAIRED_QUOTES
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
+import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.resources.message
 import java.time.Instant
 import java.util.Stack
 
@@ -69,6 +75,26 @@ class CodeWhispererEditorManager {
                     CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
                 ).afterAccept(states, sessionContext, rangeMarker)
             }
+        }
+
+        // Display tab accept priority once when the first accept is made
+        if (!CodeWhispererSettings.getInstance().isTabAcceptPriorityNotificationShownOnce()) {
+            notifyInfo(
+                "Amazon Q",
+                message("codewhisperer.inline.settings.tab_priority.notification.text"),
+                project = project,
+                listOf(
+                    NotificationAction.create(
+                        message("codewhisperer.actions.open_settings.title")
+                    ) { _, notification ->
+                        ShowSettingsUtil.getInstance().showSettingsDialog(project, CodeWhispererConfigurable::class.java)
+                    },
+                    NotificationAction.create(
+                        message("codewhisperer.notification.custom.simple.button.got_it")
+                    ) { _, notification -> notification.expire() }
+                )
+            )
+            CodeWhispererSettings.getInstance().setTabAcceptPriorityNotificationShownOnce(true)
         }
     }
 
