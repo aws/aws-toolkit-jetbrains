@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.FileUtils
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
@@ -137,13 +136,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
                 // entries against them by adding a trailing /.
                 // TODO: Add unit tests for gitignore matching
                 val relative = if (path.startsWith(projectRootPath.toString())) Paths.get(path).relativeTo(projectRootPath) else path
-                async {
-                    try {
-                        withTimeout(REGEX_TIMEOUT_MS) { pattern.matches("$relative/") }
-                    } catch (e: Exception) {
-                        false
-                    }
-                }
+                async { pattern.matches("$relative/") }
             }
         }
 
@@ -247,7 +240,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         tempFilePath
     }
 
-    private fun parseGitIgnore(): Set<String?> {
+    private fun parseGitIgnore(): Set<String> {
         if (!gitIgnoreFile.exists()) {
             return emptySet()
         }
@@ -259,59 +252,14 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     }
 
     // gitignore patterns are not regex, method update needed.
-    fun convertGitIgnorePatternToRegex(pattern: String): String? {
-        // Skip invalid patterns for length check
-        if (pattern.length > MAX_PATTERN_LENGTH) {
-            return null
-        }
-
-        // Escape special regex characters except * and ?
-        var result = pattern
-            .replace(".", "\\.")
-            .replace("+", "\\+")
-            .replace("(", "\\(")
-            .replace(")", "\\)")
-            .replace("[", "\\[")
-            .replace("]", "\\]")
-            .replace("{", "\\{")
-            .replace("}", "\\}")
-            .replace(",", "\\,")
-            .replace("^", "\\^")
-            .replace("$", "\\$")
-            .replace("|", "\\|")
-
-        // Convert gitignore glob patterns to regex
-        result = result
-            .replace("**", ".*?") // Match any directory depth
-            .replace("*", "[^/]*?") // Match any character except path separator
-            .replace("?", "[^/]") // Match single character except path separator
-
-        // Handle start of pattern
-        result = if (result.startsWith("/")) {
-            "^${result.substring(1)}"
-        } else {
-            "(?:^|.*/?)$result"
-        }
-
-        // Handle end of pattern
-        result = if (result.endsWith("/")) {
-            "$result.*"
-        } else {
-            "$result(?:/.*)?$"
-        }
-
-        return result
-    }
+    fun convertGitIgnorePatternToRegex(pattern: String): String = pattern.replace(".", "\\.")
+        .replace("*", ".*")
+        .let { if (it.endsWith("/")) "$it.*" else "$it/.*" } // Add a trailing /* to all patterns. (we add a trailing / to all files when matching)
     var selectedSourceFolder: VirtualFile
         set(newRoot) {
             _selectedSourceFolder = newRoot
         }
         get() = _selectedSourceFolder
-
-    companion object {
-        private const val MAX_PATTERN_LENGTH = 256 // Maximum allowed pattern length
-        private const val REGEX_TIMEOUT_MS = 100L // Timeout for regex operations in milliseconds
-    }
 }
 
 data class ZipCreationResult(val payload: File, val checksum: String, val contentLength: Long)
