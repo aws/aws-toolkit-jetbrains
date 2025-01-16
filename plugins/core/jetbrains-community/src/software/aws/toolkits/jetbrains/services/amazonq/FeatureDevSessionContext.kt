@@ -97,7 +97,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
                 addAll(additionalGitIgnoreRules.map { convertGitIgnorePatternToRegex(it) })
                 addAll(parseGitIgnore())
             }.mapNotNull { pattern ->
-                runCatching { pattern?.let { Regex(it) } }.getOrNull()
+                runCatching { Regex(pattern) }.getOrNull()
             }
         } catch (e: Exception) {
             emptyList()
@@ -252,7 +252,8 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     }
 
     // gitignore patterns are not regex, method update needed.
-    fun convertGitIgnorePatternToRegex(pattern: String): String = pattern.replace(".", "\\.")
+    private fun convertGitIgnorePatternToRegex(pattern: String): String = pattern
+        .replace(".", "\\.")
         .replace("*", ".*")
         .let { if (it.endsWith("/")) "$it.*" else "$it/.*" } // Add a trailing /* to all patterns. (we add a trailing / to all files when matching)
     var selectedSourceFolder: VirtualFile
