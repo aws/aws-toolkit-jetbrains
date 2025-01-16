@@ -39,6 +39,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWh
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
@@ -71,6 +72,7 @@ class CodeWhispererTelemetryServiceTest {
     private lateinit var telemetryServiceSpy: TelemetryService
     private lateinit var batcher: TelemetryBatcher
     private lateinit var mockClient: CodeWhispererClientAdaptor
+    private lateinit var codeWhispererServiceSpy: CodeWhispererService
 
     @Before
     fun setup() {
@@ -82,6 +84,10 @@ class CodeWhispererTelemetryServiceTest {
 
         telemetryServiceSpy = NoOpToolkitTelemetryService(batcher = batcher)
         ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryServiceSpy, disposableRule.disposable)
+
+        codeWhispererServiceSpy = spy(CodeWhispererService.getInstance())
+        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codeWhispererServiceSpy, disposableRule.disposable)
+        doNothing().`when`(codeWhispererServiceSpy).sendUserDecisionForNextSession()
 
         mockClient = spy(CodeWhispererClientAdaptor.getInstance(projectRule.project))
         mockClient.stub {

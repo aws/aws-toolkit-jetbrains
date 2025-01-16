@@ -114,8 +114,7 @@ open class CodeWhispererTestBase {
 
         stateManager = spy(CodeWhispererExplorerActionManager.getInstance())
         recommendationManager = CodeWhispererRecommendationManager.getInstance()
-        codewhispererService = spy(CodeWhispererService.getInstance())
-        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererService, disposableRule.disposable)
+        codewhispererService = CodeWhispererService.getInstance()
         editorManager = CodeWhispererEditorManager.getInstance()
         settingsManager = CodeWhispererSettings.getInstance()
 
@@ -163,7 +162,6 @@ open class CodeWhispererTestBase {
     fun withCodeWhispererServiceInvokedAndWait(runnable: (InvocationContext) -> Unit) {
         val statesCaptor = argumentCaptor<InvocationContext>()
         invokeCodeWhispererService()
-        doNothing().`when`(codewhispererService).promoteNextInvocationIfAvailable()
         verify(popupManagerSpy, timeout(5000).atLeastOnce())
             .showPopup(statesCaptor.capture(), any(), any(), any(), any())
         val states = statesCaptor.lastValue
