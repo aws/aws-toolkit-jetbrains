@@ -3,7 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.telemetry
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.util.Disposer
 import com.intellij.testFramework.replaceService
 import org.junit.jupiter.api.extension.AfterEachCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
@@ -37,17 +39,21 @@ class NoOpPublisher : TelemetryPublisher {
 }
 
 sealed class MockTelemetryServiceBase : ExternalResource() {
-    private val publisher: NoOpPublisher by lazy { NoOpTelemetryService.NO_OP_PUBLISHER }
-    private val batcher: TelemetryBatcher by lazy { spy(DefaultTelemetryBatcher(publisher)) }
+    protected val publisher: NoOpPublisher by lazy { NoOpTelemetryService.NO_OP_PUBLISHER }
+    protected val batcher: TelemetryBatcher by lazy { spy(DefaultTelemetryBatcher(publisher)) }
+    private lateinit var disposableParent: Disposable
 
     private val mockTelemetryService: NoOpTelemetryService by lazy { NoOpTelemetryService(publisher, batcher) }
 
     override fun before() {
-        ApplicationManager.getApplication().replaceService(TelemetryService::class.java, mockTelemetryService, mockTelemetryService)
+        // hack because @TestDisposable doesn't work here as it's not a test
+        disposableParent = Disposer.newDisposable()
+        ApplicationManager.getApplication().replaceService(TelemetryService::class.java, mockTelemetryService, disposableParent)
     }
 
     override fun after() {
         reset(batcher())
+        Disposer.dispose(disposableParent)
     }
 
     fun telemetryService() = mockTelemetryService
