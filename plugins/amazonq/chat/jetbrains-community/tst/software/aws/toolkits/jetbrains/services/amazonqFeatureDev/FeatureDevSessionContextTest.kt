@@ -3,6 +3,7 @@
 
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.RuleChain
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -48,5 +49,12 @@ class FeatureDevSessionContextTest : FeatureDevTestBase() {
         val txtFile = mock<VirtualFile>()
         whenever(txtFile.extension).thenReturn("mp4")
         assertFalse(featureDevSessionContext.isFileExtensionAllowed(txtFile))
+    }
+
+    @Test
+    fun `testWithGradleWrapperJarFile`() = runTest {
+        projectRule.fixture.addFileToProject("/.gitignore", "node_modules\n.idea\n.vscode\n.DS_Store\ngradle/wrapper/gradle-wrapper.jar").virtualFile
+        projectRule.fixture.addFileToProject("gradle/wrapper/gradle-wrapper.jar", "")
+        assertFalse(featureDevSessionContext.ignoreFile("gradle/wrapper/gradle-wrapper.jar"))
     }
 }

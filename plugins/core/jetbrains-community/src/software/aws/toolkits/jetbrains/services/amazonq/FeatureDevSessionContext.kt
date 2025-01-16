@@ -41,6 +41,7 @@ class RepoSizeLimitError(override val message: String) : RuntimeException(), Rep
 
 class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Long? = null) {
     // TODO: Need to correct this class location in the modules going further to support both amazonq and codescan.
+    private val requiredBinaryFilesForExecution = setOf("gradle/wrapper/gradle-wrapper.jar")
 
     private val ignorePatterns = setOf(
         "\\.aws-sam",
@@ -113,7 +114,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
 
     suspend fun ignoreFile(path: String): Boolean {
         // explicitly allow the Gradle wrapper JAR file
-        if (path.endsWith("gradle/wrapper/gradle-wrapper.jar")) {
+        if (requiredBinaryFilesForExecution.any { path.endsWith(it) }) {
             return false
         }
 
