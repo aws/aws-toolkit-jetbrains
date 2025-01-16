@@ -67,6 +67,7 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
     }
 
     @Test
+<<<<<<< HEAD
     fun testAllowedFilePath() {
         val allowedPaths = listOf("build.gradle", "gradle.properties", ".mvn/wrapper/maven-wrapper.properties")
         allowedPaths.forEach({
@@ -119,5 +120,11 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
         )
 
         assertTrue(zippedFiles == expectedFiles)
+=======
+    fun `testWithGradleWrapperJarFile`() = runTest {
+        projectRule.fixture.addFileToProject("/.gitignore", "node_modules\n.idea\n.vscode\n.DS_Store\ngradle/wrapper/gradle-wrapper.jar").virtualFile
+        projectRule.fixture.addFileToProject("gradle/wrapper/gradle-wrapper.jar", "")
+        assertFalse(featureDevSessionContext.ignoreFile("gradle/wrapper/gradle-wrapper.jar"))
+>>>>>>> d845d4379 (Exclude gradle-wrapper.jar from .gitignore checks)
     }
 }
