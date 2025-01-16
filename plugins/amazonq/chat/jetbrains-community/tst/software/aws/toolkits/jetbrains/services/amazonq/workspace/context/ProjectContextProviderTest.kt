@@ -41,6 +41,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.project.EncoderServer
 import software.aws.toolkits.jetbrains.services.amazonq.project.IndexRequest
 import software.aws.toolkits.jetbrains.services.amazonq.project.IndexUpdateMode
 import software.aws.toolkits.jetbrains.services.amazonq.project.InlineBm25Chunk
+import software.aws.toolkits.jetbrains.services.amazonq.project.InlineContextTarget
 import software.aws.toolkits.jetbrains.services.amazonq.project.LspMessage
 import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextProvider
 import software.aws.toolkits.jetbrains.services.amazonq.project.QueryChatRequest
@@ -237,13 +238,13 @@ class ProjectContextProviderTest {
     @Test
     fun `queryInline should send correct encrypted request to lsp`() = runTest {
         sut = ProjectContextProvider(project, encoderServer, this)
-        sut.queryInline("foo", "Foo.java")
+        sut.queryInline("foo", "Foo.java", InlineContextTarget.CODEMAP)
         advanceUntilIdle()
 
-        val request = QueryInlineCompletionRequest("foo", "Foo.java")
+        val request = QueryInlineCompletionRequest("foo", "Foo.java", "codemap")
         val requestJson = mapper.writeValueAsString(request)
 
-        assertThat(mapper.readTree(requestJson)).isEqualTo(mapper.readTree("""{ "query": "foo", "filePath": "Foo.java" }"""))
+        assertThat(mapper.readTree(requestJson)).isEqualTo(mapper.readTree("""{ "query": "foo", "filePath": "Foo.java", "target": "codemap" }"""))
 
         val encryptedRequest = encoderServer.encrypt(requestJson)
         wireMock.verify(
@@ -315,7 +316,7 @@ class ProjectContextProviderTest {
                 )
 
                 assertThrows<Exception> {
-                    sut.queryInline("foo", "filepath")
+                    sut.queryInline("foo", "filepath", InlineContextTarget.CODEMAP)
                     advanceUntilIdle()
                 }
             }
@@ -326,7 +327,7 @@ class ProjectContextProviderTest {
     fun `query inline should return deserialized bm25 chunks`() = runTest {
         sut = ProjectContextProvider(project, encoderServer, this)
         advanceUntilIdle()
-        val r = sut.queryInline("foo", "filepath")
+        val r = sut.queryInline("foo", "filepath", InlineContextTarget.CODEMAP)
         assertThat(r).hasSize(3)
         assertThat(r[0]).isEqualTo(
             InlineBm25Chunk(
@@ -374,7 +375,7 @@ class ProjectContextProviderTest {
 
             // it won't throw if it's executed within TestDispatcher context
             withContext(getCoroutineBgContext()) {
-                sut.queryInline("foo", "bar")
+                sut.queryInline("foo", "bar", InlineContextTarget.CODEMAP)
             }
 
             advanceUntilIdle()
