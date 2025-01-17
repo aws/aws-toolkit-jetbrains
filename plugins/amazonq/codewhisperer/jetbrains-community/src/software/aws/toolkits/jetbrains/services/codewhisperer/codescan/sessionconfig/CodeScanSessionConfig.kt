@@ -38,6 +38,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_TIMEOUT_IN_SECONDS
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.File
@@ -106,7 +107,7 @@ class CodeScanSessionConfig(
                 null -> getProjectPayloadMetadata()
                 else -> when (scope) {
                     CodeAnalysisScope.PROJECT -> getProjectPayloadMetadata()
-                    CodeAnalysisScope.FILE -> if (selectedFile.path.startsWith(projectRoot.path)) {
+                    CodeAnalysisScope.FILE -> if (selectedFile.isWithin(projectRoot)) {
                         getFilePayloadMetadata(selectedFile, true)
                     } else {
                         projectRoot = selectedFile.parent
