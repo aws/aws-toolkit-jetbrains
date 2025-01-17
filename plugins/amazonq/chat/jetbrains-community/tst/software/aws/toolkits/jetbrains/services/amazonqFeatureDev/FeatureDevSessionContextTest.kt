@@ -3,7 +3,6 @@
 
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.RuleChain
-import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -89,7 +88,7 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
             "build.gradle",
             "gradle/wrapper/gradle-wrapper.properties",
             "gradle/wrapper/gradle-wrapper.jar",
-            "/.idea/ref",
+            ".idea/ref",
         )
         val module = projectRule.module
         projectRule.fixture.addFileToModule(module, "/.gitignore", "node_modules\n.idea\n.vscode\n.DS_Store\ngradle/wrapper/gradle-wrapper.jar")
@@ -116,6 +115,7 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
             "build.gradle",
             "gradle/wrapper/gradle-wrapper.properties",
             "gradle/wrapper/gradle-wrapper.jar",
+            ".gitignore",
         )
 
         assertTrue(zippedFiles == expectedFiles)

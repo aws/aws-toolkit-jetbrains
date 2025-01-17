@@ -52,7 +52,6 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         ".aws-sam",
         ".gem",
         ".git",
-        ".gitignore",
         ".gradle",
         ".hg",
         ".idea",
