@@ -20,10 +20,10 @@ import com.intellij.util.xmlb.annotations.Property
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
+import software.aws.toolkits.jetbrains.services.amazonq.calculateIfIamIdentityCenterConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.calculateIfIamIdentityCenterConnection
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
@@ -157,17 +157,24 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
             return@calculateIfIamIdentityCenterConnection customizationUiItems
         }
 
+    /**
+     * Gets the active customization for a user. If a user has manually selected a customization,
+     * respect that choice. If a user has not selected a customization, check if they have a customization
+     * assigned to them via an AB feature. If so, use that customization.
+     */
     override fun activeCustomization(project: Project): CodeWhispererCustomization? {
-        val result = calculateIfIamIdentityCenterConnection(project) { connectionIdToActiveCustomizationArn[it.id] }
+        val selectedCustomization = calculateIfIamIdentityCenterConnection(project) { connectionIdToActiveCustomizationArn[it.id] }
 
-        // A/B case
-        val customizationArnFromAB = CodeWhispererFeatureConfigService.getInstance().getCustomizationArnOverride()
-        if (customizationArnFromAB.isEmpty()) return result
-        return CodeWhispererCustomization(
-            arn = customizationArnFromAB,
-            name = result?.name.orEmpty(),
-            description = result?.description
-        )
+        if (selectedCustomization != null) {
+            return selectedCustomization
+        } else {
+            val customizationOverride = CodeWhispererFeatureConfigService.getInstance().getCustomizationFeature()
+            if (customizationOverride == null || customizationOverride.value.stringValue().isEmpty()) return null
+            return CodeWhispererCustomization(
+                arn = customizationOverride.value.stringValue(),
+                name = customizationOverride.variation,
+            )
+        }
     }
 
     override fun switchCustomization(project: Project, newCustomization: CodeWhispererCustomization?) {
@@ -278,5 +285,5 @@ class CodeWhispererCustomizationState : BaseState() {
 data class CustomizationUiItem(
     val customization: CodeWhispererCustomization,
     val isNew: Boolean,
-    val shouldPrefixAccountId: Boolean
+    val shouldPrefixAccountId: Boolean,
 )

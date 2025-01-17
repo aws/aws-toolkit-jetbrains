@@ -5,15 +5,16 @@ package software.aws.toolkits.jetbrains.services.cwc.clients.chat.model
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
+import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContext
-import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.RelevantDocument
 
 enum class TriggerType {
     Click,
     ContextMenu,
     Hotkeys,
-    CodeScanButton
+    CodeScanButton,
+    Inline,
 }
 
 data class ChatRequestData(
@@ -24,7 +25,7 @@ data class ChatRequestData(
     val triggerType: TriggerType,
     val customization: CodeWhispererCustomization?,
     val relevantTextDocuments: List<RelevantDocument>,
-    val useRelevantDocuments: Boolean
+    val useRelevantDocuments: Boolean,
 )
 
 interface CodeNames {

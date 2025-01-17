@@ -10,25 +10,24 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.Follo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStatePhase
 import software.aws.toolkits.resources.message
 
-fun getFollowUpOptions(phase: SessionStatePhase?, interactionSucceeded: Boolean): List<FollowUp> {
-    when (phase) {
-        SessionStatePhase.APPROACH -> {
-            return when (interactionSucceeded) {
-                true -> listOf(
-                    FollowUp(
-                        pillText = message("amazonqFeatureDev.follow_up.generate_code"),
-                        type = FollowUpTypes.GENERATE_CODE,
-                        status = FollowUpStatusType.Info,
-                    )
-                )
+enum class InsertAction {
+    ALL,
+    REMAINING,
+    CONTINUE,
+    AUTO_CONTINUE,
+}
 
-                false -> emptyList()
-            }
-        }
+fun getFollowUpOptions(phase: SessionStatePhase?, type: InsertAction): List<FollowUp> {
+    when (phase) {
         SessionStatePhase.CODEGEN -> {
             return listOf(
                 FollowUp(
-                    pillText = message("amazonqFeatureDev.follow_up.insert_code"),
+                    pillText = when (type) {
+                        InsertAction.ALL -> message("amazonqFeatureDev.follow_up.insert_all_code")
+                        InsertAction.REMAINING -> message("amazonqFeatureDev.follow_up.insert_remaining_code")
+                        InsertAction.CONTINUE -> message("amazonqFeatureDev.follow_up.continue")
+                        InsertAction.AUTO_CONTINUE -> message("amazonqFeatureDev.follow_up.continue")
+                    },
                     type = FollowUpTypes.INSERT_CODE,
                     icon = FollowUpIcons.Ok,
                     status = FollowUpStatusType.Success

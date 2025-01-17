@@ -32,6 +32,7 @@ class CodeModernizerBottomWindowPanelManagerTest : PanelTestBase() {
         val layout = codeModernizerBottomWindowPanelManagerMock.layout as BorderLayout
         assertThat(codeModernizerBottomWindowPanelManagerMock.toolbar.component.isVisible).isTrue()
         assertThat(codeModernizerBottomWindowPanelManagerMock.fullSizeLoadingPanel.isVisible).isTrue()
+        assertThat(codeModernizerBottomWindowPanelManagerMock.banner.isVisible).isTrue()
         assertThat(BorderLayout.WEST).isEqualTo(layout.getConstraints(codeModernizerBottomWindowPanelManagerMock.toolbar.component))
         assertThat(BorderLayout.NORTH).isEqualTo(layout.getConstraints(codeModernizerBottomWindowPanelManagerMock.banner))
         assertThat(layout.getLayoutComponent(BorderLayout.EAST)).isNull()
@@ -42,7 +43,6 @@ class CodeModernizerBottomWindowPanelManagerTest : PanelTestBase() {
         codeModernizerBottomWindowPanelManagerMock.userInitiatedStopCodeModernizationUI()
         assertThat(loadingPanelMock).isEqualTo(codeModernizerBottomWindowPanelManagerMock.fullSizeLoadingPanel)
         verify(loadingPanelMock, times(0)).showSuccessUI()
-        verify(codeModernizerBottomWindowPanelManagerMock, times(1)).banner
     }
 
     @Test
@@ -57,6 +57,5 @@ class CodeModernizerBottomWindowPanelManagerTest : PanelTestBase() {
         var resultMock: CodeModernizerJobCompletedResult = spy(CodeModernizerJobCompletedResult.JobFailed(JobId("test-job-id"), "test-failure-reason"))
         codeModernizerBottomWindowPanelManagerMock.setJobFinishedUI(resultMock)
         verify(loadingPanelMock, times(0)).showSuccessUI()
-        verify(codeModernizerBottomWindowPanelManagerMock, times(1)).banner
     }
 }

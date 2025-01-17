@@ -37,7 +37,7 @@ class DotNetRuntimeDebugSupport : RuntimeDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>
+        debugPorts: List<Int>,
     ): XDebugProcessStarter = DotnetDebugUtils.createDebugProcess(environment, debugHost, debugPorts, context)
 }
 
@@ -63,7 +63,7 @@ abstract class DotnetImageDebugSupport : ImageDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>
+        debugPorts: List<Int>,
     ): XDebugProcessStarter = DotnetDebugUtils.createDebugProcess(environment, debugHost, debugPorts, context)
 }
 

@@ -26,10 +26,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWh
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreActionState
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfiguration
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhispererStatusBarWidgetFactory
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceToolWindowFactory
+import software.aws.toolkits.jetbrains.settings.CodeWhispererConfiguration
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import kotlin.test.fail
 
 class CodeWhispererSettingsTest : CodeWhispererTestBase() {
@@ -144,5 +144,45 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
             assertThat(statusBarWidgetFactory.isAvailable(projectRule.project)).isTrue
             assertThat(settingsManager.isIncludeCodeWithReference()).isEqualTo(true)
         }
+    }
+}
+
+class CodeWhispererSettingUnitTest {
+    private lateinit var sut: CodeWhispererSettings
+
+    @Before
+    fun setUp() {
+        sut = CodeWhispererSettings()
+        sut.loadState(CodeWhispererConfiguration())
+    }
+
+    @Test
+    fun `projectContext is disabled by default`() {
+        assertThat(sut.isProjectContextEnabled()).isFalse
+    }
+
+    @Test
+    fun `toggleProjectContext should set the value correct`() {
+        assertThat(sut.isProjectContextEnabled()).isFalse
+
+        sut.toggleProjectContextEnabled(true)
+        assertThat(sut.isProjectContextEnabled()).isTrue
+
+        sut.toggleProjectContextEnabled(false)
+        assertThat(sut.isProjectContextEnabled()).isFalse
+    }
+
+    @Test
+    fun `toggleProjectContext should only set once on users behalf if passive is true`() {
+        assertThat(sut.isProjectContextEnabled()).isFalse
+
+        sut.toggleProjectContextEnabled(true, passive = true)
+        assertThat(sut.isProjectContextEnabled()).isTrue
+
+        sut.toggleProjectContextEnabled(false, passive = true)
+        assertThat(sut.isProjectContextEnabled()).isTrue
+
+        sut.toggleProjectContextEnabled(false, passive = false)
+        assertThat(sut.isProjectContextEnabled()).isFalse
     }
 }

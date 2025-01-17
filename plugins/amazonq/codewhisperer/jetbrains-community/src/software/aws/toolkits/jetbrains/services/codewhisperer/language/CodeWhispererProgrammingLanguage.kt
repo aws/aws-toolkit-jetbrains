@@ -24,8 +24,6 @@ abstract class CodeWhispererProgrammingLanguage {
 
     open fun isCodeCompletionSupported(): Boolean = false
 
-    open fun isCodeScanSupported(): Boolean = false
-
     open fun isAutoFileScanSupported(): Boolean = false
 
     open fun isImportAdderSupported(): Boolean = false
@@ -35,6 +33,12 @@ abstract class CodeWhispererProgrammingLanguage {
     open fun isUTGSupported(): Boolean = false
 
     open fun toCodeWhispererRuntimeLanguage(): CodeWhispererProgrammingLanguage = this
+
+    open fun lineCommentPrefix(): String? = "//"
+
+    open fun blockCommentPrefix(): String? = "/*"
+
+    open fun blockCommentSuffix(): String? = "*/"
 
     final override fun equals(other: Any?): Boolean {
         if (other !is CodeWhispererProgrammingLanguage) return false

@@ -20,7 +20,7 @@ class AttributesTest {
         private val dataType: String,
         private val attributeValue: AttributeValue,
         private val attributeType: KClass<out DynamoAttribute<*>>,
-        private val strFormat: String
+        private val strFormat: String,
     ) {
         companion object {
             @JvmStatic

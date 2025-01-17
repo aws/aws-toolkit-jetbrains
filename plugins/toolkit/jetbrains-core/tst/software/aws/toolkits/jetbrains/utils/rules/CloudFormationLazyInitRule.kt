@@ -17,7 +17,7 @@ class CloudFormationLazyInitRule(
     private val stackName: String,
     private val templateBody: String,
     private val parameters: List<Parameter>,
-    private val cloudformationClient: CloudFormationClient
+    private val cloudformationClient: CloudFormationClient,
 ) : ExternalResource() {
     val outputs: Map<String, String> by lazy {
         cloudformationClient.describeStacks {

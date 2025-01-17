@@ -5,12 +5,14 @@ package software.aws.toolkits.jetbrains.core.credentials.sso
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.progress.ProcessCanceledException
-import com.intellij.ui.jcef.JBCefApp
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.ConfirmUserCodeLoginDialog
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.SourceOfEntry
 import software.aws.toolkits.jetbrains.utils.computeOnEdt
+import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.AwsCoreBundle
+import software.aws.toolkits.telemetry.AuthType
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.Result
@@ -30,7 +32,7 @@ class DefaultSsoLoginCallbackProvider : SsoLoginCallbackProvider {
         }
 
         return when {
-            JBCefApp.isSupported() -> SsoPromptWithBrowserSupport
+            isQWebviewsAvailable() -> SsoPromptWithBrowserSupport
             else -> deviceCodeProvider
         }
     }
@@ -38,12 +40,24 @@ class DefaultSsoLoginCallbackProvider : SsoLoginCallbackProvider {
 
 interface SsoPrompt : SsoLoginCallback {
     override fun tokenRetrieved() {
-        AwsTelemetry.loginWithBrowser(project = null, result = Result.Succeeded, credentialType = CredentialType.SsoProfile)
+        AwsTelemetry.loginWithBrowser(
+            project = null,
+            result = Result.Succeeded,
+            credentialType = CredentialType.SsoProfile,
+            authType = AuthType.DeviceCode,
+            source = SourceOfEntry.UNKNOWN.toString(),
+        )
     }
 
     override fun tokenRetrievalFailure(e: Exception) {
         e.notifyError(AwsCoreBundle.message("credentials.sso.login.failed"))
-        AwsTelemetry.loginWithBrowser(project = null, result = Result.Failed, credentialType = CredentialType.SsoProfile)
+        AwsTelemetry.loginWithBrowser(
+            project = null,
+            result = Result.Failed,
+            credentialType = CredentialType.SsoProfile,
+            authType = AuthType.DeviceCode,
+            source = SourceOfEntry.UNKNOWN.toString(),
+        )
     }
 }
 
@@ -53,13 +67,18 @@ object DefaultSsoPrompt : SsoPrompt {
             val result = ConfirmUserCodeLoginDialog(
                 authorization.userCode,
                 AwsCoreBundle.message("credentials.sso.login.title"),
-                CredentialType.SsoProfile
             ).showAndGet()
 
             if (result) {
                 BrowserUtil.browse(authorization.verificationUriComplete)
             } else {
-                AwsTelemetry.loginWithBrowser(project = null, result = Result.Cancelled, credentialType = CredentialType.SsoProfile)
+                AwsTelemetry.loginWithBrowser(
+                    project = null,
+                    result = Result.Cancelled,
+                    credentialType = CredentialType.SsoProfile,
+                    authType = AuthType.DeviceCode,
+                    source = SourceOfEntry.UNKNOWN.toString(),
+                )
                 throw ProcessCanceledException(IllegalStateException(AwsCoreBundle.message("credentials.sso.login.cancelled")))
             }
         }
@@ -76,11 +95,23 @@ object SsoPromptWithBrowserSupport : SsoPrompt {
 
 interface BearerTokenPrompt : SsoLoginCallback {
     override fun tokenRetrieved() {
-        AwsTelemetry.loginWithBrowser(project = null, result = Result.Succeeded, credentialType = CredentialType.BearerToken)
+        AwsTelemetry.loginWithBrowser(
+            project = null,
+            result = Result.Succeeded,
+            credentialType = CredentialType.BearerToken,
+            authType = AuthType.DeviceCode,
+            source = "",
+        )
     }
 
     override fun tokenRetrievalFailure(e: Exception) {
-        AwsTelemetry.loginWithBrowser(project = null, result = Result.Failed, credentialType = CredentialType.BearerToken)
+        AwsTelemetry.loginWithBrowser(
+            project = null,
+            result = Result.Failed,
+            credentialType = CredentialType.BearerToken,
+            authType = AuthType.DeviceCode,
+            source = "",
+        )
     }
 }
 
@@ -90,13 +121,18 @@ object DefaultBearerTokenPrompt : BearerTokenPrompt {
             val codeCopied = ConfirmUserCodeLoginDialog(
                 authorization.userCode,
                 AwsCoreBundle.message("credentials.sono.login"),
-                CredentialType.BearerToken
             ).showAndGet()
 
             if (codeCopied) {
                 BrowserUtil.browse(authorization.verificationUriComplete)
             } else {
-                AwsTelemetry.loginWithBrowser(project = null, result = Result.Cancelled, credentialType = CredentialType.BearerToken)
+                AwsTelemetry.loginWithBrowser(
+                    project = null,
+                    result = Result.Cancelled,
+                    credentialType = CredentialType.BearerToken,
+                    authType = AuthType.DeviceCode,
+                    source = SourceOfEntry.UNKNOWN.toString(),
+                )
             }
         }
     }

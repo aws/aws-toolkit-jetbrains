@@ -30,7 +30,7 @@ class LocalLambdaRunConfigurationProducer : LazyRunConfigurationProducer<LocalLa
     override fun setupConfigurationFromContext(
         configuration: LocalLambdaRunConfiguration,
         context: ConfigurationContext,
-        sourceElement: Ref<PsiElement>
+        sourceElement: Ref<PsiElement>,
     ): Boolean {
         val element = context.psiLocation ?: return false
         val result = when (val parent = element.parent) {

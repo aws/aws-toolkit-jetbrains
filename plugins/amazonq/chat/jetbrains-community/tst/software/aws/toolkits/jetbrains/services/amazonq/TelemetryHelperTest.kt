@@ -22,6 +22,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import software.amazon.awssdk.awscore.DefaultAwsResponseMetadata
 import software.amazon.awssdk.awscore.util.AwsHeader.AWS_REQUEST_ID
@@ -43,7 +44,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitConte
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
-import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.ChatSession
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.CodeNamesImpl
@@ -63,6 +63,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.LinkType
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionInfo
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryServiceExtension
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.CwsprChatConversationType
 import software.aws.toolkits.telemetry.CwsprChatInteractionType
 import software.aws.toolkits.telemetry.CwsprChatTriggerInteraction
@@ -106,6 +107,7 @@ class TelemetryHelperTest {
         private const val mockRegion = "us-east-1"
         private const val tabId = "tabId"
         private const val messageId = "messageId"
+        private val userIntent = UserIntent.SHOW_EXAMPLES
         private const val conversationId = "conversationId"
         private const val triggerId = "triggerId"
         private const val customizationArn = "customizationArn"
@@ -179,7 +181,7 @@ class TelemetryHelperTest {
         sessionStorage = mock {
             on { this.getSession(eq(tabId)) } doReturn ChatSessionInfo(session = mockSession, scope = mock(), history = mutableListOf())
         }
-        sut = TelemetryHelper(appInitContext, sessionStorage)
+        sut = TelemetryHelper(appInitContext.project, sessionStorage)
 
         // set up client
         mockClientManager.create<SsoOidcClient>()
@@ -331,6 +333,7 @@ class TelemetryHelperTest {
                     messageId(messageId)
                     interactionType(ChatMessageInteractionType.UPVOTE)
                     customizationArn(customizationArn)
+                    hasProjectLevelContext(false)
                 }.build()
             )
         )
@@ -362,6 +365,7 @@ class TelemetryHelperTest {
         }
 
         runBlocking {
+            sut.setResponseHasProjectContext(messageId, true)
             sut.recordInteractWithMessage(IncomingCwcMessage.FollowupClicked(mock(), tabId, messageId, "command", "tabType"))
         }
 
@@ -373,6 +377,7 @@ class TelemetryHelperTest {
                     messageId(messageId)
                     interactionType(ChatMessageInteractionType.CLICK_FOLLOW_UP)
                     customizationArn(customizationArn)
+                    hasProjectLevelContext(true)
                 }.build()
             )
         )
@@ -391,7 +396,7 @@ class TelemetryHelperTest {
                 )
                 .matches({ it.metadata["credentialStartUrl"] == mockUrl }, "startUrl doesn't match")
                 .matches(
-                    { it.metadata["cwsprChatHasProjectContext"] == CodeWhispererSettings.getInstance().isProjectContextEnabled().toString() },
+                    { it.metadata["cwsprChatHasProjectContext"] == "true" },
                     "hasProjectContext doesn't match"
                 )
         }
@@ -411,11 +416,13 @@ class TelemetryHelperTest {
                 "command",
                 tabId,
                 messageId,
+                userIntent,
                 "println()",
                 "insertionTargetType",
                 "eventId",
                 codeBlockIndex,
-                totalCodeBlocks
+                totalCodeBlocks,
+                lang
             )
         )
 
@@ -429,6 +436,7 @@ class TelemetryHelperTest {
                     interactionTarget("insertionTargetType")
                     acceptedCharacterCount("println()".length)
                     customizationArn(customizationArn)
+                    hasProjectLevelContext(false)
                 }.build()
             )
         )
@@ -462,7 +470,6 @@ class TelemetryHelperTest {
         mockClient.stub {
             on { this.sendChatInteractWithMessageTelemetry(any<ChatInteractWithMessageEvent>()) } doReturn mockSteResponse
         }
-
         val codeBlockIndex = 1
         val totalCodeBlocks = 10
         val inserTionTargetType = "insertionTargetType"
@@ -473,12 +480,14 @@ class TelemetryHelperTest {
             IncomingCwcMessage.InsertCodeAtCursorPosition(
                 tabId,
                 messageId,
+                userIntent,
                 code,
                 inserTionTargetType,
                 emptyList(),
                 eventId,
                 codeBlockIndex,
-                totalCodeBlocks
+                totalCodeBlocks,
+                lang
             )
         )
 
@@ -493,6 +502,7 @@ class TelemetryHelperTest {
                     acceptedCharacterCount(code.length)
                     acceptedLineCount(code.lines().size)
                     customizationArn(customizationArn)
+                    hasProjectLevelContext(false)
                 }.build()
             )
         )
@@ -552,6 +562,7 @@ class TelemetryHelperTest {
                     interactionType(ChatMessageInteractionType.CLICK_LINK)
                     interactionTarget(link)
                     customizationArn(customizationArn)
+                    hasProjectLevelContext(false)
                 }.build()
             )
         )
@@ -598,7 +609,7 @@ class TelemetryHelperTest {
 
         // Toolkit telemetry
         argumentCaptor<MetricEvent> {
-            verify(mockBatcher).enqueue(capture())
+            verify(mockBatcher, times(2)).enqueue(capture())
             val event = firstValue.data.find { it.name == "feedback_result" }
             assertNotNull(event)
             assertThat(event).matches { it.metadata["result"] == "Succeeded" }

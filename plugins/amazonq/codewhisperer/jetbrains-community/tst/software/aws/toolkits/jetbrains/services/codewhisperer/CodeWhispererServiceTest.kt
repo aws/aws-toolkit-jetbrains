@@ -19,6 +19,7 @@ import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
@@ -35,6 +36,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.customization.Code
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
@@ -44,8 +46,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeI
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroup
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
@@ -62,7 +62,6 @@ class CodeWhispererServiceTest {
     val disposableRule = DisposableRule()
 
     private lateinit var sut: CodeWhispererService
-    private lateinit var userGroupSetting: CodeWhispererUserGroupSettings
     private lateinit var customizationConfig: CodeWhispererModelConfigurator
     private lateinit var clientFacade: CodeWhispererClientAdaptor
     private lateinit var popupManager: CodeWhispererPopupManager
@@ -73,9 +72,7 @@ class CodeWhispererServiceTest {
     @Before
     fun setUp() {
         sut = CodeWhispererService.getInstance()
-        userGroupSetting = mock {
-            on { getUserGroup() } doReturn CodeWhispererUserGroup.Control
-        }
+
         customizationConfig = mock()
         clientFacade = mock()
         mockPopup = mock<JBPopup>()
@@ -90,7 +87,6 @@ class CodeWhispererServiceTest {
             projectRule.fixture.openFileInEditor(file.virtualFile)
         }
 
-        ApplicationManager.getApplication().replaceService(CodeWhispererUserGroupSettings::class.java, userGroupSetting, disposableRule.disposable)
         ApplicationManager.getApplication().replaceService(CodeWhispererModelConfigurator::class.java, customizationConfig, disposableRule.disposable)
         ApplicationManager.getApplication().replaceService(CodeWhispererTelemetryService::class.java, telemetryService, disposableRule.disposable)
         ApplicationManager.getApplication().replaceService(CodeWhispererPopupManager::class.java, popupManager, disposableRule.disposable)
@@ -100,8 +96,34 @@ class CodeWhispererServiceTest {
     }
 
     @Test
+    fun `getRequestContext should use correct fileContext and timeout to fetch supplementalContext`() = runTest {
+        val fileContextProvider = FileContextProvider.getInstance(projectRule.project)
+        val fileContextProviderSpy = spy(fileContextProvider)
+        projectRule.project.replaceService(FileContextProvider::class.java, fileContextProviderSpy, disposableRule.disposable)
+
+        val requestContext = sut.getRequestContext(
+            TriggerTypeInfo(CodewhispererTriggerType.AutoTrigger, CodeWhispererAutomatedTriggerType.Enter()),
+            editor = projectRule.fixture.editor,
+            project = projectRule.project,
+            file,
+            LatencyContext()
+        )
+
+        requestContext.awaitSupplementalContext()
+        val fileContextCaptor = argumentCaptor<FileContextInfo>()
+        verify(fileContextProviderSpy, times(1)).extractSupplementalFileContext(eq(file), fileContextCaptor.capture(), eq(100))
+        assertThat(fileContextCaptor.firstValue).isEqualTo(
+            FileContextInfo(
+                CaretContext(leftFileContext = "", rightFileContext = "public class Main {}", leftContextOnCurrentLine = ""),
+                "main.java",
+                CodeWhispererJava.INSTANCE,
+                "main.java"
+            )
+        )
+    }
+
+    @Test
     fun `getRequestContext should have supplementalContext and customizatioArn if they're present`() {
-        whenever(userGroupSetting.getUserGroup()).thenReturn(CodeWhispererUserGroup.CrossFile)
         whenever(customizationConfig.activeCustomization(projectRule.project)).thenReturn(
             CodeWhispererCustomization(
                 "fake-arn",
@@ -146,7 +168,6 @@ class CodeWhispererServiceTest {
     @Ignore("need update language type since Java is fully supported")
     @Test
     fun `getRequestContext - cross file context should be empty for non-cross-file user group`() {
-        whenever(userGroupSetting.getUserGroup()).thenReturn(CodeWhispererUserGroup.Control)
         val file = projectRule.fixture.addFileToProject("main.java", "public class Main {}")
 
         runInEdtAndWait {
@@ -215,7 +236,7 @@ private fun CodeWhispererProgrammingLanguage.toSdkModel(): ProgrammingLanguage =
     .build()
 
 private fun FileContextInfo.toSdkModel(): FileContext = FileContext.builder()
-    .filename(filename)
+    .filename(fileRelativePath)
     .programmingLanguage(programmingLanguage.toCodeWhispererRuntimeLanguage().toSdkModel())
     .leftFileContent(caretContext.leftFileContext)
     .rightFileContent(caretContext.rightFileContext)

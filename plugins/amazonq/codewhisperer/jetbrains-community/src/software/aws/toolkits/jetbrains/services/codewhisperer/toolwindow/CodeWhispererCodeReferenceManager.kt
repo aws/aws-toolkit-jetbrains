@@ -31,6 +31,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhisper
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.horizontalPanelConstraints
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContextNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.PreviewContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.EDITOR_CODE_REFERENCE_HOVER
 import software.aws.toolkits.resources.message
 import javax.swing.JLabel
@@ -114,6 +116,17 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
         val (_, editor, _, caretPosition) = requestContext
         val (_, detail, reformattedDetail) = recommendationContext.details[selectedIndex]
         insertCodeReference(detail.content(), reformattedDetail.references(), editor, caretPosition, detail)
+    }
+
+    fun insertCodeReference(states: InvocationContextNew, previews: List<PreviewContext>, selectedIndex: Int) {
+        val detail = previews[selectedIndex].detail
+        insertCodeReference(
+            detail.recommendation.content(),
+            detail.reformatted.references(),
+            states.requestContext.editor,
+            states.requestContext.caretPosition,
+            detail.recommendation
+        )
     }
 
     fun getReferenceLineNums(editor: Editor, start: Int, end: Int): String {
@@ -240,7 +253,7 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
     private fun isHighlighterRangeMatchCodeContent(
         editor: Editor,
         highlighter: RangeHighlighterEx,
-        codeContent: String
+        codeContent: String,
     ): Boolean =
         highlighter.isValid && highlighter.endOffset <= editor.document.textLength &&
             editor.document.getText(TextRange.create(highlighter.startOffset, highlighter.endOffset)) == codeContent
@@ -255,10 +268,10 @@ data class CodeReferenceHighLightContext(
     val editor: Editor,
     val highlighter: RangeHighlighterEx,
     val codeContent: String,
-    val referenceContent: String
+    val referenceContent: String,
 )
 
 data class CodeReferenceHighLightPopupContext(
     val context: CodeReferenceHighLightContext,
-    val popup: JBPopup
+    val popup: JBPopup,
 )

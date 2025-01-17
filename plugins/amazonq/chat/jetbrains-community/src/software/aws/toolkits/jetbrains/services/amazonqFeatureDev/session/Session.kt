@@ -3,22 +3,30 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
+import software.aws.toolkits.jetbrains.common.util.resolveAndCreateOrUpdateFile
+import software.aws.toolkits.jetbrains.common.util.resolveAndDeleteFile
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.APPROACH_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATION_RETRY_LIMIT
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ConversationIdNotFoundException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MAX_PROJECT_SIZE_BYTES
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataOperationName
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataResult
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.conversationIdNotFound
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.IncomingFeatureDevMessage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAsyncEventProgress
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.updateFileComponent
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.resolveAndCreateOrUpdateFile
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.resolveAndDeleteFile
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getChangeIdentifier
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getDiffMetrics
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.readFileToString
 import software.aws.toolkits.jetbrains.services.cwc.controller.ReferenceLogController
-import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
-import software.aws.toolkits.telemetry.AmazonqTelemetry
+import java.util.HashSet
 
 class Session(val tabID: String, val project: Project) {
     var context: FeatureDevSessionContext
@@ -31,9 +39,9 @@ class Session(val tabID: String, val project: Project) {
     private var task: String = ""
     private val proxyClient: FeatureDevClient
     private val featureDevService: FeatureDevService
+    private var _codeResultMessageId: String? = null
 
     // retry session state vars
-    private var approachRetries: Int
     private var codegenRetries: Int
 
     // Used to keep track of whether the current session/tab is currently authenticating/needs authenticating
@@ -43,18 +51,25 @@ class Session(val tabID: String, val project: Project) {
         context = FeatureDevSessionContext(project, MAX_PROJECT_SIZE_BYTES)
         proxyClient = FeatureDevClient.getInstance(project)
         featureDevService = FeatureDevService(proxyClient, project)
-        _state = ConversationNotStartedState("", tabID)
+        _state = ConversationNotStartedState(
+            approach = "",
+            tabID = tabID,
+            token = null,
+            currentIteration = 0,
+            diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet())
+        )
         isAuthenticating = false
-        approachRetries = APPROACH_RETRY_LIMIT
         codegenRetries = CODE_GENERATION_RETRY_LIMIT
     }
+
+    fun conversationIDLog(conversationId: String) = "$FEATURE_NAME Conversation ID: $conversationId"
 
     /**
      * Preload any events that have to run before a chat message can be sent
      */
     suspend fun preloader(msg: String, messenger: MessagePublisher) {
         if (!preloaderFinished) {
-            setupConversation(msg)
+            setupConversation(msg, messenger)
             preloaderFinished = true
             messenger.sendAsyncEventProgress(tabId = this.tabID, inProgress = true)
             featureDevService.sendFeatureDevEvent(this.conversationId)
@@ -64,49 +79,148 @@ class Session(val tabID: String, val project: Project) {
     /**
      * Starts a conversation with the backend and uploads the repo for the LLMs to be able to use it.
      */
-    private fun setupConversation(msg: String) {
+    private fun setupConversation(msg: String, messenger: MessagePublisher) {
         // Store the initial message when setting up the conversation so that if it fails we can retry with this message
         _latestMessage = msg
 
         _conversationId = featureDevService.createConversation()
-        val sessionStateConfig = getSessionStateConfig().copy(conversationId = this.conversationId)
-        _state = PrepareRefinementState("", tabID, sessionStateConfig)
-    }
+        logger<Session>().info(conversationIDLog(this.conversationId))
 
-    /**
-     * Triggered by the Generate Code follow-up button to move to the code generation phase
-     */
-    fun initCodegen(messenger: MessagePublisher) {
-        this._state = PrepareCodeGenerationState(
+        val sessionStateConfig = getSessionStateConfig().copy(conversationId = this.conversationId)
+        _state = PrepareCodeGenerationState(
             tabID = sessionState.tabID,
             approach = sessionState.approach,
-            config = getSessionStateConfig(),
+            config = sessionStateConfig,
             filePaths = emptyList(),
             deletedFiles = emptyList(),
             references = emptyList(),
-            currentIteration = 0, // first code gen iteration
+            currentIteration = 1, // first code gen iteration
             uploadId = "", // There is no code gen uploadId so far
             messenger = messenger,
+            token = CancellationTokenSource(),
+            diffMetricsProcessed = sessionState.diffMetricsProcessed,
         )
-        this._latestMessage = ""
+    }
 
-        AmazonqTelemetry.isApproachAccepted(amazonqConversationId = conversationId, enabled = true, credentialStartUrl = getStartUrl(project = context.project))
+    fun storeCodeResultMessageId(message: IncomingFeatureDevMessage.StoreMessageIdMessage) {
+        val messageId = message.messageId
+        this.updateCodeResultMessageId(messageId)
+    }
+
+    private fun updateCodeResultMessageId(messageId: String?) {
+        this._codeResultMessageId = messageId
+    }
+
+    suspend fun updateFilesPaths(
+        filePaths: List<NewFileZipInfo>,
+        deletedFiles: List<DeletedFileInfo>,
+        messenger: MessagePublisher,
+        disableFileActions: Boolean = false,
+    ) {
+        val codeResultMessageId = this._codeResultMessageId
+        if (codeResultMessageId != null) {
+            messenger.updateFileComponent(this.tabID, filePaths, deletedFiles, codeResultMessageId, disableFileActions)
+        }
     }
 
     /**
      * Triggered by the Insert code follow-up button to apply code changes.
      */
-    fun insertChanges(filePaths: List<NewFileZipInfo>, deletedFiles: List<DeletedFileInfo>, references: List<CodeReferenceGenerated>) {
+    suspend fun insertChanges(
+        filePaths: List<NewFileZipInfo>,
+        deletedFiles: List<DeletedFileInfo>,
+        references: List<CodeReferenceGenerated>,
+    ) {
+        val newFilePaths = filePaths.filter { !it.rejected && !it.changeApplied }
+        val newDeletedFiles = deletedFiles.filter { !it.rejected && !it.changeApplied }
         val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
 
-        filePaths.forEach { resolveAndCreateOrUpdateFile(selectedSourceFolder, it.zipFilePath, it.fileContent) }
+        runCatching {
+            var insertedLines = 0
+            var insertedCharacters = 0
+            filePaths.forEach { file ->
+                // FIXME: Ideally, the before content should be read from the uploaded context instead of from disk, to avoid drift
+                val before = selectedSourceFolder
+                    .resolve(file.zipFilePath)
+                    .toFile()
+                    .let { f ->
+                        if (f.exists() && f.canRead()) {
+                            readFileToString(f)
+                        } else {
+                            ""
+                        }
+                    }
 
-        deletedFiles.forEach { resolveAndDeleteFile(selectedSourceFolder, it.zipFilePath) }
+                val changeIdentifier = getChangeIdentifier(file.zipFilePath, before, file.fileContent)
+
+                if (_state?.diffMetricsProcessed?.accepted?.contains(changeIdentifier) != true) {
+                    val diffMetrics = getDiffMetrics(before, file.fileContent)
+                    insertedLines += diffMetrics.insertedLines
+                    insertedCharacters += diffMetrics.insertedCharacters
+                    _state?.diffMetricsProcessed?.accepted?.add(changeIdentifier)
+                }
+            }
+
+            if (insertedLines > 0) {
+                featureDevService.sendFeatureDevCodeAcceptanceEvent(
+                    conversationId = conversationId,
+                    linesOfCodeAccepted = insertedLines,
+                    charactersOfCodeAccepted = insertedCharacters,
+                )
+            }
+        }.onFailure { /* Noop on diff telemetry failure */ }
+
+        insertNewFiles(newFilePaths)
+
+        applyDeleteFiles(newDeletedFiles)
 
         ReferenceLogController.addReferenceLog(references, project)
 
         // Taken from https://intellij-support.jetbrains.com/hc/en-us/community/posts/206118439-Refresh-after-external-changes-to-project-structure-and-sources
         VfsUtil.markDirtyAndRefresh(true, true, true, context.selectedSourceFolder)
+    }
+
+// Suppressing because insertNewFiles needs to be a suspend function in order to be tested
+    @Suppress("RedundantSuspendModifier")
+    suspend fun insertNewFiles(
+        filePaths: List<NewFileZipInfo>,
+    ) {
+        val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
+
+        filePaths.forEach {
+            resolveAndCreateOrUpdateFile(selectedSourceFolder, it.zipFilePath, it.fileContent)
+            it.changeApplied = true
+        }
+    }
+
+// Suppressing because applyDeleteFiles needs to be a suspend function in order to be tested
+    @Suppress("RedundantSuspendModifier")
+    suspend fun applyDeleteFiles(
+        deletedFiles: List<DeletedFileInfo>,
+    ) {
+        val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
+
+        deletedFiles.forEach {
+            resolveAndDeleteFile(selectedSourceFolder, it.zipFilePath)
+            it.changeApplied = true
+        }
+    }
+
+    suspend fun disableFileList(
+        filePaths: List<NewFileZipInfo>,
+        deletedFiles: List<DeletedFileInfo>,
+        messenger: MessagePublisher,
+    ) {
+        if (this._codeResultMessageId.isNullOrEmpty()) {
+            return
+        }
+
+        updateFilesPaths(filePaths, deletedFiles, messenger, disableFileActions = true)
+        this._codeResultMessageId = null
+    }
+
+    fun sendMetricDataTelemetry(operationName: MetricDataOperationName, result: MetricDataResult) {
+        featureDevService.sendFeatureDevMetricData(operationName.toString(), result.toString())
     }
 
     suspend fun send(msg: String): Interaction {
@@ -120,10 +234,12 @@ class Session(val tabID: String, val project: Project) {
     }
 
     private suspend fun nextInteraction(msg: String): Interaction {
-        var action = SessionStateAction(
-            task = task,
-            msg = msg,
-        )
+        var action =
+            SessionStateAction(
+                task = task,
+                msg = msg,
+                token = sessionState.token,
+            )
         val resp = sessionState.interact(action)
         if (resp.nextState != null) {
             // Approach may have been changed after the interaction
@@ -147,7 +263,7 @@ class Session(val tabID: String, val project: Project) {
     val conversationId: String
         get() {
             if (_conversationId == null) {
-                conversationIdNotFound()
+                throw ConversationIdNotFoundException(operation = "Session", desc = "Conversation ID not found")
             } else {
                 return _conversationId as String
             }
@@ -169,13 +285,9 @@ class Session(val tabID: String, val project: Project) {
         get() = this._latestMessage
 
     val retries: Int
-        get() = if (sessionState.phase == SessionStatePhase.CODEGEN) codegenRetries else approachRetries
+        get() = codegenRetries
 
     fun decreaseRetries() {
-        if (sessionState.phase == SessionStatePhase.CODEGEN) {
-            codegenRetries -= 1
-        } else {
-            approachRetries -= 1
-        }
+        codegenRetries -= 1
     }
 }

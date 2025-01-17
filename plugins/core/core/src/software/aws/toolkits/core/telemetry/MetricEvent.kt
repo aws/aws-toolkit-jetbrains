@@ -4,11 +4,11 @@
 package software.aws.toolkits.core.telemetry
 
 import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
+import software.amazon.awssdk.services.toolkittelemetry.model.MetricUnit
 import software.aws.toolkits.core.telemetry.MetricEvent.Companion.illegalCharsRegex
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import java.time.Instant
-import software.amazon.awssdk.services.toolkittelemetry.model.Unit as MetricUnit
 
 interface MetricEvent {
     val createTime: Instant
@@ -77,7 +77,7 @@ data class DefaultMetricEvent internal constructor(
     override val awsRegion: String,
     override val awsProduct: AWSProduct,
     override val awsVersion: String,
-    override val data: Iterable<MetricEvent.Datum>
+    override val data: Iterable<MetricEvent.Datum>,
 ) : MetricEvent {
 
     class BuilderImpl : MetricEvent.Builder {
@@ -137,7 +137,7 @@ data class DefaultMetricEvent internal constructor(
         override val value: Double,
         override val unit: MetricUnit,
         override val passive: Boolean,
-        override val metadata: Map<String, String>
+        override val metadata: Map<String, String>,
     ) : MetricEvent.Datum {
         class BuilderImpl(private var name: String) : MetricEvent.Datum.Builder {
             private var value: Double = 0.0

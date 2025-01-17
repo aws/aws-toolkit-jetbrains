@@ -6,20 +6,20 @@ package software.aws.toolkits.jetbrains.services.amazonq
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.panels.Wrapper
+import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.dsl.gridLayout.HorizontalAlign
-import com.intellij.ui.dsl.gridLayout.VerticalAlign
-import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -36,6 +36,7 @@ import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
+import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.UiTelemetry
 import software.aws.toolkits.telemetry.WebviewTelemetry
@@ -52,8 +53,7 @@ class QWebviewPanel private constructor(val project: Project) : Disposable {
     val component = panel {
         row {
             cell(webviewContainer)
-                .horizontalAlign(HorizontalAlign.FILL)
-                .verticalAlign(VerticalAlign.FILL)
+                .align(Align.FILL)
         }.resizableRow()
 
         if (isDeveloperMode()) {
@@ -67,8 +67,7 @@ class QWebviewPanel private constructor(val project: Project) : Disposable {
                         )
                     },
                 )
-                    .horizontalAlign(HorizontalAlign.CENTER)
-                    .verticalAlign(VerticalAlign.BOTTOM)
+                    .align(Align.FILL)
             }
         }
     }
@@ -87,7 +86,7 @@ class QWebviewPanel private constructor(val project: Project) : Disposable {
     }
 
     private fun init() {
-        if (!JBCefApp.isSupported()) {
+        if (!isQWebviewsAvailable()) {
             // Fallback to an alternative browser-less solution
             webviewContainer.add(JBTextArea("JCEF not supported"))
             browser = null
@@ -146,7 +145,7 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
 
         when (message) {
             is BrowserMessage.PrepareUi -> {
-                this.prepareBrowser(BrowserState(FeatureId.Q, false))
+                this.prepareBrowser(BrowserState(FeatureId.AmazonQ, false))
                 WebviewTelemetry.amazonqSignInOpened(
                     project,
                     reAuth = isQExpired(project)
@@ -177,13 +176,15 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                     ToolkitConnectionManager.getInstance(project)
                         .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
                     )?.let { connection ->
-                    SsoLogoutAction(connection).actionPerformed(
-                        AnActionEvent.createFromDataContext(
-                            "qBrowser",
-                            null,
-                            DataContext.EMPTY_CONTEXT
+                    runInEdt {
+                        SsoLogoutAction(connection).actionPerformed(
+                            AnActionEvent.createFromDataContext(
+                                "qBrowser",
+                                null,
+                                DataContext.EMPTY_CONTEXT
+                            )
                         )
-                    )
+                    }
                 }
             }
 
@@ -195,8 +196,13 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                 error("QBrowser doesn't support the provided command ${message::class.simpleName}")
             }
 
-            is BrowserMessage.SendTelemetry -> {
-                UiTelemetry.click(project, "auth_continueButton")
+            is BrowserMessage.SendUiClickTelemetry -> {
+                val signInOption = message.signInOptionClicked
+                if (signInOption.isNullOrEmpty()) {
+                    LOG.warn { "Unknown sign in option" }
+                } else {
+                    UiTelemetry.click(project, signInOption)
+                }
             }
         }
     }

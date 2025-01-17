@@ -14,8 +14,10 @@ import software.aws.toolkits.jetbrains.services.amazonq.CONTENT_SHA256
 import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION
 import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevOperation
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.UploadCodeException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.UploadURLExpired
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.uploadCodeError
 import java.io.File
 import java.net.HttpURLConnection
 
@@ -36,9 +38,12 @@ fun uploadArtifactToS3(url: String, fileToUpload: File, checksumSha256: String, 
                 connection.setFixedLengthStreamingMode(fileToUpload.length())
                 IoUtils.copy(fileToUpload.inputStream(), connection.outputStream)
             }
-    } catch (err: Exception) {
+    } catch (err: HttpRequests.HttpStatusException) {
         logger.warn(err) { "$FEATURE_NAME: Failed to upload code to S3" }
-        uploadCodeError()
+        when (err.statusCode) {
+            403 -> throw UploadURLExpired(operation = FeatureDevOperation.UploadToS3.toString(), desc = "Upload URL expired or forbidden")
+            else -> throw UploadCodeException(operation = FeatureDevOperation.UploadToS3.toString(), desc = "Failed to upload code to S3")
+        }
     }
 }
 

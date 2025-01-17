@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using AWS.Toolkit.Rider.Model;
 using JetBrains.Application;
+using JetBrains.Application.Parts;
 using JetBrains.Application.Progress;
 using JetBrains.Application.Threading;
 using JetBrains.Diagnostics;
@@ -19,7 +20,11 @@ using JetBrains.Rider.Backend.Platform.Icons;
 
 namespace AWS.Psi.Lambda
 {
+    #if (PROFILE_2023_3 || PROFILE_2024_1 || PROFILE_2024_2)
     [SolutionComponent]
+    #else
+    [SolutionComponent(InstantiationEx.UnspecifiedDefault)]
+    #endif
     public class LambdaPsiHost
     {
         private readonly ISymbolCache _symbolCache;
@@ -66,7 +71,7 @@ namespace AWS.Psi.Lambda
             var indicator = NullProgressIndicator.CreateCancellable(lifetime);
 
             using (TryReadLockCookie.Create(indicator, _locks,
-                () => !lifetime.IsAlive || _locks.ContentModelLocks.IsWriteLockRequested))
+                () => !lifetime.IsAlive || _locks.ContentModelLocks.IsWriteAccessAllowed))
             {
                 var project = _projectModelViewHost.GetItemById<IProject>(projectId);
                 Assertion.AssertNotNull(project, "project instance should not be null");

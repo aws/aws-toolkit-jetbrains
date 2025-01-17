@@ -16,8 +16,6 @@ class CodeWhispererPython private constructor() : CodeWhispererProgrammingLangua
 
     override fun isCodeCompletionSupported(): Boolean = true
 
-    override fun isCodeScanSupported(): Boolean = true
-
     override fun isAutoFileScanSupported(): Boolean = true
 
     override fun isImportAdderSupported(): Boolean = true
@@ -25,6 +23,12 @@ class CodeWhispererPython private constructor() : CodeWhispererProgrammingLangua
     override fun isUTGSupported() = true
 
     override fun isSupplementalContextSupported() = true
+
+    override fun lineCommentPrefix() = "#"
+
+    override fun blockCommentPrefix() = "\"\"\""
+
+    override fun blockCommentSuffix() = "\"\"\""
 
     companion object {
         const val ID = "python"

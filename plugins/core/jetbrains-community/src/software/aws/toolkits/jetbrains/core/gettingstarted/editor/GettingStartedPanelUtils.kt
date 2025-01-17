@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.core.gettingstarted.editor
 import com.intellij.openapi.project.Project
 import com.intellij.ui.dsl.builder.Panel
 import software.aws.toolkits.core.credentials.CredentialIdentifier
+import software.aws.toolkits.core.credentials.CredentialType
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ConnectionState
@@ -25,13 +26,13 @@ enum class ActiveConnectionType {
     BUILDER_ID,
     IAM_IDC,
     IAM,
-    UNKNOWN
+    UNKNOWN,
 }
 
 enum class BearerTokenFeatureSet {
     CODEWHISPERER,
     CODECATALYST,
-    Q
+    Q,
 }
 
 fun controlPanelVisibility(currentPanel: Panel, newPanel: Panel) {
@@ -47,25 +48,25 @@ sealed interface ActiveConnection {
     data class ExpiredBearer(
         override val activeConnectionBearer: AwsBearerTokenConnection?,
         override val connectionType: ActiveConnectionType?,
-        override val activeConnectionIam: CredentialIdentifier? = null
+        override val activeConnectionIam: CredentialIdentifier? = null,
     ) : ActiveConnection
 
     data class ExpiredIam(
         override val activeConnectionBearer: AwsBearerTokenConnection? = null,
         override val connectionType: ActiveConnectionType?,
-        override val activeConnectionIam: CredentialIdentifier?
+        override val activeConnectionIam: CredentialIdentifier?,
     ) : ActiveConnection
 
     data class ValidBearer(
         override val activeConnectionBearer: AwsBearerTokenConnection?,
         override val connectionType: ActiveConnectionType?,
-        override val activeConnectionIam: CredentialIdentifier? = null
+        override val activeConnectionIam: CredentialIdentifier? = null,
     ) : ActiveConnection
 
     data class ValidIam(
         override val activeConnectionBearer: AwsBearerTokenConnection? = null,
         override val connectionType: ActiveConnectionType?,
-        override val activeConnectionIam: CredentialIdentifier?
+        override val activeConnectionIam: CredentialIdentifier?,
     ) : ActiveConnection
 
     object NotConnected : ActiveConnection {
@@ -115,6 +116,20 @@ fun checkIamConnectionValidity(project: Project): ActiveConnection {
     }
 }
 
+fun checkIamProfileByCredentialType(project: Project): ActiveConnection {
+    val currConn = AwsConnectionManager.getInstance(project).selectedCredentialIdentifier ?: return ActiveConnection.NotConnected
+    val invalidConnection = AwsConnectionManager.getInstance(project).connectionState.let { it.isTerminal && it !is ConnectionState.ValidConnection }
+    val connectionType = when (currConn.credentialType) {
+        CredentialType.SsoProfile -> ActiveConnectionType.IAM_IDC
+        else -> ActiveConnectionType.IAM
+    }
+    return if (invalidConnection) {
+        ActiveConnection.ExpiredIam(connectionType = connectionType, activeConnectionIam = currConn)
+    } else {
+        ActiveConnection.ValidIam(connectionType = connectionType, activeConnectionIam = currConn)
+    }
+}
+
 /**
  * Finds the first valid [ActiveConnection] and returns it.
  *
@@ -146,6 +161,7 @@ fun checkConnectionValidity(project: Project): ActiveConnection {
     return result
 }
 
+@Deprecated("Does not work for current config file setup. Old versions still utilize this logic.")
 fun isCredentialSso(providerId: String): ActiveConnectionType {
     val profileName = providerId.split("-").first()
     val ssoSessionIds = CredentialManager.getInstance().getSsoSessionIdentifiers().map {
@@ -160,7 +176,7 @@ fun getSourceOfEntry(
     sourceOfEntry: SourceOfEntry,
     isStartup: Boolean = false,
     connectionInitiatedFromExplorer: Boolean = false,
-    connectionInitiatedFromQChatPanel: Boolean = false
+    connectionInitiatedFromQChatPanel: Boolean = false,
 ): String {
     val src = if (connectionInitiatedFromExplorer) {
         SourceOfEntry.EXPLORER.toString()
@@ -181,7 +197,9 @@ enum class SourceOfEntry {
     FIRST_STARTUP,
     Q,
     AMAZONQ_CHAT_PANEL,
-    UNKNOWN;
+    LOGIN_BROWSER,
+    UNKNOWN,
+    ;
     override fun toString(): String {
         val value = this.name.lowercase()
         // If the string in lowercase contains an _ eg RESOURCE_EXPLORER, this function returns camelCase of the string i.e resourceExplorer

@@ -27,6 +27,7 @@ import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.Login
+import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
@@ -35,14 +36,17 @@ import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
+import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sso.PendingAuthorization
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.ssoErrorMessageFromException
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.SourceOfEntry
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.utils.pollFor
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AuthTelemetry
+import software.aws.toolkits.telemetry.AuthType
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.CredentialType
@@ -51,6 +55,7 @@ import software.aws.toolkits.telemetry.Result
 import java.time.Duration
 import java.util.Timer
 import java.util.TimerTask
+import java.util.concurrent.CancellationException
 import java.util.concurrent.Future
 import java.util.function.Function
 
@@ -59,7 +64,7 @@ data class BrowserState(val feature: FeatureId, val browserCancellable: Boolean 
 abstract class LoginBrowser(
     private val project: Project,
     val domain: String,
-    val webScriptUri: String
+    val webScriptUri: String,
 ) {
     abstract val jcefBrowser: JBCefBrowserBase
 
@@ -70,7 +75,7 @@ abstract class LoginBrowser(
 
         handleBrowserMessage(obj)
 
-        null
+        JBCefJSQuery.Response(null)
     }
     protected var currentAuthorization: PendingAuthorization? = null
 
@@ -85,22 +90,28 @@ abstract class LoginBrowser(
 
     private var browserOpenTimer: Timer? = null
 
-    private fun startBrowserOpenTimer(credentialSourceId: CredentialSourceId) {
+    private fun startBrowserOpenTimer(startUrl: String, ssoRegion: String, scopes: List<String>) {
         browserOpenTimer = Timer()
         browserOpenTimer?.schedule(
             object : TimerTask() {
                 override fun run() {
                     AwsTelemetry.loginWithBrowser(
                         project = null,
-                        credentialStartUrl = SONO_URL,
+                        credentialStartUrl = startUrl,
                         result = Result.Failed,
                         reason = "Browser authentication idle for more than 15min",
-                        credentialSourceId = credentialSourceId
+                        credentialSourceId = if (startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter,
+                        authType = getAuthType(ssoRegion),
+                        source = SourceOfEntry.LOGIN_BROWSER.toString(),
                     )
                     AuthTelemetry.addConnection(
                         result = Result.Failed,
                         reason = "Browser authentication idle for more than 15min",
-                        credentialSourceId = credentialSourceId
+                        credentialSourceId = if (startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter,
+                        isAggregated = false,
+                        featureId = getFeatureId(scopes),
+                        isReAuth = isReAuth(scopes, startUrl),
+                        source = SourceOfEntry.LOGIN_BROWSER.toString(),
                     )
                     stopAndClearBrowserOpenTimer()
                 }
@@ -118,7 +129,8 @@ abstract class LoginBrowser(
     }
 
     protected val onPendingToken: (InteractiveBearerTokenProvider) -> Unit = { provider ->
-        startBrowserOpenTimer(if (provider.startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter)
+        startBrowserOpenTimer(provider.startUrl, provider.region, provider.scopes)
+
         projectCoroutineScope(project).launch {
             val authorization = pollForAuthorization(provider)
             if (authorization != null) {
@@ -177,6 +189,7 @@ abstract class LoginBrowser(
 
     open fun loginBuilderId(scopes: List<String>) {
         val isReauth = isReAuth(scopes, SONO_URL)
+        val featureId = getFeatureId(scopes)
         val onError: (Exception) -> Unit = { e ->
             stopAndClearBrowserOpenTimer()
             isUserCancellation(e)
@@ -186,13 +199,18 @@ abstract class LoginBrowser(
                 result = Result.Failed,
                 reason = e.message,
                 credentialSourceId = CredentialSourceId.AwsId,
-                isReAuth = isReauth
+                isReAuth = isReauth,
+                authType = getAuthType(SONO_REGION),
+                source = SourceOfEntry.LOGIN_BROWSER.toString(),
             )
             AuthTelemetry.addConnection(
                 result = Result.Failed,
                 credentialSourceId = CredentialSourceId.AwsId,
                 reason = e.message,
-                isReAuth = isReauth
+                isReAuth = isReauth,
+                featureId = featureId,
+                isAggregated = false,
+                source = SourceOfEntry.LOGIN_BROWSER.toString()
             )
         }
         val onSuccess: () -> Unit = {
@@ -202,12 +220,17 @@ abstract class LoginBrowser(
                 credentialStartUrl = SONO_URL,
                 result = Result.Succeeded,
                 credentialSourceId = CredentialSourceId.AwsId,
-                isReAuth = isReauth
+                isReAuth = isReauth,
+                authType = getAuthType(SONO_REGION),
+                source = SourceOfEntry.LOGIN_BROWSER.toString(),
             )
             AuthTelemetry.addConnection(
                 result = Result.Succeeded,
                 credentialSourceId = CredentialSourceId.AwsId,
-                isReAuth = isReauth
+                isReAuth = isReauth,
+                featureId = featureId,
+                isAggregated = true,
+                source = SourceOfEntry.LOGIN_BROWSER.toString()
             )
         }
 
@@ -231,10 +254,10 @@ abstract class LoginBrowser(
     fun getSuccessAndErrorActionsForIdcLogin(
         scopes: List<String>,
         url: String,
-        region: AwsRegion
+        region: AwsRegion,
     ): Pair<(Exception) -> Unit, () -> Unit> {
         val isReAuth = isReAuth(scopes, url)
-
+        val featureId = getFeatureId(scopes)
         val onError: (Exception) -> Unit = { e ->
             stopAndClearBrowserOpenTimer()
             val message = ssoErrorMessageFromException(e)
@@ -256,13 +279,18 @@ abstract class LoginBrowser(
                 isReAuth = isReAuth,
                 result = result,
                 reason = message,
-                credentialSourceId = CredentialSourceId.IamIdentityCenter
+                credentialSourceId = CredentialSourceId.IamIdentityCenter,
+                authType = getAuthType(region.name),
+                source = SourceOfEntry.LOGIN_BROWSER.toString()
             )
             AuthTelemetry.addConnection(
                 result = result,
                 credentialSourceId = CredentialSourceId.IamIdentityCenter,
                 reason = message,
                 isReAuth = isReAuth,
+                featureId = featureId,
+                isAggregated = false,
+                source = SourceOfEntry.LOGIN_BROWSER.toString()
             )
         }
         val onSuccess: () -> Unit = {
@@ -273,13 +301,18 @@ abstract class LoginBrowser(
                 isReAuth = isReAuth,
                 credentialType = CredentialType.BearerToken,
                 credentialStartUrl = url,
-                credentialSourceId = CredentialSourceId.IamIdentityCenter
+                credentialSourceId = CredentialSourceId.IamIdentityCenter,
+                authType = getAuthType(region.name),
+                source = SourceOfEntry.LOGIN_BROWSER.toString(),
             )
             AuthTelemetry.addConnection(
                 project = null,
                 result = Result.Succeeded,
                 isReAuth = isReAuth,
-                credentialSourceId = CredentialSourceId.IamIdentityCenter
+                credentialSourceId = CredentialSourceId.IamIdentityCenter,
+                featureId = featureId,
+                isAggregated = true,
+                source = SourceOfEntry.LOGIN_BROWSER.toString()
             )
         }
         return Pair(onError, onSuccess)
@@ -296,7 +329,9 @@ abstract class LoginBrowser(
                         project = null,
                         result = Result.Failed,
                         reason = error.message,
-                        credentialType = CredentialType.StaticProfile
+                        credentialType = CredentialType.StaticProfile,
+                        authType = AuthType.IAM,
+                        source = SourceOfEntry.LOGIN_BROWSER.toString(),
                     )
                     LOG.error(error) { "Profile file error" }
                     Messages.showErrorDialog(jcefBrowser.component, error.message, AwsCoreBundle.message("gettingstarted.auth.failed"))
@@ -306,6 +341,8 @@ abstract class LoginBrowser(
                         project = null,
                         result = Result.Failed,
                         reason = "Profile already exists",
+                        authType = AuthType.IAM,
+                        source = SourceOfEntry.LOGIN_BROWSER.toString(),
                     )
                 },
                 { error ->
@@ -314,6 +351,8 @@ abstract class LoginBrowser(
                         project = null,
                         result = Result.Failed,
                         reason = reason,
+                        authType = AuthType.IAM,
+                        source = SourceOfEntry.LOGIN_BROWSER.toString(),
                     )
                     LOG.error(error) { reason }
                     Messages.showErrorDialog(jcefBrowser.component, error.message, AwsCoreBundle.message("gettingstarted.auth.failed"))
@@ -325,7 +364,9 @@ abstract class LoginBrowser(
                 AwsTelemetry.loginWithBrowser(
                     project = null,
                     result = Result.Succeeded,
-                    credentialType = CredentialType.StaticProfile
+                    credentialType = CredentialType.StaticProfile,
+                    authType = AuthType.IAM,
+                    source = SourceOfEntry.LOGIN_BROWSER.toString(),
                 )
             }
         }
@@ -351,21 +392,18 @@ abstract class LoginBrowser(
     protected fun reauth(connection: ToolkitConnection?) {
         if (connection is AwsBearerTokenConnection) {
             loginWithBackgroundContext {
-                reauthConnectionIfNeeded(project, connection, onPendingToken, isReAuth = true)
+                reauthConnectionIfNeeded(project, connection, onPendingToken, isReAuth = true, reauthSource = ReauthSource.LOGIN_BROWSER)
             }
             stopAndClearBrowserOpenTimer()
         }
     }
 
     protected fun isUserCancellation(e: Exception): Boolean {
-        if (e !is ProcessCanceledException ||
-            e.cause !is IllegalStateException ||
-            e.message?.contains(AwsCoreBundle.message("credentials.pending.user_cancel.message")) == false
-        ) {
-            return false
+        if (e is ProcessCanceledException || e is CancellationException) {
+            LOG.debug(e) { "User canceled login" }
+            return true
         }
-        LOG.debug(e) { "User canceled login" }
-        return true
+        return false
     }
 
     companion object {

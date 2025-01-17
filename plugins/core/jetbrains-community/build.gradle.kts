@@ -3,7 +3,6 @@
 
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
-import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.telemetry.generator.gradle.GenerateTelemetry
 
@@ -19,18 +18,25 @@ buildscript {
     }
 }
 
+private val generatedSrcDir = project.layout.buildDirectory.dir("generated-src")
 sourceSets {
     main {
-        java.srcDir(project.layout.buildDirectory.dir("generated-src"))
+        java.srcDir(generatedSrcDir)
+    }
+}
+
+idea {
+    module {
+        generatedSourceDirs = generatedSourceDirs.toMutableSet() + generatedSrcDir.get().asFile
     }
 }
 
 val generateTelemetry = tasks.register<GenerateTelemetry>("generateTelemetry") {
-    inputFiles = listOf(file("${project.projectDir}/resources/telemetryOverride.json"))
-    outputDirectory = project.layout.buildDirectory.dir("generated-src").get().asFile
+    inputFiles.setFrom(file("${project.projectDir}/resources/telemetryOverride.json"))
+    outputDirectory.set(generatedSrcDir)
 
     doFirst {
-        outputDirectory.deleteRecursively()
+        outputDirectory.get().asFile.deleteRecursively()
     }
 }
 
@@ -56,12 +62,6 @@ configurations.testFixturesApi {
 }
 
 dependencies {
-    intellijPlatform {
-        testFramework(TestFrameworkType.Plugin.Java)
-        testFramework(TestFrameworkType.Platform)
-        testFramework(TestFrameworkType.JUnit5)
-    }
-
     compileOnlyApi(project(":plugin-core:core"))
     compileOnlyApi(libs.aws.apacheClient)
     compileOnlyApi(libs.aws.nettyClient)
@@ -73,6 +73,8 @@ dependencies {
     testFixturesApi(libs.wiremock) {
         // conflicts with transitive inclusion from docker plugin
         exclude(group = "org.apache.httpcomponents.client5")
+        // provided by IDE
+        exclude(group = "commons-io")
     }
 
     testImplementation(project(":plugin-core:core"))

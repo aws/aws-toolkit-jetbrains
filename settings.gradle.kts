@@ -29,7 +29,7 @@ val codeArtifactMavenRepo = fun RepositoryHandler.(): MavenArtifactRepository? {
 plugins {
     id("com.github.burrunan.s3-build-cache") version "1.5"
     id("com.gradle.develocity") version "3.17.6"
-    id("org.jetbrains.intellij.platform.settings") version "2.0.0"
+    id("org.jetbrains.intellij.platform.settings") version "2.1.0"
 }
 
 dependencyResolutionManagement {
@@ -97,8 +97,15 @@ rootProject.name = "aws-toolkit-jetbrains"
 include("detekt-rules")
 include("ui-tests")
 include("sandbox-all")
+include("ui-tests-starter")
 when (providers.gradleProperty("ideProfileName").get()) {
-    "2023.3", "2024.1" -> include("tmp-all")
+    // FIX_WHEN_MIN_IS_242: `tmp-all` test module no longer needed in 242+
+    "2023.3", "2024.1" -> {
+        include("tmp-all")
+
+        // only available 242+
+        project(":ui-tests-starter").projectDir = file("noop")
+    }
 }
 
 /*

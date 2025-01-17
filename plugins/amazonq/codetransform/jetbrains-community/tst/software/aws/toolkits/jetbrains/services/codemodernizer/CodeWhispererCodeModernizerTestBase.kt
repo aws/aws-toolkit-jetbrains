@@ -15,7 +15,6 @@ import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.LightVirtualFile
 import com.intellij.testFramework.replaceService
 import kotlinx.coroutines.Job
-import org.gradle.internal.impldep.com.amazonaws.ResponseMetadata
 import org.junit.Before
 import org.junit.Rule
 import org.mockito.Mockito
@@ -26,6 +25,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.awscore.DefaultAwsResponseMetadata
+import software.amazon.awssdk.awscore.util.AwsHeader
 import software.amazon.awssdk.http.SdkHttpResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationPlanResponse
@@ -51,10 +51,13 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAu
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact.Companion.MAPPER
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerManifest
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerMetrics
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformFailureBuildLog
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.DescriptionContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
@@ -87,14 +90,26 @@ open class CodeWhispererCodeModernizerTestBase(
     lateinit var testModernizerBottomWindowPanelSpy: CodeModernizerBottomWindowPanelManager
     internal lateinit var testSessionSpy: CodeModernizerSession
     internal lateinit var testSessionStateSpy: CodeModernizerSessionState
-    internal val diffResource = "diff.patch".toResourceFile()
-    internal val examplePatchVirtualFile = LightVirtualFile("diff.patch", diffResource.readText())
+    internal val minJDKUpgradePatchResource = "min_jdk_upgrade.patch".toResourceFile()
+    internal val minJDKUpgradePatchResourceFile = LightVirtualFile("min_jdk_upgrade.patch", minJDKUpgradePatchResource.readText())
+    internal val enterpriseApplicationUpgradePatchResource = "popular_enterprise_application_framework.patch".toResourceFile()
+    internal val enterpriseApplicationUpgradePatchResourceFile = LightVirtualFile(
+        "popular_enterprise_application_framework.patch",
+        enterpriseApplicationUpgradePatchResource.readText()
+    )
+    internal val testingToolPatchResource = "testing_tool.patch".toResourceFile()
+    internal val testingToolPatchResourceFile = LightVirtualFile("testing_tool.patch", testingToolPatchResource.readText())
+    internal val deprecatedAPIPatchResource = "update_deprecated_api.patch".toResourceFile()
+    internal val deprecatedAPIPatchResourceFile = LightVirtualFile("update_deprecated_api.patch", deprecatedAPIPatchResource.readText())
+    internal val diffJsonResource = "diffPatchOutput.json".toResourceFile()
+    internal val exampleDescriptionContent: DescriptionContent = MAPPER.readValue(diffJsonResource, DescriptionContent::class.java)
     internal val emptyPomFile = LightVirtualFile("pom.xml", "")
     internal val emptyPomFileSpy = spy(emptyPomFile)
     internal val jobId = JobId("Test job id")
     internal lateinit var testCodeModernizerArtifact: CodeModernizerArtifact
     internal lateinit var testTransformFailureBuildLog: CodeTransformFailureBuildLog
     internal val exampleZipPath = "simple.zip".toResourceFile().toPath()
+    internal val multipleDiffZipPath = "multiple-diff.zip".toResourceFile().toPath()
     internal val expectedFilePath = "expectedFile".toResourceFile().toPath()
     internal val overwrittenFilePath = "overwrittenFile".toResourceFile().toPath()
     internal val testRequestId = "test_aws_request_id"
@@ -105,6 +120,7 @@ open class CodeWhispererCodeModernizerTestBase(
     internal val validZipSummaryPath = "summary/"
     internal val validZipManifestPath = "manifest.json"
     internal val validZipPatchFilePath = "patch/diff.patch"
+    internal val validZipMetricsPath = "metrics/"
     internal val validZipManifestVersion = 1.0F
     internal val validManifest =
         CodeModernizerManifest(
@@ -112,6 +128,7 @@ open class CodeWhispererCodeModernizerTestBase(
             validZipPatchDirPath,
             validZipArtifactsPath,
             validZipSummaryPath,
+            validZipMetricsPath
         )
     internal val validTransformationSummary =
         TransformationSummary(
@@ -128,19 +145,35 @@ open class CodeWhispererCodeModernizerTestBase(
             """.trimIndent(),
         )
 
+    internal val validMetrics =
+        CodeModernizerMetrics(
+            charactersOfCodeChanged = 1234,
+            linesOfCodeChanged = 119,
+            linesOfCodeSubmitted = 567,
+            programmingLanguage = "JAVA",
+        )
+
+    internal val validMetricsMultipleDiffs =
+        CodeModernizerMetrics(
+            charactersOfCodeChanged = 83,
+            linesOfCodeChanged = 3,
+            linesOfCodeSubmitted = 567,
+            programmingLanguage = "JAVA",
+        )
+
     internal val exampleCreateUploadUrlResponse =
         CreateUploadUrlResponse.builder()
             .uploadUrl("https://smth.com")
             .uploadId("1234")
             .kmsKeyArn("0000000000000000000000000000000000:key/1234abcd")
-            .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to testRequestId)))
+            .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
             .sdkHttpResponse(SdkHttpResponse.builder().headers(mapOf(CodeWhispererService.KET_SESSION_ID to listOf(testSessionId))).build())
             .build() as CreateUploadUrlResponse
 
     internal val exampleStartCodeMigrationResponse =
         StartTransformationResponse.builder()
             .transformationJobId(jobId.id)
-            .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to testRequestId)))
+            .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
             .sdkHttpResponse(SdkHttpResponse.builder().headers(mapOf(CodeWhispererService.KET_SESSION_ID to listOf(testSessionId))).build())
             .build() as StartTransformationResponse
 
@@ -164,7 +197,7 @@ open class CodeWhispererCodeModernizerTestBase(
                         ),
                     ).build(),
             )
-            .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to testRequestId)))
+            .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
             .sdkHttpResponse(SdkHttpResponse.builder().headers(mapOf(CodeWhispererService.KET_SESSION_ID to listOf(testSessionId))).build())
             .build() as GetTransformationPlanResponse
 
@@ -198,7 +231,7 @@ open class CodeWhispererCodeModernizerTestBase(
                     )
                     .build(),
             )
-            .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to testRequestId)))
+            .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
             .sdkHttpResponse(SdkHttpResponse.builder().headers(mapOf(CodeWhispererService.KET_SESSION_ID to listOf(testSessionId))).build())
             .build() as GetTransformationResponse
 
@@ -207,7 +240,7 @@ open class CodeWhispererCodeModernizerTestBase(
     fun GetTransformationResponse.replace(status: TransformationStatus) =
         this.copy { response ->
             response.transformationJob(this.transformationJob().copy { it.status(status) })
-                .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(ResponseMetadata.AWS_REQUEST_ID to testRequestId)))
+                .responseMetadata(DefaultAwsResponseMetadata.create(mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)))
                 .sdkHttpResponse(
                     SdkHttpResponse.builder().headers(mapOf(CodeWhispererService.KET_SESSION_ID to listOf(testSessionId))).build(),
                 )
@@ -268,19 +301,35 @@ open class CodeWhispererCodeModernizerTestBase(
         val summaryFileMock = Mockito.mock(File::class.java)
         val logFileMock = Mockito.mock(File::class.java)
         doReturn("dummy/path").whenever(virtualFileMock).path
-        testSessionContextSpy = spy(CodeModernizerSessionContext(project, virtualFileMock, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11))
+        testSessionContextSpy = spy(
+            CodeModernizerSessionContext(
+                project,
+                virtualFileMock,
+                JavaSdkVersion.JDK_1_8,
+                JavaSdkVersion.JDK_11,
+                listOf("EXPLAINABILITY_V1", "SELECTIVE_TRANSFORMATION_V1"),
+                "test"
+            )
+        )
+
         testSessionSpy = spy(CodeModernizerSession(testSessionContextSpy, 0, 0))
         doNothing().whenever(testSessionSpy).deleteUploadArtifact(any())
         doReturn(Job()).whenever(codeModernizerManagerSpy).launchModernizationJob(any(), any())
-        doReturn(testSessionSpy).whenever(codeModernizerManagerSpy).createCodeModernizerSession(any(), any())
         testCodeModernizerArtifact =
             spy(
                 CodeModernizerArtifact(
                     exampleZipPath.toAbsolutePath().toString(),
                     validManifest,
-                    listOf(examplePatchVirtualFile),
+                    listOf(
+                        minJDKUpgradePatchResourceFile,
+                        enterpriseApplicationUpgradePatchResourceFile,
+                        testingToolPatchResourceFile,
+                        deprecatedAPIPatchResourceFile
+                    ),
+                    exampleDescriptionContent.content,
                     validTransformationSummary,
                     summaryFileMock,
+                    validMetrics
                 ),
             )
         testTransformFailureBuildLog =

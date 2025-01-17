@@ -8,6 +8,7 @@
             <div v-for="(connection, index) in this.existConnections" :key="index">
                 <SelectableItem
                     @toggle="toggleItemSelection"
+                    @emitUiClickMetric="emitUiClickMetric"
                     :isSelected="selectedLoginOption === connection.id"
                     :itemId="connection.id"
                     :login-type="this.connectionType(connection)"
@@ -22,6 +23,7 @@
         <SelectableItem
             v-if="feature === 'codecatalyst'"
             @toggle="toggleItemSelection"
+            @emitUiClickMetric="emitUiClickMetric"
             :isSelected="selectedLoginOption === LoginOption.BUILDER_ID"
             :itemId="LoginOption.BUILDER_ID"
             :login-type="LoginOption.BUILDER_ID"
@@ -32,6 +34,7 @@
         <!-- TODO: IdC description undecided -->
         <SelectableItem
             @toggle="toggleItemSelection"
+            @emitUiClickMetric="emitUiClickMetric"
             :isSelected="selectedLoginOption === LoginOption.ENTERPRISE_SSO"
             :itemId="LoginOption.ENTERPRISE_SSO"
             :login-type="LoginOption.ENTERPRISE_SSO"
@@ -42,6 +45,7 @@
         <SelectableItem
             v-if="feature === 'awsExplorer'"
             @toggle="toggleItemSelection"
+            @emitUiClickMetric="emitUiClickMetric"
             :isSelected="selectedLoginOption === LoginOption.IAM_CREDENTIAL"
             :itemId="LoginOption.IAM_CREDENTIAL"
             :login-type="LoginOption.IAM_CREDENTIAL"
@@ -96,6 +100,14 @@ export default defineComponent({
     methods: {
         toggleItemSelection(itemId: string) {
             this.selectedLoginOption = itemId
+        },
+        emitUiClickMetric(itemId: string) {
+            const loginIdentifiers = Object.values(LoginIdentifier).map(value => value.toString());
+            if(loginIdentifiers.includes(itemId) ) {
+                this.$emit('emitUiClickTelemetry', itemId)
+            } else {
+                this.$emit('emitUiClickTelemetry', LoginIdentifier.EXISTING_LOGINS)
+            }
         },
         handleBackButtonClick() {
             this.$emit('backToMenu')

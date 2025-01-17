@@ -15,6 +15,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.ObjectAssert
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.kotlin.mock
 import software.aws.toolkits.jetbrains.core.webview.BrowserMessage
@@ -148,6 +149,18 @@ class BrowserMessageTest {
             }
             """
         )
+
+        assertDeserializedInstanceOf<BrowserMessage.SendUiClickTelemetry>(
+            """
+            {
+                "command": "sendUiClickTelemetry"
+            }
+            """
+        ).isEqualTo(
+            BrowserMessage.SendUiClickTelemetry(
+                signInOptionClicked = null
+            )
+        )
     }
 
     @Test
@@ -272,5 +285,30 @@ class BrowserMessageTest {
             }
             """
         )
+    }
+
+    @Test
+    fun `Nullable fields in sendUiClickTelemetry should not throw exception`() {
+        assertDoesNotThrow {
+            objectMapper.readValue<BrowserMessage>(
+                """
+            {
+                "command": "sendUiClickTelemetry",
+                "signInOptionClicked": null
+            }
+            """
+            )
+        }
+
+        assertDoesNotThrow {
+            objectMapper.readValue<BrowserMessage>(
+                """
+            {
+                "command": "sendUiClickTelemetry"
+             
+            }
+            """
+            )
+        }
     }
 }

@@ -58,7 +58,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionConte
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager.Companion.CODEWHISPERER_USER_ACTION_PERFORMED
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererUserGroupSettings
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeCoverageTokens
@@ -87,7 +86,7 @@ internal abstract class CodeWhispererCodeCoverageTrackerTestBase(myProjectRule: 
 
     protected class TestTelemetryService(
         publisher: TelemetryPublisher = NoOpPublisher(),
-        batcher: TelemetryBatcher
+        batcher: TelemetryBatcher,
     ) : TelemetryService(publisher, batcher)
 
     @Rule
@@ -142,6 +141,7 @@ internal abstract class CodeWhispererCodeCoverageTrackerTestBase(myProjectRule: 
         const val CWSPR_Language = "codewhispererLanguage"
         const val CWSPR_ACCEPTED_TOKENS = "codewhispererAcceptedTokens"
         const val CWSPR_TOTAL_TOKENS = "codewhispererTotalTokens"
+        const val CWSPR_RAW_ACCEPTED_TOKENS = "codewhispererSuggestedTokens"
     }
 }
 
@@ -162,7 +162,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             fixture.editor,
             mock(),
             mock(),
-            FileContextInfo(mock(), pythonFileName, CodeWhispererPython.INSTANCE),
+            FileContextInfo(mock(), pythonFileName, CodeWhispererPython.INSTANCE, pythonFileName),
             runBlocking {
                 async {
                     SupplementalContextInfo(
@@ -253,7 +253,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
         val captor = argumentCaptor<DocumentEvent>()
         verify(sut, Times(1)).documentChanged(captor.capture())
         assertThat(captor.firstValue.newFragment.toString()).isEqualTo(keystrokeInput)
-        assertThat(sut.totalTokensSize).isEqualTo(keystrokeInput.length)
+        assertThat(sut.totalCharsCount).isEqualTo(keystrokeInput.length.toLong())
     }
 
     @Test
@@ -271,7 +271,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
         val captor = argumentCaptor<DocumentEvent>()
         verify(sut, Times(1)).documentChanged(captor.capture())
         assertThat(captor.firstValue.newFragment.toString()).isEqualTo(pythonTestLeftContext)
-        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length)
+        assertThat(sut.totalCharsCount).isEqualTo(pythonTestLeftContext.length.toLong())
 
         val anotherCode = "(x, y):".repeat(8)
         runInEdtAndWait {
@@ -279,7 +279,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
                 fixture.editor.appendString(anotherCode)
             }
         }
-        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length)
+        assertThat(sut.totalCharsCount).isEqualTo(pythonTestLeftContext.length.toLong())
     }
 
     @Test
@@ -293,7 +293,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
 
         CodeWhispererCodeCoverageTracker.getInstancesMap()[CodeWhispererPython.INSTANCE] = sut
         sut.activateTrackerIfNotActive()
-        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length)
+        assertThat(sut.totalCharsCount).isEqualTo(pythonTestLeftContext.length.toLong())
 
         runInEdtAndWait {
             fixture.editor.caretModel.primaryCaret.moveToOffset(fixture.editor.document.textLength)
@@ -302,7 +302,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             }
         }
 
-        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length)
+        assertThat(sut.totalCharsCount).isEqualTo(pythonTestLeftContext.length.toLong())
     }
 
     @Test
@@ -315,7 +315,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
         )
         CodeWhispererCodeCoverageTracker.getInstancesMap()[CodeWhispererPython.INSTANCE] = sut
         sut.activateTrackerIfNotActive()
-        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length)
+        assertThat(sut.totalCharsCount).isEqualTo(pythonTestLeftContext.length.toLong())
 
         runInEdtAndWait {
             WriteCommandAction.runWriteCommandAction(project) {
@@ -323,7 +323,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             }
         }
 
-        assertThat(sut.totalTokensSize).isEqualTo(pythonTestLeftContext.length + 1)
+        assertThat(sut.totalCharsCount).isEqualTo(pythonTestLeftContext.length + 1L)
     }
 
     @Test
@@ -366,36 +366,14 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
 
         sut.activateTrackerIfNotActive()
         assertThat(sut.activeRequestCount()).isEqualTo(1)
-        assertThat(sut.acceptedTokensSize).isEqualTo("bar".length)
-        assertThat(sut.totalTokensSize).isEqualTo("foobar".length)
+        assertThat(sut.unmodifiedAcceptedCharsCount).isEqualTo("bar".length.toLong())
+        assertThat(sut.totalCharsCount).isEqualTo("foobar".length.toLong())
 
         sut.forceTrackerFlush()
 
         assertThat(sut.activeRequestCount()).isEqualTo(1)
-        assertThat(sut.acceptedTokensSize).isEqualTo(0)
-        assertThat(sut.totalTokensSize).isEqualTo(0)
-    }
-
-    @Test
-    fun `test when rangeMarker is not vaild, acceptedToken will not be updated`() {
-        // when user delete whole recommendation, rangeMarker will be isValid = false
-        val rangeMarkerMock: RangeMarker = mock()
-        whenever(rangeMarkerMock.isValid).thenReturn(false)
-        sut = spy(
-            TestCodePercentageTracker(
-                project,
-                TOTAL_SECONDS_IN_MINUTE,
-                CodeWhispererPython.INSTANCE,
-                mutableListOf(rangeMarkerMock),
-            )
-        ) {
-            onGeneric { getAcceptedTokensDelta(any(), any()) } doReturn 100
-        }
-
-        sut.activateTrackerIfNotActive()
-        sut.forceTrackerFlush()
-
-        verify(sut, Times(0)).getAcceptedTokensDelta(any(), any())
+        assertThat(sut.unmodifiedAcceptedCharsCount).isEqualTo(0)
+        assertThat(sut.totalCharsCount).isEqualTo(0)
     }
 
     @Test
@@ -419,7 +397,6 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
 
     @Test
     fun `test emitCodeWhispererCodeContribution`() {
-        val userGroup = CodeWhispererUserGroupSettings.getInstance().getUserGroup()
         val rangeMarkerMock1 = mock<RangeMarker> {
             on { isValid } doReturn true
             on { getUserData(any<Key<String>>()) } doReturn "foo"
@@ -431,12 +408,11 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
                 TOTAL_SECONDS_IN_MINUTE,
                 CodeWhispererPython.INSTANCE,
                 mutableListOf(rangeMarkerMock1),
-                mutableMapOf(fixture.editor.document to CodeCoverageTokens(totalTokens = 100, acceptedTokens = 0)),
+                mutableMapOf(fixture.editor.document to CodeCoverageTokens(totalChars = 100, unmodifiedAcceptedChars = 0, acceptedChars = 0)),
                 1
             )
         ) {
             onGeneric { extractRangeMarkerString(any()) } doReturn "fou"
-            onGeneric { getAcceptedTokensDelta(any(), any()) } doReturn 1
         }
         sut.emitCodeWhispererCodeContribution()
 
@@ -446,10 +422,9 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             metricCaptor.allValues,
             CODE_PERCENTAGE,
             1,
-            CWSPR_PERCENTAGE to "1",
-            CWSPR_ACCEPTED_TOKENS to "1",
+            CWSPR_ACCEPTED_TOKENS to "2",
+            CWSPR_RAW_ACCEPTED_TOKENS to "3",
             CWSPR_TOTAL_TOKENS to "100",
-            "codewhispererUserGroup" to userGroup.name,
         )
     }
 
@@ -463,51 +438,6 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
         sut.forceTrackerFlush()
 
         verify(sut, Times(0)).emitCodeWhispererCodeContribution()
-    }
-
-    @Test
-    fun `test getAcceptedTokensDelta()`() {
-        val tracker = TestCodePercentageTracker(project, TOTAL_SECONDS_IN_MINUTE, CodeWhispererPython.INSTANCE)
-        var originalRecommendation = "foo"
-        var modifiedRecommendation = "fou"
-        var delta = tracker.getAcceptedTokensDelta(originalRecommendation, modifiedRecommendation)
-        assertThat(delta).isEqualTo(2)
-
-        originalRecommendation = "foo"
-        modifiedRecommendation = "f11111oo"
-        delta = tracker.getAcceptedTokensDelta(originalRecommendation, modifiedRecommendation)
-        assertThat(delta).isEqualTo(3)
-
-        originalRecommendation = "foo"
-        modifiedRecommendation = "fo"
-        delta = tracker.getAcceptedTokensDelta(originalRecommendation, modifiedRecommendation)
-        assertThat(delta).isEqualTo(2)
-
-        originalRecommendation = "helloworld"
-        modifiedRecommendation = "HelloWorld"
-        delta = tracker.getAcceptedTokensDelta(originalRecommendation, modifiedRecommendation)
-        assertThat(delta).isEqualTo("helloworld".length - 2)
-
-        originalRecommendation = "helloworld"
-        modifiedRecommendation = "World"
-        delta = tracker.getAcceptedTokensDelta(originalRecommendation, modifiedRecommendation)
-        assertThat(delta).isEqualTo("helloworld".length - "hello".length - 1)
-
-        originalRecommendation = "CodeWhisperer"
-        modifiedRecommendation = "CODE"
-        delta = tracker.getAcceptedTokensDelta(originalRecommendation, modifiedRecommendation)
-        assertThat(delta).isEqualTo(1)
-
-        originalRecommendation = "CodeWhisperer"
-        modifiedRecommendation = "codewhispererISBEST"
-        delta = tracker.getAcceptedTokensDelta(originalRecommendation, modifiedRecommendation)
-        assertThat(delta).isEqualTo("CodeWhisperer".length - 2)
-
-        val pythonCommentAddedByUser = "\"\"\"we don't count this comment as generated by CodeWhisperer\"\"\"\n"
-        originalRecommendation = "x, y):\n\treturn x + y"
-        modifiedRecommendation = "x, y):\n$pythonCommentAddedByUser\treturn x + y"
-        delta = tracker.getAcceptedTokensDelta(originalRecommendation, modifiedRecommendation)
-        assertThat(delta).isEqualTo(originalRecommendation.length)
     }
 
     @Test
@@ -558,7 +488,7 @@ internal class CodeWhispererCodeCoverageTrackerTestJava : CodeWhispererCodeCover
                 project,
                 TOTAL_SECONDS_IN_MINUTE,
                 language = CodeWhispererJava.INSTANCE,
-                codeCoverageTokens = mutableMapOf(fixture.editor.document to CodeCoverageTokens(totalTokens = codeNeedToBeReformatted.length))
+                codeCoverageTokens = mutableMapOf(fixture.editor.document to CodeCoverageTokens(totalChars = codeNeedToBeReformatted.length))
             )
         )
         CodeWhispererCodeCoverageTracker.getInstancesMap()[CodeWhispererJava.INSTANCE] = sut
@@ -569,7 +499,7 @@ internal class CodeWhispererCodeCoverageTrackerTestJava : CodeWhispererCodeCover
         }
         // reformat should fire documentChanged events, but tracker should not update token from these events
         verify(sut, atLeastOnce()).documentChanged(any())
-        assertThat(sut.totalTokensSize).isEqualTo(codeNeedToBeReformatted.length)
+        assertThat(sut.totalCharsCount).isEqualTo(codeNeedToBeReformatted.length.toLong())
 
         val formatted = """
             class Answer {

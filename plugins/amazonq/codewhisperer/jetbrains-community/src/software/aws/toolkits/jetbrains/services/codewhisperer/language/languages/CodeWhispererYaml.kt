@@ -13,9 +13,13 @@ class CodeWhispererYaml private constructor() : CodeWhispererProgrammingLanguage
 
     override fun isCodeCompletionSupported(): Boolean = true
 
-    override fun isCodeScanSupported(): Boolean = true
-
     override fun isAutoFileScanSupported(): Boolean = true
+
+    override fun lineCommentPrefix(): String = "#"
+
+    override fun blockCommentPrefix(): String? = null
+
+    override fun blockCommentSuffix(): String? = null
 
     companion object {
         const val ID = "yaml"

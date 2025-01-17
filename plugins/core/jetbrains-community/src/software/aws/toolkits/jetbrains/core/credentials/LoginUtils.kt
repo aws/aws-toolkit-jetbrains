@@ -18,16 +18,22 @@ import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
 import software.amazon.awssdk.services.sts.StsClient
 import software.aws.toolkits.core.credentials.validatedSsoIdentifierFromUrl
 import software.aws.toolkits.core.region.AwsRegion
+import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
+import software.aws.toolkits.jetbrains.core.credentials.sso.pkce.ToolkitOAuthService
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.CredentialSourceId
 import java.io.IOException
+
+private val LOG = getLogger<Login<*>>()
 
 sealed class Login<T> {
     abstract val id: CredentialSourceId
@@ -35,7 +41,12 @@ sealed class Login<T> {
     protected abstract fun doLogin(project: Project): T
 
     fun login(project: Project): T {
+        LOG.debug { "Starting login with request: $this" }
         try {
+            check(!ToolkitOAuthService.getInstance().hasPendingRequest()) {
+                LOG.warn { "$this attempt initiated with pending request: ${ToolkitOAuthService.getInstance().pendingRequest()}" }
+                AwsCoreBundle.message("toolkit.login.singleton")
+            }
             return doLogin(project)
         } catch (e: Exception) {
             onError(e)
@@ -47,7 +58,7 @@ sealed class Login<T> {
         val scopes: List<String>,
         val onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
         override val onError: (Exception) -> Unit,
-        val onSuccess: () -> Unit
+        val onSuccess: () -> Unit,
     ) : Login<Unit>() {
         override val id: CredentialSourceId = CredentialSourceId.AwsId
 
@@ -62,7 +73,7 @@ sealed class Login<T> {
         val scopes: List<String>,
         val onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
         val onSuccess: () -> Unit,
-        override val onError: (Exception) -> Unit
+        override val onError: (Exception) -> Unit,
     ) : Login<AwsBearerTokenConnection?>() {
         override val id: CredentialSourceId = CredentialSourceId.IamIdentityCenter
         private val configFilesFacade = DefaultConfigFilesFacade()
@@ -104,7 +115,7 @@ sealed class Login<T> {
         val secretKey: String,
         val onConfigFileFacadeError: (Exception) -> Unit,
         val onProfileAlreadyExist: () -> Unit,
-        val onConnectionValidationError: (Exception) -> Unit
+        val onConnectionValidationError: (Exception) -> Unit,
     ) : Login<Boolean>() {
         override val onError: (Exception) -> Unit = {}
 
@@ -165,7 +176,7 @@ fun authAndUpdateConfig(
     configFilesFacade: ConfigFilesFacade,
     onPendingToken: (InteractiveBearerTokenProvider) -> Unit,
     onSuccess: () -> Unit,
-    onError: (Exception) -> Unit
+    onError: (Exception) -> Unit,
 ): AwsBearerTokenConnection? {
     val requestedScopes = profile.scopes
     val allScopes = requestedScopes.toMutableSet()
@@ -187,7 +198,7 @@ fun authAndUpdateConfig(
 
     val connection = try {
         ToolkitAuthManager.getInstance().tryCreateTransientSsoConnection(updatedProfile) { connection ->
-            reauthConnectionIfNeeded(project, connection, onPendingToken)
+            reauthConnectionIfNeeded(project, connection, onPendingToken, reauthSource = ReauthSource.FRESH_AUTH)
         }
     } catch (e: Exception) {
         onError(e)

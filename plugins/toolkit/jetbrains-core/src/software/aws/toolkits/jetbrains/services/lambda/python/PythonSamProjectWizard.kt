@@ -51,7 +51,7 @@ abstract class PythonSamProjectTemplate : SamAppTemplateBased() {
         settings: SamNewProjectSettings,
         contentRoot: VirtualFile,
         rootModel: ModifiableRootModel,
-        indicator: ProgressIndicator
+        indicator: ProgressIndicator,
     ) {
         super.postCreationAction(settings, contentRoot, rootModel, indicator)
         addSourceRoots(rootModel.project, rootModel, contentRoot)
@@ -78,7 +78,7 @@ class SamDynamoDBCookieCutter : SamProjectTemplate() {
         settings: SamNewProjectSettings,
         contentRoot: VirtualFile,
         rootModel: ModifiableRootModel,
-        indicator: ProgressIndicator
+        indicator: ProgressIndicator,
     ) {
         super.postCreationAction(settings, contentRoot, rootModel, indicator)
         addSourceRoots(rootModel.project, rootModel, contentRoot)
@@ -88,7 +88,7 @@ class SamDynamoDBCookieCutter : SamProjectTemplate() {
         projectName: String,
         runtime: LambdaRuntime,
         architecture: LambdaArchitecture,
-        packagingType: PackageType
+        packagingType: PackageType,
     ): TemplateParameters = LocationBasedTemplate(
         "gh:aws-samples/cookiecutter-aws-sam-dynamodb-python"
     )

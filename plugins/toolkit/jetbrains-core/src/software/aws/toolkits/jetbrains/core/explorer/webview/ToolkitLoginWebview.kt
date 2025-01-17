@@ -16,9 +16,8 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.panels.Wrapper
+import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.dsl.gridLayout.HorizontalAlign
-import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefBrowserBuilder
@@ -36,6 +35,7 @@ import software.aws.toolkits.core.credentials.validatedSsoIdentifierFromUrl
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.Login
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
@@ -46,7 +46,7 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConn
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
-import software.aws.toolkits.jetbrains.core.explorer.showExplorerTree
+import software.aws.toolkits.jetbrains.core.explorer.ShowToolkitListener
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopup
 import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopupState
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
@@ -55,6 +55,7 @@ import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.jetbrains.utils.isTookitConnected
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.UiTelemetry
@@ -71,8 +72,7 @@ class ToolkitWebviewPanel(val project: Project, private val scope: CoroutineScop
     val component = panel {
         row {
             cell(webviewContainer)
-                .horizontalAlign(HorizontalAlign.FILL)
-                .verticalAlign(VerticalAlign.FILL)
+                .align(Align.FILL)
         }.resizableRow()
 
         if (isDeveloperMode()) {
@@ -86,8 +86,7 @@ class ToolkitWebviewPanel(val project: Project, private val scope: CoroutineScop
                         )
                     },
                 )
-                    .horizontalAlign(HorizontalAlign.CENTER)
-                    .verticalAlign(VerticalAlign.BOTTOM)
+                    .align(Align.FILL)
             }
         }
     }
@@ -111,7 +110,7 @@ class ToolkitWebviewPanel(val project: Project, private val scope: CoroutineScop
     }
 
     init {
-        if (!JBCefApp.isSupported()) {
+        if (!isQWebviewsAvailable()) {
             // Fallback to an alternative browser-less solution
             webviewContainer.add(JBTextArea("JCEF not supported"))
             browser = null
@@ -212,7 +211,7 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
             }
 
             is BrowserMessage.ToggleBrowser -> {
-                showExplorerTree(project)
+                ShowToolkitListener.showExplorerTree(project)
             }
 
             is BrowserMessage.CancelLogin -> {
@@ -236,8 +235,13 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
                 reauth(ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance()))
             }
 
-            is BrowserMessage.SendTelemetry -> {
-                UiTelemetry.click(project, "auth_continueButton")
+            is BrowserMessage.SendUiClickTelemetry -> {
+                val signInOption = message.signInOptionClicked
+                if (signInOption.isNullOrEmpty()) {
+                    LOG.warn { "Unknown sign in option" }
+                } else {
+                    UiTelemetry.click(project, signInOption)
+                }
             }
         }
     }
@@ -336,6 +340,7 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
     fun component(): JComponent? = jcefBrowser.component
 
     companion object {
+        private val LOG = getLogger<ToolkitWebviewBrowser>()
         private const val WEB_SCRIPT_URI = "http://webview/js/toolkitGetStart.js"
         private const val DOMAIN = "webview"
     }

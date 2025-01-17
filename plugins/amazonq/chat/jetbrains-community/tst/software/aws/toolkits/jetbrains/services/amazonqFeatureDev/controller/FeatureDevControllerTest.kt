@@ -6,11 +6,11 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.controller
 import com.intellij.testFramework.LightVirtualFile
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.replaceService
-import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.just
+import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.runs
@@ -22,19 +22,30 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.whenever
+import software.aws.toolkits.jetbrains.common.util.selectFolder
+import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededStates
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.EmptyPatchException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.GuardrailsException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataOperationName
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataResult
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PromptRefusalException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ThrottlingException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUp
@@ -48,16 +59,20 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendC
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendSystemPrompt
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendUpdatePlaceholder
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.updateFileComponent
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeGenerationState
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DiffMetricsProcessed
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Interaction
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.PrepareCodeGenerationState
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.RefinementState
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Session
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStateConfig
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStatePhase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.storage.ChatSessionStorage
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.InsertAction
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.selectFolder
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.uploadArtifactToS3
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
@@ -76,26 +91,30 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
     private lateinit var spySession: Session
     private lateinit var featureDevClient: FeatureDevClient
 
-    private val newFileContents = listOf(
-        NewFileZipInfo("test.ts", "This is a comment", false),
-        NewFileZipInfo("test2.ts", "This is a rejected file", true)
-    )
-    private val deletedFiles = listOf(
-        DeletedFileInfo("delete.ts", false),
-        DeletedFileInfo("delete2.ts", true)
-    )
+    private val newFileContents =
+        listOf(
+            NewFileZipInfo("test.ts", "This is a comment", false, false),
+            NewFileZipInfo("test2.ts", "This is a rejected file", true, false),
+        )
+    private val deletedFiles =
+        listOf(
+            DeletedFileInfo("delete.ts", false, false),
+            DeletedFileInfo("delete2.ts", true, false),
+        )
 
     @Before
     override fun setup() {
         super.setup()
+
         featureDevClient = mock()
         messenger = mock()
         chatSessionStorage = mock()
         projectRule.project.replaceService(FeatureDevClient::class.java, featureDevClient, disposableRule.disposable)
-        appContext = mock<AmazonQAppInitContext> {
-            on { project }.thenReturn(project)
-            on { messagesFromAppToUi }.thenReturn(messenger)
-        }
+        appContext =
+            mock<AmazonQAppInitContext> {
+                on { project }.thenReturn(project)
+                on { messagesFromAppToUi }.thenReturn(messenger)
+            }
         authController = spy(AuthController())
         doReturn(AuthNeededStates()).`when`(authController).getAuthNeededStates(any())
         spySession = spy(Session(testTabId, project))
@@ -106,13 +125,13 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             MessagePublisher::sendUpdatePlaceholder,
             MessagePublisher::sendChatInputEnabledMessage,
             MessagePublisher::sendCodeResult,
-            MessagePublisher::updateFileComponent
+            MessagePublisher::updateFileComponent,
         )
 
         mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.UploadArtifactKt")
         every { uploadArtifactToS3(any(), any(), any(), any(), any()) } just runs
 
-        controller = FeatureDevController(appContext, chatSessionStorage, authController)
+        controller = spy(FeatureDevController(appContext, chatSessionStorage, authController))
     }
 
     @After
@@ -133,31 +152,6 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         mockitoVerify(authController, times(1)).getAuthNeededStates(project)
         mockitoVerify(chatSessionStorage, times(1)).getSession(testTabId, project)
         assertThat(spySession.isAuthenticating).isTrue()
-    }
-
-    @Test
-    fun `test handle chat for planning phase`() {
-        val testAuth = AuthNeededStates(amazonQ = null)
-        val message: IncomingFeatureDevMessage.ChatPrompt = IncomingFeatureDevMessage.ChatPrompt(userMessage, "chat-prompt", testTabId)
-
-        doReturn(testAuth).`when`(authController).getAuthNeededStates(any())
-        whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
-        whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
-        whenever(featureDevClient.sendFeatureDevTelemetryEvent(any())).thenReturn(exampleSendTelemetryEventResponse)
-        whenever(featureDevClient.createTaskAssistUploadUrl(any(), any(), any())).thenReturn(exampleCreateUploadUrlResponse)
-
-        runTest {
-            whenever(featureDevClient.generateTaskAssistPlan(any(), any(), any())).thenReturn(exampleGenerateTaskAssistPlanResult)
-
-            controller.processPromptChatMessage(message)
-
-            mockitoVerify(spySession, times(1)).preloader(any(), any())
-            mockitoVerify(spySession, times(1)).send(any())
-            assertThat(spySession.send(userMessage).content?.trim()).isEqualTo(exampleGenerateTaskAssistPlanResult.approach)
-            assertThat(spySession.send(userMessage).interactionSucceeded).isTrue()
-        }
-        mockitoVerify(authController, times(1)).getAuthNeededStates(any())
-        assertThat(spySession.sessionState).isInstanceOf(RefinementState::class.java)
     }
 
     @Test
@@ -184,308 +178,609 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         mockitoVerify(chatSessionStorage, times(1)).deleteSession(testTabId)
 
         coVerifyOrder {
-            messenger.sendAnswer(testTabId, message("amazonqFeatureDev.chat_message.closed_session"), FeatureDevMessageType.Answer)
-            messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.closed_session"))
-            messenger.sendChatInputEnabledMessage(testTabId, false)
-            messenger.sendAnswer(testTabId, message("amazonqFeatureDev.chat_message.ask_for_new_task"), FeatureDevMessageType.Answer)
+            messenger.sendAnswer(testTabId, message("amazonqFeatureDev.chat_message.ask_for_new_task"), messageType = FeatureDevMessageType.Answer)
             messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.new_plan"))
         }
 
         verify(
-            exactly = 1
+            exactly = 1,
         ) { AmazonqTelemetry.endChat(amazonqConversationId = testConversationId, amazonqEndOfTheConversationLatency = any(), createTime = any()) }
     }
 
     @Test
-    fun `test generateCodeClicked starts code generation`() = runTest {
-        doNothing().`when`(spySession).initCodegen(any())
-        whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
-        mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.controller.FeatureDevControllerExtensionsKt")
-        coEvery { controller.onCodeGeneration(any(), any(), any()) } just runs
+    fun `test provideFeedbackAndRegenerateCode`() =
+        runTest {
+            val followUp = FollowUp(FollowUpTypes.PROVIDE_FEEDBACK_AND_REGENERATE_CODE, pillText = "Regenerate code")
+            val message = IncomingFeatureDevMessage.FollowupClicked(followUp, testTabId, "", "test-command")
 
-        val followUp = FollowUp(FollowUpTypes.GENERATE_CODE, pillText = "Generate code")
-        val message = IncomingFeatureDevMessage.FollowupClicked(followUp, testTabId, "", "test-command")
+            whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
+            whenever(featureDevClient.sendFeatureDevTelemetryEvent(any())).thenReturn(exampleSendTelemetryEventResponse)
+            whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
 
-        controller.processFollowupClickedMessage(message)
+            mockkObject(AmazonqTelemetry)
+            every { AmazonqTelemetry.isProvideFeedbackForCodeGen(amazonqConversationId = any(), enabled = any()) } just runs
 
-        mockitoVerify(spySession, times(1)).initCodegen(messenger)
-        coVerify(exactly = 1) { controller.onCodeGeneration(spySession, "", testTabId) }
-    }
+            spySession.preloader(userMessage, messenger)
+            controller.processFollowupClickedMessage(message)
 
-    @Test
-    fun `test provideFeedbackAndRegenerateCode`() = runTest {
-        val followUp = FollowUp(FollowUpTypes.PROVIDE_FEEDBACK_AND_REGENERATE_CODE, pillText = "Regenerate code")
-        val message = IncomingFeatureDevMessage.FollowupClicked(followUp, testTabId, "", "test-command")
-
-        whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
-        whenever(featureDevClient.sendFeatureDevTelemetryEvent(any())).thenReturn(exampleSendTelemetryEventResponse)
-        whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
-
-        mockkObject(AmazonqTelemetry)
-        every { AmazonqTelemetry.isProvideFeedbackForCodeGen(amazonqConversationId = any(), enabled = any()) } just runs
-
-        spySession.preloader(userMessage, messenger)
-        controller.processFollowupClickedMessage(message)
-
-        coVerifyOrder {
-            AmazonqTelemetry.isProvideFeedbackForCodeGen(amazonqConversationId = testConversationId, enabled = true, createTime = any())
-            messenger.sendAsyncEventProgress(testTabId, inProgress = false)
-            messenger.sendAnswer(testTabId, message("amazonqFeatureDev.code_generation.provide_code_feedback"), FeatureDevMessageType.Answer)
-            messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.provide_code_feedback"))
-        }
-    }
-
-    @Test
-    fun `test insertCode`() = runTest {
-        val followUp = FollowUp(FollowUpTypes.INSERT_CODE, pillText = "Insert code")
-        val message = IncomingFeatureDevMessage.FollowupClicked(followUp, testTabId, "", "test-command")
-
-        mockkObject(AmazonqTelemetry)
-        every {
-            AmazonqTelemetry.isAcceptedCodeChanges(amazonqNumberOfFilesAccepted = any(), amazonqConversationId = any(), enabled = any())
-        } just runs
-
-        whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
-        whenever(featureDevClient.sendFeatureDevTelemetryEvent(any())).thenReturn(exampleSendTelemetryEventResponse)
-        whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
-        whenever(spySession.sessionState).thenReturn(
-            PrepareCodeGenerationState(
-                testTabId, "", mock(), newFileContents, deletedFiles, testReferences, testUploadId, 0, messenger
-            )
-        )
-        doNothing().`when`(spySession).insertChanges(any(), any(), any())
-
-        spySession.preloader(userMessage, messenger)
-        controller.processFollowupClickedMessage(message)
-
-        mockitoVerify(
-            spySession,
-            times(1)
-        ).insertChanges(listOf(newFileContents[0]), listOf(deletedFiles[0]), testReferences) // insert changes for only non rejected files
-        coVerifyOrder {
-            AmazonqTelemetry.isAcceptedCodeChanges(
-                amazonqNumberOfFilesAccepted = 2.0, // it should be 2 files per test setup
-                amazonqConversationId = spySession.conversationId,
-                enabled = true,
-                createTime = any()
-            )
-            messenger.sendAnswer(testTabId, message("amazonqFeatureDev.code_generation.updated_code"), FeatureDevMessageType.Answer)
-            messenger.sendSystemPrompt(
-                testTabId,
-                listOf(
-                    FollowUp(FollowUpTypes.NEW_TASK, message("amazonqFeatureDev.follow_up.new_task"), status = FollowUpStatusType.Info),
-                    FollowUp(FollowUpTypes.CLOSE_SESSION, message("amazonqFeatureDev.follow_up.close_session"), status = FollowUpStatusType.Info)
+            coVerifyOrder {
+                AmazonqTelemetry.isProvideFeedbackForCodeGen(amazonqConversationId = testConversationId, enabled = true, createTime = any())
+                messenger.sendAsyncEventProgress(testTabId, inProgress = false)
+                messenger.sendAnswer(
+                    tabId = testTabId,
+                    message = message("amazonqFeatureDev.code_generation.provide_code_feedback"),
+                    messageType = FeatureDevMessageType.Answer,
+                    canBeVoted = true,
                 )
-            )
-            messenger.sendChatInputEnabledMessage(testTabId, true)
-            messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.additional_improvements"))
+                messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.provide_code_feedback"))
+            }
         }
-    }
 
     @Test
-    fun `test handleChat onCodeGeneration succeeds to create files`() = runTest {
-        val mockInteraction = mock<Interaction>()
+    fun `test insertCode`() =
+        runTest {
+            val followUp = FollowUp(FollowUpTypes.INSERT_CODE, pillText = "Insert code")
+            val message = IncomingFeatureDevMessage.FollowupClicked(followUp, testTabId, "", "test-command")
 
-        val mockSession = mock<Session>()
-        whenever(mockSession.send(userMessage)).thenReturn(mockInteraction)
-        whenever(mockSession.conversationId).thenReturn(testConversationId)
-        whenever(mockSession.sessionState).thenReturn(
-            PrepareCodeGenerationState(
-                testTabId, "", mock(), newFileContents, deletedFiles, testReferences, testUploadId, 0, messenger
+            var featureDevService = mockk<FeatureDevService>()
+            val repoContext = mock<FeatureDevSessionContext>()
+            val sessionStateConfig = SessionStateConfig(testConversationId, repoContext, featureDevService)
+            mockkObject(AmazonqTelemetry)
+            every {
+                AmazonqTelemetry.isAcceptedCodeChanges(amazonqNumberOfFilesAccepted = any(), amazonqConversationId = any(), enabled = any())
+            } just runs
+
+            whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
+            whenever(featureDevClient.sendFeatureDevTelemetryEvent(any())).thenReturn(exampleSendTelemetryEventResponse)
+            whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
+            whenever(spySession.sessionState).thenReturn(
+                PrepareCodeGenerationState(
+                    testTabId,
+                    CancellationTokenSource(),
+                    "test-command",
+                    sessionStateConfig,
+                    newFileContents,
+                    deletedFiles,
+                    testReferences,
+                    testUploadId,
+                    0,
+                    messenger,
+                    0,
+                    0,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
+                ),
             )
-        )
 
-        controller.onCodeGeneration(mockSession, userMessage, testTabId)
+            doReturn(Unit).whenever(spySession).insertChanges(any(), any(), any())
+            doReturn(Unit).whenever(spySession).insertNewFiles(any())
+            doReturn(Unit).whenever(spySession).applyDeleteFiles(any())
 
-        coVerifyOrder {
-            messenger.sendAsyncEventProgress(testTabId, true, message("amazonqFeatureDev.chat_message.start_code_generation"))
-            messenger.sendAnswer(testTabId, message("amazonqFeatureDev.chat_message.requesting_changes"), FeatureDevMessageType.AnswerStream)
-            messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.generating_code"))
-            messenger.sendCodeResult(testTabId, testUploadId, newFileContents, deletedFiles, testReferences)
-            messenger.sendSystemPrompt(testTabId, getFollowUpOptions(SessionStatePhase.CODEGEN, true))
-            messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.after_code_generation"))
-            messenger.sendAsyncEventProgress(testTabId, false)
-            messenger.sendChatInputEnabledMessage(testTabId, false)
+            spySession.preloader(userMessage, messenger)
+            controller.processFollowupClickedMessage(message)
+
+            mockitoVerify(
+                spySession,
+                times(1),
+            ).insertChanges(newFileContents, deletedFiles, testReferences) // updates for all files
+            coVerifyOrder {
+                AmazonqTelemetry.isAcceptedCodeChanges(
+                    amazonqNumberOfFilesAccepted = 2.0, // it should be 2 files per test setup
+                    amazonqConversationId = spySession.conversationId,
+                    enabled = true,
+                    createTime = any(),
+                )
+
+                // insert changes for only non rejected files
+                spySession.insertNewFiles(listOf(newFileContents[0]))
+                spySession.applyDeleteFiles(listOf(deletedFiles[0]))
+
+                spySession.updateFilesPaths(
+                    filePaths = newFileContents,
+                    deletedFiles = deletedFiles,
+                    messenger
+                )
+                messenger.sendAnswer(
+                    tabId = testTabId,
+                    message = message("amazonqFeatureDev.code_generation.updated_code"),
+                    messageType = FeatureDevMessageType.Answer,
+                    canBeVoted = true,
+                )
+                messenger.sendSystemPrompt(
+                    testTabId,
+                    listOf(
+                        FollowUp(FollowUpTypes.NEW_TASK, message("amazonqFeatureDev.follow_up.new_task"), status = FollowUpStatusType.Info),
+                        FollowUp(FollowUpTypes.CLOSE_SESSION, message("amazonqFeatureDev.follow_up.close_session"), status = FollowUpStatusType.Info),
+                    ),
+                )
+                messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.additional_improvements"))
+            }
         }
-    }
+
+    @Test
+    fun `test handleChat onCodeGeneration succeeds to create files`() =
+        runTest {
+            val mockInteraction = mock<Interaction>()
+            val featureDevService = mockk<FeatureDevService>()
+            val repoContext = mock<FeatureDevSessionContext>()
+            val sessionStateConfig = SessionStateConfig(testConversationId, repoContext, featureDevService)
+            mockkObject(AmazonqTelemetry)
+            val mockSession = mock<Session>()
+            whenever(mockSession.send(userMessage)).thenReturn(mockInteraction)
+            whenever(mockSession.conversationId).thenReturn(testConversationId)
+            whenever(mockSession.sessionState).thenReturn(
+                PrepareCodeGenerationState(
+                    testTabId,
+                    CancellationTokenSource(),
+                    "test-command",
+                    sessionStateConfig,
+                    newFileContents,
+                    deletedFiles,
+                    testReferences,
+                    testUploadId,
+                    0,
+                    messenger,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
+                ),
+            )
+
+            controller.onCodeGeneration(mockSession, userMessage, testTabId)
+
+            coVerifyOrder {
+                messenger.sendAsyncEventProgress(testTabId, true, message("amazonqFeatureDev.chat_message.start_code_generation_retry"))
+                messenger.sendAnswer(testTabId, message("amazonqFeatureDev.chat_message.requesting_changes"), messageType = FeatureDevMessageType.AnswerStream)
+                messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.generating_code"))
+                messenger.sendCodeResult(testTabId, testUploadId, newFileContents, deletedFiles, testReferences)
+                messenger.sendSystemPrompt(testTabId, getFollowUpOptions(SessionStatePhase.CODEGEN, InsertAction.ALL))
+                messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.after_code_generation"))
+                messenger.sendAsyncEventProgress(testTabId, false)
+                messenger.sendChatInputEnabledMessage(testTabId, false)
+            }
+        }
 
     @Test(expected = RuntimeException::class)
-    fun `test handleChat onCodeGeneration throws error when sending message to state`() = runTest {
-        val mockSession = mock<Session>()
+    fun `test handleChat onCodeGeneration throws error when sending message to state`() =
+        runTest {
+            val mockSession = mock<Session>()
 
-        whenever(mockSession.send(userMessage)).thenThrow(RuntimeException())
-        whenever(mockSession.conversationId).thenReturn(testConversationId)
+            whenever(mockSession.send(userMessage)).thenThrow(RuntimeException())
+            whenever(mockSession.conversationId).thenReturn(testConversationId)
 
-        controller.onCodeGeneration(mockSession, userMessage, testTabId)
+            controller.onCodeGeneration(mockSession, userMessage, testTabId)
 
-        coVerifyOrder {
-            messenger.sendAsyncEventProgress(testTabId, true, message("amazonqFeatureDev.chat_message.start_code_generation"))
-            messenger.sendAnswer(testTabId, message("amazonqFeatureDev.chat_message.requesting_changes"), FeatureDevMessageType.AnswerStream)
-            messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.generating_code"))
-            messenger.sendAsyncEventProgress(testTabId, false)
-            messenger.sendChatInputEnabledMessage(testTabId, false)
+            coVerifyOrder {
+                messenger.sendAsyncEventProgress(testTabId, true, message("amazonqFeatureDev.chat_message.start_code_generation"))
+                messenger.sendAnswer(testTabId, message("amazonqFeatureDev.chat_message.requesting_changes"), messageType = FeatureDevMessageType.AnswerStream)
+                messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.generating_code"))
+                messenger.sendAsyncEventProgress(testTabId, false)
+                messenger.sendChatInputEnabledMessage(testTabId, false)
+            }
         }
-    }
 
     @Test
-    fun `test handleChat onCodeGeneration doesn't return any files with retries`() = runTest {
-        val filePaths = emptyList<NewFileZipInfo>()
-        val deletedFiles = emptyList<DeletedFileInfo>()
+    fun `test handleChat onCodeGeneration doesn't return any files with retries`() =
+        runTest {
+            val filePaths = emptyList<NewFileZipInfo>()
+            val deletedFiles = emptyList<DeletedFileInfo>()
 
-        val mockInteraction = mock<Interaction>()
+            val mockInteraction = mock<Interaction>()
 
+            val mockSession = mock<Session>()
+            whenever(mockSession.send(userMessage)).thenReturn(mockInteraction)
+            whenever(mockSession.conversationId).thenReturn(testConversationId)
+            whenever(mockSession.sessionState).thenReturn(
+                PrepareCodeGenerationState(
+                    testTabId,
+                    CancellationTokenSource(),
+                    "",
+                    mock(),
+                    filePaths,
+                    deletedFiles,
+                    testReferences,
+                    testUploadId,
+                    0,
+                    messenger,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
+                ),
+            )
+            whenever(mockSession.retries).thenReturn(3)
+
+            controller.onCodeGeneration(mockSession, userMessage, testTabId)
+
+            coVerifyOrder {
+                messenger.sendAnswer(testTabId, message("amazonqFeatureDev.code_generation.no_file_changes"), messageType = FeatureDevMessageType.Answer)
+                messenger.sendSystemPrompt(
+                    testTabId,
+                    listOf(FollowUp(FollowUpTypes.RETRY, message("amazonqFeatureDev.follow_up.retry"), status = FollowUpStatusType.Warning)),
+                )
+                messenger.sendChatInputEnabledMessage(testTabId, false)
+            }
+        }
+
+    @Test
+    fun `test handleChat onCodeGeneration doesn't return any files no retries`() =
+        runTest {
+            val filePaths = emptyList<NewFileZipInfo>()
+            val deletedFiles = emptyList<DeletedFileInfo>()
+
+            val mockInteraction = mock<Interaction>()
+
+            val mockSession = mock<Session>()
+            whenever(mockSession.send(userMessage)).thenReturn(mockInteraction)
+            whenever(mockSession.conversationId).thenReturn(testConversationId)
+            whenever(mockSession.sessionState).thenReturn(
+                PrepareCodeGenerationState(
+                    testTabId,
+                    CancellationTokenSource(),
+                    "",
+                    mock(),
+                    filePaths,
+                    deletedFiles,
+                    testReferences,
+                    testUploadId,
+                    0,
+                    messenger,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
+                ),
+            )
+            whenever(mockSession.retries).thenReturn(0)
+
+            controller.onCodeGeneration(mockSession, userMessage, testTabId)
+
+            coVerifyOrder {
+                messenger.sendAnswer(testTabId, message("amazonqFeatureDev.code_generation.no_file_changes"), messageType = FeatureDevMessageType.Answer)
+                messenger.sendSystemPrompt(testTabId, emptyList())
+                messenger.sendChatInputEnabledMessage(testTabId, false)
+            }
+        }
+
+    @Test
+    fun `test handleChat onCodeGeneration sends success metrics`() = runTest {
         val mockSession = mock<Session>()
+        val featureDevService = mockk<FeatureDevService>()
+        val repoContext = mock<FeatureDevSessionContext>()
+        val sessionStateConfig = SessionStateConfig(testConversationId, repoContext, featureDevService)
+        val mockInteraction = mock<Interaction>()
         whenever(mockSession.send(userMessage)).thenReturn(mockInteraction)
-        whenever(mockSession.conversationId).thenReturn(testConversationId)
         whenever(mockSession.sessionState).thenReturn(
             PrepareCodeGenerationState(
-                testTabId, "", mock(), filePaths, deletedFiles, testReferences, testUploadId, 0, messenger
-            )
-        )
-        whenever(mockSession.retries).thenReturn(3)
-
-        controller.onCodeGeneration(mockSession, userMessage, testTabId)
-
-        coVerifyOrder {
-            messenger.sendAnswer(testTabId, message("amazonqFeatureDev.code_generation.no_file_changes"), FeatureDevMessageType.Answer)
-            messenger.sendSystemPrompt(
                 testTabId,
-                listOf(FollowUp(FollowUpTypes.RETRY, message("amazonqFeatureDev.follow_up.retry"), status = FollowUpStatusType.Warning))
-            )
-            messenger.sendChatInputEnabledMessage(testTabId, false)
-        }
-    }
-
-    @Test
-    fun `test handleChat onCodeGeneration doesn't return any files no retries`() = runTest {
-        val filePaths = emptyList<NewFileZipInfo>()
-        val deletedFiles = emptyList<DeletedFileInfo>()
-
-        val mockInteraction = mock<Interaction>()
-
-        val mockSession = mock<Session>()
-        whenever(mockSession.send(userMessage)).thenReturn(mockInteraction)
-        whenever(mockSession.conversationId).thenReturn(testConversationId)
-        whenever(mockSession.sessionState).thenReturn(
-            PrepareCodeGenerationState(
-                testTabId, "", mock(), filePaths, deletedFiles, testReferences, testUploadId, 0, messenger
-            )
+                CancellationTokenSource(),
+                "test-command",
+                sessionStateConfig,
+                newFileContents,
+                deletedFiles,
+                testReferences,
+                testUploadId,
+                0,
+                messenger,
+                diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
+            ),
         )
-        whenever(mockSession.retries).thenReturn(0)
 
         controller.onCodeGeneration(mockSession, userMessage, testTabId)
 
-        coVerifyOrder {
-            messenger.sendAnswer(testTabId, message("amazonqFeatureDev.code_generation.no_file_changes"), FeatureDevMessageType.Answer)
-            messenger.sendSystemPrompt(testTabId, emptyList())
-            messenger.sendChatInputEnabledMessage(testTabId, false)
-        }
+        val mockInOrder = inOrder(mockSession)
+
+        mockInOrder.verify(mockSession).sendMetricDataTelemetry(
+            MetricDataOperationName.StartCodeGeneration,
+            MetricDataResult.Success
+
+        )
+        mockInOrder.verify(mockSession).sendMetricDataTelemetry(
+            MetricDataOperationName.EndCodeGeneration,
+            MetricDataResult.Success
+        )
     }
 
     @Test
-    fun `test processFileClicked changes the state of the clicked file`() = runTest {
-        val message = IncomingFeatureDevMessage.FileClicked(testTabId, newFileContents[0].zipFilePath, "", "")
+    fun `test handleChat onCodeGeneration sends correct failure metrics for different errors`() = runTest {
+        data class ErrorTestCase(
+            val error: Exception,
+            val expectedMetricResult: MetricDataResult,
+        )
 
-        whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
-        whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
-        whenever(spySession.sessionState).thenReturn(
-            PrepareCodeGenerationState(
-                testTabId, "", mock(), newFileContents, deletedFiles, testReferences, testUploadId, 0, messenger
+        val testCases = listOf(
+            ErrorTestCase(
+                EmptyPatchException("EmptyPatchException", "Empty patch"),
+                MetricDataResult.LlmFailure
+            ),
+            ErrorTestCase(
+                GuardrailsException(operation = "GenerateCode", desc = "Failed guardrails"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                PromptRefusalException(operation = "GenerateCode", desc = "Prompt refused"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                NoChangeRequiredException(operation = "GenerateCode", desc = "No changes needed"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                ThrottlingException(operation = "GenerateCode", desc = "Request throttled"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                RuntimeException("Unknown error"),
+                MetricDataResult.Fault
             )
         )
 
-        controller.processFileClicked(message)
-
-        val newFileContentsCopy = newFileContents.toList()
-        newFileContentsCopy[0].rejected = !newFileContentsCopy[0].rejected
-        coVerify { messenger.updateFileComponent(testTabId, newFileContentsCopy, deletedFiles, "") }
-    }
-
-    @Test
-    fun `test modifyDefaultSourceFolder customer does not select a folder`() = runTest {
-        val followUp = FollowUp(FollowUpTypes.MODIFY_DEFAULT_SOURCE_FOLDER, pillText = "Modify default source folder")
-        val message = IncomingFeatureDevMessage.FollowupClicked(followUp, testTabId, "", "test-command")
-
-        whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
-        whenever(featureDevClient.sendFeatureDevTelemetryEvent(any())).thenReturn(exampleSendTelemetryEventResponse)
-        whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
-
-        mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FileUtilsKt")
-        every { selectFolder(any(), any()) } returns null
-
-        spySession.preloader(userMessage, messenger)
-        controller.processFollowupClickedMessage(message)
-
-        coVerifyOrder {
-            messenger.sendSystemPrompt(
-                tabId = testTabId,
-                followUp = listOf(
-                    FollowUp(
-                        pillText = message("amazonqFeatureDev.follow_up.modify_source_folder"),
-                        type = FollowUpTypes.MODIFY_DEFAULT_SOURCE_FOLDER,
-                        status = FollowUpStatusType.Info,
-                    )
+        testCases.forEach { (error, expectedResult) ->
+            val mockSession = mock<Session>()
+            whenever(mockSession.send(userMessage)).thenThrow(error)
+            whenever(mockSession.sessionState).thenReturn(
+                CodeGenerationState(
+                    testTabId,
+                    "",
+                    mock(),
+                    testUploadId,
+                    0,
+                    0.0,
+                    messenger,
+                    token = CancellationTokenSource(),
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet())
                 )
             )
+
+            assertThrows<Exception> {
+                controller.onCodeGeneration(mockSession, userMessage, testTabId)
+            }
+
+            val mockInOrder = inOrder(mockSession)
+
+            mockInOrder.verify(mockSession).sendMetricDataTelemetry(
+                MetricDataOperationName.StartCodeGeneration,
+                MetricDataResult.Success
+
+            )
+            mockInOrder.verify(mockSession).sendMetricDataTelemetry(
+                MetricDataOperationName.EndCodeGeneration,
+                expectedResult
+            )
         }
     }
 
     @Test
-    fun `test modifyDefaultSourceFolder customer selects a folder outside the workspace`() = runTest {
-        val followUp = FollowUp(FollowUpTypes.MODIFY_DEFAULT_SOURCE_FOLDER, pillText = "Modify default source folder")
-        val message = IncomingFeatureDevMessage.FollowupClicked(followUp, testTabId, "", "test-command")
+    fun `test processFileClicked handles file rejection`() =
+        runTest {
+            val message = IncomingFeatureDevMessage.FileClicked(testTabId, newFileContents[0].zipFilePath, "", "reject-change")
 
-        whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
-        whenever(featureDevClient.sendFeatureDevTelemetryEvent(any())).thenReturn(exampleSendTelemetryEventResponse)
-        whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
-
-        mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FileUtilsKt")
-        every { selectFolder(any(), any()) } returns LightVirtualFile("/path")
-
-        spySession.preloader(userMessage, messenger)
-        controller.processFollowupClickedMessage(message)
-
-        coVerifyOrder {
-            messenger.sendAnswer(
-                tabId = testTabId,
-                messageType = FeatureDevMessageType.Answer,
-                message = message("amazonqFeatureDev.follow_up.incorrect_source_folder")
+            whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
+            whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
+            whenever(spySession.sessionState).thenReturn(
+                PrepareCodeGenerationState(
+                    testTabId,
+                    CancellationTokenSource(),
+                    "",
+                    mock(),
+                    newFileContents,
+                    deletedFiles,
+                    testReferences,
+                    testUploadId,
+                    0,
+                    messenger,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
+                ),
             )
-            messenger.sendSystemPrompt(
-                tabId = testTabId,
-                followUp = listOf(
-                    FollowUp(
-                        pillText = message("amazonqFeatureDev.follow_up.modify_source_folder"),
-                        type = FollowUpTypes.MODIFY_DEFAULT_SOURCE_FOLDER,
-                        status = FollowUpStatusType.Info,
-                    )
+
+            controller.processFileClicked(message)
+
+            val newFileContentsCopy = newFileContents.toMutableList()
+            newFileContentsCopy[0] = newFileContentsCopy[0].copy()
+            newFileContentsCopy[0].rejected = true
+            newFileContentsCopy[0].changeApplied = false
+            coVerify { messenger.updateFileComponent(testTabId, newFileContentsCopy, deletedFiles, "") }
+        }
+
+    @Test
+    fun `test processFileClicked handles file acceptance`() =
+        runTest {
+            val featureDevService = mockk<FeatureDevService>()
+            val repoContext = mock<FeatureDevSessionContext>()
+            val sessionStateConfig = SessionStateConfig(testConversationId, repoContext, featureDevService)
+
+            whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
+            whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
+            whenever(spySession.sessionState).thenReturn(
+                PrepareCodeGenerationState(
+                    testTabId,
+                    CancellationTokenSource(),
+                    "",
+                    sessionStateConfig,
+                    newFileContents,
+                    deletedFiles,
+                    testReferences,
+                    testUploadId,
+                    0,
+                    messenger,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
+                ),
+            )
+            doReturn(testConversationId).`when`(spySession).conversationId
+            doReturn(Unit).`when`(spySession).insertChanges(any(), any(), any())
+
+            mockkObject(AmazonqTelemetry)
+            every {
+                AmazonqTelemetry.isAcceptedCodeChanges(
+                    amazonqNumberOfFilesAccepted = 1.0,
+                    amazonqConversationId = testConversationId,
+                    enabled = true,
+                    credentialStartUrl = any()
                 )
-            )
+            } just runs
+
+            // Accept first file:
+            controller.processFileClicked(IncomingFeatureDevMessage.FileClicked(testTabId, newFileContents[0].zipFilePath, "", "accept-change"))
+
+            val newFileContentsCopy = newFileContents.toList()
+            newFileContentsCopy[0].rejected = false
+            newFileContentsCopy[0].changeApplied = true
+            coVerify { messenger.updateFileComponent(testTabId, newFileContents, deletedFiles, "") }
+
+            mockitoVerify(
+                spySession,
+                times(1),
+            ).insertChanges(listOf(newFileContents[0]), listOf(), testReferences)
+
+            // Does not continue automatically, because files are remaining:
+            mockitoVerify(
+                controller,
+                times(0),
+            ).insertCode(testTabId)
         }
-    }
 
     @Test
-    fun `test modifyDefaultSourceFolder customer selects a correct sub folder`() = runTest {
-        val followUp = FollowUp(FollowUpTypes.MODIFY_DEFAULT_SOURCE_FOLDER, pillText = "Modify default source folder")
-        val message = IncomingFeatureDevMessage.FollowupClicked(followUp, testTabId, "", "test-command")
+    fun `test processFileClicked automatically continues when last file is accepted`() =
+        runTest {
+            val featureDevService = mockk<FeatureDevService>()
+            val repoContext = mock<FeatureDevSessionContext>()
+            val sessionStateConfig = SessionStateConfig(testConversationId, repoContext, featureDevService)
 
-        whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
-        whenever(featureDevClient.sendFeatureDevTelemetryEvent(any())).thenReturn(exampleSendTelemetryEventResponse)
-        whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
-
-        val folder = LightVirtualFile("${spySession.context.projectRoot.name}/path/to/sub/folder")
-        mockkStatic("software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FileUtilsKt")
-        every { selectFolder(any(), any()) } returns folder
-
-        spySession.preloader(userMessage, messenger)
-        controller.processFollowupClickedMessage(message)
-
-        coVerify {
-            messenger.sendAnswer(
-                tabId = testTabId,
-                messageType = FeatureDevMessageType.Answer,
-                message = message("amazonqFeatureDev.follow_up.modified_source_folder", folder.path)
+            whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
+            whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
+            whenever(spySession.sessionState).thenReturn(
+                PrepareCodeGenerationState(
+                    testTabId,
+                    CancellationTokenSource(),
+                    "",
+                    sessionStateConfig,
+                    newFileContents,
+                    deletedFiles,
+                    testReferences,
+                    testUploadId,
+                    0,
+                    messenger,
+                    diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet()),
+                ),
             )
+            doReturn(testConversationId).`when`(spySession).conversationId
+            doReturn(Unit).`when`(spySession).insertChanges(any(), any(), any())
+
+            mockkObject(AmazonqTelemetry)
+            every {
+                AmazonqTelemetry.isAcceptedCodeChanges(
+                    amazonqNumberOfFilesAccepted = 1.0,
+                    amazonqConversationId = testConversationId,
+                    enabled = true,
+                    credentialStartUrl = any()
+                )
+            } just runs
+
+            val newFileContentsCopy = newFileContents.toList()
+            newFileContentsCopy[0].rejected = false
+            newFileContentsCopy[0].changeApplied = true
+            newFileContentsCopy[1].rejected = false
+            newFileContentsCopy[1].changeApplied = true
+            deletedFiles[0].rejected = false
+            deletedFiles[0].changeApplied = true
+
+            // This is simulating the file already being an accepted state, and accept-change being called redundantly. This is necessary because of the test
+            // setup, which should be fixed to avoid heavy-handed mocking of the session state (so that we can see the session state be incrementally updated).
+            deletedFiles[1].rejected = false
+            deletedFiles[1].changeApplied = true
+
+            // When the last file is accepted:
+            controller.processFileClicked(IncomingFeatureDevMessage.FileClicked(testTabId, deletedFiles[1].zipFilePath, "", "accept-change"))
+
+            // We auto-continue to the next step with a noop insertCode call:
+            mockitoVerify(
+                controller,
+                times(1),
+            ).insertCode(testTabId)
         }
-    }
+
+    @Test
+    fun `test modifyDefaultSourceFolder customer does not select a folder`() =
+        runTest {
+            val followUp = FollowUp(FollowUpTypes.MODIFY_DEFAULT_SOURCE_FOLDER, pillText = "Modify default source folder")
+            val message = IncomingFeatureDevMessage.FollowupClicked(followUp, testTabId, "", "test-command")
+
+            whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
+            whenever(featureDevClient.sendFeatureDevTelemetryEvent(any())).thenReturn(exampleSendTelemetryEventResponse)
+            whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
+
+            mockkStatic("software.aws.toolkits.jetbrains.common.util.FileUtilsKt")
+            every { selectFolder(any(), any()) } returns null
+
+            spySession.preloader(userMessage, messenger)
+            controller.processFollowupClickedMessage(message)
+
+            coVerifyOrder {
+                messenger.sendSystemPrompt(
+                    tabId = testTabId,
+                    followUp =
+                    listOf(
+                        FollowUp(
+                            pillText = message("amazonqFeatureDev.follow_up.modify_source_folder"),
+                            type = FollowUpTypes.MODIFY_DEFAULT_SOURCE_FOLDER,
+                            status = FollowUpStatusType.Info,
+                        ),
+                    ),
+                )
+            }
+        }
+
+    @Test
+    fun `test modifyDefaultSourceFolder customer selects a folder outside the workspace`() =
+        runTest {
+            val followUp = FollowUp(FollowUpTypes.MODIFY_DEFAULT_SOURCE_FOLDER, pillText = "Modify default source folder")
+            val message = IncomingFeatureDevMessage.FollowupClicked(followUp, testTabId, "", "test-command")
+
+            whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
+            whenever(featureDevClient.sendFeatureDevTelemetryEvent(any())).thenReturn(exampleSendTelemetryEventResponse)
+            whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
+
+            mockkStatic("software.aws.toolkits.jetbrains.common.util.FileUtilsKt")
+            every { selectFolder(any(), any()) } returns LightVirtualFile("/path")
+
+            spySession.preloader(userMessage, messenger)
+            controller.processFollowupClickedMessage(message)
+
+            coVerifyOrder {
+                messenger.sendAnswer(
+                    tabId = testTabId,
+                    messageType = FeatureDevMessageType.Answer,
+                    message = message("amazonqFeatureDev.follow_up.incorrect_source_folder"),
+                )
+                messenger.sendSystemPrompt(
+                    tabId = testTabId,
+                    followUp =
+                    listOf(
+                        FollowUp(
+                            pillText = message("amazonqFeatureDev.follow_up.modify_source_folder"),
+                            type = FollowUpTypes.MODIFY_DEFAULT_SOURCE_FOLDER,
+                            status = FollowUpStatusType.Info,
+                        ),
+                    ),
+                )
+            }
+        }
+
+    @Test
+    fun `test modifyDefaultSourceFolder customer selects a correct sub folder`() =
+        runTest {
+            val followUp = FollowUp(FollowUpTypes.MODIFY_DEFAULT_SOURCE_FOLDER, pillText = "Modify default source folder")
+            val message = IncomingFeatureDevMessage.FollowupClicked(followUp, testTabId, "", "test-command")
+
+            whenever(featureDevClient.createTaskAssistConversation()).thenReturn(exampleCreateTaskAssistConversationResponse)
+            whenever(featureDevClient.sendFeatureDevTelemetryEvent(any())).thenReturn(exampleSendTelemetryEventResponse)
+            whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
+
+            val folder = LightVirtualFile("${spySession.context.projectRoot.name}/path/to/sub/folder")
+            mockkStatic("software.aws.toolkits.jetbrains.common.util.FileUtilsKt")
+            every { selectFolder(any(), any()) } returns folder
+
+            spySession.preloader(userMessage, messenger)
+            controller.processFollowupClickedMessage(message)
+
+            coVerify {
+                messenger.sendAnswer(
+                    tabId = testTabId,
+                    messageType = FeatureDevMessageType.Answer,
+                    message = message("amazonqFeatureDev.follow_up.modified_source_folder", folder.path),
+                    canBeVoted = true,
+                )
+            }
+        }
 }

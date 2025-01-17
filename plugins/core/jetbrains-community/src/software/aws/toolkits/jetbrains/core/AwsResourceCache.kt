@@ -130,7 +130,7 @@ class ClientBackedCachedResource<ReturnType, ClientType : SdkClient>(
     private val sdkClientClass: KClass<ClientType>,
     override val id: String,
     private val expiry: Duration?,
-    private val fetchCall: ClientType.() -> ReturnType
+    private val fetchCall: ClientType.() -> ReturnType,
 ) : Resource.Cached<ReturnType>() {
 
     constructor(sdkClientClass: KClass<ClientType>, id: String, fetchCall: ClientType.() -> ReturnType) : this(sdkClientClass, id, null, fetchCall)
@@ -148,7 +148,7 @@ class ClientBackedCachedResource<ReturnType, ClientType : SdkClient>(
 class DefaultAwsResourceCache(
     private val clock: Clock,
     private val maximumCacheEntries: Int,
-    private val maintenanceInterval: Duration
+    private val maintenanceInterval: Duration,
 ) : AwsResourceCache, Disposable, ToolkitCredentialsChangeListener {
     private val coroutineScope = disposableCoroutineScope(this)
 
@@ -179,7 +179,7 @@ class DefaultAwsResourceCache(
         region: AwsRegion,
         credentialProvider: ToolkitCredentialsProvider,
         useStale: Boolean,
-        forceFetch: Boolean
+        forceFetch: Boolean,
     ): CompletionStage<T> = when (resource) {
         is Resource.View<*, T> -> getResource(
             resource.underlying,
@@ -198,7 +198,7 @@ class DefaultAwsResourceCache(
         region: AwsRegion,
         tokenProvider: ToolkitBearerTokenProvider,
         useStale: Boolean,
-        forceFetch: Boolean
+        forceFetch: Boolean,
     ): CompletionStage<T> = when (resource) {
         is Resource.View<*, T> -> getResource(
             resource.underlying,
@@ -376,7 +376,7 @@ class DefaultAwsResourceCache(
             val region: AwsRegion,
             val connectionSettings: ClientConnectionSettings<*>,
             val useStale: Boolean,
-            val forceFetch: Boolean
+            val forceFetch: Boolean,
         ) {
             val cacheKey = CacheKey(resource.id, region.id, connectionSettings.providerId)
             val future = CompletableFuture<T>()

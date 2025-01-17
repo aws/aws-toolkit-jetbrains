@@ -15,6 +15,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQApp
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
+import software.aws.toolkits.jetbrains.services.amazonqCodeScan.auth.isCodeScanAvailable
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.auth.isCodeTestAvailable
+import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformActionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
@@ -32,9 +35,14 @@ private enum class CodeTransformMessageTypes(val type: String) {
     TabCreated("new-tab-was-created"),
     TabRemoved("tab-was-removed"),
     Transform("transform"),
+    ChatPrompt("chat-prompt"), // for getting the transformation objective
     CodeTransformStart("codetransform-start"),
+    CodeTransformSelectSQLMetadata("codetransform-select-sql-metadata"),
+    CodeTransformSelectSQLModuleSchema("codetransform-select-sql-module-schema"),
     CodeTransformStop("codetransform-stop"),
     CodeTransformCancel("codetransform-cancel"),
+    CodeTransformConfirmSkipTests("codetransform-confirm-skip-tests"),
+    CodeTransformConfirmOneOrMultipleDiffs("codetransform-confirm-one-or-multiple-diffs"),
     CodeTransformNew("codetransform-new"),
     CodeTransformOpenTransformHub("codetransform-open-transform-hub"),
     CodeTransformOpenMvnBuild("codetransform-open-mvn-build"),
@@ -62,8 +70,13 @@ class CodeTransformChatApp : AmazonQApp {
             CodeTransformMessageTypes.TabRemoved.type to IncomingCodeTransformMessage.TabRemoved::class,
             CodeTransformMessageTypes.Transform.type to IncomingCodeTransformMessage.Transform::class,
             CodeTransformMessageTypes.CodeTransformStart.type to IncomingCodeTransformMessage.CodeTransformStart::class,
+            CodeTransformMessageTypes.CodeTransformSelectSQLMetadata.type to IncomingCodeTransformMessage.CodeTransformSelectSQLMetadata::class,
+            CodeTransformMessageTypes.CodeTransformSelectSQLModuleSchema.type to IncomingCodeTransformMessage.CodeTransformSelectSQLModuleSchema::class,
             CodeTransformMessageTypes.CodeTransformStop.type to IncomingCodeTransformMessage.CodeTransformStop::class,
             CodeTransformMessageTypes.CodeTransformCancel.type to IncomingCodeTransformMessage.CodeTransformCancel::class,
+            CodeTransformMessageTypes.ChatPrompt.type to IncomingCodeTransformMessage.ChatPrompt::class,
+            CodeTransformMessageTypes.CodeTransformConfirmSkipTests.type to IncomingCodeTransformMessage.CodeTransformConfirmSkipTests::class,
+            CodeTransformMessageTypes.CodeTransformConfirmOneOrMultipleDiffs.type to IncomingCodeTransformMessage.CodeTransformConfirmOneOrMultipleDiffs::class,
             CodeTransformMessageTypes.CodeTransformNew.type to IncomingCodeTransformMessage.CodeTransformNew::class,
             CodeTransformMessageTypes.CodeTransformOpenTransformHub.type to IncomingCodeTransformMessage.CodeTransformOpenTransformHub::class,
             CodeTransformMessageTypes.CodeTransformOpenMvnBuild.type to IncomingCodeTransformMessage.CodeTransformOpenMvnBuild::class,
@@ -96,7 +109,10 @@ class CodeTransformChatApp : AmazonQApp {
                         AuthenticationUpdateMessage(
                             featureDevEnabled = isFeatureDevAvailable(context.project),
                             codeTransformEnabled = isCodeTransformAvailable(context.project),
-                            authenticatingTabIDs = chatSessionStorage.getAuthenticatingSessions().map { it.tabId }
+                            codeScanEnabled = isCodeScanAvailable(context.project),
+                            codeTestEnabled = isCodeTestAvailable(context.project),
+                            docEnabled = isDocAvailable(context.project),
+                            authenticatingTabIDs = chatSessionStorage.getAuthenticatingSessions().map { it.tabId },
                         )
                     )
 
@@ -151,8 +167,15 @@ class CodeTransformChatApp : AmazonQApp {
         when (message) {
             is IncomingCodeTransformMessage.Transform -> inboundAppMessagesHandler.processTransformQuickAction(message)
             is IncomingCodeTransformMessage.CodeTransformStart -> inboundAppMessagesHandler.processCodeTransformStartAction(message)
+            is IncomingCodeTransformMessage.CodeTransformSelectSQLMetadata -> inboundAppMessagesHandler.processCodeTransformSelectSQLMetadataAction(message)
+            is IncomingCodeTransformMessage.CodeTransformSelectSQLModuleSchema ->
+                inboundAppMessagesHandler.processCodeTransformSelectSQLModuleSchemaAction(message)
+
             is IncomingCodeTransformMessage.CodeTransformCancel -> inboundAppMessagesHandler.processCodeTransformCancelAction(message)
             is IncomingCodeTransformMessage.CodeTransformStop -> inboundAppMessagesHandler.processCodeTransformStopAction(message.tabId)
+            is IncomingCodeTransformMessage.ChatPrompt -> inboundAppMessagesHandler.processChatPromptMessage(message)
+            is IncomingCodeTransformMessage.CodeTransformConfirmSkipTests -> inboundAppMessagesHandler.processCodeTransformConfirmSkipTests(message)
+            is IncomingCodeTransformMessage.CodeTransformConfirmOneOrMultipleDiffs -> inboundAppMessagesHandler.processCodeTransformOneOrMultipleDiffs(message)
             is IncomingCodeTransformMessage.CodeTransformNew -> inboundAppMessagesHandler.processCodeTransformNewAction(message)
             is IncomingCodeTransformMessage.CodeTransformOpenTransformHub -> inboundAppMessagesHandler.processCodeTransformOpenTransformHub(message)
             is IncomingCodeTransformMessage.CodeTransformOpenMvnBuild -> inboundAppMessagesHandler.processCodeTransformOpenMvnBuild(message)

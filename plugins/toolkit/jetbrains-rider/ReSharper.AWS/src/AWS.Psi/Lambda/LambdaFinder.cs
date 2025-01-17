@@ -55,11 +55,11 @@ namespace AWS.Psi.Lambda
         ///    a) Parameter of <see cref="System.IO.Stream"/> type can be used without Serializer. Any class derived from Stream is a match.
         ///    b) Check for Amazon Event type (set of pre-defined Amazon types used in Amazon Lambda functions)
         ///       and for default Amazon serializer.
-        ///    c) Check for any Custom Data type that could be serialized using <see cref="LambdaRunMarkersThemedIcons.Lambda.Core.ILambdaSerializer"/> serializer.
+        ///    c) Check for any Custom Data type that could be serialized using <see cref="Core.ILambdaSerializer"/> serializer.
         /// 4. Check for method return type:
         ///    a) If method is async - return type should be <see cref="System.Void"/> or <see cref="System.Threading.Tasks.Task"/> are allowed.
         ///    b) If method is sync - return type could be <see cref="System.IO.Stream"/>,
-        ///       or Amazon Event type or Custom Data type with defined <see cref="LambdaRunMarkersThemedIcons.Lambda.Core.ILambdaSerializer"/> serializer.
+        ///       or Amazon Event type or Custom Data type with defined <see cref="Core.ILambdaSerializer"/> serializer.
         /// </summary>
         /// <param name="method">Method to check if it matches Amazon Lambda definition.</param>
         /// <returns>The <see cref="bool"/> value if a method matches Amazon Lambda definition.</returns>

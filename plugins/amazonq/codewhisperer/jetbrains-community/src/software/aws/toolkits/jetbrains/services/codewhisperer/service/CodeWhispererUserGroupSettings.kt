@@ -121,7 +121,7 @@ class CodeWhispererUserGroupSettings : PersistentStateComponent<CodeWhispererUse
 
 data class CodeWhispererUserGroupStates(
     var version: String? = null,
-    var settings: Map<String, String> = emptyMap()
+    var settings: Map<String, String> = emptyMap(),
 )
 
 interface CodeWhispererGroup
@@ -135,5 +135,5 @@ enum class CodeWhispererUserGroup : CodeWhispererGroup {
 
 enum class CodeWhispererExpThresholdGroup : CodeWhispererGroup {
     Control,
-    Exp
+    Exp,
 }

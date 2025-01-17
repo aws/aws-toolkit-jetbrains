@@ -18,17 +18,25 @@ interface ChatPayload {
 export interface ConnectorProps {
     sendMessageToExtension: (message: ExtensionMessage) => void
     onMessageReceived?: (tabID: string, messageData: any, needToShowAPIDocsTab: boolean) => void
-    onAsyncEventProgress: (tabID: string, inProgress: boolean, message: string) => void
+    onAsyncEventProgress: (tabID: string, inProgress: boolean, message: string, cancelButtonWhenLoading?: boolean) => void
     onChatAnswerReceived?: (tabID: string, message: ChatItem) => void
+    onChatAnswerUpdated?: (tabID: string, message: ChatItem) => void
     sendFeedback?: (tabId: string, feedbackPayload: FeedbackPayload) => void | undefined
     onError: (tabID: string, message: string, title: string) => void
     onWarning: (tabID: string, message: string, title: string) => void
     onUpdatePlaceholder: (tabID: string, newPlaceholder: string) => void
     onChatInputEnabled: (tabID: string, enabled: boolean) => void
-    onUpdateAuthentication: (featureDevEnabled: boolean, codeTransformEnabled: boolean, authenticatingTabIDs: string[]) => void
+    onUpdateAuthentication: (
+        featureDevEnabled: boolean,
+        codeTransformEnabled: boolean,
+        docEnabled: boolean,
+        codeScanEnabled: boolean,
+        codeTestEnabled: boolean,
+        authenticatingTabIDs: string[]
+    ) => void
     onNewTab: (tabType: TabType) => void
     tabsStorage: TabsStorage
-    onFileComponentUpdate: (tabID: string, filePaths: DiffTreeFileInfo[], deletedFiles: DiffTreeFileInfo[], messageId: string) => void
+    onFileComponentUpdate: (tabID: string, filePaths: DiffTreeFileInfo[], deletedFiles: DiffTreeFileInfo[], messageId: string, disableFileActions: boolean) => void
 }
 
 export class Connector {
@@ -36,6 +44,7 @@ export class Connector {
     private readonly onError
     private readonly onWarning
     private readonly onChatAnswerReceived
+    private readonly onChatAnswerUpdated
     private readonly onAsyncEventProgress
     private readonly updatePlaceholder
     private readonly chatInputEnabled
@@ -47,6 +56,7 @@ export class Connector {
     constructor(props: ConnectorProps) {
         this.sendMessageToExtension = props.sendMessageToExtension
         this.onChatAnswerReceived = props.onChatAnswerReceived
+        this.onChatAnswerUpdated = props.onChatAnswerUpdated
         this.onWarning = props.onWarning
         this.onError = props.onError
         this.onAsyncEventProgress = props.onAsyncEventProgress
@@ -130,30 +140,15 @@ export class Connector {
 
     private processChatMessage = async (messageData: any): Promise<void> => {
         if (this.onChatAnswerReceived !== undefined) {
-            const answer: ChatItem = {
-                type: messageData.messageType,
-                body: messageData.message ?? undefined,
-                messageId: messageData.messageID ?? messageData.triggerID ?? '',
-                relatedContent: undefined,
-                canBeVoted: messageData.canBeVoted,
-                snapToTop: messageData.snapToTop,
-                followUp:
-                    messageData.followUps !== undefined && messageData.followUps.length > 0
-                        ? {
-                              text:
-                                  messageData.messageType === ChatItemType.SYSTEM_PROMPT
-                                      ? ''
-                                      : 'Please follow up with one of these',
-                              options: messageData.followUps,
-                          }
-                        : undefined,
-            }
+            const answer: ChatItem = this.createAnswer(messageData)
             this.onChatAnswerReceived(messageData.tabID, answer)
         }
     }
 
     private processCodeResultMessage = async (messageData: any): Promise<void> => {
         if (this.onChatAnswerReceived !== undefined) {
+            const messageId = messageData.messageId ?? messageData.messageID ?? messageData.triggerID ?? messageData.conversationID ?? messageData.codeGenerationId
+            this.sendMessageToExtension({ command: 'store-code-result-message-id', tabID: messageData.tabID, messageId, tabType: 'featuredev' })
             const actions = getActions([
                 ...messageData.filePaths,
                 ...messageData.deletedFiles,
@@ -165,7 +160,7 @@ export class Connector {
                 canBeVoted: true,
                 codeReference: messageData.references,
                 // TODO get the backend to store a message id in addition to conversationID
-                messageId: messageData.messageID ?? messageData.triggerID ?? messageData.conversationID,
+                messageId,
                 fileList: {
                     rootFolderTitle: 'Changes',
                     filePaths: (messageData.filePaths as DiffTreeFileInfo[]).map(path => path.zipFilePath),
@@ -200,9 +195,37 @@ export class Connector {
         return
     }
 
+    private createAnswer = (messageData: any): ChatItem => {
+        return {
+            type: messageData.messageType,
+            body: messageData.message ?? undefined,
+            messageId: messageData.messageId ?? messageData.messageID ?? messageData.triggerID ?? '',
+            relatedContent: undefined,
+            canBeVoted: messageData.canBeVoted ?? undefined,
+            snapToTop: messageData.snapToTop ?? undefined,
+            informationCard: messageData.informationCard ?? undefined,
+            followUp:
+                messageData.followUps !== undefined && Array.isArray(messageData.followUps)
+                    ? {
+                        text:
+                            messageData.messageType === ChatItemType.SYSTEM_PROMPT ||
+                            messageData.followUps.length === 0
+                                ? ''
+                                : 'Please follow up with one of these',
+                        options: messageData.followUps,
+                    }
+                    : undefined,
+        }
+    }
+
     handleMessageReceive = async (messageData: any): Promise<void> => {
         if (messageData.type === 'updateFileComponent') {
-            this.onFileComponentUpdate(messageData.tabID, messageData.filePaths, messageData.deletedFiles, messageData.messageId)
+            this.onFileComponentUpdate(messageData.tabID, messageData.filePaths, messageData.deletedFiles, messageData.messageId, messageData.disableFileActions)
+            return
+        }
+        if (messageData.type === 'updateChatAnswer') {
+            const answer = this.createAnswer(messageData)
+            this.onChatAnswerUpdated?.(messageData.tabID, answer)
             return
         }
         if (messageData.type === 'errorMessage') {
@@ -226,7 +249,7 @@ export class Connector {
         }
 
         if (messageData.type === 'asyncEventProgressMessage') {
-            this.onAsyncEventProgress(messageData.tabID, messageData.inProgress, messageData.message ?? undefined)
+            this.onAsyncEventProgress(messageData.tabID, messageData.inProgress, messageData.message ?? undefined, true)
             return
         }
 
@@ -241,7 +264,14 @@ export class Connector {
         }
 
         if (messageData.type === 'authenticationUpdateMessage') {
-            this.onUpdateAuthentication(messageData.featureDevEnabled, messageData.codeTransformEnabled, messageData.authenticatingTabIDs)
+            this.onUpdateAuthentication(
+                messageData.featureDevEnabled,
+                messageData.codeTransformEnabled,
+                messageData.docEnabled,
+                messageData.codeScanEnabled,
+                messageData.codeTestEnabled,
+                messageData.authenticatingTabIDs
+            )
             return
         }
 
@@ -260,6 +290,7 @@ export class Connector {
         this.sendMessageToExtension({
             tabID: tabID,
             command: 'stop-response',
+            tabType: 'featuredev',
         })
     }
 
@@ -280,7 +311,12 @@ export class Connector {
     }
 
     sendFeedback = (tabId: string, feedbackPayload: FeedbackPayload): void | undefined => {
-        // TODO implement telemetry
+        this.sendMessageToExtension({
+            command: 'chat-item-feedback',
+            ...feedbackPayload,
+            tabType: 'featuredev',
+            tabID: tabId,
+        })
     }
 
     onChatItemVoted = (tabId: string, messageId: string, vote: string): void | undefined => {

@@ -16,6 +16,7 @@ import com.intellij.openapi.vfs.isFile
 import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
@@ -24,15 +25,20 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.cannotFin
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileTooLarge
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.noFileOpenError
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.noSupportedFilesError
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.AmazonQCodeReviewGitUtils.getUnstagedFiles
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.AmazonQCodeReviewGitUtils.isGitRoot
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.AmazonQCodeReviewGitUtils.runGitDiffHead
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CodeAnalysisScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_TIMEOUT_IN_SECONDS
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.File
@@ -45,7 +51,8 @@ import kotlin.io.path.relativeTo
 class CodeScanSessionConfig(
     private val selectedFile: VirtualFile?,
     private val project: Project,
-    private val scope: CodeAnalysisScope
+    private val scope: CodeAnalysisScope,
+    private val initiatedByChat: Boolean,
 ) {
     var projectRoot = project.basePath?.let { Path.of(it) }?.toFile()?.toVirtualFile() ?: run {
         project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
@@ -55,6 +62,8 @@ class CodeScanSessionConfig(
     private val featureDevSessionContext = FeatureDevSessionContext(project)
 
     val fileIndex = ProjectRootManager.getInstance(project).fileIndex
+
+    fun isInitiatedByChat(): Boolean = initiatedByChat
 
     /**
      * Timeout for the overall job - "Run Security Scan".
@@ -98,8 +107,8 @@ class CodeScanSessionConfig(
                 null -> getProjectPayloadMetadata()
                 else -> when (scope) {
                     CodeAnalysisScope.PROJECT -> getProjectPayloadMetadata()
-                    CodeAnalysisScope.FILE -> if (selectedFile.path.startsWith(projectRoot.path)) {
-                        getFilePayloadMetadata(selectedFile)
+                    CodeAnalysisScope.FILE -> if (selectedFile.isWithin(projectRoot)) {
+                        getFilePayloadMetadata(selectedFile, true)
                     } else {
                         projectRoot = selectedFile.parent
                         getFilePayloadMetadata(selectedFile)
@@ -116,7 +125,7 @@ class CodeScanSessionConfig(
         }
 
         // Copy all the included source files to the source zip
-        val srcZip = zipFiles(payloadMetadata.sourceFiles.map { Path.of(it) })
+        val srcZip = zipFiles(payloadMetadata.sourceFiles.map { Path.of(it) }, payloadMetadata.codeDiff)
         val payloadContext = PayloadContext(
             payloadMetadata.language,
             payloadMetadata.linesScanned,
@@ -130,16 +139,43 @@ class CodeScanSessionConfig(
         return Payload(payloadContext, srcZip)
     }
 
-    private fun getFilePayloadMetadata(file: VirtualFile): PayloadMetadata {
+    private fun getFilePayloadMetadata(file: VirtualFile, getCodeDiff: Boolean? = false): PayloadMetadata {
         try {
+            val gitDiffContent = if (initiatedByChat && getCodeDiff == true) {
+                getFileGitDiffContent(file)
+            } else {
+                null
+            }
             return PayloadMetadata(
                 setOf(file.path),
                 file.length,
                 countLinesInVirtualFile(file).toLong(),
-                file.programmingLanguage().toTelemetryType()
+                file.programmingLanguage().toTelemetryType(),
+                gitDiffContent
             )
         } catch (e: Exception) {
             cannotFindFile("File payload creation error: ${e.message}", file.path)
+        }
+    }
+
+    private fun getFileGitDiffContent(file: VirtualFile): String {
+        if (!file.exists()) {
+            LOG.debug { "File does not exist: ${file.path}" }
+            return ""
+        }
+        try {
+            val projectRootNio = projectRoot.toNioPath()
+            val fileNio = file.toNioPath()
+
+            return buildString {
+                append("+++ b/")
+                append(project.name)
+                append('/')
+                append(fileNio.relativeTo(projectRootNio).toString().replace(File.separator, "/"))
+            }
+        } catch (e: Exception) {
+            LOG.debug(e) { "Failed to create git diff" }
+            return ""
         }
     }
 
@@ -157,14 +193,30 @@ class CodeScanSessionConfig(
         }
     }
 
-    private fun zipFiles(files: List<Path>): File = createTemporaryZipFile {
+    private fun zipFiles(files: List<Path>, codeDiff: String? = null): File = createTemporaryZipFile {
         files.forEach { file ->
             try {
-                val relativePath = file.relativeTo(projectRoot.toNioPath())
+                val relativePath = "${project.name}/${file.relativeTo(projectRoot.toNioPath())}"
+                if (relativePath.contains("../") || relativePath.contains("..\\")) {
+                    CodeWhispererTelemetryService.getInstance().sendInvalidZipEvent(file, projectRoot.toNioPath(), relativePath)
+                }
                 LOG.debug { "Selected file for truncation: $file" }
                 it.putNextEntry(relativePath.toString(), file)
             } catch (e: Exception) {
                 cannotFindFile("Zipping error: ${e.message}", file.pathString)
+            }
+        }
+
+        codeDiff?.takeIf { diff ->
+            initiatedByChat && diff.isNotEmpty()
+        }?.let { diff ->
+            try {
+                LOG.debug { "Adding Code.Diff file to zip" }
+                diff.byteInputStream(Charsets.UTF_8).buffered().use { inputStream ->
+                    it.putNextEntry("codeDiff/code.diff", inputStream)
+                }
+            } catch (e: Exception) {
+                LOG.error(e) { "Failed to add Code.Diff" }
             }
         }
     }.toFile()
@@ -176,6 +228,7 @@ class CodeScanSessionConfig(
         var currentTotalFileSize = 0L
         var currentTotalLines = 0L
         val languageCounts = mutableMapOf<CodeWhispererProgrammingLanguage, Int>()
+        var gitDiffContent = ""
 
         moduleLoop@ for (module in project.modules) {
             val changeListManager = ChangeListManager.getInstance(module.project)
@@ -186,7 +239,7 @@ class CodeScanSessionConfig(
 
                     if (!current.isDirectory) {
                         if (current.isFile && !changeListManager.isIgnoredFile(current) &&
-                            runBlocking { !featureDevSessionContext.ignoreFile(current, this) } &&
+                            runBlocking { !featureDevSessionContext.ignoreFile(current) } &&
                             runReadAction { !fileIndex.isInLibrarySource(current) }
                         ) {
                             if (willExceedPayloadLimit(currentTotalFileSize, current.length)) {
@@ -207,9 +260,29 @@ class CodeScanSessionConfig(
                             }
                         }
                     } else {
+                        try {
+                            if (isGitRoot(current)) {
+                                LOG.debug { "$current is git directory" }
+                                gitDiffContent = buildString {
+                                    append(runGitDiffHead(project.name, current))
+                                    getUnstagedFiles(current).takeIf { it.isNotEmpty() }?.let { unstagedFiles ->
+                                        unstagedFiles
+                                            .asSequence()
+                                            .map { relativePath -> runGitDiffHead(project.name, current, relativePath, true) }
+                                            .filter { it.isNotEmpty() }
+                                            .forEach { diff ->
+                                                if (isNotEmpty()) append('\n')
+                                                append(diff)
+                                            }
+                                    }
+                                }
+                            }
+                        } catch (e: Exception) {
+                            LOG.debug { "Error parsing the git diff for repository $current" }
+                        }
                         // Directory case: only traverse if not ignored
                         if (!changeListManager.isIgnoredFile(current) &&
-                            runBlocking { !featureDevSessionContext.ignoreFile(current, this) } &&
+                            runBlocking { !featureDevSessionContext.ignoreFile(current) } &&
                             !traversedDirectories.contains(current) && current.isValid &&
                             runReadAction { !fileIndex.isInLibrarySource(current) }
                         ) {
@@ -231,27 +304,25 @@ class CodeScanSessionConfig(
             noSupportedFilesError()
         }
         programmingLanguage = maxCountLanguage
-        return PayloadMetadata(files, currentTotalFileSize, currentTotalLines, maxCountLanguage.toTelemetryType())
-    }
-
-    fun getPath(root: String, relativePath: String = ""): Path? = try {
-        Path.of(root, relativePath).normalize()
-    } catch (e: Exception) {
-        LOG.debug { "Cannot find file at path $relativePath relative to the root $root" }
-        null
+        return PayloadMetadata(files, currentTotalFileSize, currentTotalLines, maxCountLanguage.toTelemetryType(), gitDiffContent)
     }
 
     fun File.toVirtualFile() = LocalFileSystem.getInstance().findFileByIoFile(this)
 
     companion object {
         private val LOG = getLogger<CodeScanSessionConfig>()
-        fun create(file: VirtualFile?, project: Project, scope: CodeAnalysisScope): CodeScanSessionConfig = CodeScanSessionConfig(file, project, scope)
+        fun create(file: VirtualFile?, project: Project, scope: CodeAnalysisScope, initiatedByChat: Boolean): CodeScanSessionConfig = CodeScanSessionConfig(
+            file,
+            project,
+            scope,
+            initiatedByChat
+        )
     }
 }
 
 data class Payload(
     val context: PayloadContext,
-    val srcZip: File
+    val srcZip: File,
 )
 
 data class PayloadContext(
@@ -262,12 +333,13 @@ data class PayloadContext(
     val scannedFiles: List<VirtualFile>,
     val srcPayloadSize: Long,
     val srcZipFileSize: Long,
-    val buildPayloadSize: Long? = null
+    val buildPayloadSize: Long? = null,
 )
 
 data class PayloadMetadata(
     val sourceFiles: Set<String>,
     val payloadSize: Long,
     val linesScanned: Long,
-    val language: CodewhispererLanguage
+    val language: CodewhispererLanguage,
+    val codeDiff: String? = null,
 )

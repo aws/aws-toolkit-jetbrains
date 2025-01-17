@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.webview
 
+import com.intellij.ide.BrowserUtil
+import com.intellij.ide.util.RunOnceUtil
 import com.intellij.ui.jcef.JBCefJSQuery.Response
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.awaitClose
@@ -15,14 +17,14 @@ import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
-import software.aws.toolkits.core.utils.error
-import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
 import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.AmazonQTheme
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.ThemeBrowserAdapter
+import software.aws.toolkits.jetbrains.settings.MeetQSettings
+import software.aws.toolkits.telemetry.Telemetry
 import java.util.function.Function
 
 class BrowserConnector(
@@ -38,20 +40,47 @@ class BrowserConnector(
         // Send browser messages to the outbound publisher
         addMessageHook(browser)
             .onEach { json ->
-                try {
-                    val node = serializer.toNode(json)
-                    if (node.command == "ui-is-ready") {
+                val node = serializer.toNode(json)
+                when (node.command) {
+                    "ui-is-ready" -> {
                         uiReady.complete(true)
-                    }
-                    val tabType = node.tabType ?: return@onEach
-                    connections.filter { connection -> connection.app.tabTypes.contains(tabType) }.forEach { connection ->
-                        launch {
-                            val message = serializer.deserialize(node, connection.messageTypeRegistry)
-                            connection.messagesFromUiToApp.publish(message)
+                        RunOnceUtil.runOnceForApp("AmazonQ-UI-Ready") {
+                            MeetQSettings.getInstance().reinvent2024OnboardingCount += 1
                         }
                     }
-                } catch (e: Exception) {
-                    getLogger<BrowserConnector>().error(e) { "message hook err" }
+
+                    "disclaimer-acknowledged" -> {
+                        MeetQSettings.getInstance().disclaimerAcknowledged = true
+                    }
+
+                    // some weird issue preventing deserialization from working
+                    "open-user-guide" -> {
+                        BrowserUtil.browse(node.get("userGuideLink").asText())
+                    }
+                    "send-telemetry" -> {
+                        val source = node.get("source")
+                        val module = node.get("module")
+                        val trigger = node.get("trigger")
+
+                        if (source != null) {
+                            Telemetry.ui.click.use {
+                                it.elementId(source.asText())
+                            }
+                        } else if (module != null && trigger != null) {
+                            Telemetry.toolkit.openModule.use {
+                                it.module(module.asText())
+                                it.source(trigger.asText())
+                            }
+                        }
+                    }
+                }
+
+                val tabType = node.tabType ?: return@onEach
+                connections.filter { connection -> connection.app.tabTypes.contains(tabType) }.forEach { connection ->
+                    launch {
+                        val message = serializer.deserialize(node, connection.messageTypeRegistry)
+                        connection.messagesFromUiToApp.publish(message)
+                    }
                 }
             }
             .launchIn(this)
@@ -69,7 +98,7 @@ class BrowserConnector(
     suspend fun connectTheme(
         chatBrowser: CefBrowser,
         loginBrowser: CefBrowser,
-        themeSource: Flow<AmazonQTheme>
+        themeSource: Flow<AmazonQTheme>,
     ) = coroutineScope {
         themeSource
             .distinctUntilChanged()
@@ -82,9 +111,8 @@ class BrowserConnector(
 
     private fun addMessageHook(browser: Browser) = callbackFlow {
         val handler = Function<String, Response> {
-            println(it)
             trySend(it)
-            null
+            Response(null)
         }
 
         browser.receiveMessageQuery.addHandler(handler)

@@ -19,7 +19,7 @@ import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.util.Lan
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.util.MatchPolicyExtractor
 import software.aws.toolkits.jetbrains.utils.computeOnEdt
 
-class FileContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter, private val project: Project) {
+class FileContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter?, private val project: Project) {
     private val languageExtractor: LanguageExtractor = LanguageExtractor()
     suspend fun extract(): FileContext? {
         val editor = if (AppMode.isRemoteDevHost()) {
@@ -31,7 +31,7 @@ class FileContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter, pri
         }
 
         val fileLanguage = computeOnEdt {
-            languageExtractor.extractLanguageNameFromCurrentFile(editor, project)
+            languageExtractor.extractLanguageNameFromCurrentFile(editor)
         }
         val fileText = computeOnEdt {
             editor.document.text

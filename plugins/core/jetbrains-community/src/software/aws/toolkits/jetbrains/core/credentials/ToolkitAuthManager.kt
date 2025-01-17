@@ -6,9 +6,11 @@ package software.aws.toolkits.jetbrains.core.credentials
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.ExtensionPointName
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import migration.software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
+import software.amazon.awssdk.services.toolkittelemetry.model.MetricUnit
 import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.TokenConnectionSettings
@@ -26,6 +28,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.AwsCoreBundle
+import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.Result
@@ -56,14 +59,14 @@ sealed interface AuthProfile
 data class ManagedSsoProfile(
     var ssoRegion: String = "",
     var startUrl: String = "",
-    var scopes: List<String> = emptyList()
+    var scopes: List<String> = emptyList(),
 ) : AuthProfile
 
 data class UserConfigSsoSessionProfile(
     var configSessionName: String = "",
     var ssoRegion: String = "",
     var startUrl: String = "",
-    var scopes: List<String> = emptyList()
+    var scopes: List<String> = emptyList(),
 ) : AuthProfile {
     val id
         get() = "$SSO_SESSION_SECTION_NAME:$configSessionName"
@@ -73,7 +76,7 @@ data class DetectedDiskSsoSessionProfile(
     var profileName: String = "",
     var startUrl: String = "",
     var ssoRegion: String = "",
-    var scopes: List<String> = emptyList()
+    var scopes: List<String> = emptyList(),
 ) : AuthProfile
 
 /**
@@ -88,6 +91,10 @@ interface ToolkitStartupAuthFactory {
 }
 
 interface ToolkitConnectionManager : Disposable {
+    @Deprecated(
+        "Fragile API. Probably leads to unexpected behavior. Use only for toolkit explorer dropdown state.",
+        ReplaceWith("activeConnectionForFeature(feature)")
+    )
     fun activeConnection(): ToolkitConnection?
 
     fun activeConnectionForFeature(feature: FeatureWithPinnedConnection): ToolkitConnection?
@@ -99,7 +106,7 @@ interface ToolkitConnectionManager : Disposable {
     override fun dispose() {}
 
     companion object {
-        fun getInstance(project: Project?) = project?.let { it.service<ToolkitConnectionManager>() } ?: service()
+        fun getInstance(project: Project) = project.service<ToolkitConnectionManager>()
     }
 }
 
@@ -118,9 +125,8 @@ fun loginSso(
     onPendingToken: (InteractiveBearerTokenProvider) -> Unit = {},
     onError: (Exception) -> Unit = {},
     onSuccess: () -> Unit = {},
-    metadata: ConnectionMetadata? = null
+    metadata: ConnectionMetadata? = null,
 ): AwsBearerTokenConnection? {
-    val source = metadata
     fun createAndAuthNewConnection(profile: AuthProfile): AwsBearerTokenConnection? {
         val authManager = ToolkitAuthManager.getInstance()
         val connection = try {
@@ -129,6 +135,9 @@ fun loginSso(
                     project = project,
                     connection = transientConnection,
                     onPendingToken = onPendingToken,
+                    isReAuth = false,
+                    source = metadata?.sourceId,
+                    reauthSource = ReauthSource.FRESH_AUTH
                 )
             }
         } catch (e: Exception) {
@@ -140,7 +149,7 @@ fun loginSso(
             onSuccess()
         }
 
-        ToolkitConnectionManager.getInstance(project).switchConnection(connection)
+        project?.let { ToolkitConnectionManager.getInstance(it).switchConnection(connection) }
         return connection
     }
 
@@ -148,7 +157,7 @@ fun loginSso(
 
     val manager = ToolkitAuthManager.getInstance()
     val allScopes = requestedScopes.toMutableSet()
-    return manager.getConnection(connectionId)?.let { connection ->
+    val connection = manager.getConnection(connectionId)?.let { connection ->
         val logger = getLogger<ToolkitAuthManager>()
 
         if (connection !is AwsBearerTokenConnection) {
@@ -166,32 +175,33 @@ fun loginSso(
                 """.trimIndent()
             }
             // can't reuse since requested scopes are not in current connection. forcing reauth
-            return createAndAuthNewConnection(
-                ManagedSsoProfile(
-                    region,
-                    startUrl,
-                    allScopes.toList()
-                )
-            )
+            return@let null
         }
 
         // For the case when the existing connection is in invalid state, we need to re-auth
         reauthConnectionIfNeeded(
             project = project,
             connection = connection,
-            isReAuth = true
+            onPendingToken = onPendingToken,
+            isReAuth = true,
+            source = metadata?.sourceId,
+            reauthSource = ReauthSource.COMMON_LOGIN
         )
-        return connection
-    } ?: run {
-        // No existing connection, start from scratch
-        createAndAuthNewConnection(
-            ManagedSsoProfile(
-                region,
-                startUrl,
-                allScopes.toList()
-            )
-        )
+        return@let connection
     }
+
+    if (connection != null) {
+        return connection
+    }
+
+    // No existing connection, start from scratch
+    return createAndAuthNewConnection(
+        ManagedSsoProfile(
+            region,
+            startUrl,
+            allScopes.toList()
+        )
+    )
 }
 
 @Suppress("UnusedParameter")
@@ -232,7 +242,9 @@ fun reauthConnectionIfNeeded(
     project: Project?,
     connection: ToolkitConnection,
     onPendingToken: (InteractiveBearerTokenProvider) -> Unit = {},
-    isReAuth: Boolean = false
+    isReAuth: Boolean = false,
+    source: String? = null,
+    reauthSource: ReauthSource? = ReauthSource.TOOLKIT,
 ): BearerTokenProvider {
     val tokenProvider = (connection.getConnectionSettings() as TokenConnectionSettings).tokenProvider.delegate as BearerTokenProvider
     if (tokenProvider is InteractiveBearerTokenProvider) {
@@ -240,7 +252,9 @@ fun reauthConnectionIfNeeded(
     }
 
     val startUrl = (connection as AwsBearerTokenConnection).startUrl
-    maybeReauthProviderIfNeeded(project, tokenProvider) {
+    var didReauth = false
+    maybeReauthProviderIfNeeded(project, reauthSource, tokenProvider) {
+        didReauth = true
         runUnderProgressIfNeeded(project, AwsCoreBundle.message("credentials.pending.title"), true) {
             try {
                 tokenProvider.reauthenticate()
@@ -249,30 +263,42 @@ fun reauthConnectionIfNeeded(
                         credentialStartUrl = startUrl,
                         credentialSourceId = getCredentialIdForTelemetry(connection),
                         isReAuth = true,
-                        result = Result.Succeeded
+                        result = Result.Succeeded,
+                        source = source,
                     )
                     recordAddConnection(
                         credentialSourceId = getCredentialIdForTelemetry(connection),
                         isReAuth = true,
-                        result = Result.Succeeded
+                        result = Result.Succeeded,
+                        source = source,
                     )
                 }
             } catch (e: Exception) {
                 if (isReAuth) {
+                    val result = if (e is ProcessCanceledException) Result.Cancelled else Result.Failed
                     recordLoginWithBrowser(
                         credentialStartUrl = startUrl,
                         credentialSourceId = getCredentialIdForTelemetry(connection),
                         isReAuth = true,
-                        result = Result.Failed
+                        result = result,
+                        source = source,
                     )
                     recordAddConnection(
                         credentialSourceId = getCredentialIdForTelemetry(connection),
                         isReAuth = true,
-                        result = Result.Failed
+                        result = result,
+                        source = source,
                     )
                 }
+
+                throw e
             }
         }
+    }
+
+    if (!didReauth) {
+        // webview is stuck if reauth was not needed (i.e. token on disk is valid)
+        project?.let { ToolkitConnectionManager.getInstance(it).switchConnection(connection) }
     }
     return tokenProvider
 }
@@ -280,8 +306,9 @@ fun reauthConnectionIfNeeded(
 // Return true if need to re-auth, false otherwise
 fun maybeReauthProviderIfNeeded(
     project: Project?,
+    reauthSource: ReauthSource? = ReauthSource.TOOLKIT,
     tokenProvider: BearerTokenProvider,
-    onReauthRequired: (SsoOidcException?) -> Any
+    onReauthRequired: (SsoOidcException?) -> Any,
 ): Boolean {
     val state = tokenProvider.state()
     when (state) {
@@ -293,12 +320,14 @@ fun maybeReauthProviderIfNeeded(
 
         BearerTokenAuthState.NEEDS_REFRESH -> {
             try {
+                getLogger<ToolkitAuthManager>().warn { "Starting token refresh" }
                 return runUnderProgressIfNeeded(project, AwsCoreBundle.message("credentials.refreshing"), true) {
                     tokenProvider.resolveToken()
                     BearerTokenProviderListener.notifyCredUpdate(tokenProvider.id)
                     return@runUnderProgressIfNeeded false
                 }
             } catch (e: SsoOidcException) {
+                AuthTelemetry.sourceOfRefresh(authRefreshSource = reauthSource.toString())
                 getLogger<ToolkitAuthManager>().warn(e) { "Redriving bearer token login flow since token could not be refreshed" }
                 onReauthRequired(e)
                 return true
@@ -309,6 +338,17 @@ fun maybeReauthProviderIfNeeded(
             return false
         }
     }
+}
+
+enum class ReauthSource {
+    CODEWHISPERER,
+    TOOLKIT,
+    Q_CHAT,
+    LOGIN_BROWSER,
+    CODEWHISPERER_STATUSBAR,
+    CODECATALYST,
+    COMMON_LOGIN,
+    FRESH_AUTH,
 }
 
 fun deleteSsoConnection(connection: ProfileSsoManagedBearerSsoConnection) =
@@ -330,12 +370,12 @@ private fun recordLoginWithBrowser(
     reason: String? = null,
     isReAuth: Boolean,
     result: Result,
-    source: String? = null
+    source: String? = null,
 ) {
     TelemetryService.getInstance().record(null as Project?) {
         datum("aws_loginWithBrowser") {
             createTime(Instant.now())
-            unit(software.amazon.awssdk.services.toolkittelemetry.model.Unit.NONE)
+            unit(MetricUnit.NONE)
             value(1.0)
             passive(false)
             credentialSourceId?.let { metadata("credentialSourceId", it.toString()) }
@@ -354,12 +394,12 @@ private fun recordAddConnection(
     reason: String? = null,
     isReAuth: Boolean,
     result: Result,
-    source: String? = null
+    source: String? = null,
 ) {
     TelemetryService.getInstance().record(null as Project?) {
         datum("auth_addConnection") {
             createTime(Instant.now())
-            unit(software.amazon.awssdk.services.toolkittelemetry.model.Unit.NONE)
+            unit(MetricUnit.NONE)
             value(1.0)
             passive(false)
             credentialSourceId?.let { metadata("credentialSourceId", it.toString()) }
@@ -372,5 +412,5 @@ private fun recordAddConnection(
 }
 
 data class ConnectionMetadata(
-    val sourceId: String? = null
+    val sourceId: String? = null,
 )

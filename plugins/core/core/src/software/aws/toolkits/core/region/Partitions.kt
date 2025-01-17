@@ -24,7 +24,7 @@ data class Partition(
     val partition: String,
     val partitionName: String,
     val regions: Map<String, PartitionRegion>,
-    val services: Map<String, Service>
+    val services: Map<String, Service>,
 )
 
 data class PartitionRegion(val description: String)
@@ -39,7 +39,6 @@ object PartitionParser {
     private val LOG = LoggerFactory.getLogger(PartitionParser::class.java)
 
     private val mapper = jacksonObjectMapper()
-        .disable(MapperFeature.CAN_OVERRIDE_ACCESS_MODIFIERS)
         .disable(MapperFeature.ALLOW_FINAL_FIELDS_AS_MUTATORS)
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
         .enable(JsonParser.Feature.ALLOW_COMMENTS)

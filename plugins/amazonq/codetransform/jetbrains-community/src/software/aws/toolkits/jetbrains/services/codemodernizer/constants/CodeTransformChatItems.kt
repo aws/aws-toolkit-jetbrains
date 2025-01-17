@@ -26,6 +26,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.Dependency
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.SqlMetadataValidationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.UploadFailureReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
@@ -34,6 +35,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.FollowUp
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 
+// shared Cancel button
 private val cancelUserSelectionButton = Button(
     keepCardAfterClick = false,
     waitMandatoryFormItems = false,
@@ -41,11 +43,39 @@ private val cancelUserSelectionButton = Button(
     id = CodeTransformButtonId.CancelTransformation.id,
 )
 
-private val confirmUserSelectionButton = Button(
+private val confirmUserSelectionLanguageUpgradeButton = Button(
     keepCardAfterClick = false,
     waitMandatoryFormItems = true,
     text = message("codemodernizer.chat.message.button.confirm"),
     id = CodeTransformButtonId.StartTransformation.id,
+)
+
+private val confirmUserSelectionSQLConversionModuleSchemaButton = Button(
+    keepCardAfterClick = false,
+    waitMandatoryFormItems = true,
+    text = message("codemodernizer.chat.message.button.confirm"),
+    id = CodeTransformButtonId.SelectSQLModuleSchema.id,
+)
+
+private val confirmUserSelectionSQLConversionMetadataButton = Button(
+    keepCardAfterClick = true,
+    waitMandatoryFormItems = true,
+    text = message("codemodernizer.chat.message.button.select_sql_metadata"),
+    id = CodeTransformButtonId.SelectSQLMetadata.id,
+)
+
+private val confirmSkipTestsSelectionButton = Button(
+    keepCardAfterClick = false,
+    waitMandatoryFormItems = true,
+    text = message("codemodernizer.chat.message.button.confirm"),
+    id = CodeTransformButtonId.ConfirmSkipTests.id,
+)
+
+private val confirmOneOrMultipleDiffsSelectionButton = Button(
+    keepCardAfterClick = false,
+    waitMandatoryFormItems = true,
+    text = message("codemodernizer.chat.message.button.confirm"),
+    id = CodeTransformButtonId.ConfirmOneOrMultipleDiffs.id,
 )
 
 private val openMvnBuildButton = Button(
@@ -72,7 +102,13 @@ private val viewDiffButton = Button(
     keepCardAfterClick = true,
 )
 
-private val viewSummaryButton = Button(
+fun createViewDiffButton(buttonLabel: String): Button = Button(
+    id = CodeTransformButtonId.ViewDiff.id,
+    text = buttonLabel,
+    keepCardAfterClick = true
+)
+
+val viewSummaryButton = Button(
     id = CodeTransformButtonId.ViewSummary.id,
     text = message("codemodernizer.chat.message.button.view_summary"),
     keepCardAfterClick = true,
@@ -122,6 +158,18 @@ private fun getSelectModuleFormItem(project: Project, moduleBuildFiles: List<Vir
     }
 )
 
+private fun getSelectSQLModuleFormItem(project: Project, javaModules: List<VirtualFile>) = FormItem(
+    id = CodeTransformFormItemId.SelectModule.id,
+    title = message("codemodernizer.chat.form.user_selection.item.choose_module"),
+    mandatory = true,
+    options = javaModules.map {
+        FormItemOption(
+            label = project.getModuleOrProjectNameForFile(it),
+            value = it.path,
+        )
+    }
+)
+
 private val selectTargetVersionFormItem = FormItem(
     id = CodeTransformFormItemId.SelectTargetVersion.id,
     title = message("codemodernizer.chat.form.user_selection.item.choose_target_version"),
@@ -134,7 +182,51 @@ private val selectTargetVersionFormItem = FormItem(
     )
 )
 
-private fun getUserSelectionFormattedMarkdown(moduleName: String): String = """
+private fun getSelectSQLSchemaFormItem(schemaOptions: Set<String>) = FormItem(
+    id = CodeTransformFormItemId.SelectSQLSchema.id,
+    title = "Choose the schema",
+    mandatory = true,
+    options = schemaOptions.map {
+        FormItemOption(
+            label = it,
+            value = it,
+        )
+    }
+)
+
+private val selectSkipTestsFlagFormItem = FormItem(
+    id = CodeTransformFormItemId.SelectSkipTestsFlag.id,
+    title = message("codemodernizer.chat.form.user_selection.item.choose_skip_tests_option"),
+    mandatory = true,
+    options = listOf(
+        FormItemOption(
+            label = message("codemodernizer.chat.message.skip_tests_form.run_tests"),
+            value = message("codemodernizer.chat.message.skip_tests_form.run_tests"),
+        ),
+        FormItemOption(
+            label = message("codemodernizer.chat.message.skip_tests_form.skip"),
+            value = message("codemodernizer.chat.message.skip_tests_form.skip"),
+        )
+    )
+)
+
+private val selectOneOrMultipleDiffsFlagFormItem = FormItem(
+    id = CodeTransformFormItemId.SelectOneOrMultipleDiffsFlag.id,
+    title = message("codemodernizer.chat.form.user_selection.item.choose_one_or_multiple_diffs_option"),
+    mandatory = true,
+    options = listOf(
+        FormItemOption(
+            label = message("codemodernizer.chat.message.one_or_multiple_diffs_form.one_diff"),
+            value = message("codemodernizer.chat.message.one_or_multiple_diffs_form.one_diff"),
+        ),
+        FormItemOption(
+            label = message("codemodernizer.chat.message.one_or_multiple_diffs_form.multiple_diffs"),
+            value = message("codemodernizer.chat.message.one_or_multiple_diffs_form.multiple_diffs"),
+        )
+    )
+)
+
+private fun getUserLanguageUpgradeSelectionFormattedMarkdown(moduleName: String): String = """
         ### ${message("codemodernizer.chat.prompt.title.details")}
         -------------
 
@@ -142,6 +234,16 @@ private fun getUserSelectionFormattedMarkdown(moduleName: String): String = """
         | :------------------- | -------: |
         | **${message("codemodernizer.chat.prompt.label.module")}**             |   $moduleName   |
         | **${message("codemodernizer.chat.prompt.label.target_version")}** |  JDK17   |
+""".trimIndent()
+
+private fun getUserSQLConversionSelectionFormattedMarkdown(moduleName: String, schema: String) = """
+        ### ${message("codemodernizer.chat.prompt.title.details")}
+        -------------
+
+        | | |
+        | :------------------- | -------: |
+        | **${message("codemodernizer.chat.prompt.label.module")}**             |   $moduleName   |
+        | **Schema** |  $schema   |
 """.trimIndent()
 
 private fun getUserHilSelectionMarkdown(dependencyName: String, currentVersion: String, selectedVersion: String): String = """
@@ -155,19 +257,35 @@ private fun getUserHilSelectionMarkdown(dependencyName: String, currentVersion: 
         | **${message("codemodernizer.chat.prompt.label.dependency_selected_version")}**             |   $selectedVersion |
 """.trimIndent()
 
+fun buildChooseTransformationObjectiveChatContent() = CodeTransformChatMessageContent(
+    message = message("codemodernizer.chat.message.choose_objective"),
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+)
+
+fun buildObjectiveChosenChatContent(objective: String) = CodeTransformChatMessageContent(
+    message = objective,
+    type = CodeTransformChatMessageType.Prompt,
+)
+
 fun buildCheckingValidProjectChatContent() = CodeTransformChatMessageContent(
-    message = message("codemodernizer.chat.message.validation.check_eligible_projects"),
+    message = message("codemodernizer.chat.message.validation.check_eligible_modules"),
     type = CodeTransformChatMessageType.PendingAnswer,
 )
 
-fun buildProjectValidChatContent(validationResult: ValidationResult) = CodeTransformChatMessageContent(
-    message = message("codemodernizer.chat.message.validation.check_passed", validationResult.validatedProjectJdkName),
+fun buildLanguageUpgradeProjectValidChatContent() = CodeTransformChatMessageContent(
+    message = message("codemodernizer.chat.message.validation.check_passed"),
     type = CodeTransformChatMessageType.FinalizedAnswer,
 )
+
 fun buildProjectInvalidChatContent(validationResult: ValidationResult): CodeTransformChatMessageContent {
     val errorMessage = when (validationResult.invalidTelemetryReason.category) {
-        CodeTransformPreValidationError.NoPom -> message("codemodernizer.chat.message.validation.error.no_pom")
+        CodeTransformPreValidationError.NoPom -> message("codemodernizer.chat.message.validation.error.no_pom", CODE_TRANSFORM_PREREQUISITES)
         CodeTransformPreValidationError.UnsupportedJavaVersion -> message("codemodernizer.chat.message.validation.error.unsupported_java_version")
+        CodeTransformPreValidationError.RemoteRunProject -> message("codemodernizer.notification.warn.invalid_project.description.reason.remote_backend")
+        CodeTransformPreValidationError.NonSsoLogin -> message("codemodernizer.notification.warn.invalid_project.description.reason.not_logged_in")
+        CodeTransformPreValidationError.EmptyProject -> message("codemodernizer.notification.warn.invalid_project.description.reason.missing_content_roots")
+        CodeTransformPreValidationError.UnsupportedBuildSystem -> message("codemodernizer.chat.message.validation.error.no_pom")
+        CodeTransformPreValidationError.NoJavaProject -> message("codemodernizer.chat.message.validation.error.no_java_project")
         else -> message("codemodernizer.chat.message.validation.error.other")
     }
 
@@ -184,20 +302,55 @@ fun buildStartNewTransformFollowup(): CodeTransformChatMessageContent = CodeTran
     )
 )
 
-fun buildAuthRestoredFollowup(): CodeTransformChatMessageContent = CodeTransformChatMessageContent(
-    type = CodeTransformChatMessageType.FinalizedAnswer,
-    followUps = listOf(
-        startNewTransformFollowUp
+fun buildUserInputSkipTestsFlagChatIntroContent(): CodeTransformChatMessageContent =
+    CodeTransformChatMessageContent(
+        message = message("codemodernizer.chat.message.skip_tests"),
+        type = CodeTransformChatMessageType.FinalizedAnswer,
     )
+
+fun buildUserInputSkipTestsFlagChatContent(): CodeTransformChatMessageContent =
+    CodeTransformChatMessageContent(
+        message = message("codemodernizer.chat.form.user_selection.title"),
+        buttons = listOf(
+            confirmSkipTestsSelectionButton,
+            cancelUserSelectionButton,
+        ),
+        formItems = listOf(selectSkipTestsFlagFormItem),
+        type = CodeTransformChatMessageType.FinalizedAnswer,
+    )
+fun buildUserInputOneOrMultipleDiffsChatIntroContent(): CodeTransformChatMessageContent =
+    CodeTransformChatMessageContent(
+        message = message("codemodernizer.chat.message.one_or_multiple_diffs"),
+        type = CodeTransformChatMessageType.FinalizedAnswer,
+    )
+fun buildUserInputOneOrMultipleDiffsFlagChatContent(): CodeTransformChatMessageContent =
+    CodeTransformChatMessageContent(
+        message = message("codemodernizer.chat.form.user_selection.title"),
+        buttons = listOf(
+            confirmOneOrMultipleDiffsSelectionButton,
+            cancelUserSelectionButton,
+        ),
+        formItems = listOf(selectOneOrMultipleDiffsFlagFormItem),
+        type = CodeTransformChatMessageType.FinalizedAnswer,
+    )
+
+fun buildUserSkipTestsFlagSelectionChatContent(skipTestsSelection: String) = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = message("codemodernizer.chat.message.skip_tests_form.response", skipTestsSelection.lowercase())
 )
 
-fun buildUserInputChatContent(project: Project, validationResult: ValidationResult): CodeTransformChatMessageContent {
+fun buildUserOneOrMultipleDiffsSelectionChatContent(oneOrMultipleDiffsSelection: String) = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = message("codemodernizer.chat.message.one_or_multiple_diffs_form.response", oneOrMultipleDiffsSelection.lowercase())
+)
+
+fun buildUserInputLanguageUpgradeChatContent(project: Project, validationResult: ValidationResult): CodeTransformChatMessageContent {
     val moduleBuildFiles = validationResult.validatedBuildFiles
 
     return CodeTransformChatMessageContent(
         message = message("codemodernizer.chat.form.user_selection.title"),
         buttons = listOf(
-            confirmUserSelectionButton,
+            confirmUserSelectionLanguageUpgradeButton,
             cancelUserSelectionButton,
         ),
         formItems = listOf(
@@ -207,6 +360,56 @@ fun buildUserInputChatContent(project: Project, validationResult: ValidationResu
         type = CodeTransformChatMessageType.FinalizedAnswer,
     )
 }
+
+fun buildUserInputSQLConversionMetadataChatContent() = CodeTransformChatMessageContent(
+    message = message("codemodernizer.chat.form.user_selection.item.choose_sql_metadata_file"),
+    buttons = listOf(
+        confirmUserSelectionSQLConversionMetadataButton,
+        cancelUserSelectionButton,
+    ),
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+)
+
+fun buildModuleSchemaFormChatContent(project: Project, javaModules: List<VirtualFile>, schemaOptions: Set<String>) = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    buttons = listOf(
+        confirmUserSelectionSQLConversionModuleSchemaButton,
+        cancelUserSelectionButton,
+    ),
+    formItems = listOf(
+        getSelectSQLModuleFormItem(project, javaModules),
+        getSelectSQLSchemaFormItem(schemaOptions),
+    ),
+)
+
+fun buildModuleSchemaFormIntroChatContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = message("codemodernizer.chat.message.sql_module_schema_prompt"),
+)
+
+fun buildSQLMetadataValidationSuccessIntroChatContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = message("codemodernizer.chat.message.sql_metadata_success"),
+)
+
+fun buildSQLMetadataValidationSuccessDetailsChatContent(validationResult: SqlMetadataValidationResult) = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = """
+        ### ${message("codemodernizer.chat.prompt.title.details")}
+        -------------
+
+        | | |
+        | :------------------- | -------: |
+        | **Source DB**             |   ${validationResult.sourceVendor}   |
+        | **Target DB**             |   ${validationResult.targetVendor} |
+        | **Host**             |   ${validationResult.sourceServerName} |
+    """.trimIndent(),
+)
+
+fun buildSQLMetadataValidationErrorChatContent(errorReason: String) = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = errorReason,
+)
 
 fun buildUserCancelledChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
@@ -228,9 +431,19 @@ fun buildTransformStoppedChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
 )
 
-fun buildUserSelectionSummaryChatContent(moduleName: String) = CodeTransformChatMessageContent(
+fun buildTransformFailedChatContent(failureReason: String) = CodeTransformChatMessageContent(
+    message = message("codemodernizer.chat.message.transform_failed", failureReason),
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+)
+
+fun buildUserSQLConversionSelectionSummaryChatContent(moduleName: String, schema: String) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.Prompt,
-    message = getUserSelectionFormattedMarkdown(moduleName)
+    message = getUserSQLConversionSelectionFormattedMarkdown(moduleName, schema)
+)
+
+fun buildUserLanguageUpgradeSelectionSummaryChatContent(moduleName: String) = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.Prompt,
+    message = getUserLanguageUpgradeSelectionFormattedMarkdown(moduleName)
 )
 
 fun buildCompileLocalInProgressChatContent() = CodeTransformChatMessageContent(
@@ -245,6 +458,16 @@ fun buildCompileLocalFailedChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
     message = "${message(
         "codemodernizer.chat.message.local_build_failed"
+    )}\n\n${message(
+        "codemodernizer.chat.message.validation.error.more_info",
+        CODE_TRANSFORM_TROUBLESHOOT_DOC_MVN_FAILURE
+    )}",
+)
+
+fun buildCompileLocalFailedNoJdkChatContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = "${message(
+        "codemodernizer.chat.message.validation.no_jdk"
     )}\n\n${message(
         "codemodernizer.chat.message.validation.error.more_info",
         CODE_TRANSFORM_TROUBLESHOOT_DOC_MVN_FAILURE
@@ -319,7 +542,7 @@ fun buildTransformResumingChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
 )
 
-fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): CodeTransformChatMessageContent {
+fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult, totalPatchFiles: Int? = null): CodeTransformChatMessageContent {
     val resultMessage = when (result) {
         is CodeModernizerJobCompletedResult.JobAbortedZipTooLarge -> {
             "${message(
@@ -333,10 +556,18 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
             buildZipUploadFailedChatMessage(result.failureReason)
         }
         is CodeModernizerJobCompletedResult.JobCompletedSuccessfully -> {
-            message("codemodernizer.chat.message.result.success")
+            if (totalPatchFiles == 1) {
+                message("codemodernizer.chat.message.result.success")
+            } else {
+                message("codemodernizer.chat.message.result.success.multiple_diffs")
+            }
         }
         is CodeModernizerJobCompletedResult.JobPartiallySucceeded -> {
-            message("codemodernizer.chat.message.result.partially_success")
+            if (totalPatchFiles == 1) {
+                message("codemodernizer.chat.message.result.partially_success")
+            } else {
+                message("codemodernizer.chat.message.result.partially_success.multiple_diffs")
+            }
         }
         is CodeModernizerJobCompletedResult.JobFailed -> {
             message("codemodernizer.chat.message.result.fail_with_known_reason", result.failureReason)
@@ -363,12 +594,13 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult): C
         type = CodeTransformChatMessageType.FinalizedAnswer,
         message = resultMessage,
         buttons = if (result is CodeModernizerJobCompletedResult.JobPartiallySucceeded || result is CodeModernizerJobCompletedResult.JobCompletedSuccessfully) {
-            listOf(viewDiffButton, viewSummaryButton)
+            listOf(createViewDiffButton(if (totalPatchFiles == 1) "View diff" else "View diff 1/$totalPatchFiles"), viewSummaryButton)
         } else if (result is CodeModernizerJobCompletedResult.JobFailedInitialBuild && result.hasBuildLog) {
             listOf(viewBuildLog)
         } else {
             null
         },
+        followUps = listOf(startNewTransformFollowUp),
     )
 }
 
@@ -409,7 +641,7 @@ fun buildTransformAwaitUserInputChatContent(dependency: Dependency): CodeTransfo
 
 fun buildTransformDependencyErrorChatContent(
     hilDownloadArtifact: CodeTransformHilDownloadArtifact,
-    showButton: Boolean = true
+    showButton: Boolean = true,
 ) = CodeTransformChatMessageContent(
     message = message("codemodernizer.chat.message.hil.pom_snippet_title") +
         "\n\n```xml" +

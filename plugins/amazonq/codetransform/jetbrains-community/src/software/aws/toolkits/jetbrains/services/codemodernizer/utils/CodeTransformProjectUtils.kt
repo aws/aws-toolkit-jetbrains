@@ -10,6 +10,7 @@ import com.intellij.openapi.project.modules
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.projectRoots.impl.JavaSdkImpl
 import com.intellij.openapi.roots.LanguageLevelProjectExtension
+import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VirtualFile
 
@@ -61,7 +62,7 @@ fun Project.getSupportedBuildFilesWithSupportedJdk(
     supportedJavaMappings: Map<
         JavaSdkVersion,
         Set<JavaSdkVersion>
-        >
+        >,
 ): List<VirtualFile> {
     val detectedBuildFiles = this.getAllSupportedBuildFiles(supportedBuildFileNames)
     val supportedModules = this.getSupportedModules(supportedJavaMappings).toSet()
@@ -78,4 +79,25 @@ fun Project.getSupportedModules(supportedJavaMappings: Map<JavaSdkVersion, Set<J
     moduleJdk in supportedJavaMappings
 }
 
-fun Project.getModuleOrProjectNameForFile(file: VirtualFile) = ModuleUtil.findModuleForFile(file, this)?.name ?: this.name
+// return the first file or directory found inside each open Java module that contains SQL statements, so that user can select a Module for us to ZIP
+fun Project.getJavaModulesWithSQL() = this.modules.flatMap { module ->
+    val rootManager = ModuleRootManager.getInstance(module)
+    if (rootManager.sdk?.sdkType?.name?.lowercase()?.contains("java") == true) {
+        val contentRoots = rootManager.contentRoots
+        if (contentRoots.isNotEmpty()) {
+            val contentRoot = contentRoots.first()
+            val children = contentRoot.children
+            if (children.isNotEmpty() && containsSQL(contentRoot)) {
+                listOf(children.first())
+            } else {
+                emptyList()
+            }
+        } else {
+            emptyList()
+        }
+    } else {
+        emptyList()
+    }
+}
+
+fun Project.getModuleOrProjectNameForFile(file: VirtualFile?) = file?.let { ModuleUtil.findModuleForFile(it, this)?.name } ?: this.name

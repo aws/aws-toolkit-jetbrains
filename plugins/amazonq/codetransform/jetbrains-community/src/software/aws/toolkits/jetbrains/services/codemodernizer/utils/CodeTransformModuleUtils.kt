@@ -10,6 +10,9 @@ import com.intellij.openapi.projectRoots.impl.JavaSdkImpl
 import com.intellij.openapi.roots.LanguageLevelModuleExtensionImpl
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.vfs.VfsUtilCore
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.util.text.StringSearcher
 
 /**
  * @description Try to get the module SDK version and/or Language level from the project settings > modules > source field.
@@ -35,5 +38,26 @@ fun Module.tryGetJdkLanguageLevelJdk(): JavaSdkVersion? {
     val moduleRootManager = ModuleRootManager.getInstance(this)
     val languageLevelModuleExtension = moduleRootManager.getModuleExtension(LanguageLevelModuleExtensionImpl::class.java)
     val languageLevel = languageLevelModuleExtension?.languageLevel
-    return languageLevel?.let { JavaSdkVersion.fromLanguageLevel(it) } ?: null
+    return languageLevel?.let { JavaSdkVersion.fromLanguageLevel(it) }
+}
+
+// search for Strings that indicate embedded Oracle SQL statements are present
+fun containsSQL(contentRoot: VirtualFile): Boolean {
+    val patterns = listOf(
+        "oracle.jdbc.",
+        "jdbc:oracle:",
+        "jdbc:odbc:",
+    )
+
+    val searchers = patterns.map { StringSearcher(it, false, true) }
+
+    return VfsUtilCore.iterateChildrenRecursively(contentRoot, null) { file ->
+        if (!file.isDirectory && !file.fileType.isBinary) {
+            val content = file.contentsToByteArray().toString(Charsets.UTF_8)
+            if (searchers.any { it.scan(content) != -1 }) {
+                return@iterateChildrenRecursively false // found a match; stop searching
+            }
+        }
+        true // no match found; continue searching
+    }.not() // invert result because iterateChildrenRecursively returns false when match found
 }

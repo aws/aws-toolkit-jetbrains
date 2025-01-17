@@ -7,6 +7,7 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.rd.createNestedDisposable
@@ -107,7 +108,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
             return null
         }
 
-        val currentConnection = ToolkitConnectionManager.getInstance(null).activeConnectionForFeature(CodeCatalystConnection.getInstance())
+        val currentConnection = service<ToolkitConnectionManager>().activeConnectionForFeature(CodeCatalystConnection.getInstance())
             as AwsBearerTokenConnection?
 
         val ssoSettings = connectionParams.ssoSettings ?: SsoSettings(SONO_URL, SONO_REGION)
@@ -388,7 +389,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
 
     private fun validateEnvironmentIsRunning(
         indicator: ProgressIndicator,
-        environmentActions: WorkspaceActions
+        environmentActions: WorkspaceActions,
     ) {
         when (val status = environmentActions.getEnvironmentDetails().status()) {
             DevEnvironmentStatus.PENDING, DevEnvironmentStatus.STARTING -> environmentActions.waitForTaskReady(indicator)
@@ -436,7 +437,8 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                 }
 
                 is GitSettings.CawsOwnedRepoSettings,
-                is GitSettings.NoRepo -> {
+                is GitSettings.NoRepo,
+                -> {
                 }
             }
 
@@ -537,7 +539,7 @@ data class CawsConnectionParameters(
     val envId: String,
     val gitSettings: GitSettings,
     val toolkitInstallSettings: ToolkitInstallSettings,
-    val ssoSettings: SsoSettings?
+    val ssoSettings: SsoSettings?,
 ) {
     companion object {
         const val CAWS_SPACE = "aws.codecatalyst.space"
@@ -603,7 +605,7 @@ data class CawsConnectionParameters(
 
 data class SsoSettings(
     val startUrl: String,
-    val region: String
+    val region: String,
 ) {
     companion object {
         fun fromUrlParameters(startUrl: String, region: String) = SsoSettings(URLDecoder.decode(startUrl, "UTF-8"), region)

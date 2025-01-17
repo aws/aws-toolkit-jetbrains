@@ -9,7 +9,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import software.aws.toolkits.jetbrains.services.cwc.editor.context.project.EncoderServer
+import software.aws.toolkits.jetbrains.services.amazonq.project.EncoderServer
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import java.math.BigInteger
@@ -21,7 +21,7 @@ class EncoderServerTest {
     private val inputBytes = BigInteger(32, DigestUtil.random).toByteArray()
 
     @Before
-    open fun setup() {
+    fun setup() {
         encoderServer = EncoderServer(projectRule.project)
     }
 

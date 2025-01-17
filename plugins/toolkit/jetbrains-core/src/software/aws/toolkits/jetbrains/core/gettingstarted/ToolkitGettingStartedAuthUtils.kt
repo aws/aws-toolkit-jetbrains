@@ -5,9 +5,8 @@ package software.aws.toolkits.jetbrains.core.gettingstarted
 
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.project.Project
-import com.intellij.ui.jcef.JBCefApp
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
-import software.aws.toolkits.jetbrains.core.explorer.showWebview
+import software.aws.toolkits.jetbrains.core.explorer.ShowToolkitListener
 import software.aws.toolkits.jetbrains.core.explorer.webview.ToolkitWebviewPanel
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.SourceOfEntry
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionCount
@@ -15,6 +14,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getEnabledConn
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getSourceOfEntry
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints.CAWS_DOCS
+import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.FeatureId
@@ -23,16 +23,16 @@ import software.aws.toolkits.telemetry.Result
 fun requestCredentialsForCodeCatalyst(
     project: Project?,
     popupBuilderIdTab: Boolean = true,
-    initialConnectionCount: Int = getConnectionCount(),
+    initialConnectionCount: Long = getConnectionCount(),
     initialAuthConnections: String = getEnabledConnections(
         project
     ),
     isFirstInstance: Boolean = false,
-    connectionInitiatedFromExplorer: Boolean = false
+    connectionInitiatedFromExplorer: Boolean = false,
 ): Boolean? {
-    if (JBCefApp.isSupported() && project != null) {
+    if (isQWebviewsAvailable() && project != null) {
         ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.Codecatalyst, true)) // TODO: consume data
-        showWebview(project)
+        ShowToolkitListener.showWebview(project)
 
         return null
     }
@@ -51,6 +51,8 @@ fun requestCredentialsForCodeCatalyst(
         }
 
         else -> {
+            requireNotNull(project) { "project must not be null when requesting credentials outside of gateway" }
+
             SetupAuthenticationDialog(
                 project,
                 state = SetupAuthenticationDialogState().also {
@@ -87,7 +89,8 @@ fun requestCredentialsForCodeCatalyst(
             credentialSourceId = authenticationDialog.authType,
             isAggregated = true,
             attempts = authenticationDialog.attempts + 1,
-            result = Result.Succeeded
+            result = Result.Succeeded,
+            isReAuth = false
         )
         AuthTelemetry.addedConnections(
             project,
@@ -108,6 +111,7 @@ fun requestCredentialsForCodeCatalyst(
             isAggregated = false,
             attempts = authenticationDialog.attempts + 1,
             result = Result.Cancelled,
+            isReAuth = false
         )
     }
     return isAuthenticationSuccessful
@@ -115,16 +119,16 @@ fun requestCredentialsForCodeCatalyst(
 
 fun requestCredentialsForExplorer(
     project: Project,
-    initialConnectionCount: Int = getConnectionCount(),
+    initialConnectionCount: Long = getConnectionCount(),
     initialAuthConnections: String = getEnabledConnections(
         project
     ),
     isFirstInstance: Boolean = false,
-    connectionInitiatedFromExplorer: Boolean = false
+    connectionInitiatedFromExplorer: Boolean = false,
 ): Boolean? {
-    if (JBCefApp.isSupported()) {
+    if (isQWebviewsAvailable()) {
         ToolkitWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AwsExplorer, true)) // TODO: consume data
-        showWebview(project)
+        ShowToolkitListener.showWebview(project)
         return null
     }
 
@@ -155,7 +159,8 @@ fun requestCredentialsForExplorer(
             credentialSourceId = authenticationDialog.authType,
             isAggregated = true,
             attempts = authenticationDialog.attempts + 1,
-            result = Result.Succeeded
+            result = Result.Succeeded,
+            isReAuth = false
         )
         AuthTelemetry.addedConnections(
             project,
@@ -176,6 +181,7 @@ fun requestCredentialsForExplorer(
             isAggregated = false,
             attempts = authenticationDialog.attempts + 1,
             result = Result.Cancelled,
+            isReAuth = false
         )
     }
     return isAuthSuccessful

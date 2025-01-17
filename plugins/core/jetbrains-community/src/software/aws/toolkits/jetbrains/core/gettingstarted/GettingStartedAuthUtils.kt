@@ -4,11 +4,11 @@
 package software.aws.toolkits.jetbrains.core.gettingstarted
 
 import com.intellij.openapi.project.Project
-import com.intellij.ui.jcef.JBCefApp
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ProfileSsoManagedBearerSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.ReauthSource
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
@@ -16,6 +16,7 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.SourceOfEntry
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getAuthScopes
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getAuthStatus
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionCount
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getEnabledConnections
@@ -31,12 +32,13 @@ import software.aws.toolkits.telemetry.Result
 fun requestCredentialsForCodeWhisperer(
     project: Project,
     popupBuilderIdTab: Boolean = true,
-    initialConnectionCount: Int = getConnectionCount(),
+    initialConnectionCount: Long = getConnectionCount(),
     initialAuthConnections: String = getEnabledConnections(
         project
     ),
     isFirstInstance: Boolean = false,
-    connectionInitiatedFromExplorer: Boolean = false
+    connectionInitiatedFromExplorer: Boolean = false,
+    isReauth: Boolean = false,
 ): Boolean {
     val authenticationDialog = SetupAuthenticationDialog(
         project,
@@ -88,7 +90,8 @@ fun requestCredentialsForCodeWhisperer(
             credentialSourceId = authenticationDialog.authType,
             isAggregated = true,
             attempts = authenticationDialog.attempts + 1,
-            result = Result.Succeeded
+            result = Result.Succeeded,
+            isReAuth = isReauth
         )
         AuthTelemetry.addedConnections(
             project,
@@ -109,6 +112,7 @@ fun requestCredentialsForCodeWhisperer(
             isAggregated = false,
             attempts = authenticationDialog.attempts + 1,
             result = Result.Cancelled,
+            isReAuth = isReauth
         )
     }
     return isAuthenticationSuccessful
@@ -117,13 +121,14 @@ fun requestCredentialsForCodeWhisperer(
 @Deprecated("pending moving to Q package")
 fun requestCredentialsForQ(
     project: Project,
-    initialConnectionCount: Int = getConnectionCount(),
+    initialConnectionCount: Long = getConnectionCount(),
     initialAuthConnections: String = getEnabledConnections(
         project
     ),
     isFirstInstance: Boolean = false,
     connectionInitiatedFromExplorer: Boolean = false,
-    connectionInitiatedFromQChatPanel: Boolean = false
+    connectionInitiatedFromQChatPanel: Boolean = false,
+    isReauth: Boolean,
 ): Boolean {
     // try to scope upgrade if we have a codewhisperer connection
     val codeWhispererConnection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
@@ -182,7 +187,7 @@ fun requestCredentialsForQ(
         scopes = Q_SCOPES,
         promptForIdcPermissionSet = false,
         sourceOfEntry = SourceOfEntry.Q,
-        featureId = FeatureId.Q, // TODO: Update Q  in common
+        featureId = FeatureId.AmazonQ,
         connectionInitiatedFromQChatPanel = connectionInitiatedFromQChatPanel
     )
 
@@ -191,11 +196,12 @@ fun requestCredentialsForQ(
         AuthTelemetry.addConnection(
             project,
             source = getSourceOfEntry(SourceOfEntry.Q, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel),
-            featureId = FeatureId.Q,
+            featureId = FeatureId.AmazonQ,
             credentialSourceId = authenticationDialog.authType,
             isAggregated = true,
             attempts = authenticationDialog.attempts + 1,
-            result = Result.Succeeded
+            result = Result.Succeeded,
+            isReAuth = isReauth
         )
         AuthTelemetry.addedConnections(
             project,
@@ -211,11 +217,12 @@ fun requestCredentialsForQ(
         AuthTelemetry.addConnection(
             project,
             source = getSourceOfEntry(SourceOfEntry.Q, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel),
-            featureId = FeatureId.Q,
+            featureId = FeatureId.AmazonQ,
             credentialSourceId = authenticationDialog.authType,
             isAggregated = false,
             attempts = authenticationDialog.attempts + 1,
             result = Result.Cancelled,
+            isReAuth = isReauth
         )
     }
     return isAuthenticationSuccessful
@@ -225,20 +232,18 @@ fun reauthenticateWithQ(project: Project) {
     val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
     if (connection !is ManagedBearerSsoConnection) return
     pluginAwareExecuteOnPooledThread {
-        reauthConnectionIfNeeded(project, connection, isReAuth = true)
+        reauthConnectionIfNeeded(project, connection, isReAuth = true, reauthSource = ReauthSource.Q_CHAT)
     }
 }
 
 fun emitUserState(project: Project) {
     AuthTelemetry.userState(
         project,
-        source = getStartupState().toString(),
         authEnabledConnections = getEnabledConnections(project),
+        authScopes = getAuthScopes(project),
         authStatus = getAuthStatus(project),
-        passive = true
+        source = getStartupState().toString()
     )
 }
 
 const val CODEWHISPERER_AUTH_LEARN_MORE_LINK = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/codewhisperer-auth.html"
-
-fun shouldShowNonWebviewUI(): Boolean = !JBCefApp.isSupported()

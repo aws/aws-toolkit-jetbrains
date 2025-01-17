@@ -7,10 +7,12 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererstreaming.model.CodeWhispererStreamingException
 import software.aws.toolkits.core.utils.convertMarkdownToHTML
+import software.aws.toolkits.core.utils.extractCodeBlockLanguage
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatResponseEvent
@@ -33,6 +35,8 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
     private val codeReferences = mutableListOf<CodeReference>()
     private var requestId: String = ""
     private var statusCode: Int = 0
+    private val defaultTestGenResponseLanguage: String = "plaintext"
+    private var codeBlockLanguage: String = defaultTestGenResponseLanguage
 
     companion object {
         private val CODE_BLOCK_PATTERN = Regex("<pre>\\s*<code")
@@ -51,14 +55,22 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
         triggerId: String,
         data: ChatRequestData,
         sessionInfo: ChatSessionInfo,
-        shouldAddIndexInProgressMessage: Boolean
+        shouldAddIndexInProgressMessage: Boolean,
+        isInlineChat: Boolean = false,
     ) = flow {
         val session = sessionInfo.session
         session.chat(data)
             .onStart {
                 // The first thing we always send back is an AnswerStream message to indicate the beginning of a streaming answer
                 val response =
-                    ChatMessage(tabId = tabId, triggerId = triggerId, messageId = requestId, messageType = ChatMessageType.AnswerStream, message = "")
+                    ChatMessage(
+                        tabId = tabId,
+                        triggerId = triggerId,
+                        messageId = requestId,
+                        messageType = ChatMessageType.AnswerStream,
+                        message = "",
+                        userIntent = data.userIntent,
+                    )
 
                 telemetryHelper.setResponseStreamStartTime(tabId)
                 emit(response)
@@ -81,15 +93,26 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                         messageType = ChatMessageType.AnswerPart,
                         message = responseText.toString(),
                         relatedSuggestions = relatedSuggestions,
+                        userIntent = data.userIntent,
                     )
                     emit(suggestionMessage)
                 }
 
                 // Send the Answer message to indicate the end of the response stream
-                val response =
-                    ChatMessage(tabId = tabId, triggerId = triggerId, messageId = requestId, messageType = ChatMessageType.Answer, followUps = followUps)
+                val response = ChatMessage(
+                    tabId = tabId,
+                    triggerId = triggerId,
+                    messageId = requestId,
+                    messageType = ChatMessageType.Answer,
+                    followUps = followUps,
+                    userIntent = data.userIntent,
+                )
 
                 telemetryHelper.setResponseStreamTotalTime(tabId)
+                telemetryHelper.setResponseHasProjectContext(
+                    requestId,
+                    telemetryHelper.getIsProjectContextEnabled() && data.useRelevantDocuments && data.relevantTextDocuments.isNotEmpty()
+                )
                 telemetryHelper.recordAddMessage(data, response, responseText.length, statusCode, countTotalNumberOfCodeBlocks(responseText))
                 emit(response)
             }
@@ -114,12 +137,29 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                     )
                 }
             }
+            .onEach { responseEvent ->
+                if (isInlineChat) processChatEvent(tabId, triggerId, data, responseEvent, shouldAddIndexInProgressMessage)?.let { emit(it) }
+            }
             .collect { responseEvent ->
-                processChatEvent(tabId, triggerId, responseEvent, shouldAddIndexInProgressMessage)?.let { emit(it) }
+                if (!isInlineChat) {
+                    processChatEvent(
+                        tabId,
+                        triggerId,
+                        data,
+                        responseEvent,
+                        shouldAddIndexInProgressMessage
+                    )?.let { emit(it) }
+                }
             }
     }
 
-    private fun processChatEvent(tabId: String, triggerId: String, event: ChatResponseEvent, shouldAddIndexInProgressMessage: Boolean): ChatMessage? {
+    private fun processChatEvent(
+        tabId: String,
+        triggerId: String,
+        data: ChatRequestData,
+        event: ChatResponseEvent,
+        shouldAddIndexInProgressMessage: Boolean,
+    ): ChatMessage? {
         requestId = event.requestId
         statusCode = event.statusCode
 
@@ -179,6 +219,10 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
             } else {
                 responseText.toString()
             }
+            if (codeBlockLanguage == defaultTestGenResponseLanguage) {
+                // To get the language of generated code in Q chat.
+                codeBlockLanguage = extractCodeBlockLanguage(message)
+            }
             ChatMessage(
                 tabId = tabId,
                 triggerId = triggerId,
@@ -186,6 +230,8 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                 messageType = ChatMessageType.AnswerPart,
                 message = message,
                 codeReference = codeReferences,
+                userIntent = data.userIntent,
+                codeBlockLanguage = codeBlockLanguage,
             )
         } else {
             null

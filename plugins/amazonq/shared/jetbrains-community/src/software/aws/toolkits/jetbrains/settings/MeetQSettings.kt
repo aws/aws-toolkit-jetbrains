@@ -26,10 +26,24 @@ class MeetQSettings : PersistentStateComponent<MeetQSettingsConfiguration> {
             state.shouldDisplayPage = value
         }
 
+    var reinvent2024OnboardingCount: Int
+        get() = state.reinvent2024OnboardingCount
+        set(value) {
+            state.reinvent2024OnboardingCount = value
+        }
+
+    var disclaimerAcknowledged: Boolean
+        get() = state.disclaimerAcknowledged
+        set(value) {
+            state.disclaimerAcknowledged = value
+        }
+
     companion object {
         fun getInstance(): MeetQSettings = service()
     }
 }
 data class MeetQSettingsConfiguration(
-    var shouldDisplayPage: Boolean = true
+    var shouldDisplayPage: Boolean = true,
+    var reinvent2024OnboardingCount: Int = 0,
+    var disclaimerAcknowledged: Boolean = false,
 )

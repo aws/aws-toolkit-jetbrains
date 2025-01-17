@@ -7,13 +7,13 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SystemInfo
-import kotlinx.coroutines.future.await
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.ArtifactType
 import software.amazon.awssdk.services.codewhispererruntime.model.ContentChecksumType
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateTaskAssistConversationRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateTaskAssistConversationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.Dimension
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTaskAssistCodeGenerationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.IdeCategory
 import software.amazon.awssdk.services.codewhispererruntime.model.OperatingSystem
@@ -24,16 +24,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.TaskAssistPlan
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadContext
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadIntent
 import software.amazon.awssdk.services.codewhispererruntime.model.UserContext
-import software.amazon.awssdk.services.codewhispererstreaming.CodeWhispererStreamingAsyncClient
-import software.amazon.awssdk.services.codewhispererstreaming.model.ChatMessage
-import software.amazon.awssdk.services.codewhispererstreaming.model.ChatTriggerType
-import software.amazon.awssdk.services.codewhispererstreaming.model.ConversationState
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportIntent
-import software.amazon.awssdk.services.codewhispererstreaming.model.GenerateTaskAssistPlanRequest
-import software.amazon.awssdk.services.codewhispererstreaming.model.GenerateTaskAssistPlanResponseHandler
-import software.amazon.awssdk.services.codewhispererstreaming.model.ProgrammingLanguage
-import software.amazon.awssdk.services.codewhispererstreaming.model.UserInputMessage
-import software.amazon.awssdk.services.codewhispererstreaming.model.WorkspaceState
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -49,7 +40,9 @@ import java.time.Instant
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatTriggerType as SyncChatTriggerType
 
 @Service(Service.Level.PROJECT)
-class FeatureDevClient(private val project: Project) {
+class FeatureDevClient(
+    private val project: Project,
+) {
     fun getTelemetryOptOutPreference() =
         if (AwsSettings.getInstance().isTelemetryEnabled) {
             OptOutPreference.OPTIN
@@ -57,149 +50,188 @@ class FeatureDevClient(private val project: Project) {
             OptOutPreference.OPTOUT
         }
 
-    private val featureDevUserContext = ClientMetadata.getDefault().let {
-        val osForFeatureDev: OperatingSystem =
-            when {
-                SystemInfo.isWindows -> OperatingSystem.WINDOWS
-                SystemInfo.isMac -> OperatingSystem.MAC
-                // For now, categorize everything else as "Linux" (Linux/FreeBSD/Solaris/etc)
-                else -> OperatingSystem.LINUX
-            }
+    private val featureDevUserContext =
+        ClientMetadata.getDefault().let {
+            val osForFeatureDev: OperatingSystem =
+                when {
+                    SystemInfo.isWindows -> OperatingSystem.WINDOWS
+                    SystemInfo.isMac -> OperatingSystem.MAC
+                    // For now, categorize everything else as "Linux" (Linux/FreeBSD/Solaris/etc.)
+                    else -> OperatingSystem.LINUX
+                }
 
-        UserContext.builder()
-            .ideCategory(IdeCategory.JETBRAINS)
-            .operatingSystem(osForFeatureDev)
-            .product(FEATURE_EVALUATION_PRODUCT_NAME)
-            .clientId(it.clientId)
-            .ideVersion(it.awsVersion)
-            .build()
-    }
+            UserContext
+                .builder()
+                .ideCategory(IdeCategory.JETBRAINS)
+                .operatingSystem(osForFeatureDev)
+                .product(FEATURE_EVALUATION_PRODUCT_NAME)
+                .clientId(it.clientId)
+                .ideVersion(it.awsVersion)
+                .build()
+        }
 
-    private fun connection() = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
-        ?: error("Attempted to use connection while one does not exist")
+    private fun connection() =
+        ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
+            ?: error("Attempted to use connection while one does not exist")
 
     private fun bearerClient() = connection().getConnectionSettings().awsClient<CodeWhispererRuntimeClient>()
-
-    private fun streamingBearerClient() = connection().getConnectionSettings().awsClient<CodeWhispererStreamingAsyncClient>()
 
     private val amazonQStreamingClient
         get() = AmazonQStreamingClient.getInstance(project)
 
-    fun sendFeatureDevTelemetryEvent(conversationId: String): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
-        requestBuilder.telemetryEvent { telemetryEventBuilder ->
-            telemetryEventBuilder.featureDevEvent {
-                it.conversationId(conversationId)
+    fun sendFeatureDevTelemetryEvent(conversationId: String): SendTelemetryEventResponse =
+        bearerClient().sendTelemetryEvent { requestBuilder ->
+            requestBuilder.telemetryEvent { telemetryEventBuilder ->
+                telemetryEventBuilder.featureDevEvent {
+                    it.conversationId(conversationId)
+                }
             }
+            requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+            requestBuilder.userContext(featureDevUserContext)
         }
-        requestBuilder.optOutPreference(getTelemetryOptOutPreference())
-        requestBuilder.userContext(featureDevUserContext)
-    }
 
-    fun createTaskAssistConversation(): CreateTaskAssistConversationResponse = bearerClient().createTaskAssistConversation(
-        CreateTaskAssistConversationRequest.builder().build()
-    )
+    fun sendFeatureDevMetricData(operationName: String, result: String): SendTelemetryEventResponse =
+        bearerClient().sendTelemetryEvent { requestBuilder ->
+            requestBuilder.telemetryEvent { telemetryEventBuilder ->
+                telemetryEventBuilder.metricData {
+                    it
+                        .metricName("Operation")
+                        .metricValue(1.0)
+                        .timestamp(Instant.now())
+                        .product("FeatureDev")
+                        .dimensions(
+                            listOf(
+                                Dimension.builder()
+                                    .name("operationName")
+                                    .value(operationName)
+                                    .build(),
+                                Dimension.builder()
+                                    .name("result")
+                                    .value(result)
+                                    .build()
+                            )
+                        )
+                }
+            }
+            requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+            requestBuilder.userContext(featureDevUserContext)
+        }
 
-    fun createTaskAssistUploadUrl(conversationId: String, contentChecksumSha256: String, contentLength: Long): CreateUploadUrlResponse =
+    fun sendFeatureDevCodeGenerationEvent(
+        conversationId: String,
+        linesOfCodeGenerated: Int,
+        charactersOfCodeGenerated: Int,
+    ): SendTelemetryEventResponse =
+        bearerClient().sendTelemetryEvent { requestBuilder ->
+            requestBuilder.telemetryEvent { telemetryEventBuilder ->
+                telemetryEventBuilder.featureDevCodeGenerationEvent {
+                    it
+                        .conversationId(conversationId)
+                        .linesOfCodeGenerated(linesOfCodeGenerated)
+                        .charactersOfCodeGenerated(charactersOfCodeGenerated)
+                }
+            }
+            requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+            requestBuilder.userContext(featureDevUserContext)
+        }
+
+    fun sendFeatureDevCodeAcceptanceEvent(
+        conversationId: String,
+        linesOfCodeAccepted: Int,
+        charactersOfCodeAccepted: Int,
+    ): SendTelemetryEventResponse =
+        bearerClient().sendTelemetryEvent { requestBuilder ->
+            requestBuilder.telemetryEvent { telemetryEventBuilder ->
+                telemetryEventBuilder.featureDevCodeAcceptanceEvent {
+                    it
+                        .conversationId(conversationId)
+                        .linesOfCodeAccepted(linesOfCodeAccepted)
+                        .charactersOfCodeAccepted(charactersOfCodeAccepted)
+                }
+            }
+            requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+            requestBuilder.userContext(featureDevUserContext)
+        }
+
+    fun createTaskAssistConversation(): CreateTaskAssistConversationResponse =
+        bearerClient().createTaskAssistConversation(
+            CreateTaskAssistConversationRequest.builder().build(),
+        )
+
+    fun createTaskAssistUploadUrl(
+        conversationId: String,
+        contentChecksumSha256: String,
+        contentLength: Long,
+        uploadId: String,
+    ): CreateUploadUrlResponse =
         bearerClient().createUploadUrl {
-            it.contentChecksumType(ContentChecksumType.SHA_256)
+            it
+                .contentChecksumType(ContentChecksumType.SHA_256)
+                .uploadId(uploadId)
                 .contentChecksum(contentChecksumSha256)
                 .contentLength(contentLength)
                 .artifactType(ArtifactType.SOURCE_CODE)
                 .uploadIntent(UploadIntent.TASK_ASSIST_PLANNING)
                 .uploadContext(
-                    UploadContext.builder()
+                    UploadContext
+                        .builder()
                         .taskAssistPlanningUploadContext(
-                            TaskAssistPlanningUploadContext.builder()
+                            TaskAssistPlanningUploadContext
+                                .builder()
                                 .conversationId(conversationId)
-                                .build()
-                        )
-                        .build()
+                                .build(),
+                        ).build(),
                 )
         }
 
-    suspend fun generateTaskAssistPlan(conversationId: String, uploadId: String, userMessage: String): GenerateTaskAssistPlanResult {
-        val assistantResponse = mutableListOf<String>()
-        var succeededPlanning = true
+    fun startTaskAssistCodeGeneration(
+        conversationId: String,
+        uploadId: String,
+        userMessage: String,
+        codeGenerationId: String?,
+        currentCodeGenerationId: String?,
+    ): StartTaskAssistCodeGenerationResponse =
+        bearerClient()
+            .startTaskAssistCodeGeneration { request ->
+                request
+                    .conversationState {
+                        it
+                            .conversationId(conversationId)
+                            .chatTriggerType(SyncChatTriggerType.MANUAL)
+                            .currentMessage { cm -> cm.userInputMessage { um -> um.content(userMessage) } }
+                    }.workspaceState {
+                        it
+                            .programmingLanguage { pl -> pl.languageName("javascript") } // This parameter is omitted by featureDev but required in the request
+                            .uploadId(uploadId)
+                    }.codeGenerationId(codeGenerationId.toString())
+                    .currentCodeGenerationId(currentCodeGenerationId)
+            }
 
-        val result = streamingBearerClient().generateTaskAssistPlan(
-            GenerateTaskAssistPlanRequest.builder()
-                .conversationState(
-                    ConversationState.builder()
-                        .currentMessage(
-                            ChatMessage.fromUserInputMessage(
-                                UserInputMessage.builder()
-                                    .content(userMessage)
-                                    .build()
-                            )
-                        )
-                        .chatTriggerType(ChatTriggerType.MANUAL)
-                        .conversationId(conversationId)
-                        .build()
-                )
-                .workspaceState(
-                    WorkspaceState.builder()
-                        .programmingLanguage(
-                            ProgrammingLanguage.builder()
-                                .languageName("javascript")
-                                .build()
-                        )
-                        .uploadId(uploadId)
-                        .build()
-                )
-                .build(),
-            GenerateTaskAssistPlanResponseHandler.builder().subscriber(
-                GenerateTaskAssistPlanResponseHandler.Visitor.builder()
-                    .onAssistantResponseEvent {
-                        assistantResponse.add(it.content())
-                    }.onInvalidStateEvent {
-                        assistantResponse.clear()
-                        assistantResponse.add(it.message())
-                        succeededPlanning = false
-                    }
-                    .build()
-            )
-                .build()
+    fun getTaskAssistCodeGeneration(
+        conversationId: String,
+        codeGenerationId: String,
+    ): GetTaskAssistCodeGenerationResponse =
+        bearerClient()
+            .getTaskAssistCodeGeneration {
+                it
+                    .conversationId(conversationId)
+                    .codeGenerationId(codeGenerationId)
+            }
+
+    suspend fun exportTaskAssistResultArchive(conversationId: String): MutableList<ByteArray> =
+        amazonQStreamingClient.exportResultArchive(
+            conversationId,
+            ExportIntent.TASK_ASSIST,
+            null,
+            { e ->
+                LOG.error(
+                    e,
+                ) { "TaskAssist - ExportResultArchive stream exportId=$conversationId exportIntent=${ExportIntent.TASK_ASSIST} Failed: ${e.message} " }
+            },
+            { startTime ->
+                LOG.info { "TaskAssist - ExportResultArchive latency: ${calculateTotalLatency(startTime, Instant.now())}" }
+            },
         )
-
-        result.await()
-        return GenerateTaskAssistPlanResult(approach = assistantResponse.joinToString(" "), succeededPlanning = succeededPlanning)
-    }
-
-    fun startTaskAssistCodeGeneration(conversationId: String, uploadId: String, userMessage: String): StartTaskAssistCodeGenerationResponse = bearerClient()
-        .startTaskAssistCodeGeneration {
-                request ->
-            request
-                .conversationState {
-                    it
-                        .conversationId(conversationId)
-                        .chatTriggerType(SyncChatTriggerType.MANUAL)
-                        .currentMessage { cm -> cm.userInputMessage { um -> um.content(userMessage) } }
-                }
-                .workspaceState {
-                    it
-                        .programmingLanguage { pl -> pl.languageName("javascript") } // This parameter is omitted by featureDev but required in the request
-                        .uploadId(uploadId)
-                }
-        }
-
-    fun getTaskAssistCodeGeneration(conversationId: String, codeGenerationId: String): GetTaskAssistCodeGenerationResponse = bearerClient()
-        .getTaskAssistCodeGeneration {
-            it
-                .conversationId(conversationId)
-                .codeGenerationId(codeGenerationId)
-        }
-
-    suspend fun exportTaskAssistResultArchive(conversationId: String): MutableList<ByteArray> = amazonQStreamingClient.exportResultArchive(
-        conversationId,
-        ExportIntent.TASK_ASSIST,
-        null,
-        { e ->
-            LOG.error(e) { "TaskAssist - ExportResultArchive stream exportId=$conversationId exportIntent=${ExportIntent.TASK_ASSIST} Failed: ${e.message} " }
-        },
-        { startTime ->
-            LOG.info { "TaskAssist - ExportResultArchive latency: ${calculateTotalLatency(startTime, Instant.now())}" }
-        }
-    )
 
     companion object {
         private val LOG = getLogger<FeatureDevClient>()

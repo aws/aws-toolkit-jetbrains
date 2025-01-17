@@ -3,17 +3,14 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.webview
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
-import com.intellij.ui.jcef.executeJavaScript
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
+import org.cef.CefApp
+import software.aws.toolkits.jetbrains.services.amazonq.util.HighlightCommand
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
-import java.util.function.Function
-
-typealias MessageReceiver = Function<String, JBCefJSQuery.Response>
+import software.aws.toolkits.jetbrains.settings.MeetQSettings
 
 /*
 Displays the web view for the Amazon Q tool window
@@ -24,16 +21,23 @@ class Browser(parent: Disposable) : Disposable {
 
     val receiveMessageQuery = JBCefJSQuery.create(jcefBrowser)
 
-    fun init(isCodeTransformAvailable: Boolean, isFeatureDevAvailable: Boolean) {
+    fun init(
+        isCodeTransformAvailable: Boolean,
+        isFeatureDevAvailable: Boolean,
+        isDocAvailable: Boolean,
+        isCodeScanAvailable: Boolean,
+        isCodeTestAvailable: Boolean,
+        highlightCommand: HighlightCommand?,
+    ) {
         // register the scheme handler to route http://mynah/ URIs to the resources/assets directory on classpath
-//        CefApp.getInstance()
-//            .registerSchemeHandlerFactory(
-//                "http",
-//                "mynah",
-//                AssetResourceHandler.AssetResourceHandlerFactory(),
-//            )
-        println("aaaaaaaaa did a load")
-        loadWebView(isCodeTransformAvailable, isFeatureDevAvailable)
+        CefApp.getInstance()
+            .registerSchemeHandlerFactory(
+                "http",
+                "mynah",
+                AssetResourceHandler.AssetResourceHandlerFactory(),
+            )
+
+        loadWebView(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable, highlightCommand)
     }
 
     override fun dispose() {
@@ -48,34 +52,35 @@ class Browser(parent: Disposable) : Disposable {
             .executeJavaScript("window.postMessage(JSON.stringify($message))", jcefBrowser.cefBrowser.url, 0)
 
     // Load the chat web app into the jcefBrowser
-    private fun loadWebView(isCodeTransformAvailable: Boolean, isFeatureDevAvailable: Boolean) {
+    private fun loadWebView(
+        isCodeTransformAvailable: Boolean,
+        isFeatureDevAvailable: Boolean,
+        isDocAvailable: Boolean,
+        isCodeScanAvailable: Boolean,
+        isCodeTestAvailable: Boolean,
+        highlightCommand: HighlightCommand?,
+    ) {
         // setup empty state. The message request handlers use this for storing state
         // that's persistent between page loads.
         jcefBrowser.setProperty("state", "")
         // load the web app
-        jcefBrowser.loadHTML(getWebviewHTML(isCodeTransformAvailable, isFeatureDevAvailable))
-        disposableCoroutineScope(this).launch {
-            while (true) {
-                delay(5000)
-                try {
-                    println("yy" + jcefBrowser.executeJavaScript("ideApi.postMessage('aaaaaaaaaaaaaaaaaaa')", 0))
-                    println(
-                        "yy" + jcefBrowser.executeJavaScript(
-                            "var state = false; setInterval(function() {document.body.innerHTML = !!state; state = !state;}, 1000)",
-                            0
-                        )
-                    )
-                    break
-                } catch (_: Exception) {}
-            }
-        }
+        jcefBrowser.loadHTML(
+            getWebviewHTML(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable, highlightCommand)
+        )
     }
 
     /**
      * Generate index.html for the web view
      * @return HTML source
      */
-    private fun getWebviewHTML(isCodeTransformAvailable: Boolean, isFeatureDevAvailable: Boolean): String {
+    private fun getWebviewHTML(
+        isCodeTransformAvailable: Boolean,
+        isFeatureDevAvailable: Boolean,
+        isDocAvailable: Boolean,
+        isCodeScanAvailable: Boolean,
+        isCodeTestAvailable: Boolean,
+        highlightCommand: HighlightCommand?,
+    ): String {
         val postMessageToJavaJsCode = receiveMessageQuery.inject("JSON.stringify(message)")
 
         val jsScripts = """
@@ -88,9 +93,15 @@ class Browser(parent: Disposable) : Disposable {
                                 $postMessageToJavaJsCode
                             }
                         },
+                        ${MeetQSettings.getInstance().reinvent2024OnboardingCount < MAX_ONBOARDING_PAGE_COUNT},
+                        ${MeetQSettings.getInstance().disclaimerAcknowledged},
                         $isFeatureDevAvailable, // whether /dev is available
                         $isCodeTransformAvailable, // whether /transform is available
-                    ); 
+                        $isDocAvailable, // whether /doc is available
+                        $isCodeScanAvailable, // whether /scan is available
+                        $isCodeTestAvailable, // whether /test is available
+                        ${OBJECT_MAPPER.writeValueAsString(highlightCommand)}
+                    );
                 }
             </script>        
         """.trimIndent()
@@ -103,13 +114,14 @@ class Browser(parent: Disposable) : Disposable {
                     $jsScripts
                 </head>
                 <body>
-                loading
                 </body>
             </html>
         """.trimIndent()
     }
 
     companion object {
-        private const val WEB_SCRIPT_URI = "http://127.0.0.1:8000/js/mynah-ui.js"
+        private const val WEB_SCRIPT_URI = "http://mynah/js/mynah-ui.js"
+        private const val MAX_ONBOARDING_PAGE_COUNT = 3
+        private val OBJECT_MAPPER = jacksonObjectMapper()
     }
 }

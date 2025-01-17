@@ -382,7 +382,7 @@ class QueryEditorDialogTest {
         querySearch: Boolean = false,
         queryLogs: Boolean = false,
         searchTerm: String = "Example",
-        query: String = "Example Query"
+        query: String = "Example Query",
     ) {
         view.logGroupTable.populateLogGroups(logGroups.toSet(), logGroups)
         view.relativeTimeRadioButton.isSelected = relativeTime

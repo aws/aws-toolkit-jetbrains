@@ -13,21 +13,55 @@ import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.Callable
 import java.util.concurrent.CompletionStage
+import java.util.concurrent.atomic.AtomicBoolean
 
 interface RemoteResourceResolver {
     fun resolve(resource: RemoteResource): CompletionStage<Path>
+    fun checkForUpdates(endpoint: String, eTagProvider: ETagProvider): UpdateCheckResult = UpdateCheckResult.NoUpdates
+    fun getLocalResourcePath(filename: String): Path? = null
 }
 interface RemoteResolveParser {
     fun canBeParsed(data: InputStream): Boolean
 }
 
+interface ETagProvider {
+    var etag: String?
+    fun updateETag(newETag: String?)
+}
+
+sealed class UpdateCheckResult {
+    data object HasUpdates : UpdateCheckResult()
+    data object NoUpdates : UpdateCheckResult()
+    data object FirstPollCheck : UpdateCheckResult()
+}
+
 class DefaultRemoteResourceResolver(
     private val urlFetcher: UrlFetcher,
     private val cacheBasePath: Path,
-    private val executor: (Callable<Path>) -> CompletionStage<Path>
+    private val executor: (Callable<Path>) -> CompletionStage<Path>,
 ) : RemoteResourceResolver {
+    private val isFirstPoll = AtomicBoolean(true)
 
     override fun resolve(resource: RemoteResource): CompletionStage<Path> = executor(Callable { internalResolve(resource) })
+
+    override fun getLocalResourcePath(filename: String): Path? {
+        val expectedLocation = cacheBasePath.resolve(filename)
+        return expectedLocation.existsOrNull()
+    }
+
+    override fun checkForUpdates(endpoint: String, eTagProvider: ETagProvider): UpdateCheckResult {
+        val hasETagUpdate = updateETags(eTagProvider, endpoint)
+        // for when we need to notify on first poll even when there's no new ETag
+        if (isFirstPoll.compareAndSet(true, false) && !hasETagUpdate) {
+            return UpdateCheckResult.FirstPollCheck
+        }
+
+        return if (hasETagUpdate) {
+            UpdateCheckResult.HasUpdates
+        } else {
+            UpdateCheckResult.NoUpdates
+        }
+    }
 
     private fun internalResolve(resource: RemoteResource): Path {
         val expectedLocation = cacheBasePath.resolve(resource.name)
@@ -82,6 +116,21 @@ class DefaultRemoteResourceResolver(
         return expectedLocation
     }
 
+    private fun updateETags(eTagProvider: ETagProvider, endpoint: String): Boolean {
+        val currentEtag = eTagProvider.etag
+        val remoteEtag = getEndpointETag(endpoint)
+        eTagProvider.etag = remoteEtag
+        return currentEtag != remoteEtag
+    }
+
+    private fun getEndpointETag(endpoint: String): String =
+        try {
+            urlFetcher.getETag(endpoint)
+        } catch (e: Exception) {
+            LOG.warn { "Failed to fetch ETag: $e.message" }
+            throw e
+        }
+
     private companion object {
         val LOG = getLogger<RemoteResourceResolver>()
         fun Path.existsOrNull() = if (this.exists()) {
@@ -103,6 +152,7 @@ class DefaultRemoteResourceResolver(
 
 interface UrlFetcher {
     fun fetch(url: String, file: Path)
+    fun getETag(url: String): String
 }
 
 /**

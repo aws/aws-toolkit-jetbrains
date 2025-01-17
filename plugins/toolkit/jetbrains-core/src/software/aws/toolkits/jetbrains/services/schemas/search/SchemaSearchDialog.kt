@@ -21,7 +21,7 @@ class SchemaSearchSingleRegistryDialog(
     project: Project,
     private val searchExecutor: SchemaSearchExecutor = SchemaSearchExecutor(project),
     schemaViewer: SchemaViewer = SchemaViewer(project),
-    onCancelCallback: (SchemaSearchDialogState) -> Unit
+    onCancelCallback: (SchemaSearchDialogState) -> Unit,
 ) : SchemasSearchDialogBase(
     project,
     schemaViewer,
@@ -36,7 +36,7 @@ class SchemaSearchSingleRegistryDialog(
     override fun searchSchemas(
         searchText: String,
         incrementalResultsCallback: OnSearchResultReturned,
-        registrySearchErrorCallback: OnSearchResultError
+        registrySearchErrorCallback: OnSearchResultError,
     ) {
         SchemasTelemetry.search(project, Result.Succeeded)
         searchExecutor.searchSchemasInRegistry(registryName, searchText, incrementalResultsCallback, registrySearchErrorCallback)
@@ -47,7 +47,7 @@ class SchemaSearchAllRegistriesDialog(
     project: Project,
     private val searchExecutor: SchemaSearchExecutor = SchemaSearchExecutor(project),
     schemaViewer: SchemaViewer = SchemaViewer(project),
-    onCancelCallback: (SchemaSearchDialogState) -> Unit
+    onCancelCallback: (SchemaSearchDialogState) -> Unit,
 ) : SchemasSearchDialogBase(
     project,
     schemaViewer,
@@ -62,7 +62,7 @@ class SchemaSearchAllRegistriesDialog(
     override fun searchSchemas(
         searchText: String,
         incrementalResultsCallback: OnSearchResultReturned,
-        registrySearchErrorCallback: OnSearchResultError
+        registrySearchErrorCallback: OnSearchResultError,
     ) {
         SchemasTelemetry.search(project, Result.Succeeded)
         searchExecutor.searchSchemasAcrossAllRegistries(searchText, incrementalResultsCallback, registrySearchErrorCallback)

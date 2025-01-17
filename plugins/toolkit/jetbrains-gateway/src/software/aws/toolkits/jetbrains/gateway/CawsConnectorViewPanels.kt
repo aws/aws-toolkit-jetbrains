@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.gateway
 
 import com.intellij.ide.browsers.BrowserLauncher
+import com.intellij.openapi.components.service
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.observable.properties.PropertyGraph
 import com.intellij.openapi.rd.createNestedDisposable
@@ -105,7 +106,7 @@ class CawsSettings(
     // intermediate values
     var connectionSettings: ClientConnectionSettings<*>? = null,
     var branchCloneType: BranchCloneType = BranchCloneType.EXISTING,
-    var is3P: Boolean = false
+    var is3P: Boolean = false,
 )
 
 fun cawsWizard(lifetime: Lifetime, settings: CawsSettings = CawsSettings()) = MultistagePanelContainer(
@@ -191,9 +192,8 @@ fun cawsWizard(lifetime: Lifetime, settings: CawsSettings = CawsSettings()) = Mu
                     return@startWithModalProgressAsync
                 }
 
-                val currentConnection = ToolkitConnectionManager.getInstance(
-                    null
-                ).activeConnectionForFeature(CodeCatalystConnection.getInstance()) as AwsBearerTokenConnection?
+                val currentConnection = service<ToolkitConnectionManager>()
+                    .activeConnectionForFeature(CodeCatalystConnection.getInstance()) as AwsBearerTokenConnection?
                     ?: error("Connection cannot be null")
 
                 val parameters = mapOf(
@@ -489,8 +489,9 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
                                 panel {
                                     row(message("caws.workspace.details.backend_toolkit_location")) {
                                         textFieldWithBrowseButton(
-                                            message("caws.workspace.details.toolkit_location"),
-                                            fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
+                                            fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFileDescriptor().withTitle(
+                                                message("caws.workspace.details.toolkit_location")
+                                            )
                                         ).bindText(context::toolkitLocation)
                                     }
 
@@ -618,12 +619,12 @@ class EnvironmentDetailsPanel(private val context: CawsSettings, lifetime: Lifet
 enum class CawsWizardCloneType {
     CAWS,
     UNLINKED_3P,
-    NONE
+    NONE,
 }
 
 enum class BranchCloneType {
     EXISTING,
-    NEW_FROM_EXISTING
+    NEW_FROM_EXISTING,
 }
 
 class PersistentStorageOptions(items: List<Int>, private val subscriptionIsFreeTier: Boolean) : CollectionComboBoxModel<Int>(items) {

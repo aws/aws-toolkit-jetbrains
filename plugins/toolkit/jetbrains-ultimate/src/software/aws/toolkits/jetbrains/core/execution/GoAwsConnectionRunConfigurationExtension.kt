@@ -36,7 +36,7 @@ class GoAwsConnectionRunConfigurationExtension : GoRunConfigurationExtension() {
         cmdLine: TargetedCommandLineBuilder,
         runnerId: String,
         state: GoRunningState<out GoRunConfigurationBase<*>>,
-        commandLineType: GoRunningState.CommandLineType
+        commandLineType: GoRunningState.CommandLineType,
     ) {
         if (GoAwsConnectionExperiment.isEnabled()) {
             delegate.addToTargetCommandLineBuilder(configuration, cmdLine, runtimeString = { determineGoVersion(configuration) })

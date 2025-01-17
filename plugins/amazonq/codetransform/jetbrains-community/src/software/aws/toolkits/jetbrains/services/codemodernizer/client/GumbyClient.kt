@@ -16,6 +16,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformat
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationPlanResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTransformationResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.IdeCategory
 import software.amazon.awssdk.services.codewhispererruntime.model.ResumeTransformationRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.ResumeTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTransformationRequest
@@ -46,9 +47,11 @@ import software.aws.toolkits.jetbrains.services.amazonq.CONTENT_SHA256
 import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION
 import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID
 import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
+import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerMetrics
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
-import software.aws.toolkits.telemetry.CodeTransformApiNames
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
 import java.io.File
 import java.net.HttpURLConnection
 import java.time.Instant
@@ -69,7 +72,7 @@ class GumbyClient(private val project: Project) {
             .contentChecksum(sha256Checksum)
             .uploadIntent(UploadIntent.TRANSFORMATION)
             .build()
-        return callApi({ bearerClient().createUploadUrl(request) }, apiName = CodeTransformApiNames.CreateUploadUrl)
+        return callApi({ bearerClient().createUploadUrl(request) }, apiName = "CreateUploadUrl")
     }
 
     fun createHilUploadUrl(sha256Checksum: String, jobId: JobId): CreateUploadUrlResponse {
@@ -90,18 +93,18 @@ class GumbyClient(private val project: Project) {
                     .build()
             )
             .build()
-        return callApi({ bearerClient().createUploadUrl(request) }, apiName = CodeTransformApiNames.CreateUploadUrl)
+        return callApi({ bearerClient().createUploadUrl(request) }, apiName = "CreateUploadUrl")
     }
 
     fun getCodeModernizationJob(jobId: String): GetTransformationResponse {
         val request = GetTransformationRequest.builder().transformationJobId(jobId).build()
-        return callApi({ bearerClient().getTransformation(request) }, apiName = CodeTransformApiNames.GetTransformation)
+        return callApi({ bearerClient().getTransformation(request) }, apiName = "GetTransformation")
     }
 
     fun startCodeModernization(
         uploadId: String,
         sourceLanguage: TransformationLanguage,
-        targetLanguage: TransformationLanguage
+        targetLanguage: TransformationLanguage,
     ): StartTransformationResponse {
         val request = StartTransformationRequest.builder()
             .workspaceState { state ->
@@ -114,37 +117,38 @@ class GumbyClient(private val project: Project) {
                     .target { it.language(targetLanguage) }
             }
             .build()
-        return callApi({ bearerClient().startTransformation(request) }, apiName = CodeTransformApiNames.StartTransformation)
+        return callApi({ bearerClient().startTransformation(request) }, apiName = "StartTransformation")
     }
 
     fun resumeCodeTransformation(
         jobId: JobId,
-        userActionStatus: TransformationUserActionStatus
+        userActionStatus: TransformationUserActionStatus,
     ): ResumeTransformationResponse {
         val request = ResumeTransformationRequest.builder()
             .transformationJobId(jobId.id)
             .userActionStatus(userActionStatus)
             .build()
-        return callApi({ bearerClient().resumeTransformation(request) }, apiName = CodeTransformApiNames.ResumeTransformation)
+        return callApi({ bearerClient().resumeTransformation(request) }, apiName = "ResumeTransformation")
     }
 
     fun getCodeModernizationPlan(jobId: JobId): GetTransformationPlanResponse {
         val request = GetTransformationPlanRequest.builder().transformationJobId(jobId.id).build()
-        return callApi({ bearerClient().getTransformationPlan(request) }, apiName = CodeTransformApiNames.GetTransformationPlan)
+        return callApi({ bearerClient().getTransformationPlan(request) }, apiName = "GetTransformationPlan")
     }
 
     fun stopTransformation(transformationJobId: String): StopTransformationResponse {
         val request = StopTransformationRequest.builder().transformationJobId(transformationJobId).build()
-        return callApi({ bearerClient().stopTransformation(request) }, apiName = CodeTransformApiNames.StopTransformation)
+        return callApi({ bearerClient().stopTransformation(request) }, apiName = "StopTransformation")
     }
 
     private fun <T : CodeWhispererRuntimeResponse> callApi(
         apiCall: () -> T,
-        apiName: CodeTransformApiNames,
+        apiName: String,
     ): T {
         var result: CodeWhispererRuntimeResponse? = null
         try {
             result = apiCall()
+            LOG.info { "$apiName request ID: ${result.responseMetadata()?.requestId()}" }
             return result
         } catch (e: Exception) {
             LOG.error(e) { "$apiName failed: ${e.message}" }
@@ -155,7 +159,7 @@ class GumbyClient(private val project: Project) {
     suspend fun downloadExportResultArchive(
         jobId: JobId,
         hilDownloadArtifactId: String? = null,
-        downloadArtifactType: TransformationDownloadArtifactType? = TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS
+        downloadArtifactType: TransformationDownloadArtifactType? = TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS,
     ): MutableList<ByteArray> = amazonQStreamingClient.exportResultArchive(
         jobId.id,
         ExportIntent.TRANSFORMATION,
@@ -174,10 +178,10 @@ class GumbyClient(private val project: Project) {
                 .build()
         },
         { e ->
-            LOG.error(e) { "${CodeTransformApiNames.ExportResultArchive} failed: ${e.message}" }
+            LOG.error(e) { "ExportResultArchive failed: ${e.message}" }
         },
         { startTime ->
-            LOG.info { "${CodeTransformApiNames.ExportResultArchive} latency: ${calculateTotalLatency(startTime, Instant.now())}" }
+            LOG.info { "ExportResultArchive latency: ${calculateTotalLatency(startTime, Instant.now())}" }
         }
     )
 
@@ -209,6 +213,26 @@ class GumbyClient(private val project: Project) {
                     }
                 }
             }
+    }
+
+    fun sendTransformTelemetryEvent(job: JobId, metrics: CodeModernizerMetrics) {
+        bearerClient().sendTelemetryEvent { requestBuilder ->
+            requestBuilder.telemetryEvent { telemetryEventBuilder ->
+                telemetryEventBuilder.transformEvent {
+                    it.jobId(job.id)
+                    it.timestamp(Instant.now())
+                    it.ideCategory(IdeCategory.JETBRAINS)
+                    it.programmingLanguage { language ->
+                        language.languageName(metrics.programmingLanguage?.lowercase())
+                    }
+                    it.linesOfCodeChanged(metrics.linesOfCodeChanged)
+                    it.charsOfCodeChanged(metrics.charactersOfCodeChanged)
+                    it.linesOfCodeSubmitted(metrics.linesOfCodeSubmitted) // currently unavailable for SQL conversions
+                }
+            }
+            requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+            requestBuilder.userContext(codeWhispererUserContext())
+        }
     }
 
     companion object {

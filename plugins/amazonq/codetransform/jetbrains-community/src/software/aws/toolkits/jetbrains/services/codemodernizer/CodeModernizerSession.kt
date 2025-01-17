@@ -8,6 +8,7 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.serviceContainer.AlreadyDisposedException
 import com.intellij.util.io.HttpRequests
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import org.apache.commons.codec.digest.DigestUtils
 import software.amazon.awssdk.core.exception.SdkClientException
 import software.amazon.awssdk.services.codewhispererruntime.model.ResumeTransformationResponse
@@ -20,11 +21,13 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationUserActionStatus
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
+import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerException
@@ -32,6 +35,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerStartJobResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArtifactResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
@@ -54,19 +58,19 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.nio.file.Path
+import java.time.Duration
 import java.time.Instant
 import java.util.Base64
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.net.ssl.SSLHandshakeException
 
-const val ZIP_SOURCES_PATH = "sources"
-const val BUILD_LOG_PATH = "build-logs.txt"
-const val UPLOAD_ZIP_MANIFEST_VERSION = 1.0F
 const val MAX_ZIP_SIZE = 2000000000 // 2GB
-const val HIL_1P_UPGRADE_CAPABILITY = "HIL_1pDependency_VersionUpgrade"
 const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
+const val SELECTIVE_TRANSFORMATION_V1 = "SELECTIVE_TRANSFORMATION_V1"
 
 // constants for handling SDKClientException
 const val CONNECTION_REFUSED_ERROR: String = "Connection refused"
@@ -144,7 +148,7 @@ class CodeModernizerSession(
      *
      *  Based on [CodeWhispererCodeScanSession]
      */
-    fun createModernizationJob(copyResult: MavenCopyCommandsResult): CodeModernizerStartJobResult {
+    suspend fun createModernizationJob(copyResult: MavenCopyCommandsResult?): CodeModernizerStartJobResult {
         LOG.info { "Compressing local project" }
         val payload: File?
         var payloadSize = 0
@@ -164,6 +168,7 @@ class CodeModernizerSession(
                 telemetryErrorMessage = "Disposed when about to create zip"
                 return CodeModernizerStartJobResult.Disposed
             }
+            // for language upgrades, copyResult should always be Successful here, failure cases already handled
             val result = sessionContext.createZipWithModuleFiles(copyResult)
 
             if (result is ZipCreationResult.Missing1P) {
@@ -175,9 +180,6 @@ class CodeModernizerSession(
 
             payload = result.payload
             payloadSize = payload.length().toInt()
-
-            // TODO: deprecated metric - remove after BI started using new metric
-            telemetry.jobCreateZipEndTime(payloadSize, startTime)
 
             LOG.info { "Uploading zip file with size: $payloadSize bytes" }
 
@@ -327,11 +329,6 @@ class CodeModernizerSession(
         return clientAdaptor.getCodeModernizationJob(jobId.id).transformationJob()
     }
 
-    fun getTransformPlanDetails(jobId: JobId): TransformationPlan {
-        LOG.info { "Getting transform plan details." }
-        return clientAdaptor.getCodeModernizationPlan(jobId).transformationPlan()
-    }
-
     /**
      * This will resume the job, i.e. it will resume the main job loop kicked of by [createModernizationJob]
      */
@@ -386,8 +383,12 @@ class CodeModernizerSession(
     /**
      * Adapted from [CodeWhispererCodeScanSession]
      */
-    fun uploadPayload(payload: File): String {
-        val sha256checksum: String = Base64.getEncoder().encodeToString(DigestUtils.sha256(FileInputStream(payload)))
+    suspend fun uploadPayload(payload: File): String {
+        val sha256checksum: String = Base64.getEncoder().encodeToString(
+            withContext(getCoroutineBgContext()) {
+                DigestUtils.sha256(FileInputStream(payload))
+            }
+        )
         if (isDisposed.get()) {
             throw AlreadyDisposedException("Disposed when about to create upload URL")
         }
@@ -403,17 +404,24 @@ class CodeModernizerSession(
             throw AlreadyDisposedException("Disposed when about to upload project artifact to s3")
         }
         val uploadStartTime = Instant.now()
-        try {
+        waitUntil(
+            exceptionsToIgnore = setOf(
+                UnknownHostException::class,
+                SocketTimeoutException::class,
+                HttpRequests.HttpStatusException::class,
+                ConnectException::class,
+                IOException::class,
+            ),
+            maxDuration = Duration.ofMinutes(5)
+        ) {
             clientAdaptor.uploadArtifactToS3(
                 createUploadUrlResponse.uploadUrl(),
                 payload,
                 sha256checksum,
                 createUploadUrlResponse.kmsKeyArn().orEmpty(),
             ) { shouldStop.get() }
-        } catch (e: Exception) {
-            LOG.error { "Unexpected error when uploading project artifact to S3: $e" }
-            throw e // pass along error to callee
         }
+        LOG.info { "Upload to S3 succeeded" }
         if (!shouldStop.get()) {
             LOG.info { "Uploaded artifact. Latency: ${calculateTotalLatency(uploadStartTime, Instant.now())}ms" }
         }
@@ -421,6 +429,7 @@ class CodeModernizerSession(
     }
 
     suspend fun pollUntilJobCompletion(
+        transformType: CodeTransformType,
         jobId: JobId,
         jobTransitionHandler: (currentStatus: TransformationStatus, migrationPlan: TransformationPlan?) -> Unit,
     ): CodeModernizerJobCompletedResult {
@@ -435,6 +444,7 @@ class CodeModernizerSession(
             var passedStart = false
 
             val result = jobId.pollTransformationStatusAndPlan(
+                transformType,
                 succeedOn = setOf(
                     TransformationStatus.COMPLETED,
                     TransformationStatus.PAUSED,
@@ -466,8 +476,8 @@ class CodeModernizerSession(
                     }
                 }
 
-                // Open the transformation plan detail panel once transformation plan is available
-                if (state.transformationPlan != null && !isTransformationPlanEditorOpened) {
+                // Open the transformation plan detail panel once transformation plan is available (no plan for SQL conversions)
+                if (transformType != CodeTransformType.SQL_CONVERSION && state.transformationPlan != null && !isTransformationPlanEditorOpened) {
                     tryOpenTransformationPlanEditor()
                     isTransformationPlanEditorOpened = true
                 }
@@ -500,10 +510,7 @@ class CodeModernizerSession(
                     message("codemodernizer.notification.warn.unknown_status_response")
                 )
 
-                result.state == TransformationStatus.PARTIALLY_COMPLETED -> CodeModernizerJobCompletedResult.JobPartiallySucceeded(
-                    jobId,
-                    sessionContext.targetJavaVersion
-                )
+                result.state == TransformationStatus.PARTIALLY_COMPLETED -> CodeModernizerJobCompletedResult.JobPartiallySucceeded(jobId)
 
                 result.state == TransformationStatus.FAILED -> {
                     if (!passedStart) {

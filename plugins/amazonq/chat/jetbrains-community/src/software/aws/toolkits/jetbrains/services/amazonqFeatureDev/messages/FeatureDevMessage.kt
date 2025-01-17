@@ -24,6 +24,12 @@ sealed interface IncomingFeatureDevMessage : FeatureDevBaseMessage {
         @JsonProperty("tabID") val tabId: String,
     ) : IncomingFeatureDevMessage
 
+    data class StoreMessageIdMessage(
+        @JsonProperty("tabID") val tabId: String,
+        val command: String,
+        val messageId: String?,
+    ) : IncomingFeatureDevMessage
+
     data class NewTabCreated(
         val command: String,
         @JsonProperty("tabID") val tabId: String,
@@ -52,11 +58,24 @@ sealed interface IncomingFeatureDevMessage : FeatureDevBaseMessage {
         val vote: String,
     ) : IncomingFeatureDevMessage
 
+    data class ChatItemFeedbackMessage(
+        @JsonProperty("tabID") val tabId: String,
+        val selectedOption: String,
+        val comment: String?,
+        val messageId: String,
+    ) : IncomingFeatureDevMessage
+
     data class ClickedLink(
         @JsonProperty("tabID") val tabId: String,
         val command: String,
         val messageId: String?,
         val link: String,
+    ) : IncomingFeatureDevMessage
+
+    data class StopResponse(
+        @JsonProperty("tabID") val tabId: String,
+        val command: String,
+        val messageId: String?,
     ) : IncomingFeatureDevMessage
 
     data class InsertCodeAtCursorPosition(
@@ -69,14 +88,14 @@ sealed interface IncomingFeatureDevMessage : FeatureDevBaseMessage {
     data class OpenDiff(
         @JsonProperty("tabID") val tabId: String,
         val filePath: String,
-        val deleted: Boolean
+        val deleted: Boolean,
     ) : IncomingFeatureDevMessage
 
     data class FileClicked(
         @JsonProperty("tabID") val tabId: String,
         val filePath: String,
         val messageId: String,
-        val actionName: String
+        val actionName: String,
     ) : IncomingFeatureDevMessage
 }
 
@@ -107,7 +126,7 @@ data class FeatureDevMessage(
     val message: String? = null,
     val followUps: List<FollowUp>? = null,
     val canBeVoted: Boolean,
-    val snapToTop: Boolean
+    val snapToTop: Boolean,
 
 ) : UiMessage(
     tabId = tabId,
@@ -117,7 +136,7 @@ data class FeatureDevMessage(
 data class AsyncEventProgressMessage(
     @JsonProperty("tabID") override val tabId: String,
     val message: String? = null,
-    val inProgress: Boolean
+    val inProgress: Boolean,
 ) : UiMessage(
     tabId = tabId,
     type = "asyncEventProgressMessage"
@@ -125,7 +144,7 @@ data class AsyncEventProgressMessage(
 
 data class UpdatePlaceholderMessage(
     @JsonProperty("tabID") override val tabId: String,
-    val newPlaceholder: String
+    val newPlaceholder: String,
 ) : UiMessage(
     tabId = tabId,
     type = "updatePlaceholderMessage"
@@ -135,7 +154,8 @@ data class FileComponent(
     @JsonProperty("tabID") override val tabId: String,
     val filePaths: List<NewFileZipInfo>,
     val deletedFiles: List<DeletedFileInfo>,
-    val messageId: String
+    val messageId: String,
+    val disableFileActions: Boolean = false,
 ) : UiMessage(
     tabId = tabId,
     type = "updateFileComponent"
@@ -143,7 +163,7 @@ data class FileComponent(
 
 data class ChatInputEnabledMessage(
     @JsonProperty("tabID") override val tabId: String,
-    val enabled: Boolean
+    val enabled: Boolean,
 ) : UiMessage(
     tabId = tabId,
     type = "chatInputEnabledMessage"
@@ -161,6 +181,9 @@ data class AuthenticationUpdateMessage(
     val authenticatingTabIDs: List<String>,
     val featureDevEnabled: Boolean,
     val codeTransformEnabled: Boolean,
+    val codeScanEnabled: Boolean,
+    val codeTestEnabled: Boolean,
+    val docEnabled: Boolean,
     val message: String? = null,
     val messageId: String = UUID.randomUUID().toString(),
 
@@ -184,7 +207,8 @@ data class CodeResultMessage(
     val conversationId: String,
     val filePaths: List<NewFileZipInfo>,
     val deletedFiles: List<DeletedFileInfo>,
-    val references: List<CodeReference>
+    val references: List<CodeReference>,
+    val messageId: String?,
 ) : UiMessage(
     tabId = tabId,
     type = "codeResultMessage"
@@ -203,7 +227,7 @@ enum class FollowUpIcons(
     @field:JsonValue val json: String,
 ) {
     Ok("ok"),
-    Refresh("refresh")
+    Refresh("refresh"),
 }
 
 enum class FollowUpStatusType(
@@ -212,22 +236,20 @@ enum class FollowUpStatusType(
     Info("info"),
     Success("success"),
     Warning("warning"),
-    Error("error")
+    Error("error"),
 }
 
 enum class FollowUpTypes(
-    @field:JsonValue val json: String
+    @field:JsonValue val json: String,
 ) {
     RETRY("Retry"),
     MODIFY_DEFAULT_SOURCE_FOLDER("ModifyDefaultSourceFolder"),
     DEV_EXAMPLES("DevExamples"),
-    NEW_PLAN("NewPlan"),
     SEND_FEEDBACK("SendFeedback"),
-    GENERATE_CODE("GenerateCode"),
     INSERT_CODE("InsertCode"),
     PROVIDE_FEEDBACK_AND_REGENERATE_CODE("ProvideFeedbackAndRegenerateCode"),
     NEW_TASK("NewTask"),
-    CLOSE_SESSION("CloseSession")
+    CLOSE_SESSION("CloseSession"),
 }
 
 // Util classes

@@ -1,3 +1,160 @@
+# _3.48_ (2025-01-16)
+- **(Feature)** Enhance Q inline completion context fetching for better suggestion quality
+- **(Feature)** /doc: Add error message if updated README is too large
+- **(Bug Fix)** /transform: always include button to start a new transformation at the end of a job
+- **(Bug Fix)** Amazon Q can update mvn and gradle build files
+- **(Bug Fix)** Fix doc generation for modules that are a part of the project
+- **(Bug Fix)** Amazon Q /dev: Remove hard-coded limits and instead rely server-side data to communicate number of code generations remaining
+- **(Bug Fix)** /transform: automatically open pre-build error logs when available
+- **(Bug Fix)** /doc: Fix code generation error when cancelling a documentation task
+- **(Bug Fix)** Amazon Q - update messaging for /doc agent
+
+# _3.47_ (2025-01-09)
+- **(Bug Fix)** Fix issue where users are unable to login to Amazon Q if they have previously authenticated ([#5214](https://github.com/aws/aws-toolkit-jetbrains/issues/5214))
+- **(Bug Fix)** Fix incorrect text shown while updating documentation in /doc
+- **(Bug Fix)** Amazon Q Code Transformation: retry initial project upload on failure
+- **(Bug Fix)** /transform: use correct doc link in SQL conversion help message
+- **(Bug Fix)** Amazon Q /dev: Fix issue when files are deleted while preparing context
+- **(Bug Fix)** Amazon Q /test: Test generation fails for files outside the project
+- **(Bug Fix)** Amazon Q Code Transformation: allow PostgreSQL as target DB for SQL conversions
+- **(Bug Fix)** Fix incorrect accept and reject buttons shows up while hovering over the generated file
+- **(Bug Fix)** Prevent customization override if user has manually selected a customization
+- **(Bug Fix)** Align UX text of document generation flow with vs code version
+
+# _3.46_ (2024-12-17)
+- **(Feature)** /review: Code fix automatically scrolls into view after generation.
+- **(Feature)** Chat: improve font size and line-height in footer (below prompt input field)
+- **(Feature)** Adds capability to send new context commands to AB groups
+- **(Bug Fix)** Chat: When writing a prompt without sending it, navigating via up/down arrows sometimes deletes the unsent prompt.
+- **(Bug Fix)** Fix chat not retaining history when interaction is through onboarding tab type ([#5189](https://github.com/aws/aws-toolkit-jetbrains/issues/5189))
+- **(Bug Fix)** Chat: When navigating to previous prompts, code attachments are sometimes displayed incorrectly
+- **(Bug Fix)** Reduce frequency of system information query
+
+# _3.45_ (2024-12-10)
+- **(Feature)** Add acknowledgement button for Amazon Q Chat disclaimer
+- **(Bug Fix)** Chosing cancel on sign out confirmation now cancels the sign out and does not delete profiles from ~/.aws/config ([#5167](https://github.com/aws/aws-toolkit-jetbrains/issues/5167))
+- **(Bug Fix)** Fix `@workspace` missing from the Amazon Q Chat welcome tab
+- **(Bug Fix)** Fix for /review LLM based code issues for file review on windows
+- **(Bug Fix)** Fix for File Review payload and Regex error for payload generation
+- **(Bug Fix)** Amazon Q Code Transformation: show build logs when server-side build fails
+
+# _3.44_ (2024-12-04)
+- **(Feature)** Amazon Q: UI improvements to chat: New splash loader animation, initial streaming card animation, improved button colours
+- **(Feature)** Amazon Q: Navigate through prompt history by using the up/down arrows
+- **(Bug Fix)** Fix issue where Amazon Q Code Transform is unable to start
+- **(Bug Fix)** Fix DynamoDB viewer throwing 'ActionGroup should be registered using <group> tag' on IDE start ([#5012](https://github.com/aws/aws-toolkit-jetbrains/issues/5012)) ([#5120](https://github.com/aws/aws-toolkit-jetbrains/issues/5120))
+- **(Bug Fix)** Amazon Q: Fix chat syntax highlighting when using several different themes
+
+# _3.43_ (2024-12-03)
+- **(Feature)** `/review` in Q chat to scan your code for vulnerabilities and quality issues, and generate fixes
+- **(Feature)** `/test` in Q chat to generate unit tests for java and python
+- **(Feature)** `/doc` in Q chat to generate and update documentation for your project
+- **(Feature)** Added system notifications to inform users about critical plugin updates and potential issues with available workarounds
+
+# _3.42_ (2024-11-27)
+- **(Feature)** Amazon Q /dev: support `Dockerfile` files
+- **(Feature)** Feature(Amazon Q Code Transformation): allow users to view results in 5 smaller diffs
+- **(Feature)** Introduce @workspace command to enhance chat context fetching for Chat
+- **(Bug Fix)** Correct search text for Amazon Q inline suggestion keybindings
+- **(Bug Fix)** Fix(Amazon Q Code Transformation): always show user latest/correct transformation results
+- **(Bug Fix)** Amazon Q /dev: Fix error when accepting changes if leading slash is present.
+
+# _3.41_ (2024-11-22)
+- **(Feature)** Amazon Q /dev: support `.gradle` files
+- **(Feature)** Inline Auto trigger will now happen more consistently and will not conflict with JetBrains code completion.
+- **(Feature)** Uses AB variation as the name for overriden customizations
+- **(Feature)** Code Transform: Enable support for Java 17 projects.
+- **(Feature)** The key shortcuts for Q inline suggestions are now configurable from keymap settings. Default key shortcuts for navigating through suggestions are changed from left/right arrow keys to option(alt) + [ and option(alt) + ], respectively.
+- **(Feature)** The Q suggestion inline popup will now hide by default and will show when the user hovers over the suggestion text, the IDE code suggestion popup will also appear to be more transparent to unblock seeing the multi-line suggestions.
+- **(Feature)** Feature(Amazon Q Code Transformation): support conversions of embedded SQL from Oracle to PostgreSQL
+- **(Bug Fix)** Amazon Q chat: `@workspace` command shown in all tab types
+- **(Bug Fix)** Amazon Q Feature Dev: display limit reached error message
+- **(Bug Fix)** Amazon Q Chat: Changed default info color on dark themes to be blue, instead of gray
+- **(Removal)** Removed support for Gateway 2024.2
+- **(Removal)** Removed support for 2023.3.x IDEs
+
+# _3.40_ (2024-11-14)
+- **(Feature)** Amazon Q /dev: Add an action to accept individual files
+- **(Bug Fix)** Fix a bug when Amazon Q responds with still indexing message even when `@workspace` index is done
+- **(Bug Fix)** Fix issue where Amazon Q inline chat can be invoked from non-editor windows
+
+# _3.39_ (2024-11-12)
+- **(Bug Fix)** Fix poor inline suggestions from Amazon Q caused by improperly formatted supplemental context
+
+# _3.38_ (2024-11-07)
+- **(Bug Fix)** Improve the position that inline chat shortcut hint is shown in editor
+- **(Bug Fix)** Improve `@workspace` index start stop strategy
+- **(Bug Fix)** Fixed an issue where Q inline won't appear in JetBrains remote 2024.2+
+
+# _3.37_ (2024-10-31)
+- **(Bug Fix)** Amazon Q /dev: Fix the issue resulting in the first request per conversation to /dev failing
+- **(Bug Fix)** Fix inline chat shortcut hint breaking text selection on remote editors
+
+# _3.36_ (2024-10-30)
+- **(Bug Fix)** Fix inline chat default key binding not working on windows and linux
+
+# _3.35_ (2024-10-29)
+- **(Feature)** Remove read-only mode on before diff of code changes generated by agent
+- **(Feature)** Provide more frequent updates about code changes made by agent
+- **(Feature)** Amazon Q /dev: Add stop generation action
+- **(Feature)** Added inline chat support. Select some code and hit ⌘+I on Mac or Ctrl+I on Windows to start
+- **(Bug Fix)** Fix pointless busy loop in Amazon Q wasting CPU cycles ([#5000](https://github.com/aws/aws-toolkit-jetbrains/issues/5000))
+- **(Bug Fix)** Update `@workspace` index when adding or deleting a file
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2024.2 and for IDEs based on the 2023.3 platform
+
+# _3.34_ (2024-10-22)
+- **(Bug Fix)** Fix issue where the plugin can't read SSO tokens from disk / always returns 'Unable to load client registration'
+
+# _3.33_ (2024-10-17)
+- **(Feature)** Add support for 2024.3
+- **(Bug Fix)** `@workspace` cannot properly locate certain folders for certain project setup
+- **(Bug Fix)** Fix an IDE deadlock that may occur while attempting to initialize Amazon Q UI elements ([#4966](https://github.com/aws/aws-toolkit-jetbrains/issues/4966))
+
+# _3.32_ (2024-10-10)
+- **(Feature)** Loosen inline completion support limitations for YAML/JSON
+- **(Bug Fix)** Fix error occuring when Amazon Q attempts to show UI hints on manually triggerred inline suggestion ([#4929](https://github.com/aws/aws-toolkit-jetbrains/issues/4929))
+- **(Bug Fix)** Amazon Q (/dev): provide error messaging when no code changes are required for the prompt
+- **(Bug Fix)** Fix 'Slow operations are prohibited on EDT.' when Amazon Q is determining if a file supports inline suggestions ([#4823](https://github.com/aws/aws-toolkit-jetbrains/issues/4823))
+- **(Bug Fix)** Amazon Q Feature Dev: Add error messages when the upload URL expires
+- **(Bug Fix)** Fix toolkit connection dropdown getting hidden when panel width is small.
+- **(Bug Fix)** Fix inability to sign out in reauth view in Q chat panel
+- **(Bug Fix)** Raise max `@workspace` indexing size to 4GB
+- **(Bug Fix)** Automatically pause and resume `@workspace` indexing when OS CPU load is high
+
+# _3.31_ (2024-10-03)
+- **(Feature)** Amazon Q Developer: Updated legal disclaimer text
+- **(Feature)** Amazon Q Code Transformation: allow users to skip tests
+- **(Bug Fix)** Fix issue where multiple SSO login attempts in a short time result in 404
+- **(Bug Fix)** Fix issue where a user may get stuck while attempting to login to Builder ID
+
+# _3.30_ (2024-09-27)
+- **(Bug Fix)** Amazon Q Code Transformation: notify users when no JDK is set in Project Structure settings
+- **(Bug Fix)** Automatically terminate orphaned process for `@workspace` helper
+
+# _3.29_ (2024-09-19)
+- **(Feature)** Support `@workspace` queries for specific files like "`@workspace` what does test.ts do?".
+- **(Bug Fix)** Amazon Q Feature Dev: fix iteration count messaging during code insertion
+- **(Bug Fix)** Fix UI slowdown when Amazon Q Inline Suggestions are enabled, but token cannot be refreshed ([#4868](https://github.com/aws/aws-toolkit-jetbrains/issues/4868))
+- **(Bug Fix)** Fix "read access" error that may occur when Amazon Q Inline Suggestion is building context ([#4888](https://github.com/aws/aws-toolkit-jetbrains/issues/4888)) ([#4848](https://github.com/aws/aws-toolkit-jetbrains/issues/4848))
+
+# _3.28_ (2024-09-11)
+- **(Feature)** Improve workspace indexing by only index files that are changed since last indexing
+- **(Bug Fix)** Amazon Q Chat: Fixed inline code blocks are not vertically aligned with texts
+- **(Bug Fix)** Fix issue preventing login when running on 2024.2 remote environments
+- **(Bug Fix)** Automatically start workspace indexing when new project is opened
+- **(Removal)** Amazon Q Feature dev: Improve quality and UX by removing approach generation flow
+
+# _3.27_ (2024-09-05)
+- **(Feature)** Reduce `@workspace` indexing time by 50%
+- **(Feature)** Amazon Q /dev: include in progress state agent in code generation
+
+# _3.26_ (2024-08-30)
+- **(Bug Fix)** Fix Runtime Exception when opening a tool window ([#4849](https://github.com/aws/aws-toolkit-jetbrains/issues/4849))
+
+# _3.25_ (2024-08-29)
+- **(Bug Fix)** Fix bug where text with inline code copied from Amazon Q Chat had new line breaks around the inline code text
+- **(Bug Fix)** Fix bug when disabled commands does not get filtered in quick actions
+
 # _3.24_ (2024-08-22)
 - **(Feature)** Add notification for IdC users on extended session
 - **(Bug Fix)** Amazon Q: update login logo styling

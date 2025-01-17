@@ -17,6 +17,8 @@ import com.intellij.ui.ScrollPaneFactory
 import org.slf4j.LoggerFactory
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.help.HelpIds
+import software.aws.toolkits.jetbrains.core.notifications.BannerNotificationService
+import software.aws.toolkits.jetbrains.core.notifications.NotificationDismissalState
 import software.aws.toolkits.resources.AwsCoreBundle
 import javax.swing.JLabel
 import javax.swing.JTextArea
@@ -48,6 +50,34 @@ private fun notify(type: NotificationType, title: String, content: String = "", 
     notify(notification, project)
 }
 
+fun notifyStickyWithData(
+    type: NotificationType,
+    title: String,
+    content: String = "",
+    project: Project? = null,
+    notificationActions: Collection<AnAction>,
+    id: String,
+) {
+    val notification = Notification(GROUP_DISPLAY_ID_STICKY, title, content, type)
+    notificationActions.forEach {
+        notification.addAction(it)
+    }
+
+    notification.addAction(
+        createNotificationExpiringAction(
+            object : AnAction("Dismiss") {
+                override fun actionPerformed(e: AnActionEvent) {
+                    BannerNotificationService.getInstance().removeNotification(id)
+                    NotificationDismissalState.getInstance().dismissNotification(id)
+                }
+            }
+        )
+
+    )
+
+    notify(notification, project)
+}
+
 private fun notifySticky(type: NotificationType, title: String, content: String = "", project: Project? = null, notificationActions: Collection<AnAction>) {
     val notification = Notification(GROUP_DISPLAY_ID_STICKY, title, content, type)
     notificationActions.forEach {
@@ -61,7 +91,7 @@ fun notifyStickyInfo(
     content: String = "",
     project: Project? = null,
     notificationActions: Collection<AnAction> = listOf(),
-    stripHtml: Boolean = true
+    stripHtml: Boolean = true,
 ) = notifySticky(NotificationType.INFORMATION, title, getCleanedContent(content, stripHtml), project, notificationActions)
 
 fun notifyStickyWarn(
@@ -69,7 +99,7 @@ fun notifyStickyWarn(
     content: String = "",
     project: Project? = null,
     notificationActions: Collection<AnAction> = listOf(),
-    stripHtml: Boolean = true
+    stripHtml: Boolean = true,
 ) = notifySticky(NotificationType.WARNING, title, getCleanedContent(content, stripHtml), project, notificationActions)
 
 fun notifyStickyError(
@@ -77,7 +107,7 @@ fun notifyStickyError(
     content: String = "",
     project: Project? = null,
     notificationActions: Collection<AnAction> = listOf(),
-    stripHtml: Boolean = true
+    stripHtml: Boolean = true,
 ) = notifySticky(NotificationType.ERROR, title, getCleanedContent(content, stripHtml), project, notificationActions)
 
 fun notifyInfo(title: String, content: String = "", project: Project? = null, listener: NotificationListener? = null, stripHtml: Boolean = true) =
@@ -103,7 +133,7 @@ fun notifyError(
     content: String = "",
     project: Project? = null,
     listener: NotificationListener? = null,
-    stripHtml: Boolean = true
+    stripHtml: Boolean = true,
 ) = notify(Notification(GROUP_DISPLAY_ID, title, getCleanedContent(content, stripHtml), NotificationType.ERROR, listener), project)
 
 fun <T> tryNotify(message: String, block: () -> T): T? = try {

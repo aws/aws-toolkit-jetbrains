@@ -18,7 +18,7 @@ class GoSamDebugSupport : RuntimeDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>
+        debugPorts: List<Int>,
     ): XDebugProcessStarter = GoDebugHelper.createGoDebugProcess(debugHost, debugPorts, context)
 
     override fun samArguments(debugPorts: List<Int>): List<String> = buildList {
@@ -55,6 +55,6 @@ class GoImageDebugSupport : ImageDebugSupport {
         environment: ExecutionEnvironment,
         state: SamRunningState,
         debugHost: String,
-        debugPorts: List<Int>
+        debugPorts: List<Int>,
     ): XDebugProcessStarter = GoDebugHelper.createGoDebugProcess(debugHost, debugPorts, context)
 }

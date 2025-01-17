@@ -31,7 +31,7 @@ internal class CodeWhispererCodeScanHighlightingFilesPanel(private val project: 
 
     init {
         removeAll()
-        val scannedFilesTreeNodeRoot = DefaultMutableTreeNode("CodeWhisperer scanned files for security scan")
+        val scannedFilesTreeNodeRoot = DefaultMutableTreeNode("Amazon Q reviewed files for code issues")
         files.forEach {
             scannedFilesTreeNodeRoot.add(DefaultMutableTreeNode(it))
         }
@@ -82,7 +82,7 @@ internal class CodeWhispererCodeScanHighlightingFilesPanel(private val project: 
             expanded: Boolean,
             leaf: Boolean,
             row: Int,
-            hasFocus: Boolean
+            hasFocus: Boolean,
         ) {
             value as DefaultMutableTreeNode
             val file = value.userObject as? VirtualFile
