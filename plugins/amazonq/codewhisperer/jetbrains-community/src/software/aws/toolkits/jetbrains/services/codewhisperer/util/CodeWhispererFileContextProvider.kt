@@ -25,7 +25,6 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
@@ -44,6 +43,7 @@ import java.io.DataInput
 import java.io.DataOutput
 import java.util.Collections
 import kotlin.coroutines.coroutineContext
+import kotlin.time.measureTimedValue
 
 private val contentRootPathProvider = CopyContentRootPathProvider()
 
@@ -147,12 +147,20 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 val latency = System.currentTimeMillis() - startFetchingTimestamp
                 if (it.contents.isNotEmpty()) {
                     val logStr = buildString {
-                        append("Successfully fetched supplemental context with strategy ${it.strategy} with $latency ms")
+                        append(
+                            """Q inline completion supplemental context: 
+                            | Strategy: ${it.strategy},
+                            | Latency: $latency ms,
+                            | Contents: ${it.contents.size} chunks,
+                            | ContentLength: ${it.contentLength} chars,
+                            | TargetFile: ${it.targetFileName},
+                            """.trimMargin()
+                        )
                         it.contents.forEachIndexed { index, chunk ->
                             append(
                                 """
                             |
-                            | Chunk ${index + 1}:
+                            | Chunk $index:
                             |    path = ${chunk.path},
                             |    score = ${chunk.score},
                             |    contentLength = ${chunk.content.length}
@@ -219,55 +227,113 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         val query = generateQuery(targetContext)
 
         val contexts = withContext(coroutineContext) {
-            val projectContextDeferred1 = if (CodeWhispererFeatureConfigService.getInstance().getInlineCompletion()) {
-                async {
-                    val t0 = System.currentTimeMillis()
-                    val r = fetchProjectContext(query, psiFile, targetContext)
-                    val t1 = System.currentTimeMillis()
-                    LOG.debug {
-                        buildString {
-                            append("time elapse for fetching project context=${t1 - t0}ms; ")
-                            append("numberOfChunks=${r.contents.size}; ")
-                            append("totalLength=${r.contentLength}")
-                        }
+            val projectContextDeferred1 = async {
+                val timedCodemapContext = measureTimedValue { fetchProjectContext(query, psiFile, targetContext) }
+                val codemapContext = timedCodemapContext.value
+                LOG.debug {
+                    buildString {
+                        append("time elapse for fetching project context=${timedCodemapContext.duration.inWholeMilliseconds}ms; ")
+                        append("numberOfChunks=${codemapContext.contents.size}; ")
+                        append("totalLength=${codemapContext.contentLength}")
                     }
-
-                    r
                 }
-            } else {
-                null
+
+                codemapContext
             }
 
             val openTabsContextDeferred1 = async {
-                val t0 = System.currentTimeMillis()
-                val r = fetchOpenTabsContext(query, psiFile, targetContext)
-                val t1 = System.currentTimeMillis()
+                val timedOpentabContext = measureTimedValue { fetchOpenTabsContext(query, psiFile, targetContext) }
+                val opentabContext = timedOpentabContext.value
                 LOG.debug {
                     buildString {
-                        append("time elapse for open tabs context=${t1 - t0}ms; ")
-                        append("numberOfChunks=${r.contents.size}; ")
-                        append("totalLength=${r.contentLength}")
+                        append("time elapse for open tabs context=${timedOpentabContext.duration.inWholeMilliseconds}ms; ")
+                        append("numberOfChunks=${opentabContext.contents.size}; ")
+                        append("totalLength=${opentabContext.contentLength}")
                     }
                 }
 
-                r
+                opentabContext
             }
 
-            if (projectContextDeferred1 != null) {
-                awaitAll(projectContextDeferred1, openTabsContextDeferred1)
-            } else {
-                awaitAll(openTabsContextDeferred1)
-            }
+            awaitAll(projectContextDeferred1, openTabsContextDeferred1)
         }
 
-        val projectContext = contexts.find { it.strategy == CrossFileStrategy.ProjectContext }
+        val projectContext = contexts.find { it.strategy == CrossFileStrategy.Codemap }
         val openTabsContext = contexts.find { it.strategy == CrossFileStrategy.OpenTabsBM25 }
 
-        return if (projectContext != null && projectContext.contents.isNotEmpty()) {
-            projectContext
-        } else {
-            openTabsContext ?: SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
+        /**
+         * We're using both codemap and opentabs context
+         * 1. If both are present, codemap should live in the first of supplemental context list, i.e [codemap, opentabs_0, opentabs_1...] with strategy name codemap
+         * 2. If only one is present, return the one present with corresponding strategy name, either codemap or opentabs
+         * 3. If none is present, return empty list with strategy name empty
+         *
+         * Service will throw 400 error when context length is greater than 20480, drop the last chunk until the total length fits in the cap
+         */
+        val contextBeforeTruncation = when {
+            projectContext == null && openTabsContext == null -> SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
+
+            projectContext != null && openTabsContext != null -> {
+                val context1 = projectContext.contents
+                val context2 = openTabsContext.contents
+                val mergedContext = (context1 + context2).filter { it.content.isNotEmpty() }
+
+                val strategy = if (projectContext.contentLength != 0 && openTabsContext.contentLength != 0) {
+                    CrossFileStrategy.Codemap
+                } else if (projectContext.contentLength != 0) {
+                    CrossFileStrategy.Codemap
+                } else if (openTabsContext.contentLength != 0) {
+                    CrossFileStrategy.OpenTabsBM25
+                } else {
+                    CrossFileStrategy.Empty
+                }
+
+                SupplementalContextInfo(
+                    isUtg = false,
+                    contents = mergedContext,
+                    targetFileName = targetContext.filename,
+                    strategy = strategy
+                )
+            }
+
+            projectContext != null -> {
+                return if (projectContext.contentLength == 0) {
+                    SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
+                } else {
+                    SupplementalContextInfo(
+                        isUtg = false,
+                        contents = projectContext.contents,
+                        targetFileName = targetContext.filename,
+                        strategy = CrossFileStrategy.Codemap
+                    )
+                }
+            }
+
+            openTabsContext != null -> {
+                return if (openTabsContext.contentLength == 0) {
+                    SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
+                } else {
+                    SupplementalContextInfo(
+                        isUtg = false,
+                        contents = openTabsContext.contents,
+                        targetFileName = targetContext.filename,
+                        strategy = CrossFileStrategy.OpenTabsBM25
+                    )
+                }
+            }
+
+            else -> SupplementalContextInfo.emptyCrossFileContextInfo(targetContext.filename)
         }
+
+        return truncateContext(contextBeforeTruncation)
+    }
+
+    fun truncateContext(context: SupplementalContextInfo): SupplementalContextInfo {
+        var c = context.contents
+        while (c.sumOf { it.content.length } >= CodeWhispererConstants.CrossFile.MAX_TOTAL_LENGTH) {
+            c = c.dropLast(1)
+        }
+
+        return context.copy(contents = c)
     }
 
     @VisibleForTesting
@@ -285,7 +351,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 )
             },
             targetFileName = targetContext.filename,
-            strategy = CrossFileStrategy.ProjectContext
+            strategy = CrossFileStrategy.Codemap
         )
     }
 

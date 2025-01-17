@@ -8,13 +8,8 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.Session
 class ChatSessionStorage {
     private val sessions = mutableMapOf<String, Session>()
 
-    private fun createSession(tabId: String): Session {
-        val session = Session(tabId)
-        sessions[tabId] = session
-        return session
-    }
-
-    fun getSession(tabId: String): Session = sessions[tabId] ?: createSession(tabId)
+    @Synchronized
+    fun getSession(tabId: String): Session = sessions.getOrPut(tabId) { Session(tabId) }
 
     fun deleteSession(tabId: String) {
         sessions.remove(tabId)

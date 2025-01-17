@@ -49,7 +49,9 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTsx
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTypeScript
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.DefaultCodeWhispererFileContextProvider
@@ -137,7 +139,7 @@ class CodeWhispererFileContextProviderTest {
 
     @Test
     fun `extractSupplementalFileContext should timeout 50ms`() = runTest {
-        featureConfigService.stub { on { getInlineCompletion() } doReturn false }
+        mockProjectContext.stub { onBlocking { queryInline(any(), any()) }.doReturn(emptyList()) }
         sut = spy(sut)
 
         val files = NaiveSampleCase.setupFixture(fixture)
@@ -159,7 +161,26 @@ class CodeWhispererFileContextProviderTest {
     }
 
     @Test
-    fun `should only call and use openTabsContext if projectContext is disabled`() = runTest {
+    fun `should return empty if both project context and opentabs context return empty`() = runTest {
+        sut = spy(sut)
+
+        mockProjectContext.stub { onBlocking { queryInline(any(), any()) }.doReturn(emptyList()) }
+        val queryPsi = projectRule.fixture.addFileToProject("Foo.java", "public Foo {}")
+        val mockFileContext = aFileContextInfo(CodeWhispererJava.INSTANCE)
+
+        val result = sut.extractSupplementalFileContextForSrc(queryPsi, mockFileContext)
+
+        verify(sut, times(1)).fetchProjectContext(any(), any(), any())
+        verify(sut, times(1)).fetchOpenTabsContext(any(), any(), any())
+
+        assertThat(result.isUtg).isFalse
+        assertThat(result.strategy).isEqualTo(CrossFileStrategy.Empty)
+        assertThat(result.contents).isEmpty()
+    }
+
+    @Test
+    fun `should only use openTabsContext if projectContext is empty`() = runTest {
+        mockProjectContext.stub { onBlocking { queryInline(any(), any()) }.doReturn(emptyList()) }
         featureConfigService.stub { on { getInlineCompletion() } doReturn false }
         sut = spy(sut)
 
@@ -169,7 +190,7 @@ class CodeWhispererFileContextProviderTest {
 
         val result = sut.extractSupplementalFileContextForSrc(queryPsi, mockFileContext)
 
-        verify(sut, times(0)).fetchProjectContext(any(), any(), any())
+        verify(sut, times(1)).fetchProjectContext(any(), any(), any())
         verify(sut, times(1)).fetchOpenTabsContext(any(), any(), any())
 
         assertThat(result.isUtg).isFalse
@@ -208,7 +229,7 @@ class CodeWhispererFileContextProviderTest {
                 assertThat(providerContext.constructed()).hasSize(1)
                 assertThat(serverContext.constructed()).hasSize(1)
 
-                whenever(providerContext.constructed()[0].queryInline(any(), any())).thenThrow(RuntimeException("mock exception"))
+                whenever(providerContext.constructed()[0].queryInline(any(), any(), any())).thenThrow(RuntimeException("mock exception"))
 
                 val result = controller.queryInline("query", "filePath")
                 assertThat(result).isEmpty()
@@ -217,19 +238,16 @@ class CodeWhispererFileContextProviderTest {
     }
 
     @Test
-    fun `should use project context if it is present`() = runTest {
+    fun `should use both project context and open tabs if both are present`() = runTest {
         mockProjectContext.stub {
             runBlocking {
                 doReturn(
                     listOf(
                         InlineBm25Chunk("project_context1", "path1", 0.0),
-                        InlineBm25Chunk("project_context2", "path2", 0.0),
-                        InlineBm25Chunk("project_context3", "path3", 0.0),
                     )
                 ).whenever(it).queryInline(any(), any())
             }
         }
-        featureConfigService.stub { on { getInlineCompletion() } doReturn true }
         sut = spy(sut)
         val files = NaiveSampleCase.setupFixture(fixture)
         val queryPsi = files[0]
@@ -238,8 +256,8 @@ class CodeWhispererFileContextProviderTest {
         val result = sut.extractSupplementalFileContextForSrc(queryPsi, mockFileContext)
 
         assertThat(result.isUtg).isFalse
-        assertThat(result.strategy).isEqualTo(CrossFileStrategy.ProjectContext)
-        assertThat(result.contents).hasSize(3)
+        assertThat(result.strategy).isEqualTo(CrossFileStrategy.Codemap)
+        assertThat(result.contents).hasSize(4)
     }
 
     @Test
@@ -419,7 +437,8 @@ class CodeWhispererFileContextProviderTest {
     }
 
     @Test
-    fun `extractSupplementalFileContext from src file should extract src`() = runTest {
+    fun `extractSupplementalFileContext should return opentabs context if project context is empty`() = runTest {
+        mockProjectContext.stub { onBlocking { queryInline(any(), any()) }.doReturn(emptyList()) }
         val files = NaiveSampleCase.setupFixture(fixture)
         val queryPsi = files[0]
 
@@ -436,6 +455,10 @@ class CodeWhispererFileContextProviderTest {
         assertThat(supplementalContext?.contents)
             .isNotNull
             .isNotEmpty
+
+        assertThat(supplementalContext?.strategy)
+            .isNotNull
+            .isEqualTo(CrossFileStrategy.OpenTabsBM25)
         verify(sut).extractSupplementalFileContextForSrc(any(), any())
         verify(sut, times(0)).extractSupplementalFileContextForTst(any(), any())
     }
@@ -482,6 +505,28 @@ class CodeWhispererFileContextProviderTest {
 
         verify(sut, times(0)).extractSupplementalFileContextForSrc(any(), any())
         verify(sut).extractSupplementalFileContextForTst(any(), any())
+    }
+
+    @Test
+    fun `truncate context should make context length fit in 20480 cap`() {
+        val supplementalContext = SupplementalContextInfo(
+            isUtg = false,
+            contents = listOf(
+                Chunk(content = "a".repeat(10000), path = "a.java"),
+                Chunk(content = "b".repeat(10000), path = "b.java"),
+                Chunk(content = "c".repeat(10000), path = "c.java"),
+                Chunk(content = "d".repeat(10000), path = "d.java"),
+                Chunk(content = "e".repeat(10000), path = "e.java"),
+            ),
+            targetFileName = "foo",
+            strategy = CrossFileStrategy.Codemap
+        )
+
+        val r = sut.truncateContext(supplementalContext)
+        assertThat(r.contents).hasSize(2)
+        assertThat(r.contentLength).isEqualTo(20000)
+        assertThat(r.strategy).isEqualTo(CrossFileStrategy.Codemap)
+        assertThat(r.targetFileName).isEqualTo("foo")
     }
 
     private fun setupFixture(fixture: JavaCodeInsightTestFixture): List<PsiFile> {

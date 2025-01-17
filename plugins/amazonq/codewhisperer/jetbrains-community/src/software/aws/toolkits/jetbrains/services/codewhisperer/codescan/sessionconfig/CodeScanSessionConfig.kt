@@ -31,12 +31,14 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.Ama
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CodeAnalysisScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_TIMEOUT_IN_SECONDS
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.File
@@ -105,7 +107,7 @@ class CodeScanSessionConfig(
                 null -> getProjectPayloadMetadata()
                 else -> when (scope) {
                     CodeAnalysisScope.PROJECT -> getProjectPayloadMetadata()
-                    CodeAnalysisScope.FILE -> if (selectedFile.path.startsWith(projectRoot.path)) {
+                    CodeAnalysisScope.FILE -> if (selectedFile.isWithin(projectRoot)) {
                         getFilePayloadMetadata(selectedFile, true)
                     } else {
                         projectRoot = selectedFile.parent
@@ -195,6 +197,9 @@ class CodeScanSessionConfig(
         files.forEach { file ->
             try {
                 val relativePath = "${project.name}/${file.relativeTo(projectRoot.toNioPath())}"
+                if (relativePath.contains("../") || relativePath.contains("..\\")) {
+                    CodeWhispererTelemetryService.getInstance().sendInvalidZipEvent(file, projectRoot.toNioPath(), relativePath)
+                }
                 LOG.debug { "Selected file for truncation: $file" }
                 it.putNextEntry(relativePath.toString(), file)
             } catch (e: Exception) {
