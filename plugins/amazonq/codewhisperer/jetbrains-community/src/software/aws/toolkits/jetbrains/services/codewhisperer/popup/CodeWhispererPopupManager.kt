@@ -457,8 +457,7 @@ class CodeWhispererPopupManager {
                     }
                     closePopup(states.popup)
                     if (sessionContext.selectedIndex == 0) {
-                        val service = CodeWhispererService.getInstance()
-                        service.promoteNextInvocationIfAvailable()
+                        CodeWhispererService.getInstance().promoteNextInvocationIfAvailable()
                     }
                 }
             }
