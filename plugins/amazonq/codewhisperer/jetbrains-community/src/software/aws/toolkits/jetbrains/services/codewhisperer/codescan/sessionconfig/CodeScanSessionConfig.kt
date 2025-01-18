@@ -36,8 +36,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CodeAnalysisScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_PAYLOAD_LIMIT_IN_BYTES
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.EXPRESS_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererLanguage
@@ -68,9 +68,11 @@ class CodeScanSessionConfig(
     /**
      * Timeout for the overall job - "Run Security Scan".
      */
-    fun overallJobTimeoutInSeconds(): Long = when (scope) {
-        CodeAnalysisScope.FILE -> FILE_SCAN_TIMEOUT_IN_SECONDS
-        else -> DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
+    fun overallJobTimeoutInSeconds(): Long {
+        if (scope == CodeAnalysisScope.FILE && !initiatedByChat) {
+            return EXPRESS_SCAN_TIMEOUT_IN_SECONDS
+        }
+        return DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
     }
 
     fun getPayloadLimitInBytes(): Long = when (scope) {
