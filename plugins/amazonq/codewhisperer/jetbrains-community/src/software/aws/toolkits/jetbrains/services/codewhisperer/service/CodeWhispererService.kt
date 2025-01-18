@@ -782,19 +782,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         )
     }
 
-    fun sendUserDecisionForNextSession() {
-        nextInvocationContext?.let { context ->
-            CodeWhispererTelemetryService.getInstance().sendUserDecisionEventForAll(
-                context.requestContext,
-                context.responseContext,
-                context.recommendationContext,
-                SessionContext(),
-                false
-            )
-        }
-        nextInvocationContext = null
-    }
-
     private fun createNextFileContextInfo(
         requestContext: RequestContext,
         firstValidRecommendation: DetailContext,
@@ -964,6 +951,8 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
     }
 
     override fun dispose() {}
+
+    fun getNextInvocationContext(): InvocationContext? = nextInvocationContext
 
     companion object {
         private val LOG = getLogger<CodeWhispererService>()

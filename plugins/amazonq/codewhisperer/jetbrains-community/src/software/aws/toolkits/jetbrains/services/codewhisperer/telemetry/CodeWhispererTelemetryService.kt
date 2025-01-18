@@ -29,7 +29,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionConte
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
@@ -452,6 +451,7 @@ class CodeWhispererTelemetryService {
         sessionContext: SessionContext,
         hasUserAccepted: Boolean,
         popupShownTime: Duration? = null,
+        nextInvocationContext: InvocationContext? = null,
     ) {
         val detailContexts = recommendationContext.details
         val decisions = mutableListOf<CodewhispererSuggestionState>()
@@ -500,8 +500,17 @@ class CodeWhispererTelemetryService {
             // we need this as well because AutotriggerService will reset the queue periodically
             CodeWhispererAutoTriggerService.getInstance().addPreviousDecision(this)
             // send possible next session event if current action is reject and next popup haven't shown up
-            if (CodewhispererSuggestionState.Reject == CodewhispererSuggestionState.from(this.toString())) {
-                CodeWhispererService.getInstance().sendUserDecisionForNextSession()
+            if (CodewhispererSuggestionState.from(this.toString()) == CodewhispererSuggestionState.Reject) {
+                nextInvocationContext?.let {
+                    sendUserDecisionEventForAll(
+                        it.requestContext,
+                        it.responseContext,
+                        it.recommendationContext,
+                        SessionContext(),
+                        false,
+                        nextInvocationContext = null
+                    )
+                }
             }
         }
     }
