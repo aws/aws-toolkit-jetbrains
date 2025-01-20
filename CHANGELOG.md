@@ -1,3 +1,6 @@
+# _3.49_ (2025-01-17)
+- **(Bug Fix)** /review: Improved success rate of code reviews for certain workspace configurations
+
 # _3.48_ (2025-01-16)
 - **(Feature)** Enhance Q inline completion context fetching for better suggestion quality
 - **(Feature)** /doc: Add error message if updated README is too large
