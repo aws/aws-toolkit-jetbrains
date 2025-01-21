@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "re-open diff when file clicked in Amazon Q Doc"
-}
+  "description" : "Amazon Q Doc README diff will re-open when the README file is clicked after it has been closed"
+}s
