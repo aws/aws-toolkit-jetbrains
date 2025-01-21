@@ -25,7 +25,7 @@ class CodeWhispererJSImportAdder : CodeWhispererImportAdder() {
 
     override fun createNewImportPsiElement(psiFile: PsiFile, statement: String): PsiElement? {
         val fileFactory = PsiFileFactory.getInstance(psiFile.project)
-        val dummyFile = fileFactory.createFileFromText(dummyFileName, JavascriptLanguage.INSTANCE, statement)
+        val dummyFile = fileFactory.createFileFromText(dummyFileName, JavascriptLanguage, statement)
             as? JSFile ?: return null
         return dummyFile.children.find { it is ES6ImportDeclaration }
     }
