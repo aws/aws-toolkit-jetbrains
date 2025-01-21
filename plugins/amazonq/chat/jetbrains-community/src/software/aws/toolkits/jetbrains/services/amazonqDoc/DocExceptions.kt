@@ -8,7 +8,8 @@ import software.aws.toolkits.resources.message
 open class DocException(
     override val message: String?,
     override val cause: Throwable? = null,
-    val remainingIterations: Int? = null) : RuntimeException()
+    val remainingIterations: Int? = null,
+) : RuntimeException()
 
 class ZipFileError(override val message: String, override val cause: Throwable?) : RuntimeException()
 

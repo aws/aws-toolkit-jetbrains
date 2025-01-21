@@ -7,6 +7,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.ProgressField
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.PromptProgressMessage
+import software.aws.toolkits.jetbrains.services.amazonqDoc.NEW_SESSION_FOLLOWUPS
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
@@ -114,7 +115,6 @@ suspend fun MessagePublisher.sendChatInputEnabledMessage(tabId: String, enabled:
     this.publish(chatInputEnabledMessage)
 }
 
-
 suspend fun MessagePublisher.sendError(tabId: String, errMessage: String?, retries: Int, conversationId: String? = null, showDefaultMessage: Boolean? = false) {
     val conversationIdText = if (conversationId == null) "" else "\n\nConversation ID: **$conversationId**"
 
@@ -151,33 +151,13 @@ suspend fun MessagePublisher.sendError(tabId: String, errMessage: String?, retri
     )
 }
 
-
 suspend fun MessagePublisher.sendErrorToUser(
     tabId: String,
     errMessage: String?,
     conversationId: String? = null,
-    isEnableChatInput: Boolean = false
+    isEnableChatInput: Boolean = false,
 ) {
     val conversationIdText = if (conversationId == null) "" else "\n\nConversation ID: **$conversationId**"
-
-    var followUps = listOf(
-        FollowUp(
-            pillText = message("amazonqDoc.prompt.reject.new_task"),
-            type = FollowUpTypes.NEW_TASK,
-            status = FollowUpStatusType.Info
-        ),
-        FollowUp(
-            pillText = message("amazonqDoc.prompt.reject.close_session"),
-            type = FollowUpTypes.CLOSE_SESSION,
-            status = FollowUpStatusType.Info
-        )
-    );
-
-    this.sendChatInputEnabledMessage(tabId, enabled = isEnableChatInput)
-    if (isEnableChatInput) {
-        this.sendUpdatePlaceholder(tabId, message("amazonqDoc.edit.placeholder"))
-        followUps = Collections.emptyList()
-    }
 
     this.sendAnswer(
         tabId = tabId,
@@ -185,11 +165,23 @@ suspend fun MessagePublisher.sendErrorToUser(
         message = errMessage + conversationIdText,
     )
 
-    this.sendAnswer(
-        tabId = tabId,
-        messageType = DocMessageType.SystemPrompt,
-        followUp = followUps
-    )
+    if (isEnableChatInput) {
+        this.sendAnswer(
+            tabId = tabId,
+            messageType = DocMessageType.SystemPrompt,
+            followUp = Collections.emptyList()
+        )
+        this.sendUpdatePlaceholder(tabId, message("amazonqDoc.edit.placeholder"))
+    } else {
+        this.sendAnswer(
+            tabId = tabId,
+            messageType = DocMessageType.SystemPrompt,
+            followUp = NEW_SESSION_FOLLOWUPS
+        )
+        this.sendUpdatePlaceholder(tabId, message("amazonqDoc.prompt.placeholder"))
+    }
+
+    this.sendChatInputEnabledMessage(tabId, enabled = isEnableChatInput)
 }
 
 suspend fun MessagePublisher.sendMonthlyLimitError(tabId: String) {

@@ -53,12 +53,12 @@ import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendAuthenti
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendChatInputEnabledMessage
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendCodeResult
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendError
+import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendErrorToUser
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendFolderConfirmationMessage
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendMonthlyLimitError
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendSystemPrompt
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePlaceholder
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePromptProgress
-import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendErrorToUser
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.updateFileComponent
 import software.aws.toolkits.jetbrains.services.amazonqDoc.session.DocSession
 import software.aws.toolkits.jetbrains.services.amazonqDoc.session.PrepareDocGenerationState
@@ -380,7 +380,7 @@ class DocController(
                     tabId = message.tabId,
                     errMessage = message("amazonqFeatureDev.exception.open_diff_failed"),
                     retries = 0,
-                    conversationId = session.conversationIdUnsafe,
+                    conversationId = session.conversationIdUnsafe
                 )
             }
         }
@@ -428,10 +428,9 @@ class DocController(
             messenger.sendUpdatePlaceholder(tabId, message("amazonqDoc.prompt.placeholder"))
         } catch (err: Exception) {
             val message = createUserFacingErrorMessage(err.message)
-            messenger.sendError(
+            messenger.sendErrorToUser(
                 tabId = tabId,
                 errMessage = message ?: message("amazonqFeatureDev.exception.request_failed"),
-                retries = retriesRemaining(session),
                 conversationId = session?.conversationIdUnsafe,
             )
         }
@@ -725,7 +724,7 @@ class DocController(
             }
         } catch (err: Exception) {
             // For non edit mode lock the chat input until they explicitly click one of the follow-ups
-            var isEnableChatInput = false;
+            var isEnableChatInput = false
             if (err is DocException && Mode.EDIT == mode) {
                 isEnableChatInput = err.remainingIterations != null && err.remainingIterations > 0
             }
@@ -887,7 +886,7 @@ class DocController(
                 tabId = tabId,
                 errMessage = message ?: message("amazonqFeatureDev.exception.retry_request_failed"),
                 retries = retriesRemaining(session),
-                conversationId = session?.conversationIdUnsafe
+                conversationId = session?.conversationIdUnsafe,
             )
         } finally {
             // Finish processing the event
