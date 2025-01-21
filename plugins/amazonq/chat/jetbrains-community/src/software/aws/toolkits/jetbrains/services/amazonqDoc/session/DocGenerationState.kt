@@ -180,6 +180,11 @@ private suspend fun DocGenerationState.generateCode(codeGenerationId: String, mo
                     -> docServiceError(message("amazonqDoc.exception.readme_too_large"))
 
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
+                        "README_UPDATE_TOO_LARGE"
+                    ),
+                    -> docServiceError(message("amazonqDoc.exception.readme_update_too_large"))
+
+                    codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "WORKSPACE_TOO_LARGE"
                     ),
                     -> docServiceError(message("amazonqDoc.exception.content_length_error"))

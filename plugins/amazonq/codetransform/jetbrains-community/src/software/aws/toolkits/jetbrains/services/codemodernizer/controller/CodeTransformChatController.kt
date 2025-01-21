@@ -673,10 +673,12 @@ class CodeTransformChatController(
         codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
     }
 
-    private suspend fun handleCodeTransformJobFailedPreBuild(result: CodeModernizerJobCompletedResult.JobFailedInitialBuild) =
+    private suspend fun handleCodeTransformJobFailedPreBuild(result: CodeModernizerJobCompletedResult.JobFailedInitialBuild) {
         codeTransformChatHelper.addNewMessage(
             buildTransformResultChatContent(result)
         )
+        artifactHandler.showBuildLog(CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId)
+    }
 
     private suspend fun handleCodeTransformResult(result: CodeModernizerJobCompletedResult) {
         LOG.info { "CodeModernizerJobCompletedResult: $result" }
@@ -684,6 +686,8 @@ class CodeTransformChatController(
             is CodeModernizerJobCompletedResult.Stopped, CodeModernizerJobCompletedResult.JobAbortedBeforeStarting -> handleCodeTransformStoppedByUser()
             is CodeModernizerJobCompletedResult.JobFailed -> handleCodeTransformJobFailed(result.failureReason)
             is CodeModernizerJobCompletedResult.JobFailedInitialBuild -> handleCodeTransformJobFailedPreBuild(result)
+            is CodeModernizerJobCompletedResult.RetryableFailure -> handleCodeTransformJobFailed(result.failureReason)
+            is CodeModernizerJobCompletedResult.UnableToCreateJob -> handleCodeTransformJobFailed(result.failureReason)
             else -> {
                 if (result is CodeModernizerJobCompletedResult.ZipUploadFailed && result.failureReason is UploadFailureReason.CREDENTIALS_EXPIRED) {
                     return

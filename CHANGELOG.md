@@ -1,3 +1,17 @@
+# _3.49_ (2025-01-17)
+- **(Bug Fix)** /review: Improved success rate of code reviews for certain workspace configurations
+
+# _3.48_ (2025-01-16)
+- **(Feature)** Enhance Q inline completion context fetching for better suggestion quality
+- **(Feature)** /doc: Add error message if updated README is too large
+- **(Bug Fix)** /transform: always include button to start a new transformation at the end of a job
+- **(Bug Fix)** Amazon Q can update mvn and gradle build files
+- **(Bug Fix)** Fix doc generation for modules that are a part of the project
+- **(Bug Fix)** Amazon Q /dev: Remove hard-coded limits and instead rely server-side data to communicate number of code generations remaining
+- **(Bug Fix)** /transform: automatically open pre-build error logs when available
+- **(Bug Fix)** /doc: Fix code generation error when cancelling a documentation task
+- **(Bug Fix)** Amazon Q - update messaging for /doc agent
+
 # _3.47_ (2025-01-09)
 - **(Bug Fix)** Fix issue where users are unable to login to Amazon Q if they have previously authenticated ([#5214](https://github.com/aws/aws-toolkit-jetbrains/issues/5214))
 - **(Bug Fix)** Fix incorrect text shown while updating documentation in /doc
