@@ -44,9 +44,8 @@ fun Module.tryGetJdkLanguageLevelJdk(): JavaSdkVersion? {
 // search for Strings that indicate embedded Oracle SQL statements are present
 fun containsSQL(contentRoot: VirtualFile): Boolean {
     val patterns = listOf(
-        "oracle.jdbc.OracleDriver",
-        "jdbc:oracle:thin:@",
-        "jdbc:oracle:oci:@",
+        "oracle.jdbc.",
+        "jdbc:oracle:",
         "jdbc:odbc:",
     )
 

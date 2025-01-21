@@ -61,6 +61,7 @@ import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.nio.file.Path
+import java.time.Duration
 import java.time.Instant
 import java.util.Base64
 import java.util.concurrent.CancellationException
@@ -408,8 +409,10 @@ class CodeModernizerSession(
                 UnknownHostException::class,
                 SocketTimeoutException::class,
                 HttpRequests.HttpStatusException::class,
-                ConnectException::class
-            )
+                ConnectException::class,
+                IOException::class,
+            ),
+            maxDuration = Duration.ofMinutes(5)
         ) {
             clientAdaptor.uploadArtifactToS3(
                 createUploadUrlResponse.uploadUrl(),

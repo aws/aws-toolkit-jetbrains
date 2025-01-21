@@ -76,7 +76,7 @@ object CodeWhispererConstants {
     const val FILE_SCAN_INITIAL_POLLING_INTERVAL_IN_SECONDS: Long = 10
     const val PROJECT_SCAN_INITIAL_POLLING_INTERVAL_IN_SECONDS: Long = 30
     const val CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS: Long = 10
-    const val FILE_SCAN_TIMEOUT_IN_SECONDS: Long = 60 * 10 // 10 minutes
+    const val EXPRESS_SCAN_TIMEOUT_IN_SECONDS: Long = 60
     const val FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES: Long = 1024 * 200 // 200KB
     const val AUTO_SCAN_DEBOUNCE_DELAY_IN_SECONDS: Long = 30
     const val CODE_FIX_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS: Long = 10
@@ -127,6 +127,11 @@ object CodeWhispererConstants {
         PROJECT("PROJECT"),
     }
 
+    enum class FeatureName(val value: String) {
+        TEST_GENERATION("TEST_GENERATION"),
+        CODE_REVIEW("CODE_REVIEW"),
+    }
+
     enum class UploadTaskType(val value: String) {
         SCAN_FILE("SCAN_FILE"),
         SCAN_PROJECT("SCAN_PROJECT"),
@@ -172,6 +177,7 @@ object CodeWhispererConstants {
         const val CHUNK_SIZE = 60
         const val NUMBER_OF_LINE_IN_CHUNK = 50
         const val NUMBER_OF_CHUNK_TO_FETCH = 3
+        const val MAX_TOTAL_LENGTH = 20480
     }
 
     object Utg {

@@ -55,8 +55,6 @@ class Session(val tabID: String, val project: Project) {
             approach = "",
             tabID = tabID,
             token = null,
-            codeGenerationRemainingIterationCount = 0,
-            codeGenerationTotalIterationCount = CODE_GENERATION_RETRY_LIMIT,
             currentIteration = 0,
             diffMetricsProcessed = DiffMetricsProcessed(HashSet(), HashSet())
         )
