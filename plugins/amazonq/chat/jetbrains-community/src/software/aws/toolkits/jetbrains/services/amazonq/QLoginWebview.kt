@@ -86,7 +86,7 @@ class QWebviewPanel private constructor(val project: Project) : Disposable {
     }
 
     private fun init() {
-        if (!isQWebviewsAvailable()) {
+        if (false) {
             // Fallback to an alternative browser-less solution
             webviewContainer.add(JBTextArea("JCEF not supported"))
             browser = null

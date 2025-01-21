@@ -107,13 +107,13 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         project: Project,
         qPanel: Wrapper,
     ) {
-        val component = if (isQConnected(project) && !isQExpired(project)) {
-            AmazonQToolWindow.getInstance(project).component
-        } else {
-            QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AmazonQ))
-            QWebviewPanel.getInstance(project).component
-        }
-        qPanel.setContent(component)
+//        val component = if (isQConnected(project) && !isQExpired(project)) {
+        qPanel.setContent(AmazonQToolWindow.getInstance(project).component)
+//        } else {
+//            QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AmazonQ))
+//            QWebviewPanel.getInstance(project).component
+//        }
+//        qPanel.setContent(component)
     }
 
     override fun init(toolWindow: ToolWindow) {
@@ -132,7 +132,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         )
     }
 
-    override fun shouldBeAvailable(project: Project): Boolean = isQWebviewsAvailable()
+    override fun shouldBeAvailable(project: Project): Boolean = true
 
     private fun onConnectionChanged(project: Project, newConnection: ToolkitConnection?, qPanel: Wrapper) {
         val isNewConnectionForQ = newConnection?.let {

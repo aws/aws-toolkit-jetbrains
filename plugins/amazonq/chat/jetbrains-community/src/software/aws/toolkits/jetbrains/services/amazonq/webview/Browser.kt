@@ -30,14 +30,15 @@ class Browser(parent: Disposable) : Disposable {
         highlightCommand: HighlightCommand?,
     ) {
         // register the scheme handler to route http://mynah/ URIs to the resources/assets directory on classpath
-        CefApp.getInstance()
-            .registerSchemeHandlerFactory(
-                "http",
-                "mynah",
-                AssetResourceHandler.AssetResourceHandlerFactory(),
-            )
-
+//        CefApp.getInstance()
+//            .registerSchemeHandlerFactory(
+//                "http",
+//                "mynah",
+//                AssetResourceHandler.AssetResourceHandlerFactory(),
+//            )
+        println("aaaaaaaaa did a load")
         loadWebView(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable, highlightCommand)
+        println("loadloadload")
     }
 
     override fun dispose() {
@@ -114,13 +115,14 @@ class Browser(parent: Disposable) : Disposable {
                     $jsScripts
                 </head>
                 <body>
+                loadingloadingloading
                 </body>
             </html>
         """.trimIndent()
     }
 
     companion object {
-        private const val WEB_SCRIPT_URI = "http://mynah/js/mynah-ui.js"
+        private const val WEB_SCRIPT_URI = "http://127.0.0.1:8000/js/mynah-ui.js"
         private const val MAX_ONBOARDING_PAGE_COUNT = 3
         private val OBJECT_MAPPER = jacksonObjectMapper()
     }

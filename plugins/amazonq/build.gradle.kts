@@ -54,12 +54,4 @@ tasks.check {
 val runSplitIde by intellijPlatformTesting.runIde.registering {
     splitMode = true
     splitModeTarget = SplitModeAware.SplitModeTarget.BACKEND
-
-    plugins {
-        localPlugin(provider { project(":plugin-core").tasks.buildPlugin.get().outputs.files.singleFile })
-    }
-
-    prepareSandboxTask {
-        dependsOn(provider { project(":plugin-core").tasks.buildPlugin })
-    }
 }
