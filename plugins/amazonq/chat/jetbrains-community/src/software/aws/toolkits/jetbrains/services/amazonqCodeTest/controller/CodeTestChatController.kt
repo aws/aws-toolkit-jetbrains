@@ -277,7 +277,7 @@ class CodeTestChatController(
 
             val requestData = ChatRequestData(
                 tabId = session.tabId,
-                message = "Generate unit tests for the following part of my code: ${message.prompt}",
+                message = "Generate unit tests for the following part of my code: ${message.prompt.ifBlank { fileInfo.fileName }}",
                 activeFileContext = activeFileContext,
                 userIntent = UserIntent.GENERATE_UNIT_TESTS,
                 triggerType = TriggerType.ContextMenu,
