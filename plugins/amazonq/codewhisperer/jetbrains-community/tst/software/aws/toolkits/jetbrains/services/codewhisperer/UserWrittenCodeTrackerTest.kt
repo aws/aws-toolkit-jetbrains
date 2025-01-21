@@ -19,7 +19,6 @@ import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.spy
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
@@ -35,7 +34,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserWrit
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.AwsSettings
-import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 
 internal class UserWrittenCodeTrackerTest {
@@ -53,7 +51,6 @@ internal class UserWrittenCodeTrackerTest {
     @JvmField
     val mockClientManagerRule = MockClientManagerRule()
 
-
     @Rule
     @JvmField
     var projectRule = PythonCodeInsightTestFixtureRule()
@@ -64,7 +61,6 @@ internal class UserWrittenCodeTrackerTest {
     lateinit var batcher: TelemetryBatcher
     lateinit var exploreActionManagerMock: CodeWhispererExplorerActionManager
     lateinit var sut: UserWrittenCodeTracker
-
 
     @Before
     open fun setup() {
