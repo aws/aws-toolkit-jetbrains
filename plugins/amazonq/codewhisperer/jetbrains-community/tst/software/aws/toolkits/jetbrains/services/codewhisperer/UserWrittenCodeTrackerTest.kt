@@ -128,6 +128,7 @@ internal class UserWrittenCodeTrackerTest {
         }
         assertThat(sut.userWrittenCodeCharacterCount[language]).isEqualTo(newCode.length.toLong())
         assertThat(sut.userWrittenCodeLineCount[language]).isEqualTo(1)
+        ApplicationManager.getApplication().assertReadAccessAllowed()
     }
 
     @Test
@@ -142,6 +143,7 @@ internal class UserWrittenCodeTrackerTest {
             }
         }
         assertThat(sut.userWrittenCodeCharacterCount.getOrDefault(CodeWhispererPython.INSTANCE, 0)).isEqualTo(0)
+        ApplicationManager.getApplication().assertReadAccessAllowed()
     }
 
     @Test
