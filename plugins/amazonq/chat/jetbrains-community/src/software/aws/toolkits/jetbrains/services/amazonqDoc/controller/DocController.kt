@@ -60,7 +60,6 @@ import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendRetryCha
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendSystemPrompt
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePlaceholder
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePromptProgress
-import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendErrorToUser
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.updateFileComponent
 import software.aws.toolkits.jetbrains.services.amazonqDoc.session.DocSession
 import software.aws.toolkits.jetbrains.services.amazonqDoc.session.PrepareDocGenerationState
@@ -409,7 +408,7 @@ class DocController(
                     tabId = message.tabId,
                     errMessage = message("amazonqFeatureDev.exception.open_diff_failed"),
                     retries = 0,
-                    conversationId = session.conversationIdUnsafe,
+                    conversationId = session.conversationIdUnsafe
                 )
             }
         }
@@ -916,7 +915,7 @@ class DocController(
                 tabId = tabId,
                 errMessage = message ?: message("amazonqFeatureDev.exception.retry_request_failed"),
                 retries = retriesRemaining(session),
-                conversationId = session?.conversationIdUnsafe
+                conversationId = session?.conversationIdUnsafe,
             )
         } finally {
             // Finish processing the event

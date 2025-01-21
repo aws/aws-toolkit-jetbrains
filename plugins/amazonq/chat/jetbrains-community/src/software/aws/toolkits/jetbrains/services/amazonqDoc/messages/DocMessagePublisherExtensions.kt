@@ -115,7 +115,6 @@ suspend fun MessagePublisher.sendChatInputEnabledMessage(tabId: String, enabled:
     this.publish(chatInputEnabledMessage)
 }
 
-
 suspend fun MessagePublisher.sendError(tabId: String, errMessage: String?, retries: Int, conversationId: String? = null, showDefaultMessage: Boolean? = false) {
     val conversationIdText = if (conversationId == null) "" else "\n\nConversation ID: **$conversationId**"
 
