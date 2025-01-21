@@ -13,7 +13,7 @@ import com.intellij.openapi.components.service
 import com.intellij.util.xmlb.annotations.Property
 
 @Service
-@State(name = "codewhispererSettings", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
+@State(name = "codewhispererSettings", storages = [Storage("aws.xml")])
 class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguration> {
     private val state = CodeWhispererConfiguration()
 
