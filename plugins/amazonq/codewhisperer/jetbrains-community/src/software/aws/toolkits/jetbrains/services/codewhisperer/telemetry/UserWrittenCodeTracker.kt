@@ -12,6 +12,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
+import com.intellij.util.concurrency.annotations.RequiresReadLock
 import com.intellij.util.messages.MessageBusConnection
 import com.intellij.util.messages.Topic
 import org.jetbrains.annotations.TestOnly
@@ -92,6 +93,7 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
         }
     }
 
+    @RequiresReadLock
     internal fun documentChanged(event: DocumentEvent) {
         // do not listen to document changed made by Amazon Q itself
         if (isQMakingEdits.get() || !isActive.get()) {
