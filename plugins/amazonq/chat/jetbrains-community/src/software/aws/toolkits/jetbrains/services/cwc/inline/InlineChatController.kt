@@ -60,6 +60,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.customization.Code
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserWrittenCodeTracker.Companion.Q_FEATURE_TOPIC
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
 import software.aws.toolkits.jetbrains.services.cwc.controller.ReferenceLogController
@@ -535,8 +536,7 @@ class InlineChatController(
     private fun insertString(editor: Editor, offset: Int, text: String): RangeMarker {
         lateinit var rangeMarker: RangeMarker
 
-        ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
-            .onEvent(QFeatureEvent.STARTS_EDITING)
+        broadcastQEvent(QFeatureEvent.STARTS_EDITING)
         ApplicationManager.getApplication().invokeAndWait {
             CommandProcessor.getInstance().runUndoTransparentAction {
                 WriteCommandAction.runWriteCommandAction(project) {
@@ -546,14 +546,12 @@ class InlineChatController(
                 highlightCodeWithBackgroundColor(editor, rangeMarker.startOffset, rangeMarker.endOffset, true)
             }
         }
-        ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
-            .onEvent(QFeatureEvent.FINISHES_EDITING)
+        broadcastQEvent(QFeatureEvent.FINISHES_EDITING)
         return rangeMarker
     }
 
     private fun replaceString(document: Document, start: Int, end: Int, text: String) {
-        ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
-            .onEvent(QFeatureEvent.STARTS_EDITING)
+        broadcastQEvent(QFeatureEvent.STARTS_EDITING)
         ApplicationManager.getApplication().invokeAndWait {
             CommandProcessor.getInstance().runUndoTransparentAction {
                 WriteCommandAction.runWriteCommandAction(project) {
@@ -561,8 +559,7 @@ class InlineChatController(
                 }
             }
         }
-        ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
-            .onEvent(QFeatureEvent.FINISHES_EDITING)
+        broadcastQEvent(QFeatureEvent.FINISHES_EDITING)
     }
 
     private fun highlightString(editor: Editor, start: Int, end: Int, isInsert: Boolean) {
@@ -720,8 +717,7 @@ class InlineChatController(
             undoChanges()
         }
 
-        ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
-            .onEvent(QFeatureEvent.FINISHES_EDITING)
+        broadcastQEvent(QFeatureEvent.FINISHES_EDITING)
         return errorMessage
     }
 

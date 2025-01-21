@@ -73,6 +73,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserWrittenCodeTracker.Companion.Q_FEATURE_TOPIC
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.cwc.ChatConstants
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
@@ -1206,8 +1207,7 @@ class CodeTestChatController(
                 "Processing message: $message " +
                 "tabId: $tabId"
         }
-        ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
-            .onEvent(QFeatureEvent.INVOCATION)
+        broadcastQEvent(QFeatureEvent.INVOCATION)
         when (session.conversationState) {
             ConversationState.WAITING_FOR_BUILD_COMMAND_INPUT -> handleBuildCommandInput(session, message)
             ConversationState.WAITING_FOR_REGENERATE_INPUT -> handleRegenerateInput(session, message)

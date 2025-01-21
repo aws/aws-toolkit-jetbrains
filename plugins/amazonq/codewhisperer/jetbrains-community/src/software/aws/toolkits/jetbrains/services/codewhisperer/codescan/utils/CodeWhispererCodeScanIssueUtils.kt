@@ -40,6 +40,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmi
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserWrittenCodeTracker.Companion.Q_FEATURE_TOPIC
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_ISSUE_TITLE_MAX_LENGTH
@@ -333,8 +334,7 @@ fun applySuggestedFix(project: Project, issue: CodeWhispererCodeScanIssue) {
     try {
         val manager = CodeWhispererCodeReferenceManager.getInstance(issue.project)
         WriteCommandAction.runWriteCommandAction(issue.project) {
-            ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
-                .onEvent(QFeatureEvent.STARTS_EDITING)
+            broadcastQEvent(QFeatureEvent.STARTS_EDITING)
             val document = FileDocumentManager.getInstance().getDocument(issue.file) ?: return@runWriteCommandAction
 
             val documentContent = document.text
@@ -347,8 +347,7 @@ fun applySuggestedFix(project: Project, issue: CodeWhispererCodeScanIssue) {
                 LOG.debug { "Original content from reference span: $originalContent" }
                 manager.addReferenceLogPanelEntry(reference = reference, null, null, originalContent.split("\n"))
             }
-            ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
-                .onEvent(QFeatureEvent.FINISHES_EDITING)
+            broadcastQEvent(QFeatureEvent.FINISHES_EDITING)
         }
         if (issue.suggestedFixes[0].references.isNotEmpty()) {
             manager.toolWindow?.show()

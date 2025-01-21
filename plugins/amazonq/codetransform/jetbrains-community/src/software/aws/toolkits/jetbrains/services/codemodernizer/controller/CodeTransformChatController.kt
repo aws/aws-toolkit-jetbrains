@@ -114,6 +114,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserWrittenCodeTracker.Companion.Q_FEATURE_TOPIC
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.resources.message
 
@@ -139,8 +140,7 @@ class CodeTransformChatController(
         if (objective == "language upgrade" || objective == "sql conversion") {
             telemetry.submitSelection(objective)
         }
-        ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
-            .onEvent(QFeatureEvent.INVOCATION)
+        broadcastQEvent(QFeatureEvent.INVOCATION)
         when (objective) {
             "language upgrade" -> this.handleLanguageUpgrade()
             "sql conversion" -> this.handleSQLConversion()

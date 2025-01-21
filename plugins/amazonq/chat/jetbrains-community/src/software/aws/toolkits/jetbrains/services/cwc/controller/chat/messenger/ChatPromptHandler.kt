@@ -16,6 +16,7 @@ import software.aws.toolkits.core.utils.convertMarkdownToHTML
 import software.aws.toolkits.core.utils.extractCodeBlockLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserWrittenCodeTracker.Companion.Q_FEATURE_TOPIC
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatResponseEvent
@@ -119,8 +120,7 @@ class ChatPromptHandler(private val telemetryHelper: TelemetryHelper) {
                 telemetryHelper.recordAddMessage(data, response, responseText.length, statusCode, countTotalNumberOfCodeBlocks(responseText))
                 emit(response)
 
-                ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
-                    .onEvent(QFeatureEvent.INVOCATION)
+                broadcastQEvent(QFeatureEvent.INVOCATION)
             }
             .catch { exception ->
                 val statusCode = if (exception is AwsServiceException) exception.statusCode() else 0

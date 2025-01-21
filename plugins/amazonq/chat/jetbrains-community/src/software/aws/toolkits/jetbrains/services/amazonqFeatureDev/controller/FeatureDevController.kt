@@ -74,6 +74,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.InsertAct
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserWrittenCodeTracker.Companion.Q_FEATURE_TOPIC
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.content
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.FeedbackComment
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
@@ -194,8 +195,7 @@ class FeatureDevController(
         logger.debug { "$FEATURE_NAME: Processing InsertCodeAtCursorPosition: $message" }
 
         withContext(EDT) {
-            ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
-                .onEvent(QFeatureEvent.STARTS_EDITING)
+            broadcastQEvent(QFeatureEvent.STARTS_EDITING)
             val editor: Editor = FileEditorManager.getInstance(context.project).selectedTextEditor ?: return@withContext
 
             val caret: Caret = editor.caretModel.primaryCaret
@@ -207,8 +207,7 @@ class FeatureDevController(
                 }
                 editor.document.insertString(offset, message.code)
             }
-            ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
-                .onEvent(QFeatureEvent.FINISHES_EDITING)
+            broadcastQEvent(QFeatureEvent.FINISHES_EDITING)
         }
     }
 
@@ -686,8 +685,7 @@ class FeatureDevController(
             }
 
             session.preloader(message, messenger)
-            ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
-                .onEvent(QFeatureEvent.INVOCATION)
+            broadcastQEvent(QFeatureEvent.INVOCATION)
             when (session.sessionState.phase) {
                 SessionStatePhase.CODEGEN -> onCodeGeneration(session, message, tabId)
                 else -> null

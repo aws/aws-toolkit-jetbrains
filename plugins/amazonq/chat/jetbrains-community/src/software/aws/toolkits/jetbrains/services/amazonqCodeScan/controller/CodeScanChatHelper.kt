@@ -14,6 +14,7 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeScan.messages.UpdateP
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.storage.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserWrittenCodeTracker.Companion.Q_FEATURE_TOPIC
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import java.util.UUID
 
@@ -37,8 +38,7 @@ class CodeScanChatHelper(
         clearPreviousItemButtons: Boolean? = false,
     ) {
         if (isInValidSession()) return
-        ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
-            .onEvent(QFeatureEvent.INVOCATION)
+        broadcastQEvent(QFeatureEvent.INVOCATION)
         messagePublisher.publish(
             CodeScanChatMessage(
                 tabId = activeCodeScanTabId as String,

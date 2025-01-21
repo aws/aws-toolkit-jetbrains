@@ -12,6 +12,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.util.Alarm
 import com.intellij.util.AlarmFactory
+import com.intellij.util.messages.MessageBusConnection
 import com.intellij.util.messages.Topic
 import org.jetbrains.annotations.TestOnly
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
@@ -21,6 +22,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWh
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserWrittenCodeTracker.Companion.Q_FEATURE_TOPIC
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import java.time.Duration
@@ -37,6 +39,7 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
     val qInvocationCount: AtomicInteger = AtomicInteger(0)
     private val isQMakingEdits = AtomicBoolean(false)
     private val isActive: AtomicBoolean = AtomicBoolean(false)
+    private var conn: MessageBusConnection? = null
 
     @Synchronized
     fun activateTrackerIfNotActive() {
@@ -44,8 +47,8 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
         if (!isTelemetryEnabled() || isActive.get()) return
         isActive.set(true)
         // count q service invocations
-        val conn = ApplicationManager.getApplication().messageBus.connect()
-        conn.subscribe(
+        conn = ApplicationManager.getApplication().messageBus.connect()
+        conn?.subscribe(
             Q_FEATURE_TOPIC,
             object : QFeatureListener {
                 override fun onEvent(event: QFeatureEvent) {
@@ -169,6 +172,7 @@ class UserWrittenCodeTracker(private val project: Project) : Disposable {
         if (isShuttingDown.getAndSet(true)) {
             return
         }
+        conn?.disconnect()
         flush()
     }
 
@@ -187,3 +191,7 @@ enum class QFeatureEvent {
 interface QFeatureListener {
     fun onEvent(event: QFeatureEvent)
 }
+
+fun broadcastQEvent(event: QFeatureEvent) =
+    ApplicationManager.getApplication().messageBus.syncPublisher(Q_FEATURE_TOPIC)
+        .onEvent(event)
