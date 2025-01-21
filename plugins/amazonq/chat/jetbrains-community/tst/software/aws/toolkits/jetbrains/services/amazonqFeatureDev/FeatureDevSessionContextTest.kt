@@ -75,6 +75,7 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
     @Test
     fun testZipProject() {
         addFilesToProjectModule(
+            ".gitignore",
             ".gradle/cached.jar",
             "src/MyClass.java",
             "gradlew",
@@ -83,6 +84,19 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
             "settings.gradle",
             "build.gradle",
             "gradle/wrapper/gradle-wrapper.properties",
+            "builder/GetTestBuilder.java", // check for false positives
+            ".aws-sam/build/function1",
+            ".gem/specs.rb",
+            "archive.zip",
+            "output.bin",
+            "images/logo.png",
+            "assets/header.jpg",
+            "icons/menu.svg",
+            "license.txt",
+            "License.md",
+            "node_modules/express",
+            "build/outputs",
+            "dist/bundle.js"
         )
 
         val zipResult = featureDevSessionContext.getProjectZip()
@@ -102,9 +116,10 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
             "gradlew",
             "gradlew.bat",
             "README.md",
+            "gradle/wrapper/gradle-wrapper.properties",
+            "builder/GetTestBuilder.java",
             "settings.gradle",
             "build.gradle",
-            "gradle/wrapper/gradle-wrapper.properties",
         )
 
         assertTrue(zippedFiles == expectedFiles)
