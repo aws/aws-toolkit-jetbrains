@@ -256,7 +256,6 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         .replace(".", "\\.")
         .replace("*", ".*")
         .let { if (it.endsWith("/")) "$it.*" else "$it/.*" } // Add a trailing /* to all patterns. (we add a trailing / to all files when matching)
-
     var selectedSourceFolder: VirtualFile
         set(newRoot) {
             _selectedSourceFolder = newRoot

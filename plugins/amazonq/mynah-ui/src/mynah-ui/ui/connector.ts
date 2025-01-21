@@ -519,6 +519,9 @@ export class Connector {
             case 'codetest':
                 this.codeTestChatConnector.onFormButtonClick(tabID, messageId ?? '', {id: "utg_view_diff"})
                 break
+            case 'doc':
+                this.docChatConnector.onOpenDiff(tabID, filePath, deleted)
+                break
         }
     }
 
