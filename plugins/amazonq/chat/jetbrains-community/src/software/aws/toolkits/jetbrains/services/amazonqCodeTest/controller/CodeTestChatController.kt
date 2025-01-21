@@ -74,6 +74,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmi
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.jetbrains.services.cwc.ChatConstants
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
@@ -1178,7 +1179,7 @@ class CodeTestChatController(
                 filePath = activeFile.path,
                 fileName = activeFile.name,
                 fileLanguage = programmingLanguage,
-                fileInWorkspace = activeFile.path.startsWith(projectRoot.path)
+                fileInWorkspace = activeFile.isWithin(projectRoot)
             )
         } catch (e: Exception) {
             LOG.debug { "Error checking active file: $e" }
