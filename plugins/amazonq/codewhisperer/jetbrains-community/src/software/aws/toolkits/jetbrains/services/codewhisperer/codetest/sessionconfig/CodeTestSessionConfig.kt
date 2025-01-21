@@ -33,6 +33,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmi
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_PAYLOAD_LIMIT_IN_BYTES
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.nio.file.Path
@@ -88,7 +89,10 @@ class CodeTestSessionConfig(
         LOG.debug { "Creating payload. File selected as root for the context truncation: ${projectRoot.path}" }
 
         val payloadMetadata: PayloadMetadata = try {
-            getProjectPayloadMetadata()
+            when {
+                !selectedFile.isWithin(projectRoot) -> cannotFindValidFile("Selected file is not within the project")
+                else -> getProjectPayloadMetadata()
+            }
         } catch (e: Exception) {
             val errorMessage = when {
                 e.message?.contains("Illegal repetition near index") == true -> "Illegal repetition near index"
