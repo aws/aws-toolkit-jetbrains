@@ -72,6 +72,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWh
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.jetbrains.services.cwc.ChatConstants
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
@@ -277,7 +278,7 @@ class CodeTestChatController(
 
             val requestData = ChatRequestData(
                 tabId = session.tabId,
-                message = "Generate unit tests for the following part of my code: ${message.prompt}",
+                message = "Generate unit tests for the following part of my code: ${message.prompt.ifBlank { fileInfo.fileName }}",
                 activeFileContext = activeFileContext,
                 userIntent = UserIntent.GENERATE_UNIT_TESTS,
                 triggerType = TriggerType.ContextMenu,
@@ -1176,7 +1177,7 @@ class CodeTestChatController(
                 filePath = activeFile.path,
                 fileName = activeFile.name,
                 fileLanguage = programmingLanguage,
-                fileInWorkspace = activeFile.path.startsWith(projectRoot.path)
+                fileInWorkspace = activeFile.isWithin(projectRoot)
             )
         } catch (e: Exception) {
             LOG.debug { "Error checking active file: $e" }
