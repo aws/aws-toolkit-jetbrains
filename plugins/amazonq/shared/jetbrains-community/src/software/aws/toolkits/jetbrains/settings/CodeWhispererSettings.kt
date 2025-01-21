@@ -117,10 +117,9 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
 }
 
 class CodeWhispererConfiguration : BaseState() {
-    @get:Property
-    val value by map<CodeWhispererConfigurationType, Boolean>()
-    val intValue by map<CodeWhispererIntConfigurationType, Int>()
-    val stringValue by map<CodeWhispererStringConfigurationType, String>()
+    var value by map<CodeWhispererConfigurationType, Boolean>()
+    var intValue by map<CodeWhispererIntConfigurationType, Int>()
+    var stringValue by map<CodeWhispererStringConfigurationType, String>()
 }
 
 enum class CodeWhispererConfigurationType {
