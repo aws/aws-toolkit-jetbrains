@@ -47,15 +47,16 @@ internal class UserWrittenCodeTrackerTest {
 
     @Rule
     @JvmField
-    val projectRule: CodeInsightTestFixtureRule
-
-    @Rule
-    @JvmField
     val disposableRule = DisposableRule()
 
     @Rule
     @JvmField
     val mockClientManagerRule = MockClientManagerRule()
+
+
+    @Rule
+    @JvmField
+    var projectRule = PythonCodeInsightTestFixtureRule()
 
     lateinit var project: Project
     lateinit var fixture: CodeInsightTestFixture
@@ -64,9 +65,6 @@ internal class UserWrittenCodeTrackerTest {
     lateinit var exploreActionManagerMock: CodeWhispererExplorerActionManager
     lateinit var sut: UserWrittenCodeTracker
 
-    init {
-        this.projectRule = PythonCodeInsightTestFixtureRule()
-    }
 
     @Before
     open fun setup() {
@@ -75,14 +73,12 @@ internal class UserWrittenCodeTrackerTest {
         fixture.configureByText(pythonFileName, pythonTestLeftContext)
         AwsSettings.getInstance().isTelemetryEnabled = true
         batcher = mock()
-        telemetryServiceSpy = spy(TestTelemetryService(batcher = batcher))
 
         exploreActionManagerMock = mock {
             on { checkActiveCodeWhispererConnectionType(any()) } doReturn CodeWhispererLoginType.Sono
         }
 
         ApplicationManager.getApplication().replaceService(CodeWhispererExplorerActionManager::class.java, exploreActionManagerMock, disposableRule.disposable)
-        ApplicationManager.getApplication().replaceService(TelemetryService::class.java, telemetryServiceSpy, disposableRule.disposable)
 
         fixture.configureByText(pythonFileName, pythonTestLeftContext)
         runInEdtAndWait {
