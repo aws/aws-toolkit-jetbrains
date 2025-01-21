@@ -9,6 +9,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
+import com.intellij.util.xmlb.annotations.Property
 
 @Service
 @State(name = "codewhispererSettings", storages = [Storage("aws.xml")])
@@ -115,9 +116,12 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
 }
 
 class CodeWhispererConfiguration : BaseState() {
-    var value by map<CodeWhispererConfigurationType, Boolean>()
-    var intValue by map<CodeWhispererIntConfigurationType, Int>()
-    var stringValue by map<CodeWhispererStringConfigurationType, String>()
+    @get:Property
+    val value by map<CodeWhispererConfigurationType, Boolean>()
+    @get:Property
+    val intValue by map<CodeWhispererIntConfigurationType, Int>()
+    @get:Property
+    val stringValue by map<CodeWhispererStringConfigurationType, String>()
 }
 
 enum class CodeWhispererConfigurationType {
