@@ -243,6 +243,16 @@ suspend fun MessagePublisher.sendFolderConfirmationMessage(
     )
 }
 
+suspend fun MessagePublisher.sendRetryChangeFolderMessage(
+    tabId: String,
+    message: String,
+    followUps: List<FollowUp>,
+) {
+    this.publish(
+        RetryChangeFolderMessage(tabId = tabId, message = message, followUps = followUps)
+    )
+}
+
 suspend fun MessagePublisher.sendUpdatePromptProgress(tabId: String, progressField: ProgressField?) {
     this.publish(
         PromptProgressMessage(tabId, progressField)
