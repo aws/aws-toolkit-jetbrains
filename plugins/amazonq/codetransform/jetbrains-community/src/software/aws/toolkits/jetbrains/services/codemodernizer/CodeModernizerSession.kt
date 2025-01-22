@@ -533,7 +533,9 @@ class CodeModernizerSession(
                     }
                 }
 
-                result.succeeded -> CodeModernizerJobCompletedResult.JobCompletedSuccessfully(jobId)
+                result.state == TransformationStatus.COMPLETED -> {
+                    CodeModernizerJobCompletedResult.JobCompletedSuccessfully(jobId)
+                }
 
                 // Should not happen
                 else -> CodeModernizerJobCompletedResult.JobFailed(jobId, result.jobDetails?.reason().orEmpty())
