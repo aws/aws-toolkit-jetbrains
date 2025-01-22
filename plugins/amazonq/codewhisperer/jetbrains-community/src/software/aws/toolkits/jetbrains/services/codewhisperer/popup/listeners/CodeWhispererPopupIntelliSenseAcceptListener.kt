@@ -17,10 +17,8 @@ class CodeWhispererPopupIntelliSenseAcceptListener(private val states: Invocatio
         if (oldLookup != null || newLookup == null) return
 
         newLookup.addLookupListener(object : LookupListener {
-            var caretBeforeInsert = 0
             override fun beforeItemSelected(event: LookupEvent): Boolean {
                 CodeWhispererPopupManager.getInstance().shouldListenerCancelPopup = false
-                caretBeforeInsert = event.lookup.editor.caretModel.offset
                 return super.beforeItemSelected(event)
             }
             override fun itemSelected(event: LookupEvent) {
