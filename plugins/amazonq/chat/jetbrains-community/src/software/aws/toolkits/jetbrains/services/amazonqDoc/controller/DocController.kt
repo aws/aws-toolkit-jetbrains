@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonqDoc.controller
 
 import com.intellij.diff.DiffContentFactory
+import com.intellij.diff.DiffDialogHints
 import com.intellij.diff.DiffManager
 import com.intellij.diff.contents.EmptyContent
 import com.intellij.diff.requests.SimpleDiffRequest
@@ -15,6 +16,7 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.ui.ComponentUtil
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.codewhispererruntime.model.DocGenerationFolderLevel
 import software.amazon.awssdk.services.codewhispererruntime.model.DocGenerationInteractionType
@@ -368,6 +370,9 @@ class DocController(
 
                     val request = SimpleDiffRequest(message.filePath, leftDiffContent, rightDiffContent, null, null)
                     request.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true)
+
+
+
 
                     DiffManager.getInstance().showDiff(project, request)
                 }
@@ -803,6 +808,8 @@ class DocController(
                 tabId = followUpMessage.tabId,
                 followUp = getFollowUpOptions(session.sessionState.phase)
             )
+
+            this.toolWindow?.activate(null, true)
 
             processOpenDiff(
                 message = IncomingDocMessage.OpenDiff(tabId = followUpMessage.tabId, filePath = filePaths[0].zipFilePath, deleted = false)
