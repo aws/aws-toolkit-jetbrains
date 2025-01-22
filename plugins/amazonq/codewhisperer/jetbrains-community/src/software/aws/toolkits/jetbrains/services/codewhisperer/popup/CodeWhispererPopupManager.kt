@@ -422,11 +422,6 @@ class CodeWhispererPopupManager {
                     changeStates(states, -1)
                 }
 
-                // TODO: the below three can be merged together
-                override fun backspace(states: InvocationContext) {
-                    changeStates(states, 0)
-                }
-
                 override fun enter(states: InvocationContext) {
                     changeStates(states, 0)
                 }
@@ -715,7 +710,6 @@ interface CodeWhispererPopupStateChangeListener {
 }
 
 interface CodeWhispererUserActionListener {
-    fun backspace(states: InvocationContext) {}
     fun enter(states: InvocationContext) {}
     fun type(states: InvocationContext, diff: String) {}
     fun navigatePrevious(states: InvocationContext) {}
