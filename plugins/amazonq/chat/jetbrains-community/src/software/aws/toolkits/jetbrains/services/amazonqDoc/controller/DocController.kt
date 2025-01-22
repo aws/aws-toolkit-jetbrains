@@ -371,6 +371,7 @@ class DocController(
     }
 
     override suspend fun processOpenDiff(message: IncomingDocMessage.OpenDiff) {
+        this.toolWindow?.activate(null)
         val session = getSessionInfo(message.tabId)
 
         val project = context.project
