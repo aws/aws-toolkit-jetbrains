@@ -20,9 +20,7 @@ class Browser(parent: Disposable) : Disposable {
 
     val jcefBrowser = createBrowser(parent)
 
-    val receiveMessageQuery = JBCefJSQuery.create(jcefBrowser).also {
-        Disposer.register(this, it)
-    }
+    val receiveMessageQuery = JBCefJSQuery.create(jcefBrowser)
 
     private val assetRequestHandler = LocalAssetJBCefRequestHandler(jcefBrowser)
 
