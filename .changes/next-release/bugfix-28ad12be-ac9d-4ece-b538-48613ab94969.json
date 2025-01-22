@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "/transform: always include button to start a new transformation at the end of a job"
-}

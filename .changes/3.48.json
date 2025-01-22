@@ -1,0 +1,32 @@
+{
+  "date" : "2025-01-16",
+  "version" : "3.48",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Enhance Q inline completion context fetching for better suggestion quality"
+  }, {
+    "type" : "feature",
+    "description" : "/doc: Add error message if updated README is too large"
+  }, {
+    "type" : "bugfix",
+    "description" : "/transform: always include button to start a new transformation at the end of a job"
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q can update mvn and gradle build files"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix doc generation for modules that are a part of the project"
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q /dev: Remove hard-coded limits and instead rely server-side data to communicate number of code generations remaining"
+  }, {
+    "type" : "bugfix",
+    "description" : "/transform: automatically open pre-build error logs when available"
+  }, {
+    "type" : "bugfix",
+    "description" : "/doc: Fix code generation error when cancelling a documentation task"
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q - update messaging for /doc agent"
+  } ]
+}

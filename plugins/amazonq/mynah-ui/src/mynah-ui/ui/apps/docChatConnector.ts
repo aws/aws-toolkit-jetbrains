@@ -170,6 +170,21 @@ export class Connector {
         }
     }
 
+    private processRetryChangeFolderMessage = async (messageData: any): Promise<void> => {
+        if (this.onChatAnswerReceived !== undefined) {
+            const answer: ChatItem = {
+                type: ChatItemType.ANSWER,
+                body: messageData.message ?? undefined,
+                messageId: messageData.messageID ?? messageData.triggerID ?? '',
+                followUp: {
+                    text: '',
+                    options: messageData.followUps,
+                },
+            }
+            this.onChatAnswerReceived(messageData.tabID, answer)
+        }
+    }
+
     private processChatMessage = async (messageData: any): Promise<void> => {
         if (this.onChatAnswerReceived !== undefined) {
             const answer: ChatItem = {
@@ -260,6 +275,11 @@ export class Connector {
 
         if (messageData.type === 'folderConfirmationMessage') {
             await this.processFolderConfirmationMessage(messageData, messageData.folderPath)
+            return
+        }
+
+        if (messageData.type === 'retryChangeFolderMessage') {
+            await this.processRetryChangeFolderMessage(messageData)
             return
         }
 

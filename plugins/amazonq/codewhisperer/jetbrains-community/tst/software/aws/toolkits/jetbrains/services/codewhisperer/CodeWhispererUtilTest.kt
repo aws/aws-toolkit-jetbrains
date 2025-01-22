@@ -24,6 +24,7 @@ import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCompletionType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getUnmodifiedAcceptedCharsCount
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.toCodeChunk
 import software.aws.toolkits.jetbrains.settings.AwsSettings
@@ -236,5 +237,26 @@ class CodeWhispererUtilTest {
         modifiedRecommendation = "x, y):\n$pythonCommentAddedByUser\treturn x + y"
         unmodifiedCharsCount = getUnmodifiedAcceptedCharsCount(originalRecommendation, modifiedRecommendation)
         assertThat(unmodifiedCharsCount).isEqualTo(originalRecommendation.length)
+    }
+
+    @Test
+    fun `test isWithin() returns true if file is within the given directory`() {
+        val projectRoot = fixture.tempDirFixture.findOrCreateDir("workspace/projectA")
+        val file = fixture.addFileToProject("workspace/projectA/src/Sample.java", "").virtualFile
+        assertThat(file.isWithin(projectRoot)).isTrue()
+    }
+
+    @Test
+    fun `test isWithin() returns false if file is not within the given directory`() {
+        val projectRoot = fixture.tempDirFixture.findOrCreateDir("workspace/projectA")
+        val file = fixture.addFileToProject("workspace/projectB/src/Sample.java", "").virtualFile
+        assertThat(file.isWithin(projectRoot)).isFalse()
+    }
+
+    @Test
+    fun `test isWithin() returns false if file is not within the given directory but has the same prefix`() {
+        val projectRoot = fixture.tempDirFixture.findOrCreateDir("workspace/projectA")
+        val file = fixture.addFileToProject("workspace/projectA1/src/Sample.java", "").virtualFile
+        assertThat(file.isWithin(projectRoot)).isFalse()
     }
 }

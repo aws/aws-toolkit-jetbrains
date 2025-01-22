@@ -53,8 +53,10 @@ import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendAuthenti
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendChatInputEnabledMessage
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendCodeResult
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendError
+import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendErrorToUser
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendFolderConfirmationMessage
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendMonthlyLimitError
+import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendRetryChangeFolderMessage
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendSystemPrompt
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePlaceholder
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePromptProgress
@@ -70,6 +72,8 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Delete
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStatePhase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.resources.message
 import java.nio.file.Paths
 import java.util.UUID
@@ -337,6 +341,31 @@ class DocController(
         }
     }
 
+    private suspend fun promptForRetryFolderSelection(tabId: String, message: String) {
+        messenger.sendRetryChangeFolderMessage(
+            tabId = tabId,
+            message = message,
+            followUps = listOf(
+                FollowUp(
+                    icon = FollowUpIcons.Refresh,
+                    pillText = message("amazonqDoc.prompt.folder.change"),
+                    prompt = message("amazonqDoc.prompt.folder.change"),
+                    status = FollowUpStatusType.Info,
+                    type = FollowUpTypes.MODIFY_DEFAULT_SOURCE_FOLDER
+                ),
+                FollowUp(
+                    icon = FollowUpIcons.Cancel,
+                    pillText = message("general.cancel"),
+                    prompt = message("general.cancel"),
+                    status = FollowUpStatusType.Error,
+                    type = FollowUpTypes.CANCEL_FOLDER_SELECTION
+                ),
+            )
+        )
+
+        messenger.sendChatInputEnabledMessage(tabId, false)
+    }
+
     override suspend fun processLinkClick(message: IncomingDocMessage.ClickedLink) {
         BrowserUtil.browse(message.link)
     }
@@ -427,11 +456,10 @@ class DocController(
             messenger.sendUpdatePlaceholder(tabId, message("amazonqDoc.prompt.placeholder"))
         } catch (err: Exception) {
             val message = createUserFacingErrorMessage(err.message)
-            messenger.sendError(
+            messenger.sendErrorToUser(
                 tabId = tabId,
                 errMessage = message ?: message("amazonqFeatureDev.exception.request_failed"),
-                retries = retriesRemaining(session),
-                conversationId = session?.conversationIdUnsafe
+                conversationId = session?.conversationIdUnsafe,
             )
         }
     }
@@ -553,7 +581,7 @@ class DocController(
         messenger.sendUpdatePlaceholder(tabId, message("amazonqFeatureDev.placeholder.provide_code_feedback"))
     }
 
-    private suspend fun processErrorChatMessage(err: Exception, session: DocSession?, tabId: String) {
+    private suspend fun processErrorChatMessage(err: Exception, session: DocSession?, tabId: String, isEnableChatInput: Boolean) {
         logger.warn(err) { "Encountered ${err.message} for tabId: $tabId" }
         messenger.sendUpdatePromptProgress(tabId, null)
 
@@ -593,23 +621,21 @@ class DocController(
             }
 
             is DocException -> {
-                messenger.sendError(
+                messenger.sendErrorToUser(
                     tabId = tabId,
                     errMessage = err.message,
-                    retries = retriesRemaining(session),
-                    conversationId = session?.conversationIdUnsafe
+                    conversationId = session?.conversationIdUnsafe,
+                    isEnableChatInput
                 )
             }
 
             is CodeIterationLimitException -> {
                 messenger.sendUpdatePlaceholder(tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_monthly_limit"))
                 messenger.sendChatInputEnabledMessage(tabId, enabled = true)
-                messenger.sendError(
+                messenger.sendErrorToUser(
                     tabId = tabId,
                     errMessage = err.message,
-                    retries = retriesRemaining(session),
-                    conversationId = session?.conversationIdUnsafe,
-                    showDefaultMessage = true,
+                    conversationId = session?.conversationIdUnsafe
                 )
 
                 val filePaths: List<NewFileZipInfo> = when (val state = session?.sessionState) {
@@ -718,6 +744,7 @@ class DocController(
                 is PrepareDocGenerationState -> state.filePaths
                 else -> emptyList()
             }
+            broadcastQEvent(QFeatureEvent.INVOCATION)
 
             if (filePaths.isNotEmpty()) {
                 processOpenDiff(
@@ -725,10 +752,13 @@ class DocController(
                 )
             }
         } catch (err: Exception) {
-            processErrorChatMessage(err, session, tabId)
+            // For non edit mode lock the chat input until they explicitly click one of the follow-ups
+            var isEnableChatInput = false
+            if (err is DocException && Mode.EDIT == mode) {
+                isEnableChatInput = err.remainingIterations != null && err.remainingIterations > 0
+            }
 
-            // Lock the chat input until they explicitly click one of the follow-ups
-            messenger.sendChatInputEnabledMessage(tabId, enabled = false)
+            processErrorChatMessage(err, session, tabId, isEnableChatInput)
         }
     }
 
@@ -808,10 +838,7 @@ class DocController(
                 message = IncomingDocMessage.OpenDiff(tabId = followUpMessage.tabId, filePath = filePaths[0].zipFilePath, deleted = false)
             )
         } catch (err: Exception) {
-            processErrorChatMessage(err, session, tabId = followUpMessage.tabId)
-
-            // Lock the chat input until they explicitly click one of the follow-ups
-            messenger.sendChatInputEnabledMessage(tabId = followUpMessage.tabId, enabled = false)
+            processErrorChatMessage(err, session, tabId = followUpMessage.tabId, false)
         } finally {
             messenger.sendUpdatePlaceholder(
                 tabId = followUpMessage.tabId,
@@ -914,11 +941,22 @@ class DocController(
         val projectRoot = session.context.projectRoot
 
         withContext(EDT) {
+            messenger.sendAnswer(
+                tabId = tabId,
+                messageType = DocMessageType.Answer,
+                message = message("amazonqDoc.prompt.choose_folder_to_continue")
+            )
+
             val selectedFolder = selectFolder(context.project, currentSourceFolder)
 
             // No folder was selected
             if (selectedFolder == null) {
                 logger.info { "Cancelled dialog and not selected any folder" }
+                promptForRetryFolderSelection(
+                    tabId,
+                    message("amazonqDoc.prompt.canceled_source_folder_selection")
+                )
+
                 return@withContext
             }
 

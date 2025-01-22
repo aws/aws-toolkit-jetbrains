@@ -253,7 +253,9 @@ abstract class CodeWhispererCodeCoverageTracker(
                     customizationArn,
                     acceptedCharsCount,
                     totalCharsCount,
-                    unmodifiedAcceptedCharsCount
+                    unmodifiedAcceptedCharsCount,
+                    0,
+                    0
                 )
                 LOG.debug { "Successfully sent code percentage telemetry. RequestId: ${response.responseMetadata().requestId()}" }
             } catch (e: Exception) {

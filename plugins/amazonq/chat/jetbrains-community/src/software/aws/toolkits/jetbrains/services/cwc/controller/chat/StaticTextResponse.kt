@@ -28,10 +28,13 @@ enum class StaticTextResponse(
             - Explain the &lt;selected code&gt; and ask clarifying questions about it.
             - What is the syntax of declaring a variable in TypeScript?
             ### Special Commands
-            - /clear - Clear the conversation.
             - /dev - Get code suggestions across files in your current project. Provide a brief prompt, such as "Implement a GET API."
+            - /doc - Create and update documentation for your repository.
+            - /review - Discover and address security and code quality issues.
+            - /test - Generate unit tests for a file.
             - /transform - Transform your code. Use to upgrade Java code versions.
             - /help - View chat topics and commands.
+            - /clear - Clear the conversation.
             ### Things to note:
             - I may not always provide completely accurate or current information.
             - Provide feedback by choosing the like or dislike buttons that appear below answers.

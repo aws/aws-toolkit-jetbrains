@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Amazon Q: cursor no longer jumps after navigating prompt history"
+}

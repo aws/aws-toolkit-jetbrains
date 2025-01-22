@@ -1,0 +1,8 @@
+{
+  "date" : "2025-01-17",
+  "version" : "3.49",
+  "entries" : [ {
+    "type" : "bugfix",
+    "description" : "/review: Improved success rate of code reviews for certain workspace configurations"
+  } ]
+}
