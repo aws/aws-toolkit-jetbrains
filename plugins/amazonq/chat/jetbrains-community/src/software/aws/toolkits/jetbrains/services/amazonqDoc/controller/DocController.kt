@@ -70,6 +70,8 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Delete
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStatePhase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.resources.message
 import java.nio.file.Paths
 import java.util.UUID
@@ -718,6 +720,7 @@ class DocController(
                 is PrepareDocGenerationState -> state.filePaths
                 else -> emptyList()
             }
+            broadcastQEvent(QFeatureEvent.INVOCATION)
 
             if (filePaths.isNotEmpty()) {
                 processOpenDiff(
