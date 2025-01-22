@@ -56,6 +56,7 @@ import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendError
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendErrorToUser
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendFolderConfirmationMessage
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendMonthlyLimitError
+import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendRetryChangeFolderMessage
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendSystemPrompt
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePlaceholder
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePromptProgress
@@ -338,6 +339,31 @@ class DocController(
             logger.error { "Error sending answer: ${e.message}" }
             // Consider logging the error or handling it appropriately
         }
+    }
+
+    private suspend fun promptForRetryFolderSelection(tabId: String, message: String) {
+        messenger.sendRetryChangeFolderMessage(
+            tabId = tabId,
+            message = message,
+            followUps = listOf(
+                FollowUp(
+                    icon = FollowUpIcons.Refresh,
+                    pillText = message("amazonqDoc.prompt.folder.change"),
+                    prompt = message("amazonqDoc.prompt.folder.change"),
+                    status = FollowUpStatusType.Info,
+                    type = FollowUpTypes.MODIFY_DEFAULT_SOURCE_FOLDER
+                ),
+                FollowUp(
+                    icon = FollowUpIcons.Cancel,
+                    pillText = message("general.cancel"),
+                    prompt = message("general.cancel"),
+                    status = FollowUpStatusType.Error,
+                    type = FollowUpTypes.CANCEL_FOLDER_SELECTION
+                ),
+            )
+        )
+
+        messenger.sendChatInputEnabledMessage(tabId, false)
     }
 
     override suspend fun processLinkClick(message: IncomingDocMessage.ClickedLink) {
@@ -915,11 +941,22 @@ class DocController(
         val projectRoot = session.context.projectRoot
 
         withContext(EDT) {
+            messenger.sendAnswer(
+                tabId = tabId,
+                messageType = DocMessageType.Answer,
+                message = message("amazonqDoc.prompt.choose_folder_to_continue")
+            )
+
             val selectedFolder = selectFolder(context.project, currentSourceFolder)
 
             // No folder was selected
             if (selectedFolder == null) {
                 logger.info { "Cancelled dialog and not selected any folder" }
+                promptForRetryFolderSelection(
+                    tabId,
+                    message("amazonqDoc.prompt.canceled_source_folder_selection")
+                )
+
                 return@withContext
             }
 
