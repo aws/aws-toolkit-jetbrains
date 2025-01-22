@@ -49,21 +49,17 @@ class CodeWhispererPopupComponents {
         message(
             "codewhisperer.popup.button.prev",
             POPUP_DIM_HEX,
-            run {
-                KeymapUtil.getFirstKeyboardShortcutText(
-                    ActionManager.getInstance().getAction("codewhisperer.inline.navigate.previous")
-                )
-            }
+            KeymapUtil.getFirstKeyboardShortcutText(
+                ActionManager.getInstance().getAction("codewhisperer.inline.navigate.previous")
+            )
         )
     val nextButton = createNavigationButton(nextButtonText()).apply { preferredSize = prevButton.preferredSize }
     fun nextButtonText() = message(
         "codewhisperer.popup.button.next",
         POPUP_DIM_HEX,
-        run {
-            KeymapUtil.getFirstKeyboardShortcutText(
-                ActionManager.getInstance().getAction("codewhisperer.inline.navigate.next")
-            )
-        }
+        KeymapUtil.getFirstKeyboardShortcutText(
+            ActionManager.getInstance().getAction("codewhisperer.inline.navigate.next")
+        )
     )
     val acceptButton = createNavigationButton(
         message("codewhisperer.popup.button.accept", POPUP_DIM_HEX)

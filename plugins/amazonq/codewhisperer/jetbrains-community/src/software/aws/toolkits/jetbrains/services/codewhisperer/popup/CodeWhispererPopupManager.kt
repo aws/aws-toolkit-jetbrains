@@ -137,13 +137,21 @@ class CodeWhispererPopupManager {
         val typeaheadOriginal = run {
             val startOffset = states.requestContext.caretPosition.offset
             val currOffset = states.requestContext.editor.caretModel.offset
-            if (startOffset > currOffset || removedLength > sessionContext.typeaheadOriginal.length) {
+            if (startOffset > currOffset) {
                 cancelPopup(popup)
                 return
             }
-            states.requestContext.editor.document.charsSequence
+
+            // userInput + typeahead
+            val prefix = states.requestContext.editor.document.charsSequence
                 .substring(startOffset, currOffset)
-                .substring(userInputOriginal.length)
+            if (prefix.length < userInputOriginal.length) {
+                cancelPopup(popup)
+                return
+            } else {
+                prefix.substring(userInputOriginal.length)
+            }
+
         }
         val isReverse = indexChange < 0
         val validCount = getValidCount(details, userInput, typeaheadOriginal)
@@ -427,6 +435,7 @@ class CodeWhispererPopupManager {
                 }
 
                 override fun type(states: InvocationContext, diff: String) {
+                    changeStates(states, 0)
                     val caretOffset = states.requestContext.editor.caretModel.primaryCaret.offset
                     val document = states.requestContext.editor.document
                     val text = document.charsSequence
@@ -435,7 +444,6 @@ class CodeWhispererPopupManager {
                             document.deleteString(caretOffset, caretOffset + 1)
                         }
                     }
-                    changeStates(states, 0)
                 }
 
                 override fun beforeAccept(states: InvocationContext, sessionContext: SessionContext) {
