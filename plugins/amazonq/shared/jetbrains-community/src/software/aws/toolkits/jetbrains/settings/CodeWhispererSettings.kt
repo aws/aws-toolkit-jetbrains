@@ -132,7 +132,6 @@ class CodeWhispererConfiguration : BaseState() {
     val intValue by map<CodeWhispererIntConfigurationType, Int>()
     val stringValue by map<CodeWhispererStringConfigurationType, String>()
     val projectAutoBuildConfigurationMap by map<String, Boolean>()
-    val stringValue by map<CodeWhispererStringConfigurationType, String>()
 }
 
 enum class CodeWhispererConfigurationType {

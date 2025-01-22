@@ -84,7 +84,7 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
             "gradle/wrapper/gradle-wrapper.properties",
         )
 
-        val zipResult = featureDevSessionContext.getProjectZip()
+        val zipResult = featureDevSessionContext.getProjectZip(false)
         val zipPath = zipResult.payload.path
 
         val zippedFiles = mutableSetOf<String>()
