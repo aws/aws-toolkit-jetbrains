@@ -34,14 +34,14 @@ import kotlin.test.fail
 
 class CodeWhispererSettingsTest : CodeWhispererTestBase() {
 
-    private lateinit var codewhispererServiceSpy: CodeWhispererService
+//    private lateinit var codewhispererServiceSpy: CodeWhispererService
     private lateinit var toolWindowHeadlessManager: ToolWindowHeadlessManagerImpl
 
     @Before
     override fun setUp() {
         super.setUp()
-        codewhispererServiceSpy = spy(codewhispererService)
-        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
+//        codewhispererServiceSpy = spy(codewhispererService)
+//        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
 
         // Create a mock ToolWindowManager with working implementation of setAvailable() and isAvailable()
         toolWindowHeadlessManager = object : ToolWindowHeadlessManagerImpl(projectRule.project) {
@@ -83,7 +83,7 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
         whenever(stateManager.checkActiveCodeWhispererConnectionType(projectRule.project)).thenReturn(CodeWhispererLoginType.Logout)
         assertThat(isCodeWhispererEnabled(projectRule.project)).isFalse
         invokeCodeWhispererService()
-        verify(codewhispererServiceSpy, never()).showRecommendationsInPopup(any(), any(), any())
+        verify(codewhispererService, never()).showRecommendationsInPopup(any(), any(), any())
     }
 
     @Test
@@ -92,7 +92,7 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
         assertThat(stateManager.isAutoEnabled()).isFalse
         runInEdtAndWait {
             projectRule.fixture.type(':')
-            verify(codewhispererServiceSpy, never()).showRecommendationsInPopup(any(), any(), any())
+            verify(codewhispererService, never()).showRecommendationsInPopup(any(), any(), any())
         }
     }
 

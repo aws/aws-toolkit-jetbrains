@@ -105,11 +105,9 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
     @Test
     fun `test pre-setup failure will send service invocation event with failed status`() {
-        val codewhispererServiceSpy = spy(codewhispererService) {
-            onGeneric { getRequestContext(any(), any(), any(), any(), any()) }
-                .doAnswer { throw Exception() }
-        }
-        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
+        doAnswer { throw Exception() }
+            .`when`(codewhispererService)
+            .getRequestContext(any(), any(), any(), any(), any())
 
         invokeCodeWhispererService()
 
@@ -164,7 +162,8 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             // 1 serviceInvocation + 1 userModification + 1 userDecision for accepted +
             // (count - 1) userDecisions for ignored
             verify(batcher, atLeast(2 + count)).enqueue(capture())
-            assertEventsContainsFieldsAndCount(allValues, serviceInvocation, 3)
+            // one service invocation for current recommendation and one for next recommendation
+            assertEventsContainsFieldsAndCount(allValues, serviceInvocation, 2)
             assertEventsContainsFieldsAndCount(
                 allValues,
                 userModification,
@@ -411,15 +410,13 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
     @Test
     fun `test showing IntelliSense after triggering CodeWhisperer will send userDecision events of state Discard`() {
-        val codewhispererServiceSpy = spy(codewhispererService)
-        codewhispererServiceSpy.stub {
+        codewhispererService.stub {
             onGeneric {
                 canDoInvocation(any(), any())
             } doAnswer {
                 true
             }
         }
-        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
         popupManagerSpy.stub {
             onGeneric {
                 hasConflictingPopups(any())

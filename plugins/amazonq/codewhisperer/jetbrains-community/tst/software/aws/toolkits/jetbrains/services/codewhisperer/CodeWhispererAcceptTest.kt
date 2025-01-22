@@ -12,16 +12,13 @@ import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_MOVE_CARET_LEFT
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_MOVE_CARET_RIGHT
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_TAB
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.actionSystem.EditorActionManager
-import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
-import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
@@ -32,20 +29,13 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestU
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.metadata
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.sdkHttpResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererActionPromoter
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import kotlin.test.fail
-import org.mockito.kotlin.doNothing
 
 class CodeWhispererAcceptTest : CodeWhispererTestBase() {
-
-    private lateinit var codewhispererServiceSpy: CodeWhispererService
 
     @Before
     override fun setUp() {
         super.setUp()
-        codewhispererServiceSpy = spy(codewhispererService)
-        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
-        doNothing().`when`(codewhispererServiceSpy).promoteNextInvocationIfAvailable()
 
         // Use java code to test curly braces behavior
         projectRule.fixture.configureByText(javaFileName, javaTestContext)

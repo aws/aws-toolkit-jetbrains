@@ -114,7 +114,10 @@ open class CodeWhispererTestBase {
 
         stateManager = spy(CodeWhispererExplorerActionManager.getInstance())
         recommendationManager = CodeWhispererRecommendationManager.getInstance()
-        codewhispererService = CodeWhispererService.getInstance()
+        codewhispererService = spy(CodeWhispererService.getInstance())
+        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererService, disposableRule.disposable)
+        doNothing().`when`(codewhispererService).promoteNextInvocationIfAvailable()
+
         editorManager = CodeWhispererEditorManager.getInstance()
         settingsManager = CodeWhispererSettings.getInstance()
 
