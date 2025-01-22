@@ -7,12 +7,14 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.ProgressField
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.PromptProgressMessage
+import software.aws.toolkits.jetbrains.services.amazonqDoc.NEW_SESSION_FOLLOWUPS
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
 import software.aws.toolkits.jetbrains.services.cwc.messages.RecommendationContentSpan
 import software.aws.toolkits.resources.message
+import java.util.Collections
 import java.util.UUID
 
 suspend fun MessagePublisher.sendAnswer(
@@ -147,6 +149,39 @@ suspend fun MessagePublisher.sendError(tabId: String, errMessage: String?, retri
             )
         ),
     )
+}
+
+suspend fun MessagePublisher.sendErrorToUser(
+    tabId: String,
+    errMessage: String?,
+    conversationId: String? = null,
+    isEnableChatInput: Boolean = false,
+) {
+    val conversationIdText = if (conversationId == null) "" else "\n\nConversation ID: **$conversationId**"
+
+    this.sendAnswer(
+        tabId = tabId,
+        messageType = DocMessageType.Answer,
+        message = errMessage + conversationIdText,
+    )
+
+    if (isEnableChatInput) {
+        this.sendAnswer(
+            tabId = tabId,
+            messageType = DocMessageType.SystemPrompt,
+            followUp = Collections.emptyList()
+        )
+        this.sendUpdatePlaceholder(tabId, message("amazonqDoc.edit.placeholder"))
+    } else {
+        this.sendAnswer(
+            tabId = tabId,
+            messageType = DocMessageType.SystemPrompt,
+            followUp = NEW_SESSION_FOLLOWUPS
+        )
+        this.sendUpdatePlaceholder(tabId, message("amazonqDoc.prompt.placeholder"))
+    }
+
+    this.sendChatInputEnabledMessage(tabId, enabled = isEnableChatInput)
 }
 
 suspend fun MessagePublisher.sendMonthlyLimitError(tabId: String) {

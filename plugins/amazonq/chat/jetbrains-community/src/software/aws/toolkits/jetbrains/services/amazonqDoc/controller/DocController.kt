@@ -53,6 +53,7 @@ import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendAuthenti
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendChatInputEnabledMessage
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendCodeResult
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendError
+import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendErrorToUser
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendFolderConfirmationMessage
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendMonthlyLimitError
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendSystemPrompt
@@ -429,11 +430,10 @@ class DocController(
             messenger.sendUpdatePlaceholder(tabId, message("amazonqDoc.prompt.placeholder"))
         } catch (err: Exception) {
             val message = createUserFacingErrorMessage(err.message)
-            messenger.sendError(
+            messenger.sendErrorToUser(
                 tabId = tabId,
                 errMessage = message ?: message("amazonqFeatureDev.exception.request_failed"),
-                retries = retriesRemaining(session),
-                conversationId = session?.conversationIdUnsafe
+                conversationId = session?.conversationIdUnsafe,
             )
         }
     }
@@ -555,7 +555,7 @@ class DocController(
         messenger.sendUpdatePlaceholder(tabId, message("amazonqFeatureDev.placeholder.provide_code_feedback"))
     }
 
-    private suspend fun processErrorChatMessage(err: Exception, session: DocSession?, tabId: String) {
+    private suspend fun processErrorChatMessage(err: Exception, session: DocSession?, tabId: String, isEnableChatInput: Boolean) {
         logger.warn(err) { "Encountered ${err.message} for tabId: $tabId" }
         messenger.sendUpdatePromptProgress(tabId, null)
 
@@ -595,23 +595,21 @@ class DocController(
             }
 
             is DocException -> {
-                messenger.sendError(
+                messenger.sendErrorToUser(
                     tabId = tabId,
                     errMessage = err.message,
-                    retries = retriesRemaining(session),
-                    conversationId = session?.conversationIdUnsafe
+                    conversationId = session?.conversationIdUnsafe,
+                    isEnableChatInput
                 )
             }
 
             is CodeIterationLimitException -> {
                 messenger.sendUpdatePlaceholder(tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_monthly_limit"))
                 messenger.sendChatInputEnabledMessage(tabId, enabled = true)
-                messenger.sendError(
+                messenger.sendErrorToUser(
                     tabId = tabId,
                     errMessage = err.message,
-                    retries = retriesRemaining(session),
-                    conversationId = session?.conversationIdUnsafe,
-                    showDefaultMessage = true,
+                    conversationId = session?.conversationIdUnsafe
                 )
 
                 val filePaths: List<NewFileZipInfo> = when (val state = session?.sessionState) {
@@ -728,10 +726,13 @@ class DocController(
                 )
             }
         } catch (err: Exception) {
-            processErrorChatMessage(err, session, tabId)
+            // For non edit mode lock the chat input until they explicitly click one of the follow-ups
+            var isEnableChatInput = false
+            if (err is DocException && Mode.EDIT == mode) {
+                isEnableChatInput = err.remainingIterations != null && err.remainingIterations > 0
+            }
 
-            // Lock the chat input until they explicitly click one of the follow-ups
-            messenger.sendChatInputEnabledMessage(tabId, enabled = false)
+            processErrorChatMessage(err, session, tabId, isEnableChatInput)
         }
     }
 
@@ -811,10 +812,7 @@ class DocController(
                 message = IncomingDocMessage.OpenDiff(tabId = followUpMessage.tabId, filePath = filePaths[0].zipFilePath, deleted = false)
             )
         } catch (err: Exception) {
-            processErrorChatMessage(err, session, tabId = followUpMessage.tabId)
-
-            // Lock the chat input until they explicitly click one of the follow-ups
-            messenger.sendChatInputEnabledMessage(tabId = followUpMessage.tabId, enabled = false)
+            processErrorChatMessage(err, session, tabId = followUpMessage.tabId, false)
         } finally {
             messenger.sendUpdatePlaceholder(
                 tabId = followUpMessage.tabId,
