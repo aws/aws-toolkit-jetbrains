@@ -50,7 +50,6 @@ class CodeWhispererPopupComponents {
             "codewhisperer.popup.button.prev",
             POPUP_DIM_HEX,
             run {
-                // TODO: Doesn't reflect dynamically if users change but didn't restart IDE
                 KeymapUtil.getFirstKeyboardShortcutText(
                     ActionManager.getInstance().getAction("codewhisperer.inline.navigate.previous")
                 )
