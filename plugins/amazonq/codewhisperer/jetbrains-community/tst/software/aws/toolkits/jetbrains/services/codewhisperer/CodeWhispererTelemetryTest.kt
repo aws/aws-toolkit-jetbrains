@@ -390,39 +390,6 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         )
     }
 
-    @Test @Ignore
-    fun `test showing IntelliSense after triggering CodeWhisperer will send userDecision events of state Discard`() {
-        val codewhispererServiceSpy = spy(codewhispererService)
-        codewhispererServiceSpy.stub {
-            onGeneric {
-                canDoInvocation(any(), any())
-            } doAnswer {
-                true
-            }
-        }
-        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
-        popupManagerSpy.stub {
-            onGeneric {
-//                hasConflictingPopups(any())
-                null
-            } doAnswer {
-                true
-            }
-        }
-        invokeCodeWhispererService()
-
-        runInEdtAndWait {
-            val metricCaptor = argumentCaptor<MetricEvent>()
-            verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
-            assertEventsContainsFieldsAndCount(
-                metricCaptor.allValues,
-                userDecision,
-                pythonResponse.completions().size,
-                codewhispererSuggestionState to CodewhispererSuggestionState.Discard.toString(),
-            )
-        }
-    }
-
     @Test
     fun `test codePercentage tracker will not be activated if CWSPR terms of service is not accepted`() {
         val exploreManagerMock = mock<CodeWhispererExplorerActionManager> {
