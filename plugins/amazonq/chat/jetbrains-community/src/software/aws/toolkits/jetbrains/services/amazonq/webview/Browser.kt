@@ -4,15 +4,14 @@
 package software.aws.toolkits.jetbrains.services.amazonq.webview
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.github.rli.cefschemeremotetest.toolWindow.JBCefLocalRequestHandler
-import com.github.rli.cefschemeremotetest.toolWindow.JBCefStreamResourceHandler
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
-import org.cef.CefApp
+import software.aws.toolkits.jetbrains.core.webview.LocalAssetJBCefRequestHandler
 import software.aws.toolkits.jetbrains.services.amazonq.util.HighlightCommand
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
+import java.nio.file.Paths
 
 /*
 Displays the web view for the Amazon Q tool window
@@ -23,6 +22,17 @@ class Browser(parent: Disposable) : Disposable {
 
     val receiveMessageQuery = JBCefJSQuery.create(jcefBrowser).also {
         Disposer.register(this, it)
+    }
+
+    private val assetRequestHandler = LocalAssetJBCefRequestHandler(jcefBrowser)
+
+    init {
+        assetRequestHandler.addWildcardHandler("mynah") { path ->
+            val asset = path.replaceFirst("mynah/", "/mynah-ui/assets/")
+            Paths.get(asset).normalize().toString().let {
+                this::class.java.getResourceAsStream(it)
+            }
+        }
     }
 
     fun init(
@@ -60,26 +70,13 @@ class Browser(parent: Disposable) : Disposable {
         // that's persistent between page loads.
         jcefBrowser.setProperty("state", "")
 
-        val handler = JBCefLocalRequestHandler("http", "toolkitasset")
-        handler.addResource("webview/chat.html") {
-            getWebviewHTML(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable, highlightCommand)
-                .byteInputStream().let {
-                    JBCefStreamResourceHandler(it, "text/html", this)
-                }
-        }
-
-        handler.addResource("mynah/js/mynah-ui.js") {
-            AssetResourceHandler::class.java.getResourceAsStream("/mynah-ui/assets/js/mynah-ui.js")?.let {
-                JBCefStreamResourceHandler(it, "text/javascript", this)
-            }
-        }
-        jcefBrowser.jbCefClient.addRequestHandler(handler, jcefBrowser.cefBrowser)
-        Disposer.register(this) {
-            jcefBrowser.jbCefClient.removeRequestHandler(handler, jcefBrowser.cefBrowser)
-        }
-
         // load the web app
-        jcefBrowser.loadURL("http://toolkitasset/webview/chat.html")
+        jcefBrowser.loadURL(
+            assetRequestHandler.createResource(
+                "webview/chat.html",
+                getWebviewHTML(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable, highlightCommand)
+            )
+        )
     }
 
     /**

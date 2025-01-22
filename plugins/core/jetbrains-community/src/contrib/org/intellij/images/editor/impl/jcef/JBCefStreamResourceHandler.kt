@@ -1,6 +1,8 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+@file:Suppress("all")
 
-package com.github.rli.cefschemeremotetest.toolWindow
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// https://github.com/JetBrains/intellij-community/blob/54429f3ba00c695c22d09e164135b0713f2cfc0f/platform/ui.jcef/jcef/utils/JBCefStreamResourceHandler.kt
+package contrib.org.intellij.images.editor.impl.jcef
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
@@ -54,8 +56,7 @@ open class JBCefStreamResourceHandler(
             if (bytesRead.get() != -1) {
                 return true
             }
-        }
-        catch (_: IOException) {
+        } catch (_: IOException) {
             callback.cancel()
         }
         bytesRead.set(0)
@@ -70,8 +71,7 @@ open class JBCefStreamResourceHandler(
     override fun dispose() {
         try {
             myStream.close()
-        }
-        catch (e: IOException) {
+        } catch (e: IOException) {
             Logger.getInstance(JBCefStreamResourceHandler::class.java).warn("Failed to close the stream", e)
         }
     }

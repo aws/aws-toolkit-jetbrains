@@ -30,7 +30,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import migration.software.aws.toolkits.jetbrains.core.credentials.CredentialManager
-import org.cef.CefApp
 import software.aws.toolkits.core.credentials.validatedSsoIdentifierFromUrl
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.core.utils.error
@@ -52,8 +51,8 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.IdcRolePopupState
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.core.webview.BrowserMessage
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
+import software.aws.toolkits.jetbrains.core.webview.LocalAssetJBCefRequestHandler
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
-import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.jetbrains.utils.isTookitConnected
@@ -140,8 +139,6 @@ class ToolkitWebviewPanel(val project: Project, private val scope: CoroutineScop
 // TODO: STILL WIP thus duplicate code / pending move to plugins/toolkit
 class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: Disposable) : LoginBrowser(
     project,
-    ToolkitWebviewBrowser.DOMAIN,
-    ToolkitWebviewBrowser.WEB_SCRIPT_URI
 ) {
     // TODO: confirm if we need such configuration or the default is fine
     // TODO: move JcefBrowserUtils to core
@@ -155,19 +152,10 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
             .setOffScreenRendering(true)
             .build()
     }
-    private val query: JBCefJSQuery = JBCefJSQuery.create(jcefBrowser)
+    private val query = JBCefJSQuery.create(jcefBrowser)
+    private val assetHandler = LocalAssetJBCefRequestHandler(jcefBrowser)
 
     init {
-        CefApp.getInstance()
-            .registerSchemeHandlerFactory(
-                "http",
-                domain,
-                WebviewResourceHandlerFactory(
-                    domain = "http://$domain/",
-                    assetUri = "/webview/assets/"
-                ),
-            )
-
         loadWebView(query)
 
         query.addHandler(jcefHandler)
@@ -334,15 +322,18 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
     }
 
     override fun loadWebView(query: JBCefJSQuery) {
-        jcefBrowser.loadHTML(getWebviewHTML(webScriptUri, query))
+        val webScriptUri = assetHandler.createResource(
+            "js/toolkitGetStart.js",
+            ToolkitWebviewBrowser::class.java.getResourceAsStream("/webview/assets/js/toolkitGetStart.js")
+        )
+
+        jcefBrowser.loadURL(assetHandler.createResource("content.html", getWebviewHTML(webScriptUri, query)))
     }
 
     fun component(): JComponent? = jcefBrowser.component
 
     companion object {
         private val LOG = getLogger<ToolkitWebviewBrowser>()
-        private const val WEB_SCRIPT_URI = "http://webview/js/toolkitGetStart.js"
-        private const val DOMAIN = "webview"
     }
 }
 

@@ -1,11 +1,18 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+@file:Suppress("all")
 
-package com.github.rli.cefschemeremotetest.toolWindow
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// adapted from https://github.com/JetBrains/intellij-community/blob/54429f3ba00c695c22d09e164135b0713f2cfc0f/platform/ui.jcef/jcef/utils/JBCefLocalRequestHandler.kt
+
+package contrib.org.intellij.images.editor.impl.jcef
 
 import org.cef.browser.CefBrowser
 import org.cef.browser.CefFrame
 import org.cef.callback.CefCallback
-import org.cef.handler.*
+import org.cef.handler.CefRequestHandlerAdapter
+import org.cef.handler.CefResourceHandler
+import org.cef.handler.CefResourceHandlerAdapter
+import org.cef.handler.CefResourceRequestHandler
+import org.cef.handler.CefResourceRequestHandlerAdapter
 import org.cef.misc.BoolRef
 import org.cef.network.CefRequest
 import java.net.URL
@@ -22,7 +29,7 @@ import java.net.URL
  */
 open class JBCefLocalRequestHandler(
     private val myProtocol: String,
-    private val myAuthority: String
+    private val myAuthority: String,
 ) : CefRequestHandlerAdapter() {
     private val myResources: MutableMap<String, () -> CefResourceHandler?> = HashMap()
 
@@ -33,22 +40,27 @@ open class JBCefLocalRequestHandler(
         }
     }
 
-    private val RESOURCE_REQUEST_HANDLER = object : CefResourceRequestHandlerAdapter() {
-        override fun getResourceHandler(browser: CefBrowser?, frame: CefFrame?, request: CefRequest): CefResourceHandler {
-            val url = URL(request.url)
-            url.protocol
-            if (!url.protocol.equals(myProtocol) || !url.authority.equals(myAuthority)) {
-                return REJECTING_RESOURCE_HANDLER
-            }
-            return try {
-                val path = url.path.trim('/')
-                myResources[path]?.let { it() } ?: REJECTING_RESOURCE_HANDLER
-            } catch (e: RuntimeException) {
-                println(e.message)
-                REJECTING_RESOURCE_HANDLER
+    private val RESOURCE_REQUEST_HANDLER = resourceHandlerWrapper { path ->
+        myResources[path]?.let { it() }
+    }
+
+    protected fun resourceHandlerWrapper(handler: (String) -> CefResourceHandler?): CefResourceRequestHandler =
+        object : CefResourceRequestHandlerAdapter() {
+            override fun getResourceHandler(browser: CefBrowser?, frame: CefFrame?, request: CefRequest): CefResourceHandler {
+                val url = URL(request.url)
+                url.protocol
+                if (!url.protocol.equals(myProtocol) || !url.authority.equals(myAuthority)) {
+                    return REJECTING_RESOURCE_HANDLER
+                }
+                return try {
+                    val path = url.path.trim('/')
+                    handler(path) ?: REJECTING_RESOURCE_HANDLER
+                } catch (e: RuntimeException) {
+                    println(e.message)
+                    REJECTING_RESOURCE_HANDLER
+                }
             }
         }
-    }
 
     fun addResource(resourcePath: String, resourceProvider: () -> CefResourceHandler?) {
         val normalisedPath = resourcePath.trim('/')
@@ -61,13 +73,15 @@ open class JBCefLocalRequestHandler(
         return "$myProtocol://$myAuthority/$normalisedPath"
     }
 
-    override fun getResourceRequestHandler(browser: CefBrowser?,
-                                           frame: CefFrame?,
-                                           request: CefRequest?,
-                                           isNavigation: Boolean,
-                                           isDownload: Boolean,
-                                           requestInitiator: String?,
-                                           disableDefaultHandling: BoolRef?): CefResourceRequestHandler {
+    override fun getResourceRequestHandler(
+        browser: CefBrowser?,
+        frame: CefFrame?,
+        request: CefRequest?,
+        isNavigation: Boolean,
+        isDownload: Boolean,
+        requestInitiator: String?,
+        disableDefaultHandling: BoolRef?,
+    ): CefResourceRequestHandler {
         return RESOURCE_REQUEST_HANDLER
     }
 }

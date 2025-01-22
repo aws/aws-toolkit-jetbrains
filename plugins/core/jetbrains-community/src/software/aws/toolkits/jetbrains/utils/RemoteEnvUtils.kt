@@ -16,4 +16,4 @@ fun isRunningOnRemoteBackend() = AppMode.isRemoteDevHost()
  */
 fun isCodeCatalystDevEnv() = System.getenv("__DEV_ENVIRONMENT_ID") != null
 
-fun isQWebviewsAvailable() = JBCefApp.isSupported() && !isRunningOnRemoteBackend()
+fun isQWebviewsAvailable() = JBCefApp.isSupported()

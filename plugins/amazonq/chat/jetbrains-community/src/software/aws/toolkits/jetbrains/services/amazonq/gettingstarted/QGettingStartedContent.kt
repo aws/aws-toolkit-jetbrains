@@ -18,6 +18,7 @@ import org.cef.browser.CefBrowser
 import org.cef.browser.CefFrame
 import org.cef.handler.CefLoadHandlerAdapter
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
+import software.aws.toolkits.jetbrains.core.webview.LocalAssetJBCefRequestHandler
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindow
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.EditorThemeAdapter
 import software.aws.toolkits.resources.message
@@ -72,7 +73,7 @@ class QGettingStartedContent(val project: Project) : Disposable {
 
     private fun loadWebView() {
         // load the web app
-        jcefBrowser.loadHTML(getWebviewHTML())
+        jcefBrowser.loadURL(LocalAssetJBCefRequestHandler(jcefBrowser).createResource("content.html", getWebviewHTML()))
     }
 
     private fun getWebviewHTML(): String {
