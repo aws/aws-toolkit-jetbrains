@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.services.amazonq.webview
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.github.rli.cefschemeremotetest.toolWindow.JBCefLocalRequestHandler
+import com.github.rli.cefschemeremotetest.toolWindow.JBCefStreamResourceHandler
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
@@ -19,7 +21,9 @@ class Browser(parent: Disposable) : Disposable {
 
     val jcefBrowser = createBrowser(parent)
 
-    val receiveMessageQuery = JBCefJSQuery.create(jcefBrowser)
+    val receiveMessageQuery = JBCefJSQuery.create(jcefBrowser).also {
+        Disposer.register(this, it)
+    }
 
     fun init(
         isCodeTransformAvailable: Boolean,
@@ -29,16 +33,7 @@ class Browser(parent: Disposable) : Disposable {
         isCodeTestAvailable: Boolean,
         highlightCommand: HighlightCommand?,
     ) {
-        // register the scheme handler to route http://mynah/ URIs to the resources/assets directory on classpath
-//        CefApp.getInstance()
-//            .registerSchemeHandlerFactory(
-//                "http",
-//                "mynah",
-//                AssetResourceHandler.AssetResourceHandlerFactory(),
-//            )
-        println("aaaaaaaaa did a load")
         loadWebView(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable, highlightCommand)
-        println("loadloadload")
     }
 
     override fun dispose() {
@@ -64,10 +59,27 @@ class Browser(parent: Disposable) : Disposable {
         // setup empty state. The message request handlers use this for storing state
         // that's persistent between page loads.
         jcefBrowser.setProperty("state", "")
-        // load the web app
-        jcefBrowser.loadHTML(
+
+        val handler = JBCefLocalRequestHandler("http", "toolkitasset")
+        handler.addResource("webview/chat.html") {
             getWebviewHTML(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable, highlightCommand)
-        )
+                .byteInputStream().let {
+                    JBCefStreamResourceHandler(it, "text/html", this)
+                }
+        }
+
+        handler.addResource("mynah/js/mynah-ui.js") {
+            AssetResourceHandler::class.java.getResourceAsStream("/mynah-ui/assets/js/mynah-ui.js")?.let {
+                JBCefStreamResourceHandler(it, "text/javascript", this)
+            }
+        }
+        jcefBrowser.jbCefClient.addRequestHandler(handler, jcefBrowser.cefBrowser)
+        Disposer.register(this) {
+            jcefBrowser.jbCefClient.removeRequestHandler(handler, jcefBrowser.cefBrowser)
+        }
+
+        // load the web app
+        jcefBrowser.loadURL("http://toolkitasset/webview/chat.html")
     }
 
     /**
@@ -85,7 +97,7 @@ class Browser(parent: Disposable) : Disposable {
         val postMessageToJavaJsCode = receiveMessageQuery.inject("JSON.stringify(message)")
 
         val jsScripts = """
-            <script type="text/javascript" src="$WEB_SCRIPT_URI" defer onload="init()"></script>
+            <script type="text/javascript" src="http://toolkitasset/mynah/js/mynah-ui.js" defer onload="init()"></script>
             <script type="text/javascript">
                 const init = () => {
                     mynahUI.createMynahUI(
@@ -115,14 +127,12 @@ class Browser(parent: Disposable) : Disposable {
                     $jsScripts
                 </head>
                 <body>
-                loadingloadingloading
                 </body>
             </html>
         """.trimIndent()
     }
 
     companion object {
-        private const val WEB_SCRIPT_URI = "http://127.0.0.1:8000/js/mynah-ui.js"
         private const val MAX_ONBOARDING_PAGE_COUNT = 3
         private val OBJECT_MAPPER = jacksonObjectMapper()
     }
