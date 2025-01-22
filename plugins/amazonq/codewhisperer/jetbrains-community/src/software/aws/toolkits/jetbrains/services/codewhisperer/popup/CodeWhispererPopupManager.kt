@@ -120,7 +120,6 @@ class CodeWhispererPopupManager {
         states: InvocationContext,
         indexChange: Int,
         recommendationAdded: Boolean = false,
-        removedLength: Int = 0,
     ) {
         val (_, _, recommendationContext, popup) = states
         val (details) = recommendationContext
@@ -151,7 +150,6 @@ class CodeWhispererPopupManager {
             } else {
                 prefix.substring(userInputOriginal.length)
             }
-
         }
         val isReverse = indexChange < 0
         val validCount = getValidCount(details, userInput, typeaheadOriginal)
@@ -513,7 +511,7 @@ class CodeWhispererPopupManager {
                 val delete = event.newLength < event.oldLength
                 if (!delete) return
                 if (editor.caretModel.offset == event.offset) {
-                    changeStates(states, 0, removedLength = event.oldLength - event.newLength)
+                    changeStates(states, 0)
                 } else if (shouldListenerCancelPopup) {
                     cancelPopup(states.popup)
                 }

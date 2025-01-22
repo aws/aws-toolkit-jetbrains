@@ -21,12 +21,12 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestU
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.javaResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.javaTestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.metadata
-import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.qInlineAcceptActionId
-import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.qInlineForceAcceptActionId
-import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.qInlineNavigateNextActionId
-import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.qInlineNavigatePrevActionId
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.sdkHttpResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererActionPromoter
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineAcceptActionId
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineForceAcceptActionId
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineNavigateNextActionId
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineNavigatePrevActionId
 import kotlin.test.fail
 
 class CodeWhispererAcceptTest : CodeWhispererTestBase() {

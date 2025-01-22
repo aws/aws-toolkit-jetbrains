@@ -69,10 +69,6 @@ object CodeWhispererTestUtil {
     const val codeWhispererCodeScanActionId = "codewhisperer.toolbar.security.scan"
     const val testValidAccessToken = "test_valid_access_token"
     const val testNextToken = "test_next_token"
-    const val qInlineAcceptActionId = "codewhisperer.inline.accept"
-    const val qInlineNavigatePrevActionId = "codewhisperer.inline.navigate.previous"
-    const val qInlineNavigateNextActionId = "codewhisperer.inline.navigate.next"
-    const val qInlineForceAcceptActionId = "codewhisperer.inline.force.accept"
     private val testReferenceInfoPair = listOf(
         Pair("MIT", "testRepo1"),
         Pair("Apache-2.0", "testRepo2"),

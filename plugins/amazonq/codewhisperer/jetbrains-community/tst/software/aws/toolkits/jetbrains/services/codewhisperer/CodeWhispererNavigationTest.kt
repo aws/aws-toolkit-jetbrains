@@ -8,8 +8,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
-import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.qInlineNavigateNextActionId
-import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.qInlineNavigatePrevActionId
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineNavigateNextActionId
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineNavigatePrevActionId
 import javax.swing.JButton
 
 class CodeWhispererNavigationTest : CodeWhispererTestBase() {

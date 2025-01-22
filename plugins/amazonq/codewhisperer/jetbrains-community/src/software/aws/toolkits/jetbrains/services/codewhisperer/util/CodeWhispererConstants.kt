@@ -110,6 +110,13 @@ object CodeWhispererConstants {
     // Formatter for timestamp on accountless warn notification
     val TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
+    object QInlineActionId {
+        const val qInlineAcceptActionId = "codewhisperer.inline.accept"
+        const val qInlineNavigatePrevActionId = "codewhisperer.inline.navigate.previous"
+        const val qInlineNavigateNextActionId = "codewhisperer.inline.navigate.next"
+        const val qInlineForceAcceptActionId = "codewhisperer.inline.force.accept"
+    }
+
     object AutoSuggestion {
         const val SETTING_ID = "codewhisperer_autoSuggestionActivation"
         const val ACTIVATED = "Activated"
