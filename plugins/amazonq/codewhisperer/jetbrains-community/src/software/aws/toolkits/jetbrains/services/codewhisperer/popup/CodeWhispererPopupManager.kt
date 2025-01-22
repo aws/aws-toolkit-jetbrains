@@ -240,11 +240,6 @@ class CodeWhispererPopupManager {
     }
 
     fun dontClosePopupAndRun(runnable: () -> Unit) {
-        // Act like a semaphore
-        if (!shouldListenerCancelPopup) {
-            runnable()
-            return
-        }
         try {
             shouldListenerCancelPopup = false
             runnable()
