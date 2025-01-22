@@ -64,6 +64,7 @@ class CodeWhispererEditorManager {
                     selectedIndex,
                     detail.completionType
                 )
+
                 ApplicationManager.getApplication().messageBus.syncPublisher(
                     CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
                 ).afterAccept(states, sessionContext, rangeMarker)

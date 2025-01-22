@@ -34,14 +34,11 @@ import kotlin.test.fail
 
 class CodeWhispererSettingsTest : CodeWhispererTestBase() {
 
-//    private lateinit var codewhispererServiceSpy: CodeWhispererService
     private lateinit var toolWindowHeadlessManager: ToolWindowHeadlessManagerImpl
 
     @Before
     override fun setUp() {
         super.setUp()
-//        codewhispererServiceSpy = spy(codewhispererService)
-//        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
 
         // Create a mock ToolWindowManager with working implementation of setAvailable() and isAvailable()
         toolWindowHeadlessManager = object : ToolWindowHeadlessManagerImpl(projectRule.project) {
