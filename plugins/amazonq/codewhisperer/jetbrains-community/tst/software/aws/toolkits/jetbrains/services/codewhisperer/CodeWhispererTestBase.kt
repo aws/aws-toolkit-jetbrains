@@ -4,6 +4,9 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiFile
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.replaceService
@@ -42,6 +45,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreStateType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererRecommendationManager
@@ -100,6 +105,13 @@ open class CodeWhispererTestBase {
         popupManagerSpy = spy(CodeWhispererPopupManager.getInstance())
         popupManagerSpy.reset()
         doNothing().`when`(popupManagerSpy).showPopup(any(), any(), any(), any())
+        popupManagerSpy.stub {
+            onGeneric {
+                showPopup(any(), any(), any(), any())
+            } doAnswer {
+                CodeWhispererInvocationStatus.getInstance().setDisplaySessionActive(true)
+            }
+        }
         ApplicationManager.getApplication().replaceService(CodeWhispererPopupManager::class.java, popupManagerSpy, disposableRule.disposable)
 
         invocationStatusSpy = spy(CodeWhispererInvocationStatus.getInstance())
@@ -223,5 +235,36 @@ open class CodeWhispererTestBase {
                 if (enabled) CodeWhispererLoginType.Sono else CodeWhispererLoginType.Logout
             }
         }
+    }
+
+    fun addUserInputAfterInvocation(userInput: String) {
+        val codewhispererServiceSpy = spy(codewhispererService)
+        val triggerTypeCaptor = argumentCaptor<TriggerTypeInfo>()
+        val editorCaptor = argumentCaptor<Editor>()
+        val projectCaptor = argumentCaptor<Project>()
+        val psiFileCaptor = argumentCaptor<PsiFile>()
+        val latencyContextCaptor = argumentCaptor<LatencyContext>()
+        codewhispererServiceSpy.stub {
+            onGeneric {
+                getRequestContext(
+                    triggerTypeCaptor.capture(),
+                    editorCaptor.capture(),
+                    projectCaptor.capture(),
+                    psiFileCaptor.capture(),
+                    latencyContextCaptor.capture()
+                )
+            }.doAnswer {
+                val requestContext = codewhispererServiceSpy.getRequestContext(
+                    triggerTypeCaptor.firstValue,
+                    editorCaptor.firstValue,
+                    projectCaptor.firstValue,
+                    psiFileCaptor.firstValue,
+                    latencyContextCaptor.firstValue
+                )
+                projectRule.fixture.type(userInput)
+                requestContext
+            }.thenCallRealMethod()
+        }
+        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
     }
 }

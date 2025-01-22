@@ -9,6 +9,7 @@ import com.intellij.idea.AppMode
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ENTER
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ESCAPE
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
@@ -129,6 +130,8 @@ class CodeWhispererPopupManager {
                 .recommendationAdded(states, sessionContext)
             return
         }
+        val userInputOriginal = recommendationContext.userInputOriginal
+        val userInput = recommendationContext.userInputSinceInvocation
         val typeaheadOriginal = run {
             val startOffset = states.requestContext.caretPosition.offset
             val currOffset = states.requestContext.editor.caretModel.offset
@@ -136,10 +139,11 @@ class CodeWhispererPopupManager {
                 cancelPopup(popup)
                 return
             }
-            states.requestContext.editor.document.charsSequence.substring(startOffset, currOffset)
+            states.requestContext.editor.document.charsSequence
+                .substring(startOffset, currOffset)
+                .substring(userInputOriginal.length)
         }
         val isReverse = indexChange < 0
-        val userInput = states.recommendationContext.userInputSinceInvocation
         val validCount = getValidCount(details, userInput, typeaheadOriginal)
         val validSelectedIndex = getValidSelectedIndex(details, userInput, sessionContext.selectedIndex, typeaheadOriginal)
         if ((validSelectedIndex == validCount - 1 && indexChange == 1) ||
@@ -430,7 +434,15 @@ class CodeWhispererPopupManager {
                     changeStates(states, 0)
                 }
 
-                override fun type(states: InvocationContext) {
+                override fun type(states: InvocationContext, diff: String) {
+                    val caretOffset = states.requestContext.editor.caretModel.primaryCaret.offset
+                    val document = states.requestContext.editor.document
+                    val text = document.charsSequence
+                    if (caretOffset < text.length && diff == text[caretOffset].toString()) {
+                        WriteCommandAction.runWriteCommandAction(states.requestContext.project) {
+                            document.deleteString(caretOffset, caretOffset + 1)
+                        }
+                    }
                     changeStates(states, 0)
                 }
 
@@ -705,7 +717,7 @@ interface CodeWhispererPopupStateChangeListener {
 interface CodeWhispererUserActionListener {
     fun backspace(states: InvocationContext) {}
     fun enter(states: InvocationContext) {}
-    fun type(states: InvocationContext) {}
+    fun type(states: InvocationContext, diff: String) {}
     fun navigatePrevious(states: InvocationContext) {}
     fun navigateNext(states: InvocationContext) {}
     fun beforeAccept(states: InvocationContext, sessionContext: SessionContext) {}

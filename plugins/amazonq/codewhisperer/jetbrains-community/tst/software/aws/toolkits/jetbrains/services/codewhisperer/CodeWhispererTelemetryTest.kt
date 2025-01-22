@@ -268,25 +268,11 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
     @Test
     fun `test user's typeahead before getting response will discard recommendations whose prefix not matching`() {
-        val editorManagerSpy = spy(editorManager)
-        val typeahead = "(x, y)"
-        editorManagerSpy.stub {
-            onGeneric {
-                getUserInputSinceInvocation(any(), any())
-            } doAnswer {
-                typeahead
-            }
-            onGeneric {
-                getCaretMovement(any(), any())
-            } doAnswer {
-                CaretMovement.MOVE_FORWARD
-            }
-        }
-        ApplicationManager.getApplication().replaceService(CodeWhispererEditorManager::class.java, editorManagerSpy, disposableRule.disposable)
-
+        val userInput = "(x, y)"
+        addUserInputAfterInvocation(userInput)
         withCodeWhispererServiceInvokedAndWait { }
         val prefixNotMatchCount = pythonResponse.completions().filter {
-            !it.content().startsWith(typeahead)
+            !it.content().startsWith(userInput)
         }.size
         argumentCaptor<MetricEvent>().apply {
             verify(batcher, atLeast(1 + prefixNotMatchCount)).enqueue(capture())

@@ -55,6 +55,16 @@ class CodeWhispererActionPromoter : ActionPromoter {
 
             0
         }
+
+        results.sortWith { a, b ->
+            if (isCodeWhispererNavigateAction(a)) {
+                return@sortWith -1
+            } else if (isCodeWhispererNavigateAction(b)) {
+                return@sortWith 1
+            }
+
+            0
+        }
         return results
     }
 

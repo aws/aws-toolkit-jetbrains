@@ -21,7 +21,7 @@ class CodeWhispererPopupTypedHandler(
             defaultHandler.execute(editor, charTyped, dataContext)
             ApplicationManager.getApplication().messageBus.syncPublisher(
                 CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED
-            ).type(states)
+            ).type(states, charTyped.toString())
         }
     }
 }
