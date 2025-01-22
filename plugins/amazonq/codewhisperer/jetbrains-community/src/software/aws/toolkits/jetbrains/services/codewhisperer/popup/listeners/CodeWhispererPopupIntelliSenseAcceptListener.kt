@@ -16,33 +16,37 @@ class CodeWhispererPopupIntelliSenseAcceptListener(private val states: Invocatio
     override fun activeLookupChanged(oldLookup: Lookup?, newLookup: Lookup?) {
         if (oldLookup != null || newLookup == null) return
 
-        newLookup.addLookupListener(object : LookupListener {
-            override fun beforeItemSelected(event: LookupEvent): Boolean {
-                CodeWhispererPopupManager.getInstance().shouldListenerCancelPopup = false
-                return super.beforeItemSelected(event)
-            }
-            override fun itemSelected(event: LookupEvent) {
-                if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive() ||
-                    !(event.lookup as LookupImpl).isShown
-                ) {
-                    cleanup()
-                    return
-                }
-                CodeWhispererPopupManager.getInstance().changeStates(
-                    states,
-                    0
-                )
-                cleanup()
-            }
-
-            override fun lookupCanceled(event: LookupEvent) {
-                cleanup()
-            }
-
-            private fun cleanup() {
-                newLookup.removeLookupListener(this)
-                CodeWhispererPopupManager.getInstance().shouldListenerCancelPopup = true
-            }
-        })
+        addIntelliSenseAcceptListener(newLookup, states)
     }
+}
+
+fun addIntelliSenseAcceptListener(lookup: Lookup, states: InvocationContext) {
+    lookup.addLookupListener(object : LookupListener {
+        override fun beforeItemSelected(event: LookupEvent): Boolean {
+            CodeWhispererPopupManager.getInstance().shouldListenerCancelPopup = false
+            return super.beforeItemSelected(event)
+        }
+        override fun itemSelected(event: LookupEvent) {
+            if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive() ||
+                !(event.lookup as LookupImpl).isShown
+            ) {
+                cleanup()
+                return
+            }
+            CodeWhispererPopupManager.getInstance().changeStates(
+                states,
+                0
+            )
+            cleanup()
+        }
+
+        override fun lookupCanceled(event: LookupEvent) {
+            cleanup()
+        }
+
+        private fun cleanup() {
+            lookup.removeLookupListener(this)
+            CodeWhispererPopupManager.getInstance().shouldListenerCancelPopup = true
+        }
+    })
 }

@@ -65,6 +65,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.Co
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererPopupIntelliSenseAcceptListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererPrevButtonActionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererScrollListener
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.addIntelliSenseAcceptListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
@@ -119,6 +120,7 @@ class CodeWhispererPopupManager {
         states: InvocationContext,
         indexChange: Int,
         recommendationAdded: Boolean = false,
+        removedLength: Int = 0,
     ) {
         val (_, _, recommendationContext, popup) = states
         val (details) = recommendationContext
@@ -135,7 +137,7 @@ class CodeWhispererPopupManager {
         val typeaheadOriginal = run {
             val startOffset = states.requestContext.caretPosition.offset
             val currOffset = states.requestContext.editor.caretModel.offset
-            if (startOffset > currOffset) {
+            if (startOffset > currOffset || removedLength > sessionContext.typeaheadOriginal.length) {
                 cancelPopup(popup)
                 return
             }
@@ -458,6 +460,9 @@ class CodeWhispererPopupManager {
             LookupManagerListener.TOPIC,
             CodeWhispererPopupIntelliSenseAcceptListener(states)
         )
+        LookupManager.getActiveLookup(states.requestContext.editor)?.let {
+            addIntelliSenseAcceptListener(it, states)
+        }
     }
 
     private fun addButtonActionListeners(states: InvocationContext) {
@@ -510,7 +515,7 @@ class CodeWhispererPopupManager {
                 val delete = event.newLength < event.oldLength
                 if (!delete) return
                 if (editor.caretModel.offset == event.offset) {
-                    changeStates(states, 0)
+                    changeStates(states, 0, removedLength = event.oldLength - event.newLength)
                 } else if (shouldListenerCancelPopup) {
                     cancelPopup(states.popup)
                 }
