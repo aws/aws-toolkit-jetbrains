@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Amazon Q /doc: Prompt users to start a new documentation task if current task failed"
+}
