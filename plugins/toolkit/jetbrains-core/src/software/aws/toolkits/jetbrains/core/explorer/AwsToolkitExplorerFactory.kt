@@ -48,7 +48,7 @@ import java.util.EventListener
 import javax.swing.JComponent
 
 class AwsToolkitExplorerFactory(
-    private val disposable: Disposable
+    private val disposable: Disposable,
 ) : ToolWindowFactory, DumbAware {
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {

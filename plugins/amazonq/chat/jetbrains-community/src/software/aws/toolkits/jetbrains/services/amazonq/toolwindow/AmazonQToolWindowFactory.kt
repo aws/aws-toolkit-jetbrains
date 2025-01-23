@@ -38,7 +38,7 @@ import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
 
 class AmazonQToolWindowFactory(
-    private val disposable: Disposable
+    private val disposable: Disposable,
 ) : ToolWindowFactory, DumbAware {
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
