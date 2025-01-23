@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Amazon Q /test: Fix for test generation payload creation to not filter out target file."
-}
