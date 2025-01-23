@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fixed an issue where Amazon Q settings did not persist across IDE restarts"
-}
