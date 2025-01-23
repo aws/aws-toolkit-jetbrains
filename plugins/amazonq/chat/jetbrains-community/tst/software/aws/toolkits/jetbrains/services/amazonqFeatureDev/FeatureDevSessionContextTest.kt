@@ -56,8 +56,8 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
     @Test
     fun testWithInvalidFile() {
         val txtFile = mock<VirtualFile>()
-        whenever(txtFile.extension).thenReturn("txt")
-        whenever(txtFile.path).thenReturn("file.txt")
+        whenever(txtFile.extension).thenReturn("mp4")
+        // whenever(txtFile.path).thenReturn("file.txt")
         assertFalse(featureDevSessionContext.isFileExtensionAllowed(txtFile))
     }
 
@@ -99,7 +99,7 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
             "dist/bundle.js"
         )
 
-        val zipResult = featureDevSessionContext.getProjectZip()
+        val zipResult = featureDevSessionContext.getProjectZip(false)
         val zipPath = zipResult.payload.path
 
         val zippedFiles = mutableSetOf<String>()
