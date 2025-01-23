@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.core.explorer
 
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.ApplicationManager
@@ -46,7 +47,9 @@ import software.aws.toolkits.telemetry.FeatureId
 import java.util.EventListener
 import javax.swing.JComponent
 
-class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
+class AwsToolkitExplorerFactory(
+    private val disposable: Disposable
+) : ToolWindowFactory, DumbAware {
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val notificationPanel = NotificationPanel()
@@ -112,7 +115,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         toolWindow.activate(null)
         contentManager.setSelectedContent(content)
 
-        project.messageBus.connect().subscribe(
+        project.messageBus.connect(disposable).subscribe(
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
@@ -121,7 +124,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             }
         )
 
-        project.messageBus.connect().subscribe(
+        project.messageBus.connect(disposable).subscribe(
             AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED,
             object : ConnectionSettingsStateChangeNotifier {
                 override fun settingsStateChanged(newState: ConnectionState) {
@@ -130,7 +133,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             }
         )
 
-        project.messageBus.connect().subscribe(
+        project.messageBus.connect(disposable).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
                 override fun onChange(providerId: String, newScopes: List<String>?) {
@@ -143,7 +146,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             }
         )
 
-        project.messageBus.connect().subscribe(
+        project.messageBus.connect(disposable).subscribe(
             ShowToolkitListener.TOPIC,
             object : ShowToolkitListener {
                 override fun showWebview(project: Project) {
