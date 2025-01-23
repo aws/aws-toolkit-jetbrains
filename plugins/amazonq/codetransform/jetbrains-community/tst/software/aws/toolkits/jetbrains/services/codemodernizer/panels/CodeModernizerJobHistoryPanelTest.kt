@@ -9,6 +9,7 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobHistoryItem
+import software.aws.toolkits.resources.message
 import java.time.Duration
 import java.time.Instant
 
@@ -23,7 +24,7 @@ class CodeModernizerJobHistoryPanelTest {
         tablePanelMock.updateTableData(testData)
         verify(tablePanelMock, times(1)).setDefaultUI()
         verify(tablePanelMock, times(1)).updateTableData(testData)
-        assertThat(tablePanelMock.headerLabel.text).isEqualTo("Job status")
+        assertThat(tablePanelMock.headerLabel.text).isEqualTo(message("codemodernizer.toolwindow.job_status.header"))
         assertThat(tablePanelMock.jbTable.columnCount).isEqualTo(5)
         assertThat(tablePanelMock.jbTable.isEmpty).isFalse()
         assertThat(tablePanelMock.tableData).isEqualTo(testData)

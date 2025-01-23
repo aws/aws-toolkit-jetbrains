@@ -23,6 +23,9 @@ enum class FollowUpType {
     Generated,
     StopCodeTransform,
     NewCodeTransform,
+    CreateDocumentation,
+    NewCodeScan,
+    ViewDiff,
 }
 
 data class SuggestedFollowUp(

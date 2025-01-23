@@ -12,6 +12,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.ui.ComponentUtil
@@ -34,6 +35,10 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererCon
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnection
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnectionType
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererManager.Companion.taskTypeToFilename
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
@@ -50,6 +55,7 @@ import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
+import software.aws.toolkits.telemetry.CredentialSourceId
 
 // Controls the condition to send telemetry event to CodeWhisperer service, currently:
 // 1. It will be sent for Builder ID users, only if they have optin telemetry sharing.
@@ -104,6 +110,17 @@ suspend fun String.toCodeChunk(path: String): List<Chunk> {
     }
 }
 
+fun getAuthType(project: Project): CredentialSourceId? {
+    val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
+    var authType: CredentialSourceId? = null
+    if (connection.connectionType == ActiveConnectionType.IAM_IDC && connection is ActiveConnection.ValidBearer) {
+        authType = CredentialSourceId.IamIdentityCenter
+    } else if (connection.connectionType == ActiveConnectionType.BUILDER_ID && connection is ActiveConnection.ValidBearer) {
+        authType = CredentialSourceId.AwsId
+    }
+    return authType
+}
+
 // we refer 10 lines of code as "Code Chunk"
 // [[L1, L2, ...L10], [L11, L12, ...L20]...]
 // use VirtualFile.toCodeChunk
@@ -135,6 +152,8 @@ fun VirtualFile.toCodeChunk(path: String): Sequence<Chunk> = sequence {
         }
     }
 }
+
+fun VirtualFile.isWithin(ancestor: VirtualFile): Boolean = VfsUtilCore.isAncestor(ancestor, this, false)
 
 object CodeWhispererUtil {
     fun getCompletionType(completion: Completion): CodewhispererCompletionType {

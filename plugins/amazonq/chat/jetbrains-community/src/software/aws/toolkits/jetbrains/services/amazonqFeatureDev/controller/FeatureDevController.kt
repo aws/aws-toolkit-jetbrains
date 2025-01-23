@@ -27,6 +27,7 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.common.util.selectFolder
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.amazonq.RepoSizeError
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
@@ -72,7 +73,8 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Sessio
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.storage.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.InsertAction
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.selectFolder
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.content
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.FeedbackComment
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
@@ -204,6 +206,7 @@ class FeatureDevController(
         logger.debug { "$FEATURE_NAME: Processing InsertCodeAtCursorPosition: $message" }
 
         withContext(EDT) {
+            broadcastQEvent(QFeatureEvent.STARTS_EDITING)
             val editor: Editor = FileEditorManager.getInstance(context.project).selectedTextEditor ?: return@withContext
 
             val caret: Caret = editor.caretModel.primaryCaret
@@ -215,6 +218,7 @@ class FeatureDevController(
                 }
                 editor.document.insertString(offset, message.code)
             }
+            broadcastQEvent(QFeatureEvent.FINISHES_EDITING)
         }
     }
 
@@ -311,7 +315,6 @@ class FeatureDevController(
                 filePaths = filePaths.filter { it.zipFilePath == fileToUpdate },
                 deletedFiles = deletedFiles.filter { it.zipFilePath == fileToUpdate },
                 references = references, // Add all references (not attributed per-file)
-                messenger
             )
 
             AmazonqTelemetry.isAcceptedCodeChanges(
@@ -326,8 +329,6 @@ class FeatureDevController(
             deletedFiles.find { it.zipFilePath == fileToUpdate }?.let { it.rejected = !it.rejected }
         }
 
-        // FIXME: This is a kludge that is hiding the fact that insertChanges is updating the file tree above this point to
-        // an incorrect state. Update the state of the tree view:
         messenger.updateFileComponent(message.tabId, filePaths, deletedFiles, messageId)
 
         // Then, if the accepted file is not a deletion, open a diff to show the changes are applied:
@@ -434,14 +435,14 @@ class FeatureDevController(
                 credentialStartUrl = getStartUrl(project = context.project)
             )
 
-            // Caution: insertChanges has multiple responsibilities.
-            // The filter here results in rejected files being hidden from the tree after continuing, by design.
-            // However, it is critical that we don't hide already-accepted files. Inside insertChanges, it
-            // filters to only update the subset of passed files that aren't accepted or rejected already.
             session.insertChanges(
-                filePaths = filePaths.filter { !it.rejected },
-                deletedFiles = deletedFiles.filter { !it.rejected },
-                references = references,
+                filePaths = filePaths,
+                deletedFiles = deletedFiles,
+                references = references
+            )
+            session.updateFilesPaths(
+                filePaths = filePaths,
+                deletedFiles = deletedFiles,
                 messenger
             )
 
@@ -735,7 +736,8 @@ class FeatureDevController(
                 return
             }
 
-            session.preloader(messenger)
+            session.preloader(message, messenger)
+            broadcastQEvent(QFeatureEvent.INVOCATION)
 
             when (session.sessionState.phase) {
                 SessionStatePhase.CODEGEN -> onCodeGeneration(session, message, tabId)

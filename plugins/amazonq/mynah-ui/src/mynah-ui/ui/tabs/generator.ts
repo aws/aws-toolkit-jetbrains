@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ChatItemType, MynahUIDataModel, QuickActionCommandGroup } from '@aws/mynah-ui-chat'
+import { ChatItemType, MynahUIDataModel, QuickActionCommandGroup, QuickActionCommand } from '@aws/mynah-ui-chat'
 import { TabType } from '../storages/tabsStorage'
 import { FollowUpGenerator } from '../followUps/generator'
 import { QuickActionGenerator } from '../quickActions/generator'
@@ -12,23 +12,34 @@ import { workspaceCommand } from '../commands'
 export interface TabDataGeneratorProps {
     isFeatureDevEnabled: boolean
     isCodeTransformEnabled: boolean
+    isDocEnabled: boolean
+    isCodeScanEnabled: boolean
+    isCodeTestEnabled: boolean
+    highlightCommand?: QuickActionCommand
 }
 
 export class TabDataGenerator {
     private followUpsGenerator: FollowUpGenerator
     public quickActionsGenerator: QuickActionGenerator
+    private highlightCommand?: QuickActionCommand
 
     private tabTitle: Map<TabType, string> = new Map([
         ['unknown', 'Chat'],
         ['cwc', 'Chat'],
         ['featuredev', 'Q - Dev'],
         ['codetransform', 'Q - Transform'],
+        ['doc', 'Q - Documentation'],
+        ['codescan', 'Q - Review'],
+        ['codetest', 'Q - Test'],
     ])
 
     private tabInputPlaceholder: Map<TabType, string> = new Map([
         ['unknown', 'Ask a question or enter "/" for quick commands'],
         ['cwc', 'Ask a question or enter "/" for quick commands'],
         ['featuredev', 'Describe your task or issue in detail'],
+        ['doc', 'Ask Amazon Q to generate documentation for your project'],
+        ['codescan', 'Waiting for your inputs...'],
+        ['codetest', 'Specify a function(s) in the current file(optional)'],
     ])
 
     private tabWelcomeMessage: Map<TabType, string> = new Map([
@@ -56,6 +67,14 @@ What would you like to work on?`,
             'codetransform',
             `Welcome to Code Transformation!`,
         ],
+        [
+            'doc',
+         `Welcome to doc generation!\n\nI can help generate documentation for your code. To get started, choose what type of doc update you'd like to make.`,
+        ],
+        [
+            'codetest',
+            `Welcome to Amazon Q Unit Test Generation. I can help you generate unit tests for your active file.`,
+        ]
     ])
 
     private tabContextCommand: Map<TabType, QuickActionCommandGroup[]> = new Map([
@@ -67,7 +86,11 @@ What would you like to work on?`,
         this.quickActionsGenerator = new QuickActionGenerator({
             isFeatureDevEnabled: props.isFeatureDevEnabled,
             isCodeTransformEnabled: props.isCodeTransformEnabled,
+            isDocEnabled: props.isDocEnabled,
+            isCodeScanEnabled: props.isCodeScanEnabled,
+            isCodeTestEnabled: props.isCodeTestEnabled,
         })
+        this.highlightCommand = props.highlightCommand
     }
 
     public getTabData(tabType: TabType, needWelcomeMessages: boolean, taskName?: string): MynahUIDataModel {
@@ -77,7 +100,7 @@ What would you like to work on?`,
                 'Amazon Q Developer uses generative AI. You may need to verify responses. See the [AWS Responsible AI Policy](https://aws.amazon.com/machine-learning/responsible-ai/policy/).',
             quickActionCommands: this.quickActionsGenerator.generateForTab(tabType),
             promptInputPlaceholder: this.tabInputPlaceholder.get(tabType),
-            contextCommands: this.tabContextCommand.get(tabType),
+            contextCommands: this.getContextCommands(tabType),
             chatItems: needWelcomeMessages
                 ? [
                       {
@@ -91,5 +114,24 @@ What would you like to work on?`,
                   ]
                 : [],
         }
+    }
+
+    private getContextCommands(tabType: TabType): QuickActionCommandGroup[] | undefined {
+        const contextCommands = this.tabContextCommand.get(tabType)
+
+        if (this.highlightCommand) {
+            const commandHighlight: QuickActionCommandGroup = {
+                groupName: 'Additional Commands',
+                commands: [this.highlightCommand],
+            }
+
+            if (contextCommands !== undefined) {
+                return [...contextCommands, commandHighlight]
+            }
+
+            return [commandHighlight]
+        }
+
+        return contextCommands
     }
 }

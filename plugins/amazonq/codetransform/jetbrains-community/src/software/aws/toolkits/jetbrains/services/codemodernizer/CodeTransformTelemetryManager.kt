@@ -11,7 +11,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.ValidationResult
-import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeTransformTelemetryState
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getAuthType
@@ -24,8 +23,8 @@ import software.aws.toolkits.telemetry.CodeTransformCancelSrcComponents
 import software.aws.toolkits.telemetry.CodeTransformJavaSourceVersionsAllowed
 import software.aws.toolkits.telemetry.CodeTransformJavaTargetVersionsAllowed
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
-import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 import software.aws.toolkits.telemetry.CodetransformTelemetry
+import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Result
 import java.time.Instant
 import java.util.Base64
@@ -36,7 +35,6 @@ import java.util.Base64
 @Service(Service.Level.PROJECT)
 class CodeTransformTelemetryManager(private val project: Project) {
     private val sessionId get() = CodeTransformTelemetryState.instance.getSessionId()
-    private val currentJobStatus get() = CodeModernizerSessionState.getInstance(project).currentJobStatus.toString()
 
     fun initiateTransform(telemetryErrorMessage: String? = null) {
         CodetransformTelemetry.initiateTransform(
@@ -60,18 +58,20 @@ class CodeTransformTelemetryManager(private val project: Project) {
             codeTransformPreValidationError = validationError,
             codeTransformBuildSystem = validationResult.buildSystem,
             codeTransformSessionId = sessionId,
+            codeTransformMetadata = validationResult.metadata,
             result = if (validationResult.valid) Result.Succeeded else Result.Failed,
             reason = if (validationResult.valid) null else validationResult.invalidTelemetryReason.additionalInfo,
         )
     }
 
-    fun submitSelection(userChoice: String, customerSelection: CustomerSelection? = null, telemetryErrorMessage: String? = null) {
+    fun submitSelection(userChoice: String, jobId: String? = null, customerSelection: CustomerSelection? = null, telemetryErrorMessage: String? = null) {
         CodetransformTelemetry.submitSelection(
-            // TODO: remove below 2 lines (JavaSource / JavaTarget) once BI is updated to use source / target
+            // TODO: remove the below 2 lines (JavaSource / JavaTarget) once BI is updated to use source / target
             codeTransformJavaSourceVersionsAllowed = CodeTransformJavaSourceVersionsAllowed.from(customerSelection?.sourceJavaVersion?.name.orEmpty()),
             codeTransformJavaTargetVersionsAllowed = CodeTransformJavaTargetVersionsAllowed.from(customerSelection?.targetJavaVersion?.name.orEmpty()),
             codeTransformSessionId = sessionId,
             codeTransformProjectId = customerSelection?.let { getProjectHash(it) },
+            codeTransformJobId = jobId,
             source = if (userChoice == "Confirm-Java") customerSelection?.sourceJavaVersion?.name.orEmpty() else customerSelection?.sourceVendor.orEmpty(),
             target = if (userChoice == "Confirm-Java") customerSelection?.targetJavaVersion?.name.orEmpty() else customerSelection?.targetVendor.orEmpty(),
             userChoice = userChoice,
@@ -128,25 +128,6 @@ class CodeTransformTelemetryManager(private val project: Project) {
         )
     }
 
-    fun viewArtifact(
-        artifactType: CodeTransformArtifactType,
-        jobId: JobId,
-        userChoice: String,
-        source: CodeTransformVCSViewerSrcComponents,
-        telemetryErrorMessage: String? = null,
-    ) {
-        CodetransformTelemetry.viewArtifact(
-            codeTransformArtifactType = artifactType,
-            codeTransformVCSViewerSrcComponents = source,
-            codeTransformSessionId = sessionId,
-            codeTransformJobId = jobId.id,
-            codeTransformStatus = currentJobStatus,
-            userChoice = userChoice,
-            result = if (telemetryErrorMessage.isNullOrEmpty()) Result.Succeeded else Result.Failed,
-            reason = telemetryErrorMessage,
-        )
-    }
-
     fun getProjectHash(customerSelection: CustomerSelection) = Base64.getEncoder().encodeToString(
         DigestUtils.sha256(customerSelection.configurationFile?.toNioPath()?.toAbsolutePath().toString())
     )
@@ -196,12 +177,12 @@ class CodeTransformTelemetryManager(private val project: Project) {
 
     fun logHil(jobId: String, metaData: HilTelemetryMetaData, success: Boolean, reason: String) {
         CodetransformTelemetry.humanInTheLoop(
-            project,
-            jobId,
-            metaData.toString(),
-            sessionId,
-            reason,
-            success,
+            project = project,
+            codeTransformJobId = jobId,
+            codeTransformMetadata = metaData.toString(),
+            codeTransformSessionId = sessionId,
+            reason = reason,
+            result = if (success) MetricResult.Succeeded else MetricResult.Failed,
         )
     }
 

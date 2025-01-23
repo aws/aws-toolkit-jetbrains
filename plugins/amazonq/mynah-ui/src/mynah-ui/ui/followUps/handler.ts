@@ -73,6 +73,7 @@ export class FollowUpInteractionHandler {
                 return
             }
         }
+
         this.connector.onFollowUpClicked(tabID, messageId, followUp)
     }
 

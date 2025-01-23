@@ -25,6 +25,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthFollowUpType
 import software.aws.toolkits.jetbrains.services.codemodernizer.ArtifactHandler
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager.Companion.LOG
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.EXPLAINABILITY_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.HilTelemetryMetaData
@@ -61,6 +62,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildSt
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformAwaitUserInputChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformBeginChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformDependencyErrorChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformFailedChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformFindingLocalAlternativeDependencyChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformInProgressChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformResultChatContent
@@ -109,9 +111,10 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toVirtualFi
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 
 class CodeTransformChatController(
     private val context: AmazonQAppInitContext,
@@ -135,7 +138,7 @@ class CodeTransformChatController(
         if (objective == "language upgrade" || objective == "sql conversion") {
             telemetry.submitSelection(objective)
         }
-
+        broadcastQEvent(QFeatureEvent.INVOCATION)
         when (objective) {
             "language upgrade" -> this.handleLanguageUpgrade()
             "sql conversion" -> this.handleSQLConversion()
@@ -183,7 +186,7 @@ class CodeTransformChatController(
     private suspend fun getUserObjective(tabId: String) {
         codeTransformChatHelper.addNewMessage(buildChooseTransformationObjectiveChatContent())
         codeTransformChatHelper.sendChatInputEnabledMessage(tabId, true)
-        codeTransformChatHelper.sendUpdatePlaceholderMessage(tabId, message("codemodernizer.chat.message.choose_objective"))
+        codeTransformChatHelper.sendUpdatePlaceholderMessage(tabId, message("codemodernizer.chat.message.choose_objective_placeholder"))
     }
 
     private suspend fun validateAndReplyOnError(transformationType: CodeTransformType): ValidationResult? {
@@ -208,6 +211,7 @@ class CodeTransformChatController(
     }
 
     private suspend fun handleSQLConversion() {
+        telemetry.submitSelection("sql conversion")
         this.validateAndReplyOnError(CodeTransformType.SQL_CONVERSION) ?: return
         codeTransformChatHelper.addNewMessage(
             buildUserInputSQLConversionMetadataChatContent()
@@ -215,6 +219,7 @@ class CodeTransformChatController(
     }
 
     private suspend fun handleLanguageUpgrade() {
+        telemetry.submitSelection("language upgrade")
         val validationResult = this.validateAndReplyOnError(CodeTransformType.LANGUAGE_UPGRADE) ?: return
         codeTransformChatHelper.updateLastPendingMessage(
             buildLanguageUpgradeProjectValidChatContent()
@@ -269,7 +274,7 @@ class CodeTransformChatController(
 
     override suspend fun processCodeTransformCancelAction(message: IncomingCodeTransformMessage.CodeTransformCancel) {
         if (!checkForAuth(message.tabId)) {
-            telemetry.submitSelection("Cancel", null, "User is not authenticated")
+            telemetry.submitSelection("Cancel", null, null, "User is not authenticated")
             return
         }
 
@@ -284,7 +289,7 @@ class CodeTransformChatController(
 
     override suspend fun processCodeTransformStartAction(message: IncomingCodeTransformMessage.CodeTransformStart) {
         if (!checkForAuth(message.tabId)) {
-            telemetry.submitSelection("Confirm", null, "User is not authenticated")
+            telemetry.submitSelection("Confirm", null, null, "User is not authenticated")
             return
         }
 
@@ -307,7 +312,7 @@ class CodeTransformChatController(
         codeModernizerManager.createCodeModernizerSession(selection, context.project)
 
         // Publish metric to capture user selection before local build starts
-        telemetry.submitSelection("Confirm-Java", selection)
+        telemetry.submitSelection("Confirm-Java", null, selection)
 
         codeTransformChatHelper.run {
             addNewMessage(buildUserInputSkipTestsFlagChatIntroContent())
@@ -339,7 +344,7 @@ class CodeTransformChatController(
 
             unzipFile(selectedZipFile.toNioPath(), extractedZip.toPath(), true)
 
-            val sctFile = extractedZip.listFiles { file -> file.name.endsWith(".sct") }.firstOrNull()
+            val sctFile = extractedZip.listFiles { file -> file.name.endsWith(".sct") }?.firstOrNull()
 
             val metadataValidationResult = validateSctMetadata(sctFile)
 
@@ -369,7 +374,7 @@ class CodeTransformChatController(
                 sqlMetadataZip = extractedZip,
             )
             codeModernizerManager.createCodeModernizerSession(selection, context.project)
-            telemetry.submitSelection("Confirm-SQL", selection)
+            telemetry.submitSelection("Confirm-SQL", null, selection)
         }
     }
 
@@ -398,6 +403,7 @@ class CodeTransformChatController(
                 EXPLAINABILITY_V1
             )
         }
+        telemetry.submitSelection(message.oneOrMultipleDiffsSelection)
         codeTransformChatHelper.addNewMessage(buildUserOneOrMultipleDiffsSelectionChatContent(message.oneOrMultipleDiffsSelection))
         codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
         codeModernizerManager.codeTransformationSession?.let {
@@ -457,7 +463,7 @@ class CodeTransformChatController(
     }
 
     override suspend fun processCodeTransformStopAction(tabId: String) {
-        if (!checkForAuth(tabId)) {
+        if (!checkForAuth(tabId) || !codeModernizerManager.isModernizationJobActive()) {
             return
         }
 
@@ -489,7 +495,6 @@ class CodeTransformChatController(
     override suspend fun processCodeTransformViewDiff(message: IncomingCodeTransformMessage.CodeTransformViewDiff) {
         artifactHandler.displayDiffAction(
             CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId,
-            CodeTransformVCSViewerSrcComponents.Chat
         )
     }
 
@@ -665,9 +670,26 @@ class CodeTransformChatController(
         codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
     }
 
+    private suspend fun handleCodeTransformJobFailed(failureReason: String) {
+        codeTransformChatHelper.updateLastPendingMessage(buildTransformFailedChatContent(failureReason))
+        codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
+    }
+
+    private suspend fun handleCodeTransformJobFailedPreBuild(result: CodeModernizerJobCompletedResult.JobFailedInitialBuild) {
+        codeTransformChatHelper.addNewMessage(
+            buildTransformResultChatContent(result)
+        )
+        artifactHandler.showBuildLog(CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId)
+    }
+
     private suspend fun handleCodeTransformResult(result: CodeModernizerJobCompletedResult) {
+        LOG.info { "CodeModernizerJobCompletedResult: $result" }
         when (result) {
             is CodeModernizerJobCompletedResult.Stopped, CodeModernizerJobCompletedResult.JobAbortedBeforeStarting -> handleCodeTransformStoppedByUser()
+            is CodeModernizerJobCompletedResult.JobFailed -> handleCodeTransformJobFailed(result.failureReason)
+            is CodeModernizerJobCompletedResult.JobFailedInitialBuild -> handleCodeTransformJobFailedPreBuild(result)
+            is CodeModernizerJobCompletedResult.RetryableFailure -> handleCodeTransformJobFailed(result.failureReason)
+            is CodeModernizerJobCompletedResult.UnableToCreateJob -> handleCodeTransformJobFailed(result.failureReason)
             else -> {
                 if (result is CodeModernizerJobCompletedResult.ZipUploadFailed && result.failureReason is UploadFailureReason.CREDENTIALS_EXPIRED) {
                     return
@@ -676,6 +698,7 @@ class CodeTransformChatController(
                         CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId,
                         TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS
                     )
+                    LOG.info { "Download result: $downloadResult" }
                     when (downloadResult) {
                         is DownloadArtifactResult.Success -> {
                             if (downloadResult.artifact !is CodeModernizerArtifact) return artifactHandler.notifyUnableToApplyPatch("")
