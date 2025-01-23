@@ -6,6 +6,13 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.controller
 import com.intellij.notification.NotificationAction
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATION_RETRY_LIMIT
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.EmptyPatchException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.GuardrailsException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataOperationName
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataResult
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PromptRefusalException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ThrottlingException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUp
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUpStatusType
@@ -21,7 +28,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Delete
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.PrepareCodeGenerationState
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Session
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionState
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.InsertAction
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
@@ -57,11 +63,16 @@ suspend fun FeatureDevController.onCodeGeneration(
         var totalIterations: Int? = state.codeGenerationTotalIterationCount
 
         if (state.token?.token?.isCancellationRequested() == true) {
-            disposeToken(state, messenger, tabId, state.currentIteration?.let { CODE_GENERATION_RETRY_LIMIT.minus(it) }, CODE_GENERATION_RETRY_LIMIT)
+            disposeToken(messenger, tabId, state.codeGenerationRemainingIterationCount, state.codeGenerationTotalIterationCount)
             return
         }
 
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.generating_code"))
+
+        session.sendMetricDataTelemetry(
+            MetricDataOperationName.StartCodeGeneration,
+            MetricDataResult.Success
+        )
 
         session.send(message) // Trigger code generation
 
@@ -84,7 +95,7 @@ suspend fun FeatureDevController.onCodeGeneration(
         }
 
         if (state.token?.token?.isCancellationRequested() == true) {
-            disposeToken(state, messenger, tabId, state.currentIteration?.let { CODE_GENERATION_RETRY_LIMIT.minus(it) }, CODE_GENERATION_RETRY_LIMIT)
+            disposeToken(messenger, tabId, state.codeGenerationRemainingIterationCount, state.codeGenerationTotalIterationCount)
             return
         }
 
@@ -121,11 +132,17 @@ suspend fun FeatureDevController.onCodeGeneration(
                 tabId = tabId,
                 messageType = FeatureDevMessageType.Answer,
                 message =
-                if (remainingIterations == 0) {
-                    message("amazonqFeatureDev.code_generation.iteration_zero")
-                } else {
+                if (remainingIterations > 2) {
+                    message("amazonqFeatureDev.code_generation.iteration_counts_ask_to_add_code_or_feedback")
+                } else if (remainingIterations > 0) {
                     message(
                         "amazonqFeatureDev.code_generation.iteration_counts",
+                        remainingIterations,
+                        totalIterations,
+                    )
+                } else {
+                    message(
+                        "amazonqFeatureDev.code_generation.iteration_counts_ask_to_add_code",
                         remainingIterations,
                         totalIterations,
                     )
@@ -134,8 +151,29 @@ suspend fun FeatureDevController.onCodeGeneration(
         }
 
         messenger.sendSystemPrompt(tabId = tabId, followUp = getFollowUpOptions(session.sessionState.phase, InsertAction.ALL))
-
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
+    } catch (err: Exception) {
+        when (err) {
+            is GuardrailsException, is NoChangeRequiredException, is PromptRefusalException, is ThrottlingException -> {
+                session.sendMetricDataTelemetry(
+                    MetricDataOperationName.EndCodeGeneration,
+                    MetricDataResult.Error
+                )
+            }
+            is EmptyPatchException -> {
+                session.sendMetricDataTelemetry(
+                    MetricDataOperationName.EndCodeGeneration,
+                    MetricDataResult.LlmFailure
+                )
+            }
+            else -> {
+                session.sendMetricDataTelemetry(
+                    MetricDataOperationName.EndCodeGeneration,
+                    MetricDataResult.Fault
+                )
+            }
+        }
+        throw err
     } finally {
         if (session.sessionState.token
                 ?.token
@@ -155,10 +193,14 @@ suspend fun FeatureDevController.onCodeGeneration(
             )
         }
     }
+
+    session.sendMetricDataTelemetry(
+        MetricDataOperationName.EndCodeGeneration,
+        MetricDataResult.Success
+    )
 }
 
 private suspend fun disposeToken(
-    state: SessionState,
     messenger: MessagePublisher,
     tabId: String,
     remainingIterations: Int?,
@@ -196,16 +238,25 @@ private suspend fun disposeToken(
         return
     }
 
-    messenger.sendAnswer(
-        tabId = tabId,
-        messageType = FeatureDevMessageType.Answer,
-        message =
-        message(
-            "amazonqFeatureDev.code_generation.stopped_code_generation",
-            remainingIterations ?: state.currentIteration?.let { CODE_GENERATION_RETRY_LIMIT - it } as Any,
-            totalIterations ?: CODE_GENERATION_RETRY_LIMIT,
-        ),
-    )
+    if (remainingIterations !== null && totalIterations !== null && remainingIterations <= 2) {
+        messenger.sendAnswer(
+            tabId = tabId,
+            messageType = FeatureDevMessageType.Answer,
+            message =
+            message(
+                "amazonqFeatureDev.code_generation.stopped_code_generation",
+                remainingIterations,
+                totalIterations,
+            ),
+        )
+    } else {
+        messenger.sendAnswer(
+            tabId = tabId,
+            messageType = FeatureDevMessageType.Answer,
+            message =
+            message("amazonqFeatureDev.code_generation.stopped_code_generation_no_iteration_count_display"),
+        )
+    }
 
     messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = true)
 

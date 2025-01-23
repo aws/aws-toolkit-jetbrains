@@ -31,7 +31,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESH
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_DOWNLOAD_EXPIRED
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildStartNewTransformFollowup
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.createViewDiffButton
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.getDownloadedArtifactTextFromType
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.viewSummaryButton
@@ -56,7 +55,6 @@ import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformArtifactType
-import software.aws.toolkits.telemetry.CodeTransformVCSViewerSrcComponents
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -93,17 +91,17 @@ class ArtifactHandler(
     private var totalPatchFiles: Int = 0
     private var sharedPatchIndex: Int = 0
 
-    internal suspend fun displayDiff(job: JobId, source: CodeTransformVCSViewerSrcComponents) {
+    internal suspend fun displayDiff(job: JobId) {
         if (isCurrentlyDownloading.get()) return
         when (val result = downloadArtifact(job, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS)) {
             is DownloadArtifactResult.Success -> {
                 if (result.artifact !is CodeModernizerArtifact) return notifyUnableToApplyPatch("")
                 totalPatchFiles = result.artifact.patches.size
                 if (result.artifact.description == null) {
-                    displayDiffUsingPatch(result.artifact.patches.first(), totalPatchFiles, null, job, source)
+                    displayDiffUsingPatch(result.artifact.patches.first(), totalPatchFiles, null, job)
                 } else {
                     val diffDescription = result.artifact.description[getCurrentPatchIndex()]
-                    displayDiffUsingPatch(result.artifact.patches[getCurrentPatchIndex()], totalPatchFiles, diffDescription, job, source)
+                    displayDiffUsingPatch(result.artifact.patches[getCurrentPatchIndex()], totalPatchFiles, diffDescription, job)
                 }
             }
             is DownloadArtifactResult.ParseZipFailure -> notifyUnableToApplyPatch(result.failureReason.errorMessage)
@@ -285,7 +283,6 @@ class ArtifactHandler(
         totalPatchFiles: Int,
         diffDescription: PatchInfo?,
         jobId: JobId,
-        source: CodeTransformVCSViewerSrcComponents,
     ) {
         withContext(EDT) {
             val dialog = ApplyPatchDifferentiatedDialog(
@@ -312,15 +309,13 @@ class ArtifactHandler(
             dialog.isModal = true
 
             if (dialog.showAndGet()) {
-                telemetry.submitSelection("Submit-${diffDescription?.name}")
-                telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Submit", source)
+                telemetry.submitSelection("Submit-${diffDescription?.name}", jobId.toString())
                 if (diffDescription == null) {
                     val resultContent = CodeTransformChatMessageContent(
                         type = CodeTransformChatMessageType.PendingAnswer,
                         message = message("codemodernizer.chat.message.changes_applied"),
                     )
                     codeTransformChatHelper?.updateLastPendingMessage(resultContent)
-                    codeTransformChatHelper?.addNewMessage(buildStartNewTransformFollowup())
                 } else {
                     if (getCurrentPatchIndex() < totalPatchFiles) {
                         val message = "I applied the changes in diff patch ${getCurrentPatchIndex() + 1} of $totalPatchFiles. " +
@@ -347,11 +342,11 @@ class ArtifactHandler(
                             )
                         }
                     } else {
-                        codeTransformChatHelper?.addNewMessage(buildStartNewTransformFollowup())
+                        // no-op; start a new transformation button already visible at this point
                     }
                 }
             } else {
-                telemetry.viewArtifact(CodeTransformArtifactType.ClientInstructions, jobId, "Cancel", source)
+                telemetry.submitSelection("Cancel", jobId.toString())
             }
         }
     }
@@ -464,9 +459,9 @@ class ArtifactHandler(
         )
     }
 
-    fun displayDiffAction(jobId: JobId, source: CodeTransformVCSViewerSrcComponents) = runReadAction {
+    fun displayDiffAction(jobId: JobId) = runReadAction {
         projectCoroutineScope(project).launch {
-            displayDiff(jobId, source)
+            displayDiff(jobId)
         }
     }
 

@@ -431,6 +431,11 @@ fun buildTransformStoppedChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
 )
 
+fun buildTransformFailedChatContent(failureReason: String) = CodeTransformChatMessageContent(
+    message = message("codemodernizer.chat.message.transform_failed", failureReason),
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+)
+
 fun buildUserSQLConversionSelectionSummaryChatContent(moduleName: String, schema: String) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.Prompt,
     message = getUserSQLConversionSelectionFormattedMarkdown(moduleName, schema)
@@ -537,7 +542,7 @@ fun buildTransformResumingChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.PendingAnswer,
 )
 
-fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult, totalPatchFiles: Int): CodeTransformChatMessageContent {
+fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult, totalPatchFiles: Int? = null): CodeTransformChatMessageContent {
     val resultMessage = when (result) {
         is CodeModernizerJobCompletedResult.JobAbortedZipTooLarge -> {
             "${message(
@@ -595,6 +600,7 @@ fun buildTransformResultChatContent(result: CodeModernizerJobCompletedResult, to
         } else {
             null
         },
+        followUps = listOf(startNewTransformFollowUp),
     )
 }
 

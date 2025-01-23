@@ -1,3 +1,67 @@
+# _3.49_ (2025-01-17)
+- **(Bug Fix)** /review: Improved success rate of code reviews for certain workspace configurations
+
+# _3.48_ (2025-01-16)
+- **(Feature)** Enhance Q inline completion context fetching for better suggestion quality
+- **(Feature)** /doc: Add error message if updated README is too large
+- **(Bug Fix)** /transform: always include button to start a new transformation at the end of a job
+- **(Bug Fix)** Amazon Q can update mvn and gradle build files
+- **(Bug Fix)** Fix doc generation for modules that are a part of the project
+- **(Bug Fix)** Amazon Q /dev: Remove hard-coded limits and instead rely server-side data to communicate number of code generations remaining
+- **(Bug Fix)** /transform: automatically open pre-build error logs when available
+- **(Bug Fix)** /doc: Fix code generation error when cancelling a documentation task
+- **(Bug Fix)** Amazon Q - update messaging for /doc agent
+
+# _3.47_ (2025-01-09)
+- **(Bug Fix)** Fix issue where users are unable to login to Amazon Q if they have previously authenticated ([#5214](https://github.com/aws/aws-toolkit-jetbrains/issues/5214))
+- **(Bug Fix)** Fix incorrect text shown while updating documentation in /doc
+- **(Bug Fix)** Amazon Q Code Transformation: retry initial project upload on failure
+- **(Bug Fix)** /transform: use correct doc link in SQL conversion help message
+- **(Bug Fix)** Amazon Q /dev: Fix issue when files are deleted while preparing context
+- **(Bug Fix)** Amazon Q /test: Test generation fails for files outside the project
+- **(Bug Fix)** Amazon Q Code Transformation: allow PostgreSQL as target DB for SQL conversions
+- **(Bug Fix)** Fix incorrect accept and reject buttons shows up while hovering over the generated file
+- **(Bug Fix)** Prevent customization override if user has manually selected a customization
+- **(Bug Fix)** Align UX text of document generation flow with vs code version
+
+# _3.46_ (2024-12-17)
+- **(Feature)** /review: Code fix automatically scrolls into view after generation.
+- **(Feature)** Chat: improve font size and line-height in footer (below prompt input field)
+- **(Feature)** Adds capability to send new context commands to AB groups
+- **(Bug Fix)** Chat: When writing a prompt without sending it, navigating via up/down arrows sometimes deletes the unsent prompt.
+- **(Bug Fix)** Fix chat not retaining history when interaction is through onboarding tab type ([#5189](https://github.com/aws/aws-toolkit-jetbrains/issues/5189))
+- **(Bug Fix)** Chat: When navigating to previous prompts, code attachments are sometimes displayed incorrectly
+- **(Bug Fix)** Reduce frequency of system information query
+
+# _3.45_ (2024-12-10)
+- **(Feature)** Add acknowledgement button for Amazon Q Chat disclaimer
+- **(Bug Fix)** Chosing cancel on sign out confirmation now cancels the sign out and does not delete profiles from ~/.aws/config ([#5167](https://github.com/aws/aws-toolkit-jetbrains/issues/5167))
+- **(Bug Fix)** Fix `@workspace` missing from the Amazon Q Chat welcome tab
+- **(Bug Fix)** Fix for /review LLM based code issues for file review on windows
+- **(Bug Fix)** Fix for File Review payload and Regex error for payload generation
+- **(Bug Fix)** Amazon Q Code Transformation: show build logs when server-side build fails
+
+# _3.44_ (2024-12-04)
+- **(Feature)** Amazon Q: UI improvements to chat: New splash loader animation, initial streaming card animation, improved button colours
+- **(Feature)** Amazon Q: Navigate through prompt history by using the up/down arrows
+- **(Bug Fix)** Fix issue where Amazon Q Code Transform is unable to start
+- **(Bug Fix)** Fix DynamoDB viewer throwing 'ActionGroup should be registered using <group> tag' on IDE start ([#5012](https://github.com/aws/aws-toolkit-jetbrains/issues/5012)) ([#5120](https://github.com/aws/aws-toolkit-jetbrains/issues/5120))
+- **(Bug Fix)** Amazon Q: Fix chat syntax highlighting when using several different themes
+
+# _3.43_ (2024-12-03)
+- **(Feature)** `/review` in Q chat to scan your code for vulnerabilities and quality issues, and generate fixes
+- **(Feature)** `/test` in Q chat to generate unit tests for java and python
+- **(Feature)** `/doc` in Q chat to generate and update documentation for your project
+- **(Feature)** Added system notifications to inform users about critical plugin updates and potential issues with available workarounds
+
+# _3.42_ (2024-11-27)
+- **(Feature)** Amazon Q /dev: support `Dockerfile` files
+- **(Feature)** Feature(Amazon Q Code Transformation): allow users to view results in 5 smaller diffs
+- **(Feature)** Introduce @workspace command to enhance chat context fetching for Chat
+- **(Bug Fix)** Correct search text for Amazon Q inline suggestion keybindings
+- **(Bug Fix)** Fix(Amazon Q Code Transformation): always show user latest/correct transformation results
+- **(Bug Fix)** Amazon Q /dev: Fix error when accepting changes if leading slash is present.
+
 # _3.41_ (2024-11-22)
 - **(Feature)** Amazon Q /dev: support `.gradle` files
 - **(Feature)** Inline Auto trigger will now happen more consistently and will not conflict with JetBrains code completion.

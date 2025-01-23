@@ -34,8 +34,6 @@ dependencies {
     testImplementation(libs.junit4)
     testImplementation(libs.bundles.mockito)
     testImplementation(gradleTestKit())
-
-    testRuntimeOnly(libs.junit5.jupiterVintage)
 }
 
 tasks.test {

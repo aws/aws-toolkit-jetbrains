@@ -32,6 +32,7 @@ class CodeModernizerBottomWindowPanelManagerTest : PanelTestBase() {
         val layout = codeModernizerBottomWindowPanelManagerMock.layout as BorderLayout
         assertThat(codeModernizerBottomWindowPanelManagerMock.toolbar.component.isVisible).isTrue()
         assertThat(codeModernizerBottomWindowPanelManagerMock.fullSizeLoadingPanel.isVisible).isTrue()
+        assertThat(codeModernizerBottomWindowPanelManagerMock.banner.isVisible).isTrue()
         assertThat(BorderLayout.WEST).isEqualTo(layout.getConstraints(codeModernizerBottomWindowPanelManagerMock.toolbar.component))
         assertThat(BorderLayout.NORTH).isEqualTo(layout.getConstraints(codeModernizerBottomWindowPanelManagerMock.banner))
         assertThat(layout.getLayoutComponent(BorderLayout.EAST)).isNull()

@@ -26,7 +26,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.readFileT
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
-import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.MetricResult
 import java.util.UUID
 
 private val logger = getLogger<CodeGenerationState>()
@@ -47,9 +47,9 @@ class CodeGenerationState(
 ) : SessionState {
     override val phase = SessionStatePhase.CODEGEN
 
-    override suspend fun interact(action: SessionStateAction): SessionStateInteraction {
+    override suspend fun interact(action: SessionStateAction): SessionStateInteraction<SessionState> {
         val startTime = System.currentTimeMillis()
-        var result: Result = Result.Succeeded
+        var result: MetricResult = MetricResult.Succeeded
         var failureReason: String? = null
         var failureReasonDesc: String? = null
         var codeGenerationWorkflowStatus: CodeGenerationWorkflowStatus = CodeGenerationWorkflowStatus.COMPLETE
@@ -84,6 +84,12 @@ class CodeGenerationState(
             numberOfFilesGenerated = codeGenerationResult.newFiles.size
             codeGenerationRemainingIterationCount = codeGenerationResult.codeGenerationRemainingIterationCount
             codeGenerationTotalIterationCount = codeGenerationResult.codeGenerationTotalIterationCount
+            currentIteration =
+                if (codeGenerationRemainingIterationCount != null && codeGenerationTotalIterationCount != null) {
+                    codeGenerationTotalIterationCount?.let { total -> codeGenerationRemainingIterationCount?.let { remaining -> total - remaining } }
+                } else {
+                    currentIteration?.plus(1)
+                }
 
             runCatching {
                 var insertedLines = 0
@@ -128,7 +134,7 @@ class CodeGenerationState(
                     filePaths = codeGenerationResult.newFiles,
                     deletedFiles = codeGenerationResult.deletedFiles,
                     references = codeGenerationResult.references,
-                    currentIteration = currentIteration?.plus(1),
+                    currentIteration = currentIteration,
                     uploadId = uploadId,
                     messenger = messenger,
                     codeGenerationRemainingIterationCount = codeGenerationRemainingIterationCount,
@@ -145,7 +151,7 @@ class CodeGenerationState(
             )
         } catch (e: Exception) {
             logger.warn(e) { "$FEATURE_NAME: Code generation failed: ${e.message}" }
-            result = Result.Failed
+            result = MetricResult.Failed
             failureReason = e.javaClass.simpleName
             if (e is FeatureDevException) {
                 failureReason = e.reason()
@@ -182,16 +188,21 @@ private suspend fun CodeGenerationState.generateCode(
 ): CodeGenerationResult {
     val pollCount = 360
     val requestDelay = 5000L
+    var codeGenerationRemainingIterationCount: Int? = null
+    var codeGenerationTotalIterationCount: Int? = null
 
     repeat(pollCount) {
         if (token?.token?.isCancellationRequested() == true) {
-            return CodeGenerationResult(emptyList(), emptyList(), emptyList())
+            return CodeGenerationResult(emptyList(), emptyList(), emptyList(), codeGenerationRemainingIterationCount, codeGenerationTotalIterationCount)
         }
         val codeGenerationResultState =
             config.featureDevService.getTaskAssistCodeGeneration(
                 conversationId = config.conversationId,
                 codeGenerationId = codeGenerationId,
             )
+
+        codeGenerationRemainingIterationCount = codeGenerationResultState.codeGenerationRemainingIterationCount()
+        codeGenerationTotalIterationCount = codeGenerationResultState.codeGenerationTotalIterationCount()
 
         when (codeGenerationResultState.codeGenerationStatus().status()) {
             CodeGenerationWorkflowStatus.COMPLETE -> {
@@ -207,8 +218,8 @@ private suspend fun CodeGenerationState.generateCode(
                     newFiles = newFileInfo,
                     deletedFiles = deletedFileInfo,
                     references = codeGenerationStreamResult.references,
-                    codeGenerationRemainingIterationCount = codeGenerationResultState.codeGenerationRemainingIterationCount(),
-                    codeGenerationTotalIterationCount = codeGenerationResultState.codeGenerationTotalIterationCount(),
+                    codeGenerationRemainingIterationCount = codeGenerationRemainingIterationCount,
+                    codeGenerationTotalIterationCount = codeGenerationTotalIterationCount,
                 )
             }
             CodeGenerationWorkflowStatus.IN_PROGRESS -> {
@@ -252,13 +263,14 @@ private suspend fun CodeGenerationState.generateCode(
         }
     }
 
-    return CodeGenerationResult(emptyList(), emptyList(), emptyList())
+    return CodeGenerationResult(emptyList(), emptyList(), emptyList(), codeGenerationRemainingIterationCount, codeGenerationTotalIterationCount)
 }
 
 fun registerNewFiles(newFileContents: Map<String, String>): List<NewFileZipInfo> =
     newFileContents.map {
         NewFileZipInfo(
-            zipFilePath = it.key,
+            // Note: When managing file state, we normalize file paths returned from the agent in order to ensure they are handled as relative paths.
+            zipFilePath = it.key.removePrefix("/"),
             fileContent = it.value,
             rejected = false,
             changeApplied = false
@@ -268,7 +280,8 @@ fun registerNewFiles(newFileContents: Map<String, String>): List<NewFileZipInfo>
 fun registerDeletedFiles(deletedFiles: List<String>): List<DeletedFileInfo> =
     deletedFiles.map {
         DeletedFileInfo(
-            zipFilePath = it,
+            // Note: When managing file state, we normalize file paths returned from the agent in order to ensure they are handled as relative paths.
+            zipFilePath = it.removePrefix("/"),
             rejected = false,
             changeApplied = false
         )

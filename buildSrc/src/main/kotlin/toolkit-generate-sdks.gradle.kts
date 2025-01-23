@@ -38,6 +38,8 @@ java {
 
 tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
+    sourceCompatibility = "17"
+    targetCompatibility = "17"
 }
 
 val generateTask = tasks.register<GenerateSdk>("generateSdks")
