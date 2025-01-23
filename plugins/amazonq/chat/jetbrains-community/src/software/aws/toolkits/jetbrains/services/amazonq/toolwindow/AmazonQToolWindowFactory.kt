@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.toolwindow
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAware
@@ -36,7 +37,9 @@ import software.aws.toolkits.telemetry.FeatureId
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
 
-class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
+class AmazonQToolWindowFactory(
+    private val disposable: Disposable
+) : ToolWindowFactory, DumbAware {
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val mainPanel = BorderLayoutPanel()
@@ -58,7 +61,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         }
         val contentManager = toolWindow.contentManager
 
-        project.messageBus.connect().subscribe(
+        project.messageBus.connect(disposable).subscribe(
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
@@ -67,7 +70,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             }
         )
 
-        project.messageBus.connect().subscribe(
+        project.messageBus.connect(disposable).subscribe(
             RefreshQChatPanelButtonPressedListener.TOPIC,
             object : RefreshQChatPanelButtonPressedListener {
                 override fun onRefresh() {
@@ -78,7 +81,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             }
         )
 
-        project.messageBus.connect().subscribe(
+        project.messageBus.connect(disposable).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
                 override fun onChange(providerId: String, newScopes: List<String>?) {
