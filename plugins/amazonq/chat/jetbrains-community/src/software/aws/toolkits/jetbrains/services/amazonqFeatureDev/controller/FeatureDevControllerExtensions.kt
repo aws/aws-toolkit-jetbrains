@@ -289,7 +289,7 @@ private fun FeatureDevController.openChatNotificationAction() =
         toolWindow?.show()
     }
 
-// Should include error messages only for whitelisted exceptions
+// Should include error messages only for safe exceptions
 // i.e. exceptions with deterministic error messages and do not include sensitive data
 private fun getStackTraceForError(error: Throwable): String {
     val writer = StringWriter()
@@ -303,11 +303,20 @@ private fun getStackTraceForError(error: Throwable): String {
         seenExceptions.add(throwable)
 
         when (throwable) {
-            is NoChangeRequiredException, is EmptyPatchException, is ContentLengthException, is ZipFileCorruptedException,
-            is UploadURLExpired, is CodeIterationLimitException, is GuardrailsException,
-            is PromptRefusalException, is ThrottlingException, is ExportParseException,
-            is CodeGenerationException, is UploadCodeException,
-            is ConversationIdNotFoundException, is RepoSizeLimitError,
+            is NoChangeRequiredException,
+            is EmptyPatchException,
+            is ContentLengthException,
+            is ZipFileCorruptedException,
+            is UploadURLExpired,
+            is CodeIterationLimitException,
+            is GuardrailsException,
+            is PromptRefusalException,
+            is ThrottlingException,
+            is ExportParseException,
+            is CodeGenerationException,
+            is UploadCodeException,
+            is ConversationIdNotFoundException,
+            is RepoSizeLimitError,
             -> {
                 printer.println("$prefix${throwable.javaClass.name}: ${throwable.message}")
             }
