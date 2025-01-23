@@ -36,7 +36,7 @@ import software.aws.toolkits.telemetry.FeatureId
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
 
-class AmazonQToolWindowFactory: ToolWindowFactory, DumbAware {
+class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val mainPanel = BorderLayoutPanel()

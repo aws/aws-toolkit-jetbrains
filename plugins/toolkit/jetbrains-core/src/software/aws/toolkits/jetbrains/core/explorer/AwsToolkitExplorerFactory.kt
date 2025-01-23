@@ -46,7 +46,7 @@ import software.aws.toolkits.telemetry.FeatureId
 import java.util.EventListener
 import javax.swing.JComponent
 
-class AwsToolkitExplorerFactory: ToolWindowFactory, DumbAware {
+class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val notificationPanel = NotificationPanel()
