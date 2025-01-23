@@ -7,6 +7,7 @@ import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.io.NioFiles
 import com.intellij.testFramework.ApplicationExtension
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledOnOs
@@ -713,5 +714,32 @@ class DiskCacheTest {
         assertThat(sut.loadAccessToken(key1))
             .usingRecursiveComparison()
             .isEqualTo(sut.loadAccessToken(key2))
+    }
+
+    @Test
+    fun `loadClientRegistration returns null when file not found during registration`() {
+        val key = DeviceAuthorizationClientRegistrationCacheKey(
+            startUrl = ssoUrl,
+            scopes = scopes,
+            region = ssoRegion
+        )
+
+        assertThat(sut.loadClientRegistration(key, SsoAccessTokenProvider.SourceOfLoadRegistration.REGISTER_CLIENT.toString())).isNull()
+    }
+
+    @Test
+    fun `loadClientRegistration throws exception when file not found during refresh`() {
+        val key = DeviceAuthorizationClientRegistrationCacheKey(
+            startUrl = ssoUrl,
+            scopes = scopes,
+            region = ssoRegion
+        )
+
+        assertThatThrownBy {
+            sut.loadClientRegistration(
+                key,
+                SsoAccessTokenProvider.SourceOfLoadRegistration.REFRESH_TOKEN.toString()
+            )
+        }.isInstanceOf(ClientRegistrationNotFoundException::class.java)
     }
 }
