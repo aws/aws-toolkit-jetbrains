@@ -559,6 +559,15 @@ export class Connector {
                 this.amazonqCommonsConnector.onCustomFormAction(tabId, action)
                 break
             }
+            case 'cwc': {
+                if (action.id === `open-settings`) {
+                    this.sendMessageToExtension({
+                        command: 'open-settings',
+                        type: '',
+                        tabType: 'cwc',
+                    })
+                }
+            }
         }
     }
 
@@ -591,37 +600,6 @@ export class Connector {
                 break
             case 'featuredev':
                 this.featureDevChatConnector.onChatItemVoted(tabId, messageId, vote)
-                break
-        }
-    }
-
-    onFormButtonClick = (
-        tabId: string,
-        messageId: string,
-        action: {
-            id: string
-            text?: string
-            formItemValues?: Record<string, string>
-        }
-    ) => {
-        if (isFormButtonCodeTransform(action.id)) {
-            this.codeTransformChatConnector.onFormButtonClick(tabId, action)
-        } else if (isFormButtonCodeScan(action.id)) {
-            this.codeScanChatConnector.onFormButtonClick(tabId, action)
-        } else if (isFormButtonCodeTest(action.id)) {
-            this.codeTestChatConnector.onFormButtonClick(tabId, messageId, action)
-        } else if (action.id === 'doc') {
-            this.docChatConnector.onFormButtonClick(tabId, action)
-        }
-        switch (this.tabsStorage.getTab(tabId)?.type) {
-            case 'cwc':
-                if (action.id === `open-settings`) {
-                    this.sendMessageToExtension({
-                        command: 'open-settings',
-                        type: '',
-                        tabType: 'cwc',
-                    })
-                }
                 break
         }
     }

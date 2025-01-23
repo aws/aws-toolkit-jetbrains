@@ -179,6 +179,15 @@ data class FolderConfirmationMessage(
     type = "folderConfirmationMessage"
 )
 
+data class RetryChangeFolderMessage(
+    @JsonProperty("tabID") override val tabId: String,
+    val message: String,
+    val followUps: List<FollowUp>?,
+) : UiMessage(
+    tabId = tabId,
+    type = "retryChangeFolderMessage"
+)
+
 // this should come from mynah?
 data class ChatItemButton(
     val id: String,
