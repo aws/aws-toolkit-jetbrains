@@ -7,9 +7,12 @@ import com.intellij.notification.NotificationAction
 import software.aws.toolkits.jetbrains.services.amazonq.RepoSizeLimitError
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATION_RETRY_LIMIT
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeGenerationException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ConversationIdNotFoundException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.EmptyPatchException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ExportParseException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.GuardrailsException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataOperationName
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataResult
@@ -17,7 +20,9 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConvers
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PromptRefusalException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ThrottlingException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.UploadCodeException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.UploadURLExpired
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileCorruptedException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUp
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUpStatusType
@@ -38,6 +43,8 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.InsertAct
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
+import java.io.PrintWriter
+import java.io.StringWriter
 
 suspend fun FeatureDevController.onCodeGeneration(
     session: Session,
@@ -179,7 +186,7 @@ suspend fun FeatureDevController.onCodeGeneration(
         session.sendMetricDataTelemetry(
             operationName = MetricDataOperationName.EndCodeGeneration,
             result = result,
-            log = "stack trace: " + err.stackTraceToString()
+            log = "stack trace: " + getStackTraceForError(err)
         )
         throw err
     } finally {
@@ -281,3 +288,50 @@ private fun FeatureDevController.openChatNotificationAction() =
     ) {
         toolWindow?.show()
     }
+
+// Should include error messages only for whitelisted exceptions
+// i.e. exceptions with deterministic error messages and do not include sensitive data
+private fun getStackTraceForError(error: Throwable): String {
+    val writer = StringWriter()
+    val printer = PrintWriter(writer)
+    val seenExceptions = mutableSetOf<Throwable>()
+
+    fun printExceptionDetails(throwable: Throwable, prefix: String = "") {
+        if (throwable in seenExceptions) {
+            return
+        }
+        seenExceptions.add(throwable)
+
+        when (throwable) {
+            is NoChangeRequiredException, is EmptyPatchException, is ContentLengthException, is ZipFileCorruptedException,
+            is UploadURLExpired, is CodeIterationLimitException, is GuardrailsException,
+            is PromptRefusalException, is ThrottlingException, is ExportParseException,
+            is CodeGenerationException, is UploadCodeException,
+            is ConversationIdNotFoundException, is RepoSizeLimitError,
+            -> {
+                printer.println("$prefix${throwable.javaClass.name}: ${throwable.message}")
+            }
+            else -> {
+                // No message included
+                printer.println("$prefix${throwable.javaClass.name}")
+            }
+        }
+
+        throwable.stackTrace.forEach { element ->
+            printer.println("$prefix\tat $element")
+        }
+
+        throwable.cause?.let { cause ->
+            printer.println("$prefix\tCaused by: ")
+            printExceptionDetails(cause, "$prefix\t")
+        }
+
+        throwable.suppressed.forEach { suppressed ->
+            printer.println("$prefix\tSuppressed: ")
+            printExceptionDetails(suppressed, "$prefix\t")
+        }
+    }
+
+    printExceptionDetails(error)
+    return writer.toString()
+}

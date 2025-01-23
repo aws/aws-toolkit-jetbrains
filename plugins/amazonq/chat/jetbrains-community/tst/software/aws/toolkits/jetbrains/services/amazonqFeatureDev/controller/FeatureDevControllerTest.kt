@@ -696,7 +696,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             mockInOrder.verify(mockSession).sendMetricDataTelemetry(
                 eq(MetricDataOperationName.EndCodeGeneration),
                 eq(expectedResult),
-                argThat { this.contains("stack trace: ") ?: false }
+                argThat { this.startsWith("stack trace: ") ?: false }
             )
         }
     }
