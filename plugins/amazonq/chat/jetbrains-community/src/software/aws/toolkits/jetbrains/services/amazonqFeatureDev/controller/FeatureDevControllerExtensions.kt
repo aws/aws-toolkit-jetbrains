@@ -292,12 +292,13 @@ private fun FeatureDevController.openChatNotificationAction() =
 // Should include error messages only for safe exceptions
 // i.e. exceptions with deterministic error messages and do not include sensitive data
 private fun getStackTraceForError(error: Throwable): String {
+    val recursionLimit = 3
     val writer = StringWriter()
     val printer = PrintWriter(writer)
     val seenExceptions = mutableSetOf<Throwable>()
 
-    fun printExceptionDetails(throwable: Throwable, prefix: String = "") {
-        if (throwable in seenExceptions) {
+    fun printExceptionDetails(throwable: Throwable, depth: Int, prefix: String = "") {
+        if (depth >= recursionLimit || throwable in seenExceptions) {
             return
         }
         seenExceptions.add(throwable)
@@ -332,15 +333,15 @@ private fun getStackTraceForError(error: Throwable): String {
 
         throwable.cause?.let { cause ->
             printer.println("$prefix\tCaused by: ")
-            printExceptionDetails(cause, "$prefix\t")
+            printExceptionDetails(cause, depth + 1, "$prefix\t")
         }
 
         throwable.suppressed.forEach { suppressed ->
             printer.println("$prefix\tSuppressed: ")
-            printExceptionDetails(suppressed, "$prefix\t")
+            printExceptionDetails(suppressed, depth + 1, "$prefix\t")
         }
     }
 
-    printExceptionDetails(error)
+    printExceptionDetails(error, 0)
     return writer.toString()
 }
