@@ -12,12 +12,15 @@ import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.diff.util.DiffUserDataKeys
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.testFramework.LightVirtualFile
 import kotlinx.coroutines.withContext
+import org.intellij.images.fileTypes.impl.SvgFileType
 import software.amazon.awssdk.services.codewhispererruntime.model.DocFolderLevel
 import software.amazon.awssdk.services.codewhispererruntime.model.DocInteractionType
 import software.amazon.awssdk.services.codewhispererruntime.model.DocUserDecision
@@ -33,6 +36,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitConte
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.amazonqDoc.DEFAULT_RETRY_LIMIT
+import software.aws.toolkits.jetbrains.services.amazonqDoc.DIAGRAM_SVG_EXT
 import software.aws.toolkits.jetbrains.services.amazonqDoc.DocException
 import software.aws.toolkits.jetbrains.services.amazonqDoc.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqDoc.InboundAppMessagesHandler
@@ -374,45 +378,51 @@ class DocController(
 
     override suspend fun processOpenDiff(message: IncomingDocMessage.OpenDiff) {
         val session = getSessionInfo(message.tabId)
-
-        val project = context.project
         val sessionState = session.sessionState
 
-        when (sessionState) {
-            is PrepareDocGenerationState -> {
-                runInEdt {
-                    val existingFile = VfsUtil.findRelativeFile(message.filePath, session.context.selectedSourceFolder)
+        if (sessionState !is PrepareDocGenerationState) {
+            logger.error { "$FEATURE_NAME: OpenDiff event is received for a conversation that has ${session.sessionState.phase} phase" }
+            messenger.sendError(
+                tabId = message.tabId,
+                errMessage = message("amazonqFeatureDev.exception.open_diff_failed"),
+                retries = 0,
+                conversationId = session.conversationIdUnsafe
+            )
+            return
+        }
 
-                    val leftDiffContent = if (existingFile == null) {
-                        EmptyContent()
-                    } else {
-                        DiffContentFactory.getInstance().create(project, existingFile)
-                    }
+        runInEdt {
+            val newFileContent = sessionState.filePaths.find { it.zipFilePath == message.filePath }?.fileContent
 
-                    val newFileContent = sessionState.filePaths.find { it.zipFilePath == message.filePath }?.fileContent
-
-                    val rightDiffContent = if (message.deleted || newFileContent == null) {
-                        EmptyContent()
-                    } else {
-                        DiffContentFactory.getInstance().create(newFileContent)
-                    }
-
-                    val request = SimpleDiffRequest(message.filePath, leftDiffContent, rightDiffContent, null, null)
-                    request.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true)
-
-                    val newDiff = ChainDiffVirtualFile(SimpleDiffRequestChain(request), message.filePath)
-                    DiffEditorTabFilesManager.getInstance(context.project).showDiffFile(newDiff, true)
-                }
-            }
-
-            else -> {
-                logger.error { "$FEATURE_NAME: OpenDiff event is received for a conversation that has ${session.sessionState.phase} phase" }
-                messenger.sendError(
-                    tabId = message.tabId,
-                    errMessage = message("amazonqFeatureDev.exception.open_diff_failed"),
-                    retries = 0,
-                    conversationId = session.conversationIdUnsafe
+            val isSvgFile = message.filePath.lowercase().endsWith(".".plus(DIAGRAM_SVG_EXT))
+            if (isSvgFile && newFileContent != null) {
+                // instead of diff display generated svg in edit/preview window
+                val inMemoryFile = LightVirtualFile(
+                    message.filePath,
+                    SvgFileType.INSTANCE,
+                    newFileContent
                 )
+                inMemoryFile.isWritable = false
+                FileEditorManager.getInstance(context.project).openFile(inMemoryFile, true)
+            } else {
+                val existingFile = VfsUtil.findRelativeFile(message.filePath, session.context.selectedSourceFolder)
+                val leftDiffContent = if (existingFile == null) {
+                    EmptyContent()
+                } else {
+                    DiffContentFactory.getInstance().create(context.project, existingFile)
+                }
+
+                val rightDiffContent = if (message.deleted || newFileContent == null) {
+                    EmptyContent()
+                } else {
+                    DiffContentFactory.getInstance().create(newFileContent)
+                }
+
+                val request = SimpleDiffRequest(message.filePath, leftDiffContent, rightDiffContent, null, null)
+                request.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true)
+
+                val newDiff = ChainDiffVirtualFile(SimpleDiffRequestChain(request), message.filePath)
+                DiffEditorTabFilesManager.getInstance(context.project).showDiffFile(newDiff, true)
             }
         }
     }
@@ -738,6 +748,7 @@ class DocController(
                 SessionStatePhase.CODEGEN -> {
                     onCodeGeneration(session, message, tabId, mode)
                 }
+
                 else -> null
             }
 
