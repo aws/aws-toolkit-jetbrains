@@ -214,10 +214,10 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
 
     internal suspend fun invokeCodeWhispererInBackground(
         requestContext: RequestContext,
-        isPrefetch: Boolean = false,
         currStates: InvocationContext? = null,
     ): Job {
-        if (isPrefetch && currStates?.recommendationContext?.details?.isNotEmpty() == true) {
+        // current states != null means that it's prefetch
+        if (currStates != null) {
             val firstValidRecommendation = currStates.recommendationContext.details
                 .firstOrNull {
                     !it.isDiscarded && it.recommendation.content().isNotEmpty()
@@ -598,7 +598,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 return null
             }
             cs.launch(getCoroutineBgContext()) {
-                invokeCodeWhispererInBackground(requestContext, true, nextStates)
+                invokeCodeWhispererInBackground(requestContext, nextStates)
             }
         } else {
             // subsequent responses
@@ -753,7 +753,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 recommendationAdded = false
             )
             cs.launch(getCoroutineBgContext()) {
-                invokeCodeWhispererInBackground(updatedNextStates.requestContext, true, updatedNextStates)
+                invokeCodeWhispererInBackground(updatedNextStates.requestContext, updatedNextStates)
             }
         }
 
