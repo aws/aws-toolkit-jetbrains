@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.settings
 
 import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.components.PersistentStateComponent
-import com.intellij.openapi.components.RoamingType
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
@@ -13,7 +12,7 @@ import com.intellij.openapi.components.service
 import com.intellij.util.xmlb.annotations.Property
 
 @Service
-@State(name = "codewhispererSettings", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
+@State(name = "codewhispererSettings", storages = [Storage("aws.xml")])
 class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguration> {
     private val state = CodeWhispererConfiguration()
 
@@ -119,7 +118,11 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
 class CodeWhispererConfiguration : BaseState() {
     @get:Property
     val value by map<CodeWhispererConfigurationType, Boolean>()
+
+    @get:Property
     val intValue by map<CodeWhispererIntConfigurationType, Int>()
+
+    @get:Property
     val stringValue by map<CodeWhispererStringConfigurationType, String>()
 }
 
