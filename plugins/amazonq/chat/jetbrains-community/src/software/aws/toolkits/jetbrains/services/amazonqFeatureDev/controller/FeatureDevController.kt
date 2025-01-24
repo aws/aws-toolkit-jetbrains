@@ -736,7 +736,7 @@ class FeatureDevController(
                 return
             }
 
-            session.preloader(message, messenger)
+            session.preloader(messenger)
             broadcastQEvent(QFeatureEvent.INVOCATION)
 
             when (session.sessionState.phase) {

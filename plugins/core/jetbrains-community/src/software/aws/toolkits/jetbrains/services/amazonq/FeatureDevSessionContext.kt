@@ -47,11 +47,11 @@ class RepoSizeLimitError(override val message: String) : RuntimeException(), Rep
 class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Long? = null) {
     // TODO: Need to correct this class location in the modules going further to support both amazonq and codescan.
 
+    private val requiredFilesForExecution = setOf("gradle/wrapper/gradle-wrapper.jar")
     private val additionalGitIgnoreRules = setOf(
         ".aws-sam",
         ".gem",
         ".git",
-        ".gitignore",
         ".gradle",
         ".hg",
         ".idea",
@@ -136,6 +136,9 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     suspend fun ignoreFile(file: VirtualFile): Boolean = ignoreFile(file.presentableUrl)
 
     suspend fun ignoreFile(path: String): Boolean {
+        if (requiredFilesForExecution.any { path.endsWith(it) }) {
+            return false
+        }
         // this method reads like something a JS dev would write and doesn't do what the author thinks
         val deferredResults = ignorePatternsWithGitIgnore.map { pattern ->
             withContext(coroutineContext) {
