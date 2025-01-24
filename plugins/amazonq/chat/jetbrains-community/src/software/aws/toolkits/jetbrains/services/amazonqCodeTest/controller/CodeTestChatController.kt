@@ -71,7 +71,10 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendA
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.jetbrains.services.cwc.ChatConstants
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
@@ -277,7 +280,7 @@ class CodeTestChatController(
 
             val requestData = ChatRequestData(
                 tabId = session.tabId,
-                message = "Generate unit tests for the following part of my code: ${message.prompt}",
+                message = "Generate unit tests for the following part of my code: ${message.prompt.ifBlank { fileInfo.fileName }}",
                 activeFileContext = activeFileContext,
                 userIntent = UserIntent.GENERATE_UNIT_TESTS,
                 triggerType = TriggerType.ContextMenu,
@@ -1176,7 +1179,7 @@ class CodeTestChatController(
                 filePath = activeFile.path,
                 fileName = activeFile.name,
                 fileLanguage = programmingLanguage,
-                fileInWorkspace = activeFile.path.startsWith(projectRoot.path)
+                fileInWorkspace = activeFile.isWithin(projectRoot)
             )
         } catch (e: Exception) {
             LOG.debug { "Error checking active file: $e" }
@@ -1204,6 +1207,7 @@ class CodeTestChatController(
                 "Processing message: $message " +
                 "tabId: $tabId"
         }
+        broadcastQEvent(QFeatureEvent.INVOCATION)
         when (session.conversationState) {
             ConversationState.WAITING_FOR_BUILD_COMMAND_INPUT -> handleBuildCommandInput(session, message)
             ConversationState.WAITING_FOR_REGENERATE_INPUT -> handleRegenerateInput(session, message)
