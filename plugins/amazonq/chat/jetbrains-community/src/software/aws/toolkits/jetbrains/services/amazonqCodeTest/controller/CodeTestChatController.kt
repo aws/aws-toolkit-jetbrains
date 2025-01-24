@@ -119,7 +119,7 @@ class CodeTestChatController(
 
         ApplicationManager.getApplication().invokeAndWait {
             selectionRange = ApplicationManager.getApplication().runReadAction<Range?> {
-                val editor = FileEditorManager.getInstance(project).selectedTextEditor
+                val editor = FileEditorManager.getInstance(project).selectedTextEditorWithRemotes.firstOrNull()
                 editor?.let {
                     val selectionModel = it.selectionModel
                     val startOffset = selectionModel.selectionStart
