@@ -13,8 +13,8 @@ import com.intellij.openapi.editor.colors.EditorColorsUtil
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.components.JBLabel
+import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.components.BorderLayoutPanel
 import software.aws.toolkits.core.utils.tryOrNull
@@ -48,7 +48,7 @@ class ConfirmUserCodeLoginDialog(
                     )
                     addToRight(ActionButton(action, action.templatePresentation.clone(), ActionPlaces.UNKNOWN, ActionToolbar.NAVBAR_MINIMUM_BUTTON_SIZE))
                 }
-            ).horizontalAlign(HorizontalAlign.CENTER)
+            ).align(AlignX.CENTER)
         }
     }
 

@@ -8,9 +8,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.panels.Wrapper
+import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.dsl.gridLayout.HorizontalAlign
-import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
 
 class QGettingStartedPanel(
@@ -23,8 +22,7 @@ class QGettingStartedPanel(
     val component = panel {
         row {
             cell(webviewContainer)
-                .horizontalAlign(HorizontalAlign.FILL)
-                .verticalAlign(VerticalAlign.FILL)
+                .align(Align.FILL)
         }.resizableRow()
     }
 
