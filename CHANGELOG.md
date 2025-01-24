@@ -1,3 +1,31 @@
+# _3.50_ (2025-01-23)
+- **(Feature)** Amazon Q: Updated `/help` command to include re:invent 2024 features
+- **(Feature)** Amazon Q: UI improvements through more accurate code syntax highlighting
+- **(Bug Fix)** Fixed an issue where Amazon Q settings did not persist across IDE restarts
+- **(Bug Fix)** Amazon Q: Fix context menu displaying when typing `@`, even though input is disallowed
+- **(Bug Fix)** Amazon Q: Fix up/down history navigation only triggering on first/last line of prompt input
+- **(Bug Fix)** Amazon Q /doc: Ask for user prompt if error occurs while updating documentation
+- **(Bug Fix)** Amazon Q: cursor no longer jumps after navigating prompt history
+- **(Bug Fix)** Improve text description of workspace index settings
+- **(Bug Fix)** Amazon Q /doc: fix for user prompt to change folder in chat
+- **(Bug Fix)** Amazon Q Doc README diff will re-open when the README file is clicked after it has been closed
+- **(Bug Fix)** Amazon Q /test: Fix for test generation payload creation to not filter out target file.
+- **(Bug Fix)** Amazon Q: word duplication when pressing tab on context selector fixed
+
+# _3.49_ (2025-01-17)
+- **(Bug Fix)** /review: Improved success rate of code reviews for certain workspace configurations
+
+# _3.48_ (2025-01-16)
+- **(Feature)** Enhance Q inline completion context fetching for better suggestion quality
+- **(Feature)** /doc: Add error message if updated README is too large
+- **(Bug Fix)** /transform: always include button to start a new transformation at the end of a job
+- **(Bug Fix)** Amazon Q can update mvn and gradle build files
+- **(Bug Fix)** Fix doc generation for modules that are a part of the project
+- **(Bug Fix)** Amazon Q /dev: Remove hard-coded limits and instead rely server-side data to communicate number of code generations remaining
+- **(Bug Fix)** /transform: automatically open pre-build error logs when available
+- **(Bug Fix)** /doc: Fix code generation error when cancelling a documentation task
+- **(Bug Fix)** Amazon Q - update messaging for /doc agent
+
 # _3.47_ (2025-01-09)
 - **(Bug Fix)** Fix issue where users are unable to login to Amazon Q if they have previously authenticated ([#5214](https://github.com/aws/aws-toolkit-jetbrains/issues/5214))
 - **(Bug Fix)** Fix incorrect text shown while updating documentation in /doc

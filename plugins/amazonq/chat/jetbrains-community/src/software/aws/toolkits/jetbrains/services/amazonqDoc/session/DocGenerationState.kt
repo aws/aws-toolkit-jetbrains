@@ -17,10 +17,6 @@ import software.aws.toolkits.jetbrains.services.amazonqDoc.controller.Mode
 import software.aws.toolkits.jetbrains.services.amazonqDoc.controller.docGenerationProgressMessage
 import software.aws.toolkits.jetbrains.services.amazonqDoc.docServiceError
 import software.aws.toolkits.jetbrains.services.amazonqDoc.inProgress
-import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.DocMessageType
-import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.FollowUp
-import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.FollowUpTypes
-import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendAnswer
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendAnswerPart
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePromptProgress
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeGenerationResult
@@ -30,10 +26,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Sessio
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.registerDeletedFiles
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.registerNewFiles
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
-import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.AmazonqTelemetry
-import software.aws.toolkits.telemetry.MetricResult
 
 private val logger = getLogger<DocGenerationState>()
 
@@ -43,7 +36,6 @@ class DocGenerationState(
     val config: SessionStateConfig,
     val uploadId: String,
     val currentIteration: Int,
-    val repositorySize: Double,
     val messenger: MessagePublisher,
     var codeGenerationRemainingIterationCount: Int? = null,
     var codeGenerationTotalIterationCount: Int? = null,
@@ -51,12 +43,6 @@ class DocGenerationState(
     override var token: CancellationTokenSource?,
 ) : SessionState {
     override suspend fun interact(action: SessionStateAction): SessionStateInteraction<SessionState> {
-        val startTime = System.currentTimeMillis()
-        var result: MetricResult = MetricResult.Succeeded
-        var failureReason: String? = null
-        var codeGenerationWorkflowStatus: CodeGenerationWorkflowStatus = CodeGenerationWorkflowStatus.COMPLETE
-        var numberOfReferencesGenerated: Int? = null
-        var numberOfFilesGenerated: Int? = null
         try {
             val response = config.amazonQCodeGenService.startTaskAssistCodeGeneration(
                 conversationId = config.conversationId,
@@ -66,8 +52,6 @@ class DocGenerationState(
             )
             val mode = if (action.msg == message("amazonqDoc.session.create")) Mode.CREATE else null
             val codeGenerationResult = generateCode(codeGenerationId = response.codeGenerationId(), mode, token)
-            numberOfReferencesGenerated = codeGenerationResult.references.size
-            numberOfFilesGenerated = codeGenerationResult.newFiles.size
             codeGenerationRemainingIterationCount = codeGenerationResult.codeGenerationRemainingIterationCount
             codeGenerationTotalIterationCount = codeGenerationResult.codeGenerationTotalIterationCount
 
@@ -94,25 +78,7 @@ class DocGenerationState(
             )
         } catch (e: Exception) {
             logger.warn(e) { "$FEATURE_NAME: Code generation failed: ${e.message}" }
-            result = MetricResult.Failed
-            failureReason = e.javaClass.simpleName
-            codeGenerationWorkflowStatus = CodeGenerationWorkflowStatus.FAILED
-
             throw e
-        } finally {
-            AmazonqTelemetry.codeGenerationInvoke(
-                amazonqConversationId = config.conversationId,
-                amazonqCodeGenerationResult = codeGenerationWorkflowStatus.toString(),
-                amazonqGenerateCodeIteration = currentIteration.toDouble(),
-                amazonqNumberOfReferences = numberOfReferencesGenerated?.toDouble(),
-                amazonqGenerateCodeResponseLatency = (System.currentTimeMillis() - startTime).toDouble(),
-                amazonqNumberOfFilesGenerated = numberOfFilesGenerated?.toDouble(),
-                amazonqRepositorySize = repositorySize,
-                result = result,
-                reason = failureReason,
-                duration = (System.currentTimeMillis() - startTime).toDouble(),
-                credentialStartUrl = getStartUrl(config.amazonQCodeGenService.project)
-            )
         }
     }
 }
@@ -144,24 +110,6 @@ private suspend fun DocGenerationState.generateCode(codeGenerationId: String, mo
 
     repeat(pollCount) {
         if (token?.token?.isCancellationRequested() == true) {
-            // This should be switched to newTask or something. Looks different than previously and may need to clean up previous run
-            messenger.sendUpdatePromptProgress(tabId = tabID, null)
-            messenger.sendAnswer(
-                messageType = DocMessageType.SystemPrompt,
-                tabId = tabID,
-                followUp = listOf(
-                    FollowUp(
-                        pillText = message("amazonqDoc.prompt.create"),
-                        prompt = message("amazonqDoc.prompt.create"),
-                        type = FollowUpTypes.CREATE_DOCUMENTATION,
-                    ),
-                    FollowUp(
-                        pillText = message("amazonqDoc.prompt.update"),
-                        prompt = message("amazonqDoc.prompt.update"),
-                        type = FollowUpTypes.UPDATE_DOCUMENTATION,
-                    )
-                )
-            )
             return CodeGenerationResult(emptyList(), emptyList(), emptyList())
         }
 
@@ -224,12 +172,18 @@ private suspend fun DocGenerationState.generateCode(codeGenerationId: String, mo
 
             CodeGenerationWorkflowStatus.FAILED -> {
                 messenger.sendUpdatePromptProgress(tabId = tabID, progressField = null)
+                val remainingIterations = codeGenerationResultState.codeGenerationRemainingIterationCount()
 
                 when (true) {
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "README_TOO_LARGE"
                     ),
-                    -> docServiceError(message("amazonqDoc.exception.readme_too_large"))
+                    -> docServiceError(message("amazonqDoc.exception.readme_too_large"), remainingIterations = remainingIterations)
+
+                    codeGenerationResultState.codeGenerationStatusDetail()?.contains(
+                        "README_UPDATE_TOO_LARGE"
+                    ),
+                    -> docServiceError(message("amazonqDoc.exception.readme_update_too_large"), remainingIterations = remainingIterations)
 
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "WORKSPACE_TOO_LARGE"
@@ -244,17 +198,17 @@ private suspend fun DocGenerationState.generateCode(codeGenerationId: String, mo
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "PROMPT_UNRELATED"
                     ),
-                    -> docServiceError(message("amazonqDoc.exception.prompt_unrelated"))
+                    -> docServiceError(message("amazonqDoc.exception.prompt_unrelated"), remainingIterations = remainingIterations)
 
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "PROMPT_TOO_VAGUE"
                     ),
-                    -> docServiceError(message("amazonqDoc.exception.prompt_too_vague"))
+                    -> docServiceError(message("amazonqDoc.exception.prompt_too_vague"), remainingIterations = remainingIterations)
 
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "PromptRefusal"
                     ),
-                    -> docServiceError(message("amazonqFeatureDev.exception.prompt_refusal"))
+                    -> docServiceError(message("amazonqFeatureDev.exception.prompt_refusal"), remainingIterations = remainingIterations)
 
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "Guardrails"

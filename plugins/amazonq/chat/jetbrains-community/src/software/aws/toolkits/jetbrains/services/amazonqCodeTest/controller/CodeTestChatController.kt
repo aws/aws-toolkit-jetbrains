@@ -9,7 +9,6 @@ import com.intellij.diff.DiffManagerEx
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
@@ -72,7 +71,10 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendA
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.jetbrains.services.cwc.ChatConstants
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerType
@@ -278,7 +280,7 @@ class CodeTestChatController(
 
             val requestData = ChatRequestData(
                 tabId = session.tabId,
-                message = "Generate unit tests for the following part of my code: ${message.prompt}",
+                message = "Generate unit tests for the following part of my code: ${message.prompt.ifBlank { fileInfo.fileName }}",
                 activeFileContext = activeFileContext,
                 userIntent = UserIntent.GENERATE_UNIT_TESTS,
                 triggerType = TriggerType.ContextMenu,
@@ -452,7 +454,6 @@ class CodeTestChatController(
         var charDifference = 0
         var generatedFileContent = ""
         var selectedFileContent = ""
-        var latencyOfTestGeneration = 0.0
 
         when (message.actionID) {
             "utg_view_diff" -> {
@@ -474,15 +475,13 @@ class CodeTestChatController(
                     )
                     session.openedDiffFile = FileEditorManager.getInstance(context.project).selectedEditor?.file
                     ApplicationManager.getApplication().runReadAction {
-                        generatedFileContent = getFileContentAtTestFilePath(
-                            session.projectRoot,
-                            session.testFileRelativePathToProjectRoot
-                        )
-                        val selectedFile = FileEditorManager.getInstance(context.project).selectedEditor?.file
-                        selectedFileContent = selectedFile?.let {
-                            FileDocumentManager.getInstance().getDocument(it)?.text
-                        }.orEmpty()
+                        generatedFileContent = getGeneratedFileContent(session)
                     }
+
+                    selectedFileContent = getFileContentAtTestFilePath(
+                        session.projectRoot,
+                        session.testFileRelativePathToProjectRoot,
+                    )
 
                     // Line difference calculation: linesOfCodeGenerated = number of lines in generated test file - number of lines in original test file
                     numberOfLinesGenerated = generatedFileContent.lines().size
@@ -496,7 +495,7 @@ class CodeTestChatController(
 
                     session.linesOfCodeGenerated = lineDifference.coerceAtLeast(0)
                     session.charsOfCodeGenerated = charDifference.coerceAtLeast(0)
-                    latencyOfTestGeneration = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration)
+                    session.latencyOfTestGeneration = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration)
                     UiTelemetry.click(null as Project?, "unitTestGeneration_viewDiff")
 
                     val buttonList = mutableListOf<Button>()
@@ -611,7 +610,7 @@ class CodeTestChatController(
                     acceptedCharactersCount = session.charsOfCodeGenerated?.toLong(),
                     generatedCharactersCount = session.charsOfCodeGenerated?.toLong(),
                     result = MetricResult.Succeeded,
-                    perfClientLatency = latencyOfTestGeneration,
+                    perfClientLatency = session.latencyOfTestGeneration,
                     isCodeBlockSelected = session.isCodeBlockSelected,
                     artifactsUploadDuration = session.artifactUploadDuration,
                     buildPayloadBytes = session.srcPayloadSize,
@@ -807,7 +806,7 @@ class CodeTestChatController(
                     acceptedCharactersCount = 0,
                     generatedCharactersCount = session.charsOfCodeGenerated?.toLong(),
                     result = MetricResult.Succeeded,
-                    perfClientLatency = latencyOfTestGeneration,
+                    perfClientLatency = session.latencyOfTestGeneration,
                     isCodeBlockSelected = session.isCodeBlockSelected,
                     artifactsUploadDuration = session.artifactUploadDuration,
                     buildPayloadBytes = session.srcPayloadSize,
@@ -1071,6 +1070,12 @@ class CodeTestChatController(
         }
     }
 
+    // Return generated test file content
+    private fun getGeneratedFileContent(session: Session): String {
+        val generateFileContent = session.generatedTestDiffs[session.testFileRelativePathToProjectRoot].toString()
+        return generateFileContent
+    }
+
     /*
      If shortAnswer has buildCommand, use it, if it doesn't hardcode it according to the user type(internal or not)
     private fun getBuildCommand(tabId: String): String {
@@ -1174,7 +1179,7 @@ class CodeTestChatController(
                 filePath = activeFile.path,
                 fileName = activeFile.name,
                 fileLanguage = programmingLanguage,
-                fileInWorkspace = activeFile.path.startsWith(projectRoot.path)
+                fileInWorkspace = activeFile.isWithin(projectRoot)
             )
         } catch (e: Exception) {
             LOG.debug { "Error checking active file: $e" }
@@ -1202,6 +1207,7 @@ class CodeTestChatController(
                 "Processing message: $message " +
                 "tabId: $tabId"
         }
+        broadcastQEvent(QFeatureEvent.INVOCATION)
         when (session.conversationState) {
             ConversationState.WAITING_FOR_BUILD_COMMAND_INPUT -> handleBuildCommandInput(session, message)
             ConversationState.WAITING_FOR_REGENERATE_INPUT -> handleRegenerateInput(session, message)

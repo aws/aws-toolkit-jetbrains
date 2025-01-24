@@ -112,6 +112,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toVirtualFi
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
@@ -138,7 +140,7 @@ class CodeTransformChatController(
         if (objective == "language upgrade" || objective == "sql conversion") {
             telemetry.submitSelection(objective)
         }
-
+        broadcastQEvent(QFeatureEvent.INVOCATION)
         when (objective) {
             "language upgrade" -> this.handleLanguageUpgrade()
             "sql conversion" -> this.handleSQLConversion()
@@ -690,10 +692,12 @@ class CodeTransformChatController(
         codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
     }
 
-    private suspend fun handleCodeTransformJobFailedPreBuild(result: CodeModernizerJobCompletedResult.JobFailedInitialBuild) =
+    private suspend fun handleCodeTransformJobFailedPreBuild(result: CodeModernizerJobCompletedResult.JobFailedInitialBuild) {
         codeTransformChatHelper.addNewMessage(
             buildTransformResultChatContent(result)
         )
+        artifactHandler.showBuildLog(CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId)
+    }
 
     private suspend fun handleCodeTransformResult(result: CodeModernizerJobCompletedResult) {
         LOG.info { "CodeModernizerJobCompletedResult: $result" }
@@ -701,6 +705,8 @@ class CodeTransformChatController(
             is CodeModernizerJobCompletedResult.Stopped, CodeModernizerJobCompletedResult.JobAbortedBeforeStarting -> handleCodeTransformStoppedByUser()
             is CodeModernizerJobCompletedResult.JobFailed -> handleCodeTransformJobFailed(result.failureReason)
             is CodeModernizerJobCompletedResult.JobFailedInitialBuild -> handleCodeTransformJobFailedPreBuild(result)
+            is CodeModernizerJobCompletedResult.RetryableFailure -> handleCodeTransformJobFailed(result.failureReason)
+            is CodeModernizerJobCompletedResult.UnableToCreateJob -> handleCodeTransformJobFailed(result.failureReason)
             else -> {
                 if (result is CodeModernizerJobCompletedResult.ZipUploadFailed && result.failureReason is UploadFailureReason.CREDENTIALS_EXPIRED) {
                     return
