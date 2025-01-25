@@ -36,7 +36,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Sessio
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.InsertAction
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getStackTraceForError
+import software.aws.toolkits.jetbrains.services.telemetry.getStackTraceForError
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
 

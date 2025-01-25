@@ -3,6 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.telemetry
 
+import java.io.PrintWriter
+import java.io.StringWriter
+
 val ALLOWED_CODE_EXTENSIONS = setOf(
     "abap",
     "ada",
@@ -272,3 +275,60 @@ val commonFilePathPatterns = setOf(
 val driveLetterRegex = Regex("""^[a-zA-Z]:""")
 
 fun getSystemUserName(): String? = System.getProperty("user.name") ?: null
+
+const val RECURSION_LIMIT = 3
+
+interface SafeMessageError
+
+/**
+ * This function constructs a string similar to error.printStackTrace() for telemetry,
+ * but include error messages only for safe exceptions,
+ * i.e. exceptions with deterministic error messages and do not include sensitive data.
+ *
+ * @param [error] The error to get stack trace string from
+ * @param [aux] Helper function to determine whether error message should be included
+ */
+fun getStackTraceForError(error: Throwable): String {
+    val writer = StringWriter()
+    val printer = PrintWriter(writer)
+    val seenExceptions = mutableSetOf<Throwable>()
+
+    fun printExceptionDetails(throwable: Throwable, depth: Int, prefix: String = "") {
+        if (depth >= RECURSION_LIMIT || throwable in seenExceptions) {
+            return
+        }
+        seenExceptions.add(throwable)
+
+        when (throwable) { is SafeMessageError -> {
+            printer.println("$prefix${throwable.javaClass.name}: ${throwable.message}")
+        }
+            else -> {
+                // No message included
+                printer.println("$prefix${throwable.javaClass.name}")
+            }
+        }
+
+        throwable.stackTrace.forEach { element ->
+            val className = element.className
+            val methodName = element.methodName
+            val fileName = element.fileName?.let { scrubNames(it) } ?: "Unknown Source"
+            val lineNumber = if (element.lineNumber >= 0) element.lineNumber else "Unknown Line"
+
+            val formattedElement = "$className.$methodName($fileName:$lineNumber)"
+            printer.println("$prefix\tat $formattedElement")
+        }
+
+        throwable.cause?.let { cause ->
+            printer.println("$prefix\tCaused by: ")
+            printExceptionDetails(cause, depth + 1, "$prefix\t")
+        }
+
+        throwable.suppressed?.forEach { suppressed ->
+            printer.println("$prefix\tSuppressed: ")
+            printExceptionDetails(suppressed, depth + 1, "$prefix\t")
+        }
+    }
+
+    printExceptionDetails(error, 0)
+    return writer.toString()
+}
