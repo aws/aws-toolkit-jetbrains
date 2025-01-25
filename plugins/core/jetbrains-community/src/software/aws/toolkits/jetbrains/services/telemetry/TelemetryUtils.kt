@@ -88,7 +88,6 @@ val ALLOWED_CODE_EXTENSIONS = setOf(
     "idl",
     "ini",
     "io",
-    "jar",
     "java",
     "jl",
     "js",
