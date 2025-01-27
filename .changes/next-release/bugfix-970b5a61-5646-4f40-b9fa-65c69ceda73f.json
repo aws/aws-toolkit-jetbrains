@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix UI freeze caused by updating workspace index on non background context"
+}
