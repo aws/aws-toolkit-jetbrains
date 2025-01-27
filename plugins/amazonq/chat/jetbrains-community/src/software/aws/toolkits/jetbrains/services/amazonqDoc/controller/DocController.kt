@@ -404,10 +404,9 @@ class DocController(
 
             else -> {
                 logger.error { "$FEATURE_NAME: OpenDiff event is received for a conversation that has ${session.sessionState.phase} phase" }
-                messenger.sendError(
+                messenger.sendErrorToUser(
                     tabId = message.tabId,
                     errMessage = message("amazonqFeatureDev.exception.open_diff_failed"),
-                    retries = 0,
                     conversationId = session.conversationIdUnsafe
                 )
             }
@@ -506,10 +505,9 @@ class DocController(
             )
         } catch (err: Exception) {
             val message = createUserFacingErrorMessage("Failed to insert code changes: ${err.message}")
-            messenger.sendError(
+            messenger.sendErrorToUser(
                 tabId = tabId,
                 errMessage = message ?: message("amazonqFeatureDev.exception.insert_code_failed"),
-                retries = retriesRemaining(session),
                 conversationId = session?.conversationIdUnsafe
             )
         }
@@ -587,10 +585,9 @@ class DocController(
 
         when (err) {
             is RepoSizeError -> {
-                messenger.sendError(
+                messenger.sendErrorToUser(
                     tabId = tabId,
                     errMessage = err.message,
-                    retries = retriesRemaining(session),
                     conversationId = session?.conversationIdUnsafe
                 )
                 messenger.sendSystemPrompt(
@@ -606,10 +603,9 @@ class DocController(
             }
 
             is ZipFileError -> {
-                messenger.sendError(
+                messenger.sendErrorToUser(
                     tabId = tabId,
                     errMessage = err.message,
-                    retries = 0,
                     conversationId = session?.conversationIdUnsafe
                 )
             }
@@ -701,10 +697,9 @@ class DocController(
                     else -> message("amazonqFeatureDev.error_text")
                 }
 
-                messenger.sendError(
+                messenger.sendErrorToUser(
                     tabId = tabId,
                     errMessage = defaultMessage,
-                    retries = retriesRemaining(session),
                     conversationId = session?.conversationIdUnsafe
                 )
             }
@@ -802,9 +797,12 @@ class DocController(
             ) {
                 return
             }
-
             if (filePaths.isEmpty() && deletedFiles.isEmpty()) {
-                handleEmptyFiles(followUpMessage, session)
+                messenger.sendErrorToUser(
+                    followUpMessage.tabId,
+                    message("amazonqDoc.error.generating"),
+                    conversationId = session.conversationId
+                )
                 return
             }
 
@@ -857,37 +855,6 @@ class DocController(
                 messenger.sendChatInputEnabledMessage(tabId = followUpMessage.tabId, enabled = false) // Lock chat input until a follow-up is clicked.
             }
         }
-    }
-
-    private suspend fun handleEmptyFiles(
-        message: IncomingDocMessage.FollowupClicked,
-        session: DocSession,
-    ) {
-        messenger.sendAnswer(
-            message = message("amazonqDoc.error.generating"),
-            messageType = DocMessageType.Answer,
-            tabId = message.tabId,
-            canBeVoted = true
-        )
-
-        messenger.sendAnswer(
-            messageType = DocMessageType.SystemPrompt,
-            tabId = message.tabId,
-            followUp = if (retriesRemaining(session) > 0) {
-                listOf(
-                    FollowUp(
-                        pillText = message("amazonqFeatureDev.follow_up.retry"),
-                        type = FollowUpTypes.RETRY,
-                        status = FollowUpStatusType.Warning
-                    )
-                )
-            } else {
-                emptyList()
-            }
-        )
-
-        // Lock the chat input until they explicitly click retry
-        messenger.sendChatInputEnabledMessage(tabId = message.tabId, enabled = false)
     }
 
     private suspend fun retryRequests(tabId: String) {
