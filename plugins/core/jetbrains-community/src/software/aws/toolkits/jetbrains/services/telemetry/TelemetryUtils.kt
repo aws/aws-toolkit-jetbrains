@@ -286,7 +286,6 @@ interface SafeMessageError
  * i.e. exceptions with deterministic error messages and do not include sensitive data.
  *
  * @param [error] The error to get stack trace string from
- * @param [aux] Helper function to determine whether error message should be included
  */
 fun getStackTraceForError(error: Throwable): String {
     val writer = StringWriter()
