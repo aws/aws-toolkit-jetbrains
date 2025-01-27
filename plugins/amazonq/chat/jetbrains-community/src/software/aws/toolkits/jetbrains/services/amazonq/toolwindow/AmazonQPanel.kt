@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.toolwindow
 
-import com.intellij.idea.AppMode
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.components.JBTextArea
@@ -14,6 +13,7 @@ import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.ui.jcef.JBCefApp
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.webview.Browser
+import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import java.awt.event.ActionListener
 import javax.swing.JButton
 
@@ -66,7 +66,7 @@ class AmazonQPanel(private val parent: Disposable) {
     private fun init() {
         if (!JBCefApp.isSupported()) {
             // Fallback to an alternative browser-less solution
-            if (AppMode.isRemoteDevHost()) {
+            if (isRunningOnRemoteBackend()) {
                 webviewContainer.add(JBTextArea("Amazon Q chat is not supported in remote dev environment."))
             } else {
                 webviewContainer.add(JBTextArea("JCEF not supported"))

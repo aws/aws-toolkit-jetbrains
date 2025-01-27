@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.popup
 
 import com.intellij.codeInsight.hint.ParameterInfoController
 import com.intellij.codeInsight.lookup.LookupManager
-import com.intellij.idea.AppMode
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_BACKSPACE
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ENTER
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_MOVE_CARET_LEFT
@@ -72,6 +71,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhis
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_DIM_HEX
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.POPUP_INFO_TEXT_SIZE
+import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import java.awt.Point
 import java.awt.Rectangle
@@ -310,7 +310,7 @@ class CodeWhispererPopupManager {
         CodeWhispererInvocationStatus.getInstance().setPopupActive(true)
 
         // Check if the current editor still has focus. If not, don't show the popup.
-        val isSameEditorAsTrigger = if (!AppMode.isRemoteDevHost()) {
+        val isSameEditorAsTrigger = if (!isRunningOnRemoteBackend()) {
             editor.contentComponent.isFocusOwner
         } else {
             FileEditorManager.getInstance(states.requestContext.project).selectedTextEditorWithRemotes.firstOrNull() == editor
@@ -346,12 +346,12 @@ class CodeWhispererPopupManager {
         // TODO: visibleAreaChanged listener is not getting triggered in remote environment when scrolling
         if (popup.isVisible) {
             // Changing the position of BackendBeAbstractPopup does not work
-            if (!shouldHidePopup && !AppMode.isRemoteDevHost()) {
+            if (!shouldHidePopup && !isRunningOnRemoteBackend()) {
                 popup.setLocation(relativePopupLocationToEditor.screenPoint)
                 popup.size = popup.preferredContentSize
             }
         } else {
-            if (!AppMode.isRemoteDevHost()) {
+            if (!isRunningOnRemoteBackend()) {
                 popup.show(relativePopupLocationToEditor)
             } else {
                 // TODO: For now, the popup will always display below the suggestions, without checking
@@ -378,7 +378,7 @@ class CodeWhispererPopupManager {
         }
 
         // popup.popupWindow is null in remote host
-        if (!AppMode.isRemoteDevHost()) {
+        if (!isRunningOnRemoteBackend()) {
             if (shouldHidePopup) {
                 WindowManager.getInstance().setAlphaModeRatio(popup.popupWindow, 1f)
             } else {
