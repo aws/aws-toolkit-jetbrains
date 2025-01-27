@@ -270,9 +270,9 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         val userInput = "(x, y)"
         addUserInputAfterInvocation(userInput)
         withCodeWhispererServiceInvokedAndWait { }
-        val prefixNotMatchCount = pythonResponse.completions().filter {
+        val prefixNotMatchCount = pythonResponse.completions().count {
             !it.content().startsWith(userInput)
-        }.size
+        }
         argumentCaptor<MetricEvent>().apply {
             verify(batcher, atLeast(1 + prefixNotMatchCount)).enqueue(capture())
             assertEventsContainsFieldsAndCount(

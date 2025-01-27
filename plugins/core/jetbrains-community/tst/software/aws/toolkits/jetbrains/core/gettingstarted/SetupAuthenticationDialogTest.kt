@@ -13,7 +13,6 @@ import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Ignore
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
@@ -280,7 +279,6 @@ class SetupAuthenticationDialogTest {
     }
 
     @Test
-    @Ignore("flaky")
     fun `validate IAM tab fails if credentials are invalid`() {
         val state = SetupAuthenticationDialogState().apply {
             selectedTab.set(SetupAuthenticationTabs.IAM_LONG_LIVED)
