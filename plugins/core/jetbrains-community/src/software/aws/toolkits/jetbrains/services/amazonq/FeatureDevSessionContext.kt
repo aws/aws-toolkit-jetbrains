@@ -189,10 +189,6 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
             projectRoot,
             object : VirtualFileVisitor<Unit>() {
                 override fun visitFile(file: VirtualFile): Boolean {
-                    if (file.isDirectory) {
-                        return true
-                    }
-
                     val isIncluded = shouldIncludeInZipFile(file, isAutoBuildFeatureEnabled == true)
                     if (!isIncluded) {
                         val extension = file.extension.orEmpty()
