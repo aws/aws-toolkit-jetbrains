@@ -19,6 +19,7 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.FileUtils
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.services.telemetry.ALLOWED_CODE_EXTENSIONS
+import software.aws.toolkits.jetbrains.services.telemetry.SafeMessageError
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import java.io.File
@@ -41,7 +42,7 @@ import kotlin.io.path.relativeTo
 interface RepoSizeError {
     val message: String
 }
-class RepoSizeLimitError(override val message: String) : RuntimeException(), RepoSizeError
+class RepoSizeLimitError(override val message: String) : RuntimeException(), RepoSizeError, SafeMessageError
 
 class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Long? = null) {
     // TODO: Need to correct this class location in the modules going further to support both amazonq and codescan.
