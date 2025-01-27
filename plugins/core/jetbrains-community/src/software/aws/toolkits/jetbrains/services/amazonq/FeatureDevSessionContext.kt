@@ -136,7 +136,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         return ALLOWED_CODE_EXTENSIONS.contains(extension)
     }
 
-    fun ignoreFile(file: VirtualFile): Boolean = ignoreFile(file.presentableUrl)
+    fun ignoreFile(file: VirtualFile, applyExtraBinaryFilesRules: Boolean = true): Boolean = ignoreFile(file.presentableUrl, applyExtraBinaryFilesRules)
 
     fun ignoreFile(path: String, applyExtraBinaryFilesRules: Boolean = true): Boolean {
         val allIgnoreRules = if (applyExtraBinaryFilesRules) ignorePatternsWithGitIgnore + ignorePatternsForBinaryFiles else ignorePatternsWithGitIgnore
@@ -161,7 +161,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         }
 
         // always respect gitignore rules and remove binary files if auto build is disabled
-        val isFileIgnoredByPattern = ignoreFile(file.path, !isAutoBuildFeatureEnabled)
+        val isFileIgnoredByPattern = ignoreFile(file, !isAutoBuildFeatureEnabled)
         if (isFileIgnoredByPattern) {
             return false
         }
