@@ -3,6 +3,7 @@
 
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.RuleChain
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -72,7 +73,51 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
     }
 
     @Test
-    fun testZipProject() {
+    fun testZipProjectWithoutAutoDev() {
+        checkZipProject(
+            false,
+            setOf(
+                "src/MyClass.java",
+                "gradlew",
+                "gradlew.bat",
+                "README.md",
+                "gradle/wrapper/gradle-wrapper.properties",
+                "builder/GetTestBuilder.java",
+                "settings.gradle",
+                "build.gradle",
+                ".gitignore",
+            )
+        )
+    }
+
+    @Test
+    fun testZipProjectWithAutoDev() {
+        checkZipProject(
+            true,
+            setOf(
+                "src/MyClass.java",
+                "icons/menu.svg",
+                "assets/header.jpg",
+                "gradle/wrapper/gradle-wrapper.jar",
+                "gradle/wrapper/gradle-wrapper.properties",
+                "images/logo.png",
+                "builder/GetTestBuilder.java",
+                "gradlew",
+                "README.md",
+                ".gitignore",
+                "License.md",
+                "output.bin",
+                "archive.zip",
+                "gradlew.bat",
+                "license.txt",
+                "build.gradle",
+                "devfile.yaml",
+                "settings.gradle"
+            )
+        )
+    }
+
+    fun checkZipProject(autoBuildEnabled: Boolean, expectedFiles: Set<String>) {
         addFilesToProjectModule(
             ".gitignore",
             ".gradle/cached.jar",
@@ -97,9 +142,12 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
             "build/outputs",
             "dist/bundle.js",
             "gradle/wrapper/gradle-wrapper.jar",
+            "devfile.yaml",
         )
 
-        val zipResult = featureDevSessionContext.getProjectZip(false)
+        projectRule.fixture.addFileToModule(module, "large-file.txt", "loblob".repeat(1024 * 1024))
+
+        val zipResult = featureDevSessionContext.getProjectZip(autoBuildEnabled)
         val zipPath = zipResult.payload.path
 
         val zippedFiles = mutableSetOf<String>()
@@ -111,19 +159,6 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
             }
         }
 
-        val expectedFiles = setOf(
-            "src/MyClass.java",
-            "gradlew",
-            "gradlew.bat",
-            "README.md",
-            "gradle/wrapper/gradle-wrapper.properties",
-            "builder/GetTestBuilder.java",
-            "settings.gradle",
-            "build.gradle",
-            "gradle/wrapper/gradle-wrapper.jar",
-            ".gitignore",
-        )
-
-        assertTrue(zippedFiles == expectedFiles)
+        assertEquals(zippedFiles, expectedFiles)
     }
 }
