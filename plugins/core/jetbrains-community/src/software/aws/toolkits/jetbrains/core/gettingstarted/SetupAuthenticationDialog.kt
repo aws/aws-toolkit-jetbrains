@@ -370,7 +370,7 @@ class SetupAuthenticationDialog(
                         reason = "InvalidCredentials",
                         isReAuth = false
                     )
-                    return
+                    throw Exception(AwsCoreBundle.message("gettingstarted.setup.iam.profile.invalid_credentials"))
                 }
 
                 val profile = Profile.builder()
