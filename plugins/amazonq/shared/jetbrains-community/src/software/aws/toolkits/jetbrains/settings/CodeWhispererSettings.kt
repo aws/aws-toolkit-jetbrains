@@ -52,13 +52,13 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
                 toggleEnabledProjectContextOnce(true)
                 state.value[CodeWhispererConfigurationType.IsProjectContextEnabled] = value
                 // todo: hack to bypass module dependency issue (codewhisperer -> shared), should pass [CodeWhispererShowSettingsAction] instead when it's resolved
-                ActionManager.getInstance().getAction("codewhisperer.settings")?.let { a ->
-                    notifyInfo(
-                        AmazonQBundle.message("amazonq.title"),
-                        AmazonQBundle.message("amazonq.workspace.settings.open.prompt"),
-                        notificationActions = listOf(a)
-                    )
-                }
+                val actions = ActionManager.getInstance().getAction("codewhisperer.settings")?.let { listOf(it) } ?: emptyList()
+
+                notifyInfo(
+                    AmazonQBundle.message("amazonq.title"),
+                    AmazonQBundle.message("amazonq.workspace.settings.open.prompt"),
+                    notificationActions = actions
+                )
             }
         } else {
             state.value[CodeWhispererConfigurationType.IsProjectContextEnabled] = value
