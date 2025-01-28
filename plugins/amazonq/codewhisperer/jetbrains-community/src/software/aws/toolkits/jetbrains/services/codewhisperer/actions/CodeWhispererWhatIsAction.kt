@@ -10,7 +10,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAware
 import software.aws.toolkits.jetbrains.services.amazonq.QConstants
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
+import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.resources.message
 import java.net.URI
 
@@ -25,7 +25,7 @@ class CodeWhispererWhatIsAction :
 
     override fun update(e: AnActionEvent) {
         e.project?.let {
-            e.presentation.isEnabledAndVisible = isCodeWhispererEnabled(it)
+            e.presentation.isEnabledAndVisible = isQConnected(it)
         }
     }
 

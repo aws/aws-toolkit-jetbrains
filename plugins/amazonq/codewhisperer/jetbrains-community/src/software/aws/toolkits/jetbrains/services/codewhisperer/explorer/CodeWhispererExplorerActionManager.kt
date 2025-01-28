@@ -46,11 +46,6 @@ interface CodeWhispererActivationChangedListener {
     fun activationChanged(value: Boolean) {}
 }
 
-@Deprecated("remove it, use isQConnected")
-fun isCodeWhispererEnabled(project: Project) = with(CodeWhispererExplorerActionManager.getInstance()) {
-    checkActiveCodeWhispererConnectionType(project) != CodeWhispererLoginType.Logout
-}
-
 fun isUserBuilderId(project: Project) = with(CodeWhispererExplorerActionManager.getInstance()) {
     checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.Sono
 }

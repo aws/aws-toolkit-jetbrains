@@ -24,12 +24,12 @@ import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.core.ToolWindowHeadlessManagerImpl
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreActionState
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhispererStatusBarWidgetFactory
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceToolWindowFactory
 import software.aws.toolkits.jetbrains.settings.CodeWhispererConfiguration
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
+import software.aws.toolkits.jetbrains.utils.isQConnected
 import kotlin.test.fail
 
 class CodeWhispererSettingsTest : CodeWhispererTestBase() {
@@ -81,7 +81,7 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
     @Test
     fun `when isCodeWhispererEnabled is false, user not able to trigger CodeWhisperer manually`() {
         whenever(stateManager.checkActiveCodeWhispererConnectionType(projectRule.project)).thenReturn(CodeWhispererLoginType.Logout)
-        assertThat(isCodeWhispererEnabled(projectRule.project)).isFalse
+        assertThat(isQConnected(projectRule.project)).isFalse
         invokeCodeWhispererService()
         verify(codewhispererServiceSpy, never()).showRecommendationsInPopup(any(), any(), any())
     }

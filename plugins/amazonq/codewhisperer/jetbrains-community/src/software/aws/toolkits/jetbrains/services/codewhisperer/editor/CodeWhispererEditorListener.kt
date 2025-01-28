@@ -10,12 +10,12 @@ import com.intellij.openapi.editor.event.EditorFactoryListener
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatusNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.UserWrittenCodeTracker
+import software.aws.toolkits.jetbrains.utils.isQConnected
 
 class CodeWhispererEditorListener : EditorFactoryListener {
     override fun editorCreated(event: EditorFactoryEvent) {
@@ -31,7 +31,7 @@ class CodeWhispererEditorListener : EditorFactoryListener {
                 // TODO: Track only deletion changes within the current 5-min interval which will give
                 // the most accurate code percentage data.
                 override fun documentChanged(event: DocumentEvent) {
-                    if (!isCodeWhispererEnabled(project)) return
+                    if (!isQConnected(project)) return
                     if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
                         CodeWhispererInvocationStatusNew.getInstance().documentChanged()
                     } else {
