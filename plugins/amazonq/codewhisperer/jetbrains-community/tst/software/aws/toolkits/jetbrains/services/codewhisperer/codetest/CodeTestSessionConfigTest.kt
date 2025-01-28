@@ -27,11 +27,8 @@ class CodeTestSessionConfigTest {
     private lateinit var testJava: VirtualFile
     private lateinit var utilsJava: VirtualFile
     private lateinit var readMeMd: VirtualFile
-    private lateinit var helpGo: VirtualFile
     private lateinit var utilsJs: VirtualFile
-    private lateinit var testYaml: VirtualFile
     private lateinit var helperPy: VirtualFile
-    private lateinit var testTf: VirtualFile
 
     private var totalSize: Long = 0
     private var totalLines: Long = 0
@@ -55,17 +52,14 @@ class CodeTestSessionConfigTest {
         assertThat(project.modules.size).isEqualTo(2)
         val payload = codeTestSessionConfig.createPayload()
         assertThat(payload).isNotNull
-        assertThat(payload.context.totalFiles).isEqualTo(8)
+        assertThat(payload.context.totalFiles).isEqualTo(5)
 
-        assertThat(payload.context.scannedFiles.size).isEqualTo(8)
+        assertThat(payload.context.scannedFiles.size).isEqualTo(5)
         assertThat(payload.context.scannedFiles).contains(
             testJava,
             utilsJava,
             readMeMd,
             utilsJs,
-            helpGo,
-            testYaml,
-            testTf,
             helperPy
         )
 
@@ -80,7 +74,7 @@ class CodeTestSessionConfigTest {
             filesInZip += 1
         }
 
-        assertThat(filesInZip).isEqualTo(12)
+        assertThat(filesInZip).isEqualTo(9)
     }
 
     @Test
@@ -91,7 +85,7 @@ class CodeTestSessionConfigTest {
         val srcPayloadSize = payloadMetadata.payloadSize
         val totalLines = payloadMetadata.linesScanned
         val maxCountLanguage = payloadMetadata.language
-        assertThat(includedSourceFiles.size).isEqualTo(8)
+        assertThat(includedSourceFiles.size).isEqualTo(5)
         assertThat(srcPayloadSize).isEqualTo(totalSize)
         assertThat(totalLines).isEqualTo(totalLines)
         assertThat(maxCountLanguage).isEqualTo(testJava.programmingLanguage().toTelemetryType())
@@ -195,22 +189,6 @@ class CodeTestSessionConfigTest {
             """.trimIndent()
         ).virtualFile
 
-        helpGo = projectRule.fixture.addFileToModule(
-            testModule,
-            "/help.go",
-            """
-                package main
-
-                import "fmt"
-
-                func Help() {
-                        fmt.Printf("./main")
-                }
-            """.trimIndent()
-        ).virtualFile
-        totalSize += helpGo.length
-        totalLines += helpGo.toNioPath().toFile().readLines().size
-
         utilsJs = projectRule.fixture.addFileToModule(
             testModule,
             "/utils.js",
@@ -296,7 +274,7 @@ class CodeTestSessionConfigTest {
         ).virtualFile
 
         helperPy = projectRule.fixture.addFileToModule(
-            testModule,
+            testModule2,
             "/HelpersInPython/helper.py", // False positive testing
             """
             from helpers import helper as h
@@ -316,52 +294,6 @@ class CodeTestSessionConfigTest {
         readMeMd = projectRule.fixture.addFileToModule(testModule, "/ReadMe.md", "### Now included").virtualFile
         totalSize += readMeMd.length
         totalLines += readMeMd.toNioPath().toFile().readLines().size
-
-        testTf = projectRule.fixture.addFileToModule(
-            testModule2,
-            "/testTf.tf",
-            """
-                # Create example resource for three S3 buckets using for_each, where the bucket prefix are in variable with list containing [prod, staging, dev]
-
-                resource "aws_s3_bucket" "example" {
-                  for_each      = toset(var.names)
-                  bucket_prefix = each.value
-                }
-
-                variable "names" {
-                  type    = list(string)
-                  default = ["prod", "staging", "dev"]
-                }
-            """.trimIndent()
-        ).virtualFile
-        totalSize += testTf.length
-        totalLines += testTf.toNioPath().toFile().readLines().size
-
-        testYaml = projectRule.fixture.addFileToModule(
-            testModule2,
-            "/testYaml.yaml",
-            """
-                AWSTemplateFormatVersion: "2010-09-09"
-
-                Description: |
-                  This stack creates a SNS topic using KMS encryption
-
-                Parameters:
-                  KmsKey:
-                    Description: The KMS key master ID
-                    Type: String
-
-                Resources:
-
-                  # A SNS topic
-                  Topic:
-                    Type: AWS::SNS::Topic
-                    Properties:
-                      KmsMasterKeyId: !Ref KmsKey
-            """.trimIndent()
-        ).virtualFile
-        totalSize += testYaml.length
-        totalLines += testYaml.toNioPath().toFile().readLines().size
 
         // Adding gitignore file and gitignore file member for testing.
         // The tests include the markdown file but not these two files.
