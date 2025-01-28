@@ -22,7 +22,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.emitUserState
 import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindow
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
-import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererExplorerActionManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.cwc.inline.InlineChatController
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import java.lang.management.ManagementFactory
