@@ -69,7 +69,7 @@ class GitIgnoreFilteringUtil(private val moduleDir: VirtualFile) {
             } else {
                 emptySet()
             }
-        } ?: emptySet()
+        }.orEmpty()
     }
 
     // gitignore patterns are not regex, method update needed.
@@ -98,5 +98,5 @@ class GitIgnoreFilteringUtil(private val moduleDir: VirtualFile) {
         return deferredResults.any { it.await() }
     }
 
-    private fun getRelativePath(file: VirtualFile): String = VfsUtil.getRelativePath(file, moduleDir) ?: ""
+    private fun getRelativePath(file: VirtualFile): String = VfsUtil.getRelativePath(file, moduleDir).orEmpty()
 }
