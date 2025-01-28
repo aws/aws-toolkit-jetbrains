@@ -10,6 +10,8 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.util.xmlb.annotations.Property
+import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererShowSettingsAction
+import software.aws.toolkits.jetbrains.utils.notifyInfo
 
 @Service
 @State(name = "codewhispererSettings", storages = [Storage("aws.xml")])
@@ -48,6 +50,7 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
             if (!hasEnabledProjectContextOnce()) {
                 toggleEnabledProjectContextOnce(true)
                 state.value[CodeWhispererConfigurationType.IsProjectContextEnabled] = value
+                notifyInfo("Amazon Q", "Workspace index is now enabled. You can disable it from Amazon Q settings.", notificationActions = listOf(CodeWhispererShowSettingsAction()))
             }
         } else {
             state.value[CodeWhispererConfigurationType.IsProjectContextEnabled] = value
