@@ -371,7 +371,9 @@ class CodeWhispererTelemetryService {
             result = result,
             reason = reason,
             credentialStartUrl = getCodeWhispererStartUrl(issue.project),
-            codeFixAction = codeFixAction
+            codeFixAction = codeFixAction,
+            autoDetected = issue.autoDetected,
+            codewhispererCodeScanJobId = issue.scanJobId
         )
     }
 
@@ -402,6 +404,7 @@ class CodeWhispererTelemetryService {
         isRefresh: Boolean,
         result: MetricResult,
         reason: String? = null,
+        includesFix: Boolean? = false,
     ) {
         CodewhispererTelemetry.codeScanIssueGenerateFix(
             component = component,
@@ -411,7 +414,10 @@ class CodeWhispererTelemetryService {
             ruleId = issue.ruleId,
             variant = if (isRefresh) "refresh" else null,
             result = result,
-            reason = reason
+            reason = reason,
+            autoDetected = issue.autoDetected,
+            codewhispererCodeScanJobId = issue.scanJobId,
+            includesFix = includesFix
         )
     }
 
