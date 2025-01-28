@@ -11,6 +11,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isUserBuilderId
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.AwsTelemetry
 
 class ResumeCodeScans : DumbAwareAction(
     { message("codewhisperer.explorer.resume_auto_scans") },
@@ -20,7 +21,12 @@ class ResumeCodeScans : DumbAwareAction(
         val project = e.project ?: return
 
         val actionManager = CodeWhispererExplorerActionManager.getInstance()
-        actionManager.setAutoCodeScan(project, true)
+        actionManager.setAutoCodeScan(true)
+        AwsTelemetry.modifySetting(
+            project,
+            settingId = CodeWhispererConstants.AutoCodeScan.SETTING_ID,
+            settingState = CodeWhispererConstants.AutoCodeScan.ACTIVATED
+        )
         //  Run Proactive Code File Scan once toggle is enabled
         if (actionManager.isAutoEnabledForCodeScan() && !actionManager.isMonthlyQuotaForCodeScansExceeded() && !isUserBuilderId(project)) {
             CodeWhispererCodeScanManager.getInstance(project).createDebouncedRunCodeScan(CodeWhispererConstants.CodeAnalysisScope.FILE)

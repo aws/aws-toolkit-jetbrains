@@ -86,7 +86,6 @@ object CodeWhispererConstants {
     const val TOTAL_BYTES_IN_MB = 1024 * 1024
     const val TOTAL_MILLIS_IN_SECOND = 1000
     const val TOTAL_SECONDS_IN_MINUTE: Long = 60L
-    const val ACCOUNTLESS_START_URL = "accountless"
     const val FEATURE_CONFIG_POLL_INTERVAL_IN_MS: Long = 30 * 60 * 1000L // 30 mins
     const val USING: String = "using"
     const val GLOBAL_USING: String = "global using"

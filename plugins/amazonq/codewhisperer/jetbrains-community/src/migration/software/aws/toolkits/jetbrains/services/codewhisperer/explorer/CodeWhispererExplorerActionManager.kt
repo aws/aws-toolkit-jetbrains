@@ -20,9 +20,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreActionState
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreStateType
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getConnectionStartUrl
-import software.aws.toolkits.telemetry.AwsTelemetry
 
 // TODO: refactor this class, now it's managing action and state
 @State(name = "codewhispererStates", storages = [Storage("aws.xml")])
@@ -39,7 +37,10 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
 
     private fun getCodeWhispererConnectionStartUrl(project: Project): String {
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
-        return getConnectionStartUrl(connection) ?: CodeWhispererConstants.ACCOUNTLESS_START_URL
+        return getConnectionStartUrl(connection) ?: run {
+            LOG.warn { "fail to retrieve connection start url, not a bearer token connection" }
+            ""
+        }
     }
 
     fun isAutoEnabled(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.IsAutoEnabled, true)
@@ -81,10 +82,8 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
     }
 
     // Adding Auto CodeScan Function
-    fun setAutoCodeScan(project: Project, isAutoEnabledForCodeScan: Boolean) {
+    fun setAutoCodeScan(isAutoEnabledForCodeScan: Boolean) {
         setAutoEnabledForCodeScan(isAutoEnabledForCodeScan)
-        val autoCodeScanState = if (isAutoEnabledForCodeScan) CodeWhispererConstants.AutoCodeScan.ACTIVATED else CodeWhispererConstants.AutoCodeScan.DEACTIVATED
-        AwsTelemetry.modifySetting(project, settingId = CodeWhispererConstants.AutoCodeScan.SETTING_ID, settingState = autoCodeScanState)
     }
 
     fun getIsFirstRestartAfterQInstall(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.IsFirstRestartAfterQInstall, true)

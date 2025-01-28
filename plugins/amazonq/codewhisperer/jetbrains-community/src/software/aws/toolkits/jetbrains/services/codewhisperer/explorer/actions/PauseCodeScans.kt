@@ -7,7 +7,9 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAwareAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.AwsTelemetry
 
 class PauseCodeScans : DumbAwareAction(
     { message("codewhisperer.explorer.pause_auto_scans") },
@@ -16,6 +18,11 @@ class PauseCodeScans : DumbAwareAction(
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
 
-        CodeWhispererExplorerActionManager.getInstance().setAutoCodeScan(project, false)
+        CodeWhispererExplorerActionManager.getInstance().setAutoCodeScan(false)
+        AwsTelemetry.modifySetting(
+            project,
+            settingId = CodeWhispererConstants.AutoCodeScan.SETTING_ID,
+            settingState = CodeWhispererConstants.AutoCodeScan.DEACTIVATED
+        )
     }
 }
