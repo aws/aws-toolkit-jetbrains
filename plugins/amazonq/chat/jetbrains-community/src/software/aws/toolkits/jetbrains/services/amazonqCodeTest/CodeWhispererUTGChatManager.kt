@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.TargetCode
 import software.amazon.awssdk.services.codewhispererruntime.model.TestGenerationJobStatus
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportIntent
+import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -58,6 +59,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.nio.file.Paths
+import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipInputStream
@@ -109,29 +111,38 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
 
         // 2nd API call: StartTestGeneration
         val startTestGenerationResponse = try {
-            startTestGeneration(
-                uploadId = createUploadUrlResponse.uploadId(),
-                targetCode = listOf(
-                    TargetCode.builder()
-                        .relativeTargetPath(codeTestResponseContext.currentFileRelativePath.toString())
-                        .targetLineRangeList(
-                            if (selectionRange != null) {
-                                listOf(
-                                    selectionRange
+            var response: StartTestGenerationResponse? = null
+
+            waitUntil(
+                succeedOn = { response?.sdkHttpResponse()?.statusCode() == 200 },
+                maxDuration = Duration.ofSeconds(1), // 1 second timeout
+            ) {
+                try {
+                    response = startTestGeneration(
+                        uploadId = createUploadUrlResponse.uploadId(),
+                        targetCode = listOf(
+                            TargetCode.builder()
+                                .relativeTargetPath(codeTestResponseContext.currentFileRelativePath.toString())
+                                .targetLineRangeList(
+                                    if (selectionRange != null) {
+                                        listOf(selectionRange)
+                                    } else {
+                                        emptyList()
+                                    }
                                 )
-                            } else {
-                                emptyList()
-                            }
-                        )
-                        .build()
-                ),
-                userInput = prompt
-            )
-        } catch (e: Exception) {
-            val statusCode = when {
-                e is SdkServiceException -> e.statusCode()
-                else -> 400
+                                .build()
+                        ),
+                        userInput = prompt
+                    )
+                    delay(200)
+                    response?.testGenerationJob() != null
+                } catch (e: Exception) {
+                    throw e
+                }
             }
+
+            response ?: throw RuntimeException("Failed to start test generation")
+        } catch (e: Exception) {
             LOG.error(e) { "Unexpected error while creating test generation job" }
             val errorMessage = getTelemetryErrorMessage(e, CodeWhispererConstants.FeatureName.TEST_GENERATION)
             throw CodeTestException(
