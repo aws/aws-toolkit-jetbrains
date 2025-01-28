@@ -131,15 +131,18 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         value.putAll(state.value)
         intValue.putAll(state.intValue)
         stringValue.putAll(state.stringValue)
+        autoBuildSetting.putAll(state.autoBuildSetting)
     }
 
     override fun loadState(state: CodeWhispererConfiguration) {
         this.state.value.clear()
         this.state.intValue.clear()
         this.state.stringValue.clear()
+        this.state.autoBuildSetting.clear()
         this.state.value.putAll(state.value)
         this.state.intValue.putAll(state.intValue)
         this.state.stringValue.putAll(state.stringValue)
+        this.state.autoBuildSetting.putAll(state.autoBuildSetting)
     }
 }
 
