@@ -10,9 +10,9 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.project.DumbAwareAction
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.INACTIVE_TEXT_COLOR
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.runScanKey
+import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.resources.message
 
 class CodeWhispererCodeScanRunAction : DumbAwareAction(
@@ -24,7 +24,7 @@ class CodeWhispererCodeScanRunAction : DumbAwareAction(
 
     override fun update(event: AnActionEvent) {
         val project = event.project ?: return
-        event.presentation.isEnabledAndVisible = isCodeWhispererEnabled(project)
+        event.presentation.isEnabledAndVisible = isQConnected(project)
         val scanManager = CodeWhispererCodeScanManager.getInstance(project)
         event.presentation.icon = scanManager.getRunActionButtonIcon()
     }

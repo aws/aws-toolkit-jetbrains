@@ -18,10 +18,10 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererActivationChangedListener
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhispererStatusBarWidgetFactory
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
+import software.aws.toolkits.jetbrains.utils.isQConnected
 
 class CodeWhispererProjectStartupSettingsListener(private val project: Project) :
     CodeWhispererActivationChangedListener,
@@ -42,7 +42,7 @@ class CodeWhispererProjectStartupSettingsListener(private val project: Project) 
     override fun toolWindowShown(toolWindow: ToolWindow) {
         super.toolWindowShown(toolWindow)
         if (toolWindow.id != ProblemsView.ID) return
-        if (!isCodeWhispererEnabled(project)) return
+        if (!isQConnected(project)) return
         CodeWhispererCodeScanManager.getInstance(project).buildCodeScanUI()
         CodeWhispererCodeScanManager.getInstance(project).showCodeScanUI()
     }

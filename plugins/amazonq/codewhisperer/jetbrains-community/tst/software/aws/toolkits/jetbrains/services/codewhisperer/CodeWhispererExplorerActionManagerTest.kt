@@ -34,6 +34,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBe
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
+import software.aws.toolkits.jetbrains.utils.isQConnected
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -211,6 +212,6 @@ class CodeWhispererExplorerActionManagerTest {
         assertThat(activeCwConn).isEqualTo(myConnection)
         assertThat(myTokenProvider.state()).isEqualTo(expectedState)
         assertThat(CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project)).isEqualTo(expectedLoginType)
-        assertThat(isCodeWhispererEnabled(project)).isEqualTo(expectedIsCwEnabled)
+        assertThat(isQConnected(project)).isEqualTo(expectedIsCwEnabled)
     }
 }

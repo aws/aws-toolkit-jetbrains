@@ -23,8 +23,8 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
+import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.resources.message
 import java.awt.Font
 import java.util.concurrent.TimeUnit
@@ -43,7 +43,7 @@ class CodeWhispererConfigurable(private val project: Project) :
 
     override fun createPanel() = panel {
         val connect = project.messageBus.connect(disposable ?: error("disposable wasn't initialized by framework"))
-        val invoke = isCodeWhispererEnabled(project)
+        val invoke = isQConnected(project)
 
         // TODO: can we remove message bus subscribe and solely use visible(boolean) / enabled(boolean), consider multi project cases
         row {
@@ -55,7 +55,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                     ToolkitConnectionManagerListener.TOPIC,
                     object : ToolkitConnectionManagerListener {
                         override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                            visible(!isCodeWhispererEnabled(project))
+                            visible(!isQConnected(project))
                         }
                     }
                 )
@@ -69,7 +69,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                         ToolkitConnectionManagerListener.TOPIC,
                         object : ToolkitConnectionManagerListener {
                             override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                                enabled(isCodeWhispererEnabled(project) && !isSso)
+                                enabled(isQConnected(project) && !isSso)
                             }
                         }
                     )
@@ -89,7 +89,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                         ToolkitConnectionManagerListener.TOPIC,
                         object : ToolkitConnectionManagerListener {
                             override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                                enabled(isCodeWhispererEnabled(project))
+                                enabled(isQConnected(project))
                             }
                         }
                     )
@@ -132,7 +132,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                         ToolkitConnectionManagerListener.TOPIC,
                         object : ToolkitConnectionManagerListener {
                             override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                                enabled(isCodeWhispererEnabled(project))
+                                enabled(isQConnected(project))
                             }
                         }
                     )
@@ -150,7 +150,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                             ToolkitConnectionManagerListener.TOPIC,
                             object : ToolkitConnectionManagerListener {
                                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                                    enabled(isCodeWhispererEnabled(project))
+                                    enabled(isQConnected(project))
                                 }
                             }
                         )
@@ -167,7 +167,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                             ToolkitConnectionManagerListener.TOPIC,
                             object : ToolkitConnectionManagerListener {
                                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                                    enabled(isCodeWhispererEnabled(project))
+                                    enabled(isQConnected(project))
                                 }
                             }
                         )
@@ -181,7 +181,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                         ToolkitConnectionManagerListener.TOPIC,
                         object : ToolkitConnectionManagerListener {
                             override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                                enabled(isCodeWhispererEnabled(project))
+                                enabled(isQConnected(project))
                             }
                         }
                     )
@@ -209,7 +209,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                         ToolkitConnectionManagerListener.TOPIC,
                         object : ToolkitConnectionManagerListener {
                             override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                                enabled(isCodeWhispererEnabled(project) && !isSso)
+                                enabled(isQConnected(project) && !isSso)
                             }
                         }
                     )

@@ -60,7 +60,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhisper
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getCaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.isSupportedJsonFormat
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJson
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContextNew
@@ -86,6 +85,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.utils.isInjectedText
+import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
@@ -129,7 +129,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         latencyContext: LatencyContext,
     ) {
         val project = editor.project ?: return
-        if (!isCodeWhispererEnabled(project)) return
+        if (!isQConnected(project)) return
 
         latencyContext.credentialFetchingStart = System.nanoTime()
 
@@ -778,7 +778,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
 
     fun canDoInvocation(editor: Editor, type: CodewhispererTriggerType): Boolean {
         editor.project?.let {
-            if (!isCodeWhispererEnabled(it)) {
+            if (!isQConnected(it)) {
                 return false
             }
         }
