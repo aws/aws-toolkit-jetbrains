@@ -76,10 +76,8 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
         actionState.value[CodeWhispererExploreStateType.SessionConfigurationMessageShown] = isShown
     }
 
-    fun setAutoSuggestion(project: Project, isAutoEnabled: Boolean) {
+    fun setAutoSuggestion(isAutoEnabled: Boolean) {
         setAutoEnabled(isAutoEnabled)
-        val autoSuggestionState = if (isAutoEnabled) CodeWhispererConstants.AutoSuggestion.ACTIVATED else CodeWhispererConstants.AutoSuggestion.DEACTIVATED
-        AwsTelemetry.modifySetting(project, settingId = CodeWhispererConstants.AutoSuggestion.SETTING_ID, settingState = autoSuggestionState)
     }
 
     // Adding Auto CodeScan Function
