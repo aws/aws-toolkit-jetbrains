@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.project
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class ProjectContextEditorListener : FileEditorManagerListener {
     override fun selectionChanged(event: FileEditorManagerEvent) {
@@ -19,6 +20,8 @@ class ProjectContextEditorListener : FileEditorManagerListener {
         }
 
         val project = event.manager.project
-        ProjectContextController.getInstance(project).updateIndex(listOf(oldFile.path), IndexUpdateMode.UPDATE)
+        pluginAwareExecuteOnPooledThread {
+            ProjectContextController.getInstance(project).updateIndex(listOf(oldFile.path), IndexUpdateMode.UPDATE)
+        }
     }
 }
