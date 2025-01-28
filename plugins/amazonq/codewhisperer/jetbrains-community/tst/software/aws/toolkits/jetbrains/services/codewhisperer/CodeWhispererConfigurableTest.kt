@@ -13,6 +13,7 @@ import org.mockito.kotlin.doNothing
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.resources.message
 import javax.swing.JCheckBox
 import javax.swing.JComponent
