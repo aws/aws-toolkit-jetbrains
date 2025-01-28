@@ -997,6 +997,8 @@ data class CodeWhispererCodeScanIssue(
     val isInvalid: Boolean = false,
     var rangeHighlighter: RangeHighlighterEx? = null,
     var isVisible: Boolean = true,
+    val autoDetected: Boolean = false,
+    val scanJobId: String,
 ) {
     override fun toString(): String = title
 

@@ -149,7 +149,13 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
                 if (suggestedFix.code.isNotBlank()) {
                     sendCodeFixGeneratedTelemetryToServiceAPI(issue, false)
                 }
-                CodeWhispererTelemetryService.getInstance().sendCodeScanIssueGenerateFix(Component.Webview, issue, isRegenerate, MetricResult.Succeeded)
+                CodeWhispererTelemetryService.getInstance().sendCodeScanIssueGenerateFix(
+                    Component.Webview,
+                    issue,
+                    isRegenerate,
+                    MetricResult.Succeeded,
+                    includesFix = suggestedFix.code.isNotBlank()
+                )
             }
         }
     }

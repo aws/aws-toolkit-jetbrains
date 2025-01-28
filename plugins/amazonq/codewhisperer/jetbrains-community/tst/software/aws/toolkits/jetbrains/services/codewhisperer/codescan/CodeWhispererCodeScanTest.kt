@@ -160,7 +160,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
             fakeListCodeScanFindingsResponse.codeScanFindings(),
             getFakeRecommendationsOnNonExistentFile()
         )
-        val res = codeScanSessionSpy.mapToCodeScanIssues(recommendations, project)
+        val res = codeScanSessionSpy.mapToCodeScanIssues(recommendations, project, "jobId")
         assertThat(res).hasSize(2)
     }
 
@@ -169,7 +169,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
         val recommendations = listOf(
             fakeListCodeScanFindingsOutOfBoundsIndexResponse.codeScanFindings(),
         )
-        val res = codeScanSessionSpy.mapToCodeScanIssues(recommendations, project)
+        val res = codeScanSessionSpy.mapToCodeScanIssues(recommendations, project, "jobId")
         assertThat(res).hasSize(1)
     }
 
