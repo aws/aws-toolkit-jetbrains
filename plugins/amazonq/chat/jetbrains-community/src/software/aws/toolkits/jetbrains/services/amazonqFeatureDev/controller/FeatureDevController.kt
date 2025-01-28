@@ -727,7 +727,7 @@ class FeatureDevController(
                 return
             }
 
-            val codeWhispererSettings = CodeWhispererSettings.getInstance().getAutoBuildFeatureConfiguration()
+            val codeWhispererSettings = CodeWhispererSettings.getInstance().getAutoBuildSetting()
             val hasDevFile = session.context.checkForDevFile()
             val isPromptedForAutoBuildFeature = codeWhispererSettings.containsKey(session.context.getWorkspaceRoot())
 
