@@ -90,7 +90,7 @@ class FeatureDevClient(
             requestBuilder.userContext(featureDevUserContext)
         }
 
-    fun sendFeatureDevMetricData(operationName: String, result: String): SendTelemetryEventResponse =
+    fun sendFeatureDevMetricData(operationName: String, result: String, log: String?): SendTelemetryEventResponse =
         bearerClient().sendTelemetryEvent { requestBuilder ->
             requestBuilder.telemetryEvent { telemetryEventBuilder ->
                 telemetryEventBuilder.metricData {
@@ -100,16 +100,29 @@ class FeatureDevClient(
                         .timestamp(Instant.now())
                         .product("FeatureDev")
                         .dimensions(
-                            listOf(
-                                Dimension.builder()
-                                    .name("operationName")
-                                    .value(operationName)
-                                    .build(),
-                                Dimension.builder()
-                                    .name("result")
-                                    .value(result)
-                                    .build()
-                            )
+                            buildList {
+                                add(
+                                    Dimension.builder()
+                                        .name("operationName")
+                                        .value(operationName)
+                                        .build()
+                                )
+                                add(
+                                    Dimension.builder()
+                                        .name("result")
+                                        .value(result)
+                                        .build()
+                                )
+                                if (log != null) {
+                                    // The log dimension will be emitted only to CloudWatch Logs
+                                    add(
+                                        Dimension.builder()
+                                            .name("log")
+                                            .value(log)
+                                            .build()
+                                    )
+                                }
+                            }
                         )
                 }
             }
