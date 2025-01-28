@@ -25,15 +25,15 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         false
     )
 
-    fun getAutoBuildFeatureConfiguration() = state.projectAutoBuildConfigurationMap
+    fun getAutoBuildSetting() = state.autoBuildSetting
 
     fun toggleAutoBuildFeature(project: String?, value: Boolean) {
         if (project == null) return
 
-        state.projectAutoBuildConfigurationMap[project] = value
+        state.autoBuildSetting[project] = value
     }
 
-    fun isAutoBuildFeatureEnabled(project: String?) = state.projectAutoBuildConfigurationMap.getOrDefault(project, false)
+    fun isAutoBuildFeatureEnabled(project: String?) = state.autoBuildSetting.getOrDefault(project, false)
 
     fun toggleImportAdder(value: Boolean) {
         state.value[CodeWhispererConfigurationType.IsImportAdderEnabled] = value
@@ -153,7 +153,7 @@ class CodeWhispererConfiguration : BaseState() {
     @get:Property
     val stringValue by map<CodeWhispererStringConfigurationType, String>()
 
-    val projectAutoBuildConfigurationMap by map<String, Boolean>()
+    val autoBuildSetting by map<String, Boolean>()
 }
 
 enum class CodeWhispererConfigurationType {
