@@ -25,7 +25,7 @@ import software.amazon.awssdk.services.codewhispererstreaming.CodeWhispererStrea
 import software.amazon.awssdk.services.cognitoidentity.CognitoIdentityClient
 import software.aws.toolkits.core.ToolkitClientCustomizer
 import software.aws.toolkits.jetbrains.core.AwsSdkClient
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.telemetry.AwsCognitoCredentialsProvider
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import java.net.Proxy

@@ -11,7 +11,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererActivationChangedListener
+import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererActivationChangedListener
 
 class CodeTransformProjectStartupSettingListener(private val project: Project) :
     CodeWhispererActivationChangedListener,

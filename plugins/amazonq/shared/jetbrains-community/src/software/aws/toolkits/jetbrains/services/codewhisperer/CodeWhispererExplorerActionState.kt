@@ -1,14 +1,11 @@
-// Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.services.codewhisperer.explorer
+package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.project.Project
 import com.intellij.util.xmlb.annotations.Property
-import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
-
-typealias CodeWhispererExplorerActionManager = migration.software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 
 class CodeWhispererExploreActionState : BaseState() {
     @get:Property

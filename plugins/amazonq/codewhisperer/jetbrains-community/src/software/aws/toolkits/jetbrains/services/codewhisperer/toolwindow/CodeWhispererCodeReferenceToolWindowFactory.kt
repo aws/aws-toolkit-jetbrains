@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.components.JBScrollPane
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
+import software.aws.toolkits.jetbrains.services.codewhisperer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 
 class CodeWhispererCodeReferenceToolWindowFactory : ToolWindowFactory, DumbAware {
