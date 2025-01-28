@@ -55,7 +55,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispere
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererEditorActionHandlerNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupBackspaceHandlerNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupEnterHandlerNew
-import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupEscHandler
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupEscHandlerNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupTypedHandlerNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererAcceptButtonActionListenerNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererActionListenerNew
@@ -406,7 +406,7 @@ class CodeWhispererPopupManagerNew {
         sessionContext.project.putUserData(CodeWhispererServiceNew.KEY_SESSION_CONTEXT, sessionContext)
 
         setPopupTypedHandler(CodeWhispererPopupTypedHandlerNew(TypedAction.getInstance().rawHandler, sessionContext), sessionContext)
-        setPopupActionHandler(ACTION_EDITOR_ESCAPE, CodeWhispererPopupEscHandler(sessionContext), sessionContext)
+        setPopupActionHandler(ACTION_EDITOR_ESCAPE, CodeWhispererPopupEscHandlerNew(sessionContext), sessionContext)
         setPopupActionHandler(
             ACTION_EDITOR_ENTER,
             CodeWhispererPopupEnterHandlerNew(actionManager.getActionHandler(ACTION_EDITOR_ENTER), sessionContext),
