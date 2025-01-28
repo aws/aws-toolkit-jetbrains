@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.settings
 
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
@@ -10,7 +11,6 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.util.xmlb.annotations.Property
-import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererShowSettingsAction
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 
 @Service
@@ -50,7 +50,14 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
             if (!hasEnabledProjectContextOnce()) {
                 toggleEnabledProjectContextOnce(true)
                 state.value[CodeWhispererConfigurationType.IsProjectContextEnabled] = value
-                notifyInfo("Amazon Q", "Workspace index is now enabled. You can disable it from Amazon Q settings.", notificationActions = listOf(CodeWhispererShowSettingsAction()))
+                // todo: hack to bypass module dependency issue (codewhisperer -> shared), should pass [CodeWhispererShowSettingsAction] instead when it's resolved
+                ActionManager.getInstance().getAction("codewhisperer.settings")?.let { a ->
+                    notifyInfo(
+                        "Amazon Q",
+                        "Workspace index is now enabled. You can disable it from Amazon Q settings.",
+                        notificationActions = listOf(a)
+                    )
+                }
             }
         } else {
             state.value[CodeWhispererConfigurationType.IsProjectContextEnabled] = value
