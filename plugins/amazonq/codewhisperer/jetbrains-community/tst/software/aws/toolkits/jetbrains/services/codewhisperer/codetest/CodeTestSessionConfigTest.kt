@@ -3,24 +3,17 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.codetest
 
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.modules
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.testFramework.ApplicationRule
-import com.intellij.testFramework.DisposableRule
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
-import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
-import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.sessionconfig.CodeTestSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
@@ -33,42 +26,19 @@ import java.util.zip.ZipInputStream
 class CodeTestSessionConfigTest {
     private lateinit var testJava: VirtualFile
     private lateinit var utilsJava: VirtualFile
-    private lateinit var helperJava: VirtualFile
     private lateinit var readMeMd: VirtualFile
     private lateinit var helpGo: VirtualFile
     private lateinit var utilsJs: VirtualFile
-    private lateinit var testJson: VirtualFile
     private lateinit var testYaml: VirtualFile
     private lateinit var helperPy: VirtualFile
     private lateinit var testTf: VirtualFile
 
     private var totalSize: Long = 0
     private var totalLines: Long = 0
-    private var payloadTestSize: Long = 0
-    private var payloadTestLines: Long = 0
-
-    @Rule
-    @JvmField
-    val applicationRule = ApplicationRule()
 
     @Rule
     @JvmField
     val projectRule: CodeInsightTestFixtureRule = HeavyJavaCodeInsightTestFixtureRule()
-
-    @Rule
-    @JvmField
-    val disposableRule = DisposableRule()
-
-    @Rule
-    @JvmField
-    val mockClientManagerRule = MockClientManagerRule()
-
-    @Rule
-    @JvmField
-    val wireMock = WireMockRule(WireMockConfiguration.wireMockConfig().dynamicPort())
-
-    @get:Rule
-    val tempFolder = TemporaryFolder()
 
     private lateinit var project: Project
     private lateinit var codeTestSessionConfig: CodeTestSessionConfig
@@ -82,9 +52,9 @@ class CodeTestSessionConfigTest {
 
     @Test
     fun `test createPayload`() {
-        assertEquals(project.modules.size, 2)
+        assertThat(project.modules.size).isEqualTo(2)
         val payload = codeTestSessionConfig.createPayload()
-        assertNotNull(payload)
+        assertThat(payload).isNotNull
         assertThat(payload.context.totalFiles).isEqualTo(8)
 
         assertThat(payload.context.scannedFiles.size).isEqualTo(8)
@@ -99,8 +69,8 @@ class CodeTestSessionConfigTest {
             helperPy
         )
 
-        assertThat(payload.context.srcPayloadSize).isEqualTo(payloadTestSize)
-        assertThat(payload.context.totalLines).isEqualTo(payloadTestLines)
+        assertThat(payload.context.srcPayloadSize).isEqualTo(totalSize)
+        assertThat(payload.context.totalLines).isEqualTo(totalLines)
         assertNotNull(payload.srcZip)
 
         val bufferedInputStream = BufferedInputStream(payload.srcZip.inputStream())
@@ -122,8 +92,8 @@ class CodeTestSessionConfigTest {
         val totalLines = payloadMetadata.linesScanned
         val maxCountLanguage = payloadMetadata.language
         assertThat(includedSourceFiles.size).isEqualTo(8)
-        assertThat(srcPayloadSize).isEqualTo(payloadTestSize)
-        assertThat(totalLines).isEqualTo(payloadTestLines)
+        assertThat(srcPayloadSize).isEqualTo(totalSize)
+        assertThat(totalLines).isEqualTo(totalLines)
         assertThat(maxCountLanguage).isEqualTo(testJava.programmingLanguage().toTelemetryType())
     }
 
@@ -191,7 +161,7 @@ class CodeTestSessionConfigTest {
         totalSize += utilsJava.length
         totalLines += utilsJava.toNioPath().toFile().readLines().size
 
-        helperJava = projectRule.fixture.addFileToModule(
+        projectRule.fixture.addFileToModule(
             testModule,
             "/Helpers/Helper.java",
             """
@@ -224,8 +194,6 @@ class CodeTestSessionConfigTest {
             }
             """.trimIndent()
         ).virtualFile
-        totalSize += helperJava.length
-        totalLines += helperJava.toNioPath().toFile().readLines().size
 
         helpGo = projectRule.fixture.addFileToModule(
             testModule,
@@ -273,7 +241,7 @@ class CodeTestSessionConfigTest {
         totalSize += utilsJs.length
         totalLines += utilsJs.toNioPath().toFile().readLines().size
 
-        testJson = projectRule.fixture.addFileToModule(
+        projectRule.fixture.addFileToModule(
             testModule,
             "/Helpers/test3Json.json",
             """
@@ -326,8 +294,6 @@ class CodeTestSessionConfigTest {
                 }
             """.trimIndent()
         ).virtualFile
-        totalSize += testJson.length
-        totalLines += testJson.toNioPath().toFile().readLines().size
 
         helperPy = projectRule.fixture.addFileToModule(
             testModule,
@@ -422,8 +388,5 @@ class CodeTestSessionConfigTest {
         ).virtualFile
 
         projectRule.fixture.addFileToModule(testModule2, "/.idea/ref", "ref: refs/heads/main") // adding ignored files in second module
-
-        payloadTestSize = totalSize - helperJava.length - testJson.length
-        payloadTestLines = totalLines - helperJava.toNioPath().toFile().readLines().size - testJson.toNioPath().toFile().readLines().size
     }
 }
