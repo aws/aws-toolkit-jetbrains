@@ -95,6 +95,24 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         state.stringValue[CodeWhispererStringConfigurationType.IgnoredCodeReviewIssues] = value
     }
 
+    fun isQPrioritizedForTabAccept(): Boolean = state.value.getOrDefault(
+        CodeWhispererConfigurationType.IsQPrioritizedForTabAccept,
+        true
+    )
+
+    fun setQPrioritizedForTabAccept(value: Boolean) {
+        state.value[CodeWhispererConfigurationType.IsQPrioritizedForTabAccept] = value
+    }
+
+    fun isTabAcceptPriorityNotificationShownOnce(): Boolean = state.value.getOrDefault(
+        CodeWhispererConfigurationType.IsTabAcceptPriorityNotificationShownOnce,
+        false
+    )
+
+    fun setTabAcceptPriorityNotificationShownOnce(value: Boolean) {
+        state.value[CodeWhispererConfigurationType.IsTabAcceptPriorityNotificationShownOnce] = value
+    }
+
     companion object {
         fun getInstance(): CodeWhispererSettings = service()
     }
@@ -136,6 +154,8 @@ enum class CodeWhispererConfigurationType {
     IsProjectContextEnabled,
     IsProjectContextGpu,
     HasEnabledProjectContextOnce,
+    IsQPrioritizedForTabAccept,
+    IsTabAcceptPriorityNotificationShownOnce,
 }
 
 enum class CodeWhispererStringConfigurationType {
