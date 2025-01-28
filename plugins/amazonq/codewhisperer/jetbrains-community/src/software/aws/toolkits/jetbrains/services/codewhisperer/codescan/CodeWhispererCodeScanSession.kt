@@ -364,7 +364,8 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
 
     private fun isProjectScope(): Boolean = sessionContext.codeAnalysisScope == CodeWhispererConstants.CodeAnalysisScope.PROJECT
 
-    private fun isAutoScan() = sessionContext.codeAnalysisScope == CodeWhispererConstants.CodeAnalysisScope.FILE && !sessionContext.sessionConfig.isInitiatedByChat()
+    private fun isAutoScan(): Boolean =
+        sessionContext.codeAnalysisScope == CodeWhispererConstants.CodeAnalysisScope.FILE && !sessionContext.sessionConfig.isInitiatedByChat()
 
     companion object {
         private val LOG = getLogger<CodeWhispererCodeScanSession>()
