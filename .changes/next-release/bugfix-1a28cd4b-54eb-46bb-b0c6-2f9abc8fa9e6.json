@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Amazon Q /doc: fix open diff in a tab when another modal is open"
+}
