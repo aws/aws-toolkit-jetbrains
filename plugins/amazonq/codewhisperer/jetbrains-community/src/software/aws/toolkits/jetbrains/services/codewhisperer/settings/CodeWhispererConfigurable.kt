@@ -191,6 +191,35 @@ class CodeWhispererConfigurable(private val project: Project) :
             }
         }
 
+        val autoBuildSetting = codeWhispererSettings.getAutoBuildSetting()
+        if (autoBuildSetting.isNotEmpty()) {
+            group(message("aws.settings.codewhisperer.feature_development")) {
+                row {
+                    text(message("aws.settings.codewhisperer.feature_development.allow_running_code_and_test_commands"))
+                }
+                row {
+                    val settings = codeWhispererSettings.getAutoBuildSetting()
+                    for ((key) in settings) {
+                        checkBox(key).apply {
+                            connect.subscribe(
+                                ToolkitConnectionManagerListener.TOPIC,
+                                object : ToolkitConnectionManagerListener {
+                                    override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+                                        enabled(isCodeWhispererEnabled(project))
+                                    }
+                                }
+                            )
+
+                            bindSelected(
+                                getter = { codeWhispererSettings.isAutoBuildFeatureEnabled(key) },
+                                setter = { newValue -> codeWhispererSettings.toggleAutoBuildFeature(key, newValue) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         group(message("aws.settings.codewhisperer.code_review")) {
             row {
                 ExpandableTextField(ParametersListUtil.COLON_LINE_PARSER, ParametersListUtil.COLON_LINE_JOINER).also {

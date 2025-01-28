@@ -30,7 +30,7 @@ class OpenedFileTypeMetricsTest {
 
     @Test
     fun `test addToExistingTelemetryBatch with disallowed extension`() {
-        service.addToExistingTelemetryBatch("txt")
+        service.addToExistingTelemetryBatch("mp4")
         assertThat(service.getOpenedFileTypes()).isEmpty()
     }
 }
