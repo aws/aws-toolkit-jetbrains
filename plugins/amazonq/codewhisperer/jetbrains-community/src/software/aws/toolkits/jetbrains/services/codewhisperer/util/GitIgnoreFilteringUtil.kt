@@ -7,9 +7,7 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
-import java.nio.file.Paths
 import kotlin.coroutines.coroutineContext
-import kotlin.io.path.relativeTo
 
 class GitIgnoreFilteringUtil(private val moduleDir: VirtualFile) {
     private var ignorePatternsWithGitIgnore = emptyList<Regex>()
@@ -80,9 +78,7 @@ class GitIgnoreFilteringUtil(private val moduleDir: VirtualFile) {
         .replace("*", ".*")
         .let { if (it.endsWith("/")) "$it.*" else "$it/.*" } // Add a trailing /* to all patterns. (we add a trailing / to all files when matching)
 
-    suspend fun ignoreFile(file: VirtualFile): Boolean = ignoreFile(file.presentableUrl)
-
-    suspend fun ignoreFile(path: String): Boolean {
+    suspend fun ignoreFile(file: VirtualFile): Boolean {
         // this method reads like something a JS dev would write and doesn't do what the author thinks
         val deferredResults = ignorePatternsWithGitIgnore.map { pattern ->
             withContext(coroutineContext) {
@@ -91,7 +87,7 @@ class GitIgnoreFilteringUtil(private val moduleDir: VirtualFile) {
                 // we convert the glob rules to regex, add a trailing /* to all rules and then match
                 // entries against them by adding a trailing /.
                 // TODO: Add unit tests for gitignore matching
-                val relative = if (path.startsWith(moduleDir.presentableUrl)) Paths.get(path).relativeTo(moduleDir.toNioPath()) else path
+                val relative = getRelativePath(file)
                 async { pattern.matches("$relative/") }
             }
         }
