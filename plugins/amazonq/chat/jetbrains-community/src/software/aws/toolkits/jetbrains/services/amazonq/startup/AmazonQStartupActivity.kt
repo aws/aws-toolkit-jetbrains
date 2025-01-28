@@ -19,6 +19,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.core.gettingstarted.emitUserState
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindow
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
@@ -36,7 +37,7 @@ class AmazonQStartupActivity : ProjectActivity {
         if (ApplicationManager.getApplication().isUnitTestMode) return
 
         ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let {
-            if (it is AwsBearerTokenConnection && isInternalUser(it.startUrl)) {
+            if (it is AwsBearerTokenConnection && CodeWhispererFeatureConfigService.getInstance().getChatWSContext()) {
                 CodeWhispererSettings.getInstance().toggleProjectContextEnabled(value = true, passive = true)
             }
         }
