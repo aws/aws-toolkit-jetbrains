@@ -153,6 +153,7 @@ class CodeWhispererConfiguration : BaseState() {
     @get:Property
     val stringValue by map<CodeWhispererStringConfigurationType, String>()
 
+    @get:Property
     val autoBuildSetting by map<String, Boolean>()
 }
 
