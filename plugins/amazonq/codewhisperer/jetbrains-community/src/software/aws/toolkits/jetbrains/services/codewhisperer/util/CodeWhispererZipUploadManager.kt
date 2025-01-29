@@ -111,7 +111,7 @@ class CodeWhispererZipUploadManager(private val project: Project) {
             },
             isRetryable = { e ->
                 when (e) {
-                    is SocketException, is SocketTimeoutException, is IOException -> true
+                    is IOException -> true
                     else -> false
                 }
             },
