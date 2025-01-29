@@ -44,10 +44,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.invalidSo
 @Service
 class CodeWhispererZipUploadManager(private val project: Project) {
 
-    private val maxRetryAttempts = 3
-    private val initialDelay = 200L // 200ms
-    private val maxBackoff = 1000L // 1 second
-
     fun createUploadUrlAndUpload(
         zipFile: File,
         artifactType: String,
@@ -90,11 +86,8 @@ class CodeWhispererZipUploadManager(private val project: Project) {
         requestHeaders: Map<String, String>?,
         featureUseCase: CodeWhispererConstants.FeatureName,
     ) {
-        var attempts = 0
-        var currentDelay = initialDelay
-
-        while (attempts < maxRetryAttempts) {
-            try {
+        RetryableOperation<Unit>().execute(
+            operation = {
                 val uploadIdJson = """{"uploadId":"$uploadId"}"""
                 HttpRequests.put(url, "application/zip").userAgent(AwsClientManager.getUserAgent()).tuner {
                     if (requestHeaders.isNullOrEmpty()) {
@@ -115,26 +108,17 @@ class CodeWhispererZipUploadManager(private val project: Project) {
                     connection.setFixedLengthStreamingMode(fileToUpload.length())
                     IoUtils.copy(fileToUpload.inputStream(), connection.outputStream)
                 }
-                return // Success, exit the function
-            } catch (e: Exception) {
-                LOG.debug { "$featureUseCase: Artifact failed to upload in the S3 bucket (attempt ${attempts + 1}): ${e.message}" }
-
-                // Determine if the exception is retryable
-                val isRetryable = when (e) {
-                    is IOException, // Network issues
+            },
+            isRetryable = { e ->
+                when (e) {
+                    is IOException,
                     is SocketException,
                     is SocketTimeoutException,
                     -> true
                     else -> false
                 }
-                attempts++
-                if (attempts < maxRetryAttempts && isRetryable) {
-                    Thread.sleep(currentDelay)
-                    currentDelay = (currentDelay * 2).coerceAtMost(maxBackoff)
-                    continue
-                }
-
-                // If not retryable or max attempts reached, handle the error
+            },
+            errorHandler = { e, attempts ->
                 val errorMessage = getTelemetryErrorMessage(e, featureUseCase)
                 when (featureUseCase) {
                     CodeWhispererConstants.FeatureName.CODE_REVIEW ->
@@ -145,85 +129,56 @@ class CodeWhispererZipUploadManager(private val project: Project) {
                             "UploadTestArtifactToS3Error",
                             message("testgen.error.generic_technical_error_message")
                         )
-                    else -> throw RuntimeException("$errorMessage (after $attempts attempts)") // Adding else for safety check
+                    else -> throw RuntimeException("$errorMessage (after $attempts attempts)")
                 }
             }
-        }
+        )
     }
+
     fun createUploadUrl(
         md5Content: String,
         artifactType: String,
         uploadTaskType: CodeWhispererConstants.UploadTaskType,
         taskName: String,
         featureUseCase: CodeWhispererConstants.FeatureName,
-    ): CreateUploadUrlResponse {
-        var attempts = 0
-        var currentDelay = initialDelay
-        var lastException: Exception? = null
+    ): CreateUploadUrlResponse = RetryableOperation<CreateUploadUrlResponse>().execute(
+        operation = {
+            CodeWhispererClientAdaptor.getInstance(project).createUploadUrl(
+                CreateUploadUrlRequest.builder()
+                    .contentMd5(md5Content)
+                    .artifactType(artifactType)
+                    .uploadIntent(getUploadIntent(uploadTaskType))
+                    .uploadContext(
+                        // For UTG we don't need uploadContext but sending else case as UploadContext
+                        if (uploadTaskType == CodeWhispererConstants.UploadTaskType.CODE_FIX) {
+                            UploadContext.fromCodeFixUploadContext(CodeFixUploadContext.builder().codeFixName(taskName).build())
+                        } else {
+                            UploadContext.fromCodeAnalysisUploadContext(CodeAnalysisUploadContext.builder().codeScanName(taskName).build())
+                        }
+                    )
+                    .build()
+            )
+        },
+        isRetryable = { e ->
+            e is ThrottlingException || e is InternalServerException
+        },
+        errorHandler = { e, attempts ->
+            val errorMessage = getTelemetryErrorMessage(e, featureUseCase)
+            when (featureUseCase) {
+                CodeWhispererConstants.FeatureName.CODE_REVIEW ->
+                    codeScanServerException("CreateUploadUrlException after $attempts attempts: $errorMessage")
 
-        while (attempts < maxRetryAttempts) {
-            try {
-                return CodeWhispererClientAdaptor.getInstance(project).createUploadUrl(
-                    CreateUploadUrlRequest.builder()
-                        .contentMd5(md5Content)
-                        .artifactType(artifactType)
-                        .uploadIntent(getUploadIntent(uploadTaskType))
-                        .uploadContext(
-                            // For UTG we don't need uploadContext but sending else case as UploadContext
-                            if (uploadTaskType == CodeWhispererConstants.UploadTaskType.CODE_FIX) {
-                                UploadContext.fromCodeFixUploadContext(CodeFixUploadContext.builder().codeFixName(taskName).build())
-                            } else {
-                                UploadContext.fromCodeAnalysisUploadContext(CodeAnalysisUploadContext.builder().codeScanName(taskName).build())
-                            }
-                        )
-                        .build()
-                )
-            } catch (e: Exception) {
-                lastException = e
-                LOG.debug { "$featureUseCase: Create Upload URL failed (attempt ${attempts + 1}): ${e.message}" }
+                CodeWhispererConstants.FeatureName.TEST_GENERATION ->
+                    throw CodeTestException(
+                        "CreateUploadUrlError after $attempts attempts: $errorMessage",
+                        "CreateUploadUrlError",
+                        message("testgen.error.generic_technical_error_message")
+                    )
 
-                // Don't retry these exceptions
-                if (e !is ThrottlingException && e !is InternalServerException) {
-                    val errorMessage = getTelemetryErrorMessage(e, featureUseCase)
-                    when (featureUseCase) {
-                        CodeWhispererConstants.FeatureName.CODE_REVIEW ->
-                            codeScanServerException("CreateUploadUrlException: $errorMessage")
-                        CodeWhispererConstants.FeatureName.TEST_GENERATION ->
-                            throw CodeTestException(
-                                "CreateUploadUrlError: $errorMessage",
-                                "CreateUploadUrlError",
-                                message("testgen.error.generic_technical_error_message")
-                            )
-                        else -> throw RuntimeException(errorMessage)
-                    }
-                }
-
-                attempts++
-                if (attempts < maxRetryAttempts) {
-                    Thread.sleep(currentDelay)
-                    currentDelay = (currentDelay * 2).coerceAtMost(maxBackoff)
-                    continue
-                }
+                else -> throw RuntimeException("$errorMessage (after $attempts attempts)")
             }
         }
-
-        // If we've exhausted all retries, handle the last exception
-        val errorMessage = getTelemetryErrorMessage(
-            lastException ?: Exception("Unknown error"),
-            featureUseCase
-        )
-        when (featureUseCase) {
-            CodeWhispererConstants.FeatureName.CODE_REVIEW ->
-                codeScanServerException("CreateUploadUrlException after $maxRetryAttempts attempts: $errorMessage")
-            CodeWhispererConstants.FeatureName.TEST_GENERATION ->
-                throw CodeTestException(
-                    "CreateUploadUrlError after $maxRetryAttempts attempts: $errorMessage",
-                    "CreateUploadUrlError",
-                    message("testgen.error.generic_technical_error_message")
-                )
-            else -> throw RuntimeException("$errorMessage (after $maxRetryAttempts attempts)") // Adding else for safety check
-        }
-    }
+    )
 
     private fun getUploadIntent(uploadTaskType: CodeWhispererConstants.UploadTaskType): UploadIntent = when (uploadTaskType) {
         CodeWhispererConstants.UploadTaskType.SCAN_FILE -> UploadIntent.AUTOMATIC_FILE_SECURITY_SCAN
@@ -256,5 +211,43 @@ fun getTelemetryErrorMessage(e: Exception, featureUseCase: CodeWhispererConstant
     else -> e.message ?: when (featureUseCase) {
         CodeWhispererConstants.FeatureName.CODE_REVIEW -> message("codewhisperer.codescan.run_scan_error_telemetry")
         else -> message("testgen.message.failed")
+    }
+}
+
+class RetryableOperation<T> {
+    private var attempts = 0
+    private var currentDelay = initialDelay
+    private var lastException: Exception? = null
+
+    fun execute(
+        operation: () -> T,
+        isRetryable: (Exception) -> Boolean,
+        errorHandler: (Exception, Int) -> Nothing,
+    ): T {
+        while (attempts < maxRetryAttempts) {
+            try {
+                return operation()
+            } catch (e: Exception) {
+                lastException = e
+
+                attempts++
+                if (attempts < maxRetryAttempts && isRetryable(e)) {
+                    Thread.sleep(currentDelay)
+                    currentDelay = (currentDelay * 2).coerceAtMost(maxBackoff)
+                    continue
+                }
+
+                errorHandler(e, attempts)
+            }
+        }
+
+        // This line should never be reached due to errorHandler throwing exception
+        throw RuntimeException("Unexpected state after $attempts attempts")
+    }
+
+    companion object {
+        private const val initialDelay = 100L // milliseconds
+        private const val maxBackoff = 10000L // milliseconds
+        private const val maxRetryAttempts = 3
     }
 }
