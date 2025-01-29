@@ -111,10 +111,7 @@ class CodeWhispererZipUploadManager(private val project: Project) {
             },
             isRetryable = { e ->
                 when (e) {
-                    is IOException,
-                    is SocketException,
-                    is SocketTimeoutException,
-                    -> true
+                    is SocketException, is SocketTimeoutException, is IOException -> true
                     else -> false
                 }
             },
@@ -216,7 +213,7 @@ fun getTelemetryErrorMessage(e: Exception, featureUseCase: CodeWhispererConstant
 
 class RetryableOperation<T> {
     private var attempts = 0
-    private var currentDelay = initialDelay
+    private var currentDelay = INITIAL_DELAY
     private var lastException: Exception? = null
 
     fun execute(
@@ -224,16 +221,16 @@ class RetryableOperation<T> {
         isRetryable: (Exception) -> Boolean,
         errorHandler: (Exception, Int) -> Nothing,
     ): T {
-        while (attempts < maxRetryAttempts) {
+        while (attempts < MAX_RETRY_ATTEMPTS) {
             try {
                 return operation()
             } catch (e: Exception) {
                 lastException = e
 
                 attempts++
-                if (attempts < maxRetryAttempts && isRetryable(e)) {
+                if (attempts < MAX_RETRY_ATTEMPTS && isRetryable(e)) {
                     Thread.sleep(currentDelay)
-                    currentDelay = (currentDelay * 2).coerceAtMost(maxBackoff)
+                    currentDelay = (currentDelay * 2).coerceAtMost(MAX_BACKOFF)
                     continue
                 }
 
@@ -246,8 +243,8 @@ class RetryableOperation<T> {
     }
 
     companion object {
-        private const val initialDelay = 100L // milliseconds
-        private const val maxBackoff = 10000L // milliseconds
-        private const val maxRetryAttempts = 3
+        private const val INITIAL_DELAY = 100L // milliseconds
+        private const val MAX_BACKOFF = 10000L // milliseconds
+        private const val MAX_RETRY_ATTEMPTS = 3
     }
 }
