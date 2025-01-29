@@ -36,8 +36,6 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.net.HttpURLConnection
-import java.net.SocketException
-import java.net.SocketTimeoutException
 import java.util.Base64
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.invalidSourceZipError as testGenerationInvalidSourceZipError
 
