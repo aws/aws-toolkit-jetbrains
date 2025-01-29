@@ -208,7 +208,10 @@ class CodeWhispererZipUploadManager(private val project: Project) {
         }
 
         // If we've exhausted all retries, handle the last exception
-        val errorMessage = getTelemetryErrorMessage(lastException!!, featureUseCase)
+        val errorMessage = getTelemetryErrorMessage(
+            lastException ?: Exception("Unknown error"),
+            featureUseCase
+        )
         when (featureUseCase) {
             CodeWhispererConstants.FeatureName.CODE_REVIEW ->
                 codeScanServerException("CreateUploadUrlException after $maxRetryAttempts attempts: $errorMessage")
