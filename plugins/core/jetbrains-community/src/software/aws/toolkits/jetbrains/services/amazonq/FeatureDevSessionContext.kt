@@ -10,7 +10,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.openapi.vfs.isFile
 import com.intellij.platform.ide.progress.withBackgroundProgress
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -18,7 +17,9 @@ import kotlinx.coroutines.withContext
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.FileUtils
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
+import software.aws.toolkits.jetbrains.services.amazonq.QConstants.MAX_FILE_SIZE_BYTES
 import software.aws.toolkits.jetbrains.services.telemetry.ALLOWED_CODE_EXTENSIONS
+import software.aws.toolkits.jetbrains.utils.isDevFile
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import java.io.File
@@ -32,7 +33,6 @@ import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.util.Base64
 import java.util.UUID
-import kotlin.coroutines.coroutineContext
 import kotlin.io.path.Path
 import kotlin.io.path.createParentDirectories
 import kotlin.io.path.getPosixFilePermissions
@@ -46,17 +46,22 @@ class RepoSizeLimitError(override val message: String) : RuntimeException(), Rep
 class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Long? = null) {
     // TODO: Need to correct this class location in the modules going further to support both amazonq and codescan.
 
-    private val additionalGitIgnoreRules = setOf(
+    private val additionalGitIgnoreFolderRules = setOf(
         ".aws-sam",
         ".gem",
         ".git",
-        ".gitignore",
         ".gradle",
         ".hg",
         ".idea",
         ".project",
         ".rvm",
         ".svn",
+        "node_modules",
+        "build",
+        "dist",
+    )
+
+    private val additionalGitIgnoreBinaryFilesRules = setOf(
         "*.zip",
         "*.bin",
         "*.png",
@@ -69,9 +74,6 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         "license.md",
         "License.md",
         "LICENSE.md",
-        "node_modules",
-        "build",
-        "dist"
     )
 
     // well known source files that do not have extensions
@@ -86,15 +88,20 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     val projectRoot = project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
     private val projectRootPath = Paths.get(projectRoot.path) ?: error("Can not find project root path")
 
-    // selectedSourceFolder": is the directory selected in replacement of the root, this happens when the project is too big to bundle for uploading.
+    // selectedSourceFolder: is the directory selected in replacement of the root, this happens when the project is too big to bundle for uploading.
     private var _selectedSourceFolder = projectRoot
     private var ignorePatternsWithGitIgnore = emptyList<Regex>()
+    private var ignorePatternsForBinaryFiles = additionalGitIgnoreBinaryFilesRules
+        .map { convertGitIgnorePatternToRegex(it) }
+        .mapNotNull { pattern ->
+            runCatching { Regex(pattern) }.getOrNull()
+        }
     private val gitIgnoreFile = File(selectedSourceFolder.path, ".gitignore")
 
     init {
         ignorePatternsWithGitIgnore = try {
             buildList {
-                addAll(additionalGitIgnoreRules.map { convertGitIgnorePatternToRegex(it) })
+                addAll(additionalGitIgnoreFolderRules.map { convertGitIgnorePatternToRegex(it) })
                 addAll(parseGitIgnore())
             }.mapNotNull { pattern ->
                 runCatching { Regex(pattern) }.getOrNull()
@@ -104,10 +111,18 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         }
     }
 
-    fun getProjectZip(): ZipCreationResult {
+    // This function checks for existence of `devfile.yaml` in customer's repository, currently only `devfile.yaml` is supported for this feature.
+    fun checkForDevFile(): Boolean {
+        val devFile = File(projectRoot.path, "/devfile.yaml")
+        return devFile.exists()
+    }
+
+    fun getWorkspaceRoot(): String = projectRoot.path
+
+    fun getProjectZip(isAutoBuildFeatureEnabled: Boolean?): ZipCreationResult {
         val zippedProject = runBlocking {
             withBackgroundProgress(project, AwsCoreBundle.message("amazonqFeatureDev.placeholder.generating_code")) {
-                zipFiles(selectedSourceFolder)
+                zipFiles(selectedSourceFolder, isAutoBuildFeatureEnabled)
             }
         }
         val checkSum256: String = Base64.getEncoder().encodeToString(DigestUtils.sha256(FileInputStream(zippedProject)))
@@ -121,34 +136,51 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         return ALLOWED_CODE_EXTENSIONS.contains(extension)
     }
 
-    private fun ignoreFileByExtension(file: VirtualFile) =
-        !isFileExtensionAllowed(file)
+    fun ignoreFile(file: VirtualFile, applyExtraBinaryFilesRules: Boolean = true): Boolean = ignoreFile(file.presentableUrl, applyExtraBinaryFilesRules)
 
-    suspend fun ignoreFile(file: VirtualFile): Boolean = ignoreFile(file.presentableUrl)
-
-    suspend fun ignoreFile(path: String): Boolean {
-        // this method reads like something a JS dev would write and doesn't do what the author thinks
-        val deferredResults = ignorePatternsWithGitIgnore.map { pattern ->
-            withContext(coroutineContext) {
-                // avoid partial match (pattern.containsMatchIn) since it causes us matching files
-                // against folder patterns. (e.g. settings.gradle ignored by .gradle rule!)
-                // we convert the glob rules to regex, add a trailing /* to all rules and then match
-                // entries against them by adding a trailing /.
-                // TODO: Add unit tests for gitignore matching
-                val relative = if (path.startsWith(projectRootPath.toString())) Paths.get(path).relativeTo(projectRootPath) else path
-                async { pattern.matches("$relative/") }
-            }
+    fun ignoreFile(path: String, applyExtraBinaryFilesRules: Boolean = true): Boolean {
+        val allIgnoreRules = if (applyExtraBinaryFilesRules) ignorePatternsWithGitIgnore + ignorePatternsForBinaryFiles else ignorePatternsWithGitIgnore
+        val matchedRules = allIgnoreRules.map { pattern ->
+            // avoid partial match (pattern.containsMatchIn) since it causes us matching files
+            // against folder patterns. (e.g. settings.gradle ignored by .gradle rule!)
+            // we convert the glob rules to regex, add a trailing /* to all rules and then match
+            // entries against them by adding a trailing /.
+            // TODO: Add unit tests for gitignore matching
+            val relative = if (path.startsWith(projectRootPath.toString())) Paths.get(path).relativeTo(projectRootPath) else path
+            pattern.matches("$relative/")
         }
-
-        // this will serially iterate over and block
-        // ideally we race the results https://github.com/Kotlin/kotlinx.coroutines/issues/2867
-        // i.e. Promise.any(...)
-        return deferredResults.any { it.await() }
+        return matchedRules.any { it }
     }
 
-    fun wellKnown(file: VirtualFile): Boolean = wellKnownSourceFiles.contains(file.name)
+    private fun wellKnown(file: VirtualFile): Boolean = wellKnownSourceFiles.contains(file.name)
 
-    suspend fun zipFiles(projectRoot: VirtualFile): File = withContext(getCoroutineBgContext()) {
+    private fun shouldIncludeInZipFile(file: VirtualFile, isAutoBuildFeatureEnabled: Boolean): Boolean {
+        // large files always ignored
+        if (file.length > MAX_FILE_SIZE_BYTES) {
+            return false
+        }
+
+        // always respect gitignore rules and remove binary files if auto build is disabled
+        val isFileIgnoredByPattern = ignoreFile(file, !isAutoBuildFeatureEnabled)
+        if (isFileIgnoredByPattern) {
+            return false
+        }
+
+        // all other files are included when auto build enabled
+        if (isAutoBuildFeatureEnabled) {
+            return true
+        }
+
+        // when auto build is disabled, only include files with well known extensions and names except "devfile.yam"
+        if (!isDevFile(file) && (wellKnown(file) || isFileExtensionAllowed(file))) {
+            return true
+        }
+
+        // Any other files should not be included
+        return false
+    }
+
+    suspend fun zipFiles(projectRoot: VirtualFile, isAutoBuildFeatureEnabled: Boolean?): File = withContext(getCoroutineBgContext()) {
         val files = mutableListOf<VirtualFile>()
         val ignoredExtensionMap = mutableMapOf<String, Long>().withDefault { 0L }
         var totalSize: Long = 0
@@ -157,15 +189,10 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
             projectRoot,
             object : VirtualFileVisitor<Unit>() {
                 override fun visitFile(file: VirtualFile): Boolean {
-                    val isWellKnown = runBlocking { wellKnown(file) }
-                    val isFileIgnoredByExtension = runBlocking { ignoreFileByExtension(file) }
-                    if (!isWellKnown && isFileIgnoredByExtension) {
+                    val isIncluded = shouldIncludeInZipFile(file, isAutoBuildFeatureEnabled == true)
+                    if (!isIncluded) {
                         val extension = file.extension.orEmpty()
                         ignoredExtensionMap[extension] = (ignoredExtensionMap[extension] ?: 0) + 1
-                        return false
-                    }
-                    val isFileIgnoredByPattern = runBlocking { ignoreFile(file.name) }
-                    if (isFileIgnoredByPattern) {
                         return false
                     }
 
