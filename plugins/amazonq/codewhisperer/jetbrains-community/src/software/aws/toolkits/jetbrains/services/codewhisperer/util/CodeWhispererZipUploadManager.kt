@@ -12,6 +12,8 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CodeAnalysisUp
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeFixUploadContext
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.InternalServerException
+import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadContext
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadIntent
 import software.amazon.awssdk.utils.IoUtils
@@ -34,11 +36,17 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.net.HttpURLConnection
+import java.net.SocketException
+import java.net.SocketTimeoutException
 import java.util.Base64
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.invalidSourceZipError as testGenerationInvalidSourceZipError
 
 @Service
 class CodeWhispererZipUploadManager(private val project: Project) {
+
+    private val maxRetryAttempts = 3
+    private val initialDelay = 200L // 200ms
+    private val maxBackoff = 1000L // 1 second
 
     fun createUploadUrlAndUpload(
         zipFile: File,
@@ -82,75 +90,135 @@ class CodeWhispererZipUploadManager(private val project: Project) {
         requestHeaders: Map<String, String>?,
         featureUseCase: CodeWhispererConstants.FeatureName,
     ) {
-        try {
-            val uploadIdJson = """{"uploadId":"$uploadId"}"""
-            HttpRequests.put(url, "application/zip").userAgent(AwsClientManager.getUserAgent()).tuner {
-                if (requestHeaders.isNullOrEmpty()) {
-                    it.setRequestProperty(CONTENT_MD5, md5)
-                    it.setRequestProperty(CONTENT_TYPE, APPLICATION_ZIP)
-                    it.setRequestProperty(SERVER_SIDE_ENCRYPTION, AWS_KMS)
-                    if (kmsArn?.isNotEmpty() == true) {
-                        it.setRequestProperty(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsArn)
+        var attempts = 0
+        var currentDelay = initialDelay
+
+        while (attempts < maxRetryAttempts) {
+            try {
+                val uploadIdJson = """{"uploadId":"$uploadId"}"""
+                HttpRequests.put(url, "application/zip").userAgent(AwsClientManager.getUserAgent()).tuner {
+                    if (requestHeaders.isNullOrEmpty()) {
+                        it.setRequestProperty(CONTENT_MD5, md5)
+                        it.setRequestProperty(CONTENT_TYPE, APPLICATION_ZIP)
+                        it.setRequestProperty(SERVER_SIDE_ENCRYPTION, AWS_KMS)
+                        if (kmsArn?.isNotEmpty() == true) {
+                            it.setRequestProperty(SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID, kmsArn)
+                        }
+                        it.setRequestProperty(SERVER_SIDE_ENCRYPTION_CONTEXT, Base64.getEncoder().encodeToString(uploadIdJson.toByteArray()))
+                    } else {
+                        requestHeaders.forEach { entry ->
+                            it.setRequestProperty(entry.key, entry.value)
+                        }
                     }
-                    it.setRequestProperty(SERVER_SIDE_ENCRYPTION_CONTEXT, Base64.getEncoder().encodeToString(uploadIdJson.toByteArray()))
-                } else {
-                    requestHeaders.forEach { entry ->
-                        it.setRequestProperty(entry.key, entry.value)
-                    }
+                }.connect {
+                    val connection = it.connection as HttpURLConnection
+                    connection.setFixedLengthStreamingMode(fileToUpload.length())
+                    IoUtils.copy(fileToUpload.inputStream(), connection.outputStream)
                 }
-            }.connect {
-                val connection = it.connection as HttpURLConnection
-                connection.setFixedLengthStreamingMode(fileToUpload.length())
-                IoUtils.copy(fileToUpload.inputStream(), connection.outputStream)
-            }
-        } catch (e: Exception) {
-            LOG.debug { "$featureUseCase: Artifact failed to upload in the S3 bucket: ${e.message}" }
-            val errorMessage = getTelemetryErrorMessage(e, featureUseCase)
-            when (featureUseCase) {
-                CodeWhispererConstants.FeatureName.CODE_REVIEW -> codeScanServerException("CreateUploadUrlException: $errorMessage")
-                CodeWhispererConstants.FeatureName.TEST_GENERATION -> throw CodeTestException(
-                    "UploadTestArtifactToS3Error: $errorMessage",
-                    "UploadTestArtifactToS3Error",
-                    message("testgen.error.generic_technical_error_message")
-                )
-                else -> throw RuntimeException(errorMessage) // Adding else for safety check
+                return // Success, exit the function
+            } catch (e: Exception) {
+                LOG.debug { "$featureUseCase: Artifact failed to upload in the S3 bucket (attempt ${attempts + 1}): ${e.message}" }
+
+                // Determine if the exception is retryable
+                val isRetryable = when (e) {
+                    is IOException, // Network issues
+                    is SocketException,
+                    is SocketTimeoutException,
+                    -> true
+                    else -> false
+                }
+                attempts++
+                if (attempts < maxRetryAttempts && isRetryable) {
+                    Thread.sleep(currentDelay)
+                    currentDelay = (currentDelay * 2).coerceAtMost(maxBackoff)
+                    continue
+                }
+
+                // If not retryable or max attempts reached, handle the error
+                val errorMessage = getTelemetryErrorMessage(e, featureUseCase)
+                when (featureUseCase) {
+                    CodeWhispererConstants.FeatureName.CODE_REVIEW ->
+                        codeScanServerException("CreateUploadUrlException: $errorMessage")
+                    CodeWhispererConstants.FeatureName.TEST_GENERATION ->
+                        throw CodeTestException(
+                            "UploadTestArtifactToS3Error: $errorMessage",
+                            "UploadTestArtifactToS3Error",
+                            message("testgen.error.generic_technical_error_message")
+                        )
+                    else -> throw RuntimeException("$errorMessage (after $attempts attempts)") // Adding else for safety check
+                }
             }
         }
     }
-
     fun createUploadUrl(
         md5Content: String,
         artifactType: String,
         uploadTaskType: CodeWhispererConstants.UploadTaskType,
         taskName: String,
         featureUseCase: CodeWhispererConstants.FeatureName,
-    ): CreateUploadUrlResponse = try {
-        CodeWhispererClientAdaptor.getInstance(project).createUploadUrl(
-            CreateUploadUrlRequest.builder()
-                .contentMd5(md5Content)
-                .artifactType(artifactType)
-                .uploadIntent(getUploadIntent(uploadTaskType))
-                .uploadContext(
-                    // For UTG we don't need uploadContext but sending else case as UploadContext
-                    if (uploadTaskType == CodeWhispererConstants.UploadTaskType.CODE_FIX) {
-                        UploadContext.fromCodeFixUploadContext(CodeFixUploadContext.builder().codeFixName(taskName).build())
-                    } else {
-                        UploadContext.fromCodeAnalysisUploadContext(CodeAnalysisUploadContext.builder().codeScanName(taskName).build())
-                    }
+    ): CreateUploadUrlResponse {
+        var attempts = 0
+        var currentDelay = initialDelay
+        var lastException: Exception? = null
+
+        while (attempts < maxRetryAttempts) {
+            try {
+                return CodeWhispererClientAdaptor.getInstance(project).createUploadUrl(
+                    CreateUploadUrlRequest.builder()
+                        .contentMd5(md5Content)
+                        .artifactType(artifactType)
+                        .uploadIntent(getUploadIntent(uploadTaskType))
+                        .uploadContext(
+                            // For UTG we don't need uploadContext but sending else case as UploadContext
+                            if (uploadTaskType == CodeWhispererConstants.UploadTaskType.CODE_FIX) {
+                                UploadContext.fromCodeFixUploadContext(CodeFixUploadContext.builder().codeFixName(taskName).build())
+                            } else {
+                                UploadContext.fromCodeAnalysisUploadContext(CodeAnalysisUploadContext.builder().codeScanName(taskName).build())
+                            }
+                        )
+                        .build()
                 )
-                .build()
-        )
-    } catch (e: Exception) {
-        LOG.debug { "$featureUseCase: Create Upload URL failed: ${e.message}" }
-        val errorMessage = getTelemetryErrorMessage(e, featureUseCase)
+            } catch (e: Exception) {
+                lastException = e
+                LOG.debug { "$featureUseCase: Create Upload URL failed (attempt ${attempts + 1}): ${e.message}" }
+
+                // Don't retry these exceptions
+                if (e !is ThrottlingException && e !is InternalServerException) {
+                    val errorMessage = getTelemetryErrorMessage(e, featureUseCase)
+                    when (featureUseCase) {
+                        CodeWhispererConstants.FeatureName.CODE_REVIEW ->
+                            codeScanServerException("CreateUploadUrlException: $errorMessage")
+                        CodeWhispererConstants.FeatureName.TEST_GENERATION ->
+                            throw CodeTestException(
+                                "CreateUploadUrlError: $errorMessage",
+                                "CreateUploadUrlError",
+                                message("testgen.error.generic_technical_error_message")
+                            )
+                        else -> throw RuntimeException(errorMessage)
+                    }
+                }
+
+                attempts++
+                if (attempts < maxRetryAttempts) {
+                    Thread.sleep(currentDelay)
+                    currentDelay = (currentDelay * 2).coerceAtMost(maxBackoff)
+                    continue
+                }
+            }
+        }
+
+        // If we've exhausted all retries, handle the last exception
+        val errorMessage = getTelemetryErrorMessage(lastException!!, featureUseCase)
         when (featureUseCase) {
-            CodeWhispererConstants.FeatureName.CODE_REVIEW -> codeScanServerException("CreateUploadUrlException: $errorMessage")
-            CodeWhispererConstants.FeatureName.TEST_GENERATION -> throw CodeTestException(
-                "CreateUploadUrlError: $errorMessage",
-                "CreateUploadUrlError",
-                message("testgen.error.generic_technical_error_message")
-            )
-            else -> throw RuntimeException(errorMessage) // Adding else for safety check
+            CodeWhispererConstants.FeatureName.CODE_REVIEW ->
+                codeScanServerException("CreateUploadUrlException after $maxRetryAttempts attempts: $errorMessage")
+            CodeWhispererConstants.FeatureName.TEST_GENERATION ->
+                throw CodeTestException(
+                    "CreateUploadUrlError after $maxRetryAttempts attempts: $errorMessage",
+                    "CreateUploadUrlError",
+                    message("testgen.error.generic_technical_error_message")
+                )
+            else -> throw RuntimeException("$errorMessage (after $maxRetryAttempts attempts)") // Adding else for safety check
         }
     }
 
