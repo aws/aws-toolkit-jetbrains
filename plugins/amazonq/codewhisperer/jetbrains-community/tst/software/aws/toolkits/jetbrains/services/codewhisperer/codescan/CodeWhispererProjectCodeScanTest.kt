@@ -34,7 +34,6 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
     private lateinit var testYaml: VirtualFile
     private lateinit var helperPy: VirtualFile
     private lateinit var testTf: VirtualFile
-    private lateinit var gitIgnore: VirtualFile
 
     private lateinit var sessionConfigSpy: CodeScanSessionConfig
     private lateinit var sessionConfigSpy2: CodeScanSessionConfig
@@ -64,9 +63,9 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
     fun `test createPayload`() {
         val payload = sessionConfigSpy.createPayload()
         assertNotNull(payload)
-        assertThat(payload.context.totalFiles).isEqualTo(11)
+        assertThat(payload.context.totalFiles).isEqualTo(10)
 
-        assertThat(payload.context.scannedFiles.size).isEqualTo(11)
+        assertThat(payload.context.scannedFiles.size).isEqualTo(10)
         assertThat(payload.context.scannedFiles).contains(testYaml, testTf, readMeMd, utilsJs, utilsCs, testJson, testCs, helperPy, helperCs, helpGo)
 
         assertThat(payload.context.srcPayloadSize).isEqualTo(totalSize)
@@ -81,12 +80,12 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
             filesInZip += 1
         }
 
-        assertThat(filesInZip).isEqualTo(11)
+        assertThat(filesInZip).isEqualTo(10)
     }
 
     @Test
     fun `getProjectPayloadMetadata()`() {
-        getProjectPayloadMetadata(sessionConfigSpy, 11, totalSize, this.totalLines, CodewhispererLanguage.Csharp)
+        getProjectPayloadMetadata(sessionConfigSpy, 10, totalSize, this.totalLines, CodewhispererLanguage.Csharp)
     }
 
     @Test
@@ -106,7 +105,7 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
 
     @Test
     fun `e2e happy path integration test`() = runTest {
-        assertE2ERunsSuccessfully(sessionConfigSpy, project, totalLines, 11, totalSize, 1)
+        assertE2ERunsSuccessfully(sessionConfigSpy, project, totalLines, 10, totalSize, 1)
     }
 
     private fun setupCsharpProject() {
@@ -372,10 +371,7 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
 
         // Adding gitignore file and gitignore file member for testing.
         // The tests include the markdown file but not these two files.
-        gitIgnore = projectRule.fixture.addFileToProject("/.gitignore", "node_modules\n.idea\n.vscode\n.DS_Store").virtualFile
-        totalSize += gitIgnore.length
-        totalLines += gitIgnore.toNioPath().toFile().readLines().size
-
+        projectRule.fixture.addFileToProject("/.gitignore", "node_modules\n.idea\n.vscode\n.DS_Store").virtualFile
         projectRule.fixture.addFileToProject("/.idea/ref", "ref: refs/heads/main")
     }
 }
