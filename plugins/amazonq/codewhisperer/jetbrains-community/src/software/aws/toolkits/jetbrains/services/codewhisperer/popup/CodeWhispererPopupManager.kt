@@ -3,14 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.popup
 
-import com.intellij.codeInsight.hint.ParameterInfoController
 import com.intellij.codeInsight.lookup.LookupManager
+import com.intellij.codeInsight.lookup.LookupManagerListener
 import com.intellij.idea.AppMode
-import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_BACKSPACE
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ENTER
-import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_MOVE_CARET_LEFT
-import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_MOVE_CARET_RIGHT
-import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_TAB
+import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ESCAPE
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.components.Service
@@ -27,6 +24,8 @@ import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
+import com.intellij.openapi.editor.event.EditorMouseEvent
+import com.intellij.openapi.editor.event.EditorMouseMotionListener
 import com.intellij.openapi.editor.event.SelectionEvent
 import com.intellij.openapi.editor.event.SelectionListener
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -34,6 +33,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.Key
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.ui.ComponentUtil
 import com.intellij.ui.awt.RelativePoint
@@ -56,17 +56,16 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.PreviewConte
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererEditorActionHandler
-import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupBackspaceHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupEnterHandler
-import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupLeftArrowHandler
-import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupRightArrowHandler
-import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupTabHandler
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupEscHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupTypedHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererAcceptButtonActionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererActionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererNextButtonActionListener
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererPopupIntelliSenseAcceptListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererPrevButtonActionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererScrollListener
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.addIntelliSenseAcceptListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
@@ -88,7 +87,6 @@ class CodeWhispererPopupManager {
     val popupComponents = CodeWhispererPopupComponents()
 
     var shouldListenerCancelPopup: Boolean = true
-        private set
     var sessionContext = SessionContext()
         private set
 
@@ -122,8 +120,6 @@ class CodeWhispererPopupManager {
     fun changeStates(
         states: InvocationContext,
         indexChange: Int,
-        typeaheadChange: String,
-        typeaheadAdded: Boolean,
         recommendationAdded: Boolean = false,
     ) {
         val (_, _, recommendationContext, popup) = states
@@ -136,21 +132,27 @@ class CodeWhispererPopupManager {
                 .recommendationAdded(states, sessionContext)
             return
         }
-        val typeaheadOriginal =
-            if (typeaheadAdded) {
-                sessionContext.typeaheadOriginal + typeaheadChange
-            } else {
-                if (typeaheadChange.length > sessionContext.typeaheadOriginal.length) {
-                    cancelPopup(popup)
-                    return
-                }
-                sessionContext.typeaheadOriginal.substring(
-                    0,
-                    sessionContext.typeaheadOriginal.length - typeaheadChange.length
-                )
+        val userInputOriginal = recommendationContext.userInputOriginal
+        val userInput = recommendationContext.userInputSinceInvocation
+        val typeaheadOriginal = run {
+            val startOffset = states.requestContext.caretPosition.offset
+            val currOffset = states.requestContext.editor.caretModel.offset
+            if (startOffset > currOffset) {
+                cancelPopup(popup)
+                return
             }
+
+            // userInput + typeahead
+            val prefix = states.requestContext.editor.document.charsSequence
+                .substring(startOffset, currOffset)
+            if (prefix.length < userInputOriginal.length) {
+                cancelPopup(popup)
+                return
+            } else {
+                prefix.substring(userInputOriginal.length)
+            }
+        }
         val isReverse = indexChange < 0
-        val userInput = states.recommendationContext.userInputSinceInvocation
         val validCount = getValidCount(details, userInput, typeaheadOriginal)
         val validSelectedIndex = getValidSelectedIndex(details, userInput, sessionContext.selectedIndex, typeaheadOriginal)
         if ((validSelectedIndex == validCount - 1 && indexChange == 1) ||
@@ -171,14 +173,14 @@ class CodeWhispererPopupManager {
             return
         }
         val typeahead = resolveTypeahead(states, selectedIndex, typeaheadOriginal)
-        val isFirstTimeShowingPopup = indexChange == 0 && typeaheadChange.isEmpty()
         sessionContext = SessionContext(
             typeahead,
             typeaheadOriginal,
             selectedIndex,
             sessionContext.seen,
-            isFirstTimeShowingPopup,
-            sessionContext.toBeRemovedHighlighter
+            sessionContext.toBeRemovedHighlighter,
+            isPopupShowing = sessionContext.isPopupShowing,
+            perceivedLatency = sessionContext.perceivedLatency
         )
 
         ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_POPUP_STATE_CHANGED).stateChanged(
@@ -218,13 +220,10 @@ class CodeWhispererPopupManager {
     fun render(
         states: InvocationContext,
         sessionContext: SessionContext,
-        overlappingLinesCount: Int,
         isRecommendationAdded: Boolean,
-        isScrolling: Boolean,
     ) {
         updatePopupPanel(states, sessionContext)
 
-        val caretPoint = states.requestContext.editor.offsetToXY(states.requestContext.caretPosition.offset)
         sessionContext.seen.add(sessionContext.selectedIndex)
 
         // There are four cases that render() is called:
@@ -236,22 +235,15 @@ class CodeWhispererPopupManager {
         // emit any events.
         // 4. User navigating through the completions or typing as the completion shows. We should not update the latency
         // end time and should not emit any events in this case.
-        if (!CodeWhispererInvocationStatus.getInstance().isPopupActive()) {
+        if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()) {
             states.requestContext.latencyContext.codewhispererPostprocessingEnd = System.nanoTime()
             states.requestContext.latencyContext.codewhispererEndToEndEnd = System.nanoTime()
             states.requestContext.latencyContext.perceivedLatency =
                 states.requestContext.latencyContext.getPerceivedLatency(states.requestContext.triggerTypeInfo.triggerType)
         }
         if (!isRecommendationAdded) {
-            showPopup(states, sessionContext, states.popup, caretPoint, overlappingLinesCount)
+            showPopup(states, sessionContext, states.popup, visible = sessionContext.isPopupShowing)
         }
-        if (isScrolling ||
-            CodeWhispererInvocationStatus.getInstance().hasExistingServiceInvocation() ||
-            !sessionContext.isFirstTimeShowingPopup
-        ) {
-            return
-        }
-        CodeWhispererTelemetryService.getInstance().sendClientComponentLatencyEvent(states)
     }
 
     fun dontClosePopupAndRun(runnable: () -> Unit) {
@@ -288,27 +280,29 @@ class CodeWhispererPopupManager {
         states: InvocationContext,
         sessionContext: SessionContext,
         popup: JBPopup,
-        p: Point,
-        overlappingLinesCount: Int,
+        visible: Boolean = false,
     ) {
+        val caretPoint = states.requestContext.editor.offsetToXY(states.requestContext.caretPosition.offset)
         val editor = states.requestContext.editor
         val detailContexts = states.recommendationContext.details
         val userInputOriginal = states.recommendationContext.userInputOriginal
-        val userInput = states.recommendationContext.userInputSinceInvocation
         val selectedIndex = sessionContext.selectedIndex
         val typeaheadOriginal = sessionContext.typeaheadOriginal
         val typeahead = sessionContext.typeahead
         val userInputLines = userInputOriginal.split("\n").size - 1
-        val lineCount = getReformattedRecommendation(detailContexts[selectedIndex], userInput).split("\n").size
         val additionalLines = typeaheadOriginal.split("\n").size - typeahead.split("\n").size
         val popupSize = (popup as AbstractPopup).preferredContentSize
-        val yBelowLastLine = p.y + (lineCount + additionalLines + userInputLines - overlappingLinesCount) * editor.lineHeight
-        val yAboveFirstLine = p.y - popupSize.height + (additionalLines + userInputLines) * editor.lineHeight
+        val yAboveFirstLine = caretPoint.y - popupSize.height + (additionalLines + userInputLines) * editor.lineHeight
         val editorRect = editor.scrollingModel.visibleArea
-        var popupRect = Rectangle(p.x, yBelowLastLine, popupSize.width, popupSize.height)
-        var shouldHidePopup = false
+        val popupRect = Rectangle(caretPoint.x, yAboveFirstLine, popupSize.width, popupSize.height)
+        var noEnoughSpaceForPopup = false
 
-        CodeWhispererInvocationStatus.getInstance().setPopupActive(true)
+        CodeWhispererInvocationStatus.getInstance().setDisplaySessionActive(true)
+
+        if (!editorRect.contains(popupRect)) {
+            // popup location above first line don't work, so don't show the popup
+            noEnoughSpaceForPopup = true
+        }
 
         // Check if the current editor still has focus. If not, don't show the popup.
         val isSameEditorAsTrigger = if (!AppMode.isRemoteDevHost()) {
@@ -322,38 +316,26 @@ class CodeWhispererPopupManager {
             return
         }
 
-        val popupLocation =
-            if (!editorRect.contains(popupRect)) {
-                popupRect = Rectangle(p.x, yAboveFirstLine, popupSize.width, popupSize.height)
-                if (!editorRect.contains(popupRect)) {
-                    // both popup location (below last line and above first line) don't work, so don't show the popup
-                    shouldHidePopup = true
-                }
-                LOG.debug {
-                    "Show popup above the first line of recommendation. " +
-                        "Editor position: $editorRect, popup position: $popupRect"
-                }
-                Point(p.x, yAboveFirstLine)
-            } else {
-                LOG.debug {
-                    "Show popup below the last line of recommendation. " +
-                        "Editor position: $editorRect, popup position: $popupRect"
-                }
-                Point(p.x, yBelowLastLine)
-            }
+        // popup to always display above the current editing line
+        val popupLocation = Point(caretPoint.x, yAboveFirstLine)
 
         val relativePopupLocationToEditor = RelativePoint(editor.contentComponent, popupLocation)
 
         // TODO: visibleAreaChanged listener is not getting triggered in remote environment when scrolling
         if (popup.isVisible) {
             // Changing the position of BackendBeAbstractPopup does not work
-            if (!shouldHidePopup && !AppMode.isRemoteDevHost()) {
+            if (!noEnoughSpaceForPopup && !AppMode.isRemoteDevHost()) {
                 popup.setLocation(relativePopupLocationToEditor.screenPoint)
                 popup.size = popup.preferredContentSize
             }
         } else {
             if (!AppMode.isRemoteDevHost()) {
-                popup.show(relativePopupLocationToEditor)
+                if (visible && !noEnoughSpaceForPopup) {
+                    // TODO: will move to a keybinding listener once I found one
+                    popupComponents.prevButton.text = popupComponents.prevButtonText()
+                    popupComponents.nextButton.text = popupComponents.nextButtonText()
+                    popup.show(relativePopupLocationToEditor)
+                }
             } else {
                 // TODO: For now, the popup will always display below the suggestions, without checking
                 // if the location the popup is about to show at stays in the editor window or not, due to
@@ -369,23 +351,40 @@ class CodeWhispererPopupManager {
                 editor.putUserData(PopupFactoryImpl.ANCHOR_POPUP_POSITION, popupPositionForRemote)
                 popup.showInBestPositionFor(editor)
             }
-            val perceivedLatency = CodeWhispererInvocationStatus.getInstance().getTimeSinceDocumentChanged()
-            CodeWhispererTelemetryService.getInstance().sendPerceivedLatencyEvent(
-                detailContexts[selectedIndex].requestId,
-                states.requestContext,
-                states.responseContext,
-                perceivedLatency
-            )
-        }
-
-        // popup.popupWindow is null in remote host
-        if (!AppMode.isRemoteDevHost()) {
-            if (shouldHidePopup) {
-                WindowManager.getInstance().setAlphaModeRatio(popup.popupWindow, 1f)
-            } else {
-                WindowManager.getInstance().setAlphaModeRatio(popup.popupWindow, 0.1f)
+            if (sessionContext.perceivedLatency < 0) {
+                val perceivedLatency = CodeWhispererInvocationStatus.getInstance().getTimeSinceDocumentChanged()
+                CodeWhispererTelemetryService.getInstance().sendPerceivedLatencyEvent(
+                    detailContexts[selectedIndex].requestId,
+                    states.requestContext,
+                    states.responseContext,
+                    perceivedLatency
+                )
+                CodeWhispererTelemetryService.getInstance().sendClientComponentLatencyEvent(states)
+                sessionContext.perceivedLatency = perceivedLatency
             }
         }
+
+        bringSuggestionInlayToFront(editor, popup, sessionContext, !visible)
+    }
+
+    // opposite == false: show Q, hide IntelliSense
+    // opposite == true: show IntelliSense, hide Q
+    fun bringSuggestionInlayToFront(
+        editor: Editor,
+        popup: JBPopup?,
+        sessionContext: SessionContext,
+        opposite: Boolean = false,
+    ) {
+        val qInlinePopupAlpha = if (opposite) 1f else 0.1f
+        val intelliSensePopupAlpha = if (opposite) 0f else 0.8f
+
+        (popup as AbstractPopup?)?.popupWindow?.let {
+            WindowManager.getInstance().setAlphaModeRatio(it, qInlinePopupAlpha)
+        }
+        ComponentUtil.getWindow(LookupManager.getActiveLookup(editor)?.component)?.let {
+            WindowManager.getInstance().setAlphaModeRatio(it, intelliSensePopupAlpha)
+        }
+        sessionContext.isPopupShowing = !opposite
     }
 
     fun initPopup(): JBPopup = JBPopupFactory.getInstance()
@@ -393,7 +392,7 @@ class CodeWhispererPopupManager {
         .setAlpha(0.1F)
         .setCancelOnClickOutside(true)
         .setCancelOnOtherWindowOpen(true)
-        .setCancelKeyEnabled(true)
+        .setCancelKeyEnabled(false)
         .setCancelOnWindowDeactivation(true)
         .createPopup().also {
             myPopup = it
@@ -423,23 +422,19 @@ class CodeWhispererPopupManager {
             CODEWHISPERER_USER_ACTION_PERFORMED,
             object : CodeWhispererUserActionListener {
                 override fun navigateNext(states: InvocationContext) {
-                    changeStates(states, 1, "", true)
+                    changeStates(states, 1)
                 }
 
                 override fun navigatePrevious(states: InvocationContext) {
-                    changeStates(states, -1, "", true)
+                    changeStates(states, -1)
                 }
 
-                override fun backspace(states: InvocationContext, diff: String) {
-                    changeStates(states, 0, diff, false)
-                }
-
-                override fun enter(states: InvocationContext, diff: String) {
-                    changeStates(states, 0, diff, true)
+                override fun enter(states: InvocationContext) {
+                    changeStates(states, 0)
                 }
 
                 override fun type(states: InvocationContext, diff: String) {
-                    // remove the character at primaryCaret if it's the same as the typed character
+                    changeStates(states, 0)
                     val caretOffset = states.requestContext.editor.caretModel.primaryCaret.offset
                     val document = states.requestContext.editor.document
                     val text = document.charsSequence
@@ -448,7 +443,6 @@ class CodeWhispererPopupManager {
                             document.deleteString(caretOffset, caretOffset + 1)
                         }
                     }
-                    changeStates(states, 0, diff, true)
                 }
 
                 override fun beforeAccept(states: InvocationContext, sessionContext: SessionContext) {
@@ -462,6 +456,13 @@ class CodeWhispererPopupManager {
                 }
             }
         )
+        states.requestContext.project.messageBus.connect(states).subscribe(
+            LookupManagerListener.TOPIC,
+            CodeWhispererPopupIntelliSenseAcceptListener(states)
+        )
+        LookupManager.getActiveLookup(states.requestContext.editor)?.let {
+            addIntelliSenseAcceptListener(it, states)
+        }
     }
 
     private fun addButtonActionListeners(states: InvocationContext) {
@@ -476,18 +477,12 @@ class CodeWhispererPopupManager {
     }
 
     private fun setPopupActionHandlers(states: InvocationContext) {
-        val actionManager = EditorActionManager.getInstance()
+        states.requestContext.project.putUserData(KEY_INVOCATION_CONTEXT, states)
         setPopupTypedHandler(CodeWhispererPopupTypedHandler(TypedAction.getInstance().rawHandler, states))
-        setPopupActionHandler(ACTION_EDITOR_TAB, CodeWhispererPopupTabHandler(states))
-        setPopupActionHandler(ACTION_EDITOR_MOVE_CARET_LEFT, CodeWhispererPopupLeftArrowHandler(states))
-        setPopupActionHandler(ACTION_EDITOR_MOVE_CARET_RIGHT, CodeWhispererPopupRightArrowHandler(states))
+        setPopupActionHandler(ACTION_EDITOR_ESCAPE, CodeWhispererPopupEscHandler(states))
         setPopupActionHandler(
             ACTION_EDITOR_ENTER,
-            CodeWhispererPopupEnterHandler(actionManager.getActionHandler(ACTION_EDITOR_ENTER), states)
-        )
-        setPopupActionHandler(
-            ACTION_EDITOR_BACKSPACE,
-            CodeWhispererPopupBackspaceHandler(actionManager.getActionHandler(ACTION_EDITOR_BACKSPACE), states)
+            CodeWhispererPopupEnterHandler(EditorActionManager.getInstance().getActionHandler(ACTION_EDITOR_ENTER), states)
         )
     }
 
@@ -516,10 +511,14 @@ class CodeWhispererPopupManager {
 
         val codewhispererDocumentListener: DocumentListener = object : DocumentListener {
             override fun documentChanged(event: DocumentEvent) {
-                if (shouldListenerCancelPopup) {
+                super.documentChanged(event)
+                val delete = event.newLength < event.oldLength
+                if (!delete) return
+                if (editor.caretModel.offset == event.offset) {
+                    changeStates(states, 0)
+                } else if (shouldListenerCancelPopup) {
                     cancelPopup(states.popup)
                 }
-                super.documentChanged(event)
             }
         }
         editor.document.addDocumentListener(codewhispererDocumentListener, states)
@@ -551,6 +550,18 @@ class CodeWhispererPopupManager {
             window?.addComponentListener(windowListener)
             Disposer.register(states) { window?.removeComponentListener(windowListener) }
         }
+
+        val suggestionHoverEnterListener: EditorMouseMotionListener = object : EditorMouseMotionListener {
+            override fun mouseMoved(e: EditorMouseEvent) {
+                if (e.inlay != null) {
+                    showPopup(states, sessionContext, states.popup, visible = true)
+                } else {
+                    bringSuggestionInlayToFront(editor, states.popup, sessionContext, opposite = true)
+                }
+                super.mouseMoved(e)
+            }
+        }
+        editor.addEditorMouseMotionListener(suggestionHoverEnterListener, states)
     }
 
     private fun updateSelectedRecommendationLabelText(validSelectedIndex: Int, validCount: Int) {
@@ -627,10 +638,6 @@ class CodeWhispererPopupManager {
         }
     }
 
-    fun hasConflictingPopups(editor: Editor): Boolean =
-        ParameterInfoController.existsWithVisibleHintForEditor(editor, true) ||
-            LookupManager.getActiveLookup(editor) != null
-
     private fun findNewSelectedIndex(
         isReverse: Boolean,
         detailContexts: List<DetailContext>,
@@ -690,6 +697,7 @@ class CodeWhispererPopupManager {
     companion object {
         private val LOG = getLogger<CodeWhispererPopupManager>()
         fun getInstance(): CodeWhispererPopupManager = service()
+        val KEY_INVOCATION_CONTEXT = Key.create<InvocationContext>("codewhisperer.states")
         val CODEWHISPERER_POPUP_STATE_CHANGED: Topic<CodeWhispererPopupStateChangeListener> = Topic.create(
             "CodeWhisperer popup state changed",
             CodeWhispererPopupStateChangeListener::class.java
@@ -712,8 +720,7 @@ interface CodeWhispererPopupStateChangeListener {
 }
 
 interface CodeWhispererUserActionListener {
-    fun backspace(states: InvocationContext, diff: String) {}
-    fun enter(states: InvocationContext, diff: String) {}
+    fun enter(states: InvocationContext) {}
     fun type(states: InvocationContext, diff: String) {}
     fun navigatePrevious(states: InvocationContext) {}
     fun navigateNext(states: InvocationContext) {}

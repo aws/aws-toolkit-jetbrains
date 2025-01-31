@@ -32,7 +32,7 @@ class CodeWhispererPopupListener(private val states: InvocationContext) : JBPopu
             CodeWhispererService.getInstance().getNextInvocationContext()
         )
 
-        CodeWhispererInvocationStatus.getInstance().setPopupActive(false)
+        CodeWhispererInvocationStatus.getInstance().setDisplaySessionActive(false)
     }
 }
 

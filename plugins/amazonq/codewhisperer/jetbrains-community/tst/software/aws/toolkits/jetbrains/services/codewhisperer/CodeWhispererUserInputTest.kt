@@ -3,17 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
-import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.project.Project
-import com.intellij.psi.PsiFile
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.doAnswer
-import org.mockito.kotlin.stub
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 
 class CodeWhispererUserInputTest : CodeWhispererTestBase() {
 
@@ -92,35 +84,6 @@ class CodeWhispererUserInputTest : CodeWhispererTestBase() {
                 val expectedDiscarded = !pythonResponse.completions()[index].content().startsWith(userInput)
                 assertThat(actualDiscarded).isEqualTo(expectedDiscarded)
             }
-        }
-    }
-
-    private fun addUserInputAfterInvocation(userInput: String) {
-        val triggerTypeCaptor = argumentCaptor<TriggerTypeInfo>()
-        val editorCaptor = argumentCaptor<Editor>()
-        val projectCaptor = argumentCaptor<Project>()
-        val psiFileCaptor = argumentCaptor<PsiFile>()
-        val latencyContextCaptor = argumentCaptor<LatencyContext>()
-        codewhispererService.stub {
-            onGeneric {
-                getRequestContext(
-                    triggerTypeCaptor.capture(),
-                    editorCaptor.capture(),
-                    projectCaptor.capture(),
-                    psiFileCaptor.capture(),
-                    latencyContextCaptor.capture()
-                )
-            }.doAnswer {
-                val requestContext = codewhispererService.getRequestContext(
-                    triggerTypeCaptor.firstValue,
-                    editorCaptor.firstValue,
-                    projectCaptor.firstValue,
-                    psiFileCaptor.firstValue,
-                    latencyContextCaptor.firstValue
-                )
-                projectRule.fixture.type(userInput)
-                requestContext
-            }.thenCallRealMethod()
         }
     }
 }
