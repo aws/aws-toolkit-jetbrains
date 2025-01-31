@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Amazon Q /test: Fixed an issue which incorrectly caused payload size exceeded exception when collecting project payload files"
-}
