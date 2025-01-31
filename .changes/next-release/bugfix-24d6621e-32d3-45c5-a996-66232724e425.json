@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Amazon Q: Prevent IndexOutOfBoundsException by adding boundary checks for invalid range markers"
+  "description" : "Amazon Q: Prevent IndexOutOfBoundsException by adding boundary checks for invalid range markers (#5187)"
 }
