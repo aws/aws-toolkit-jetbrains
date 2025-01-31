@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ChatItemAction, ChatItemType, FeedbackPayload } from '@aws/mynah-ui-chat'
+import {ChatItemAction, ChatItemType, FeedbackPayload, QuickActionCommand} from '@aws/mynah-ui-chat'
 import { ExtensionMessage } from '../commands'
 import { CodeReference } from './amazonqCommonsConnector'
 import { TabOpenType, TabsStorage } from '../storages/tabsStorage'
@@ -23,6 +23,9 @@ export interface ConnectorProps {
     onError: (tabID: string, message: string, title: string) => void
     onWarning: (tabID: string, message: string, title: string) => void
     onOpenSettingsMessage: (tabID: string) => void
+    onFeatureConfigsAvailable: (
+        highlightCommand?: QuickActionCommand
+    ) => void
     tabsStorage: TabsStorage
 }
 
@@ -33,6 +36,7 @@ export class Connector {
     private readonly onChatAnswerReceived
     private readonly onCWCContextCommandMessage
     private readonly onOpenSettingsMessage
+    private readonly onFeatureConfigsAvailable
     private readonly followUpGenerator: FollowUpGenerator
 
     constructor(props: ConnectorProps) {
@@ -42,6 +46,7 @@ export class Connector {
         this.onError = props.onError
         this.onCWCContextCommandMessage = props.onCWCContextCommandMessage
         this.onOpenSettingsMessage = props.onOpenSettingsMessage
+        this.onFeatureConfigsAvailable = props.onFeatureConfigsAvailable
         this.followUpGenerator = new FollowUpGenerator()
     }
 
@@ -371,6 +376,13 @@ export class Connector {
 
         if (messageData.type === 'openSettingsMessage') {
             await this.processOpenSettingsMessage(messageData)
+            return
+        }
+
+        if (messageData.type === 'featureConfigsAvailableMessage') {
+            this.onFeatureConfigsAvailable(
+                messageData.highlightCommand,
+            )
             return
         }
     }
