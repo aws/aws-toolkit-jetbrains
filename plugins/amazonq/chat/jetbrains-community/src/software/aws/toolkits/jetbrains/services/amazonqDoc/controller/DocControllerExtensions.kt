@@ -6,13 +6,11 @@ package software.aws.toolkits.jetbrains.services.amazonqDoc.controller
 import com.intellij.notification.NotificationAction
 import software.aws.toolkits.jetbrains.services.amazonqDoc.inProgress
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.DocMessageType
-import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.FollowUp
-import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.FollowUpStatusType
-import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.FollowUpTypes
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendAnswer
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendAsyncEventProgress
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendChatInputEnabledMessage
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendCodeResult
+import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendErrorToUser
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendSystemPrompt
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePlaceholder
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePromptProgress
@@ -73,26 +71,12 @@ suspend fun DocController.onCodeGeneration(session: DocSession, message: String,
 
         // Atm this is the only possible path as codegen is mocked to return empty.
         if (filePaths.size or deletedFiles.size == 0) {
-            messenger.sendAnswer(
-                tabId = tabId,
-                messageType = DocMessageType.Answer,
-                message = message("amazonqFeatureDev.code_generation.no_file_changes")
+            messenger.sendErrorToUser(
+                tabId,
+                message("amazonqDoc.error.generating"),
+                conversationId = session.conversationId
             )
-            messenger.sendSystemPrompt(
-                tabId = tabId,
-                followUp = if (retriesRemaining(session) > 0) {
-                    listOf(
-                        FollowUp(
-                            pillText = message("amazonqFeatureDev.follow_up.retry"),
-                            type = FollowUpTypes.RETRY,
-                            status = FollowUpStatusType.Warning
-                        )
-                    )
-                } else {
-                    emptyList()
-                }
-            )
-            messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = false) // Lock chat input until retry is clicked.
+
             return
         }
 
