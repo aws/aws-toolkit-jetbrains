@@ -114,6 +114,11 @@
 
 
         <group id="aws.toolkit.codewhisperer.toolbar.security">
+            <group id="codewhisperer.toolbar.security.group" icon="AllIcons.Actions.GroupBy" text="Group" popup="true">
+                <separator text="Group By"/>
+                <group id="CodeWhispererCodeScanGroupBy"
+                       class="software.aws.toolkits.jetbrains.services.codewhisperer.codescan.actions.CodeWhispererCodeScanGroupingStrategyActionGroup" text="Group"/>
+            </group>
             <group id="codewhisperer.toolbar.security.filter" icon="AllIcons.General.Filter" text="Filter" popup="true">
                 <separator text="Severity"/>
                 <group id="CodeWhispererCodeScanFilterGroup"
