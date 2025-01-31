@@ -228,8 +228,16 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     codewhispererEndToEndStart = System.nanoTime()
                 }
 
-                val nextCaretPosition = calculateNextCaretPosition(requestContext, firstValidRecommendation)
-                val nextFileContextInfo = createNextFileContextInfo(requestContext, firstValidRecommendation)
+                val nextCaretPosition = CaretPosition(
+                    line = requestContext.caretPosition.line + firstValidRecommendation.recommendation.content().count { it == '\n' },
+                    offset = requestContext.caretPosition.offset + firstValidRecommendation.recommendation.content().length
+                )
+
+                val nextFileContextInfo = requestContext.fileContextInfo.copy(
+                    caretContext = requestContext.fileContextInfo.caretContext.copy(
+                        leftFileContext = requestContext.fileContextInfo.caretContext.leftFileContext + firstValidRecommendation.recommendation.content()
+                    )
+                )
 
                 val nextRequestContext = requestContext.copy(
                     caretPosition = nextCaretPosition,
@@ -751,37 +759,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         }
 
         LOG.debug { "Promoted nextInvocationContext to current session and displayed next recommendation." }
-    }
-
-    private fun calculateNextCaretPosition(
-        currentRequestContext: RequestContext,
-        firstValidRecommendation: DetailContext,
-    ): CaretPosition {
-        val indent = currentRequestContext.fileContextInfo.caretContext.leftContextOnCurrentLine
-            .takeWhile { it.isWhitespace() }
-        val recommendedText = buildString {
-            append(indent)
-            append(firstValidRecommendation.recommendation.content())
-            if (!endsWith("\n")) {
-                append("\n")
-            }
-        }
-        val lineCount = recommendedText.count { it == '\n' }
-
-        return CaretPosition(
-            line = currentRequestContext.caretPosition.line + lineCount,
-            offset = currentRequestContext.caretPosition.offset + recommendedText.length
-        )
-    }
-
-    private fun createNextFileContextInfo(
-        requestContext: RequestContext,
-        firstValidRecommendation: DetailContext,
-    ): FileContextInfo {
-        val updatedCaretContext = requestContext.fileContextInfo.caretContext.copy(
-            leftFileContext = requestContext.fileContextInfo.caretContext.leftFileContext + firstValidRecommendation.recommendation.content()
-        )
-        return requestContext.fileContextInfo.copy(caretContext = updatedCaretContext)
     }
 
     private fun sendDiscardedUserDecisionEventForAll(

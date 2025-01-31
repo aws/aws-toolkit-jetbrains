@@ -241,13 +241,12 @@ open class CodeWhispererTestBase {
     }
 
     fun addUserInputAfterInvocation(userInput: String) {
-        val codewhispererServiceSpy = spy(codewhispererService)
         val triggerTypeCaptor = argumentCaptor<TriggerTypeInfo>()
         val editorCaptor = argumentCaptor<Editor>()
         val projectCaptor = argumentCaptor<Project>()
         val psiFileCaptor = argumentCaptor<PsiFile>()
         val latencyContextCaptor = argumentCaptor<LatencyContext>()
-        codewhispererServiceSpy.stub {
+        codewhispererService.stub {
             onGeneric {
                 getRequestContext(
                     triggerTypeCaptor.capture(),
@@ -257,7 +256,7 @@ open class CodeWhispererTestBase {
                     latencyContextCaptor.capture()
                 )
             }.doAnswer {
-                val requestContext = codewhispererServiceSpy.getRequestContext(
+                val requestContext = codewhispererService.getRequestContext(
                     triggerTypeCaptor.firstValue,
                     editorCaptor.firstValue,
                     projectCaptor.firstValue,
@@ -268,6 +267,5 @@ open class CodeWhispererTestBase {
                 requestContext
             }.thenCallRealMethod()
         }
-        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
     }
 }
