@@ -61,6 +61,7 @@ type MessageCommand =
     | 'generate-test'
     | 'start-test-gen'
     | 'open-user-guide'
+    | 'open-form-link'
     | 'send-telemetry'
     | 'doc_stop_generate'
     | 'updatePromptProgress'
