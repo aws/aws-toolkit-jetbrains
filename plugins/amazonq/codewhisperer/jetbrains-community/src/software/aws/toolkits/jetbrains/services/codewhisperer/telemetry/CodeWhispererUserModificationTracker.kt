@@ -19,7 +19,6 @@ import org.assertj.core.util.VisibleForTesting
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
@@ -155,7 +154,7 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
     private fun emitTelemetryOnSuggestion(acceptedSuggestion: AcceptedSuggestionEntry) {
         val file = acceptedSuggestion.vFile
 
-        if (file == null || (!file.isValid) || !acceptedSuggestion.range.isValid) {
+        if (file == null || (!file.isValid)) {
             sendModificationTelemetry(acceptedSuggestion, null)
             sendUserModificationTelemetryToServiceAPI(acceptedSuggestion)
         } else {
@@ -163,20 +162,6 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
             val document = runReadAction {
                 FileDocumentManager.getInstance().getDocument(file)
             }
-            val start = acceptedSuggestion.range.startOffset
-            val end = acceptedSuggestion.range.endOffset
-            if (document != null) {
-                if (start < 0 || end < start || end > document.textLength) {
-                    LOG.warn {
-                        "Invalid range for suggestion ${acceptedSuggestion.requestId}: " +
-                            "start=$start, end=$end, docLength=${document.textLength}"
-                    }
-                    sendModificationTelemetry(acceptedSuggestion, null)
-                    sendUserModificationTelemetryToServiceAPI(acceptedSuggestion)
-                    return
-                }
-            }
-
             val currentString = document?.getText(
                 TextRange(acceptedSuggestion.range.startOffset, acceptedSuggestion.range.endOffset)
             )
