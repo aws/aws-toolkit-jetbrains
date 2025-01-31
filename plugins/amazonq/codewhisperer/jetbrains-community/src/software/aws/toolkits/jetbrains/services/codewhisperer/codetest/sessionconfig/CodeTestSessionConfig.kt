@@ -18,7 +18,6 @@ import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
-import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.Payload
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadMetadata
@@ -33,6 +32,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmi
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_PAYLOAD_LIMIT_IN_BYTES
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.GitIgnoreFilteringUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.resources.message
 import java.io.File
@@ -52,8 +52,6 @@ class CodeTestSessionConfig(
     val projectRoot = project.basePath?.let { Path.of(it) }?.toFile()?.toVirtualFile() ?: run {
         project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
     }
-
-    private val featureDevSessionContext = FeatureDevSessionContext(project)
 
     val fileIndex = ProjectRootManager.getInstance(project).fileIndex
 
@@ -186,15 +184,16 @@ class CodeTestSessionConfig(
 
         moduleLoop@ for (module in project.modules) {
             val changeListManager = ChangeListManager.getInstance(module.project)
-            if (module.guessModuleDir() != null) {
-                stack.push(module.guessModuleDir())
+            module.guessModuleDir()?.let { moduleDir ->
+                val gitIgnoreFilteringUtil = GitIgnoreFilteringUtil(moduleDir)
+                stack.push(moduleDir)
                 while (stack.isNotEmpty()) {
                     val current = stack.pop()
 
                     if (!current.isDirectory) {
                         if (current.isFile && current.path != selectedFile?.path &&
                             !changeListManager.isIgnoredFile(current) &&
-                            runBlocking { !featureDevSessionContext.ignoreFile(current) } &&
+                            runBlocking { !gitIgnoreFilteringUtil.ignoreFile(current) } &&
                             runReadAction { !fileIndex.isInLibrarySource(current) }
                         ) {
                             if (willExceedPayloadLimit(currentTotalFileSize, current.length)) {
@@ -217,7 +216,7 @@ class CodeTestSessionConfig(
                     } else {
                         // Directory case: only traverse if not ignored
                         if (!changeListManager.isIgnoredFile(current) &&
-                            runBlocking { !featureDevSessionContext.ignoreFile(current) } &&
+                            runBlocking { !gitIgnoreFilteringUtil.ignoreFile(current) } &&
                             !traversedDirectories.contains(current) && current.isValid &&
                             runReadAction { !fileIndex.isInLibrarySource(current) }
                         ) {
@@ -242,13 +241,6 @@ class CodeTestSessionConfig(
         return PayloadMetadata(files, currentTotalFileSize, currentTotalLines, maxCountLanguage.toTelemetryType())
     }
 
-    fun getPath(root: String, relativePath: String = ""): Path? = try {
-        Path.of(root, relativePath).normalize()
-    } catch (e: Exception) {
-        LOG.debug { "Cannot find file at path $relativePath relative to the root $root" }
-        null
-    }
-
     fun getRelativePath(): Path? = try {
         selectedFile?.path?.let { Path.of(projectRoot.path).relativize(Path.of(it)).normalize() }
     } catch (e: Exception) {
@@ -256,7 +248,7 @@ class CodeTestSessionConfig(
         null
     }
 
-    fun File.toVirtualFile() = LocalFileSystem.getInstance().findFileByIoFile(this)
+    private fun File.toVirtualFile() = LocalFileSystem.getInstance().findFileByIoFile(this)
 
     companion object {
         private val LOG = getLogger<CodeTestSessionConfig>()

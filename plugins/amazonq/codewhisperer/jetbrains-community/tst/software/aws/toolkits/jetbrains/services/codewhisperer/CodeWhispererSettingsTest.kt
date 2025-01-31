@@ -12,7 +12,9 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.impl.status.widget.StatusBarWidgetsManager
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
+import com.intellij.util.xmlb.XmlSerializer
 import org.assertj.core.api.Assertions.assertThat
+import org.jdom.output.XMLOutputter
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
@@ -30,6 +32,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhisper
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceToolWindowFactory
 import software.aws.toolkits.jetbrains.settings.CodeWhispererConfiguration
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
+import software.aws.toolkits.jetbrains.utils.xmlElement
 import kotlin.test.fail
 
 class CodeWhispererSettingsTest : CodeWhispererTestBase() {
@@ -144,6 +147,70 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
             assertThat(statusBarWidgetFactory.isAvailable(projectRule.project)).isTrue
             assertThat(settingsManager.isIncludeCodeWithReference()).isEqualTo(true)
         }
+    }
+
+    @Test
+    fun `serialize settings to ensure backwards compatibility`() {
+        val element = xmlElement(
+            """
+            <component name="CodeWhispererSettings">
+  </component>
+            """.trimIndent()
+        )
+
+        val settings = CodeWhispererSettings.getInstance()
+        settings.toggleAutoBuildFeature("project1", true)
+
+        XmlSerializer.serializeInto(settings.state, element)
+
+        val actual = XMLOutputter().outputString(element)
+        val expected = "<component name=\"CodeWhispererSettings\">\n" +
+            "<option name=\"autoBuildSetting\">" +
+            "<map><entry key=\"project1\" value=\"true\" />" +
+            "</map>" +
+            "</option>" +
+            "<option name=\"value\">" +
+            "<map><entry key=\"IsIncludeCodeWithReference\" value=\"true\" />" +
+            "</map>" +
+            "</option>" +
+            "</component>"
+
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Test
+    fun `deserialize empty settings to ensure backwards compatibility`() {
+        val element = xmlElement(
+            """
+                <component name="CodeWhispererSettings">
+                </component>
+                """
+        )
+        val actual = XmlSerializer.deserialize(element, CodeWhispererConfiguration::class.java)
+        assertThat(actual.autoBuildSetting).hasSize(0)
+    }
+
+    @Test
+    fun `deserialize existing settings to ensure backwards compatibility`() {
+        val element = xmlElement(
+            """
+                <component name="CodeWhispererSettings">
+                    <option name="autoBuildSetting">
+                        <map>
+                            <entry key="project1" value="true" />
+                        </map>
+                    </option>
+                    <option>
+                        <map>
+                            <entry key="IsIncludeCodeWithReference" value="true" />
+                        </map>
+                    </option>
+                </component>
+            """.trimIndent()
+        )
+        val actual = XmlSerializer.deserialize(element, CodeWhispererConfiguration::class.java)
+        assertThat(actual.autoBuildSetting).hasSize(1)
+        assertThat(actual.autoBuildSetting["project1"]).isTrue()
     }
 }
 
