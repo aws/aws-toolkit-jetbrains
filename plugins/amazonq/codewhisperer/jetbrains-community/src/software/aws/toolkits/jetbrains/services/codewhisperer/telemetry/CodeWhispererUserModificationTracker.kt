@@ -167,10 +167,6 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
             val end = acceptedSuggestion.range.endOffset
             if (document != null) {
                 if (start < 0 || end < start || end > document.textLength) {
-                    LOG.warn {
-                        "Invalid range for suggestion ${acceptedSuggestion.requestId}: " +
-                            "start=$start, end=$end, docLength=${document.textLength}"
-                    }
                     sendModificationTelemetry(acceptedSuggestion, null)
                     sendUserModificationTelemetryToServiceAPI(acceptedSuggestion)
                     return
