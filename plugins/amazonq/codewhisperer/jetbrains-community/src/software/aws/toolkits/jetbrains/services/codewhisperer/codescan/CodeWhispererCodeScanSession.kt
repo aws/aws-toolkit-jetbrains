@@ -219,7 +219,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                 LOG.debug { "Rendering response to display code review results." }
             }
             currentCoroutineContext.ensureActive()
-            val issues = mapToCodeScanIssues(documents, sessionContext.project).filter { it.isVisible }
+            val issues = mapToCodeScanIssues(documents, sessionContext.project, jobId).filter { it.isVisible }
             codeScanResponseContext = codeScanResponseContext.copy(codeScanTotalIssues = issues.count())
             codeScanResponseContext = codeScanResponseContext.copy(codeScanIssuesWithFixes = issues.count { it.suggestedFixes.isNotEmpty() })
             codeScanResponseContext = codeScanResponseContext.copy(reason = "Succeeded")
@@ -304,7 +304,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         throw codeScanServerException("ListCodeReviewFindingsException: $errorMessage")
     }
 
-    fun mapToCodeScanIssues(recommendations: List<String>, project: Project): List<CodeWhispererCodeScanIssue> {
+    fun mapToCodeScanIssues(recommendations: List<String>, project: Project, jobId: String): List<CodeWhispererCodeScanIssue> {
         val scanRecommendations = recommendations.flatMap { MAPPER.readValue<List<CodeScanRecommendation>>(it) }
         if (isProjectScope()) {
             LOG.debug { "Total code review issues returned from service: ${scanRecommendations.size}" }
@@ -347,6 +347,8 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                         suggestedFixes = recommendation.remediation.suggestedFixes,
                         codeSnippet = recommendation.codeSnippet,
                         isVisible = !isIssueIgnored,
+                        autoDetected = isAutoScan(),
+                        scanJobId = jobId
                     )
                 }
             } else {
@@ -361,6 +363,9 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
     }
 
     private fun isProjectScope(): Boolean = sessionContext.codeAnalysisScope == CodeWhispererConstants.CodeAnalysisScope.PROJECT
+
+    private fun isAutoScan(): Boolean =
+        sessionContext.codeAnalysisScope == CodeWhispererConstants.CodeAnalysisScope.FILE && !sessionContext.sessionConfig.isInitiatedByChat()
 
     companion object {
         private val LOG = getLogger<CodeWhispererCodeScanSession>()

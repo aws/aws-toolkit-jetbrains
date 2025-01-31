@@ -285,7 +285,7 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
             fakeListCodeScanFindingsResponse.codeScanFindings(),
             getFakeRecommendationsOnNonExistentFile()
         )
-        val res = codeScanSessionSpy.mapToCodeScanIssues(recommendations, project)
+        val res = codeScanSessionSpy.mapToCodeScanIssues(recommendations, project, "jobId")
         assertThat(res).hasSize(2)
     }
 

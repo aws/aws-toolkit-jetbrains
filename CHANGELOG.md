@@ -1,3 +1,27 @@
+# _3.51_ (2025-01-29)
+- **(Feature)** Amazon Q: Now the Amazon Q suggestions can co-exist with Jetbrains suggestions, with tab behavior configurable in the settings.
+- **(Feature)** Amazon Q: Amazon Q inline now has configurable shortcuts for various actions including accept and browsing through suggestions.
+- **(Feature)** Add setting to allow Q /dev to run code and test commands
+- **(Feature)** Amazon Q: The suggestion popup will hide by default and will be displayed when the suggestion is being hovered over.
+- **(Bug Fix)** Amazon Q /doc: fix open diff in a tab when another modal is open
+- **(Bug Fix)** Amazon Q /test: Fixed an issue which incorrectly caused payload size exceeded exception when collecting project payload files
+- **(Bug Fix)** fix(amazonq): For security reasons, disabled auto linkify for link texts coming in markdown other than [TEXT](URL) format
+- **(Bug Fix)** Fix UI freeze caused by updating workspace index on non background context
+
+# _3.50_ (2025-01-23)
+- **(Feature)** Amazon Q: Updated `/help` command to include re:invent 2024 features
+- **(Feature)** Amazon Q: UI improvements through more accurate code syntax highlighting
+- **(Bug Fix)** Fixed an issue where Amazon Q settings did not persist across IDE restarts
+- **(Bug Fix)** Amazon Q: Fix context menu displaying when typing `@`, even though input is disallowed
+- **(Bug Fix)** Amazon Q: Fix up/down history navigation only triggering on first/last line of prompt input
+- **(Bug Fix)** Amazon Q /doc: Ask for user prompt if error occurs while updating documentation
+- **(Bug Fix)** Amazon Q: cursor no longer jumps after navigating prompt history
+- **(Bug Fix)** Improve text description of workspace index settings
+- **(Bug Fix)** Amazon Q /doc: fix for user prompt to change folder in chat
+- **(Bug Fix)** Amazon Q Doc README diff will re-open when the README file is clicked after it has been closed
+- **(Bug Fix)** Amazon Q /test: Fix for test generation payload creation to not filter out target file.
+- **(Bug Fix)** Amazon Q: word duplication when pressing tab on context selector fixed
+
 # _3.49_ (2025-01-17)
 - **(Bug Fix)** /review: Improved success rate of code reviews for certain workspace configurations
 

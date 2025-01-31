@@ -13,6 +13,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.components.ActionLink
 import com.intellij.ui.components.fields.ExpandableTextField
 import com.intellij.ui.dsl.builder.bindIntText
+import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
@@ -20,7 +21,6 @@ import com.intellij.util.concurrency.EdtExecutorService
 import com.intellij.util.execution.ParametersListUtil
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
-import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
@@ -98,20 +98,29 @@ class CodeWhispererConfigurable(private val project: Project) :
                 }.comment(message("aws.settings.codewhisperer.automatic_import_adder.tooltip"))
             }
 
-            if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
-                row {
-                    link("Configure inline suggestion keybindings") { e ->
-                        // TODO: user needs feedback if these are null
-                        val settings = DataManager.getInstance().getDataContext(e.source as ActionLink).getData(Settings.KEY) ?: return@link
-                        val configurable: Configurable = settings.find("preferences.keymap") ?: return@link
+            row {
+                text(message("codewhisperer.inline.settings.tab_priority.prefix"))
+                val amazonq = message("codewhisperer.inline.settings.tab_priority.choice.amazonq")
+                val jetbrains = message("codewhisperer.inline.settings.tab_priority.choice.jetbrains")
+                comboBox(listOf(amazonq, jetbrains)).bindItem(
+                    { if (CodeWhispererSettings.getInstance().isQPrioritizedForTabAccept()) amazonq else jetbrains },
+                    { CodeWhispererSettings.getInstance().setQPrioritizedForTabAccept(it == amazonq) }
+                )
+                text(message("codewhisperer.inline.settings.tab_priority.suffix"))
+            }
 
+            row {
+                link("Configure inline suggestion keybindings") { e ->
+                    // TODO: user needs feedback if these are null
+                    val settings = DataManager.getInstance().getDataContext(e.source as ActionLink).getData(Settings.KEY) ?: return@link
+                    val configurable: Configurable = settings.find("preferences.keymap") ?: return@link
+
+                    settings.select(configurable, Q_INLINE_KEYBINDING_SEARCH_TEXT)
+
+                    // workaround for certain cases for sometimes the string is not input there
+                    EdtExecutorService.getScheduledExecutorInstance().schedule({
                         settings.select(configurable, Q_INLINE_KEYBINDING_SEARCH_TEXT)
-
-                        // workaround for certain cases for sometimes the string is not input there
-                        EdtExecutorService.getScheduledExecutorInstance().schedule({
-                            settings.select(configurable, Q_INLINE_KEYBINDING_SEARCH_TEXT)
-                        }, 500, TimeUnit.MILLISECONDS)
-                    }
+                    }, 500, TimeUnit.MILLISECONDS)
                 }
             }
         }
@@ -182,6 +191,35 @@ class CodeWhispererConfigurable(private val project: Project) :
             }
         }
 
+        val autoBuildSetting = codeWhispererSettings.getAutoBuildSetting()
+        if (autoBuildSetting.isNotEmpty()) {
+            group(message("aws.settings.codewhisperer.feature_development")) {
+                row {
+                    text(message("aws.settings.codewhisperer.feature_development.allow_running_code_and_test_commands"))
+                }
+                row {
+                    val settings = codeWhispererSettings.getAutoBuildSetting()
+                    for ((key) in settings) {
+                        checkBox(key).apply {
+                            connect.subscribe(
+                                ToolkitConnectionManagerListener.TOPIC,
+                                object : ToolkitConnectionManagerListener {
+                                    override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+                                        enabled(isCodeWhispererEnabled(project))
+                                    }
+                                }
+                            )
+
+                            bindSelected(
+                                getter = { codeWhispererSettings.isAutoBuildFeatureEnabled(key) },
+                                setter = { newValue -> codeWhispererSettings.toggleAutoBuildFeature(key, newValue) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         group(message("aws.settings.codewhisperer.code_review")) {
             row {
                 ExpandableTextField(ParametersListUtil.COLON_LINE_PARSER, ParametersListUtil.COLON_LINE_JOINER).also {
@@ -223,6 +261,6 @@ class CodeWhispererConfigurable(private val project: Project) :
     }
 
     companion object {
-        private const val Q_INLINE_KEYBINDING_SEARCH_TEXT = "Amazon Q inline suggestion"
+        private const val Q_INLINE_KEYBINDING_SEARCH_TEXT = "Amazon Q"
     }
 }
