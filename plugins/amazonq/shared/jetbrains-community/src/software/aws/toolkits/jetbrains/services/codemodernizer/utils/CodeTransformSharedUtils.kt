@@ -27,6 +27,5 @@ fun isValidCodeTransformConnection(project: Project): Boolean {
 }
 fun isCodeTransformAvailable(project: Project): Boolean {
     if (!isIntellij()) return false
-    if (isRunningOnRemoteBackend()) return false
     return isValidCodeTransformConnection(project)
 }

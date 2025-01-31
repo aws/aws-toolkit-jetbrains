@@ -59,9 +59,7 @@ fun <T> buildActionListForCodeScan(project: Project, actionProvider: ActionProvi
 
 fun <T> buildActionListForOtherFeatures(project: Project, actionProvider: ActionProvider<T>): List<T> =
     buildList {
-        if (!isRunningOnRemoteBackend()) {
-            add(actionProvider.openChatPanel)
-        }
+        add(actionProvider.openChatPanel)
 
         val isIdC = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()).let { conn ->
             conn != null && !conn.isSono()

@@ -23,7 +23,7 @@ class CodeWhispererCodeReferenceToolWindowFactory : ToolWindowFactory, DumbAware
         toolWindow.contentManager.addContent(toolWindowContent)
     }
 
-    override fun shouldBeAvailable(project: Project): Boolean = isCodeWhispererEnabled(project) && !isRunningOnRemoteBackend()
+    override fun shouldBeAvailable(project: Project): Boolean = isCodeWhispererEnabled(project)
 
     companion object {
         const val id = "aws.codewhisperer.codereference"
