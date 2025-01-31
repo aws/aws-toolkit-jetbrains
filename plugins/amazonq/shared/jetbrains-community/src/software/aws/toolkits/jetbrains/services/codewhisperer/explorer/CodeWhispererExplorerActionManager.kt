@@ -1,7 +1,7 @@
-// Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package migration.software.aws.toolkits.jetbrains.services.codewhisperer.explorer
+package software.aws.toolkits.jetbrains.services.codewhisperer.explorer
 
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
@@ -17,12 +17,8 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererCon
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
-import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreActionState
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreStateType
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getConnectionStartUrl
-import software.aws.toolkits.telemetry.AwsTelemetry
+import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererLoginType
+import software.aws.toolkits.jetbrains.utils.getConnectionStartUrl
 
 // TODO: refactor this class, now it's managing action and state
 @State(name = "codewhispererStates", storages = [Storage("aws.xml")])
@@ -39,7 +35,10 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
 
     private fun getCodeWhispererConnectionStartUrl(project: Project): String {
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
-        return getConnectionStartUrl(connection) ?: CodeWhispererConstants.ACCOUNTLESS_START_URL
+        return getConnectionStartUrl(connection) ?: run {
+            LOG.warn { "fail to retrieve connection start url, not a bearer token connection" }
+            ""
+        }
     }
 
     fun isAutoEnabled(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.IsAutoEnabled, true)
@@ -76,17 +75,13 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
         actionState.value[CodeWhispererExploreStateType.SessionConfigurationMessageShown] = isShown
     }
 
-    fun setAutoSuggestion(project: Project, isAutoEnabled: Boolean) {
+    fun setAutoSuggestion(isAutoEnabled: Boolean) {
         setAutoEnabled(isAutoEnabled)
-        val autoSuggestionState = if (isAutoEnabled) CodeWhispererConstants.AutoSuggestion.ACTIVATED else CodeWhispererConstants.AutoSuggestion.DEACTIVATED
-        AwsTelemetry.modifySetting(project, settingId = CodeWhispererConstants.AutoSuggestion.SETTING_ID, settingState = autoSuggestionState)
     }
 
     // Adding Auto CodeScan Function
-    fun setAutoCodeScan(project: Project, isAutoEnabledForCodeScan: Boolean) {
+    fun setAutoCodeScan(isAutoEnabledForCodeScan: Boolean) {
         setAutoEnabledForCodeScan(isAutoEnabledForCodeScan)
-        val autoCodeScanState = if (isAutoEnabledForCodeScan) CodeWhispererConstants.AutoCodeScan.ACTIVATED else CodeWhispererConstants.AutoCodeScan.DEACTIVATED
-        AwsTelemetry.modifySetting(project, settingId = CodeWhispererConstants.AutoCodeScan.SETTING_ID, settingState = autoCodeScanState)
     }
 
     fun getIsFirstRestartAfterQInstall(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.IsFirstRestartAfterQInstall, true)
