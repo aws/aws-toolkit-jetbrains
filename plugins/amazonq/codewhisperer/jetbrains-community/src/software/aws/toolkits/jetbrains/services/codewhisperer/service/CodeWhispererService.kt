@@ -736,15 +736,13 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         runInEdt {
             val newPopup = CodeWhispererPopupManager.getInstance().initPopup()
             val updatedNextStates = nextStates.copy(popup = newPopup).also {
-                addPopupChildDisposables(it.popup)
+                addPopupChildDisposables(it.requestContext.project, it.requestContext.editor, it.popup)
                 Disposer.register(newPopup, it)
             }
             CodeWhispererPopupManager.getInstance().initPopupListener(updatedNextStates)
             CodeWhispererPopupManager.getInstance().changeStates(
                 updatedNextStates,
                 0,
-                "",
-                typeaheadAdded = true,
                 recommendationAdded = false
             )
             cs.launch(getCoroutineBgContext()) {
