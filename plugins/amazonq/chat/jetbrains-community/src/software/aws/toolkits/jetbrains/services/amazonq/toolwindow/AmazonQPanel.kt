@@ -67,7 +67,7 @@ class AmazonQPanel(private val parent: Disposable) {
         if (!JBCefApp.isSupported()) {
             // Fallback to an alternative browser-less solution
             if (isRunningOnRemoteBackend()) {
-                webviewContainer.add(JBTextArea("Amazon Q chat is not supported in remote dev environment."))
+                webviewContainer.add(JBTextArea("Amazon Q chat is not supported in this remote dev environment because it lacks JCEF webview support."))
             } else {
                 webviewContainer.add(JBTextArea("JCEF not supported"))
             }

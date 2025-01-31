@@ -163,12 +163,6 @@ class GettingStartedPanel(
                                     setTitleFont(JBFont.h1().asBold())
                                 }.align(AlignX.FILL)
                             }
-                            row {
-                                label("Note: " + (message("gettingstarted.codewhisperer.remote"))).applyToComponent {
-
-                                    font = JBFont.h4().asBold()
-                                }
-                            }.bottomGap(BottomGap.SMALL).visible(isRunningOnRemoteBackend())
                             featureSetPanel.setFeatureContent()
                             row {
                                 cell(featureSetPanel)
@@ -203,7 +197,7 @@ class GettingStartedPanel(
                                         )
                                     )
                                 )
-                            ).visible(!isRunningOnRemoteBackend())
+                            )
                             // Resource Explorer panel auth bullets
                             cell(
                                 PanelAuthBullets(
@@ -1214,7 +1208,7 @@ class GettingStartedPanel(
                 panel {
                     row {
                         // CodeWhisperer panel
-                        cell(CodeWhispererPanel()).visible(!isRunningOnRemoteBackend())
+                        cell(CodeWhispererPanel())
                         // Resource Explorer Panel
                         cell(ResourceExplorerPanel())
                         // CodeCatalyst Panel

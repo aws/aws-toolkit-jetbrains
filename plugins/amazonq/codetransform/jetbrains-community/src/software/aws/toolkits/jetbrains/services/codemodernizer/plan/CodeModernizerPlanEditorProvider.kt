@@ -31,8 +31,8 @@ class CodeModernizerPlanEditorProvider : FileEditorProvider, DumbAware {
         val MIGRATION_PLAN_KEY = Key.create<TransformationPlan>("TRANSFORMATION_PLAN")
         val MODULE_NAME_KEY = Key.create<String>("MODULE_NAME")
         val JAVA_VERSION = Key.create<String>("JAVA_VERSION")
+
         fun openEditor(project: Project, plan: TransformationPlan, module: String?, javaVersionNumber: String) {
-            if (isRunningOnRemoteBackend()) return
             val virtualFile = CodeModernizerPlanVirtualFile()
             virtualFile.putUserData(MIGRATION_PLAN_KEY, plan)
             virtualFile.putUserData(MODULE_NAME_KEY, module)

@@ -133,14 +133,6 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     fun validate(project: Project, transformationType: CodeTransformType): ValidationResult {
         fun validateCore(project: Project): ValidationResult {
-            if (isRunningOnRemoteBackend()) {
-                return ValidationResult(
-                    false,
-                    InvalidTelemetryReason(
-                        CodeTransformPreValidationError.RemoteRunProject,
-                    )
-                )
-            }
             if (!isCodeTransformAvailable(project)) {
                 return ValidationResult(
                     false,
