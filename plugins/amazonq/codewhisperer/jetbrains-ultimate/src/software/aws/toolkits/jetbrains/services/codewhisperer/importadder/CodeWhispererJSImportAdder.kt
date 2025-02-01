@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.importadder
 
 import com.intellij.lang.ecmascript6.psi.ES6ImportDeclaration
-import com.intellij.lang.javascript.JavascriptLanguage
 import com.intellij.lang.javascript.psi.JSBlockStatement
 import com.intellij.lang.javascript.psi.JSFile
 import com.intellij.openapi.editor.Editor
@@ -12,6 +11,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.util.PsiTreeUtil
+import compat.com.intellij.lang.javascript.JavascriptLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJavaScript
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJsx
@@ -25,7 +25,7 @@ class CodeWhispererJSImportAdder : CodeWhispererImportAdder() {
 
     override fun createNewImportPsiElement(psiFile: PsiFile, statement: String): PsiElement? {
         val fileFactory = PsiFileFactory.getInstance(psiFile.project)
-        val dummyFile = fileFactory.createFileFromText(dummyFileName, JavascriptLanguage.INSTANCE, statement)
+        val dummyFile = fileFactory.createFileFromText(dummyFileName, JavascriptLanguage, statement)
             as? JSFile ?: return null
         return dummyFile.children.find { it is ES6ImportDeclaration }
     }
