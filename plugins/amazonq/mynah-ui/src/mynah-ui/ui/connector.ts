@@ -10,7 +10,7 @@ import {
     Engagement,
     NotificationType,
     ProgressField,
-    ChatPrompt,
+    ChatPrompt, QuickActionCommand,
 } from '@aws/mynah-ui-chat'
 import { Connector as CWChatConnector } from './apps/cwChatConnector'
 import { Connector as FeatureDevChatConnector } from './apps/featureDevChatConnector'
@@ -83,6 +83,9 @@ export interface ConnectorProps {
         codeScanEnabled: boolean,
         codeTestEnabled: boolean,
         authenticatingTabIDs: string[]
+    ) => void
+    onFeatureConfigsAvailable: (
+        highlightCommand?: QuickActionCommand
     ) => void
     onNewTab: (tabType: TabType) => void
     onStartNewTransform: (tabID: string) => void

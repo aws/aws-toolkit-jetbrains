@@ -17,6 +17,7 @@ import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthFollowUpType
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
+import software.aws.toolkits.jetbrains.services.amazonq.util.HighlightCommand
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FollowUpType
 import java.time.Instant
 
@@ -262,6 +263,14 @@ data class ErrorMessage(
 ) : UiMessage(
     tabId = tabId,
     type = "errorMessage",
+)
+
+data class FeatureConfigsAvailableMessage(
+    val highlightCommand: HighlightCommand?,
+
+) : UiMessage(
+    null,
+    type = "featureConfigsAvailableMessage",
 )
 
 data class QuickActionMessage(
