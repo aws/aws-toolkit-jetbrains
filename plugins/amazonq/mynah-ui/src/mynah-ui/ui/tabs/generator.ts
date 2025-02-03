@@ -21,7 +21,7 @@ export interface TabDataGeneratorProps {
 export class TabDataGenerator {
     private followUpsGenerator: FollowUpGenerator
     public quickActionsGenerator: QuickActionGenerator
-    private highlightCommand?: QuickActionCommand
+    public highlightCommand?: QuickActionCommand
 
     private tabTitle: Map<TabType, string> = new Map([
         ['unknown', 'Chat'],

@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Adds event listener for notifying UI that AB feature configurations have been resolved"
+}
