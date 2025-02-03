@@ -54,10 +54,7 @@ class BrowserConnector(
                     }
 
                     // some weird issue preventing deserialization from working
-                    "open-user-guide" -> {
-                        BrowserUtil.browse(node.get("userGuideLink").asText())
-                    }
-                    "open-form-link" -> {
+                    "open-link" -> {
                         BrowserUtil.browse(node.get("link").asText())
                     }
                     "send-telemetry" -> {
