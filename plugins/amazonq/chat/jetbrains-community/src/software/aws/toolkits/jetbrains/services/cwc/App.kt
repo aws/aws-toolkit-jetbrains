@@ -3,17 +3,21 @@
 
 package software.aws.toolkits.jetbrains.services.cwc
 
+import com.intellij.openapi.application.ApplicationManager
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigListener
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQApp
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
+import software.aws.toolkits.jetbrains.services.amazonq.util.highlightCommand
 import software.aws.toolkits.jetbrains.services.cwc.commands.ActionRegistrar
 import software.aws.toolkits.jetbrains.services.cwc.commands.CodeScanIssueActionMessage
 import software.aws.toolkits.jetbrains.services.cwc.commands.ContextMenuActionMessage
 import software.aws.toolkits.jetbrains.services.cwc.controller.ChatController
+import software.aws.toolkits.jetbrains.services.cwc.messages.FeatureConfigsAvailableMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
 
 class App : AmazonQApp {
@@ -56,6 +60,21 @@ class App : AmazonQApp {
                 scope.launch { handleMessage(message, inboundAppMessagesHandler) }
             }
         }
+
+        ApplicationManager.getApplication().messageBus.connect(this).subscribe(
+            CodeWhispererFeatureConfigListener.TOPIC,
+            object : CodeWhispererFeatureConfigListener {
+                override fun publishFeatureConfigsAvailble() {
+                    scope.launch {
+                        context.messagesFromAppToUi.publish(
+                            FeatureConfigsAvailableMessage(
+                                highlightCommand = highlightCommand()
+                            )
+                        )
+                    }
+                }
+            }
+        )
     }
 
     private suspend fun handleMessage(message: AmazonQMessage, inboundAppMessagesHandler: InboundAppMessagesHandler) {
