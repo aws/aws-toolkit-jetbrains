@@ -9,6 +9,7 @@ import com.intellij.codeInsight.lookup.LookupListener
 import com.intellij.codeInsight.lookup.LookupManagerListener
 import com.intellij.codeInsight.lookup.impl.LookupImpl
 import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
@@ -56,7 +57,7 @@ fun addIntelliSenseAcceptListener(lookup: Lookup, states: InvocationContext) {
         private fun cleanup() {
             lookup.removeLookupListener(this)
             if (CodeWhispererPopupManager.getInstance().shouldEditorChangeCancelPopup <= 0) {
-                LOG.error("shouldListenerCancelPopup semaphore is not updated correctly")
+                LOG.error { "shouldListenerCancelPopup semaphore is not updated correctly" }
             } else {
                 CodeWhispererPopupManager.getInstance().shouldEditorChangeCancelPopup--
                 LOG.debug { "Decrementing shouldListenerCancelPopup semaphore value" }

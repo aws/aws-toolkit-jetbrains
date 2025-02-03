@@ -44,6 +44,7 @@ import com.intellij.util.ui.UIUtil
 import software.amazon.awssdk.services.codewhispererruntime.model.Import
 import software.amazon.awssdk.services.codewhispererruntime.model.Reference
 import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addHorizontalGlue
@@ -253,7 +254,7 @@ class CodeWhispererPopupManager {
             runnable()
         } finally {
             if (shouldEditorChangeCancelPopup <= 0) {
-                LOG.error("shouldListenerCancelPopup semaphore is not updated correctly")
+                LOG.error { "shouldListenerCancelPopup semaphore is not updated correctly" }
             } else {
                 shouldEditorChangeCancelPopup--
                 LOG.debug { "Decrementing shouldListenerCancelPopup semaphore value" }
