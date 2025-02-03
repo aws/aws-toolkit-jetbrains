@@ -29,13 +29,9 @@ class CodeWhispererPopupIntelliSenseAcceptListener(private val states: Invocatio
 }
 
 fun addIntelliSenseAcceptListener(lookup: Lookup, states: InvocationContext) {
+    CodeWhispererPopupManager.getInstance().shouldEditorChangeCancelPopup++
+    LOG.debug { "Incrementing shouldListenerCancelPopup semaphore value" }
     lookup.addLookupListener(object : LookupListener {
-        override fun lookupShown(event: LookupEvent) {
-            CodeWhispererPopupManager.getInstance().shouldEditorChangeCancelPopup++
-            LOG.debug { "Incrementing shouldListenerCancelPopup semaphore value" }
-            super.lookupShown(event)
-        }
-
         override fun itemSelected(event: LookupEvent) {
             if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive() ||
                 !(event.lookup as LookupImpl).isShown
