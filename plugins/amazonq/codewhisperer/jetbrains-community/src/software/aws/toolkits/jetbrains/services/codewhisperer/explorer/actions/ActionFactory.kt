@@ -10,7 +10,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isUserBuilderId
-import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 
 interface ActionProvider<T> {
     val pause: T

@@ -15,7 +15,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 
 class CodeModernizerPlanEditorProvider : FileEditorProvider, DumbAware {
     override fun accept(project: Project, file: VirtualFile) = file is CodeModernizerPlanVirtualFile
