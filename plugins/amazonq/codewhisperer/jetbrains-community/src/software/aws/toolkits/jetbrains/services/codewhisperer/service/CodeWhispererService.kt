@@ -283,7 +283,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                             nextRequestContext,
                             nextResponseContext,
                             nextResponse.completions().size,
-                            true,
+                            invocationSuccess = true,
                             latency,
                             null
                         )
