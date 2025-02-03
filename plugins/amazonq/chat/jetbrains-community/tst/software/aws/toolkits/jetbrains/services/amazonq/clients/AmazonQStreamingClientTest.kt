@@ -5,12 +5,15 @@ package software.aws.toolkits.jetbrains.services.amazonq.clients
 
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.replaceService
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
@@ -20,6 +23,7 @@ import software.amazon.awssdk.services.codewhispererstreaming.CodeWhispererStrea
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportIntent
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportResultArchiveRequest
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportResultArchiveResponseHandler
+import software.amazon.awssdk.services.codewhispererstreaming.model.ValidationException
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.utils.test.aString
@@ -80,5 +84,157 @@ class AmazonQStreamingClientTest : AmazonQTestBase() {
         argumentCaptor<ExportResultArchiveRequest, ExportResultArchiveResponseHandler>().apply {
             verify(streamingBearerClient).exportResultArchive(requestCaptor.capture(), handlerCaptor.capture())
         }
+    }
+
+    @Test
+    fun `verify retry on ValidationException`(): Unit = runBlocking {
+        var attemptCount = 0
+        streamingBearerClient = mockClientManagerRule.create<CodeWhispererStreamingAsyncClient>().stub {
+            on {
+                exportResultArchive(any<ExportResultArchiveRequest>(), any<ExportResultArchiveResponseHandler>())
+            } doAnswer {
+                attemptCount++
+                if (attemptCount <= 2) {
+                    CompletableFuture<Void>().apply {
+                        completeExceptionally(VALIDATION_EXCEPTION)
+                    }
+                } else {
+                    CompletableFuture.completedFuture(mock())
+                }
+            }
+        }
+
+        amazonQStreamingClient.exportResultArchive("test-id", ExportIntent.TRANSFORMATION, null, {}, {})
+
+        assertThat(attemptCount).isEqualTo(3)
+    }
+
+    @Test
+    fun `verify retry gives up after max attempts`(): Unit = runBlocking {
+        var attemptCount = 0
+        streamingBearerClient = mockClientManagerRule.create<CodeWhispererStreamingAsyncClient>().stub {
+            on {
+                exportResultArchive(any<ExportResultArchiveRequest>(), any<ExportResultArchiveResponseHandler>())
+            } doAnswer {
+                attemptCount++
+                CompletableFuture<Void>().apply {
+                    completeExceptionally(VALIDATION_EXCEPTION)
+                }
+            }
+        }
+
+        val thrown = catchCoroutineException {
+            amazonQStreamingClient.exportResultArchive("test-id", ExportIntent.TRANSFORMATION, null, {}, {})
+        }
+
+        assertThat(attemptCount).isEqualTo(3)
+        assertThat(thrown)
+            .isInstanceOf(ValidationException::class.java)
+            .hasMessage("Resource validation failed")
+    }
+
+    @Test
+    fun `verify no retry on non-retryable exception`(): Unit = runBlocking {
+        var attemptCount = 0
+
+        streamingBearerClient = mockClientManagerRule.create<CodeWhispererStreamingAsyncClient>().stub {
+            on {
+                exportResultArchive(any<ExportResultArchiveRequest>(), any<ExportResultArchiveResponseHandler>())
+            } doAnswer {
+                attemptCount++
+                CompletableFuture<Void>().apply {
+                    completeExceptionally(IllegalArgumentException("Non-retryable error"))
+                }
+            }
+        }
+
+        val thrown = catchCoroutineException {
+            amazonQStreamingClient.exportResultArchive("test-id", ExportIntent.TRANSFORMATION, null, {}, {})
+        }
+
+        assertThat(attemptCount).isEqualTo(1)
+        assertThat(thrown)
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessage("Non-retryable error")
+    }
+
+    @Test
+    fun `verify backoff timing between retries`(): Unit = runBlocking {
+        var lastAttemptTime = 0L
+        var minBackoffObserved = Long.MAX_VALUE
+        var maxBackoffObserved = 0L
+
+        streamingBearerClient = mockClientManagerRule.create<CodeWhispererStreamingAsyncClient>().stub {
+            on {
+                exportResultArchive(any<ExportResultArchiveRequest>(), any<ExportResultArchiveResponseHandler>())
+            } doAnswer {
+                val currentTime = System.currentTimeMillis()
+                if (lastAttemptTime > 0) {
+                    val backoffTime = currentTime - lastAttemptTime
+                    minBackoffObserved = minOf(minBackoffObserved, backoffTime)
+                    maxBackoffObserved = maxOf(maxBackoffObserved, backoffTime)
+                }
+                lastAttemptTime = currentTime
+
+                CompletableFuture<Void>().apply {
+                    completeExceptionally(VALIDATION_EXCEPTION)
+                }
+            }
+        }
+
+        val thrown = catchCoroutineException {
+            amazonQStreamingClient.exportResultArchive("test-id", ExportIntent.TRANSFORMATION, null, {}, {})
+        }
+
+        assertThat(thrown)
+            .isInstanceOf(ValidationException::class.java)
+            .hasMessage("Resource validation failed")
+        assertThat(minBackoffObserved).isGreaterThanOrEqualTo(100)
+        assertThat(maxBackoffObserved).isLessThanOrEqualTo(10000)
+    }
+
+    @Test
+    fun `verify onError callback is called with final exception`(): Unit = runBlocking {
+        var errorCaught: Exception? = null
+
+        streamingBearerClient = mockClientManagerRule.create<CodeWhispererStreamingAsyncClient>().stub {
+            on {
+                exportResultArchive(any<ExportResultArchiveRequest>(), any<ExportResultArchiveResponseHandler>())
+            } doAnswer {
+                CompletableFuture<Void>().apply {
+                    completeExceptionally(VALIDATION_EXCEPTION)
+                }
+            }
+        }
+
+        val thrown = catchCoroutineException {
+            amazonQStreamingClient.exportResultArchive(
+                "test-id",
+                ExportIntent.TRANSFORMATION,
+                null,
+                { errorCaught = it },
+                {}
+            )
+        }
+
+        assertThat(thrown)
+            .isInstanceOf(ValidationException::class.java)
+            .hasMessage("Resource validation failed")
+        assertThat(errorCaught).isEqualTo(VALIDATION_EXCEPTION)
+    }
+
+    private suspend fun catchCoroutineException(block: suspend () -> Unit): Throwable {
+        try {
+            block()
+            error("Expected exception was not thrown")
+        } catch (e: Throwable) {
+            return e
+        }
+    }
+
+    companion object {
+        private val VALIDATION_EXCEPTION = ValidationException.builder()
+            .message("Resource validation failed")
+            .build()
     }
 }
