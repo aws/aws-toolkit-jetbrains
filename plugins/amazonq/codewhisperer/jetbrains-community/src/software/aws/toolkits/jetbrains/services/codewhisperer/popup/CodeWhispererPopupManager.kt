@@ -85,7 +85,8 @@ import javax.swing.JLabel
 class CodeWhispererPopupManager {
     val popupComponents = CodeWhispererPopupComponents()
 
-    var shouldListenerCancelPopup: Boolean = true
+    // Act like a semaphore: one increment only corresponds to one decrement
+    var shouldEditorChangeCancelPopup: Int = 0
     var sessionContext = SessionContext()
         private set
 
@@ -247,10 +248,16 @@ class CodeWhispererPopupManager {
 
     fun dontClosePopupAndRun(runnable: () -> Unit) {
         try {
-            shouldListenerCancelPopup = false
+            shouldEditorChangeCancelPopup++
+            LOG.debug { "Incrementing shouldListenerCancelPopup semaphore value" }
             runnable()
         } finally {
-            shouldListenerCancelPopup = true
+            if (shouldEditorChangeCancelPopup <= 0) {
+                LOG.error("shouldListenerCancelPopup semaphore is not updated correctly")
+            } else {
+                shouldEditorChangeCancelPopup--
+                LOG.debug { "Decrementing shouldListenerCancelPopup semaphore value" }
+            }
         }
     }
 
@@ -496,7 +503,7 @@ class CodeWhispererPopupManager {
         val editor = states.requestContext.editor
         val codewhispererSelectionListener: SelectionListener = object : SelectionListener {
             override fun selectionChanged(event: SelectionEvent) {
-                if (shouldListenerCancelPopup) {
+                if (shouldEditorChangeCancelPopup == 0) {
                     cancelPopup(states.popup)
                 }
                 super.selectionChanged(event)
@@ -512,7 +519,7 @@ class CodeWhispererPopupManager {
                 if (!delete) return
                 if (editor.caretModel.offset == event.offset) {
                     changeStates(states, 0)
-                } else if (shouldListenerCancelPopup) {
+                } else if (shouldEditorChangeCancelPopup == 0) {
                     cancelPopup(states.popup)
                 }
             }
@@ -521,7 +528,7 @@ class CodeWhispererPopupManager {
 
         val codewhispererCaretListener: CaretListener = object : CaretListener {
             override fun caretPositionChanged(event: CaretEvent) {
-                if (shouldListenerCancelPopup) {
+                if (shouldEditorChangeCancelPopup == 0) {
                     cancelPopup(states.popup)
                 }
                 super.caretPositionChanged(event)
