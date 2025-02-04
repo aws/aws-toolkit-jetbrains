@@ -8,7 +8,6 @@ import com.intellij.codeInsight.lookup.LookupEvent
 import com.intellij.codeInsight.lookup.LookupListener
 import com.intellij.codeInsight.lookup.LookupManagerListener
 import com.intellij.codeInsight.lookup.impl.LookupImpl
-import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
@@ -29,8 +28,9 @@ class CodeWhispererPopupIntelliSenseAcceptListener(private val states: Invocatio
 }
 
 fun addIntelliSenseAcceptListener(lookup: Lookup, states: InvocationContext) {
-    CodeWhispererPopupManager.getInstance().shouldEditorChangeCancelPopup++
-    LOG.debug { "Incrementing shouldListenerCancelPopup semaphore value" }
+    if (!CodeWhispererPopupManager.getInstance().allowEditsDuringSuggestionPreview.tryAcquire()) {
+        LOG.error { "Failed to acquire allowEditsDuringSuggestionPreview semaphore" }
+    }
     lookup.addLookupListener(object : LookupListener {
         override fun itemSelected(event: LookupEvent) {
             if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive() ||
@@ -52,11 +52,10 @@ fun addIntelliSenseAcceptListener(lookup: Lookup, states: InvocationContext) {
 
         private fun cleanup() {
             lookup.removeLookupListener(this)
-            if (CodeWhispererPopupManager.getInstance().shouldEditorChangeCancelPopup <= 0) {
-                LOG.error { "shouldListenerCancelPopup semaphore is not updated correctly" }
-            } else {
-                CodeWhispererPopupManager.getInstance().shouldEditorChangeCancelPopup--
-                LOG.debug { "Decrementing shouldListenerCancelPopup semaphore value" }
+            try {
+                CodeWhispererPopupManager.getInstance().allowEditsDuringSuggestionPreview.release()
+            } catch (e: Exception) {
+                LOG.error(e) { "Failed to release allowEditsDuringSuggestionPreview semaphore" }
             }
         }
     })
