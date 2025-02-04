@@ -1,4 +1,4 @@
 {
   "type" : "feature",
-  "description" : "Amazon Q: Instantly show the next recommendation after the current recommendation is accepted"
+  "description" : "Inline suggestions: Pre-fetch recommendations to reduce suggestion latency."
 }
