@@ -39,6 +39,7 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.Session
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.utils.combineBuildAndExecuteLogFiles
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.CodeTestException
+import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.fileTooLarge
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.sessionconfig.CodeTestSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.testGenStoppedError
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
@@ -94,6 +95,9 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         )
 
         val codeTestResponseContext = createUploadUrl(codeTestChatHelper, previousIterationContext)
+        if (codeTestResponseContext.payloadContext.payloadLimitCrossed == true) {
+            fileTooLarge()
+        }
         session.srcPayloadSize = codeTestResponseContext.payloadContext.srcPayloadSize
         session.srcZipFileSize = codeTestResponseContext.payloadContext.srcZipFileSize
         session.artifactUploadDuration = codeTestResponseContext.serviceInvocationContext.artifactsUploadDuration
