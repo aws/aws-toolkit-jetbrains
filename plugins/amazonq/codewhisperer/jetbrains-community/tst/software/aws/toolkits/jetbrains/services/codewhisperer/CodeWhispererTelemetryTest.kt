@@ -106,7 +106,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     @Test
     fun `test pre-setup failure will send service invocation event with failed status`() {
         doAnswer { throw Exception() }
-            .`when`(codewhispererService)
+            .whenever(codewhispererService)
             .getRequestContext(any(), any(), any(), any(), any())
 
         invokeCodeWhispererService()
