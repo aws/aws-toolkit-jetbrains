@@ -27,6 +27,7 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsRequest
 import software.amazon.awssdk.services.codewhispererruntime.paginators.GenerateCompletionsIterable
@@ -126,7 +127,10 @@ open class CodeWhispererTestBase {
 
         stateManager = spy(CodeWhispererExplorerActionManager.getInstance())
         recommendationManager = CodeWhispererRecommendationManager.getInstance()
-        codewhispererService = CodeWhispererService.getInstance()
+        codewhispererService = spy(CodeWhispererService.getInstance())
+        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererService, disposableRule.disposable)
+        doNothing().whenever(codewhispererService).promoteNextInvocationIfAvailable()
+
         editorManager = CodeWhispererEditorManager.getInstance()
         settingsManager = CodeWhispererSettings.getInstance()
 
@@ -238,13 +242,12 @@ open class CodeWhispererTestBase {
     }
 
     fun addUserInputAfterInvocation(userInput: String) {
-        val codewhispererServiceSpy = spy(codewhispererService)
         val triggerTypeCaptor = argumentCaptor<TriggerTypeInfo>()
         val editorCaptor = argumentCaptor<Editor>()
         val projectCaptor = argumentCaptor<Project>()
         val psiFileCaptor = argumentCaptor<PsiFile>()
         val latencyContextCaptor = argumentCaptor<LatencyContext>()
-        codewhispererServiceSpy.stub {
+        codewhispererService.stub {
             onGeneric {
                 getRequestContext(
                     triggerTypeCaptor.capture(),
@@ -254,7 +257,7 @@ open class CodeWhispererTestBase {
                     latencyContextCaptor.capture()
                 )
             }.doAnswer {
-                val requestContext = codewhispererServiceSpy.getRequestContext(
+                val requestContext = codewhispererService.getRequestContext(
                     triggerTypeCaptor.firstValue,
                     editorCaptor.firstValue,
                     projectCaptor.firstValue,
@@ -265,6 +268,5 @@ open class CodeWhispererTestBase {
                 requestContext
             }.thenCallRealMethod()
         }
-        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
     }
 }
