@@ -16,7 +16,6 @@ import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
 import java.awt.Font
 import java.text.SimpleDateFormat
 import java.time.format.DateTimeFormatter
-import kotlin.time.times
 
 object CodeWhispererConstants {
     const val CHARACTERS_LIMIT = 10240
