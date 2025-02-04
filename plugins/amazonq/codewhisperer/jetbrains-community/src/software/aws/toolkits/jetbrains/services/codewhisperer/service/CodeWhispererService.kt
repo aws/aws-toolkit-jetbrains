@@ -748,7 +748,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 Disposer.register(newPopup, it)
             }
             CodeWhispererPopupManager.getInstance().initPopupListener(updatedNextStates)
-            withContext(EDT){
+            withContext(EDT) {
                 CodeWhispererPopupManager.getInstance().changeStates(
                     updatedNextStates,
                     0,
