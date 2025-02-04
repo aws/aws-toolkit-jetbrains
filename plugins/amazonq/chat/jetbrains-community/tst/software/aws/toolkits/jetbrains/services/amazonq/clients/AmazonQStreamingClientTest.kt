@@ -95,8 +95,8 @@ class AmazonQStreamingClientTest : AmazonQTestBase() {
             } doAnswer {
                 attemptCount++
                 if (attemptCount <= 2) {
-                    CompletableFuture<Void>().apply {
-                        completeExceptionally(VALIDATION_EXCEPTION)
+                    CompletableFuture.runAsync {
+                        throw VALIDATION_EXCEPTION
                     }
                 } else {
                     CompletableFuture.completedFuture(mock())
@@ -117,8 +117,8 @@ class AmazonQStreamingClientTest : AmazonQTestBase() {
                 exportResultArchive(any<ExportResultArchiveRequest>(), any<ExportResultArchiveResponseHandler>())
             } doAnswer {
                 attemptCount++
-                CompletableFuture<Void>().apply {
-                    completeExceptionally(VALIDATION_EXCEPTION)
+                CompletableFuture.runAsync {
+                    throw VALIDATION_EXCEPTION
                 }
             }
         }
@@ -142,8 +142,8 @@ class AmazonQStreamingClientTest : AmazonQTestBase() {
                 exportResultArchive(any<ExportResultArchiveRequest>(), any<ExportResultArchiveResponseHandler>())
             } doAnswer {
                 attemptCount++
-                CompletableFuture<Void>().apply {
-                    completeExceptionally(IllegalArgumentException("Non-retryable error"))
+                CompletableFuture.runAsync {
+                    throw IllegalArgumentException("Non-retryable error")
                 }
             }
         }
@@ -176,8 +176,8 @@ class AmazonQStreamingClientTest : AmazonQTestBase() {
                 }
                 lastAttemptTime = currentTime
 
-                CompletableFuture<Void>().apply {
-                    completeExceptionally(VALIDATION_EXCEPTION)
+                CompletableFuture.runAsync {
+                    throw VALIDATION_EXCEPTION
                 }
             }
         }
@@ -201,8 +201,8 @@ class AmazonQStreamingClientTest : AmazonQTestBase() {
             on {
                 exportResultArchive(any<ExportResultArchiveRequest>(), any<ExportResultArchiveResponseHandler>())
             } doAnswer {
-                CompletableFuture<Void>().apply {
-                    completeExceptionally(VALIDATION_EXCEPTION)
+                CompletableFuture.runAsync {
+                    throw VALIDATION_EXCEPTION
                 }
             }
         }
