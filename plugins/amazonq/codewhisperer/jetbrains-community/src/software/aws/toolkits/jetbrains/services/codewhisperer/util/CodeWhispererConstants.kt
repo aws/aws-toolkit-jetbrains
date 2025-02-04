@@ -16,6 +16,7 @@ import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
 import java.awt.Font
 import java.text.SimpleDateFormat
 import java.time.format.DateTimeFormatter
+import kotlin.time.times
 
 object CodeWhispererConstants {
     const val CHARACTERS_LIMIT = 10240
@@ -72,6 +73,7 @@ object CodeWhispererConstants {
     const val CODE_SCAN_ISSUE_TITLE_MAX_LENGTH = 60
     const val DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS: Long = 60 * 10 // 10 minutes
     const val DEFAULT_PAYLOAD_LIMIT_IN_BYTES: Long = 1 * 1024 * 1024 * 1024 // 1GB
+    const val INTERNAL_PAYLOAD_LIMIT_IN_BYTES: Long = (1024L * 1024L * 1024L * 3L) / 2L // 1.5GB
     const val CODE_SCAN_POLLING_INTERVAL_IN_SECONDS: Long = 1
     const val FILE_SCAN_INITIAL_POLLING_INTERVAL_IN_SECONDS: Long = 10
     const val PROJECT_SCAN_INITIAL_POLLING_INTERVAL_IN_SECONDS: Long = 30
