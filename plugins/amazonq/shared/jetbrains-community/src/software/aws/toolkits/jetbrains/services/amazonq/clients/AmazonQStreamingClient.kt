@@ -6,9 +6,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.clients
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
-import software.amazon.awssdk.core.exception.RetryableException
 import software.amazon.awssdk.core.exception.SdkException
 import software.amazon.awssdk.services.codewhispererstreaming.CodeWhispererStreamingAsyncClient
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportContext
@@ -21,11 +19,11 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.services.amazonq.RetryableOperation
 import java.time.Instant
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicReference
 import javax.naming.ServiceUnavailableException
-import kotlin.random.Random
 
 @Service(Service.Level.PROJECT)
 class AmazonQStreamingClient(private val project: Project) {
@@ -113,62 +111,5 @@ class AmazonQStreamingClient(private val project: Project) {
         private val LOG = getLogger<AmazonQStreamingClient>()
 
         fun getInstance(project: Project) = project.service<AmazonQStreamingClient>()
-    }
-}
-
-class RetryableOperation<T> {
-    private var attempts = 0
-    private var currentDelay = INITIAL_DELAY
-
-    private fun getJitteredDelay(): Long {
-        currentDelay = (currentDelay * 2).coerceAtMost(MAX_BACKOFF)
-        return (currentDelay * (0.5 + Random.nextDouble(0.5))).toLong()
-    }
-
-    fun execute(
-        operation: () -> T,
-        isRetryable: (Exception) -> Boolean = { it is RetryableException },
-        errorHandler: ((Exception, Int) -> Nothing)? = null,
-    ): T {
-        while (attempts < MAX_RETRY_ATTEMPTS) {
-            try {
-                return operation()
-            } catch (e: Exception) {
-                attempts++
-                if (attempts >= MAX_RETRY_ATTEMPTS || !isRetryable(e)) {
-                    errorHandler?.invoke(e, attempts) ?: throw e
-                }
-
-                Thread.sleep(getJitteredDelay())
-            }
-        }
-
-        throw RuntimeException("Unexpected state after $attempts attempts")
-    }
-
-    suspend fun executeSuspend(
-        operation: suspend () -> T,
-        isRetryable: (Exception) -> Boolean = { it is RetryableException },
-        errorHandler: (suspend (Exception, Int) -> Nothing)? = null,
-    ): T {
-        while (attempts < MAX_RETRY_ATTEMPTS) {
-            try {
-                return operation()
-            } catch (e: Exception) {
-                attempts++
-                if (attempts >= MAX_RETRY_ATTEMPTS || !isRetryable(e)) {
-                    errorHandler?.invoke(e, attempts) ?: throw e
-                }
-                delay(getJitteredDelay())
-            }
-        }
-
-        throw RuntimeException("Unexpected state after $attempts attempts")
-    }
-
-    companion object {
-        private const val INITIAL_DELAY = 100L
-        private const val MAX_BACKOFF = 10000L
-        private const val MAX_RETRY_ATTEMPTS = 3
     }
 }
