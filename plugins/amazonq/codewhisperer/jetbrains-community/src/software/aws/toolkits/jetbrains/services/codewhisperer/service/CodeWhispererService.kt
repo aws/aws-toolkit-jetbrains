@@ -16,7 +16,6 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.VisualPosition
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
-import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
@@ -299,12 +298,9 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                             }
                         }
                         val nextRecommendationContext = RecommendationContext(detailContexts, "", "", newVisualPosition)
-                        val newPopup = withContext(EDT) {
-                            JBPopupFactory.getInstance().createMessage("Dummy popup")
-                        }
 
                         // send userDecision and trigger decision when next recommendation haven't been seen
-                        if (currStates.popup.isDisposed) {
+                        if (currStates.popup?.isDisposed == true) {
                             CodeWhispererTelemetryService.getInstance().sendUserDecisionEventForAll(
                                 nextRequestContext,
                                 nextResponseContext,
@@ -313,7 +309,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                                 false
                             )
                         } else {
-                            nextInvocationContext = InvocationContext(nextRequestContext, nextResponseContext, nextRecommendationContext, newPopup)
+                            nextInvocationContext = InvocationContext(nextRequestContext, nextResponseContext, nextRecommendationContext, null)
                         }
                         LOG.debug { "Prefetched next invocation stored in nextInvocationContext" }
                     }
@@ -709,7 +705,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         val updatedStates = states.copy(
             recommendationContext = recommendationContext.copy(details = details + newDetailContexts)
         )
-        Disposer.register(states.popup, updatedStates)
+        states.popup?.let { Disposer.register(it, updatedStates) }
         CodeWhispererPopupManager.getInstance().initPopupListener(updatedStates)
         return updatedStates
     }
@@ -744,7 +740,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         cs.launch {
             val newPopup = CodeWhispererPopupManager.getInstance().initPopup()
             val updatedNextStates = nextStates.copy(popup = newPopup).also {
-                addPopupChildDisposables(it.requestContext.project, it.requestContext.editor, it.popup)
+                it.popup?.let { it1 -> addPopupChildDisposables(it.requestContext.project, it.requestContext.editor, it1) }
                 Disposer.register(newPopup, it)
             }
             CodeWhispererPopupManager.getInstance().initPopupListener(updatedNextStates)
