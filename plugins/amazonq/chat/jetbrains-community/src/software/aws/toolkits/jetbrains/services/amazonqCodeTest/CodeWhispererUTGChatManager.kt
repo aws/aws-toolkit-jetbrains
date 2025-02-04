@@ -585,7 +585,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     codeTestChatHelper.deleteSession(session.tabId)
                     codeTestChatHelper.updateUI(
                         promptInputDisabledState = false,
-                        promptInputPlaceholder = message("testgen.placeholder.newtab"),
+                        promptInputPlaceholder = message("testgen.placeholder.enter_slash_quick_actions"),
                     )
                 }
                 session.isGeneratingTests = false
