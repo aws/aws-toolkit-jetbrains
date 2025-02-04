@@ -62,8 +62,8 @@ class AmazonQStreamingClient(private val project: Project) {
         val checksum = AtomicReference("")
 
         try {
-            withRetry(
-                block = {
+            RetryableOperation<Unit>().executeSuspend(
+                operation = {
                     val result = streamingBearerClient().exportResultArchive(
                         {
                             it.exportId(exportId)
@@ -96,11 +96,12 @@ class AmazonQStreamingClient(private val project: Project) {
                         -> true
                         else -> false
                     }
+                },
+                errorHandler = { e, attempts ->
+                    onError(e)
+                    throw e
                 }
             )
-        } catch (e: Exception) {
-            onError(e)
-            throw e
         } finally {
             onStreamingFinished(startTime)
         }
@@ -108,44 +109,66 @@ class AmazonQStreamingClient(private val project: Project) {
         return byteBufferList
     }
 
-    /**
-     * Helper function to implement retry logic with exponential backoff and jitter
-     *
-     * @param block The suspend function to execute with retry logic
-     * @param isRetryable A function that determines if an exception should trigger a retry
-     * @return The result of the block execution
-     */
-    private suspend fun <T> withRetry(
-        block: suspend () -> T,
-        isRetryable: (Exception) -> Boolean = { it is RetryableException },
-    ): T {
-        var currentDelay = INITIAL_DELAY
-        var attempt = 0
+    companion object {
+        private val LOG = getLogger<AmazonQStreamingClient>()
 
-        while (true) {
+        fun getInstance(project: Project) = project.service<AmazonQStreamingClient>()
+    }
+}
+
+class RetryableOperation<T> {
+    private var attempts = 0
+    private var currentDelay = INITIAL_DELAY
+
+    private fun getJitteredDelay(): Long {
+        currentDelay = (currentDelay * 2).coerceAtMost(MAX_BACKOFF)
+        return (currentDelay * (0.5 + Random.nextDouble(0.5))).toLong()
+    }
+
+    fun execute(
+        operation: () -> T,
+        isRetryable: (Exception) -> Boolean = { it is RetryableException },
+        errorHandler: ((Exception, Int) -> Nothing)? = null,
+    ): T {
+        while (attempts < MAX_RETRY_ATTEMPTS) {
             try {
-                return block()
+                return operation()
             } catch (e: Exception) {
-                attempt++
-                if (attempt >= MAX_RETRY_ATTEMPTS || !isRetryable(e)) {
-                    throw e
+                attempts++
+                if (attempts >= MAX_RETRY_ATTEMPTS || !isRetryable(e)) {
+                    errorHandler?.invoke(e, attempts) ?: throw e
                 }
 
-                // Calculate delay with exponential backoff and jitter
-                currentDelay = (currentDelay * 2).coerceAtMost(MAX_BACKOFF)
-                val jitteredDelay = currentDelay * (0.5 + Random.nextDouble(0.5))
-
-                delay(jitteredDelay.toLong())
+                Thread.sleep(getJitteredDelay())
             }
         }
+
+        throw RuntimeException("Unexpected state after $attempts attempts")
+    }
+
+    suspend fun executeSuspend(
+        operation: suspend () -> T,
+        isRetryable: (Exception) -> Boolean = { it is RetryableException },
+        errorHandler: (suspend (Exception, Int) -> Nothing)? = null,
+    ): T {
+        while (attempts < MAX_RETRY_ATTEMPTS) {
+            try {
+                return operation()
+            } catch (e: Exception) {
+                attempts++
+                if (attempts >= MAX_RETRY_ATTEMPTS || !isRetryable(e)) {
+                    errorHandler?.invoke(e, attempts) ?: throw e
+                }
+                delay(getJitteredDelay())
+            }
+        }
+
+        throw RuntimeException("Unexpected state after $attempts attempts")
     }
 
     companion object {
-        private val LOG = getLogger<AmazonQStreamingClient>()
-        private const val INITIAL_DELAY = 100L // milliseconds
-        private const val MAX_BACKOFF = 10000L // milliseconds
+        private const val INITIAL_DELAY = 100L
+        private const val MAX_BACKOFF = 10000L
         private const val MAX_RETRY_ATTEMPTS = 3
-
-        fun getInstance(project: Project) = project.service<AmazonQStreamingClient>()
     }
 }
