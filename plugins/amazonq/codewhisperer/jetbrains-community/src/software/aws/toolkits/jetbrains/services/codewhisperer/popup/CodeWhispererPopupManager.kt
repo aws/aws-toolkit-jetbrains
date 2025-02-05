@@ -41,9 +41,11 @@ import com.intellij.ui.popup.AbstractPopup
 import com.intellij.ui.popup.PopupFactoryImpl
 import com.intellij.util.messages.Topic
 import com.intellij.util.ui.UIUtil
+import kotlinx.coroutines.sync.Semaphore
 import software.amazon.awssdk.services.codewhispererruntime.model.Import
 import software.amazon.awssdk.services.codewhispererruntime.model.Reference
 import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addHorizontalGlue
@@ -67,6 +69,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.Co
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererScrollListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.addIntelliSenseAcceptListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_DIM_HEX
@@ -85,7 +88,8 @@ import javax.swing.JLabel
 class CodeWhispererPopupManager {
     val popupComponents = CodeWhispererPopupComponents()
 
-    var shouldListenerCancelPopup: Boolean = true
+    // Act like a semaphore: one increment only corresponds to one decrement
+    var allowEditsDuringSuggestionPreview = Semaphore(MAX_EDIT_SOURCE_DURING_SUGGESTION_PREVIEW)
     var sessionContext = SessionContext()
         private set
 
@@ -245,12 +249,20 @@ class CodeWhispererPopupManager {
         }
     }
 
+    // Don't want to block or throw any kinds of exceptions here if it can continue to provide suggestions
     fun dontClosePopupAndRun(runnable: () -> Unit) {
-        try {
-            shouldListenerCancelPopup = false
-            runnable()
-        } finally {
-            shouldListenerCancelPopup = true
+        if (allowEditsDuringSuggestionPreview.tryAcquire()) {
+            try {
+                runnable()
+            } finally {
+                try {
+                    allowEditsDuringSuggestionPreview.release()
+                } catch (e: Exception) {
+                    LOG.error(e) { "Failed to release allowEditsDuringSuggestionPreview semaphore" }
+                }
+            }
+        } else {
+            LOG.error { "Failed to acquire allowEditsDuringSuggestionPreview semaphore" }
         }
     }
 
@@ -449,6 +461,9 @@ class CodeWhispererPopupManager {
                         CodeWhispererEditorManager.getInstance().updateEditorWithRecommendation(states, sessionContext)
                     }
                     closePopup(states.popup)
+                    if (sessionContext.selectedIndex == 0) {
+                        CodeWhispererService.getInstance().promoteNextInvocationIfAvailable()
+                    }
                 }
             }
         )
@@ -496,7 +511,7 @@ class CodeWhispererPopupManager {
         val editor = states.requestContext.editor
         val codewhispererSelectionListener: SelectionListener = object : SelectionListener {
             override fun selectionChanged(event: SelectionEvent) {
-                if (shouldListenerCancelPopup) {
+                if (allowEditsDuringSuggestionPreview.availablePermits == MAX_EDIT_SOURCE_DURING_SUGGESTION_PREVIEW) {
                     cancelPopup(states.popup)
                 }
                 super.selectionChanged(event)
@@ -512,7 +527,7 @@ class CodeWhispererPopupManager {
                 if (!delete) return
                 if (editor.caretModel.offset == event.offset) {
                     changeStates(states, 0)
-                } else if (shouldListenerCancelPopup) {
+                } else if (allowEditsDuringSuggestionPreview.availablePermits == MAX_EDIT_SOURCE_DURING_SUGGESTION_PREVIEW) {
                     cancelPopup(states.popup)
                 }
             }
@@ -521,7 +536,7 @@ class CodeWhispererPopupManager {
 
         val codewhispererCaretListener: CaretListener = object : CaretListener {
             override fun caretPositionChanged(event: CaretEvent) {
-                if (shouldListenerCancelPopup) {
+                if (allowEditsDuringSuggestionPreview.availablePermits == MAX_EDIT_SOURCE_DURING_SUGGESTION_PREVIEW) {
                     cancelPopup(states.popup)
                 }
                 super.caretPositionChanged(event)
@@ -702,6 +717,7 @@ class CodeWhispererPopupManager {
             "CodeWhisperer user action performed",
             CodeWhispererUserActionListener::class.java
         )
+        const val MAX_EDIT_SOURCE_DURING_SUGGESTION_PREVIEW = 2
     }
 }
 
