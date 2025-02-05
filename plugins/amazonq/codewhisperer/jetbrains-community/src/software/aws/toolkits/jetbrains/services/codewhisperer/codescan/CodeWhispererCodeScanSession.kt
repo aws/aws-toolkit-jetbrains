@@ -91,7 +91,6 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             if (isProjectScope()) {
                 LOG.debug {
                     "Total size of source payload in KB: ${payloadContext.srcPayloadSize * 1.0 / TOTAL_BYTES_IN_KB} \n" +
-                        "Total size of build payload in KB: ${(payloadContext.buildPayloadSize ?: 0) * 1.0 / TOTAL_BYTES_IN_KB} \n" +
                         "Total size of source zip file in KB: ${payloadContext.srcZipFileSize * 1.0 / TOTAL_BYTES_IN_KB} \n" +
                         "Total number of lines reviewed: ${payloadContext.totalLines} \n" +
                         "Total number of files included in payload: ${payloadContext.totalFiles} \n" +
