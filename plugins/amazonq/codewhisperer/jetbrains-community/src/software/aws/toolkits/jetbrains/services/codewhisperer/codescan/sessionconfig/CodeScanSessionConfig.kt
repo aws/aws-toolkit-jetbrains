@@ -334,7 +334,8 @@ data class PayloadContext(
     val scannedFiles: List<VirtualFile>,
     val srcPayloadSize: Long,
     val srcZipFileSize: Long,
-    val buildPayloadSize: Long? = null,
+    val payloadManifest: Set<Pair<String, Long>>? = null,
+    val payloadLimitCrossed: Boolean? = false,
 )
 
 data class PayloadMetadata(
@@ -343,4 +344,6 @@ data class PayloadMetadata(
     val linesScanned: Long,
     val language: CodewhispererLanguage,
     val codeDiff: String? = null,
+    val payloadManifest: Set<Pair<String, Long>>? = null,
+    val payloadLimitCrossed: Boolean? = false,
 )

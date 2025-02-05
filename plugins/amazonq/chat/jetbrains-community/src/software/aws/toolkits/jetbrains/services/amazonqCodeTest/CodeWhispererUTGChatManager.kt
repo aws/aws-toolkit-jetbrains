@@ -16,6 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTestGenerationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.Range
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTestGenerationResponse
@@ -39,6 +40,7 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.Session
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.utils.combineBuildAndExecuteLogFiles
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.CodeTestException
+import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.fileTooLarge
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.sessionconfig.CodeTestSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.testGenStoppedError
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
@@ -98,6 +100,9 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         session.srcZipFileSize = codeTestResponseContext.payloadContext.srcZipFileSize
         session.artifactUploadDuration = codeTestResponseContext.serviceInvocationContext.artifactsUploadDuration
         val path = codeTestResponseContext.currentFileRelativePath
+        if (codeTestResponseContext.payloadContext.payloadLimitCrossed == true) {
+            fileTooLarge()
+        }
 
         val createUploadUrlResponse = codeTestResponseContext.createUploadUrlResponse ?: return
         throwIfCancelled(session)
@@ -144,6 +149,11 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         } catch (e: Exception) {
             LOG.error(e) { "Unexpected error while creating test generation job" }
             val errorMessage = getTelemetryErrorMessage(e, CodeWhispererConstants.FeatureName.TEST_GENERATION)
+
+            // Sending requestId to telemetry if there is Validation Exception
+            if (e is SdkServiceException) {
+                session.startTestGenerationRequestId = e.requestId()
+            }
             throw CodeTestException(
                 "CreateTestJobError: $errorMessage",
                 "CreateTestJobError",
