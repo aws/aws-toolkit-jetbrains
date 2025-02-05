@@ -16,6 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTestGenerationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.Range
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTestGenerationResponse
@@ -118,7 +119,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
             ) {
                 try {
                     response = startTestGeneration(
-                        uploadId = createUploadUrlResponse.uploadId(),
+                        uploadId = "", // createUploadUrlResponse.uploadId(),
                         targetCode = listOf(
                             TargetCode.builder()
                                 .relativeTargetPath(codeTestResponseContext.currentFileRelativePath.toString())
@@ -144,6 +145,11 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         } catch (e: Exception) {
             LOG.error(e) { "Unexpected error while creating test generation job" }
             val errorMessage = getTelemetryErrorMessage(e, CodeWhispererConstants.FeatureName.TEST_GENERATION)
+
+            // Sending requestId to telemetry if there is Validation Exception
+            if (e is SdkServiceException) {
+                session.startTestGenerationRequestId = e.requestId()
+            }
             throw CodeTestException(
                 "CreateTestJobError: $errorMessage",
                 "CreateTestJobError",
