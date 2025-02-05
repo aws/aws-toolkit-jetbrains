@@ -18,7 +18,6 @@ import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
-import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.Payload
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadMetadata
@@ -33,10 +32,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmi
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_PAYLOAD_LIMIT_IN_BYTES
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.INTERNAL_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.GitIgnoreFilteringUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
-import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.nio.file.Path
@@ -63,12 +60,7 @@ class CodeTestSessionConfig(
      */
     fun overallJobTimeoutInSeconds(): Long = DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
 
-    fun getPayloadLimitInBytes(): Long =
-        if (isInternalUser(getStartUrl(project))) {
-            INTERNAL_PAYLOAD_LIMIT_IN_BYTES
-        } else {
-            DEFAULT_PAYLOAD_LIMIT_IN_BYTES
-        }
+    fun getPayloadLimitInBytes(): Long = DEFAULT_PAYLOAD_LIMIT_IN_BYTES
 
     private fun willExceedPayloadLimit(currentTotalFileSize: Long, currentFileSize: Long): Boolean =
         currentTotalFileSize.let { totalSize -> totalSize > (getPayloadLimitInBytes() - currentFileSize) }
