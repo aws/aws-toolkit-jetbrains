@@ -23,7 +23,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.RetryableOperation
 import java.time.Instant
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicReference
-import javax.naming.ServiceUnavailableException
 
 @Service(Service.Level.PROJECT)
 class AmazonQStreamingClient(private val project: Project) {
@@ -88,7 +87,6 @@ class AmazonQStreamingClient(private val project: Project) {
                     when (e) {
                         is ValidationException,
                         is ThrottlingException,
-                        is ServiceUnavailableException,
                         is SdkException,
                         is TimeoutException,
                         -> true
