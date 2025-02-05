@@ -95,13 +95,13 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         )
 
         val codeTestResponseContext = createUploadUrl(codeTestChatHelper, previousIterationContext)
-        if (codeTestResponseContext.payloadContext.payloadLimitCrossed == true) {
-            fileTooLarge()
-        }
         session.srcPayloadSize = codeTestResponseContext.payloadContext.srcPayloadSize
         session.srcZipFileSize = codeTestResponseContext.payloadContext.srcZipFileSize
         session.artifactUploadDuration = codeTestResponseContext.serviceInvocationContext.artifactsUploadDuration
         val path = codeTestResponseContext.currentFileRelativePath
+        if (codeTestResponseContext.payloadContext.payloadLimitCrossed == true) {
+            fileTooLarge()
+        }
 
         val createUploadUrlResponse = codeTestResponseContext.createUploadUrlResponse ?: return
         throwIfCancelled(session)
