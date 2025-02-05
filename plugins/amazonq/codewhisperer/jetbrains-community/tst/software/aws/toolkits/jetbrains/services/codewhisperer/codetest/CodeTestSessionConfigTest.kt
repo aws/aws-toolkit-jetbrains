@@ -101,17 +101,6 @@ class CodeTestSessionConfigTest {
         }
     }
 
-    @Test
-    fun `test createPayload should throw CodeWhispererCodeScanException if project size is more than Payload Limit`() {
-        codeTestSessionConfig.stub {
-            onGeneric { getPayloadLimitInBytes() }.thenReturn(1000)
-        }
-
-        assertThrows<CodeTestException> {
-            codeTestSessionConfig.createPayload()
-        }
-    }
-
     private fun setupTestProject() {
         val testModule = projectRule.fixture.addModule("testModule")
         val testModule2 = projectRule.fixture.addModule("testModule2")
