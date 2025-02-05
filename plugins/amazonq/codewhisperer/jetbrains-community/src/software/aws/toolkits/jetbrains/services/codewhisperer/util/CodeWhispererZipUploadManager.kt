@@ -20,6 +20,7 @@ import software.amazon.awssdk.utils.IoUtils
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.AwsClientManager
+import software.aws.toolkits.jetbrains.services.amazonq.RetryableOperation
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanSession.Companion.APPLICATION_ZIP
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanSession.Companion.AWS_KMS
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanSession.Companion.CONTENT_MD5
@@ -206,43 +207,5 @@ fun getTelemetryErrorMessage(e: Exception, featureUseCase: CodeWhispererConstant
     else -> e.message ?: when (featureUseCase) {
         CodeWhispererConstants.FeatureName.CODE_REVIEW -> message("codewhisperer.codescan.run_scan_error_telemetry")
         else -> message("testgen.message.failed")
-    }
-}
-
-class RetryableOperation<T> {
-    private var attempts = 0
-    private var currentDelay = INITIAL_DELAY
-    private var lastException: Exception? = null
-
-    fun execute(
-        operation: () -> T,
-        isRetryable: (Exception) -> Boolean,
-        errorHandler: (Exception, Int) -> Nothing,
-    ): T {
-        while (attempts < MAX_RETRY_ATTEMPTS) {
-            try {
-                return operation()
-            } catch (e: Exception) {
-                lastException = e
-
-                attempts++
-                if (attempts < MAX_RETRY_ATTEMPTS && isRetryable(e)) {
-                    Thread.sleep(currentDelay)
-                    currentDelay = (currentDelay * 2).coerceAtMost(MAX_BACKOFF)
-                    continue
-                }
-
-                errorHandler(e, attempts)
-            }
-        }
-
-        // This line should never be reached due to errorHandler throwing exception
-        throw RuntimeException("Unexpected state after $attempts attempts")
-    }
-
-    companion object {
-        private const val INITIAL_DELAY = 100L // milliseconds
-        private const val MAX_BACKOFF = 10000L // milliseconds
-        private const val MAX_RETRY_ATTEMPTS = 3
     }
 }

@@ -14,7 +14,7 @@ dependencyResolutionManagement {
                     "1.8.0-intellij-9"
                 }
 
-                "2024.3" -> {
+                "2024.3", "2025.1" -> {
                     "1.8.0-intellij-11"
                 }
 
