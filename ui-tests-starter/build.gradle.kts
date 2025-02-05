@@ -9,7 +9,7 @@ plugins {
     id("toolkit-kotlin-conventions")
     id("toolkit-intellij-plugin")
 
-    id("org.jetbrains.intellij.platform")
+    id("org.jetbrains.intellij.platform.module")
 }
 
 val ideProfile = IdeVersions.ideProfile(project)
@@ -34,9 +34,7 @@ dependencies {
     // should really be set by the BOM, but too much work to figure out right now
     testImplementation("org.kodein.di:kodein-di-jvm:7.20.2")
     intellijPlatform {
-        intellijIdeaCommunity(IdeVersions.ideProfile(providers).map { it.name })
-
-        testFramework(TestFrameworkType.Starter)
+        testFramework(TestFrameworkType.Starter, ideProfile.community.sdkVersion)
     }
 
     testPlugins(project(":plugin-amazonq", "pluginZip"))
