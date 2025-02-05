@@ -105,11 +105,9 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
     @Test
     fun `test pre-setup failure will send service invocation event with failed status`() {
-        val codewhispererServiceSpy = spy(codewhispererService) {
-            onGeneric { getRequestContext(any(), any(), any(), any(), any()) }
-                .doAnswer { throw Exception() }
-        }
-        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
+        doAnswer { throw Exception() }
+            .whenever(codewhispererService)
+            .getRequestContext(any(), any(), any(), any(), any())
 
         invokeCodeWhispererService()
 
@@ -164,7 +162,8 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             // 1 serviceInvocation + 1 userModification + 1 userDecision for accepted +
             // (count - 1) userDecisions for ignored
             verify(batcher, atLeast(2 + count)).enqueue(capture())
-            assertEventsContainsFieldsAndCount(allValues, serviceInvocation, 1)
+            // one service invocation for current recommendation and one for next recommendation
+            assertEventsContainsFieldsAndCount(allValues, serviceInvocation, 2)
             assertEventsContainsFieldsAndCount(
                 allValues,
                 userModification,
@@ -194,10 +193,12 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             val count = pythonResponse.completions().size
             argumentCaptor<MetricEvent>().apply {
                 verify(batcher, atLeast(1 + count)).enqueue(capture())
+                // send 2 invocation events for current and next recommendation session,
+                // one reject and at least (count -1) Unseen events
                 assertEventsContainsFieldsAndCount(
                     allValues,
                     serviceInvocation,
-                    1,
+                    2,
                     "result" to Result.Succeeded.toString(),
                 )
                 assertEventsContainsFieldsAndCount(
@@ -211,6 +212,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
                     userDecision,
                     count - 1,
                     codewhispererSuggestionState to CodewhispererSuggestionState.Unseen.toString(),
+                    atLeast = true
                 )
             }
         }
@@ -218,13 +220,14 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
     @Test
     fun `test invoking CodeWhisperer will send service invocation event with succeeded status`() {
+        // serviceInvocation event will be sent for current session and preloaded next session
         withCodeWhispererServiceInvokedAndWait {
             argumentCaptor<MetricEvent>().apply {
                 verify(batcher, atLeastOnce()).enqueue(capture())
                 assertEventsContainsFieldsAndCount(
                     allValues,
                     serviceInvocation,
-                    1,
+                    2,
                     "result" to Result.Succeeded.toString(),
                 )
             }
@@ -267,32 +270,19 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
     @Test
     fun `test user's typeahead before getting response will discard recommendations whose prefix not matching`() {
-        val editorManagerSpy = spy(editorManager)
-        val typeahead = "(x, y)"
-        editorManagerSpy.stub {
-            onGeneric {
-                getUserInputSinceInvocation(any(), any())
-            } doAnswer {
-                typeahead
-            }
-            onGeneric {
-                getCaretMovement(any(), any())
-            } doAnswer {
-                CaretMovement.MOVE_FORWARD
-            }
-        }
-        ApplicationManager.getApplication().replaceService(CodeWhispererEditorManager::class.java, editorManagerSpy, disposableRule.disposable)
-
+        val userInput = "(x, y)"
+        addUserInputAfterInvocation(userInput)
         withCodeWhispererServiceInvokedAndWait { }
-        val prefixNotMatchCount = pythonResponse.completions().filter {
-            !it.content().startsWith(typeahead)
-        }.size
+        val prefixNotMatchCount = pythonResponse.completions().count {
+            !it.content().startsWith(userInput)
+        }
+        // serviceInvocation event will be sent for current session and preloaded next session
         argumentCaptor<MetricEvent>().apply {
             verify(batcher, atLeast(1 + prefixNotMatchCount)).enqueue(capture())
             assertEventsContainsFieldsAndCount(
                 allValues,
                 serviceInvocation,
-                1,
+                2,
                 "result" to Result.Succeeded.toString(),
             )
             assertEventsContainsFieldsAndCount(
@@ -373,13 +363,14 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
     @Test
     fun `test invoking CodeWhisperer will send service invocation event with sessionId and requestId from response`() {
+        // serviceInvocation event will be sent for current session and preloaded next session
         withCodeWhispererServiceInvokedAndWait { states ->
             val metricCaptor = argumentCaptor<MetricEvent>()
             verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
             assertEventsContainsFieldsAndCount(
                 metricCaptor.allValues,
                 serviceInvocation,
-                1,
+                2,
                 "codewhispererSessionId" to states.responseContext.sessionId,
                 "codewhispererRequestId" to states.recommendationContext.details[0].requestId,
             )
@@ -390,7 +381,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     fun `test userDecision events will record sessionId and requestId from response`() {
         val statesCaptor = argumentCaptor<InvocationContext>()
         withCodeWhispererServiceInvokedAndWait {}
-        verify(popupManagerSpy, timeout(5000).atLeastOnce()).render(statesCaptor.capture(), any(), any(), any(), any())
+        verify(popupManagerSpy, timeout(5000).atLeastOnce()).render(statesCaptor.capture(), any(), any())
         val states = statesCaptor.lastValue
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
@@ -401,38 +392,6 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             "codewhispererSessionId" to states.responseContext.sessionId,
             "codewhispererRequestId" to states.recommendationContext.details[0].requestId,
         )
-    }
-
-    @Test
-    fun `test showing IntelliSense after triggering CodeWhisperer will send userDecision events of state Discard`() {
-        val codewhispererServiceSpy = spy(codewhispererService)
-        codewhispererServiceSpy.stub {
-            onGeneric {
-                canDoInvocation(any(), any())
-            } doAnswer {
-                true
-            }
-        }
-        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
-        popupManagerSpy.stub {
-            onGeneric {
-                hasConflictingPopups(any())
-            } doAnswer {
-                true
-            }
-        }
-        invokeCodeWhispererService()
-
-        runInEdtAndWait {
-            val metricCaptor = argumentCaptor<MetricEvent>()
-            verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
-            assertEventsContainsFieldsAndCount(
-                metricCaptor.allValues,
-                userDecision,
-                pythonResponse.completions().size,
-                codewhispererSuggestionState to CodewhispererSuggestionState.Discard.toString(),
-            )
-        }
     }
 
     @Test
@@ -672,7 +631,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         }
         invokeCodeWhispererService()
 
-        verify(popupManagerSpy, never()).showPopup(any(), any(), any(), any(), any())
+        verify(popupManagerSpy, never()).showPopup(any(), any(), any(), any())
         runInEdtAndWait {
             val metricCaptor = argumentCaptor<MetricEvent>()
             verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
@@ -772,11 +731,11 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
         val numOfEmptyRecommendations = response.completions().filter { it.content().isEmpty() }.size
         if (numOfEmptyRecommendations == response.completions().size) {
-            verify(popupManagerSpy, never()).showPopup(any(), any(), any(), any(), any())
+            verify(popupManagerSpy, never()).showPopup(any(), any(), any(), any())
         } else {
             val popupCaptor = argumentCaptor<JBPopup>()
             verify(popupManagerSpy, timeout(5000))
-                .showPopup(any(), any(), popupCaptor.capture(), any(), any())
+                .showPopup(any(), any(), popupCaptor.capture(), any())
             runInEdtAndWait {
                 popupManagerSpy.closePopup(popupCaptor.lastValue)
             }

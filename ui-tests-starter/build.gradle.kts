@@ -53,7 +53,7 @@ tasks.test {
 
 // hack to disable ui tests in ./gradlew check
 val action = Action<TaskExecutionGraph> {
-    if (hasTask(tasks.test.get())) {
+    if (hasTask(tasks.check.get())) {
         tasks.test.get().enabled = false
     }
 }

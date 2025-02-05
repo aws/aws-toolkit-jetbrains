@@ -23,6 +23,7 @@ import icons.AwsIcons
 import kotlinx.coroutines.CoroutineScope
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.IssueGroupingStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.IssueSeverity
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addHorizontalGlue
@@ -49,6 +50,8 @@ import javax.swing.tree.TreePath
  */
 internal class CodeWhispererCodeScanResultsView(private val project: Project, private val defaultScope: CoroutineScope) : JPanel(BorderLayout()) {
 
+    private fun isGroupedBySeverity() = CodeWhispererCodeScanManager.getInstance(project).getGroupingStrategySelected() == IssueGroupingStrategy.SEVERITY
+
     private val codeScanTree: Tree = Tree().apply {
         isRootVisible = false
 
@@ -67,6 +70,9 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project, pr
     }
 
     private fun expandItems() {
+        if (!isGroupedBySeverity()) {
+            return
+        }
         val criticalTreePath = TreePath(arrayOf(codeScanTree.model.root, codeScanTree.model.getChild(codeScanTree.model.root, 0)))
         val highTreePath = TreePath(arrayOf(codeScanTree.model.root, codeScanTree.model.getChild(codeScanTree.model.root, 1)))
         codeScanTree.expandPath(criticalTreePath)
@@ -331,7 +337,7 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project, pr
         return actionManager.createActionToolbar(ACTION_PLACE, group, false)
     }
 
-    private class ColoredTreeCellRenderer : TreeCellRenderer {
+    private inner class ColoredTreeCellRenderer : TreeCellRenderer {
         private fun getSeverityIcon(severity: String): Icon? = when (severity) {
             IssueSeverity.LOW.displayName -> AwsIcons.Resources.CodeWhisperer.SEVERITY_INITIAL_LOW
             IssueSeverity.MEDIUM.displayName -> AwsIcons.Resources.CodeWhisperer.SEVERITY_INITIAL_MEDIUM
@@ -364,7 +370,11 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project, pr
                     }
                     is CodeWhispererCodeScanIssue -> {
                         val cellText = obj.title.trimEnd('.')
-                        val cellDescription = "${obj.file.name} ${obj.displayTextRange()}"
+                        val cellDescription = if (this@CodeWhispererCodeScanResultsView.isGroupedBySeverity()) {
+                            "${obj.file.name} ${obj.displayTextRange()}"
+                        } else {
+                            obj.displayTextRange()
+                        }
                         if (obj.isInvalid) {
                             cell.text = message("codewhisperer.codescan.scan_recommendation_invalid", obj.title, cellDescription, INACTIVE_TEXT_COLOR)
                             cell.toolTipText = message("codewhisperer.codescan.scan_recommendation_invalid.tooltip_text")
@@ -372,7 +382,11 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project, pr
                         } else {
                             cell.text = message("codewhisperer.codescan.scan_recommendation", cellText, cellDescription, INACTIVE_TEXT_COLOR)
                             cell.toolTipText = cellText
-                            cell.icon = obj.issueSeverity.icon
+                            cell.icon = if (this@CodeWhispererCodeScanResultsView.isGroupedBySeverity()) {
+                                obj.issueSeverity.icon
+                            } else {
+                                getSeverityIcon(obj.severity)
+                            }
                         }
                     }
                 }

@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.util
 import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.editor.markup.EffectType
 import com.intellij.openapi.editor.markup.TextAttributes
+import com.intellij.openapi.util.registry.Registry
 import com.intellij.ui.JBColor
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
@@ -72,6 +73,7 @@ object CodeWhispererConstants {
     const val CODE_SCAN_ISSUE_TITLE_MAX_LENGTH = 60
     const val DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS: Long = 60 * 10 // 10 minutes
     const val DEFAULT_PAYLOAD_LIMIT_IN_BYTES: Long = 1 * 1024 * 1024 * 1024 // 1GB
+    const val INTERNAL_PAYLOAD_LIMIT_IN_BYTES: Long = (1024L * 1024L * 1024L * 2L) // 2GB
     const val CODE_SCAN_POLLING_INTERVAL_IN_SECONDS: Long = 1
     const val FILE_SCAN_INITIAL_POLLING_INTERVAL_IN_SECONDS: Long = 10
     const val PROJECT_SCAN_INITIAL_POLLING_INTERVAL_IN_SECONDS: Long = 30
@@ -110,6 +112,13 @@ object CodeWhispererConstants {
     // Formatter for timestamp on accountless warn notification
     val TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
+    object QInlineActionId {
+        const val qInlineAcceptActionId = "codewhisperer.inline.accept"
+        const val qInlineNavigatePrevActionId = "codewhisperer.inline.navigate.previous"
+        const val qInlineNavigateNextActionId = "codewhisperer.inline.navigate.next"
+        const val qInlineForceAcceptActionId = "codewhisperer.inline.force.accept"
+    }
+
     object AutoSuggestion {
         const val SETTING_ID = "codewhisperer_autoSuggestionActivation"
         const val ACTIVATED = "Activated"
@@ -146,7 +155,9 @@ object CodeWhispererConstants {
     }
 
     object Config {
-        const val CODEWHISPERER_ENDPOINT = "https://codewhisperer.us-east-1.amazonaws.com/" // PROD
+        val CODEWHISPERER_ENDPOINT
+            get() = Registry.get("amazon.q.endpoint").asString()
+
         const val CODEWHISPERER_IDPOOL_ID = "us-east-1:70717e99-906f-4add-908c-bd9074a2f5b9"
         val Sigv4ClientRegion = Region.US_EAST_1
         val BearerClientRegion = Region.US_EAST_1

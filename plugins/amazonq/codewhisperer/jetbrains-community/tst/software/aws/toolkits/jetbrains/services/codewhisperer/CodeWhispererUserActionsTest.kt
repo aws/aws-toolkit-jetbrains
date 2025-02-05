@@ -122,7 +122,7 @@ class CodeWhispererUserActionsTest : CodeWhispererTestBase() {
         assertThat(projectRule.fixture.editor.document.text).isEqualTo(expectedFileContext)
         val popupCaptor = argumentCaptor<JBPopup>()
         verify(popupManagerSpy, timeout(5000))
-            .showPopup(any(), any(), popupCaptor.capture(), any(), any())
+            .showPopup(any(), any(), popupCaptor.capture(), any())
         runInEdtAndWait {
             popupManagerSpy.closePopup(popupCaptor.lastValue)
         }
@@ -138,10 +138,10 @@ class CodeWhispererUserActionsTest : CodeWhispererTestBase() {
             on { this.newRectangle } doReturn newRect
         }
         withCodeWhispererServiceInvokedAndWait { states ->
-            CodeWhispererInvocationStatus.getInstance().setPopupActive(true)
+            CodeWhispererInvocationStatus.getInstance().setDisplaySessionActive(true)
             val listener = CodeWhispererScrollListener(states)
             listener.visibleAreaChanged(event)
-            verify(popupManagerSpy, times(2)).showPopup(any(), any(), any(), any(), any())
+            verify(popupManagerSpy, times(2)).showPopup(any(), any(), any(), any())
         }
     }
 
@@ -165,13 +165,13 @@ class CodeWhispererUserActionsTest : CodeWhispererTestBase() {
         if (shouldtrigger) {
             val popupCaptor = argumentCaptor<JBPopup>()
             verify(popupManagerSpy, timeout(5000).atLeastOnce())
-                .showPopup(any(), any(), popupCaptor.capture(), any(), any())
+                .showPopup(any(), any(), popupCaptor.capture(), any())
             runInEdtAndWait {
                 popupManagerSpy.closePopup(popupCaptor.lastValue)
             }
         } else {
             verify(popupManagerSpy, times(0))
-                .showPopup(any(), any(), any(), any(), any())
+                .showPopup(any(), any(), any(), any())
         }
     }
 
@@ -181,7 +181,7 @@ class CodeWhispererUserActionsTest : CodeWhispererTestBase() {
         projectRule.fixture.type('\n')
         val popupCaptor = argumentCaptor<JBPopup>()
         verify(popupManagerSpy, timeout(5000).atLeast(times))
-            .showPopup(any(), any(), popupCaptor.capture(), any(), any())
+            .showPopup(any(), any(), popupCaptor.capture(), any())
         runInEdtAndWait {
             popupManagerSpy.closePopup(popupCaptor.lastValue)
         }

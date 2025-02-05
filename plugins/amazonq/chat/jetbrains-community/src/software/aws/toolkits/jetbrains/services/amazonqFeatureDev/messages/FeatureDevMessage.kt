@@ -250,6 +250,9 @@ enum class FollowUpTypes(
     PROVIDE_FEEDBACK_AND_REGENERATE_CODE("ProvideFeedbackAndRegenerateCode"),
     NEW_TASK("NewTask"),
     CLOSE_SESSION("CloseSession"),
+    ACCEPT_AUTO_BUILD("AcceptAutoBuild"),
+    DENY_AUTO_BUILD("DenyAutoBuild"),
+    GENERATE_DEV_FILE("GenerateDevFile"),
 }
 
 // Util classes

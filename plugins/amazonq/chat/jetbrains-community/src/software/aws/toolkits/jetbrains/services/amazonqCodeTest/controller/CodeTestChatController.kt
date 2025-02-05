@@ -627,7 +627,7 @@ class CodeTestChatController(
                 sessionCleanUp(session.tabId)
                 codeTestChatHelper.updateUI(
                     promptInputDisabledState = false,
-                    promptInputPlaceholder = message("testgen.placeholder.waiting_on_your_inputs"),
+                    promptInputPlaceholder = message("testgen.placeholder.enter_slash_quick_actions"),
                 )
                 /*
                 val taskContext = session.buildAndExecuteTaskContext
@@ -1004,7 +1004,7 @@ class CodeTestChatController(
         codeTestChatHelper.updateUI(
             promptInputDisabledState = false
         )
-        codeTestChatHelper.sendUpdatePlaceholder(tabId, message("testgen.placeholder.newtab"))
+        codeTestChatHelper.sendUpdatePlaceholder(tabId, message("testgen.placeholder.enter_slash_quick_actions"))
     }
 
     private fun openOrCreateTestFileAndApplyDiff(
