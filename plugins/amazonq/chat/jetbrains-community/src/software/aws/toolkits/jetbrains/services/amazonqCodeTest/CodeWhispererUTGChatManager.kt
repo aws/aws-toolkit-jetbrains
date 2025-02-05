@@ -119,7 +119,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
             ) {
                 try {
                     response = startTestGeneration(
-                        uploadId = "", // createUploadUrlResponse.uploadId(),
+                        uploadId = createUploadUrlResponse.uploadId(),
                         targetCode = listOf(
                             TargetCode.builder()
                                 .relativeTargetPath(codeTestResponseContext.currentFileRelativePath.toString())
