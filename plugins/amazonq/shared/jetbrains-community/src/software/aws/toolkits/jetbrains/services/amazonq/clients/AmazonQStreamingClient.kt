@@ -7,16 +7,21 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.future.await
+import software.amazon.awssdk.core.exception.SdkException
 import software.amazon.awssdk.services.codewhispererstreaming.CodeWhispererStreamingAsyncClient
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportIntent
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportResultArchiveResponseHandler
+import software.amazon.awssdk.services.codewhispererstreaming.model.ThrottlingException
+import software.amazon.awssdk.services.codewhispererstreaming.model.ValidationException
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.services.amazonq.RetryableOperation
 import java.time.Instant
+import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicReference
 
 @Service(Service.Level.PROJECT)
@@ -54,30 +59,45 @@ class AmazonQStreamingClient(private val project: Project) {
         val checksum = AtomicReference("")
 
         try {
-            val result = streamingBearerClient().exportResultArchive(
-                {
-                    it.exportId(exportId)
-                    it.exportIntent(exportIntent)
-                    it.exportContext(exportContext)
+            RetryableOperation<Unit>().executeSuspend(
+                operation = {
+                    val result = streamingBearerClient().exportResultArchive(
+                        {
+                            it.exportId(exportId)
+                            it.exportIntent(exportIntent)
+                            it.exportContext(exportContext)
+                        },
+                        ExportResultArchiveResponseHandler.builder().subscriber(
+                            ExportResultArchiveResponseHandler.Visitor.builder()
+                                .onBinaryMetadataEvent {
+                                    checksum.set(it.contentChecksum())
+                                }.onBinaryPayloadEvent {
+                                    val payloadBytes = it.bytes().asByteArray()
+                                    byteBufferList.add(payloadBytes)
+                                }.onDefault {
+                                    LOG.warn { "Received unknown payload stream: $it" }
+                                }
+                                .build()
+                        )
+                            .build()
+                    )
+                    result.await()
                 },
-                ExportResultArchiveResponseHandler.builder().subscriber(
-                    ExportResultArchiveResponseHandler.Visitor.builder()
-                        .onBinaryMetadataEvent {
-                            checksum.set(it.contentChecksum())
-                        }.onBinaryPayloadEvent {
-                            val payloadBytes = it.bytes().asByteArray()
-                            byteBufferList.add(payloadBytes)
-                        }.onDefault {
-                            LOG.warn { "Received unknown payload stream: $it" }
-                        }
-                        .build()
-                )
-                    .build()
+                isRetryable = { e ->
+                    when (e) {
+                        is ValidationException,
+                        is ThrottlingException,
+                        is SdkException,
+                        is TimeoutException,
+                        -> true
+                        else -> false
+                    }
+                },
+                errorHandler = { e, attempts ->
+                    onError(e)
+                    throw e
+                }
             )
-            result.await()
-        } catch (e: Exception) {
-            onError(e)
-            throw e
         } finally {
             onStreamingFinished(startTime)
         }
