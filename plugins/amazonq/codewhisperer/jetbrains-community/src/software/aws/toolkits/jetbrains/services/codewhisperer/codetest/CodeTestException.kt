@@ -16,7 +16,7 @@ open class CodeTestException(
 internal fun noFileOpenError(): Nothing =
     throw CodeTestException(message("codewhisperer.codescan.no_file_open"), "ProjectZipError")
 
-internal fun fileTooLarge(): Nothing =
+fun fileTooLarge(): Nothing =
     throw CodeTestException(message("codewhisperer.codescan.file_too_large_telemetry"), "ProjectZipError")
 
 internal fun cannotFindFile(errorMessage: String, filepath: String): Nothing =
