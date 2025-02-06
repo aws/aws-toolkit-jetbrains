@@ -146,7 +146,7 @@ interface CodeWhispererClientAdaptor : Disposable {
         sessionId: String,
         requestId: String,
         language: CodeWhispererProgrammingLanguage,
-        customizationArn: String,
+        customizationArn: String?,
         acceptedCharacterCount: Int,
         unmodifiedAcceptedTokenCount: Int,
     ): SendTelemetryEventResponse
@@ -427,7 +427,11 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     it.timestamp(Instant.now())
                     it.suggestionReferenceCount(suggestionReferenceCount)
                     it.generatedLine(lineCount)
-                    it.customizationArn(requestContext.customizationArn)
+                    requestContext.customizationArn?.let { arn ->
+                        if (arn.isNotBlank()) {
+                            it.customizationArn(arn)
+                        }
+                    }
                     it.numberOfRecommendations(numberOfRecommendations)
                     it.acceptedCharacterCount(acceptedCharCount)
                 }
@@ -473,7 +477,11 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     it.timestamp(Instant.now())
                     it.suggestionReferenceCount(suggestionReferenceCount)
                     it.generatedLine(lineCount)
-                    it.customizationArn(requestContext.customizationArn)
+                    requestContext.customizationArn?.let { arn ->
+                        if (arn.isNotBlank()) {
+                            it.customizationArn(arn)
+                        }
+                    }
                     it.numberOfRecommendations(numberOfRecommendations)
                     it.acceptedCharacterCount(acceptedCharCount)
                 }
@@ -495,7 +503,11 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.codeCoverageEvent {
                 it.programmingLanguage { languageBuilder -> languageBuilder.languageName(language.toCodeWhispererRuntimeLanguage().languageId) }
-                it.customizationArn(customizationArn)
+                customizationArn?.let { arn ->
+                    if (arn.isNotBlank()) {
+                        it.customizationArn(arn)
+                    }
+                }
                 it.acceptedCharacterCount(acceptedTokenCount.toInt())
                 it.totalCharacterCount(totalTokenCount.toInt())
                 it.timestamp(Instant.now())
@@ -512,7 +524,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         sessionId: String,
         requestId: String,
         language: CodeWhispererProgrammingLanguage,
-        customizationArn: String,
+        customizationArn: String?,
         acceptedCharacterCount: Int,
         unmodifiedAcceptedTokenCount: Int,
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
@@ -523,7 +535,11 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 it.programmingLanguage { languageBuilder ->
                     languageBuilder.languageName(language.toCodeWhispererRuntimeLanguage().languageId)
                 }
-                it.customizationArn(customizationArn)
+                customizationArn?.let { arn ->
+                    if (arn.isNotBlank()) {
+                        it.customizationArn(arn)
+                    }
+                }
                 // deprecated field, service side should not use this % anymore
                 it.modificationPercentage(0.0)
                 it.timestamp(Instant.now())
