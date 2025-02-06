@@ -395,7 +395,6 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project, pr
         }
     }
 
-    // Move navigateToIssue as a private class function
     private fun navigateToIssue(codeScanIssue: CodeWhispererCodeScanIssue) {
         val textRange = codeScanIssue.textRange ?: return
         val startOffset = textRange.startOffset
