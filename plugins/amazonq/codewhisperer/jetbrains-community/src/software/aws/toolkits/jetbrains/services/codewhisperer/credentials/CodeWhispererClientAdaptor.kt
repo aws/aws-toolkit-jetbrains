@@ -7,8 +7,6 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
-import software.amazon.awssdk.services.codewhisperer.CodeWhispererClient
 import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanRequest
 import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanResponse
 import software.amazon.awssdk.services.codewhisperer.model.GetCodeScanRequest
@@ -63,8 +61,6 @@ import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import java.time.Instant
 import java.util.concurrent.TimeUnit
-import kotlin.reflect.KProperty0
-import kotlin.reflect.jvm.isAccessible
 
 // TODO: move this file to package "/client"
 // As the connection is project-level, we need to make this project-level too
@@ -284,16 +280,8 @@ interface CodeWhispererClientAdaptor : Disposable {
 }
 
 open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispererClientAdaptor {
-    private val mySigv4Client by lazy { createUnmanagedSigv4Client() }
-
     @Volatile
     private var myBearerClient: CodeWhispererRuntimeClient? = null
-
-    private val KProperty0<*>.isLazyInitialized: Boolean
-        get() {
-            isAccessible = true
-            return (getDelegate() as Lazy<*>).isInitialized()
-        }
 
     init {
         initClientUpdateListener()
@@ -333,25 +321,13 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         bearerClient().createUploadUrl(request)
 
     override fun createCodeScan(request: CreateCodeScanRequest, isSigv4: Boolean): CreateCodeScanResponse =
-        if (isSigv4) {
-            mySigv4Client.createCodeScan(request)
-        } else {
-            bearerClient().startCodeAnalysis(request.transform()).transform()
-        }
+        bearerClient().startCodeAnalysis(request.transform()).transform()
 
     override fun getCodeScan(request: GetCodeScanRequest, isSigv4: Boolean): GetCodeScanResponse =
-        if (isSigv4) {
-            mySigv4Client.getCodeScan(request)
-        } else {
-            bearerClient().getCodeAnalysis(request.transform()).transform()
-        }
+        bearerClient().getCodeAnalysis(request.transform()).transform()
 
     override fun listCodeScanFindings(request: ListCodeScanFindingsRequest, isSigv4: Boolean): ListCodeScanFindingsResponse =
-        if (isSigv4) {
-            mySigv4Client.listCodeScanFindings(request)
-        } else {
-            bearerClient().listCodeAnalysisFindings(request.transform()).transform()
-        }
+        bearerClient().listCodeAnalysisFindings(request.transform()).transform()
 
     override fun startCodeFixJob(request: StartCodeFixJobRequest): StartCodeFixJobResponse = bearerClient().startCodeFixJob(request)
 
@@ -860,9 +836,6 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
     }
 
     override fun dispose() {
-        if (this::mySigv4Client.isLazyInitialized) {
-            mySigv4Client.close()
-        }
         myBearerClient?.close()
     }
 
@@ -889,11 +862,6 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
 
     companion object {
         private val LOG = getLogger<CodeWhispererClientAdaptorImpl>()
-        private fun createUnmanagedSigv4Client(): CodeWhispererClient = AwsClientManager.getInstance().createUnmanagedClient(
-            AnonymousCredentialsProvider.create(),
-            CodeWhispererConstants.Config.Sigv4ClientRegion,
-            CodeWhispererConstants.Config.CODEWHISPERER_ENDPOINT
-        )
     }
 }
 
