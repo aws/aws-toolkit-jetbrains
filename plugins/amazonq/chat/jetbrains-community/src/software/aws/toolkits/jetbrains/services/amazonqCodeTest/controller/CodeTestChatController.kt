@@ -458,6 +458,8 @@ class CodeTestChatController(
         when (message.actionID) {
             "utg_view_diff" -> {
                 withContext(EDT) {
+                    val virtualFile = Path.of(session.projectRoot, session.testFileRelativePathToProjectRoot).toString().let { Path.of(it).toFile().toVirtualFile() }
+
                     (DiffManager.getInstance() as DiffManagerEx).showDiffBuiltin(
                         context.project,
                         SimpleDiffRequest(
@@ -466,9 +468,13 @@ class CodeTestChatController(
                                 getFileContentAtTestFilePath(
                                     session.projectRoot,
                                     session.testFileRelativePathToProjectRoot
-                                )
+                                ),
+                                virtualFile
                             ),
-                            DiffContentFactory.getInstance().create(session.generatedTestDiffs.values.first()),
+                            DiffContentFactory.getInstance().create(
+                                session.generatedTestDiffs.values.first(),
+                                virtualFile
+                            ),
                             "Before",
                             "After"
                         )
