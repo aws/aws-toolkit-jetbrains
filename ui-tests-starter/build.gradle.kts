@@ -9,7 +9,7 @@ plugins {
     id("toolkit-kotlin-conventions")
     id("toolkit-intellij-plugin")
 
-    id("org.jetbrains.intellij.platform.module")
+    id("org.jetbrains.intellij.platform.base")
 }
 
 val ideProfile = IdeVersions.ideProfile(project)
@@ -30,11 +30,12 @@ intellijPlatform {
 val testPlugins by configurations.registering
 
 dependencies {
-    testImplementation(platform("com.jetbrains.intellij.tools:ide-starter-squashed"))
     // should really be set by the BOM, but too much work to figure out right now
     testImplementation("org.kodein.di:kodein-di-jvm:7.20.2")
     intellijPlatform {
-        testFramework(TestFrameworkType.Starter, ideProfile.community.sdkVersion)
+        // shouldn't be needed? but IsolationException
+        intellijIdeaCommunity(ideProfile.community.sdkVersion)
+        testFramework(TestFrameworkType.Starter)
     }
 
     testPlugins(project(":plugin-amazonq", "pluginZip"))
