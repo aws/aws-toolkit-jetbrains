@@ -80,5 +80,6 @@ fun String.toTransformationLanguage() = when (this) {
     "JDK_1_8" -> TransformationLanguage.JAVA_8
     "JDK_11" -> TransformationLanguage.JAVA_11
     "JDK_17" -> TransformationLanguage.JAVA_17
+    "JDK_21" -> TransformationLanguage.JAVA_21
     else -> TransformationLanguage.UNKNOWN_TO_SDK_VERSION
 }
