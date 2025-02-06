@@ -17,7 +17,7 @@ jobs:
   generate_artifact_toolkit_standalone:
     strategy:
       matrix:
-        supported_versions: [ '2024.1', '2024.2', '2024.3' ]
+        supported_versions: [ '2024.1', '2024.2', '2024.3', '2025.1' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

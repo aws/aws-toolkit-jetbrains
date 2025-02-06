@@ -24,9 +24,9 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.remoteDev.downloader.CodeWithMeClientDownloader
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.dsl.builder.Align
+import com.intellij.ui.dsl.builder.AlignX
+import com.intellij.ui.dsl.builder.AlignY
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.dsl.gridLayout.HorizontalAlign
-import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.util.ui.JBFont
 import com.jetbrains.gateway.api.ConnectionRequestor
 import com.jetbrains.gateway.api.GatewayConnectionHandle
@@ -325,7 +325,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                         setCenterPanel(
                                             panel {
                                                 row {
-                                                    icon(AllIcons.General.ErrorDialog).verticalAlign(VerticalAlign.TOP)
+                                                    icon(AllIcons.General.ErrorDialog).align(AlignY.TOP)
 
                                                     panel {
                                                         row {
@@ -344,7 +344,7 @@ class CawsConnectionProvider : GatewayConnectionProvider {
                                                     collapsibleGroup(message("general.logs"), false) {
                                                         row {
                                                             cell(view)
-                                                                .horizontalAlign(HorizontalAlign.FILL)
+                                                                .align(AlignX.FILL)
                                                         }
                                                     }.expanded = false
                                                     // TODO: can't seem to reliably force a terminal redraw on initial expand
