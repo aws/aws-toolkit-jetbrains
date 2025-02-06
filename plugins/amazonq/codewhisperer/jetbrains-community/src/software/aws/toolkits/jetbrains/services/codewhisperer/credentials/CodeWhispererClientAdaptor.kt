@@ -146,7 +146,7 @@ interface CodeWhispererClientAdaptor : Disposable {
         sessionId: String,
         requestId: String,
         language: CodeWhispererProgrammingLanguage,
-        customizationArn: String,
+        customizationArn: String?,
         acceptedCharacterCount: Int,
         unmodifiedAcceptedTokenCount: Int,
     ): SendTelemetryEventResponse
@@ -512,7 +512,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         sessionId: String,
         requestId: String,
         language: CodeWhispererProgrammingLanguage,
-        customizationArn: String,
+        customizationArn: String?,
         acceptedCharacterCount: Int,
         unmodifiedAcceptedTokenCount: Int,
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->

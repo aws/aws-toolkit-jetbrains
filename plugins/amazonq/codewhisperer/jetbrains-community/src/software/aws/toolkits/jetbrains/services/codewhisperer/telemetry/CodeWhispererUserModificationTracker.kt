@@ -264,7 +264,7 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
                         suggestion.sessionId,
                         suggestion.requestId,
                         CodeWhispererLanguageManager.getInstance().getLanguage(suggestion.vFile),
-                        CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn.orEmpty(),
+                        CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn,
                         suggestion.suggestion.length,
                         getUnmodifiedAcceptedCharsCount(suggestion.suggestion, modifiedSuggestion)
                     )
