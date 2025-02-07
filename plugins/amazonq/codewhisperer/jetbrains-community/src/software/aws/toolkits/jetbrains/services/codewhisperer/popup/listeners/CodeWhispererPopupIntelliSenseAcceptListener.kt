@@ -28,9 +28,7 @@ class CodeWhispererPopupIntelliSenseAcceptListener(private val states: Invocatio
 }
 
 fun addIntelliSenseAcceptListener(lookup: Lookup, states: InvocationContext) {
-    if (!CodeWhispererPopupManager.getInstance().allowEditsDuringSuggestionPreview.tryAcquire()) {
-        LOG.error { "Failed to acquire allowEditsDuringSuggestionPreview semaphore" }
-    }
+    CodeWhispererPopupManager.getInstance().allowIntelliSenseDuringSuggestionPreview = true
     lookup.addLookupListener(object : LookupListener {
         override fun itemSelected(event: LookupEvent) {
             if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive() ||
@@ -52,11 +50,7 @@ fun addIntelliSenseAcceptListener(lookup: Lookup, states: InvocationContext) {
 
         private fun cleanup() {
             lookup.removeLookupListener(this)
-            try {
-                CodeWhispererPopupManager.getInstance().allowEditsDuringSuggestionPreview.release()
-            } catch (e: Exception) {
-                LOG.error(e) { "Failed to release allowEditsDuringSuggestionPreview semaphore" }
-            }
+            CodeWhispererPopupManager.getInstance().allowIntelliSenseDuringSuggestionPreview = false
         }
     })
 }
