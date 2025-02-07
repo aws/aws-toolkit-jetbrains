@@ -22,7 +22,7 @@ class CodeWhispererInlayManager {
         clearInlays()
 
         chunks.forEach { chunk ->
-            createCodeWhispererInlays(editor, chunk.inlayOffset, chunk.text, states.popup)
+            states.popup?.let { createCodeWhispererInlays(editor, chunk.inlayOffset, chunk.text, it) }
         }
     }
 
