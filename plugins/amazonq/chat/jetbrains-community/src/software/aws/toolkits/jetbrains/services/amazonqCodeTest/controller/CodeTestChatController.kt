@@ -459,8 +459,7 @@ class CodeTestChatController(
         when (message.actionID) {
             "utg_view_diff" -> {
                 withContext(EDT) {
-                    val extension = session.testFileRelativePathToProjectRoot.substringAfterLast('.', "")
-                    val virtualFile = LightVirtualFile(".$extension")
+                    val virtualFile = LightVirtualFile(session.testFileName)
 
                     (DiffManager.getInstance() as DiffManagerEx).showDiffBuiltin(
                         context.project,
