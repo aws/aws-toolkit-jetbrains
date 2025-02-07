@@ -8,6 +8,7 @@ import com.intellij.codeInsight.lookup.LookupEvent
 import com.intellij.codeInsight.lookup.LookupListener
 import com.intellij.codeInsight.lookup.LookupManagerListener
 import com.intellij.codeInsight.lookup.impl.LookupImpl
+import com.intellij.openapi.util.Disposer
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
@@ -27,7 +28,7 @@ class CodeWhispererPopupIntelliSenseAcceptListener(private val states: Invocatio
 
 fun addIntelliSenseAcceptListener(lookup: Lookup, states: InvocationContext) {
     CodeWhispererPopupManager.getInstance().allowIntelliSenseDuringSuggestionPreview = true
-    lookup.addLookupListener(object : LookupListener {
+    val listener = object : LookupListener {
         override fun itemSelected(event: LookupEvent) {
             if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive() ||
                 !(event.lookup as LookupImpl).isShown
@@ -50,5 +51,10 @@ fun addIntelliSenseAcceptListener(lookup: Lookup, states: InvocationContext) {
             lookup.removeLookupListener(this)
             CodeWhispererPopupManager.getInstance().allowIntelliSenseDuringSuggestionPreview = false
         }
-    })
+    }
+    lookup.addLookupListener(listener)
+    Disposer.register(states) {
+        lookup.removeLookupListener(listener)
+        CodeWhispererPopupManager.getInstance().allowIntelliSenseDuringSuggestionPreview = false
+    }
 }
