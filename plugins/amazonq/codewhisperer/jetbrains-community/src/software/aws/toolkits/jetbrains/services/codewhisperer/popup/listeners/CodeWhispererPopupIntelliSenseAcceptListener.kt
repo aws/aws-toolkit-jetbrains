@@ -8,11 +8,10 @@ import com.intellij.codeInsight.lookup.LookupEvent
 import com.intellij.codeInsight.lookup.LookupListener
 import com.intellij.codeInsight.lookup.LookupManagerListener
 import com.intellij.codeInsight.lookup.impl.LookupImpl
-import software.aws.toolkits.core.utils.error
+import com.intellij.openapi.util.Disposer
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererPopupIntelliSenseAcceptListener.Companion.LOG
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 
 class CodeWhispererPopupIntelliSenseAcceptListener(private val states: InvocationContext) : LookupManagerListener {
@@ -28,10 +27,8 @@ class CodeWhispererPopupIntelliSenseAcceptListener(private val states: Invocatio
 }
 
 fun addIntelliSenseAcceptListener(lookup: Lookup, states: InvocationContext) {
-    if (!CodeWhispererPopupManager.getInstance().allowEditsDuringSuggestionPreview.tryAcquire()) {
-        LOG.error { "Failed to acquire allowEditsDuringSuggestionPreview semaphore" }
-    }
-    lookup.addLookupListener(object : LookupListener {
+    CodeWhispererPopupManager.getInstance().allowIntelliSenseDuringSuggestionPreview = true
+    val listener = object : LookupListener {
         override fun itemSelected(event: LookupEvent) {
             if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive() ||
                 !(event.lookup as LookupImpl).isShown
@@ -52,11 +49,12 @@ fun addIntelliSenseAcceptListener(lookup: Lookup, states: InvocationContext) {
 
         private fun cleanup() {
             lookup.removeLookupListener(this)
-            try {
-                CodeWhispererPopupManager.getInstance().allowEditsDuringSuggestionPreview.release()
-            } catch (e: Exception) {
-                LOG.error(e) { "Failed to release allowEditsDuringSuggestionPreview semaphore" }
-            }
+            CodeWhispererPopupManager.getInstance().allowIntelliSenseDuringSuggestionPreview = false
         }
-    })
+    }
+    lookup.addLookupListener(listener)
+    Disposer.register(states) {
+        lookup.removeLookupListener(listener)
+        CodeWhispererPopupManager.getInstance().allowIntelliSenseDuringSuggestionPreview = false
+    }
 }

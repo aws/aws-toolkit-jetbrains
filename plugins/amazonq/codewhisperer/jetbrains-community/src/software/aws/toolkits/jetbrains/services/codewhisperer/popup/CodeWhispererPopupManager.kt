@@ -41,11 +41,9 @@ import com.intellij.ui.popup.AbstractPopup
 import com.intellij.ui.popup.PopupFactoryImpl
 import com.intellij.util.messages.Topic
 import com.intellij.util.ui.UIUtil
-import kotlinx.coroutines.sync.Semaphore
 import software.amazon.awssdk.services.codewhispererruntime.model.Import
 import software.amazon.awssdk.services.codewhispererruntime.model.Reference
 import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addHorizontalGlue
@@ -88,8 +86,8 @@ import javax.swing.JLabel
 class CodeWhispererPopupManager {
     val popupComponents = CodeWhispererPopupComponents()
 
-    // Act like a semaphore: one increment only corresponds to one decrement
-    var allowEditsDuringSuggestionPreview = Semaphore(MAX_EDIT_SOURCE_DURING_SUGGESTION_PREVIEW)
+    var allowTypingDuringSuggestionPreview = false
+    var allowIntelliSenseDuringSuggestionPreview = false
     var sessionContext = SessionContext()
         private set
 
@@ -251,18 +249,11 @@ class CodeWhispererPopupManager {
 
     // Don't want to block or throw any kinds of exceptions here if it can continue to provide suggestions
     fun dontClosePopupAndRun(runnable: () -> Unit) {
-        if (allowEditsDuringSuggestionPreview.tryAcquire()) {
-            try {
-                runnable()
-            } finally {
-                try {
-                    allowEditsDuringSuggestionPreview.release()
-                } catch (e: Exception) {
-                    LOG.error(e) { "Failed to release allowEditsDuringSuggestionPreview semaphore" }
-                }
-            }
-        } else {
-            LOG.error { "Failed to acquire allowEditsDuringSuggestionPreview semaphore" }
+        try {
+            allowTypingDuringSuggestionPreview = true
+            runnable()
+        } finally {
+            allowTypingDuringSuggestionPreview = false
         }
     }
 
@@ -511,7 +502,7 @@ class CodeWhispererPopupManager {
         val editor = states.requestContext.editor
         val codewhispererSelectionListener: SelectionListener = object : SelectionListener {
             override fun selectionChanged(event: SelectionEvent) {
-                if (allowEditsDuringSuggestionPreview.availablePermits == MAX_EDIT_SOURCE_DURING_SUGGESTION_PREVIEW) {
+                if (!allowTypingDuringSuggestionPreview && !allowIntelliSenseDuringSuggestionPreview) {
                     cancelPopup(states.popup)
                 }
                 super.selectionChanged(event)
@@ -527,7 +518,7 @@ class CodeWhispererPopupManager {
                 if (!delete) return
                 if (editor.caretModel.offset == event.offset) {
                     changeStates(states, 0)
-                } else if (allowEditsDuringSuggestionPreview.availablePermits == MAX_EDIT_SOURCE_DURING_SUGGESTION_PREVIEW) {
+                } else if (!allowTypingDuringSuggestionPreview && !allowIntelliSenseDuringSuggestionPreview) {
                     cancelPopup(states.popup)
                 }
             }
@@ -536,7 +527,7 @@ class CodeWhispererPopupManager {
 
         val codewhispererCaretListener: CaretListener = object : CaretListener {
             override fun caretPositionChanged(event: CaretEvent) {
-                if (allowEditsDuringSuggestionPreview.availablePermits == MAX_EDIT_SOURCE_DURING_SUGGESTION_PREVIEW) {
+                if (!allowTypingDuringSuggestionPreview && !allowIntelliSenseDuringSuggestionPreview) {
                     cancelPopup(states.popup)
                 }
                 super.caretPositionChanged(event)
