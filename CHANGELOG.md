@@ -1,3 +1,6 @@
+# _3.53_ (2025-02-07)
+- **(Bug Fix)** Amazon Q: Fixed an issue where in a specific scenario when receiving multiple suggestions with JetBrains suggestions visible, users are not able to accept the suggestion.
+
 # _3.52_ (2025-02-06)
 - **(Feature)** Adds event listener for notifying UI that AB feature configurations have been resolved
 - **(Feature)** Amazon Q /review: Code issues can now be grouped by severity or file location.
