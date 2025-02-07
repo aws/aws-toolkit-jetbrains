@@ -20,7 +20,6 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.storage.ChatSess
 import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
-import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
 
 class CodeTestChatApp(private val scope: CoroutineScope) : AmazonQApp {
 
