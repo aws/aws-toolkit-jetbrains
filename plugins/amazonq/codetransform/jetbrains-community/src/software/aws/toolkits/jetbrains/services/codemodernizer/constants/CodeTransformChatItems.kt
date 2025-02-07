@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.constants
 
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_PREREQUISITES
@@ -177,12 +176,8 @@ private val selectTargetVersionFormItem = FormItem(
     mandatory = true,
     options = listOf(
         FormItemOption(
-            label = JavaSdkVersion.JDK_17.toString(),
-            value = JavaSdkVersion.JDK_17.toString(),
-        ),
-        FormItemOption(
-            label = JavaSdkVersion.JDK_21.toString(),
-            value = JavaSdkVersion.JDK_21.toString(),
+            label = "JDK17",
+            value = "17",
         )
     )
 )
@@ -231,14 +226,14 @@ private val selectOneOrMultipleDiffsFlagFormItem = FormItem(
     )
 )
 
-private fun getUserLanguageUpgradeSelectionFormattedMarkdown(moduleName: String, targetJdkVersion: String): String = """
+private fun getUserLanguageUpgradeSelectionFormattedMarkdown(moduleName: String): String = """
         ### ${message("codemodernizer.chat.prompt.title.details")}
         -------------
 
         | | |
         | :------------------- | -------: |
         | **${message("codemodernizer.chat.prompt.label.module")}**             |   $moduleName   |
-        | **${message("codemodernizer.chat.prompt.label.target_version")}** |  $targetJdkVersion   |
+        | **${message("codemodernizer.chat.prompt.label.target_version")}** |  JDK17   |
 """.trimIndent()
 
 private fun getUserSQLConversionSelectionFormattedMarkdown(moduleName: String, schema: String) = """
@@ -291,7 +286,6 @@ fun buildProjectInvalidChatContent(validationResult: ValidationResult): CodeTran
         CodeTransformPreValidationError.EmptyProject -> message("codemodernizer.notification.warn.invalid_project.description.reason.missing_content_roots")
         CodeTransformPreValidationError.UnsupportedBuildSystem -> message("codemodernizer.chat.message.validation.error.no_pom")
         CodeTransformPreValidationError.NoJavaProject -> message("codemodernizer.chat.message.validation.error.no_java_project")
-        CodeTransformPreValidationError.JavaDowngradeAttempt -> message("codemodernizer.chat.message.validation.error.downgrade_attempt")
         else -> message("codemodernizer.chat.message.validation.error.other")
     }
 
@@ -324,9 +318,9 @@ fun buildUserInputSkipTestsFlagChatContent(): CodeTransformChatMessageContent =
         formItems = listOf(selectSkipTestsFlagFormItem),
         type = CodeTransformChatMessageType.FinalizedAnswer,
     )
-fun buildUserInputOneOrMultipleDiffsChatIntroContent(version: String): CodeTransformChatMessageContent =
+fun buildUserInputOneOrMultipleDiffsChatIntroContent(): CodeTransformChatMessageContent =
     CodeTransformChatMessageContent(
-        message = message("codemodernizer.chat.message.one_or_multiple_diffs", version.substring(4)), // extract "17" / "21" from "JDK_17" / "JDK_21"
+        message = message("codemodernizer.chat.message.one_or_multiple_diffs"),
         type = CodeTransformChatMessageType.FinalizedAnswer,
     )
 fun buildUserInputOneOrMultipleDiffsFlagChatContent(): CodeTransformChatMessageContent =
@@ -447,9 +441,9 @@ fun buildUserSQLConversionSelectionSummaryChatContent(moduleName: String, schema
     message = getUserSQLConversionSelectionFormattedMarkdown(moduleName, schema)
 )
 
-fun buildUserLanguageUpgradeSelectionSummaryChatContent(moduleName: String, targetJdkVersion: String) = CodeTransformChatMessageContent(
+fun buildUserLanguageUpgradeSelectionSummaryChatContent(moduleName: String) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.Prompt,
-    message = getUserLanguageUpgradeSelectionFormattedMarkdown(moduleName, targetJdkVersion)
+    message = getUserLanguageUpgradeSelectionFormattedMarkdown(moduleName)
 )
 
 fun buildCompileLocalInProgressChatContent() = CodeTransformChatMessageContent(

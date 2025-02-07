@@ -63,7 +63,7 @@ data class CodeModernizerSessionContext(
     val project: Project,
     var configurationFile: VirtualFile? = null, // used to ZIP module
     val sourceJavaVersion: JavaSdkVersion, // always needed for startJob API
-    val targetJavaVersion: JavaSdkVersion, // 17 or 21
+    val targetJavaVersion: JavaSdkVersion = JavaSdkVersion.JDK_17, // only one supported
     var transformCapabilities: List<String> = listOf(EXPLAINABILITY_V1),
     var customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS, // run unit tests by default
     val sourceVendor: String = ORACLE_DB, // only one supported
