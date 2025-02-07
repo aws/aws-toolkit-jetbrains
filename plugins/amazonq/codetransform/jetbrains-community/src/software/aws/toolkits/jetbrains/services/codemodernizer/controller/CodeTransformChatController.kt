@@ -93,6 +93,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransfo
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadArtifactResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.DownloadFailureReason
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.InvalidTelemetryReason
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_RUN_UNIT_TESTS
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_SKIP_UNIT_TESTS
@@ -115,6 +116,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeature
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 
 class CodeTransformChatController(
     private val context: AmazonQAppInitContext,
@@ -298,14 +300,28 @@ class CodeTransformChatController(
         val moduleVirtualFile: VirtualFile = modulePath.toVirtualFile() as VirtualFile
         val moduleName = context.project.getModuleOrProjectNameForFile(moduleVirtualFile)
 
-        codeTransformChatHelper.addNewMessage(buildUserLanguageUpgradeSelectionSummaryChatContent(moduleName))
+        codeTransformChatHelper.addNewMessage(buildUserLanguageUpgradeSelectionSummaryChatContent(moduleName, targetVersion))
 
         val sourceJdk = getSourceJdk(moduleVirtualFile)
+
+        val sourceVersion = sourceJdk.toString()
+
+        if (sourceVersion == JavaSdkVersion.JDK_21.toString() && targetVersion == JavaSdkVersion.JDK_17.toString()) {
+            codeTransformChatHelper.addNewMessage(
+                buildProjectInvalidChatContent(
+                    ValidationResult(
+                        false,
+                        InvalidTelemetryReason(CodeTransformPreValidationError.JavaDowngradeAttempt)
+                    )
+                )
+            )
+            return
+        }
 
         val selection = CustomerSelection(
             configurationFile = moduleVirtualFile,
             sourceJavaVersion = sourceJdk,
-            targetJavaVersion = JavaSdkVersion.JDK_17,
+            targetJavaVersion = if (targetVersion == JavaSdkVersion.JDK_17.toString()) JavaSdkVersion.JDK_17 else JavaSdkVersion.JDK_21,
         )
 
         // Create and set a session
@@ -387,8 +403,9 @@ class CodeTransformChatController(
         codeModernizerManager.codeTransformationSession?.let {
             it.sessionContext.customBuildCommand = customBuildCommand
         }
+        val targetJdkVersion = codeModernizerManager.codeTransformationSession?.sessionContext?.targetJavaVersion?.name.orEmpty()
         codeTransformChatHelper.run {
-            addNewMessage(buildUserInputOneOrMultipleDiffsChatIntroContent())
+            addNewMessage(buildUserInputOneOrMultipleDiffsChatIntroContent(targetJdkVersion))
             addNewMessage(buildUserInputOneOrMultipleDiffsFlagChatContent())
         }
     }
