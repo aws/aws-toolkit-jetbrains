@@ -404,6 +404,13 @@ class CodeTestChatController(
             .build()
     }
 
+    override suspend fun processChatItemFeedBack(message: IncomingCodeTestMessage.ChatItemFeedback) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun processChatItemVoted(message: IncomingCodeTestMessage.ChatItemVoted) {
+        TODO("Not yet implemented")
+    }
     override suspend fun processNewTabCreatedMessage(message: IncomingCodeTestMessage.NewTabCreated) {
         newTabOpened(message.tabId)
         LOG.debug { "$FEATURE_NAME: New tab created: $message" }
