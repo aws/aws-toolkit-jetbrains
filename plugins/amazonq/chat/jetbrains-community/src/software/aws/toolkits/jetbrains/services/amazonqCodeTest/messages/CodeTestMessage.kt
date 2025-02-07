@@ -9,6 +9,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
 import software.aws.toolkits.jetbrains.services.cwc.messages.FollowUp
+import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
+import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage.MessageId
+import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage.TabId
 import java.time.Instant
 import java.util.UUID
 
@@ -93,6 +96,19 @@ sealed interface IncomingCodeTestMessage : CodeTestBaseMessage {
     data class ButtonClicked(
         @JsonProperty("tabID") val tabId: String,
         @JsonProperty("actionID") val actionID: String,
+    ) : IncomingCodeTestMessage
+
+    data class ChatItemVoted(
+        @JsonProperty("tabID") val tabId: String,
+        val messageId: String,
+        val vote: String,
+    ) : IncomingCodeTestMessage
+
+    data class ChatItemFeedback(
+        @JsonProperty("tabID") val tabId: String,
+        val selectedOption: String,
+        val comment: String?,
+        val messageId: String,
     ) : IncomingCodeTestMessage
 }
 

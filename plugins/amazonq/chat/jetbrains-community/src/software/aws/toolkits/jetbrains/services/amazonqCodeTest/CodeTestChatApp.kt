@@ -20,6 +20,7 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.storage.ChatSess
 import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.auth.isFeatureDevAvailable
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTransformAvailable
+import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
 
 class CodeTestChatApp(private val scope: CoroutineScope) : AmazonQApp {
 
@@ -38,7 +39,9 @@ class CodeTestChatApp(private val scope: CoroutineScope) : AmazonQApp {
             "tab-was-removed" to IncomingCodeTestMessage.TabRemoved::class,
             "start-test-gen" to IncomingCodeTestMessage.StartTestGen::class,
             "response-body-link-click" to IncomingCodeTestMessage.ClickedLink::class,
-            "button-click" to IncomingCodeTestMessage.ButtonClicked::class
+            "button-click" to IncomingCodeTestMessage.ButtonClicked::class,
+            "chat-item-voted" to IncomingCodeTestMessage.ChatItemVoted::class,
+            "chat-item-feedback" to IncomingCodeTestMessage.ChatItemFeedback::class,
         )
 
         scope.launch {
@@ -79,6 +82,8 @@ class CodeTestChatApp(private val scope: CoroutineScope) : AmazonQApp {
             is IncomingCodeTestMessage.StartTestGen -> inboundAppMessagesHandler.processStartTestGen(message)
             is IncomingCodeTestMessage.ClickedLink -> inboundAppMessagesHandler.processLinkClick(message)
             is IncomingCodeTestMessage.ButtonClicked -> inboundAppMessagesHandler.processButtonClickedMessage(message)
+            is IncomingCodeTestMessage.ChatItemVoted -> inboundAppMessagesHandler.processChatItemVoted(message)
+            is IncomingCodeTestMessage.ChatItemFeedback -> inboundAppMessagesHandler.processChatItemFeedBack(message)
         }
     }
 
