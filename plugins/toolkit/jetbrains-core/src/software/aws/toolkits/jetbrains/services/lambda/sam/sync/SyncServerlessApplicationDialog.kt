@@ -13,13 +13,13 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.MutableCollectionComboBoxModel
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBTextField
+import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.actionListener
 import com.intellij.ui.dsl.builder.bind
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toMutableProperty
-import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.layout.selected
 import com.intellij.util.text.nullize
 import org.jetbrains.annotations.TestOnly
@@ -182,7 +182,7 @@ class SyncServerlessApplicationDialog(
                             }
                         }
                     cell(stackNameField)
-                        .horizontalAlign(HorizontalAlign.FILL)
+                        .align(AlignX.FILL)
                         .enabledIf(createStackButton.component.selected)
                         .bindText(::newStackName)
                         .validationOnApply { field ->
@@ -215,7 +215,7 @@ class SyncServerlessApplicationDialog(
                     }
                     stackSelector.reload(forceFetch = true)
                     cell(stackSelector)
-                        .horizontalAlign(HorizontalAlign.FILL)
+                        .align(AlignX.FILL)
                         .enabledIf(updateStackButton.component.selected)
                         .errorOnApply(message("serverless.application.sync.validation.stack.missing")) {
                             it.isEnabled && (it.isLoading || it.selected() == null)
@@ -228,19 +228,19 @@ class SyncServerlessApplicationDialog(
                     .withBinding(::templateParameters.toMutableProperty())
                     .validationOnApply {
                         validateParameters(it, templateFileParameters)
-                    }.horizontalAlign(HorizontalAlign.FILL)
+                    }.align(AlignX.FILL)
                     .component.toolTipText = message("serverless.application.sync.tooltip.template.parameters")
             }
             val tagsString = message("tags.title")
             row(tagsString) {
                 cell(tagsField)
-                    .horizontalAlign(HorizontalAlign.FILL)
+                    .align(AlignX.FILL)
                     .withBinding(::tags.toMutableProperty())
             }
 
             row(message("serverless.application.sync.label.bucket")) {
                 cell(s3BucketSelector)
-                    .horizontalAlign(HorizontalAlign.FILL)
+                    .align(AlignX.FILL)
                     .errorOnApply(message("serverless.application.sync.validation.s3.bucket.empty")) { it.isLoading || it.selected() == null }
                     .component.toolTipText = message("serverless.application.sync.tooltip.s3Bucket")
 
@@ -262,7 +262,7 @@ class SyncServerlessApplicationDialog(
 
             row(message("serverless.application.sync.label.repo")) {
                 cell(ecrRepoSelector)
-                    .horizontalAlign(HorizontalAlign.FILL)
+                    .align(AlignX.FILL)
                     .errorOnApply(message("serverless.application.sync.validation.ecr.repo.empty")) {
                         it.isVisible && (it.isLoading || it.selected() == null)
                     }.component.toolTipText = message("serverless.application.sync.tooltip.ecrRepo")
