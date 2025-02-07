@@ -99,6 +99,7 @@ import java.time.Instant
 import java.util.UUID
 import software.amazon.awssdk.services.codewhispererstreaming.model.Position as StreamingPosition
 import software.amazon.awssdk.services.codewhispererstreaming.model.Range as StreamingRange
+import com.intellij.testFramework.LightVirtualFile
 
 class CodeTestChatController(
     private val context: AmazonQAppInitContext,
@@ -458,10 +459,8 @@ class CodeTestChatController(
         when (message.actionID) {
             "utg_view_diff" -> {
                 withContext(EDT) {
-                    val virtualFile = Path.of(
-                        session.projectRoot,
-                        session.testFileRelativePathToProjectRoot
-                    ).toString().let { Path.of(it).toFile().toVirtualFile() }
+                    val extension = session.testFileRelativePathToProjectRoot.substringAfterLast('.', "")
+                    val virtualFile = LightVirtualFile(".$extension")
 
                     (DiffManager.getInstance() as DiffManagerEx).showDiffBuiltin(
                         context.project,
