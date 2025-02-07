@@ -17,9 +17,11 @@ open class FeatureDevException(override val message: String?, val operation: Str
     fun reason(): String = this.javaClass.simpleName
 
     fun reasonDesc(): String =
-        when (desc) {
-            desc -> "$operation | Description: $desc"
-            else -> operation
+        val finalDesc = desc?.takeIf { it.isNotBlank() } ?: message
+        return if (finalDesc != null) {
+            "$operation | Description: $finalDesc"
+        } else {
+            operation
         }
 }
 
