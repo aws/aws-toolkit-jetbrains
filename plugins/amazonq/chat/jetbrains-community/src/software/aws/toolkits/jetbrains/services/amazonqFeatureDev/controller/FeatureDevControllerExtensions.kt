@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.controller
 
 import com.intellij.notification.NotificationAction
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CLIENT_ERROR_MESSAGES
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATION_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthException
@@ -179,16 +180,9 @@ suspend fun FeatureDevController.onCodeGeneration(
                 )
             }
             else -> {
-                val clientErrorMessages = setOf(
-                    "Improperly formed request",
-                    "Resource not found",
-                    "StartTaskAssistCodeGeneration reached for this month.",
-                    "The folder you chose did not contain any source files in a supported language. Choose another folder and try again.",
-                    "reached the quota for number of iterations on code generation."
-                )
                 val errorMessage = err.message.orEmpty()
 
-                if (clientErrorMessages.any { errorMessage.contains(message) }) {
+                if (CLIENT_ERROR_MESSAGES.any { errorMessage.contains(it) }) {
                     session.sendMetricDataTelemetry(
                         MetricDataOperationName.EndCodeGeneration,
                         MetricDataResult.Error

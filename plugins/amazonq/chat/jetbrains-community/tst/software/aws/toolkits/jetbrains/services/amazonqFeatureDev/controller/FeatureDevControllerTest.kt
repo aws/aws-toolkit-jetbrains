@@ -41,6 +41,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublishe
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.EmptyPatchException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.GuardrailsException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataOperationName
@@ -634,6 +635,10 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             ),
             ErrorTestCase(
                 ZipFileCorruptedException(operation = "GenerateCode", desc = "Zipped file is corrupted"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                FeatureDevException(message = "Resource not found", operation = "GenerateCode", desc = null),
                 MetricDataResult.Error
             ),
             ErrorTestCase(
