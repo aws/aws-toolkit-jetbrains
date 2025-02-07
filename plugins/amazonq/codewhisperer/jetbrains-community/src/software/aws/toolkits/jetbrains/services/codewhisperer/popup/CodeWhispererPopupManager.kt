@@ -41,11 +41,9 @@ import com.intellij.ui.popup.AbstractPopup
 import com.intellij.ui.popup.PopupFactoryImpl
 import com.intellij.util.messages.Topic
 import com.intellij.util.ui.UIUtil
-import kotlinx.coroutines.sync.Semaphore
 import software.amazon.awssdk.services.codewhispererruntime.model.Import
 import software.amazon.awssdk.services.codewhispererruntime.model.Reference
 import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addHorizontalGlue
