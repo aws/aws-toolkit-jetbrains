@@ -105,11 +105,9 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
     @Test
     fun `test pre-setup failure will send service invocation event with failed status`() {
-        val codewhispererServiceSpy = spy(codewhispererService) {
-            onGeneric { getRequestContext(any(), any(), any(), any(), any()) }
-                .doAnswer { throw Exception() }
-        }
-        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
+        doAnswer { throw Exception() }
+            .whenever(codewhispererService)
+            .getRequestContext(any(), any(), any(), any(), any())
 
         invokeCodeWhispererService()
 
@@ -164,7 +162,8 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             // 1 serviceInvocation + 1 userModification + 1 userDecision for accepted +
             // (count - 1) userDecisions for ignored
             verify(batcher, atLeast(2 + count)).enqueue(capture())
-            assertEventsContainsFieldsAndCount(allValues, serviceInvocation, 1)
+            // one service invocation for current recommendation and one for next recommendation
+            assertEventsContainsFieldsAndCount(allValues, serviceInvocation, 2)
             assertEventsContainsFieldsAndCount(
                 allValues,
                 userModification,
@@ -194,10 +193,12 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             val count = pythonResponse.completions().size
             argumentCaptor<MetricEvent>().apply {
                 verify(batcher, atLeast(1 + count)).enqueue(capture())
+                // send 2 invocation events for current and next recommendation session,
+                // one reject and at least (count -1) Unseen events
                 assertEventsContainsFieldsAndCount(
                     allValues,
                     serviceInvocation,
-                    1,
+                    2,
                     "result" to Result.Succeeded.toString(),
                 )
                 assertEventsContainsFieldsAndCount(
@@ -211,6 +212,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
                     userDecision,
                     count - 1,
                     codewhispererSuggestionState to CodewhispererSuggestionState.Unseen.toString(),
+                    atLeast = true
                 )
             }
         }
@@ -218,13 +220,14 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
     @Test
     fun `test invoking CodeWhisperer will send service invocation event with succeeded status`() {
+        // serviceInvocation event will be sent for current session and preloaded next session
         withCodeWhispererServiceInvokedAndWait {
             argumentCaptor<MetricEvent>().apply {
                 verify(batcher, atLeastOnce()).enqueue(capture())
                 assertEventsContainsFieldsAndCount(
                     allValues,
                     serviceInvocation,
-                    1,
+                    2,
                     "result" to Result.Succeeded.toString(),
                 )
             }
@@ -273,12 +276,13 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         val prefixNotMatchCount = pythonResponse.completions().count {
             !it.content().startsWith(userInput)
         }
+        // serviceInvocation event will be sent for current session and preloaded next session
         argumentCaptor<MetricEvent>().apply {
             verify(batcher, atLeast(1 + prefixNotMatchCount)).enqueue(capture())
             assertEventsContainsFieldsAndCount(
                 allValues,
                 serviceInvocation,
-                1,
+                2,
                 "result" to Result.Succeeded.toString(),
             )
             assertEventsContainsFieldsAndCount(
@@ -359,13 +363,14 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
     @Test
     fun `test invoking CodeWhisperer will send service invocation event with sessionId and requestId from response`() {
+        // serviceInvocation event will be sent for current session and preloaded next session
         withCodeWhispererServiceInvokedAndWait { states ->
             val metricCaptor = argumentCaptor<MetricEvent>()
             verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
             assertEventsContainsFieldsAndCount(
                 metricCaptor.allValues,
                 serviceInvocation,
-                1,
+                2,
                 "codewhispererSessionId" to states.responseContext.sessionId,
                 "codewhispererRequestId" to states.recommendationContext.details[0].requestId,
             )

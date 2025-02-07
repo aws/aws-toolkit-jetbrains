@@ -18,7 +18,6 @@ import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
-import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.Payload
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadMetadata
@@ -33,6 +32,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmi
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_PAYLOAD_LIMIT_IN_BYTES
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.GitIgnoreFilteringUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.resources.message
 import java.io.File
@@ -52,8 +52,6 @@ class CodeTestSessionConfig(
     val projectRoot = project.basePath?.let { Path.of(it) }?.toFile()?.toVirtualFile() ?: run {
         project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
     }
-
-    private val featureDevSessionContext = FeatureDevSessionContext(project)
 
     val fileIndex = ProjectRootManager.getInstance(project).fileIndex
 
@@ -103,7 +101,7 @@ class CodeTestSessionConfig(
         }
 
         // Copy all the included source files to the source zip
-        val srcZip = zipFiles(payloadMetadata.sourceFiles.map { Path.of(it) })
+        val srcZip = zipFiles(payloadMetadata)
         val payloadContext = PayloadContext(
             payloadMetadata.language,
             payloadMetadata.linesScanned,
@@ -111,7 +109,9 @@ class CodeTestSessionConfig(
             Instant.now().toEpochMilli() - start,
             payloadMetadata.sourceFiles.mapNotNull { Path.of(it).toFile().toVirtualFile() },
             payloadMetadata.payloadSize,
-            srcZip.length()
+            srcZip.length(),
+            payloadMetadata.payloadManifest,
+            payloadMetadata.payloadLimitCrossed,
         )
 
         return Payload(payloadContext, srcZip)
@@ -131,16 +131,20 @@ class CodeTestSessionConfig(
         }
     }
 
-    private fun zipFiles(files: List<Path>): File = createTemporaryZipFile {
-        files.forEach { file ->
-            try {
-                val relativePath = file.relativeTo(projectRoot.toNioPath())
-                val projectBaseName = projectRoot.name
-                val zipEntryPath = "$projectBaseName/${relativePath.toString().replace("\\", "/")}"
-                LOG.debug { "Adding file to ZIP: $zipEntryPath" }
-                it.putNextEntry(zipEntryPath, file)
-            } catch (e: Exception) {
-                cannotFindFile("Zipping error: ${e.message}", file.toString())
+    private fun zipFiles(payloadMetadata: PayloadMetadata): File = createTemporaryZipFile {
+        if (payloadMetadata.payloadLimitCrossed == false) {
+            payloadMetadata.sourceFiles.forEach { file ->
+                Path.of(file).let { path ->
+                    try {
+                        val relativePath = path.relativeTo(projectRoot.toNioPath())
+                        val projectBaseName = projectRoot.name
+                        val zipEntryPath = "$projectBaseName/${relativePath.toString().replace("\\", "/")}"
+                        LOG.debug { "Adding file to ZIP: $zipEntryPath" }
+                        it.putNextEntry(zipEntryPath, path)
+                    } catch (e: Exception) {
+                        cannotFindFile("Zipping error: ${e.message}", path.toString())
+                    }
+                }
             }
         }
 
@@ -162,6 +166,18 @@ class CodeTestSessionConfig(
         if (buildAndExecuteLogFile != null) {
             it.putNextEntry(Path.of(utgDir, buildAndExecuteLogDir, "buildAndExecuteLog").name, buildAndExecuteLogFile.inputStream)
         }
+        if (payloadMetadata.payloadLimitCrossed == true) {
+            // write payloadMetadata.payloadManifest into a json file in repoMapData directory. manifest is Set<Pair<String, Long>> write into file first or ina byte stream
+            val payloadManifestPath = Path.of(utgDir, "repoMapData", "payloadManifest.json")
+            LOG.debug { "Adding payload manifest to ZIP: $payloadManifestPath" }
+            // Create ZIP entry with the relative path
+            val zipEntry = ZipEntry(payloadManifestPath.toString())
+            it.putNextEntry(zipEntry)
+            // Write the content once using byte array
+            payloadMetadata.payloadManifest.toString().toByteArray().inputStream().use { inputStream ->
+                inputStream.copyTo(it)
+            }
+        }
     }.toFile()
 
     fun getProjectPayloadMetadata(): PayloadMetadata {
@@ -172,11 +188,24 @@ class CodeTestSessionConfig(
         var currentTotalLines = 0L
         val languageCounts = mutableMapOf<CodeWhispererProgrammingLanguage, Int>()
 
+        // Create a data structure to store file information
+        val fileInfoList = mutableSetOf<Pair<String, Long>>()
+        var exceededPayloadLimit = false
+
         // Adding Target File to make sure target file doesn't get filtered out.
         selectedFile?.let { selected ->
             files.add(selected.path)
             currentTotalFileSize += selected.length
             currentTotalLines += countLinesInVirtualFile(selected)
+
+            // Add selected file info to the list
+            fileInfoList.add(
+                Pair(
+                    selected.path,
+                    selected.length
+                )
+            )
+
             selected.programmingLanguage().let { language ->
                 if (language !is CodeWhispererUnknownLanguage) {
                     languageCounts[language] = (languageCounts[language] ?: 0) + 1
@@ -184,48 +213,66 @@ class CodeTestSessionConfig(
             }
         }
 
-        moduleLoop@ for (module in project.modules) {
-            val changeListManager = ChangeListManager.getInstance(module.project)
-            if (module.guessModuleDir() != null) {
-                stack.push(module.guessModuleDir())
-                while (stack.isNotEmpty()) {
-                    val current = stack.pop()
+        run {
+            for (module in project.modules) {
+                val changeListManager = ChangeListManager.getInstance(module.project)
+                module.guessModuleDir()?.let { moduleDir ->
+                    val gitIgnoreFilteringUtil = GitIgnoreFilteringUtil(moduleDir)
+                    stack.push(moduleDir)
+                    while (stack.isNotEmpty()) {
+                        val current = stack.pop()
 
-                    if (!current.isDirectory) {
-                        if (current.isFile && current.path != selectedFile?.path &&
-                            !changeListManager.isIgnoredFile(current) &&
-                            runBlocking { !featureDevSessionContext.ignoreFile(current) } &&
-                            runReadAction { !fileIndex.isInLibrarySource(current) }
-                        ) {
-                            if (willExceedPayloadLimit(currentTotalFileSize, current.length)) {
-                                fileTooLarge()
-                            } else {
-                                try {
-                                    val language = current.programmingLanguage()
-                                    if (language !is CodeWhispererUnknownLanguage) {
-                                        languageCounts[language] = (languageCounts[language] ?: 0) + 1
+                        if (!current.isDirectory) {
+                            if (current.isFile && current.path != selectedFile?.path &&
+                                !changeListManager.isIgnoredFile(current) &&
+                                runBlocking { !gitIgnoreFilteringUtil.ignoreFile(current) } &&
+                                runReadAction { !fileIndex.isInLibrarySource(current) }
+                            ) {
+                                if (willExceedPayloadLimit(currentTotalFileSize, current.length)) {
+                                    fileInfoList.add(
+                                        Pair(
+                                            current.path,
+                                            current.length
+                                        )
+                                    )
+                                    exceededPayloadLimit = true
+                                    return@run
+                                } else {
+                                    try {
+                                        val language = current.programmingLanguage()
+                                        if (language !is CodeWhispererUnknownLanguage) {
+                                            languageCounts[language] = (languageCounts[language] ?: 0) + 1
+                                        }
+                                        files.add(current.path)
+                                        currentTotalFileSize += current.length
+                                        currentTotalLines += countLinesInVirtualFile(current)
+
+                                        // Add file info to the list
+                                        fileInfoList.add(
+                                            Pair(
+                                                current.path,
+                                                current.length
+                                            )
+                                        )
+                                    } catch (e: Exception) {
+                                        LOG.debug { "Error parsing the file: ${current.path} with error: ${e.message}" }
+                                        continue
                                     }
-                                    files.add(current.path)
-                                    currentTotalFileSize += current.length
-                                    currentTotalLines += countLinesInVirtualFile(current)
-                                } catch (e: Exception) {
-                                    LOG.debug { "Error parsing the file: ${current.path} with error: ${e.message}" }
-                                    continue
                                 }
                             }
-                        }
-                    } else {
-                        // Directory case: only traverse if not ignored
-                        if (!changeListManager.isIgnoredFile(current) &&
-                            runBlocking { !featureDevSessionContext.ignoreFile(current) } &&
-                            !traversedDirectories.contains(current) && current.isValid &&
-                            runReadAction { !fileIndex.isInLibrarySource(current) }
-                        ) {
-                            for (child in current.children) {
-                                stack.push(child)
+                        } else {
+                            // Directory case: only traverse if not ignored
+                            if (!changeListManager.isIgnoredFile(current) &&
+                                runBlocking { !gitIgnoreFilteringUtil.ignoreFile(current) } &&
+                                !traversedDirectories.contains(current) && current.isValid &&
+                                runReadAction { !fileIndex.isInLibrarySource(current) }
+                            ) {
+                                for (child in current.children) {
+                                    stack.push(child)
+                                }
                             }
+                            traversedDirectories.add(current)
                         }
-                        traversedDirectories.add(current)
                     }
                 }
             }
@@ -239,14 +286,7 @@ class CodeTestSessionConfig(
             cannotFindValidFile("Amazon Q: doesn't contain valid files to generate tests")
         }
         programmingLanguage = maxCountLanguage
-        return PayloadMetadata(files, currentTotalFileSize, currentTotalLines, maxCountLanguage.toTelemetryType())
-    }
-
-    fun getPath(root: String, relativePath: String = ""): Path? = try {
-        Path.of(root, relativePath).normalize()
-    } catch (e: Exception) {
-        LOG.debug { "Cannot find file at path $relativePath relative to the root $root" }
-        null
+        return PayloadMetadata(files, currentTotalFileSize, currentTotalLines, maxCountLanguage.toTelemetryType(), null, fileInfoList, exceededPayloadLimit)
     }
 
     fun getRelativePath(): Path? = try {
@@ -256,7 +296,7 @@ class CodeTestSessionConfig(
         null
     }
 
-    fun File.toVirtualFile() = LocalFileSystem.getInstance().findFileByIoFile(this)
+    private fun File.toVirtualFile() = LocalFileSystem.getInstance().findFileByIoFile(this)
 
     companion object {
         private val LOG = getLogger<CodeTestSessionConfig>()

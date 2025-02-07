@@ -19,7 +19,6 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.putNextEntry
-import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.cannotFindBuildArtifacts
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.cannotFindFile
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.fileTooLarge
@@ -38,6 +37,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.EXPRESS_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.GitIgnoreFilteringUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererLanguage
@@ -58,8 +58,6 @@ class CodeScanSessionConfig(
         project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
     }
         private set
-
-    private val featureDevSessionContext = FeatureDevSessionContext(project)
 
     val fileIndex = ProjectRootManager.getInstance(project).fileIndex
 
@@ -234,14 +232,15 @@ class CodeScanSessionConfig(
 
         moduleLoop@ for (module in project.modules) {
             val changeListManager = ChangeListManager.getInstance(module.project)
-            if (module.guessModuleDir() != null) {
-                stack.push(module.guessModuleDir())
+            module.guessModuleDir()?.let { moduleDir ->
+                val gitIgnoreFilteringUtil = GitIgnoreFilteringUtil(moduleDir)
+                stack.push(moduleDir)
                 while (stack.isNotEmpty()) {
                     val current = stack.pop()
 
                     if (!current.isDirectory) {
                         if (current.isFile && !changeListManager.isIgnoredFile(current) &&
-                            runBlocking { !featureDevSessionContext.ignoreFile(current) } &&
+                            runBlocking { !gitIgnoreFilteringUtil.ignoreFile(current) } &&
                             runReadAction { !fileIndex.isInLibrarySource(current) }
                         ) {
                             if (willExceedPayloadLimit(currentTotalFileSize, current.length)) {
@@ -284,7 +283,7 @@ class CodeScanSessionConfig(
                         }
                         // Directory case: only traverse if not ignored
                         if (!changeListManager.isIgnoredFile(current) &&
-                            runBlocking { !featureDevSessionContext.ignoreFile(current) } &&
+                            runBlocking { !gitIgnoreFilteringUtil.ignoreFile(current) } &&
                             !traversedDirectories.contains(current) && current.isValid &&
                             runReadAction { !fileIndex.isInLibrarySource(current) }
                         ) {
@@ -335,7 +334,8 @@ data class PayloadContext(
     val scannedFiles: List<VirtualFile>,
     val srcPayloadSize: Long,
     val srcZipFileSize: Long,
-    val buildPayloadSize: Long? = null,
+    val payloadManifest: Set<Pair<String, Long>>? = null,
+    val payloadLimitCrossed: Boolean? = false,
 )
 
 data class PayloadMetadata(
@@ -344,4 +344,6 @@ data class PayloadMetadata(
     val linesScanned: Long,
     val language: CodewhispererLanguage,
     val codeDiff: String? = null,
+    val payloadManifest: Set<Pair<String, Long>>? = null,
+    val payloadLimitCrossed: Boolean? = false,
 )
