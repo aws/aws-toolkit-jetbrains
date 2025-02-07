@@ -39,7 +39,7 @@ class GettingStartedOnStartup : StartupActivity {
                 return
             } else {
                 GettingStartedPanel.openPanel(project, firstInstance = true, connectionInitiatedFromExplorer = false)
-                Telemetry.auth.addConnection.use { 
+                Telemetry.auth.addConnection.use {
                     it.source(SourceOfEntry.FIRST_STARTUP.toString())
                         .featureId(FeatureId.Unknown)
                         .credentialSourceId(CredentialSourceId.Unknown)

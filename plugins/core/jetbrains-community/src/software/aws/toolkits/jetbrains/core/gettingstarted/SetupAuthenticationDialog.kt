@@ -52,11 +52,9 @@ import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.jetbrains.utils.ui.editorNotificationCompoundBorder
 import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.AwsCoreBundle
-import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.MetricResult
-import software.aws.toolkits.telemetry.Result
 import software.aws.toolkits.telemetry.Telemetry
 import java.awt.BorderLayout
 import java.util.Optional
