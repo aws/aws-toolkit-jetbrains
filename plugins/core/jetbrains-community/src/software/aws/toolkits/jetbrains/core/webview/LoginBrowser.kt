@@ -45,7 +45,6 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.SourceOfEntry
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.utils.pollFor
 import software.aws.toolkits.resources.AwsCoreBundle
-import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.AuthType
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
@@ -106,7 +105,7 @@ abstract class LoginBrowser(
                         authType = getAuthType(ssoRegion),
                         source = SourceOfEntry.LOGIN_BROWSER.toString(),
                     )
-                    Telemetry.auth.addConnection.use{
+                    Telemetry.auth.addConnection.use {
                         it.result(MetricResult.Failed)
                             .reason("Browser authentication idle for more than 15min")
                             .credentialSourceId(if (startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter)
