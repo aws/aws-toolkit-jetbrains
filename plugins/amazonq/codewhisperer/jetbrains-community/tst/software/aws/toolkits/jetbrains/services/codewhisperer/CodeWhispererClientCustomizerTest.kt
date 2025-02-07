@@ -32,7 +32,7 @@ import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.MockClientManager.Companion.useRealImplementations
 import java.util.concurrent.CountDownLatch
 
-class CodeWhispererEndpointCustomizerTest {
+class CodeWhispererClientCustomizerTest {
     @Rule
     @JvmField
     val application = ApplicationRule()

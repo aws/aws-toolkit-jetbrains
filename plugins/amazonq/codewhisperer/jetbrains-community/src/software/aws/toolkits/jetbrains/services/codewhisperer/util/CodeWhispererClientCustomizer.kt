@@ -34,7 +34,7 @@ import java.time.Duration
 import javax.net.ssl.TrustManager
 
 // TODO: move this file to package /client
-class CodeWhispererEndpointCustomizer : ToolkitClientCustomizer {
+class CodeWhispererClientCustomizer : ToolkitClientCustomizer {
 
     override fun customize(
         credentialProvider: AwsCredentialsProvider?,
