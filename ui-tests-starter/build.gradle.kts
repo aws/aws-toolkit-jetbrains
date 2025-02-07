@@ -27,6 +27,10 @@ intellijPlatform {
     instrumentCode = false
 }
 
+tasks.verifyPluginProjectConfiguration {
+    enabled = false
+}
+
 val testPlugins by configurations.registering
 
 dependencies {
