@@ -279,7 +279,8 @@ fun buildLanguageUpgradeProjectValidChatContent() = CodeTransformChatMessageCont
 
 fun buildProjectInvalidChatContent(validationResult: ValidationResult): CodeTransformChatMessageContent {
     val errorMessage = when (validationResult.invalidTelemetryReason.category) {
-        CodeTransformPreValidationError.UnsupportedJavaVersion, CodeTransformPreValidationError.UnsupportedBuildSystem -> message("codemodernizer.chat.message.validation.error.unsupported_module")
+        CodeTransformPreValidationError.UnsupportedJavaVersion, CodeTransformPreValidationError.UnsupportedBuildSystem ->
+            message("codemodernizer.chat.message.validation.error.unsupported_module")
         CodeTransformPreValidationError.RemoteRunProject -> message("codemodernizer.notification.warn.invalid_project.description.reason.remote_backend")
         CodeTransformPreValidationError.NonSsoLogin -> message("codemodernizer.notification.warn.invalid_project.description.reason.not_logged_in")
         CodeTransformPreValidationError.EmptyProject -> message("codemodernizer.notification.warn.invalid_project.description.reason.missing_content_roots")
