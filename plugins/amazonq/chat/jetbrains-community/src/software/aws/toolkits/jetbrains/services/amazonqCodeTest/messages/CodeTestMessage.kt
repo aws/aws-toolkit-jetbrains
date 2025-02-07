@@ -9,9 +9,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
 import software.aws.toolkits.jetbrains.services.cwc.messages.FollowUp
-import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
-import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage.MessageId
-import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage.TabId
 import java.time.Instant
 import java.util.UUID
 
