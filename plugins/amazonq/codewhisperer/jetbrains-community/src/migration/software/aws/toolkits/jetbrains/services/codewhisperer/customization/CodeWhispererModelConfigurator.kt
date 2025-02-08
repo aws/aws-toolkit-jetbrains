@@ -35,6 +35,11 @@ interface CodeWhispererModelConfigurator {
      */
     fun getNewUpdate(connectionId: String): Collection<CustomizationUiItem>?
 
+    /**
+     * Refreshes the default customization ARN by retrieving the latest value from the feature configuration service.
+     */
+    fun refreshDefaultCustomizationArn(project: Project)
+
     companion object {
         fun getInstance(): CodeWhispererModelConfigurator = service()
     }

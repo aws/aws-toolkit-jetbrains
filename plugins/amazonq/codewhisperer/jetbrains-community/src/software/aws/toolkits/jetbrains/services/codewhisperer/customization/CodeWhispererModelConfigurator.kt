@@ -76,6 +76,8 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
 
     private val hasShownNewCustomizationNotification = AtomicBoolean(false)
 
+    private var serviceDefaultArn: String? = null
+
     override fun showConfigDialog(project: Project) {
         runInEdt {
             calculateIfIamIdentityCenterConnection(project) {
@@ -165,16 +167,7 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
     override fun activeCustomization(project: Project): CodeWhispererCustomization? {
         val selectedCustomization = calculateIfIamIdentityCenterConnection(project) { connectionIdToActiveCustomizationArn[it.id] }
 
-        if (selectedCustomization != null) {
-            return selectedCustomization
-        } else {
-            val customizationOverride = CodeWhispererFeatureConfigService.getInstance().getCustomizationFeature()
-            if (customizationOverride == null || customizationOverride.value.stringValue().isEmpty()) return null
-            return CodeWhispererCustomization(
-                arn = customizationOverride.value.stringValue(),
-                name = customizationOverride.variation,
-            )
-        }
+        return selectedCustomization
     }
 
     override fun switchCustomization(project: Project, newCustomization: CodeWhispererCustomization?) {
@@ -234,12 +227,22 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
         } ?: false
     }
 
+    override fun refreshDefaultCustomizationArn(project: Project) {
+        CodeWhispererFeatureConfigService.getInstance().getCustomizationFeature()?.let { customization ->
+            if (customization.value.stringValue() != serviceDefaultArn) {
+                serviceDefaultArn = customization.value.stringValue()
+                switchCustomization(project, CodeWhispererCustomization(customization.value.stringValue(), customization.variation))
+            }
+        }
+    }
+
     override fun getNewUpdate(connectionId: String) = connectionToCustomizationUiItems[connectionId]
 
     override fun getState(): CodeWhispererCustomizationState {
         val state = CodeWhispererCustomizationState()
         state.connectionIdToActiveCustomizationArn.putAll(this.connectionIdToActiveCustomizationArn)
         state.previousAvailableCustomizations.putAll(this.connectionToCustomizationsShownLastTime)
+        state.serviceDefaultArn = this.serviceDefaultArn
 
         return state
     }
@@ -250,6 +253,8 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
 
         connectionToCustomizationsShownLastTime.clear()
         connectionToCustomizationsShownLastTime.putAll(state.previousAvailableCustomizations)
+
+        this.serviceDefaultArn = state.serviceDefaultArn
     }
 
     override fun dispose() {}
@@ -280,6 +285,10 @@ class CodeWhispererCustomizationState : BaseState() {
     @get:Property
     @get:MapAnnotation
     val previousAvailableCustomizations by map<String, MutableList<String>>()
+
+    @get:Property
+    @get:MapAnnotation
+    var serviceDefaultArn by string()
 }
 
 data class CustomizationUiItem(
