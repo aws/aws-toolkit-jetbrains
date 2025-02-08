@@ -15,6 +15,7 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.testFramework.LightVirtualFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -99,7 +100,6 @@ import java.time.Instant
 import java.util.UUID
 import software.amazon.awssdk.services.codewhispererstreaming.model.Position as StreamingPosition
 import software.amazon.awssdk.services.codewhispererstreaming.model.Range as StreamingRange
-import com.intellij.testFramework.LightVirtualFile
 
 class CodeTestChatController(
     private val context: AmazonQAppInitContext,
