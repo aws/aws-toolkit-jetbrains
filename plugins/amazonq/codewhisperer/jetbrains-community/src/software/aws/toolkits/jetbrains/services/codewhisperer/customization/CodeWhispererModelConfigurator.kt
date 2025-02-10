@@ -231,7 +231,7 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
         CodeWhispererFeatureConfigService.getInstance().getCustomizationFeature()?.let { customization ->
             if (customization.value.stringValue() != serviceDefaultArn) {
                 serviceDefaultArn = customization.value.stringValue()
-                switchCustomization(project, CodeWhispererCustomization(customization.value.stringValue(), customization.variation))
+                switchCustomization(project, CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation))
             }
         }
     }
