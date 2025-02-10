@@ -1,0 +1,8 @@
+{
+  "date" : "2025-02-07",
+  "version" : "3.53",
+  "entries" : [ {
+    "type" : "bugfix",
+    "description" : "Amazon Q: Fixed an issue where in a specific scenario when receiving multiple suggestions with JetBrains suggestions visible, users are not able to accept the suggestion."
+  } ]
+}
