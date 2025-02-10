@@ -15,6 +15,12 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
+import com.intellij.util.io.await
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import org.eclipse.lsp4j.ClientCapabilities
+import org.eclipse.lsp4j.InitializeParams
+import org.eclipse.lsp4j.InitializedParams
 import org.eclipse.lsp4j.jsonrpc.Launcher
 import org.eclipse.lsp4j.launch.LSPLauncher
 import software.aws.toolkits.core.utils.getLogger
@@ -62,7 +68,7 @@ internal class LSPProcessListener : ProcessListener {
 }
 
 @Service(Service.Level.PROJECT)
-class AmazonQLspService(project: Project) : Disposable {
+class AmazonQLspService(project: Project, private val cs: CoroutineScope) : Disposable {
     private val launcher: Launcher<AmazonQLanguageServer>
 
     private val languageServer: AmazonQLanguageServer
@@ -74,7 +80,6 @@ class AmazonQLspService(project: Project) : Disposable {
         val handler = KillableColoredProcessHandler.Silent(cmd)
         val inputWrapper = LSPProcessListener()
         handler.addProcessListener(inputWrapper)
-
         handler.startNotify()
 
         launcher = LSPLauncher.Builder<AmazonQLanguageServer>()
@@ -103,6 +108,28 @@ class AmazonQLspService(project: Project) : Disposable {
             .create()
 
         launcher.startListening()
+
+        cs.launch {
+            val initializeResult = languageServer.initialize(
+                InitializeParams().apply {
+                    // does this work on windows
+                    processId = ProcessHandle.current().pid().toInt()
+                    // capabilities
+                    // client info
+                    // trace?
+                    // workspace folders?
+                    // anything else we need?
+                }
+                // probably need a timeout
+            ).await()
+
+            // then if this succeeds then we can allow the client to send requests
+            languageServer.initialized(InitializedParams())
+            if (initializeResult == null) {
+                LOG.warn("LSP initialization failed")
+                handler.destroyProcess()
+            }
+        }
     }
 
     override fun dispose() {
