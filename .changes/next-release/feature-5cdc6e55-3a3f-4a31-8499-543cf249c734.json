@@ -1,0 +1,4 @@
+{
+  "type" : "feature",
+  "description" : "Inline suggestions: Enable Pre-fetch recommendations to reduce suggestion latency for complex scenarios"
+}
