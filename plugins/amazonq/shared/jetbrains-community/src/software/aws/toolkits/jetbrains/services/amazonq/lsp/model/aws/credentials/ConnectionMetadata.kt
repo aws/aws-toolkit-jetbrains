@@ -4,9 +4,9 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials
 
 data class ConnectionMetadata(
-    val sso: SsoProfileData
+    val sso: SsoProfileData,
 )
 
 data class SsoProfileData(
-    val startUrl: String
+    val startUrl: String,
 )
