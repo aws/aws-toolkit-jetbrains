@@ -26,6 +26,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -267,6 +268,11 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                         val latency = TimeUnit.NANOSECONDS.toMillis(endTime - startTime).toDouble()
                         val requestId = nextResponse.responseMetadata().requestId()
                         val sessionId = nextResponse.sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
+                        if (sessionId != currStates.responseContext.sessionId) {
+                            LOG.debug { "Session id mismatch, expected: ${currStates.responseContext.sessionId}, actual: $sessionId" }
+                            this.cancel("Session mismatch")
+                            return@launch
+                        }
 
                         nextRequestContext.latencyContext.apply {
                             codewhispererPostprocessingStart = System.nanoTime()
