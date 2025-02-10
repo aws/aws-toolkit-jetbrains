@@ -135,7 +135,7 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
     }
 
     private fun emitTelemetryOnChatCodeInsert(insertedCode: InsertedCodeModificationEntry) {
-        try {
+        val modificationPercentage = try {
             val file = insertedCode.vFile
             if (file == null || (!file.isValid)) throw Exception("Record OnChatCodeInsert - invalid file")
 
@@ -145,11 +145,12 @@ class CodeWhispererUserModificationTracker(private val project: Project) : Dispo
             val currentString = document?.getText(
                 TextRange(insertedCode.range.startOffset, insertedCode.range.endOffset)
             )
-            val modificationPercentage = checkDiff(currentString?.trim(), insertedCode.originalString.trim())
-            sendModificationWithChatTelemetry(insertedCode, modificationPercentage)
+            checkDiff(currentString?.trim(), insertedCode.originalString.trim())
         } catch (e: Exception) {
-            sendModificationWithChatTelemetry(insertedCode, null)
+            null
         }
+
+        sendModificationWithChatTelemetry(insertedCode, modificationPercentage)
     }
 
     private fun emitTelemetryOnSuggestion(acceptedSuggestion: AcceptedSuggestionEntry) {
