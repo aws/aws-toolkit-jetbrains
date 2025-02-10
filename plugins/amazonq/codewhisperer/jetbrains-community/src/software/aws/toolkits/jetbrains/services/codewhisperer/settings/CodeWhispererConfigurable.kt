@@ -99,17 +99,6 @@ class CodeWhispererConfigurable(private val project: Project) :
             }
 
             row {
-                text(message("codewhisperer.inline.settings.tab_priority.prefix"))
-                val amazonq = message("codewhisperer.inline.settings.tab_priority.choice.amazonq")
-                val jetbrains = message("codewhisperer.inline.settings.tab_priority.choice.jetbrains")
-                comboBox(listOf(amazonq, jetbrains)).bindItem(
-                    { if (CodeWhispererSettings.getInstance().isQPrioritizedForTabAccept()) amazonq else jetbrains },
-                    { CodeWhispererSettings.getInstance().setQPrioritizedForTabAccept(it == amazonq) }
-                )
-                text(message("codewhisperer.inline.settings.tab_priority.suffix"))
-            }
-
-            row {
                 link("Configure inline suggestion keybindings") { e ->
                     // TODO: user needs feedback if these are null
                     val settings = DataManager.getInstance().getDataContext(e.source as ActionLink).getData(Settings.KEY) ?: return@link
