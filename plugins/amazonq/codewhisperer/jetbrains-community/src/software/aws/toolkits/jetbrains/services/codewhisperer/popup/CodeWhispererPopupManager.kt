@@ -243,7 +243,7 @@ class CodeWhispererPopupManager {
                 states.requestContext.latencyContext.getPerceivedLatency(states.requestContext.triggerTypeInfo.triggerType)
         }
         if (!isRecommendationAdded) {
-            showPopup(states, sessionContext, states.popup, visible = sessionContext.isPopupShowing)
+            states.popup?.let { showPopup(states, sessionContext, it, visible = sessionContext.isPopupShowing) }
         }
     }
 
