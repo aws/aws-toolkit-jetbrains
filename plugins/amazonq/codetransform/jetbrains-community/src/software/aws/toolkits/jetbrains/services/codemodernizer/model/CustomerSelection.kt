@@ -10,7 +10,7 @@ import java.io.File
 data class CustomerSelection(
     val configurationFile: VirtualFile? = null, // used to ZIP module
     val sourceJavaVersion: JavaSdkVersion, // always needed, use default of JDK_8 for SQL conversions for startJob API call
-    val targetJavaVersion: JavaSdkVersion = JavaSdkVersion.JDK_17,
+    val targetJavaVersion: JavaSdkVersion, // 17 or 21
     val sourceVendor: String = ORACLE_DB, // only one supported
     val targetVendor: String? = null,
     val sourceServerName: String? = null,
