@@ -63,6 +63,7 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         calculateIfIamIdentityCenterConnection(project) {
             pluginAwareExecuteOnPooledThread {
                 CodeWhispererModelConfigurator.getInstance().listCustomizations(project, passive = true)
+                CodeWhispererModelConfigurator.getInstance().refreshDefaultCustomizationArn(project)
             }
         }
 
