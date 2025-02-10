@@ -14,6 +14,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credential
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import java.util.concurrent.CompletableFuture
 
+/**
+ * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
+ */
 class AmazonQLanguageClientImpl : AmazonQLanguageClient {
     override fun telemetryEvent(`object`: Any) {
         println(`object`)
