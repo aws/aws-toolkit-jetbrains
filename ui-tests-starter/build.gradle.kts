@@ -27,7 +27,12 @@ intellijPlatform {
     instrumentCode = false
 }
 
+tasks.initializeIntellijPlatformPlugin {
+    enabled = false
+}
+
 tasks.verifyPluginProjectConfiguration {
+    runtimeDirectory.set(null as File?)
     enabled = false
 }
 
