@@ -1,3 +1,6 @@
+# _3.54_ (2025-02-11)
+- **(Bug Fix)** Amazon Q: Reverting the behavior of making JetBrains suggestions(IntelliSense) and Q suggestions co-exist
+
 # _3.53_ (2025-02-07)
 - **(Bug Fix)** Amazon Q: Fixed an issue where in a specific scenario when receiving multiple suggestions with JetBrains suggestions visible, users are not able to accept the suggestion.
 
