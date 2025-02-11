@@ -16,7 +16,7 @@ interface CodeWhispererModelConfigurator {
 
     fun activeCustomization(project: Project): CodeWhispererCustomization?
 
-    fun switchCustomization(project: Project, newCustomization: CodeWhispererCustomization?)
+    fun switchCustomization(project: Project, newCustomization: CodeWhispererCustomization?, isOverride: Boolean = false)
 
     /**
      * This method is only used for invalidate a stale customization which was previously active but was removed, it will remove all usage of this customization
@@ -34,11 +34,6 @@ interface CodeWhispererModelConfigurator {
      * Query if there is customization for given connection
      */
     fun getNewUpdate(connectionId: String): Collection<CustomizationUiItem>?
-
-    /**
-     * Refreshes the default customization ARN by retrieving the latest value from the feature configuration service.
-     */
-    fun refreshDefaultCustomizationArn(project: Project)
 
     companion object {
         fun getInstance(): CodeWhispererModelConfigurator = service()

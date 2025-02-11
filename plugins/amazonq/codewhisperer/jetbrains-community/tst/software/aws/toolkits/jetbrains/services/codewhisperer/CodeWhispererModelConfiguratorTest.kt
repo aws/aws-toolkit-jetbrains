@@ -143,7 +143,11 @@ class CodeWhispererModelConfiguratorTest {
                 FeatureContext("customizationArnOverride", "foo", FeatureValue.builder().stringValue("overrideArn").build())
             )
         }
-        sut.refreshDefaultCustomizationArn(projectRule.project)
+        abManager.getCustomizationFeature()?.let { customization ->
+            sut.switchCustomization(projectRule.project, CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation),
+                isOverride = true
+            )
+        }
         assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(CodeWhispererCustomization("overrideArn", "foo", null))
     }
 
@@ -158,7 +162,11 @@ class CodeWhispererModelConfiguratorTest {
                 FeatureContext("customizationArnOverride", "foo", FeatureValue.builder().stringValue("arnOverride1").build())
             )
         }
-        sut.refreshDefaultCustomizationArn(projectRule.project)
+        abManager.getCustomizationFeature()?.let { customization ->
+            sut.switchCustomization(projectRule.project, CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation),
+                isOverride = true
+            )
+        }
 
         // User should receive arnOverride1 from the server
         assertThat(sut.activeCustomization(projectRule.project))
@@ -170,8 +178,12 @@ class CodeWhispererModelConfiguratorTest {
                 FeatureContext("customizationArnOverride", "foo", FeatureValue.builder().stringValue("arnOverride2").build())
             )
         }
-        sut.refreshDefaultCustomizationArn(projectRule.project)
 
+        abManager.getCustomizationFeature()?.let { customization ->
+            sut.switchCustomization(projectRule.project, CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation),
+                isOverride = true
+            )
+        }
         // User should receive arnOverride2 from the server
         assertThat(sut.activeCustomization(projectRule.project))
             .isEqualTo(CodeWhispererCustomization("arnOverride2", "foo", null))
@@ -188,8 +200,12 @@ class CodeWhispererModelConfiguratorTest {
                 FeatureContext("customizationArnOverride", "foo", FeatureValue.builder().stringValue("arnOverride1").build())
             )
         }
-        sut.refreshDefaultCustomizationArn(projectRule.project)
 
+        abManager.getCustomizationFeature()?.let { customization ->
+            sut.switchCustomization(projectRule.project, CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation),
+                isOverride = true
+            )
+        }
         // User should receive arnOverride1 from the server
         assertThat(sut.activeCustomization(projectRule.project))
             .isEqualTo(CodeWhispererCustomization("arnOverride1", "foo", null))
@@ -200,8 +216,12 @@ class CodeWhispererModelConfiguratorTest {
                 FeatureContext("customizationArnOverride", "foo", FeatureValue.builder().stringValue("arnOverride2").build())
             )
         }
-        sut.refreshDefaultCustomizationArn(projectRule.project)
 
+        abManager.getCustomizationFeature()?.let { customization ->
+            sut.switchCustomization(projectRule.project, CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation),
+                isOverride = true
+            )
+        }
         // Ensure server’s change is applied
         assertThat(sut.activeCustomization(projectRule.project))
             .isEqualTo(CodeWhispererCustomization("arnOverride2", "foo", null))
@@ -209,7 +229,11 @@ class CodeWhispererModelConfiguratorTest {
         // Step 3: User manually selects a different customization (userSelectedArn)
         val userCustomization = CodeWhispererCustomization("userSelectedArn", "userChoice", null)
         sut.switchCustomization(projectRule.project, userCustomization)
-
+        abManager.getCustomizationFeature()?.let { customization ->
+            sut.switchCustomization(projectRule.project, CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation),
+                isOverride = true
+            )
+        }
         // Ensure user selection is still respected (should not change to arnOverride2)
         assertThat(sut.activeCustomization(projectRule.project))
             .isEqualTo(userCustomization)
@@ -385,6 +409,8 @@ class CodeWhispererModelConfiguratorTest {
                     "fake-sso-url" to CodeWhispererCustomization(arn = "arn_2", name = "name_2", description = "description_2")
                 )
             )
+
+            this.serviceDefaultArn = "arn:aws:codewhisperer:default"
         }
 
         XmlSerializer.serializeInto(state, element)
@@ -416,6 +442,7 @@ class CodeWhispererModelConfiguratorTest {
             "</entry>" +
             "</map>" +
             "</option>" +
+            "<option name=\"serviceDefaultArn\" value=\"arn:aws:codewhisperer:default\" />" +
             "</component>"
 
         assertThat(actual).isEqualTo(expected)
@@ -432,6 +459,7 @@ class CodeWhispererModelConfiguratorTest {
         val actual = XmlSerializer.deserialize(element, CodeWhispererCustomizationState::class.java)
         assertThat(actual.connectionIdToActiveCustomizationArn).hasSize(0)
         assertThat(actual.previousAvailableCustomizations).hasSize(0)
+        assertThat(actual.serviceDefaultArn).isNull()
     }
 
     @Test
@@ -465,10 +493,12 @@ class CodeWhispererModelConfiguratorTest {
                             </entry>
                         </map>
                     </option>
+                    <option name="serviceDefaultArn" value="arn:aws:codewhisperer:default"/>
                 </component>
             """
         )
         val actual = XmlSerializer.deserialize(element, CodeWhispererCustomizationState::class.java)
+        assertThat(actual.serviceDefaultArn).isEqualTo("arn:aws:codewhisperer:default")
         assertThat(actual.connectionIdToActiveCustomizationArn).hasSize(1)
         assertThat(actual.connectionIdToActiveCustomizationArn["fake-sso-url"]).isEqualTo(
             CodeWhispererCustomization(
@@ -505,6 +535,7 @@ class CodeWhispererModelConfiguratorTest {
         )
         val actual = XmlSerializer.deserialize(element, CodeWhispererCustomizationState::class.java)
         assertThat(actual.connectionIdToActiveCustomizationArn).hasSize(0)
+        assertThat(actual.serviceDefaultArn).isNull()
         assertThat(actual.previousAvailableCustomizations).hasSize(1)
         assertThat(actual.previousAvailableCustomizations["fake-sso-url"]).isEqualTo(listOf("arn_1", "arn_2", "arn_3"))
     }

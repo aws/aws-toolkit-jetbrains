@@ -170,8 +170,16 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
         return selectedCustomization
     }
 
-    override fun switchCustomization(project: Project, newCustomization: CodeWhispererCustomization?) {
+    /**
+     * Override happens when ALL following conditions are met
+     *  1. service returns non-empty override customization arn, refer to [CodeWhispererFeatureConfigService.kt]
+     *  2. the override customization arn is different from the previous override customization if any. The purpose is to only do override once on users' behalf.
+     */
+    override fun switchCustomization(project: Project, newCustomization: CodeWhispererCustomization?, isOverride: Boolean) {
         calculateIfIamIdentityCenterConnection(project) {
+            if (isOverride && (newCustomization == null || newCustomization.arn.isEmpty() || serviceDefaultArn == newCustomization.arn)) {
+                return@calculateIfIamIdentityCenterConnection
+            }
             val oldCus = connectionIdToActiveCustomizationArn[it.id]
             if (oldCus != newCustomization) {
                 newCustomization?.let { newCus ->
@@ -183,6 +191,9 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
                 LOG.debug { "Switch from customization $oldCus to $newCustomization" }
 
                 CodeWhispererCustomizationListener.notifyCustomUiUpdate()
+            }
+            if (isOverride) {
+                serviceDefaultArn = newCustomization?.arn
             }
         }
     }
@@ -225,15 +236,6 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
                 }
             }
         } ?: false
-    }
-
-    override fun refreshDefaultCustomizationArn(project: Project) {
-        CodeWhispererFeatureConfigService.getInstance().getCustomizationFeature()?.let { customization ->
-            if (customization.value.stringValue() != serviceDefaultArn) {
-                serviceDefaultArn = customization.value.stringValue()
-                switchCustomization(project, CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation))
-            }
-        }
     }
 
     override fun getNewUpdate(connectionId: String) = connectionToCustomizationUiItems[connectionId]
@@ -287,7 +289,6 @@ class CodeWhispererCustomizationState : BaseState() {
     val previousAvailableCustomizations by map<String, MutableList<String>>()
 
     @get:Property
-    @get:MapAnnotation
     var serviceDefaultArn by string()
 }
 
