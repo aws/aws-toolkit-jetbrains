@@ -959,6 +959,7 @@ class CodeTestChatController(
         authController.handleAuth(context.project, message.authType)
         codeTestChatHelper.sendAuthenticationInProgressMessage(message.tabId) // show user that authentication is in progress
         codeTestChatHelper.sendChatInputEnabledMessage(false) // disable the input field while authentication is in progress
+        sessionCleanUp(codeTestChatHelper.getActiveSession().tabId)
     }
 
     private suspend fun updateBuildAndExecuteProgressCard(
