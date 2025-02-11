@@ -41,12 +41,45 @@ class ManifestManager {
         @JsonProperty("contents")
         val contents: List<TargetContent>? = emptyList(),
     )
+
+    data class RunTime(
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        @JsonProperty("name")
+        val name: String? = null,
+        @JsonProperty("version")
+        val version: String? = null
+    )
+
+    data class Capabilities(
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        @JsonProperty("name")
+        val name: String? = null,
+        @JsonProperty("version")
+        val version: String? = null
+    )
+
+    data class Protocol(
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        @JsonProperty("name")
+        val name: String?= null,
+        @JsonProperty("version")
+        val version: String? = null
+    )
+
     data class Version(
         @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("serverVersion")
         val serverVersion: String? = null,
         @JsonProperty("isDelisted")
         val isDelisted: Boolean? = null,
+        @JsonProperty("runtime")
+        val runtime: RunTime? = null,
+        @JsonProperty("capabilities")
+        val capabilities: Capabilities? = null,
+        @JsonProperty("protocol")
+        val protocol: Protocol? = null,
+        @JsonProperty("thirdPartyLicenses")
+        val thirdPartyLicenses: String? = null,
         @JsonProperty("targets")
         val targets: List<VersionTarget>? = emptyList(),
     )
@@ -65,7 +98,7 @@ class ManifestManager {
         val versions: List<Version>? = emptyList(),
     )
 
-    fun getManifest(): Manifest? = fetchFromRemoteAndSave()
+    fun getManifest(manifestUrl: String = cloudFrontUrl): Manifest? = fetchFromRemoteAndSave(manifestUrl)
 
     private fun readManifestFile(content: String): Manifest? {
         try {
@@ -95,9 +128,9 @@ class ManifestManager {
         return target.contents?.find { content -> content.filename?.contains("qserver") == true }
     }
 
-    private fun fetchFromRemoteAndSave(): Manifest? {
+    private fun fetchFromRemoteAndSave(manifestUrl: String): Manifest? {
         try {
-            val response = getTextFromUrl(cloudFrontUrl)
+            val response = getTextFromUrl(manifestUrl)
             return readManifestFile(response)
         } catch (e: Exception) {
             logger.warn { "failed to save manifest from remote: ${e.message}" }
