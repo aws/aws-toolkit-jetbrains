@@ -43,7 +43,8 @@ dependencies {
     testImplementation("org.kodein.di:kodein-di-jvm:7.20.2")
     intellijPlatform {
         // shouldn't be needed? but IsolationException
-        intellijIdeaCommunity(ideProfile.community.sdkVersion)
+        val version = ideProfile.community.sdkVersion
+        intellijIdeaCommunity(version, !version.contains("SNAPSHOT"))
         testFramework(TestFrameworkType.Starter)
     }
 
