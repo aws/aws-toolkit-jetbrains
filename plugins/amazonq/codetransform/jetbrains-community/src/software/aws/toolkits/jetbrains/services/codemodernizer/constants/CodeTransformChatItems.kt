@@ -179,10 +179,6 @@ private val selectTargetVersionFormItem = FormItem(
         FormItemOption(
             label = JavaSdkVersion.JDK_17.toString(),
             value = JavaSdkVersion.JDK_17.toString(),
-        ),
-        FormItemOption(
-            label = JavaSdkVersion.JDK_21.toString(),
-            value = JavaSdkVersion.JDK_21.toString(),
         )
     )
 )
