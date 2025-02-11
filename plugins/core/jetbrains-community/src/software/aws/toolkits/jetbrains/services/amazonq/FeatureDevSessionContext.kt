@@ -279,10 +279,17 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     }
 
     // gitignore patterns are not regex, method update needed.
-    private fun convertGitIgnorePatternToRegex(pattern: String): String = pattern
-        .replace(".", "\\.")
-        .replace("*", ".*")
-        .let { if (it.endsWith("/")) "$it.*" else "$it/.*" } // Add a trailing /* to all patterns. (we add a trailing / to all files when matching)
+    fun convertGitIgnorePatternToRegex(pattern: String): String {
+        // Special case for ".*" to match only dotfiles
+        if (pattern == ".*") {
+            return "^\\..*/.*"
+        }
+
+        return pattern
+            .replace(".", "\\.")
+            .replace("*", ".*")
+            .let { if (it.endsWith("/")) "$it.*" else "$it/.*" } // Add a trailing /* to all patterns. (we add a trailing / to all files when matching)
+    }
     var selectedSourceFolder: VirtualFile
         set(newRoot) {
             _selectedSourceFolder = newRoot
