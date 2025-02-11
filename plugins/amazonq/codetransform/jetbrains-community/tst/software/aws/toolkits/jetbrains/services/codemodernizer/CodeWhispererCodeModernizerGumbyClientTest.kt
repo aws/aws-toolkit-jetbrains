@@ -136,7 +136,7 @@ class CodeWhispererCodeModernizerGumbyClientTest : CodeWhispererCodeModernizerTe
     }
 
     @Test
-    fun `check startCodeModernization`() {
+    fun `check startCodeModernization on JAVA_17 target`() {
         val actual = gumbyClient.startCodeModernization("jobId", TransformationLanguage.JAVA_8, TransformationLanguage.JAVA_17)
         argumentCaptor<StartTransformationRequest>().apply {
             verify(bearerClient).startTransformation(capture())

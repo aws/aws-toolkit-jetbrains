@@ -83,6 +83,7 @@ class CodeWhispererFeatureConfigService {
                     featureConfigs.remove(CUSTOMIZATION_ARN_OVERRIDE_NAME)
                 }
             }
+            CodeWhispererFeatureConfigListener.notifyUiFeatureConfigsAvailable()
         } catch (e: Exception) {
             LOG.debug(e) { "Error when fetching feature configs" }
         }

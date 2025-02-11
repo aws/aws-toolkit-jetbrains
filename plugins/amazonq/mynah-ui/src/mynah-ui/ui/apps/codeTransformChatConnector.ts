@@ -244,7 +244,7 @@ export class CodeTransformChatConnector {
                 tabID,
                 tabType: 'codetransform',
                 modulePath: action.formItemValues?.module,
-                targetVersion: 'Java 17',
+                targetVersion: action.formItemValues?.targetVersion,
             })
         } else if (action.id === FormButtonIds.CodeTransformInputSQLMetadata) {
             this.sendMessageToExtension({
