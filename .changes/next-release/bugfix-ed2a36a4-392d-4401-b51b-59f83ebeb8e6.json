@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Amazon Q: Reverting the behavior of making JetBrains suggestions(IntelliSense) and Q suggestions co-exist"
-}
