@@ -71,6 +71,6 @@ class PluginAmazonQJvmBinaryCompatabilityTest {
         assertThat(customizationUiItem.getMethod("getCustomization").returnType).isEqualTo(customizationClazz)
 
         // CodeWhispererModelConfigurator.switchCustomization(...)
-        assertThat(modelConfiguratorClazz.getMethod("switchCustomization", Class.forName("com.intellij.openapi.project.Project"), customizationClazz).returnType).isEqualTo(Void.TYPE)
+        assertThat(modelConfiguratorClazz.getMethod("switchCustomization", Class.forName("com.intellij.openapi.project.Project"), customizationClazz, java.lang.Boolean.TYPE).returnType).isEqualTo(Void.TYPE)
     }
 }

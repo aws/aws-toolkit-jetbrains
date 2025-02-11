@@ -172,7 +172,7 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
 
     /**
      * Override happens when ALL following conditions are met
-     *  1. service returns non-empty override customization arn, refer to [CodeWhispererFeatureConfigService.kt]
+     *  1. service returns non-empty override customization arn, refer to [CodeWhispererFeatureConfigService]
      *  2. the override customization arn is different from the previous override customization if any. The purpose is to only do override once on users' behalf.
      */
     override fun switchCustomization(project: Project, newCustomization: CodeWhispererCustomization?, isOverride: Boolean) {
