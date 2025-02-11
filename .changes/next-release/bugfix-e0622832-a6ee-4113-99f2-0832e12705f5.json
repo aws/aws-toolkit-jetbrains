@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Amazon Q: Ensure server-pushed customization updates"
+  "description" : "Amazon Q: Ensure server-pushed customization settings updates local value"
 }
