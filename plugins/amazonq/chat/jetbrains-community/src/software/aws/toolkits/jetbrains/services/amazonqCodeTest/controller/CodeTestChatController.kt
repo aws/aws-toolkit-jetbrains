@@ -457,6 +457,10 @@ class CodeTestChatController(
         when (message.actionID) {
             "utg_view_diff" -> {
                 withContext(EDT) {
+                    // virtual file only needed for syntax highlighting when viewing diff
+                    val tempPath = Files.createTempFile(null, ".${session.testFileName.substringAfterLast('.')}")
+                    val virtualFile = tempPath.toFile().toVirtualFile()
+
                     (DiffManager.getInstance() as DiffManagerEx).showDiffBuiltin(
                         context.project,
                         SimpleDiffRequest(
@@ -465,13 +469,18 @@ class CodeTestChatController(
                                 getFileContentAtTestFilePath(
                                     session.projectRoot,
                                     session.testFileRelativePathToProjectRoot
-                                )
+                                ),
+                                virtualFile
                             ),
-                            DiffContentFactory.getInstance().create(session.generatedTestDiffs.values.first()),
+                            DiffContentFactory.getInstance().create(
+                                session.generatedTestDiffs.values.first(),
+                                virtualFile
+                            ),
                             "Before",
                             "After"
                         )
                     )
+                    Files.deleteIfExists(tempPath)
                     session.openedDiffFile = FileEditorManager.getInstance(context.project).selectedEditor?.file
                     ApplicationManager.getApplication().runReadAction {
                         generatedFileContent = getGeneratedFileContent(session)
