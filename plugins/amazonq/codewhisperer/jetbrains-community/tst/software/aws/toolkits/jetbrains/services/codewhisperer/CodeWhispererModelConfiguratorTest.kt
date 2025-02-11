@@ -144,7 +144,9 @@ class CodeWhispererModelConfiguratorTest {
             )
         }
         abManager.getCustomizationFeature()?.let { customization ->
-            sut.switchCustomization(projectRule.project, CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation),
+            sut.switchCustomization(
+                projectRule.project,
+                CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation),
                 isOverride = true
             )
         }
@@ -153,7 +155,7 @@ class CodeWhispererModelConfiguratorTest {
 
     @Test
     fun `should update customization when user has never selected one`() {
-        val ssoConn = spy(LegacyManagedBearerSsoConnection(region = "us-east-1", startUrl = "url-1", scopes = Q_SCOPES))
+        val ssoConn = LegacyManagedBearerSsoConnection(region = "us-east-1", startUrl = "url-1", scopes = Q_SCOPES)
         ToolkitConnectionManager.getInstance(projectRule.project).switchConnection(ssoConn)
 
         // Step 1: Server pushes first customization (arnOverride1)
@@ -163,7 +165,9 @@ class CodeWhispererModelConfiguratorTest {
             )
         }
         abManager.getCustomizationFeature()?.let { customization ->
-            sut.switchCustomization(projectRule.project, CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation),
+            sut.switchCustomization(
+                projectRule.project,
+                CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation),
                 isOverride = true
             )
         }
@@ -180,7 +184,9 @@ class CodeWhispererModelConfiguratorTest {
         }
 
         abManager.getCustomizationFeature()?.let { customization ->
-            sut.switchCustomization(projectRule.project, CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation),
+            sut.switchCustomization(
+                projectRule.project,
+                CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation),
                 isOverride = true
             )
         }
@@ -191,7 +197,7 @@ class CodeWhispererModelConfiguratorTest {
 
     @Test
     fun `should not override user selection when server updates customization`() {
-        val ssoConn = spy(LegacyManagedBearerSsoConnection(region = "us-east-1", startUrl = "url-1", scopes = Q_SCOPES))
+        val ssoConn = LegacyManagedBearerSsoConnection(region = "us-east-1", startUrl = "url-1", scopes = Q_SCOPES)
         ToolkitConnectionManager.getInstance(projectRule.project).switchConnection(ssoConn)
 
         // Step 1: Server pushes first customization (arnOverride1)
@@ -202,7 +208,9 @@ class CodeWhispererModelConfiguratorTest {
         }
 
         abManager.getCustomizationFeature()?.let { customization ->
-            sut.switchCustomization(projectRule.project, CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation),
+            sut.switchCustomization(
+                projectRule.project,
+                CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation),
                 isOverride = true
             )
         }
@@ -218,7 +226,9 @@ class CodeWhispererModelConfiguratorTest {
         }
 
         abManager.getCustomizationFeature()?.let { customization ->
-            sut.switchCustomization(projectRule.project, CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation),
+            sut.switchCustomization(
+                projectRule.project,
+                CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation),
                 isOverride = true
             )
         }
@@ -230,7 +240,9 @@ class CodeWhispererModelConfiguratorTest {
         val userCustomization = CodeWhispererCustomization("userSelectedArn", "userChoice", null)
         sut.switchCustomization(projectRule.project, userCustomization)
         abManager.getCustomizationFeature()?.let { customization ->
-            sut.switchCustomization(projectRule.project, CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation),
+            sut.switchCustomization(
+                projectRule.project,
+                CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation),
                 isOverride = true
             )
         }
@@ -238,7 +250,6 @@ class CodeWhispererModelConfiguratorTest {
         assertThat(sut.activeCustomization(projectRule.project))
             .isEqualTo(userCustomization)
     }
-
 
     @Test
     fun `loadState should load the correct values into memory`() {
