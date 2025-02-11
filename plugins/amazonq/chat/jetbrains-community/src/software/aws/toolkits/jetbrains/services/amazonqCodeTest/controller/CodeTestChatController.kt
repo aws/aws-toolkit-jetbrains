@@ -946,6 +946,13 @@ class CodeTestChatController(
         }
     }
 
+    override suspend fun processAuthFollowUpClick(message: IncomingCodeTestMessage.AuthFollowUpWasClicked) {
+        codeTestChatHelper.sendUpdatePromptProgress(message.tabId, null)
+        authController.handleAuth(context.project, message.authType)
+        codeTestChatHelper.sendAuthenticationInProgressMessage(message.tabId) // show user that authentication is in progress
+        codeTestChatHelper.sendChatInputEnabledMessage(false) // disable the input field while authentication is in progress
+    }
+
     private suspend fun updateBuildAndExecuteProgressCard(
         currentStatus: BuildAndExecuteProgressStatus,
         messageId: String?,
@@ -1202,6 +1209,17 @@ class CodeTestChatController(
      * */
     private suspend fun handleChat(tabId: String, message: String) {
         val session = codeTestChatHelper.getActiveSession()
+        session.projectRoot
+        val credentialState = authController.getAuthNeededStates(context.project).amazonQ
+        if (credentialState != null) {
+            messenger.sendAuthNeededException(
+                tabId = tabId,
+                triggerId = UUID.randomUUID().toString(),
+                credentialState = credentialState,
+            )
+            session.isAuthenticating = true
+            return
+        }
         LOG.debug {
             "$FEATURE_NAME: " +
                 "Processing message: $message " +
