@@ -130,11 +130,11 @@ class AmazonQLspService(project: Project, private val cs: CoroutineScope) : Disp
             ).await()
 
             // then if this succeeds then we can allow the client to send requests
-            languageServer.initialized(InitializedParams())
             if (initializeResult == null) {
                 LOG.warn { "LSP initialization failed" }
                 launcherHandler.destroyProcess()
             }
+            languageServer.initialized(InitializedParams())
         }
     }
 
