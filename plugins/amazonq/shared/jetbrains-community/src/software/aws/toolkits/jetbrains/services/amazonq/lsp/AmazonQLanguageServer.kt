@@ -12,6 +12,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * Remote interface exposed by the Amazon Q language server
  */
+@Suppress("unused")
 interface AmazonQLanguageServer : LanguageServer {
     @JsonRequest("aws/credentials/token/update")
     fun updateTokenCredentials(payload: UpdateCredentialsPayload): CompletableFuture<ResponseMessage>

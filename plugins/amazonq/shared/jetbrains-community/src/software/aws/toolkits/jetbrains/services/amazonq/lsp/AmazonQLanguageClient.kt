@@ -11,6 +11,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * Requests sent by server to client
  */
+@Suppress("unused")
 interface AmazonQLanguageClient : LanguageClient {
     @JsonRequest("aws/credentials/getConnectionMetadata")
     fun getConnectionMetadata(): CompletableFuture<ConnectionMetadata>
