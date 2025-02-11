@@ -15,7 +15,6 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
-import com.intellij.testFramework.LightVirtualFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -459,7 +458,8 @@ class CodeTestChatController(
         when (message.actionID) {
             "utg_view_diff" -> {
                 withContext(EDT) {
-                    val virtualFile = LightVirtualFile(session.testFileName)
+                    val tempPath = Files.createTempFile(null, ".${session.testFileName.substringAfterLast('.')}")
+                    val virtualFile = tempPath.toFile().toVirtualFile()
 
                     (DiffManager.getInstance() as DiffManagerEx).showDiffBuiltin(
                         context.project,
@@ -480,6 +480,7 @@ class CodeTestChatController(
                             "After"
                         )
                     )
+                    Files.deleteIfExists(tempPath)
                     session.openedDiffFile = FileEditorManager.getInstance(context.project).selectedEditor?.file
                     ApplicationManager.getApplication().runReadAction {
                         generatedFileContent = getGeneratedFileContent(session)
