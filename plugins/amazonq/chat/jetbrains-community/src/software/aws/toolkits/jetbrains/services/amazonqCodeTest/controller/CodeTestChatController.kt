@@ -458,6 +458,7 @@ class CodeTestChatController(
         when (message.actionID) {
             "utg_view_diff" -> {
                 withContext(EDT) {
+                    // virtual file only needed for syntax highlighting when viewing diff
                     val tempPath = Files.createTempFile(null, ".${session.testFileName.substringAfterLast('.')}")
                     val virtualFile = tempPath.toFile().toVirtualFile()
 
