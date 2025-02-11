@@ -190,7 +190,19 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
             }
         }
 
-        val expectedFilesToMatch = listOf(".gitignore/", ".env/", "file.txt/", ".git/config/", "src/file.txt/", "build/", "build/output.jar/", "log.txt/", "file.png/", "src/file.png/")
+        val expectedFilesToMatch =
+            listOf(
+                ".gitignore/",
+                ".env/",
+                "file.txt/",
+                ".git/config/",
+                "src/file.txt/",
+                "build/",
+                "build/output.jar/",
+                "log.txt/",
+                "file.png/",
+                "src/file.png/"
+            )
 
         assertEquals(expectedFilesToMatch, matchedFiles)
     }
