@@ -201,12 +201,11 @@ class CodeTestChatController(
 
             session.isCodeBlockSelected = selectionRange !== null
 
-            // This check is added to remove /test if user accidentally added while doing Regenerate unit tests.
-            val userPrompt = if (message.prompt.startsWith("/test")) {
-                message.prompt.substringAfter("/test ").trim()
-            } else {
-                message.prompt
-            }
+            // This removes /test if user accidentally added while doing Regenerate unit tests and truncates the user response to 4096 characters.
+            val userPrompt = message.prompt
+                .let { if (it.startsWith("/test")) it.substringAfter("/test ").trim() else it }
+                .take(4096)
+
             CodeWhispererUTGChatManager.getInstance(project).generateTests(userPrompt, codeTestChatHelper, null, selectionRange)
         } else {
             // Not adding a progress bar to unsupported language cases
