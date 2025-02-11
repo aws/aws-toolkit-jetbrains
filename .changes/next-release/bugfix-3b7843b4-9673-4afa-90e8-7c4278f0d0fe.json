@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "/test syntax highlighting when viewing diff"
+  "description" : "Enable syntax highlighting when viewing diff for /test"
 }
