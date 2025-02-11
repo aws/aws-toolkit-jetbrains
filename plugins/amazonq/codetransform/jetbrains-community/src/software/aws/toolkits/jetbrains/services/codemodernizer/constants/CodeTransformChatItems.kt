@@ -179,10 +179,6 @@ private val selectTargetVersionFormItem = FormItem(
         FormItemOption(
             label = JavaSdkVersion.JDK_17.toString(),
             value = JavaSdkVersion.JDK_17.toString(),
-        ),
-        FormItemOption(
-            label = JavaSdkVersion.JDK_21.toString(),
-            value = JavaSdkVersion.JDK_21.toString(),
         )
     )
 )
@@ -284,12 +280,11 @@ fun buildLanguageUpgradeProjectValidChatContent() = CodeTransformChatMessageCont
 
 fun buildProjectInvalidChatContent(validationResult: ValidationResult): CodeTransformChatMessageContent {
     val errorMessage = when (validationResult.invalidTelemetryReason.category) {
-        CodeTransformPreValidationError.NoPom -> message("codemodernizer.chat.message.validation.error.no_pom", CODE_TRANSFORM_PREREQUISITES)
-        CodeTransformPreValidationError.UnsupportedJavaVersion -> message("codemodernizer.chat.message.validation.error.unsupported_java_version")
+        CodeTransformPreValidationError.UnsupportedJavaVersion, CodeTransformPreValidationError.UnsupportedBuildSystem ->
+            message("codemodernizer.chat.message.validation.error.unsupported_module")
         CodeTransformPreValidationError.RemoteRunProject -> message("codemodernizer.notification.warn.invalid_project.description.reason.remote_backend")
         CodeTransformPreValidationError.NonSsoLogin -> message("codemodernizer.notification.warn.invalid_project.description.reason.not_logged_in")
         CodeTransformPreValidationError.EmptyProject -> message("codemodernizer.notification.warn.invalid_project.description.reason.missing_content_roots")
-        CodeTransformPreValidationError.UnsupportedBuildSystem -> message("codemodernizer.chat.message.validation.error.no_pom")
         CodeTransformPreValidationError.NoJavaProject -> message("codemodernizer.chat.message.validation.error.no_java_project")
         CodeTransformPreValidationError.JavaDowngradeAttempt -> message("codemodernizer.chat.message.validation.error.downgrade_attempt")
         else -> message("codemodernizer.chat.message.validation.error.other")
