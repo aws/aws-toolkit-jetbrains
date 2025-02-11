@@ -143,8 +143,78 @@ class CodeWhispererModelConfiguratorTest {
                 FeatureContext("customizationArnOverride", "foo", FeatureValue.builder().stringValue("overrideArn").build())
             )
         }
+        sut.refreshDefaultCustomizationArn(projectRule.project)
         assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(CodeWhispererCustomization("overrideArn", "foo", null))
     }
+
+    @Test
+    fun `should update customization when user has never selected one`() {
+        val ssoConn = spy(LegacyManagedBearerSsoConnection(region = "us-east-1", startUrl = "url-1", scopes = Q_SCOPES))
+        ToolkitConnectionManager.getInstance(projectRule.project).switchConnection(ssoConn)
+
+        // Step 1: Server pushes first customization (arnOverride1)
+        abManager.stub {
+            on { getCustomizationFeature() }.thenReturn(
+                FeatureContext("customizationArnOverride", "foo", FeatureValue.builder().stringValue("arnOverride1").build())
+            )
+        }
+        sut.refreshDefaultCustomizationArn(projectRule.project)
+
+        // User should receive arnOverride1 from the server
+        assertThat(sut.activeCustomization(projectRule.project))
+            .isEqualTo(CodeWhispererCustomization("arnOverride1", "foo", null))
+
+        // Step 2: Server updates customization (arnOverride2)
+        abManager.stub {
+            on { getCustomizationFeature() }.thenReturn(
+                FeatureContext("customizationArnOverride", "foo", FeatureValue.builder().stringValue("arnOverride2").build())
+            )
+        }
+        sut.refreshDefaultCustomizationArn(projectRule.project)
+
+        // User should receive arnOverride2 from the server
+        assertThat(sut.activeCustomization(projectRule.project))
+            .isEqualTo(CodeWhispererCustomization("arnOverride2", "foo", null))
+    }
+
+    @Test
+    fun `should not override user selection when server updates customization`() {
+        val ssoConn = spy(LegacyManagedBearerSsoConnection(region = "us-east-1", startUrl = "url-1", scopes = Q_SCOPES))
+        ToolkitConnectionManager.getInstance(projectRule.project).switchConnection(ssoConn)
+
+        // Step 1: Server pushes first customization (arnOverride1)
+        abManager.stub {
+            on { getCustomizationFeature() }.thenReturn(
+                FeatureContext("customizationArnOverride", "foo", FeatureValue.builder().stringValue("arnOverride1").build())
+            )
+        }
+        sut.refreshDefaultCustomizationArn(projectRule.project)
+
+        // User should receive arnOverride1 from the server
+        assertThat(sut.activeCustomization(projectRule.project))
+            .isEqualTo(CodeWhispererCustomization("arnOverride1", "foo", null))
+
+        // Step 2: Server updates customization again (arnOverride2)
+        abManager.stub {
+            on { getCustomizationFeature() }.thenReturn(
+                FeatureContext("customizationArnOverride", "foo", FeatureValue.builder().stringValue("arnOverride2").build())
+            )
+        }
+        sut.refreshDefaultCustomizationArn(projectRule.project)
+
+        // Ensure server’s change is applied
+        assertThat(sut.activeCustomization(projectRule.project))
+            .isEqualTo(CodeWhispererCustomization("arnOverride2", "foo", null))
+
+        // Step 3: User manually selects a different customization (userSelectedArn)
+        val userCustomization = CodeWhispererCustomization("userSelectedArn", "userChoice", null)
+        sut.switchCustomization(projectRule.project, userCustomization)
+
+        // Ensure user selection is still respected (should not change to arnOverride2)
+        assertThat(sut.activeCustomization(projectRule.project))
+            .isEqualTo(userCustomization)
+    }
+
 
     @Test
     fun `loadState should load the correct values into memory`() {
