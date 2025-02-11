@@ -5,14 +5,19 @@ package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.controller
 
 import com.intellij.notification.NotificationAction
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CLIENT_ERROR_MESSAGES
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATION_RETRY_LIMIT
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.EmptyPatchException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.GuardrailsException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataOperationName
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataResult
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PromptRefusalException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ThrottlingException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileCorruptedException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUp
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUpStatusType
@@ -154,7 +159,15 @@ suspend fun FeatureDevController.onCodeGeneration(
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
     } catch (err: Exception) {
         when (err) {
-            is GuardrailsException, is NoChangeRequiredException, is PromptRefusalException, is ThrottlingException -> {
+            is GuardrailsException,
+            is NoChangeRequiredException,
+            is PromptRefusalException,
+            is ThrottlingException,
+            is CodeIterationLimitException,
+            is MonthlyConversationLimitError,
+            is ContentLengthException,
+            is ZipFileCorruptedException,
+            -> {
                 session.sendMetricDataTelemetry(
                     MetricDataOperationName.EndCodeGeneration,
                     MetricDataResult.Error
@@ -167,10 +180,19 @@ suspend fun FeatureDevController.onCodeGeneration(
                 )
             }
             else -> {
-                session.sendMetricDataTelemetry(
-                    MetricDataOperationName.EndCodeGeneration,
-                    MetricDataResult.Fault
-                )
+                val errorMessage = err.message.orEmpty()
+
+                if (CLIENT_ERROR_MESSAGES.any { errorMessage.contains(it) }) {
+                    session.sendMetricDataTelemetry(
+                        MetricDataOperationName.EndCodeGeneration,
+                        MetricDataResult.Error
+                    )
+                } else {
+                    session.sendMetricDataTelemetry(
+                        MetricDataOperationName.EndCodeGeneration,
+                        MetricDataResult.Fault
+                    )
+                }
             }
         }
         throw err
