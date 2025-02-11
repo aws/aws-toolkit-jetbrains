@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.popup
 
+import com.intellij.codeInsight.hint.ParameterInfoController
 import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.codeInsight.lookup.LookupManagerListener
 import com.intellij.idea.AppMode
@@ -639,6 +640,10 @@ class CodeWhispererPopupManager {
             it.font = it.font.deriveFont(POPUP_INFO_TEXT_SIZE)
         }
     }
+
+    fun hasConflictingPopups(editor: Editor): Boolean =
+        ParameterInfoController.existsWithVisibleHintForEditor(editor, true) ||
+            LookupManager.getActiveLookup(editor) != null
 
     private fun findNewSelectedIndex(
         isReverse: Boolean,
