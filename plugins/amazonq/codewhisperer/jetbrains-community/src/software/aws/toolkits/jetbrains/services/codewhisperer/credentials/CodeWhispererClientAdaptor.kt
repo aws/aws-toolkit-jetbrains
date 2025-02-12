@@ -8,12 +8,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.text.nullize
-import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanRequest
-import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanResponse
-import software.amazon.awssdk.services.codewhisperer.model.GetCodeScanRequest
-import software.amazon.awssdk.services.codewhisperer.model.GetCodeScanResponse
-import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsRequest
-import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsResponse
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatInteractWithMessageEvent
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatMessageInteractionType
@@ -23,14 +17,20 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUr
 import software.amazon.awssdk.services.codewhispererruntime.model.Dimension
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeAnalysisRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeAnalysisResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeFixJobRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeFixJobResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTestGenerationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.IdeCategory
 import software.amazon.awssdk.services.codewhispererruntime.model.InlineChatUserDecision
 import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.ListCodeAnalysisFindingsRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.ListCodeAnalysisFindingsResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEvaluationsResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeAnalysisRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeAnalysisResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeFixJobRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeFixJobResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTestGenerationResponse
@@ -57,7 +57,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestCon
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.transform
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import java.time.Instant
@@ -81,20 +80,11 @@ interface CodeWhispererClientAdaptor : Disposable {
         request: CreateUploadUrlRequest,
     ): CreateUploadUrlResponse
 
-    fun createCodeScan(
-        request: CreateCodeScanRequest,
-        isSigv4: Boolean = shouldUseSigv4Client(project),
-    ): CreateCodeScanResponse
+    fun createCodeScan(request: StartCodeAnalysisRequest): StartCodeAnalysisResponse
 
-    fun getCodeScan(
-        request: GetCodeScanRequest,
-        isSigv4: Boolean = shouldUseSigv4Client(project),
-    ): GetCodeScanResponse
+    fun getCodeScan(request: GetCodeAnalysisRequest): GetCodeAnalysisResponse
 
-    fun listCodeScanFindings(
-        request: ListCodeScanFindingsRequest,
-        isSigv4: Boolean = shouldUseSigv4Client(project),
-    ): ListCodeScanFindingsResponse
+    fun listCodeScanFindings(request: ListCodeAnalysisFindingsRequest): ListCodeAnalysisFindingsResponse
 
     fun startCodeFixJob(request: StartCodeFixJobRequest): StartCodeFixJobResponse
 
@@ -315,20 +305,19 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             yield(response)
         } while (!nextToken.isNullOrEmpty())
     }
+
     override fun generateCompletions(firstRequest: GenerateCompletionsRequest): GenerateCompletionsResponse =
         bearerClient().generateCompletions(firstRequest)
 
     override fun createUploadUrl(request: CreateUploadUrlRequest): CreateUploadUrlResponse =
         bearerClient().createUploadUrl(request)
 
-    override fun createCodeScan(request: CreateCodeScanRequest, isSigv4: Boolean): CreateCodeScanResponse =
-        bearerClient().startCodeAnalysis(request.transform()).transform()
+    override fun createCodeScan(request: StartCodeAnalysisRequest): StartCodeAnalysisResponse = bearerClient().startCodeAnalysis(request)
 
-    override fun getCodeScan(request: GetCodeScanRequest, isSigv4: Boolean): GetCodeScanResponse =
-        bearerClient().getCodeAnalysis(request.transform()).transform()
+    override fun getCodeScan(request: GetCodeAnalysisRequest): GetCodeAnalysisResponse = bearerClient().getCodeAnalysis(request)
 
-    override fun listCodeScanFindings(request: ListCodeScanFindingsRequest, isSigv4: Boolean): ListCodeScanFindingsResponse =
-        bearerClient().listCodeAnalysisFindings(request.transform()).transform()
+    override fun listCodeScanFindings(request: ListCodeAnalysisFindingsRequest): ListCodeAnalysisFindingsResponse =
+        bearerClient().listCodeAnalysisFindings(request)
 
     override fun startCodeFixJob(request: StartCodeFixJobRequest): StartCodeFixJobResponse = bearerClient().startCodeFixJob(request)
 

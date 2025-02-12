@@ -17,18 +17,18 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.time.withTimeout
 import kotlinx.coroutines.withContext
-import software.amazon.awssdk.services.codewhisperer.model.ArtifactType
-import software.amazon.awssdk.services.codewhisperer.model.CodeScanFindingsSchema
-import software.amazon.awssdk.services.codewhisperer.model.CodeScanStatus
-import software.amazon.awssdk.services.codewhisperer.model.CodeWhispererException
-import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanRequest
-import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanResponse
-import software.amazon.awssdk.services.codewhisperer.model.GetCodeScanRequest
-import software.amazon.awssdk.services.codewhisperer.model.GetCodeScanResponse
-import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsRequest
-import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.ArtifactType
+import software.amazon.awssdk.services.codewhispererruntime.model.CodeAnalysisFindingsSchema
+import software.amazon.awssdk.services.codewhispererruntime.model.CodeAnalysisStatus
+import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeAnalysisRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeAnalysisResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.ListCodeAnalysisFindingsRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.ListCodeAnalysisFindingsResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.Reference
+import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeAnalysisRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeAnalysisResponse
 import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -145,7 +145,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                 }
             }
             var codeScanStatus = createCodeScanResponse.status()
-            if (codeScanStatus == CodeScanStatus.FAILED) {
+            if (codeScanStatus == CodeAnalysisStatus.FAILED) {
                 if (isProjectScope()) {
                     LOG.debug {
                         "CodeWhisperer service error occurred. Something went wrong when creating a code review: $createCodeScanResponse " +
@@ -165,7 +165,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
 
             // 5. Keep polling the API GetCodeScan to wait for results for a given timeout period.
             waitUntil(
-                succeedOn = { codeScanStatus == CodeScanStatus.COMPLETED },
+                succeedOn = { codeScanStatus == CodeAnalysisStatus.COMPLETED },
                 maxDuration = Duration.ofSeconds(sessionContext.sessionConfig.overallJobTimeoutInSeconds())
             ) {
                 currentCoroutineContext.ensureActive()
@@ -182,7 +182,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                     }
                 }
                 delay(CODE_SCAN_POLLING_INTERVAL_IN_SECONDS * TOTAL_MILLIS_IN_SECOND)
-                if (codeScanStatus == CodeScanStatus.FAILED) {
+                if (codeScanStatus == CodeAnalysisStatus.FAILED) {
                     if (isProjectScope()) {
                         LOG.debug {
                             "CodeWhisperer service error occurred. Something went wrong fetching results for code review: $getCodeScanResponse " +
@@ -205,12 +205,12 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             )
 
             val documents = mutableListOf<String>()
-            documents.add(listCodeScanFindingsResponse.codeScanFindings())
+            documents.add(listCodeScanFindingsResponse.codeAnalysisFindings())
             // coroutineContext helps to actively cancel the bigger projects quickly
             withContext(currentCoroutineContext) {
                 while (listCodeScanFindingsResponse.nextToken() != null && currentCoroutineContext.isActive) {
                     listCodeScanFindingsResponse = listCodeScanFindings(jobId, listCodeScanFindingsResponse.nextToken())
-                    documents.add(listCodeScanFindingsResponse.codeScanFindings())
+                    documents.add(listCodeScanFindingsResponse.codeAnalysisFindings())
                 }
             }
 
@@ -224,7 +224,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             codeScanResponseContext = codeScanResponseContext.copy(reason = "Succeeded")
             return CodeScanResponse.Success(issues, codeScanResponseContext)
         } catch (e: Exception) {
-            val exception = e as? CodeWhispererException
+            val exception = e as? CodeWhispererRuntimeException
             val awsError = exception?.awsErrorDetails()
 
             if (awsError != null) {
@@ -248,7 +248,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         }
     }
 
-    fun createCodeScan(language: String, codeScanName: String): CreateCodeScanResponse {
+    fun createCodeScan(language: String, codeScanName: String): StartCodeAnalysisResponse {
         val artifactsMap = mapOf(
             ArtifactType.SOURCE_CODE to urlResponse[ArtifactType.SOURCE_CODE]?.uploadId(),
             ArtifactType.BUILT_JARS to urlResponse[ArtifactType.BUILT_JARS]?.uploadId()
@@ -262,7 +262,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
 
         try {
             return clientAdaptor.createCodeScan(
-                CreateCodeScanRequest.builder()
+                StartCodeAnalysisRequest.builder()
                     .clientToken(clientToken.toString())
                     .programmingLanguage { it.languageName(language) }
                     .artifacts(artifactsMap)
@@ -277,9 +277,9 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         }
     }
 
-    fun getCodeScan(jobId: String): GetCodeScanResponse = try {
+    fun getCodeScan(jobId: String): GetCodeAnalysisResponse = try {
         clientAdaptor.getCodeScan(
-            GetCodeScanRequest.builder()
+            GetCodeAnalysisRequest.builder()
                 .jobId(jobId)
                 .build()
         )
@@ -289,11 +289,11 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         throw codeScanServerException("GetCodeReviewException: $errorMessage")
     }
 
-    fun listCodeScanFindings(jobId: String, nextToken: String?): ListCodeScanFindingsResponse = try {
+    fun listCodeScanFindings(jobId: String, nextToken: String?): ListCodeAnalysisFindingsResponse = try {
         clientAdaptor.listCodeScanFindings(
-            ListCodeScanFindingsRequest.builder()
+            ListCodeAnalysisFindingsRequest.builder()
                 .jobId(jobId)
-                .codeScanFindingsSchema(CodeScanFindingsSchema.CODESCAN_FINDINGS_1_0)
+                .codeAnalysisFindingsSchema(CodeAnalysisFindingsSchema.CODEANALYSIS_FINDINGS_1_0)
                 .nextToken(nextToken)
                 .build()
         )
