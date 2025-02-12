@@ -55,7 +55,7 @@ class ProjectContextController(private val project: Project, private val cs: Cor
         try {
             return projectContextProvider.query(prompt, timeout)
         } catch (e: Exception) {
-            logger.warn { "error while querying for project context $e.message" }
+            logger.warn(e) { "error while querying for project context" }
             return emptyList()
         }
     }
@@ -64,11 +64,11 @@ class ProjectContextController(private val project: Project, private val cs: Cor
         try {
             projectContextProvider.queryInline(query, filePath, InlineContextTarget.CODEMAP)
         } catch (e: Exception) {
-            var logStr = "error while querying inline for project context $e.message"
             if (e is TimeoutCancellationException || e is TimeoutException) {
-                logStr = "project context times out with 50ms ${e.message}"
+                logger.warn { "project context times out with 50ms" }
+            } else {
+                logger.warn(e) { "error while querying inline for project context" }
             }
-            logger.warn { logStr }
             emptyList()
         }
 
@@ -77,7 +77,7 @@ class ProjectContextController(private val project: Project, private val cs: Cor
         try {
             return projectContextProvider.updateIndex(filePaths, mode)
         } catch (e: Exception) {
-            logger.warn { "error while updating index for project context $e.message" }
+            logger.warn(e) { "error while updating index for project context" }
         }
     }
 
