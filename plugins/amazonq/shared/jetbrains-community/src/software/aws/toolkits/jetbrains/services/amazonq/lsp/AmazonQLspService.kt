@@ -41,6 +41,7 @@ import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.io.PrintWriter
 import java.io.StringWriter
+import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.Future
 
@@ -78,7 +79,7 @@ internal class LSPProcessListener : ProcessListener {
 }
 
 @Service(Service.Level.PROJECT)
-class AmazonQLspService(project: Project, private val cs: CoroutineScope) : Disposable {
+class AmazonQLspService(private val project: Project, private val cs: CoroutineScope) : Disposable {
     private val launcher: Launcher<AmazonQLanguageServer>
 
     private val languageServer: AmazonQLanguageServer
@@ -123,7 +124,12 @@ class AmazonQLspService(project: Project, private val cs: CoroutineScope) : Disp
     }
 
     private fun createWorkspaceFolders(): List<WorkspaceFolder> {
-        return emptyList()
+        return project.basePath?.let { basePath ->
+            listOf(WorkspaceFolder(
+                URI("file://$basePath").toString(),
+                project.name
+            ))
+        } ?: emptyList()
     }
 
     private fun createClientInfo(): ClientInfo {
