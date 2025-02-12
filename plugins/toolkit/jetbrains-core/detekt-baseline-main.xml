@@ -2,7 +2,6 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>BannedImports:UploadFunctionContinueDialog.kt$import com.intellij.ui.layout.panel</ID>
     <ID>CommentWrapping:Attributes.kt$NullAttribute$/*Dynamo always expects the NUL field to contain true */</ID>
     <ID>CommentWrapping:ConfigureMaxResultsAction.kt$ConfigureMaxResultsAction$/* popup */</ID>
     <ID>CommentWrapping:ProjectFileBrowseListener.kt$/* infer disposable from UI context */</ID>
