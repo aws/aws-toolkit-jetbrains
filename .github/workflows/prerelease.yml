@@ -46,7 +46,7 @@ jobs:
         env:
           ARTIFACT_NAME: "${{ matrix.build_target }}"
         run: |
-          echo "ARTIFACT_NAME=${ARTIFACT_NAME/-/:}" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=${ARTIFACT_NAME//:}" >> $GITHUB_ENV
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
