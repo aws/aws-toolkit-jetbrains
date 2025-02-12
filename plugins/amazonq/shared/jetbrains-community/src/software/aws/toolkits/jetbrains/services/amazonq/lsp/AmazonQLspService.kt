@@ -158,6 +158,7 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
         }
     }
 
+    // needs case handling when project's base path is null: default projects/unit tests
     private fun createWorkspaceFolders(): List<WorkspaceFolder> {
         return project.basePath?.let { basePath ->
             listOf(
