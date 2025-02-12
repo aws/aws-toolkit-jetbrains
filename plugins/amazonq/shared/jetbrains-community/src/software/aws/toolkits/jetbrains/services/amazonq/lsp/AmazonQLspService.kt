@@ -71,7 +71,7 @@ internal class LSPProcessListener : ProcessListener {
 }
 
 @Service(Service.Level.PROJECT)
-class AmazonQLspService(project: Project, private val cs: CoroutineScope) : Disposable {
+class AmazonQLspService(private val project: Project, private val cs: CoroutineScope) : Disposable {
     private var instance: AmazonQServerInstance? = null
 
     init {
@@ -79,7 +79,7 @@ class AmazonQLspService(project: Project, private val cs: CoroutineScope) : Disp
             // manage lifecycle RAII-like so we can restart at arbitrary time
             // and suppress IDE error if server fails to start
             try {
-                instance = AmazonQServerInstance(cs).also {
+                instance = AmazonQServerInstance(project, cs).also {
                     Disposer.register(this@AmazonQLspService, it)
                 }
             } catch (e: Exception) {
@@ -97,7 +97,7 @@ class AmazonQLspService(project: Project, private val cs: CoroutineScope) : Disp
     }
 }
 
-private class AmazonQServerInstance(cs: CoroutineScope) : Disposable {
+private class AmazonQServerInstance(private val project: Project, private val cs: CoroutineScope) : Disposable {
     private val launcher: Launcher<AmazonQLanguageServer>
 
     private val languageServer: AmazonQLanguageServer
