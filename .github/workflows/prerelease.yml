@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         build_target: [ ':plugin-core:buildPlugin', ':plugin-toolkit:intellij-standalone:buildPlugin', ':plugin-amazonq:buildPlugin' ]
-        supported_versions: [ '2024.1', '2024.2', '2024.3', '2025.1' ]
+        version: [ '2024.1', '2024.2', '2024.3', '2025.1' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,10 +41,10 @@ jobs:
           dotnet-version: '6.x'
       - name: Generate artifact
         run: |
-          ./gradlew -PideProfileName=${{ matrix.supported_versions }} ${{ matrix.build_target }}
+          ./gradlew -PideProfileName=${{ matrix.version }} ${{ matrix.build_target }}
       - name: Fix artifact name
         env:
-          ARTIFACT_NAME: "${{ matrix.build_target }}"
+          ARTIFACT_NAME: "${{ matrix.build_target }}-${{ matrix.version }}"
         run: |
           echo "ARTIFACT_NAME=${ARTIFACT_NAME//:}" >> $GITHUB_ENV
       - name: Upload artifact
