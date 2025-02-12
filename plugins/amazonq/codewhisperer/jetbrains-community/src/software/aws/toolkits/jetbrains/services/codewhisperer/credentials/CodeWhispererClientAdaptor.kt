@@ -42,6 +42,8 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
@@ -288,7 +290,10 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             return (getDelegate() as Lazy<*>).isInitialized()
         }
 
-    private fun bearerClient(): CodeWhispererRuntimeClient = project.awsClient()
+    private fun bearerClient(): CodeWhispererRuntimeClient =
+        ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.getConnectionSettings()
+            ?.awsClient<CodeWhispererRuntimeClient>()
+            ?: throw Exception("attempt to get bearer client while there is no valid credential")
 
     override fun generateCompletionsPaginator(firstRequest: GenerateCompletionsRequest) = sequence<GenerateCompletionsResponse> {
         var nextToken: String? = firstRequest.nextToken()
@@ -298,6 +303,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             yield(response)
         } while (!nextToken.isNullOrEmpty())
     }
+
     override fun generateCompletions(firstRequest: GenerateCompletionsRequest): GenerateCompletionsResponse =
         bearerClient().generateCompletions(firstRequest)
 
