@@ -106,7 +106,7 @@
         </action>
         <action id="codewhisperer.inline.force.accept"
                 class="software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererForceAcceptAction"
-                text="Force Accept the Current Inline Suggestion" description="Force accept the current inline suggestion">
+                text="Force Accept the Current Amazon Q Suggestion" description="Force accept the current Amazon Q suggestion">
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt TAB"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt TAB"/>
             <keyboard-shortcut keymap="$default" first-keystroke="alt ENTER"/>
