@@ -7,6 +7,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.util.text.nullize
 import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanRequest
 import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanResponse
 import software.amazon.awssdk.services.codewhisperer.model.GetCodeScanRequest
@@ -142,7 +143,7 @@ interface CodeWhispererClientAdaptor : Disposable {
         sessionId: String,
         requestId: String,
         language: CodeWhispererProgrammingLanguage,
-        customizationArn: String,
+        customizationArn: String?,
         acceptedCharacterCount: Int,
         unmodifiedAcceptedTokenCount: Int,
     ): SendTelemetryEventResponse
@@ -403,7 +404,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     it.timestamp(Instant.now())
                     it.suggestionReferenceCount(suggestionReferenceCount)
                     it.generatedLine(lineCount)
-                    it.customizationArn(requestContext.customizationArn)
+                    it.customizationArn(requestContext.customizationArn.nullize(nullizeSpaces = true))
                     it.numberOfRecommendations(numberOfRecommendations)
                     it.acceptedCharacterCount(acceptedCharCount)
                 }
@@ -449,7 +450,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     it.timestamp(Instant.now())
                     it.suggestionReferenceCount(suggestionReferenceCount)
                     it.generatedLine(lineCount)
-                    it.customizationArn(requestContext.customizationArn)
+                    it.customizationArn(requestContext.customizationArn.nullize(nullizeSpaces = true))
                     it.numberOfRecommendations(numberOfRecommendations)
                     it.acceptedCharacterCount(acceptedCharCount)
                 }
@@ -471,7 +472,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         requestBuilder.telemetryEvent { telemetryEventBuilder ->
             telemetryEventBuilder.codeCoverageEvent {
                 it.programmingLanguage { languageBuilder -> languageBuilder.languageName(language.toCodeWhispererRuntimeLanguage().languageId) }
-                it.customizationArn(customizationArn)
+                it.customizationArn(customizationArn.nullize(nullizeSpaces = true))
                 it.acceptedCharacterCount(acceptedTokenCount.toInt())
                 it.totalCharacterCount(totalTokenCount.toInt())
                 it.timestamp(Instant.now())
@@ -488,7 +489,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         sessionId: String,
         requestId: String,
         language: CodeWhispererProgrammingLanguage,
-        customizationArn: String,
+        customizationArn: String?,
         acceptedCharacterCount: Int,
         unmodifiedAcceptedTokenCount: Int,
     ): SendTelemetryEventResponse = bearerClient().sendTelemetryEvent { requestBuilder ->
@@ -499,7 +500,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 it.programmingLanguage { languageBuilder ->
                     languageBuilder.languageName(language.toCodeWhispererRuntimeLanguage().languageId)
                 }
-                it.customizationArn(customizationArn)
+                it.customizationArn(customizationArn.nullize(nullizeSpaces = true))
                 // deprecated field, service side should not use this % anymore
                 it.modificationPercentage(0.0)
                 it.timestamp(Instant.now())
@@ -736,9 +737,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 it.responseLength(responseLength)
                 it.numberOfCodeBlocks(numberOfCodeBlocks)
                 it.hasProjectLevelContext(hasProjectLevelContext)
-                customization?.arn?.let { arn ->
-                    it.customizationArn(arn)
-                }
+                it.customizationArn(customization?.arn.nullize(nullizeSpaces = true))
             }
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
@@ -791,9 +790,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 }
                 it.modificationPercentage(modificationPercentage)
                 it.hasProjectLevelContext(hasProjectLevelContext)
-                customization?.arn?.let { arn ->
-                    it.customizationArn(arn)
-                }
+                it.customizationArn(customization?.arn.nullize(nullizeSpaces = true))
             }
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())

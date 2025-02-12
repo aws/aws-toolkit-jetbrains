@@ -6,8 +6,9 @@ package software.aws.toolkits.jetbrains.services.amazonqDoc.session
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
-import software.amazon.awssdk.services.codewhispererruntime.model.DocGenerationEvent
-import software.amazon.awssdk.services.codewhispererruntime.model.DocGenerationInteractionType
+import software.amazon.awssdk.services.codewhispererruntime.model.DocInteractionType
+import software.amazon.awssdk.services.codewhispererruntime.model.DocV2AcceptanceEvent
+import software.amazon.awssdk.services.codewhispererruntime.model.DocV2GenerationEvent
 import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventResponse
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -17,7 +18,6 @@ import software.aws.toolkits.jetbrains.common.session.ConversationNotStartedStat
 import software.aws.toolkits.jetbrains.common.session.SessionState
 import software.aws.toolkits.jetbrains.common.session.SessionStateConfigData
 import software.aws.toolkits.jetbrains.common.util.AmazonQCodeGenService
-import software.aws.toolkits.jetbrains.common.util.getDiffCharsAndLines
 import software.aws.toolkits.jetbrains.common.util.resolveAndCreateOrUpdateFile
 import software.aws.toolkits.jetbrains.common.util.resolveAndDeleteFile
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
@@ -32,7 +32,10 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Intera
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStateAction
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getDiffMetrics
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.content
+import java.nio.charset.Charset
+import java.security.MessageDigest
 
 private val logger = getLogger<AmazonQCodeGenerateClient>()
 
@@ -47,6 +50,7 @@ class DocSession(val tabID: String, val project: Project) {
     var task: String = ""
     val proxyClient: AmazonQCodeGenerateClient
     val amazonQCodeGenService: AmazonQCodeGenService
+    private val _reportedChanges = mutableMapOf<String, String>()
 
     // retry session state vars
     private var codegenRetries: Int
@@ -115,31 +119,80 @@ class DocSession(val tabID: String, val project: Project) {
         VfsUtil.markDirtyAndRefresh(true, true, true, context.selectedSourceFolder)
     }
 
+    private fun getFromReportedChanges(filePath: NewFileZipInfo): String? {
+        val key = getChangeIdentifier(filePath.zipFilePath)
+        return this._reportedChanges[key]
+    }
+
+    private fun addToReportedChanges(filePath: NewFileZipInfo) {
+        val key = getChangeIdentifier(filePath.zipFilePath)
+        _reportedChanges[key] = filePath.fileContent
+    }
+
+    private fun getChangeIdentifier(filePath: String): String {
+        val hash = MessageDigest.getInstance("SHA-1")
+        hash.update(filePath.toByteArray(Charset.forName("UTF-8")))
+        return hash.digest().joinToString("") { "%02x".format(it) }
+    }
+
     data class AddedContent(
         val totalAddedChars: Int,
         val totalAddedLines: Int,
         val totalAddedFiles: Int,
     )
 
-    fun countAddedContent(filePaths: List<NewFileZipInfo>, interactionType: DocGenerationInteractionType? = null): AddedContent {
+    fun countedGeneratedContent(filePaths: List<NewFileZipInfo>, interactionType: DocInteractionType? = null): AddedContent {
+        var totalAddedChars = 0
+        var totalAddedLines = 0
+        var totalAddedFiles = 0
+
+        filePaths.forEach { filePath ->
+            val content = filePath.fileContent
+            val reportedChange = getFromReportedChanges(filePath)
+            if (interactionType == DocInteractionType.GENERATE_README) {
+                if (reportedChange != null) {
+                    val diffMetrics = getDiffMetrics(reportedChange, content)
+                    totalAddedLines += diffMetrics.insertedLines
+                    totalAddedChars += diffMetrics.insertedCharacters
+                } else {
+                    totalAddedChars += content.length
+                    totalAddedLines += content.split('\n').size
+                }
+            } else {
+                val sourceContent = reportedChange
+                    ?: VfsUtil.findRelativeFile(filePath.zipFilePath, context.selectedSourceFolder)?.content()
+                        .orEmpty()
+                val diffMetrics = getDiffMetrics(sourceContent, content)
+                totalAddedLines += diffMetrics.insertedLines
+                totalAddedChars += diffMetrics.insertedCharacters
+            }
+            addToReportedChanges(filePath)
+            totalAddedFiles += 1
+        }
+
+        return AddedContent(
+            totalAddedChars = totalAddedChars,
+            totalAddedLines = totalAddedLines,
+            totalAddedFiles = totalAddedFiles
+        )
+    }
+    fun countAddedContent(filePaths: List<NewFileZipInfo>, interactionType: DocInteractionType? = null): AddedContent {
         var totalAddedChars = 0
         var totalAddedLines = 0
         var totalAddedFiles = 0
 
         filePaths.filter { !it.rejected }.forEach { filePath ->
-            val existingFile = VfsUtil.findRelativeFile(filePath.zipFilePath, context.selectedSourceFolder)
             val content = filePath.fileContent
-            totalAddedFiles += 1
-
-            if (existingFile != null && interactionType == DocGenerationInteractionType.UPDATE_README) {
-                val existingContent = existingFile.content()
-                val (addedChars, addedLines) = getDiffCharsAndLines(existingContent, content)
-                totalAddedChars += addedChars
-                totalAddedLines += addedLines
-            } else {
+            if (interactionType == DocInteractionType.GENERATE_README) {
                 totalAddedChars += content.length
                 totalAddedLines += content.split('\n').size
+            } else {
+                val existingFileContent = VfsUtil.findRelativeFile(filePath.zipFilePath, context.selectedSourceFolder)?.content()
+                val diffMetrics = getDiffMetrics(existingFileContent.orEmpty(), content)
+                totalAddedLines += diffMetrics.insertedLines
+                totalAddedChars += diffMetrics.insertedCharacters
             }
+            totalAddedFiles += 1
         }
 
         return AddedContent(
@@ -218,16 +271,26 @@ class DocSession(val tabID: String, val project: Project) {
         codegenRetries -= 1
     }
 
-    fun sendDocGenerationEvent(docGenerationEvent: DocGenerationEvent) {
-        val sendDocGenerationEventResponse: SendTelemetryEventResponse
+    fun sendDocTelemetryEvent(
+        generationEvent: DocV2GenerationEvent? = null,
+        acceptanceEvent: DocV2AcceptanceEvent? = null,
+    ) {
+        val sendDocTelemetryEventResponse: SendTelemetryEventResponse
         try {
-            sendDocGenerationEventResponse = proxyClient.sendDocGenerationTelemetryEvent(docGenerationEvent)
-            val requestId = sendDocGenerationEventResponse.responseMetadata().requestId()
+            sendDocTelemetryEventResponse = when {
+                generationEvent != null -> proxyClient.sendDocTelemetryEvent(generationEvent, null)
+                acceptanceEvent != null -> proxyClient.sendDocTelemetryEvent(null, acceptanceEvent)
+                else -> {
+                    logger.warn { "Neither generation nor acceptance event was provided" }
+                    return
+                }
+            }
+            val requestId = sendDocTelemetryEventResponse.responseMetadata().requestId()
             logger.debug {
-                "${FEATURE_NAME}: succesfully sent doc generation telemetry: ConversationId: $conversationId RequestId: $requestId"
+                "${FEATURE_NAME}: succesfully sent doc telemetry: ConversationId: $conversationId RequestId: $requestId"
             }
         } catch (e: Exception) {
-            logger.warn(e) { "${FEATURE_NAME}: failed to send doc generation telemetry" }
+            logger.warn(e) { "${FEATURE_NAME}: failed to send doc telemetry" }
         }
     }
 

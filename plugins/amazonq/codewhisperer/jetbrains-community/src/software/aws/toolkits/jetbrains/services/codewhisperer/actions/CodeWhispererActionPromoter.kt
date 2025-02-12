@@ -3,13 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.actions
 
-import com.intellij.codeInsight.lookup.impl.actions.ChooseItemAction
 import com.intellij.openapi.actionSystem.ActionPromoter
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.DataContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatusNew
-import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 
 class CodeWhispererActionPromoter : ActionPromoter {
     override fun promote(actions: MutableList<out AnAction>, context: DataContext): MutableList<AnAction> {
@@ -27,30 +25,10 @@ class CodeWhispererActionPromoter : ActionPromoter {
                 return@sortWith 1
             }
 
-            if (CodeWhispererSettings.getInstance().isQPrioritizedForTabAccept()) {
-                if (isCodeWhispererAcceptAction(a)) {
-                    return@sortWith -1
-                } else if (isCodeWhispererAcceptAction(b)) {
-                    return@sortWith 1
-                }
-
-                if (a is ChooseItemAction) {
-                    return@sortWith -1
-                } else if (b is ChooseItemAction) {
-                    return@sortWith 1
-                }
-            } else {
-                if (a is ChooseItemAction) {
-                    return@sortWith -1
-                } else if (b is ChooseItemAction) {
-                    return@sortWith 1
-                }
-
-                if (isCodeWhispererAcceptAction(a)) {
-                    return@sortWith -1
-                } else if (isCodeWhispererAcceptAction(b)) {
-                    return@sortWith 1
-                }
+            if (isCodeWhispererAcceptAction(a)) {
+                return@sortWith -1
+            } else if (isCodeWhispererAcceptAction(b)) {
+                return@sortWith 1
             }
 
             0
