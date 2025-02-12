@@ -21,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.time.withTimeout
+import kotlinx.serialization.Serializable
 import org.eclipse.lsp4j.ClientCapabilities
 import org.eclipse.lsp4j.ClientInfo
 import org.eclipse.lsp4j.FileOperationsWorkspaceCapabilities
@@ -47,6 +48,47 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.concurrent.Future
+
+@Serializable
+data class ExtendedClientMetadata(
+    val aws: AwsMetadata,
+)
+
+@Serializable
+data class AwsMetadata(
+    val clientInfo: ClientInfoMetadata,
+)
+
+@Serializable
+data class ClientInfoMetadata(
+    val extension: ExtensionMetadata,
+    val clientId: String,
+    val version: String,
+    val name: String,
+)
+
+@Serializable
+data class ExtensionMetadata(
+    val name: String,
+    val version: String,
+)
+
+private fun createExtendedClientMetadata(): ExtendedClientMetadata {
+    val metadata = ClientMetadata.getDefault()
+    return ExtendedClientMetadata(
+        aws = AwsMetadata(
+            clientInfo = ClientInfoMetadata(
+                extension = ExtensionMetadata(
+                    name = metadata.awsProduct.toString(),
+                    version = metadata.awsVersion
+                ),
+                clientId = metadata.clientId,
+                version = metadata.parentProductVersion,
+                name = metadata.parentProduct
+            )
+        )
+    )
+}
 
 // https://github.com/redhat-developer/lsp4ij/blob/main/src/main/java/com/redhat/devtools/lsp4ij/server/LSPProcessListener.java
 // JB impl and redhat both use a wrapper to handle input buffering issue
@@ -135,30 +177,13 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
         }
     }
 
-    private fun getExtendedClientMetadata(): Map<String, Any> {
-        val metadata = ClientMetadata.getDefault()
-        return mapOf(
-            "aws" to mapOf(
-                "clientInfo" to mapOf(
-                    "extension" to mapOf(
-                        "name" to metadata.awsProduct.toString(),
-                        "version" to metadata.awsVersion
-                    ),
-                    "clientId" to metadata.clientId,
-                    "version" to metadata.parentProductVersion,
-                    "name" to metadata.parentProduct
-                )
-            )
-        )
-    }
-
     private fun createInitializeParams(): InitializeParams {
         return InitializeParams().apply {
             processId = ProcessHandle.current().pid().toInt()
             capabilities = createClientCapabilities()
             clientInfo = createClientInfo()
             workspaceFolders = createWorkspaceFolders()
-            initializationOptions = getExtendedClientMetadata()
+            initializationOptions = createExtendedClientMetadata()
         }
     }
 
