@@ -89,16 +89,6 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
     private val launcherFuture: Future<Void>
     private val launcherHandler: KillableProcessHandler
 
-    private fun createInitializeParams(): InitializeParams {
-        return InitializeParams().apply {
-            processId = ProcessHandle.current().pid().toInt()
-            capabilities = createClientCapabilities()
-            clientInfo = createClientInfo()
-            workspaceFolders = createWorkspaceFolders()
-            initializationOptions = getExtendedClientMetadata()
-        }
-    }
-
     private fun createClientCapabilities(): ClientCapabilities {
         return ClientCapabilities().apply {
             textDocument = TextDocumentClientCapabilities().apply {
@@ -125,10 +115,12 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
 
     private fun createWorkspaceFolders(): List<WorkspaceFolder> {
         return project.basePath?.let { basePath ->
-            listOf(WorkspaceFolder(
-                URI("file://$basePath").toString(),
-                project.name
-            ))
+            listOf(
+                WorkspaceFolder(
+                    URI("file://$basePath").toString(),
+                    project.name
+                )
+            )
         } ?: emptyList()
     }
 
@@ -155,6 +147,16 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
                 )
             )
         )
+    }
+
+    private fun createInitializeParams(): InitializeParams {
+        return InitializeParams().apply {
+            processId = ProcessHandle.current().pid().toInt()
+            capabilities = createClientCapabilities()
+            clientInfo = createClientInfo()
+            workspaceFolders = createWorkspaceFolders()
+            initializationOptions = getExtendedClientMetadata()
+        }
     }
 
     init {
