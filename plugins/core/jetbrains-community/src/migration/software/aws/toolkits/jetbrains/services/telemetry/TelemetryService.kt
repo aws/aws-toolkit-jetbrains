@@ -54,9 +54,10 @@ abstract class TelemetryService(private val publisher: TelemetryPublisher, prote
                     awsRegion = DefaultMetricEvent.METADATA_INVALID
                 )
             } else {
+                val connectionSettings = project.getConnectionSettings()
                 MetricEventMetadata(
-                    awsAccount = project.getConnectionSettings()?.activeAwsAccountIfKnown() ?: DefaultMetricEvent.METADATA_NOT_SET,
-                    awsRegion = project.activeRegion().id
+                    awsAccount = connectionSettings?.activeAwsAccountIfKnown() ?: DefaultMetricEvent.METADATA_NOT_SET,
+                    awsRegion = connectionSettings?.region?.id ?: DefaultMetricEvent.METADATA_NOT_SET
                 )
             }
         } else {
