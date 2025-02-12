@@ -15,6 +15,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
@@ -68,10 +69,12 @@ import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.DefaultToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ManagedSsoProfile
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.MockToolkitAuthManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.services.amazonq.FEATURE_EVALUATION_PRODUCT_NAME
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.metadata
@@ -161,6 +164,16 @@ class CodeWhispererClientAdaptorTest {
     @Test
     fun `Sono region is us-east-1`() {
         assertThat("us-east-1").isEqualTo(SONO_REGION)
+    }
+
+    @Test
+    fun `should throw if there is no valid credential`() {
+        projectRule.project.replaceService(ToolkitConnectionManager::class.java, DefaultToolkitConnectionManager(), disposableRule.disposable)
+        assertThat(ToolkitConnectionManager.getInstance(projectRule.project).activeConnectionForFeature(QConnection.getInstance())).isNull()
+
+        assertThrows<Exception>("attempt to get bearer client while there is no valid credential") {
+            sut.listFeatureEvaluations()
+        }
     }
 
     @Test
