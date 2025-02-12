@@ -75,9 +75,9 @@ class ManifestManager {
         @JsonProperty("runtime")
         val runtime: RunTime? = null,
         @JsonProperty("capabilities")
-        val capabilities: Capabilities? = null,
+        val capabilities: List<Capabilities>? = emptyList(),
         @JsonProperty("protocol")
-        val protocol: Protocol? = null,
+        val protocol: List<Protocol>? = emptyList(),
         @JsonProperty("thirdPartyLicenses")
         val thirdPartyLicenses: String? = null,
         @JsonProperty("targets")
