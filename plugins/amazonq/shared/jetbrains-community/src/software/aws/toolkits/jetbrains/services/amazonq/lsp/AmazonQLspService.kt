@@ -21,7 +21,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.time.withTimeout
-import kotlinx.serialization.Serializable
 import org.eclipse.lsp4j.ClientCapabilities
 import org.eclipse.lsp4j.ClientInfo
 import org.eclipse.lsp4j.FileOperationsWorkspaceCapabilities
@@ -37,6 +36,7 @@ import org.slf4j.event.Level
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.createExtendedClientMetadata
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import java.io.IOException
 import java.io.OutputStreamWriter
@@ -48,48 +48,6 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.concurrent.Future
-
-@Serializable
-data class ExtendedClientMetadata(
-    val aws: AwsMetadata,
-)
-
-@Serializable
-data class AwsMetadata(
-    val clientInfo: ClientInfoMetadata,
-)
-
-@Serializable
-data class ClientInfoMetadata(
-    val extension: ExtensionMetadata,
-    val clientId: String,
-    val version: String,
-    val name: String,
-)
-
-@Serializable
-data class ExtensionMetadata(
-    val name: String,
-    val version: String,
-)
-
-private fun createExtendedClientMetadata(): ExtendedClientMetadata {
-    val metadata = ClientMetadata.getDefault()
-    return ExtendedClientMetadata(
-        aws = AwsMetadata(
-            clientInfo = ClientInfoMetadata(
-                extension = ExtensionMetadata(
-                    name = metadata.awsProduct.toString(),
-                    version = metadata.awsVersion
-                ),
-                clientId = metadata.clientId,
-                version = metadata.parentProductVersion,
-                name = metadata.parentProduct
-            )
-        )
-    )
-}
-
 // https://github.com/redhat-developer/lsp4ij/blob/main/src/main/java/com/redhat/devtools/lsp4ij/server/LSPProcessListener.java
 // JB impl and redhat both use a wrapper to handle input buffering issue
 internal class LSPProcessListener : ProcessListener {
