@@ -281,9 +281,6 @@ interface CodeWhispererClientAdaptor : Disposable {
 open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispererClientAdaptor {
     private val mySigv4Client by lazy { createUnmanagedSigv4Client() }
 
-    @Volatile
-    private var myBearerClient: CodeWhispererRuntimeClient? = null
-
     private val KProperty0<*>.isLazyInitialized: Boolean
         get() {
             isAccessible = true
@@ -837,7 +834,6 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         if (this::mySigv4Client.isLazyInitialized) {
             mySigv4Client.close()
         }
-        myBearerClient?.close()
     }
 
     companion object {
