@@ -18,7 +18,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.util.io.await
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.time.withTimeout
 import org.eclipse.lsp4j.ClientCapabilities
 import org.eclipse.lsp4j.ClientInfo
 import org.eclipse.lsp4j.FileOperationsWorkspaceCapabilities
@@ -43,6 +45,7 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import java.net.URI
 import java.nio.charset.StandardCharsets
+import java.time.Duration
 import java.util.concurrent.Future
 
 // https://github.com/redhat-developer/lsp4ij/blob/main/src/main/java/com/redhat/devtools/lsp4ij/server/LSPProcessListener.java
@@ -195,7 +198,14 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
         launcherFuture = launcher.startListening()
 
         cs.launch {
-            val initializeResult = languageServer.initialize(createInitializeParams()).await()
+            val initializeResult = try {
+                withTimeout(Duration.ofSeconds(30)) {
+                    languageServer.initialize(createInitializeParams()).await()
+                }
+            } catch (e: TimeoutCancellationException) {
+                LOG.warn { "LSP initialization timed out" }
+                null
+            }
 
             // then if this succeeds then we can allow the client to send requests
             if (initializeResult == null) {
