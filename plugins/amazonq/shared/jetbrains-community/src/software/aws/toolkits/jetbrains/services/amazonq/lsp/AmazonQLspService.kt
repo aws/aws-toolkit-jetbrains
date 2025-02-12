@@ -19,14 +19,22 @@ import com.intellij.openapi.util.Key
 import com.intellij.util.io.await
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.eclipse.lsp4j.ClientCapabilities
+import org.eclipse.lsp4j.ClientInfo
+import org.eclipse.lsp4j.FileOperationsWorkspaceCapabilities
 import org.eclipse.lsp4j.InitializeParams
 import org.eclipse.lsp4j.InitializedParams
+import org.eclipse.lsp4j.SynchronizationCapabilities
+import org.eclipse.lsp4j.TextDocumentClientCapabilities
+import org.eclipse.lsp4j.WorkspaceClientCapabilities
+import org.eclipse.lsp4j.WorkspaceFolder
 import org.eclipse.lsp4j.jsonrpc.Launcher
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.slf4j.event.Level
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import java.io.IOException
 import java.io.OutputStreamWriter
 import java.io.PipedInputStream
@@ -80,6 +88,69 @@ class AmazonQLspService(project: Project, private val cs: CoroutineScope) : Disp
     private val launcherFuture: Future<Void>
     private val launcherHandler: KillableProcessHandler
 
+    private fun createInitializeParams(): InitializeParams {
+        return InitializeParams().apply {
+            processId = ProcessHandle.current().pid().toInt()
+            capabilities = createClientCapabilities()
+            clientInfo = createClientInfo()
+            workspaceFolders = createWorkspaceFolders()
+            initializationOptions = getExtendedClientMetadata()
+        }
+    }
+
+    private fun createClientCapabilities(): ClientCapabilities {
+        return ClientCapabilities().apply {
+            textDocument = TextDocumentClientCapabilities().apply {
+                // For didSaveTextDocument, other textDocument/ messages always mandatory
+                synchronization = SynchronizationCapabilities().apply {
+                    didSave = true
+                }
+            }
+
+            workspace = WorkspaceClientCapabilities().apply {
+                applyEdit = false
+
+                // For workspace folder changes
+                workspaceFolders = true
+
+                // For file operations (create, delete)
+                fileOperations = FileOperationsWorkspaceCapabilities().apply {
+                    didCreate = true
+                    didDelete = true
+                }
+            }
+        }
+    }
+
+    private fun createWorkspaceFolders(): List<WorkspaceFolder> {
+        return emptyList()
+    }
+
+    private fun createClientInfo(): ClientInfo {
+        val metadata = ClientMetadata.getDefault()
+        return ClientInfo().apply {
+            name = metadata.awsProduct.toString()
+            version = metadata.awsVersion
+        }
+    }
+
+    private fun getExtendedClientMetadata(): Map<String, Any> {
+        val metadata = ClientMetadata.getDefault()
+        return mapOf(
+            "aws" to mapOf(
+                "clientInfo" to mapOf(
+                    "extension" to mapOf(
+                        "name" to metadata.awsProduct.toString(),
+                        "version" to metadata.awsVersion
+                    ),
+                    "clientId" to metadata.clientId,
+                    "version" to metadata.parentProductVersion,
+                    "name" to metadata.parentProduct
+                )
+            )
+        )
+    }
+
     init {
         val cmd = GeneralCommandLine("amazon-q-lsp")
 
@@ -116,18 +187,7 @@ class AmazonQLspService(project: Project, private val cs: CoroutineScope) : Disp
         launcherFuture = launcher.startListening()
 
         cs.launch {
-            val initializeResult = languageServer.initialize(
-                InitializeParams().apply {
-                    // does this work on windows
-                    processId = ProcessHandle.current().pid().toInt()
-                    // capabilities
-                    // client info
-                    // trace?
-                    // workspace folders?
-                    // anything else we need?
-                }
-                // probably need a timeout
-            ).await()
+            val initializeResult = languageServer.initialize(createInitializeParams()).await()
 
             // then if this succeeds then we can allow the client to send requests
             languageServer.initialized(InitializedParams())
