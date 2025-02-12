@@ -287,7 +287,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             return (getDelegate() as Lazy<*>).isInitialized()
         }
 
-    private fun bearerClient(): CodeWhispererRuntimeClient =
+    fun bearerClient(): CodeWhispererRuntimeClient =
         ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.getConnectionSettings()
             ?.awsClient<CodeWhispererRuntimeClient>()
             ?: throw Exception("attempt to get bearer client while there is no valid credential")
