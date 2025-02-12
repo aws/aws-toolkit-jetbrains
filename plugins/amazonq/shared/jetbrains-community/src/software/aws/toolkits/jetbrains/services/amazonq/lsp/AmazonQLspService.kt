@@ -92,8 +92,8 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
     private val launcherFuture: Future<Void>
     private val launcherHandler: KillableProcessHandler
 
-    private fun createClientCapabilities(): ClientCapabilities {
-        return ClientCapabilities().apply {
+    private fun createClientCapabilities(): ClientCapabilities =
+        ClientCapabilities().apply {
             textDocument = TextDocumentClientCapabilities().apply {
                 // For didSaveTextDocument, other textDocument/ messages always mandatory
                 synchronization = SynchronizationCapabilities().apply {
@@ -114,11 +114,10 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
                 }
             }
         }
-    }
 
     // needs case handling when project's base path is null: default projects/unit tests
-    private fun createWorkspaceFolders(): List<WorkspaceFolder> {
-        return project.basePath?.let { basePath ->
+    private fun createWorkspaceFolders(): List<WorkspaceFolder> =
+        project.basePath?.let { basePath ->
             listOf(
                 WorkspaceFolder(
                     URI("file://$basePath").toString(),
@@ -126,7 +125,6 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
                 )
             )
         } ?: emptyList() // no folders to report or workspace not folder based
-    }
 
     private fun createClientInfo(): ClientInfo {
         val metadata = ClientMetadata.getDefault()
@@ -136,15 +134,14 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
         }
     }
 
-    private fun createInitializeParams(): InitializeParams {
-        return InitializeParams().apply {
+    private fun createInitializeParams(): InitializeParams =
+        InitializeParams().apply {
             processId = ProcessHandle.current().pid().toInt()
             capabilities = createClientCapabilities()
             clientInfo = createClientInfo()
             workspaceFolders = createWorkspaceFolders()
             initializationOptions = createExtendedClientMetadata()
         }
-    }
 
     init {
         val cmd = GeneralCommandLine("amazon-q-lsp")
