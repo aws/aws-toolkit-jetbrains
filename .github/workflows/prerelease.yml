@@ -42,10 +42,15 @@ jobs:
       - name: Generate artifact
         run: |
           ./gradlew -PideProfileName=${{ matrix.supported_versions }} ${{ matrix.build_target }}
+      - name: Fix artifact name
+        env:
+          ARTIFACT_NAME: "${{ matrix.build_target }}"
+        run: |
+          echo "ARTIFACT_NAME=${ARTIFACT_NAME/-/:}" >> $GITHUB_ENV
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: plugin-${{ matrix.build_target }}-${{ matrix.supported_versions }}
+          name: ${{ env.ARTIFACT_NAME }}
           path: ./plugins/**/build/distributions/*.zip
           retention-days: 1
 
