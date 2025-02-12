@@ -575,7 +575,6 @@ export class CodeTestChatConnector {
     onChatItemVoted = (tabId: string, messageId: string, vote: string): void | undefined => {
         this.sendMessageToExtension({
             tabID: tabId,
-            messageId: messageId,
             vote: vote,
             command: 'chat-item-voted',
             tabType: 'codetest',
