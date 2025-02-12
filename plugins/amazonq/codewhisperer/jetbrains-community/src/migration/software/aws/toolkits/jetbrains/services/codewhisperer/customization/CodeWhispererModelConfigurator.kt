@@ -16,7 +16,9 @@ interface CodeWhispererModelConfigurator {
 
     fun activeCustomization(project: Project): CodeWhispererCustomization?
 
-    fun switchCustomization(project: Project, newCustomization: CodeWhispererCustomization?, isOverride: Boolean = false)
+    fun switchCustomization(project: Project, newCustomization: CodeWhispererCustomization?)
+
+    fun switchCustomization(project: Project, newCustomization: CodeWhispererCustomization?, isOverride: Boolean)
 
     /**
      * This method is only used for invalidate a stale customization which was previously active but was removed, it will remove all usage of this customization

@@ -170,6 +170,10 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
         return selectedCustomization
     }
 
+    override fun switchCustomization(project: Project, newCustomization: CodeWhispererCustomization?) {
+        switchCustomization(project, newCustomization, false)
+    }
+
     /**
      * Override happens when ALL following conditions are met
      *  1. service returns non-empty override customization arn, refer to [CodeWhispererFeatureConfigService]
