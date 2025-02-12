@@ -140,7 +140,7 @@ class CodeWhispererPopupManager {
             val startOffset = states.requestContext.caretPosition.offset
             val currOffset = states.requestContext.editor.caretModel.offset
             if (startOffset > currOffset) {
-                cancelPopup(popup)
+                popup?.let { cancelPopup(popup) }
                 return
             }
 
@@ -148,7 +148,7 @@ class CodeWhispererPopupManager {
             val prefix = states.requestContext.editor.document.charsSequence
                 .substring(startOffset, currOffset)
             if (prefix.length < userInputOriginal.length) {
-                cancelPopup(popup)
+                popup?.let { cancelPopup(popup) }
                 return
             } else {
                 prefix.substring(userInputOriginal.length)
@@ -171,7 +171,7 @@ class CodeWhispererPopupManager {
         )
         if (selectedIndex == -1 || !isValidRecommendation(details[selectedIndex], userInput, typeaheadOriginal)) {
             LOG.debug { "None of the recommendation is valid at this point, cancelling the popup" }
-            cancelPopup(popup)
+            popup?.let { cancelPopup(popup) }
             return
         }
         val typeahead = resolveTypeahead(states, selectedIndex, typeaheadOriginal)
@@ -244,7 +244,7 @@ class CodeWhispererPopupManager {
                 states.requestContext.latencyContext.getPerceivedLatency(states.requestContext.triggerTypeInfo.triggerType)
         }
         if (!isRecommendationAdded) {
-            showPopup(states, sessionContext, states.popup, visible = sessionContext.isPopupShowing)
+            states.popup?.let { showPopup(states, sessionContext, it, visible = sessionContext.isPopupShowing) }
         }
     }
 
@@ -415,8 +415,8 @@ class CodeWhispererPopupManager {
 
     private fun addPopupListener(states: InvocationContext) {
         val listener = CodeWhispererPopupListener(states)
-        states.popup.addListener(listener)
-        Disposer.register(states) { states.popup.removeListener(listener) }
+        states.popup?.addListener(listener)
+        Disposer.register(states) { states.popup?.removeListener(listener) }
     }
 
     private fun addMessageSubscribers(states: InvocationContext) {
@@ -452,7 +452,7 @@ class CodeWhispererPopupManager {
                     dontClosePopupAndRun {
                         CodeWhispererEditorManager.getInstance().updateEditorWithRecommendation(states, sessionContext)
                     }
-                    closePopup(states.popup)
+                    states.popup?.let { closePopup(it) }
                     if (sessionContext.selectedIndex == 0) {
                         CodeWhispererService.getInstance().promoteNextInvocationIfAvailable()
                     }
@@ -504,7 +504,7 @@ class CodeWhispererPopupManager {
         val codewhispererSelectionListener: SelectionListener = object : SelectionListener {
             override fun selectionChanged(event: SelectionEvent) {
                 if (!allowTypingDuringSuggestionPreview && !allowIntelliSenseDuringSuggestionPreview) {
-                    cancelPopup(states.popup)
+                    states.popup?.let { cancelPopup(it) }
                 }
                 super.selectionChanged(event)
             }
@@ -520,7 +520,7 @@ class CodeWhispererPopupManager {
                 if (editor.caretModel.offset == event.offset) {
                     changeStates(states, 0)
                 } else if (!allowTypingDuringSuggestionPreview && !allowIntelliSenseDuringSuggestionPreview) {
-                    cancelPopup(states.popup)
+                    states.popup?.let { cancelPopup(it) }
                 }
             }
         }
@@ -529,7 +529,7 @@ class CodeWhispererPopupManager {
         val codewhispererCaretListener: CaretListener = object : CaretListener {
             override fun caretPositionChanged(event: CaretEvent) {
                 if (!allowTypingDuringSuggestionPreview && !allowIntelliSenseDuringSuggestionPreview) {
-                    cancelPopup(states.popup)
+                    states.popup?.let { cancelPopup(it) }
                 }
                 super.caretPositionChanged(event)
             }
@@ -542,11 +542,11 @@ class CodeWhispererPopupManager {
             val window = ComponentUtil.getWindow(editorComponent)
             val windowListener: ComponentListener = object : ComponentAdapter() {
                 override fun componentMoved(event: ComponentEvent) {
-                    cancelPopup(states.popup)
+                    states.popup?.let { cancelPopup(it) }
                 }
 
                 override fun componentShown(e: ComponentEvent?) {
-                    cancelPopup(states.popup)
+                    states.popup?.let { cancelPopup(it) }
                     super.componentShown(e)
                 }
             }
@@ -557,7 +557,7 @@ class CodeWhispererPopupManager {
         val suggestionHoverEnterListener: EditorMouseMotionListener = object : EditorMouseMotionListener {
             override fun mouseMoved(e: EditorMouseEvent) {
                 if (e.inlay != null) {
-                    showPopup(states, sessionContext, states.popup, visible = true)
+                    states.popup?.let { showPopup(states, sessionContext, it, visible = true) }
                 } else {
                     bringSuggestionInlayToFront(editor, states.popup, sessionContext, opposite = true)
                 }

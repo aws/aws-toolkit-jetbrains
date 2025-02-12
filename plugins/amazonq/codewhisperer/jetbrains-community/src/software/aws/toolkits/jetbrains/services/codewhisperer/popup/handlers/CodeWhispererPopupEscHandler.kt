@@ -13,7 +13,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 
 class CodeWhispererPopupEscHandler(states: InvocationContext) : CodeWhispererEditorActionHandler(states) {
     override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
-        CodeWhispererPopupManager.getInstance().cancelPopup(states.popup)
+        states.popup?.let { CodeWhispererPopupManager.getInstance().cancelPopup(it) }
     }
 }
 

@@ -216,7 +216,7 @@ data class InvocationContext(
     val requestContext: RequestContext,
     val responseContext: ResponseContext,
     val recommendationContext: RecommendationContext,
-    val popup: JBPopup,
+    val popup: JBPopup? = null,
 ) : Disposable {
     override fun dispose() {}
 }

@@ -61,8 +61,10 @@ class CodeWhispererUIChangeListener : CodeWhispererPopupStateChangeListener {
                 },
                 HighlighterTargetArea.EXACT_RANGE
             )
-            Disposer.register(states.popup) {
-                editor.markupModel.removeHighlighter(rangeHighlighter)
+            states.popup?.let {
+                Disposer.register(it) {
+                    editor.markupModel.removeHighlighter(rangeHighlighter)
+                }
             }
             sessionContext.toBeRemovedHighlighter = rangeHighlighter
         }

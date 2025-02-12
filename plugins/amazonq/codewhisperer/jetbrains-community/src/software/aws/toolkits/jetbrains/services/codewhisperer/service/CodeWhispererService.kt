@@ -16,7 +16,6 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.VisualPosition
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
-import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
@@ -27,6 +26,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -268,6 +268,11 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                         val latency = TimeUnit.NANOSECONDS.toMillis(endTime - startTime).toDouble()
                         val requestId = nextResponse.responseMetadata().requestId()
                         val sessionId = nextResponse.sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
+                        if (sessionId != currStates.responseContext.sessionId) {
+                            LOG.debug { "Session id mismatch, expected: ${currStates.responseContext.sessionId}, actual: $sessionId" }
+                            this.cancel("Session mismatch")
+                            return@launch
+                        }
 
                         nextRequestContext.latencyContext.apply {
                             codewhispererPostprocessingStart = System.nanoTime()
@@ -299,12 +304,9 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                             }
                         }
                         val nextRecommendationContext = RecommendationContext(detailContexts, "", "", newVisualPosition)
-                        val newPopup = withContext(EDT) {
-                            JBPopupFactory.getInstance().createMessage("Dummy popup")
-                        }
 
                         // send userDecision and trigger decision when next recommendation haven't been seen
-                        if (currStates.popup.isDisposed) {
+                        if (currStates.popup?.isDisposed == true) {
                             CodeWhispererTelemetryService.getInstance().sendUserDecisionEventForAll(
                                 nextRequestContext,
                                 nextResponseContext,
@@ -313,7 +315,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                                 false
                             )
                         } else {
-                            nextInvocationContext = InvocationContext(nextRequestContext, nextResponseContext, nextRecommendationContext, newPopup)
+                            nextInvocationContext = InvocationContext(nextRequestContext, nextResponseContext, nextRecommendationContext, null)
                         }
                         LOG.debug { "Prefetched next invocation stored in nextInvocationContext" }
                     }
@@ -715,7 +717,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         val updatedStates = states.copy(
             recommendationContext = recommendationContext.copy(details = details + newDetailContexts)
         )
-        Disposer.register(states.popup, updatedStates)
+        states.popup?.let { Disposer.register(it, updatedStates) }
         CodeWhispererPopupManager.getInstance().initPopupListener(updatedStates)
         return updatedStates
     }
@@ -750,7 +752,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         cs.launch {
             val newPopup = CodeWhispererPopupManager.getInstance().initPopup()
             val updatedNextStates = nextStates.copy(popup = newPopup).also {
-                addPopupChildDisposables(it.requestContext.project, it.requestContext.editor, it.popup)
+                it.popup?.let { it1 -> addPopupChildDisposables(it.requestContext.project, it.requestContext.editor, it1) }
                 Disposer.register(newPopup, it)
             }
             CodeWhispererPopupManager.getInstance().initPopupListener(updatedNextStates)
