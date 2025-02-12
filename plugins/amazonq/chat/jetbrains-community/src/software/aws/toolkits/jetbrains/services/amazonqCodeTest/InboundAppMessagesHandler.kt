@@ -21,4 +21,6 @@ interface InboundAppMessagesHandler {
     suspend fun processTabRemovedMessage(message: IncomingCodeTestMessage.TabRemoved)
 
     suspend fun processButtonClickedMessage(message: IncomingCodeTestMessage.ButtonClicked)
+
+    suspend fun processAuthFollowUpClick(message: IncomingCodeTestMessage.AuthFollowUpWasClicked)
 }

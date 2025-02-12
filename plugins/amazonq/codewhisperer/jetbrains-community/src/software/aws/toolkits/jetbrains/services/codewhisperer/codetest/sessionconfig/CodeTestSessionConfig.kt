@@ -29,6 +29,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.noFileOpe
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_PAYLOAD_LIMIT_IN_BYTES
@@ -217,7 +218,7 @@ class CodeTestSessionConfig(
             for (module in project.modules) {
                 val changeListManager = ChangeListManager.getInstance(module.project)
                 module.guessModuleDir()?.let { moduleDir ->
-                    val gitIgnoreFilteringUtil = GitIgnoreFilteringUtil(moduleDir)
+                    val gitIgnoreFilteringUtil = GitIgnoreFilteringUtil(moduleDir, CodeWhispererConstants.FeatureName.TEST_GENERATION)
                     stack.push(moduleDir)
                     while (stack.isNotEmpty()) {
                         val current = stack.pop()

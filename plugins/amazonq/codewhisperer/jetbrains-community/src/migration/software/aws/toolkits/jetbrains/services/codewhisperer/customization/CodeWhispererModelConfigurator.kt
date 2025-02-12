@@ -18,6 +18,8 @@ interface CodeWhispererModelConfigurator {
 
     fun switchCustomization(project: Project, newCustomization: CodeWhispererCustomization?)
 
+    fun switchCustomization(project: Project, newCustomization: CodeWhispererCustomization?, isOverride: Boolean)
+
     /**
      * This method is only used for invalidate a stale customization which was previously active but was removed, it will remove all usage of this customization
      * but not limited to the specific connection.

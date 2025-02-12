@@ -9,7 +9,7 @@ plugins {
     id("toolkit-kotlin-conventions")
     id("toolkit-intellij-plugin")
 
-    id("org.jetbrains.intellij.platform")
+    id("org.jetbrains.intellij.platform.base")
 }
 
 val ideProfile = IdeVersions.ideProfile(project)
@@ -27,15 +27,24 @@ intellijPlatform {
     instrumentCode = false
 }
 
+tasks.initializeIntellijPlatformPlugin {
+    enabled = false
+}
+
+tasks.verifyPluginProjectConfiguration {
+    runtimeDirectory.set(null as File?)
+    enabled = false
+}
+
 val testPlugins by configurations.registering
 
 dependencies {
-    testImplementation(platform("com.jetbrains.intellij.tools:ide-starter-squashed"))
     // should really be set by the BOM, but too much work to figure out right now
     testImplementation("org.kodein.di:kodein-di-jvm:7.20.2")
     intellijPlatform {
-        intellijIdeaCommunity(IdeVersions.ideProfile(providers).map { it.name })
-
+        // shouldn't be needed? but IsolationException
+        val version = ideProfile.community.sdkVersion
+        intellijIdeaCommunity(version, !version.contains("SNAPSHOT"))
         testFramework(TestFrameworkType.Starter)
     }
 

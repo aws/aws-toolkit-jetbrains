@@ -147,6 +147,17 @@ class CodeWhispererCodeModernizerGumbyClientTest : CodeWhispererCodeModernizerTe
     }
 
     @Test
+    fun `check startCodeModernization on JAVA_21 target`() {
+        val actual = gumbyClient.startCodeModernization("jobId", TransformationLanguage.JAVA_8, TransformationLanguage.JAVA_21)
+        argumentCaptor<StartTransformationRequest>().apply {
+            verify(bearerClient).startTransformation(capture())
+            verifyNoInteractions(streamingBearerClient)
+            assertThat(actual).isInstanceOf(StartTransformationResponse::class.java)
+            assertThat(actual).usingRecursiveComparison().comparingOnlyFields("transformationJobId").isEqualTo(exampleStartCodeMigrationResponse)
+        }
+    }
+
+    @Test
     fun `check getCodeModernizationPlan`() {
         val actual = gumbyClient.getCodeModernizationPlan(JobId("JobId"))
         argumentCaptor<GetTransformationPlanRequest>().apply {
