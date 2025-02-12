@@ -44,9 +44,10 @@ jobs:
           ./gradlew -PideProfileName=${{ matrix.version }} ${{ matrix.build_target }}
       - name: Fix artifact name
         env:
+          BUILD_TARGET: "${{ matrix.build_target }}"
           ARTIFACT_NAME: "${{ matrix.build_target }}-${{ matrix.version }}"
         run: |
-          echo "ARTIFACT_SUBPATH=$(echo $ARTIFACT_NAME | sed -e 's/^:plugin-//' -e 's/:buildPlugin$//' -e 's/:/\//')" >> $GITHUB_ENV
+          echo "ARTIFACT_SUBPATH=$(echo $BUILD_TARGET | sed -e 's/^:plugin-//' -e 's/:buildPlugin$//' -e 's/:/\//')" >> $GITHUB_ENV
           echo "ARTIFACT_NAME=${ARTIFACT_NAME//:}" >> $GITHUB_ENV
       - name: Upload artifact
         uses: actions/upload-artifact@v4
