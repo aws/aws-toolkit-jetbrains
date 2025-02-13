@@ -30,13 +30,27 @@ intellijPlatform {
 val testPlugins by configurations.registering
 
 dependencies {
-    testImplementation(platform("com.jetbrains.intellij.tools:ide-starter-squashed"))
+    //testImplementation(platform("com.jetbrains.intellij.tools:ide-starter"))
     // should really be set by the BOM, but too much work to figure out right now
     testImplementation("org.kodein.di:kodein-di-jvm:7.20.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
+
+    testImplementation(project(":plugin-core:jetbrains-community"))
+    testImplementation(project(":plugin-core:core"))
+    testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
+
+
+
+
+
     intellijPlatform {
         intellijIdeaCommunity(IdeVersions.ideProfile(providers).map { it.name })
+        intellijIdeaCommunity(ideProfile.community.sdkVersion)
 
+        testFramework(TestFrameworkType.JUnit5)
         testFramework(TestFrameworkType.Starter)
+        testFramework(TestFrameworkType.Bundled)
     }
 
     testPlugins(project(":plugin-amazonq", "pluginZip"))
