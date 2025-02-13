@@ -3,8 +3,10 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption
 
+import com.nimbusds.jose.JOSEException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.crypto.spec.SecretKeySpec
@@ -14,8 +16,13 @@ class JwtEncryptionManagerTest {
     @Test
     fun `uses a different encryption key for each instance`() {
         val blob = Random.Default.nextBytes(256)
-        assertThat(JwtEncryptionManager().encrypt(blob))
-            .isNotEqualTo(JwtEncryptionManager().encrypt(blob))
+        val sut1 = JwtEncryptionManager()
+        val encrypted = sut1.encrypt(blob)
+
+        assertThrows<JOSEException> {
+            assertThat(sut1.decrypt(encrypted))
+                .isNotEqualTo(JwtEncryptionManager().decrypt(encrypted))
+        }
     }
 
     @Test
@@ -24,8 +31,12 @@ class JwtEncryptionManagerTest {
         val blob = Random.Default.nextBytes(256)
         val bytes = "DEADBEEF".repeat(8).hexToByteArray() // 32 bytes
         val key = SecretKeySpec(bytes, "HmacSHA256")
-        assertThat(JwtEncryptionManager(key).encrypt(blob))
-            .isNotEqualTo(JwtEncryptionManager(key).encrypt(blob))
+        val sut1 = JwtEncryptionManager(key)
+        val encrypted = sut1.encrypt(blob)
+
+        // each encrypt() call will use a different IV so we can't just directly compare
+        assertThat(sut1.decrypt(encrypted))
+            .isEqualTo(JwtEncryptionManager(key).decrypt(encrypted))
     }
 
     @Test
