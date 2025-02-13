@@ -250,7 +250,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         return regex.find(fileName) != null
     }
 
-    private fun collectFiles(): FileCollectionResult {
+    fun collectFiles(): FileCollectionResult {
         val collectedFiles = mutableListOf<String>()
         var currentTotalFileSize = 0L
         val featureDevSessionContext = FeatureDevSessionContext(project)
