@@ -15,11 +15,13 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.openapi.vfs.isFile
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -34,7 +36,7 @@ import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
-import java.net.URL
+import java.net.URI
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.minutes
@@ -128,13 +130,13 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
-    private fun initEncryption(): Boolean {
+    private suspend fun initEncryption(): Boolean {
         val request = encoderServer.getEncryptionRequest()
         val response = sendMsgToLsp(LspMessage.Initialize, request)
         return response.responseCode == 200
     }
 
-    fun index(): Boolean {
+    suspend fun index(): Boolean {
         val projectRoot = project.basePath ?: return false
 
         val indexStartTime = System.currentTimeMillis()
@@ -180,7 +182,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }.await()
     }
 
-    fun getUsage(): Usage? {
+    internal suspend fun getUsage(): Usage? {
         val response = sendMsgToLsp(LspMessage.GetUsageMetrics, request = null)
         return try {
             val parsedResponse = mapper.readValue<Usage>(response.responseBody)
@@ -191,9 +193,10 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
+    @RequiresBackgroundThread
     fun updateIndex(filePaths: List<String>, mode: IndexUpdateMode) {
         val encrypted = encryptRequest(UpdateIndexRequest(filePaths, mode.command))
-        sendMsgToLsp(LspMessage.UpdateIndex, encrypted)
+        runBlocking(IO) { sendMsgToLsp(LspMessage.UpdateIndex, encrypted) }
     }
 
     private fun recordIndexWorkspace(
@@ -307,12 +310,13 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         return encoderServer.encrypt(payloadJson)
     }
 
-    private fun sendMsgToLsp(msgType: LspMessage, request: String?): LspResponse {
+    private suspend fun sendMsgToLsp(msgType: LspMessage, request: String?): LspResponse = withContext(IO) {
         logger.info { "sending message: ${msgType.endpoint} to lsp on port ${encoderServer.port}" }
-        val url = URL("http://localhost:${encoderServer.port}/${msgType.endpoint}")
+        val url = URI("http://127.0.0.1:${encoderServer.port}/${msgType.endpoint}").toURL()
         // use 1h as timeout for index, 5 seconds for other APIs
         val timeoutMs = if (msgType is LspMessage.Index) 60.minutes.inWholeMilliseconds.toInt() else 5000
-        return with(url.openConnection() as HttpURLConnection) {
+
+        with(url.openConnection() as HttpURLConnection) {
             setConnectionProperties(this)
             setConnectionTimeout(this, timeoutMs)
             request?.let { r ->
