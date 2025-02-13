@@ -1,4 +1,0 @@
-{
-  "type" : "removal",
-  "description" : "Amazon Q: Revert prefetch logic to enable more stable inline completion."
-}
