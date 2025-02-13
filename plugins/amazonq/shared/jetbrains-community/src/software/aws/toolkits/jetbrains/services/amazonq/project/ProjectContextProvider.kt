@@ -16,6 +16,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.openapi.vfs.isFile
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -44,7 +45,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     private val mapper = jacksonObjectMapper()
 
     init {
-        cs.launch {
+        cs.launch(Dispatchers.IO) {
             if (ApplicationManager.getApplication().isUnitTestMode) {
                 return@launch
             }

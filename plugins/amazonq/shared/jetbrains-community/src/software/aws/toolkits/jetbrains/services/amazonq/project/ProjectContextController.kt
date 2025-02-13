@@ -15,6 +15,7 @@ import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
@@ -28,7 +29,7 @@ class ProjectContextController(private val project: Project, private val cs: Cor
     // TODO: Ideally we should inject dependencies via constructor for easier testing, refer to how [TelemetryService] inject publisher and batcher
     private val encoderServer: EncoderServer = EncoderServer(project)
     private val projectContextProvider: ProjectContextProvider = ProjectContextProvider(project, encoderServer, cs)
-    val initJob: Job = cs.launch {
+    val initJob: Job = cs.launch(Dispatchers.IO) {
         encoderServer.downloadArtifactsAndStartServer()
     }
 
