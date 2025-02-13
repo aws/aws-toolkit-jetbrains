@@ -13,6 +13,11 @@ plugins {
 }
 
 val ideProfile = IdeVersions.ideProfile(project)
+val testPlugins by configurations.registering
+val testPrep by sourceSets.creating {
+    java.srcDirs(findFolders(project, "tst-prep", ideProfile))
+}
+
 
 // Add our source sets per IDE profile version (i.e. src-211)
 sourceSets {
@@ -27,7 +32,7 @@ intellijPlatform {
     instrumentCode = false
 }
 
-val testPlugins by configurations.registering
+
 
 dependencies {
     //testImplementation(platform("com.jetbrains.intellij.tools:ide-starter"))
@@ -39,15 +44,18 @@ dependencies {
     testImplementation(project(":plugin-core:jetbrains-community"))
     testImplementation(project(":plugin-core:core"))
     testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
+    val testPrepImplementation by configurations.getting
 
+    testPrepImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
 
 
 
 
     intellijPlatform {
-        intellijIdeaCommunity(IdeVersions.ideProfile(providers).map { it.name })
-        intellijIdeaCommunity(ideProfile.community.sdkVersion)
-
+        //intellijIdeaCommunity(IdeVersions.ideProfile(providers).map { it.name })
+        //intellijIdeaCommunity(ideProfile.community.sdkVersion)
+        val version = ideProfile.community.sdkVersion
+        intellijIdeaCommunity(version, !version.contains("SNAPSHOT"))
         testFramework(TestFrameworkType.JUnit5)
         testFramework(TestFrameworkType.Starter)
         testFramework(TestFrameworkType.Bundled)
@@ -57,9 +65,22 @@ dependencies {
     testPlugins(project(":plugin-core", "pluginZip"))
 }
 
+val prepareAmazonQTest = tasks.register<Test>("prepareAmazonQTest") {
+//    dependsOn(":plugin-core:jetbrains-community:test:abc")
+//    filter {
+//        setIncludePatterns("abc.*")
+//        //includeTestsMatching("abc.AbcTest")
+//        //excludeTestsMatching("software.aws.toolkits.jetbrains.*")
+//    }
+    testClassesDirs = testPrep.output.classesDirs
+    classpath = testPrep.runtimeClasspath
+
+    useJUnitPlatform()// Assuming your test task is named amazonQTest
+}
+
 tasks.test {
     dependsOn(testPlugins)
-
+    dependsOn(prepareAmazonQTest)
     useJUnitPlatform()
 
     systemProperty("ui.test.plugins", testPlugins.get().asPath)

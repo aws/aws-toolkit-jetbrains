@@ -64,20 +64,20 @@ class AmazonQChatTest {
 
 
 
-        Paths.get(System.getProperty("user.home"), ".aws", "sso", "cache", "ee1d2538cb8d358377d7661466c866af747a8a3f.json")
-            .createParentDirectories()
-            .writeText(
-                """
-                  paste your client reg here
-                """.trimIndent()
-            )
-
-        Paths.get(System.getProperty("user.home"), ".aws", "sso", "cache", "d3b447f809607422aac1470dd17fbb32e358cdb3.json")
-            .writeText(
-                """
-               paste your access token here
-                """.trimIndent()
-            )
+//        Paths.get(System.getProperty("user.home"), ".aws", "sso", "cache", "ee1d2538cb8d358377d7661466c866af747a8a3f.json")
+//            .createParentDirectories()
+//            .writeText(
+//                """
+//                  paste your client reg here
+//                """.trimIndent()
+//            )
+//
+//        Paths.get(System.getProperty("user.home"), ".aws", "sso", "cache", "d3b447f809607422aac1470dd17fbb32e358cdb3.json")
+//            .writeText(
+//                """
+//               paste your access token here
+//                """.trimIndent()
+//            )
 
         Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
             System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
