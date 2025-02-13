@@ -9,6 +9,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.ManagedBearerSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
@@ -61,3 +63,9 @@ fun isQExpired(project: Project): Boolean {
 
 fun AwsBearerTokenConnection.state(): BearerTokenAuthState =
     (getConnectionSettings().tokenProvider.delegate as? BearerTokenProvider)?.state() ?: BearerTokenAuthState.NOT_AUTHENTICATED
+
+fun getConnectionStartUrl(connection: ToolkitConnection?): String? {
+    connection ?: return null
+    if (connection !is ManagedBearerSsoConnection) return null
+    return connection.startUrl
+}
