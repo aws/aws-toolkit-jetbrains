@@ -37,6 +37,7 @@ import org.slf4j.event.Level
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.createExtendedClientMetadata
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import java.io.IOException
@@ -111,6 +112,8 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
 }
 
 private class AmazonQServerInstance(private val project: Project, private val cs: CoroutineScope) : Disposable {
+    private val encryptionManager = JwtEncryptionManager()
+
     private val launcher: Launcher<AmazonQLanguageServer>
 
     private val languageServer: AmazonQLanguageServer
@@ -172,7 +175,11 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         }
 
     init {
-        val cmd = GeneralCommandLine("amazon-q-lsp")
+        val cmd = GeneralCommandLine(
+            "amazon-q-lsp",
+            "--stdio",
+            "--set-credentials-encryption-key",
+        )
 
         launcherHandler = KillableColoredProcessHandler.Silent(cmd)
         val inputWrapper = LSPProcessListener()
@@ -207,6 +214,9 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         launcherFuture = launcher.startListening()
 
         cs.launch {
+            // encryption info must be sent within 5s or Flare process will exit
+            encryptionManager.writeInitializationPayload(launcherHandler.process.outputStream)
+
             val initializeResult = try {
                 withTimeout(Duration.ofSeconds(10)) {
                     languageServer.initialize(createInitializeParams()).await()
