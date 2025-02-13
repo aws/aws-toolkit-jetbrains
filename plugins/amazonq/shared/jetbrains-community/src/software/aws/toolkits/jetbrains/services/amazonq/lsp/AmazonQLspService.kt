@@ -15,6 +15,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
 import com.intellij.util.io.await
 import kotlinx.coroutines.CoroutineScope
@@ -48,6 +49,7 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.concurrent.Future
+
 // https://github.com/redhat-developer/lsp4ij/blob/main/src/main/java/com/redhat/devtools/lsp4ij/server/LSPProcessListener.java
 // JB impl and redhat both use a wrapper to handle input buffering issue
 internal class LSPProcessListener : ProcessListener {
@@ -83,6 +85,32 @@ internal class LSPProcessListener : ProcessListener {
 
 @Service(Service.Level.PROJECT)
 class AmazonQLspService(private val project: Project, private val cs: CoroutineScope) : Disposable {
+    private var instance: AmazonQServerInstance? = null
+
+    init {
+        cs.launch {
+            // manage lifecycle RAII-like so we can restart at arbitrary time
+            // and suppress IDE error if server fails to start
+            try {
+                instance = AmazonQServerInstance(project, cs).also {
+                    Disposer.register(this@AmazonQLspService, it)
+                }
+            } catch (e: Exception) {
+                LOG.warn(e) { "Failed to start LSP server" }
+            }
+        }
+    }
+
+    override fun dispose() {
+    }
+
+    companion object {
+        private val LOG = getLogger<AmazonQLspService>()
+        fun getInstance(project: Project) = project.service<AmazonQLspService>()
+    }
+}
+
+private class AmazonQServerInstance(private val project: Project, private val cs: CoroutineScope) : Disposable {
     private val launcher: Launcher<AmazonQLanguageServer>
 
     private val languageServer: AmazonQLanguageServer
@@ -180,10 +208,10 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
 
         cs.launch {
             val initializeResult = try {
-                withTimeout(Duration.ofSeconds(30)) {
+                withTimeout(Duration.ofSeconds(10)) {
                     languageServer.initialize(createInitializeParams()).await()
                 }
-            } catch (e: TimeoutCancellationException) {
+            } catch (_: TimeoutCancellationException) {
                 LOG.warn { "LSP initialization timed out" }
                 null
             }
@@ -213,7 +241,6 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
     }
 
     companion object {
-        private val LOG = getLogger<AmazonQLspService>()
-        fun getInstance(project: Project) = project.service<AmazonQLspService>()
+        private val LOG = getLogger<AmazonQServerInstance>()
     }
 }
