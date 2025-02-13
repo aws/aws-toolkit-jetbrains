@@ -7,7 +7,6 @@ import com.intellij.openapi.ui.popup.JBPopupListener
 import com.intellij.openapi.ui.popup.LightweightWindowEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererServiceNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import java.time.Duration
@@ -28,8 +27,7 @@ class CodeWhispererPopupListener(private val states: InvocationContext) : JBPopu
             recommendationContext,
             CodeWhispererPopupManager.getInstance().sessionContext,
             event.isOk,
-            CodeWhispererInvocationStatus.getInstance().popupStartTimestamp?.let { Duration.between(it, Instant.now()) },
-            CodeWhispererService.getInstance().getNextInvocationContext()
+            CodeWhispererInvocationStatus.getInstance().popupStartTimestamp?.let { Duration.between(it, Instant.now()) }
         )
 
         CodeWhispererInvocationStatus.getInstance().setDisplaySessionActive(false)
