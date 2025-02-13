@@ -25,6 +25,7 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.coroutines.IO
 import software.aws.toolkits.jetbrains.services.amazonq.CHAT_EXPLICIT_PROJECT_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
@@ -44,7 +45,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     private val mapper = jacksonObjectMapper()
 
     init {
-        cs.launch {
+        cs.launch(IO) {
             if (ApplicationManager.getApplication().isUnitTestMode) {
                 return@launch
             }
