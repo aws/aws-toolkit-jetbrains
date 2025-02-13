@@ -36,7 +36,12 @@ class JwtEncryptionManager(private val key: SecretKey) {
 
     fun encrypt(data: Any): String {
         val header = JWEHeader(JWEAlgorithm.DIR, EncryptionMethod.A256GCM)
-        val payload = Payload(mapper.writeValueAsBytes(data))
+        val payload = if (data is String) {
+            Payload(data)
+        } else {
+            Payload(mapper.writeValueAsBytes(data))
+        }
+
         val jweObject = JWEObject(header, payload)
         jweObject.encrypt(DirectEncrypter(key))
 
