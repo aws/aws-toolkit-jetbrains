@@ -1,4 +1,4 @@
 {
   "type" : "removal",
-  "description" : "Reverted prefetch logic to enable more stable inline completion."
+  "description" : "Amazon Q: Revert prefetch logic to enable more stable inline completion."
 }
