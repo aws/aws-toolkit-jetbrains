@@ -1,0 +1,4 @@
+{
+  "type" : "removal",
+  "description" : "Reverted prefetch logic to enable more stable inline completion."
+}
