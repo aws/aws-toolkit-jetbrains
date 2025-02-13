@@ -19,6 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
@@ -52,16 +53,16 @@ class ProjectContextController(private val project: Project, private val cs: Cor
 
     fun getProjectContextIndexComplete() = projectContextProvider.isIndexComplete.get()
 
-    suspend fun queryChat(prompt: String, timeout: Long?): List<RelevantDocument> {
+    suspend fun queryChat(prompt: String, timeout: Long?): List<RelevantDocument> = withContext(Dispatchers.IO) {
         try {
-            return projectContextProvider.query(prompt, timeout)
+            projectContextProvider.query(prompt, timeout)
         } catch (e: Exception) {
             logger.warn { "error while querying for project context $e.message" }
-            return emptyList()
+            emptyList()
         }
     }
 
-    suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> =
+    suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> = withContext(Dispatchers.IO) {
         try {
             projectContextProvider.queryInline(query, filePath, InlineContextTarget.CODEMAP)
         } catch (e: Exception) {
@@ -72,6 +73,7 @@ class ProjectContextController(private val project: Project, private val cs: Cor
             logger.warn { logStr }
             emptyList()
         }
+    }
 
     @RequiresBackgroundThread
     fun updateIndex(filePaths: List<String>, mode: IndexUpdateMode) {
