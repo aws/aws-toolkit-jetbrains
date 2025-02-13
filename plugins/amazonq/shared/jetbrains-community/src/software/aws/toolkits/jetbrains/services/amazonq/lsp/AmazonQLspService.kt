@@ -18,24 +18,36 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.util.io.await
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.time.withTimeout
+import org.eclipse.lsp4j.ClientCapabilities
+import org.eclipse.lsp4j.ClientInfo
+import org.eclipse.lsp4j.FileOperationsWorkspaceCapabilities
 import org.eclipse.lsp4j.InitializeParams
 import org.eclipse.lsp4j.InitializedParams
+import org.eclipse.lsp4j.SynchronizationCapabilities
+import org.eclipse.lsp4j.TextDocumentClientCapabilities
+import org.eclipse.lsp4j.WorkspaceClientCapabilities
+import org.eclipse.lsp4j.WorkspaceFolder
 import org.eclipse.lsp4j.jsonrpc.Launcher
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.slf4j.event.Level
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.createExtendedClientMetadata
+import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import java.io.IOException
 import java.io.OutputStreamWriter
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.io.PrintWriter
 import java.io.StringWriter
+import java.net.URI
 import java.nio.charset.StandardCharsets
+import java.time.Duration
 import java.util.concurrent.Future
-
 // https://github.com/redhat-developer/lsp4ij/blob/main/src/main/java/com/redhat/devtools/lsp4ij/server/LSPProcessListener.java
 // JB impl and redhat both use a wrapper to handle input buffering issue
 internal class LSPProcessListener : ProcessListener {
@@ -70,7 +82,7 @@ internal class LSPProcessListener : ProcessListener {
 }
 
 @Service(Service.Level.PROJECT)
-class AmazonQLspService(project: Project, private val cs: CoroutineScope) : Disposable {
+class AmazonQLspService(private val project: Project, private val cs: CoroutineScope) : Disposable {
     private val launcher: Launcher<AmazonQLanguageServer>
 
     private val languageServer: AmazonQLanguageServer
@@ -79,6 +91,57 @@ class AmazonQLspService(project: Project, private val cs: CoroutineScope) : Disp
     @Suppress("ForbiddenVoid")
     private val launcherFuture: Future<Void>
     private val launcherHandler: KillableProcessHandler
+
+    private fun createClientCapabilities(): ClientCapabilities =
+        ClientCapabilities().apply {
+            textDocument = TextDocumentClientCapabilities().apply {
+                // For didSaveTextDocument, other textDocument/ messages always mandatory
+                synchronization = SynchronizationCapabilities().apply {
+                    didSave = true
+                }
+            }
+
+            workspace = WorkspaceClientCapabilities().apply {
+                applyEdit = false
+
+                // For workspace folder changes
+                workspaceFolders = true
+
+                // For file operations (create, delete)
+                fileOperations = FileOperationsWorkspaceCapabilities().apply {
+                    didCreate = true
+                    didDelete = true
+                }
+            }
+        }
+
+    // needs case handling when project's base path is null: default projects/unit tests
+    private fun createWorkspaceFolders(): List<WorkspaceFolder> =
+        project.basePath?.let { basePath ->
+            listOf(
+                WorkspaceFolder(
+                    URI("file://$basePath").toString(),
+                    project.name
+                )
+            )
+        }.orEmpty() // no folders to report or workspace not folder based
+
+    private fun createClientInfo(): ClientInfo {
+        val metadata = ClientMetadata.getDefault()
+        return ClientInfo().apply {
+            name = metadata.awsProduct.toString()
+            version = metadata.awsVersion
+        }
+    }
+
+    private fun createInitializeParams(): InitializeParams =
+        InitializeParams().apply {
+            processId = ProcessHandle.current().pid().toInt()
+            capabilities = createClientCapabilities()
+            clientInfo = createClientInfo()
+            workspaceFolders = createWorkspaceFolders()
+            initializationOptions = createExtendedClientMetadata()
+        }
 
     init {
         val cmd = GeneralCommandLine("amazon-q-lsp")
@@ -116,18 +179,14 @@ class AmazonQLspService(project: Project, private val cs: CoroutineScope) : Disp
         launcherFuture = launcher.startListening()
 
         cs.launch {
-            val initializeResult = languageServer.initialize(
-                InitializeParams().apply {
-                    // does this work on windows
-                    processId = ProcessHandle.current().pid().toInt()
-                    // capabilities
-                    // client info
-                    // trace?
-                    // workspace folders?
-                    // anything else we need?
+            val initializeResult = try {
+                withTimeout(Duration.ofSeconds(30)) {
+                    languageServer.initialize(createInitializeParams()).await()
                 }
-                // probably need a timeout
-            ).await()
+            } catch (e: TimeoutCancellationException) {
+                LOG.warn { "LSP initialization timed out" }
+                null
+            }
 
             // then if this succeeds then we can allow the client to send requests
             if (initializeResult == null) {
