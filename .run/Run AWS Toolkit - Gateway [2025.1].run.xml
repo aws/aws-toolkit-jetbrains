@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Run AWS Toolkit - Gateway [2025.1]" type="GradleRunConfiguration" factoryName="Gradle" folderName="2025.1">
-    <log_file alias="idea.log" path="$PROJECT_DIR$/plugins/toolkit/jetbrains-gateway/build/idea-sandbox/system/log/idea.log" />
+    <log_file alias="idea.log" path="$PROJECT_DIR$/plugins/toolkit/jetbrains-gateway/build/idea-sandbox/GW-2025.1/log/idea.log" />
     <ExternalSystemSettings>
       <option name="executionName" />
       <option name="externalProjectPath" value="$PROJECT_DIR$" />
