@@ -47,10 +47,11 @@ class JwtEncryptionManagerTest {
             // https://github.com/aws/language-server-runtimes/blob/4d7f81295dc12b59ed2e1c0ebaedb85ccb86cf76/runtimes/README.md#encryption
             .endsWith("\n")
             // language=JSON
-            .isEqualTo("""
+            .isEqualTo(
+                """
             |{"version":"1.0","mode":"JWT","key":"3q2-796tvu_erb7v3q2-796tvu_erb7v3q2-796tvu8"}
             |
-            """.trimMargin()
+                """.trimMargin()
             )
     }
 }
