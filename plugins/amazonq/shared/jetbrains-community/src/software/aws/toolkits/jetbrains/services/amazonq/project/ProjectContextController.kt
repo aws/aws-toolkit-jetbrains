@@ -15,13 +15,13 @@ import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.coroutines.IO
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import java.util.concurrent.TimeoutException
 
@@ -30,7 +30,7 @@ class ProjectContextController(private val project: Project, private val cs: Cor
     // TODO: Ideally we should inject dependencies via constructor for easier testing, refer to how [TelemetryService] inject publisher and batcher
     private val encoderServer: EncoderServer = EncoderServer(project)
     private val projectContextProvider: ProjectContextProvider = ProjectContextProvider(project, encoderServer, cs)
-    val initJob: Job = cs.launch(Dispatchers.IO) {
+    val initJob: Job = cs.launch(IO) {
         encoderServer.downloadArtifactsAndStartServer()
     }
 
@@ -53,7 +53,7 @@ class ProjectContextController(private val project: Project, private val cs: Cor
 
     fun getProjectContextIndexComplete() = projectContextProvider.isIndexComplete.get()
 
-    suspend fun queryChat(prompt: String, timeout: Long?): List<RelevantDocument> = withContext(Dispatchers.IO) {
+    suspend fun queryChat(prompt: String, timeout: Long?): List<RelevantDocument> = withContext(IO) {
         try {
             projectContextProvider.query(prompt, timeout)
         } catch (e: Exception) {
@@ -62,7 +62,7 @@ class ProjectContextController(private val project: Project, private val cs: Cor
         }
     }
 
-    suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> = withContext(Dispatchers.IO) {
+    suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> = withContext(IO) {
         try {
             projectContextProvider.queryInline(query, filePath, InlineContextTarget.CODEMAP)
         } catch (e: Exception) {

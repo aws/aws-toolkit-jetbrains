@@ -32,3 +32,5 @@ fun getCoroutineUiContext(): CoroutineContext = EdtCoroutineDispatcher
 fun getCoroutineBgContext(): CoroutineContext = AppExecutorUtil.getAppExecutorService().asCoroutineDispatcher()
 
 val EDT = Dispatchers.EDT
+
+val IO = Dispatchers.IO
