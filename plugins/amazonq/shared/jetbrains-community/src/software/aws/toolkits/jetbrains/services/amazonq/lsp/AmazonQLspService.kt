@@ -124,7 +124,7 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
                     project.name
                 )
             )
-        } ?: emptyList() // no folders to report or workspace not folder based
+        }.orEmpty() // no folders to report or workspace not folder based
 
     private fun createClientInfo(): ClientInfo {
         val metadata = ClientMetadata.getDefault()
