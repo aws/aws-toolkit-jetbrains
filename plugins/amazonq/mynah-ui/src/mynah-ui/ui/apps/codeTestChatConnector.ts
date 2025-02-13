@@ -4,7 +4,7 @@
 import {ExtensionMessage} from "../commands";
 import {ChatPayload, ConnectorProps} from "../connector";
 import {FormButtonIds} from "../forms/constants";
-import {ChatItem, ChatItemAction, ChatItemType, MynahIcons, MynahUIDataModel} from '@aws/mynah-ui-chat'
+import {ChatItem, ChatItemAction, ChatItemType, FeedbackPayload, MynahIcons, MynahUIDataModel} from '@aws/mynah-ui-chat'
 import {CodeReference} from "./amazonqCommonsConnector";
 import {Status} from "@aws/mynah-ui-chat/dist/static";
 import {EmptyMynahUIDataModel} from "@aws/mynah-ui-chat/dist/helper/store";
@@ -13,6 +13,7 @@ import {doesNotMatch} from "node:assert";
 export interface ICodeTestChatConnectorProps {
     sendMessageToExtension: (message: ExtensionMessage) => void
     onChatAnswerReceived?: (tabID: string, message: ChatItem) => void
+    sendFeedback?: (tabId: string, feedbackPayload: FeedbackPayload) => void | undefined
     onUpdateAuthentication: (
         featureDevEnabled: boolean,
         codeTransformEnabled: boolean,
@@ -568,6 +569,24 @@ export class CodeTestChatConnector {
             followUp,
             tabID,
             tabType: 'codetest',
+        })
+    }
+
+    onChatItemVoted = (tabId: string, messageId: string, vote: string): void | undefined => {
+        this.sendMessageToExtension({
+            tabID: tabId,
+            vote: vote,
+            command: 'chat-item-voted',
+            tabType: 'codetest',
+        })
+    }
+
+    sendFeedback = (tabId: string, feedbackPayload: FeedbackPayload): void | undefined => {
+        this.sendMessageToExtension({
+            command: 'chat-item-feedback',
+            ...feedbackPayload,
+            tabType: 'codetest',
+            tabID: tabId,
         })
     }
 

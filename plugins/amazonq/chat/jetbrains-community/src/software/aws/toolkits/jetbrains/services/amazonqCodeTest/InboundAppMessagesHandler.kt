@@ -22,5 +22,9 @@ interface InboundAppMessagesHandler {
 
     suspend fun processButtonClickedMessage(message: IncomingCodeTestMessage.ButtonClicked)
 
+    suspend fun processChatItemVoted(message: IncomingCodeTestMessage.ChatItemVoted)
+
+    suspend fun processChatItemFeedBack(message: IncomingCodeTestMessage.ChatItemFeedback)
+
     suspend fun processAuthFollowUpClick(message: IncomingCodeTestMessage.AuthFollowUpWasClicked)
 }
