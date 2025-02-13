@@ -214,11 +214,13 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             } catch (_: TimeoutCancellationException) {
                 LOG.warn { "LSP initialization timed out" }
                 null
+            } catch (e: Exception) {
+                LOG.warn(e) { "LSP initialization failed" }
+                null
             }
 
             // then if this succeeds then we can allow the client to send requests
             if (initializeResult == null) {
-                LOG.warn { "LSP initialization failed" }
                 launcherHandler.destroyProcess()
             }
             languageServer.initialized(InitializedParams())
