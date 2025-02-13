@@ -34,10 +34,8 @@ coroutines:
   active: true
   GlobalCoroutineUsage:
     active: true
-  RedundantSuspendModifier:
-    active: true
-  SleepInsteadOfDelay:
-    active: true
+  InjectDispatcher:
+    active: false
   SuspendFunWithFlowReturnType:
     active: true
 
