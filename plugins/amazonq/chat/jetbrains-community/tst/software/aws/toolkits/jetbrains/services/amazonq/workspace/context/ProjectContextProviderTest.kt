@@ -17,8 +17,8 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.replaceService
-import io.mockk.spyk
 import io.mockk.every
+import io.mockk.spyk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -85,7 +85,7 @@ class ProjectContextProviderTest {
     fun setup() {
         encoderServer = spy(EncoderServer(project))
         encoderServer.stub { on { port } doReturn wireMock.port() }
-        encoderServer.stub { on {isNodeProcessRunning()} doReturn true}
+        encoderServer.stub { on { isNodeProcessRunning() } doReturn true }
         sut = spyk(ProjectContextProvider(project, encoderServer, TestScope(context = dispatcher)))
 
         // initialization
@@ -146,7 +146,7 @@ class ProjectContextProviderTest {
         projectRule.fixture.addFileToProject("Foo.java", "foo")
         projectRule.fixture.addFileToProject("Bar.java", "bar")
         projectRule.fixture.addFileToProject("Baz.java", "baz")
-        every {sut.collectFiles()} returns FileCollectionResult(
+        every { sut.collectFiles() } returns FileCollectionResult(
             files = listOf("Foo.java", "Bar.java", "Baz.java"),
             fileSize = 10
         )
@@ -181,7 +181,7 @@ class ProjectContextProviderTest {
         projectRule.fixture.addFileToProject("Foo.java", "foo")
         projectRule.fixture.addFileToProject("Bar.java", "bar")
         projectRule.fixture.addFileToProject("Baz.java", "baz")
-        every {sut.collectFiles()} returns FileCollectionResult(
+        every { sut.collectFiles() } returns FileCollectionResult(
             files = listOf("Foo.java", "Bar.java", "Baz.java"),
             fileSize = 10
         )
@@ -417,7 +417,7 @@ class ProjectContextProviderTest {
     @Test
     fun `test index payload is encrypted`() = runTest {
         whenever(encoderServer.port).thenReturn(3000)
-        every {sut.collectFiles()} returns FileCollectionResult(
+        every { sut.collectFiles() } returns FileCollectionResult(
             files = listOf("Foo.java", "Bar.java", "Baz.java"),
             fileSize = 10
         )
