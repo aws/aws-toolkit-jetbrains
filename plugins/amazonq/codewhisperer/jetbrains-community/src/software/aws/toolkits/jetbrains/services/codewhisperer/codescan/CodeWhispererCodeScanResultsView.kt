@@ -7,10 +7,12 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionToolbar
+import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.AnimatedIcon
-import com.intellij.ui.ClickListener
 import com.intellij.ui.OnePixelSplitter
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.border.CustomLineBorder
@@ -19,7 +21,8 @@ import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.JBUI
 import icons.AwsIcons
 import kotlinx.coroutines.CoroutineScope
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanTreeMouseListener
+import software.aws.toolkits.core.utils.error
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.IssueGroupingStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.IssueSeverity
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig
@@ -31,7 +34,6 @@ import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
-import java.awt.event.MouseEvent
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import javax.swing.BorderFactory
@@ -52,15 +54,18 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project, pr
 
     private val codeScanTree: Tree = Tree().apply {
         isRootVisible = false
-        CodeWhispererCodeScanTreeMouseListener(project).installOn(this)
-        object : ClickListener() {
-            override fun onClick(event: MouseEvent, clickCount: Int): Boolean {
-                val issueNode = (event.source as Tree).selectionPath?.lastPathComponent as? DefaultMutableTreeNode
-                val issue = issueNode?.userObject as? CodeWhispererCodeScanIssue ?: return false
-                showIssueDetails(issue, defaultScope)
-                return true
+
+        addTreeSelectionListener { e ->
+            val issueNode = e.path.lastPathComponent as? DefaultMutableTreeNode
+            val issue = issueNode?.userObject as? CodeWhispererCodeScanIssue ?: return@addTreeSelectionListener
+
+            showIssueDetails(issue, defaultScope)
+
+            synchronized(issueNode) {
+                if (issueNode.userObject !is CodeWhispererCodeScanIssue) return@addTreeSelectionListener
+                navigateToIssue(issueNode.userObject as CodeWhispererCodeScanIssue)
             }
-        }.installOn(this)
+        }
         cellRenderer = ColoredTreeCellRenderer()
     }
 
@@ -390,8 +395,30 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project, pr
         }
     }
 
+    private fun navigateToIssue(codeScanIssue: CodeWhispererCodeScanIssue) {
+        val textRange = codeScanIssue.textRange ?: return
+        val startOffset = textRange.startOffset
+
+        if (codeScanIssue.isInvalid) return
+
+        runInEdt {
+            val editor = FileEditorManager.getInstance(project).openTextEditor(
+                OpenFileDescriptor(project, codeScanIssue.file, startOffset),
+                false
+            )
+            if (editor == null) {
+                LOG.error { "Cannot fetch editor for the file ${codeScanIssue.file.path}" }
+                return@runInEdt
+            }
+            if (codeScanIssue.rangeHighlighter == null) {
+                codeScanIssue.rangeHighlighter = codeScanIssue.addRangeHighlighter(editor.markupModel)
+            }
+        }
+    }
+
     private companion object {
         const val ACTION_PLACE = "CodeScanResultsPanel"
         const val CODE_SCAN_SPLITTER_PROPORTION_KEY = "CODE_SCAN_SPLITTER_PROPORTION"
+        private val LOG = getLogger<CodeWhispererCodeScanResultsView>()
     }
 }

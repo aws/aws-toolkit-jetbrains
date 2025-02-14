@@ -13,7 +13,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.components.ActionLink
 import com.intellij.ui.components.fields.ExpandableTextField
 import com.intellij.ui.dsl.builder.bindIntText
-import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
@@ -96,17 +95,6 @@ class CodeWhispererConfigurable(private val project: Project) :
                     enabled(invoke)
                     bindSelected(codeWhispererSettings::isImportAdderEnabled, codeWhispererSettings::toggleImportAdder)
                 }.comment(message("aws.settings.codewhisperer.automatic_import_adder.tooltip"))
-            }
-
-            row {
-                text(message("codewhisperer.inline.settings.tab_priority.prefix"))
-                val amazonq = message("codewhisperer.inline.settings.tab_priority.choice.amazonq")
-                val jetbrains = message("codewhisperer.inline.settings.tab_priority.choice.jetbrains")
-                comboBox(listOf(amazonq, jetbrains)).bindItem(
-                    { if (CodeWhispererSettings.getInstance().isQPrioritizedForTabAccept()) amazonq else jetbrains },
-                    { CodeWhispererSettings.getInstance().setQPrioritizedForTabAccept(it == amazonq) }
-                )
-                text(message("codewhisperer.inline.settings.tab_priority.suffix"))
             }
 
             row {

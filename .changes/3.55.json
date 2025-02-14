@@ -1,0 +1,23 @@
+{
+  "date" : "2025-02-13",
+  "version" : "3.55",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "/transform: support transformations to Java 21"
+  }, {
+    "type" : "bugfix",
+    "description" : "Enable syntax highlighting when viewing diff for /test"
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q /test: Truncating user input to 4096 characters for unit test generation."
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q /review: Unable to navigate to code location when selecting issues"
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q /test: Q identify active test file and infer source file for test generation."
+  }, {
+    "type" : "removal",
+    "description" : "Amazon Q: Revert prefetch logic to enable more stable inline completion."
+  } ]
+}

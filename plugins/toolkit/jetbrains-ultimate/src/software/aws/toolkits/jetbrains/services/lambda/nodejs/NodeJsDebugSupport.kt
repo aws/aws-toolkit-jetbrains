@@ -10,7 +10,6 @@ import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.javascript.debugger.LocalFileSystemFileFinder
 import com.intellij.javascript.debugger.RemoteDebuggingFileFinder
-import com.intellij.lang.javascript.JavascriptLanguage
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.xdebugger.XDebugProcess
@@ -18,6 +17,7 @@ import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
 import com.jetbrains.debugger.wip.WipLocalVmConnection
 import com.jetbrains.nodeJs.NodeChromeDebugProcess
+import compat.com.intellij.lang.javascript.JavascriptLanguage
 import org.jetbrains.io.LocalFileFinder
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.services.PathMapping
@@ -39,7 +39,7 @@ class NodeJsRuntimeDebugSupport : RuntimeDebugSupport {
 
 abstract class NodeJsImageDebugSupport : ImageDebugSupport {
     override fun supportsPathMappings(): Boolean = true
-    override val languageId = JavascriptLanguage.INSTANCE.id
+    override val languageId = JavascriptLanguage.id
     override suspend fun createDebugProcess(
         context: Context,
         environment: ExecutionEnvironment,
