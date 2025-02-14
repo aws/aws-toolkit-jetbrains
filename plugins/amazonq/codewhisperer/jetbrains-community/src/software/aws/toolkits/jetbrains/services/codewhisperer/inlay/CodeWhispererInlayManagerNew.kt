@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.inlay
 
-import com.intellij.idea.AppMode
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.EditorCustomElementRenderer
@@ -11,6 +10,7 @@ import com.intellij.openapi.editor.Inlay
 import com.intellij.openapi.util.Disposer
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationChunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
+import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 
 @Service
 class CodeWhispererInlayManagerNew {
@@ -39,7 +39,7 @@ class CodeWhispererInlayManagerNew {
 
         if (firstLine.isNotEmpty()) {
             val firstLineRenderer =
-                if (!AppMode.isRemoteDevHost()) {
+                if (!isRunningOnRemoteBackend()) {
                     CodeWhispererInlayInlineRenderer(firstLine)
                 } else {
                     InlineCompletionRemoteRendererFactory.createLineInlay(editor, firstLine)
@@ -55,7 +55,7 @@ class CodeWhispererInlayManagerNew {
             return
         }
         val otherLinesRenderers =
-            if (!AppMode.isRemoteDevHost()) {
+            if (!isRunningOnRemoteBackend()) {
                 listOf(CodeWhispererInlayBlockRenderer(otherLines))
             } else {
                 InlineCompletionRemoteRendererFactory.createBlockInlays(editor, otherLines.split("\n"))
