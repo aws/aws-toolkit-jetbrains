@@ -20,7 +20,8 @@ import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 class WorkspaceServiceHandler(
     private val project: Project,
     private val languageServer: AmazonQLanguageServer,
-) : Disposable {
+    private val serverInstance: Disposable
+){
 
     fun startWorkspaceServiceListeners() {
         startFileLifecycleListener()
@@ -55,7 +56,7 @@ class WorkspaceServiceHandler(
     }
 
     private fun startFileLifecycleListener() {
-        project.messageBus.connect(this).subscribe(
+        project.messageBus.connect(serverInstance).subscribe(
             VirtualFileManager.VFS_CHANGES,
             object : BulkFileListener {
                 override fun after(events: List<VFileEvent>) {
@@ -73,7 +74,4 @@ class WorkspaceServiceHandler(
     //private fun didChangeWorkspaceFolders() {
     //    languageServer.workspaceService.didChangeWorkspaceFolders()
     //}
-
-    override fun dispose() {
-    }
 }

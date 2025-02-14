@@ -237,9 +237,11 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             languageServer.initialized(InitializedParams())
         }
 
-        //may need to register listeners differently so their messageBus' don't get garbage collected
-        val workspaceServiceHandler = WorkspaceServiceHandler(project, languageServer)
-        workspaceServiceHandler.startWorkspaceServiceListeners()
+        WorkspaceServiceHandler(
+            project,
+            languageServer,
+            this
+        ).startWorkspaceServiceListeners()
     }
 
     override fun dispose() {
