@@ -52,6 +52,10 @@ class ProjectContextController(private val project: Project, private val cs: Cor
     fun getProjectContextIndexComplete() = projectContextProvider.isIndexComplete.get()
 
     suspend fun queryChat(prompt: String, timeout: Long?): List<RelevantDocument> {
+        if (!getProjectContextIndexComplete()) {
+            logger.warn { "attempt to query project context while index for ${project.name} isn't ready" }
+            return emptyList()
+        }
         try {
             return projectContextProvider.query(prompt, timeout)
         } catch (e: Exception) {
@@ -60,8 +64,13 @@ class ProjectContextController(private val project: Project, private val cs: Cor
         }
     }
 
-    suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> =
-        try {
+    suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> {
+        if (!getProjectContextIndexComplete()) {
+            logger.warn { "attempt to query project context while index for ${project.name} isn't ready" }
+            return emptyList()
+        }
+
+        return try {
             projectContextProvider.queryInline(query, filePath, InlineContextTarget.CODEMAP)
         } catch (e: Exception) {
             var logStr = "error while querying inline for project context $e.message"
@@ -71,9 +80,14 @@ class ProjectContextController(private val project: Project, private val cs: Cor
             logger.warn { logStr }
             emptyList()
         }
+    }
 
     @RequiresBackgroundThread
     fun updateIndex(filePaths: List<String>, mode: IndexUpdateMode) {
+        if (!getProjectContextIndexComplete()) {
+            return
+        }
+
         try {
             return projectContextProvider.updateIndex(filePaths, mode)
         } catch (e: Exception) {
