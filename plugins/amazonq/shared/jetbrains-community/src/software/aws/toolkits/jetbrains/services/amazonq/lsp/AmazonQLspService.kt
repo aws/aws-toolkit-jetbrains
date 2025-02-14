@@ -241,7 +241,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             project,
             languageServer,
             this
-        ).startWorkspaceServiceListeners()
+        )
     }
 
     override fun dispose() {

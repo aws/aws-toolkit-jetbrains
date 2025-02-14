@@ -23,7 +23,7 @@ class WorkspaceServiceHandler(
     private val serverInstance: Disposable
 ){
 
-    fun startWorkspaceServiceListeners() {
+    init{
         startFileLifecycleListener()
     }
 
