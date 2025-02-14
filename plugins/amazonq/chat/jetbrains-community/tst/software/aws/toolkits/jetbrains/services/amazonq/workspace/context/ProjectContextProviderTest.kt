@@ -17,6 +17,8 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.replaceService
+import io.mockk.every
+import io.mockk.spyk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -44,6 +46,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.project.InlineBm25Chunk
 import software.aws.toolkits.jetbrains.services.amazonq.project.InlineContextTarget
 import software.aws.toolkits.jetbrains.services.amazonq.project.LspMessage
 import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextProvider
+import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextProvider.FileCollectionResult
 import software.aws.toolkits.jetbrains.services.amazonq.project.QueryChatRequest
 import software.aws.toolkits.jetbrains.services.amazonq.project.QueryInlineCompletionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
@@ -82,8 +85,8 @@ class ProjectContextProviderTest {
     fun setup() {
         encoderServer = spy(EncoderServer(project))
         encoderServer.stub { on { port } doReturn wireMock.port() }
-
-        sut = ProjectContextProvider(project, encoderServer, TestScope(context = dispatcher))
+        encoderServer.stub { on { isNodeProcessRunning() } doReturn true }
+        sut = spyk(ProjectContextProvider(project, encoderServer, TestScope(context = dispatcher)))
 
         // initialization
         stubFor(any(urlPathEqualTo("/initialize")).willReturn(aResponse().withStatus(200).withResponseBody(Body("initialize response"))))
@@ -143,7 +146,10 @@ class ProjectContextProviderTest {
         projectRule.fixture.addFileToProject("Foo.java", "foo")
         projectRule.fixture.addFileToProject("Bar.java", "bar")
         projectRule.fixture.addFileToProject("Baz.java", "baz")
-
+        every { sut.collectFiles() } returns FileCollectionResult(
+            files = listOf("Foo.java", "Bar.java", "Baz.java"),
+            fileSize = 10
+        )
         sut.index()
 
         val request = IndexRequest(listOf("/src/Foo.java", "/src/Bar.java", "/src/Baz.java"), "/src", "all", "")
@@ -175,7 +181,10 @@ class ProjectContextProviderTest {
         projectRule.fixture.addFileToProject("Foo.java", "foo")
         projectRule.fixture.addFileToProject("Bar.java", "bar")
         projectRule.fixture.addFileToProject("Baz.java", "baz")
-
+        every { sut.collectFiles() } returns FileCollectionResult(
+            files = listOf("Foo.java", "Bar.java", "Baz.java"),
+            fileSize = 10
+        )
         sut.index()
 
         val request = IndexRequest(listOf("/src/Foo.java", "/src/Bar.java", "/src/Baz.java"), "/src", "default", "")
@@ -408,6 +417,10 @@ class ProjectContextProviderTest {
     @Test
     fun `test index payload is encrypted`() = runTest {
         whenever(encoderServer.port).thenReturn(3000)
+        every { sut.collectFiles() } returns FileCollectionResult(
+            files = listOf("Foo.java", "Bar.java", "Baz.java"),
+            fileSize = 10
+        )
         try {
             sut.index()
         } catch (e: ConnectException) {
