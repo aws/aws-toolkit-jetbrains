@@ -21,7 +21,7 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails
-import software.amazon.awssdk.services.codewhisperer.model.CodeWhispererException
+import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlRequest
 import software.aws.toolkits.core.utils.WaiterTimeoutException
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
@@ -226,7 +226,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
 
         mockClient.stub {
             onGeneric { zipUploadManagerSpy.createUploadUrlAndUpload(any(), any(), any(), any(), any()) }.thenThrow(
-                CodeWhispererException.builder()
+                CodeWhispererRuntimeException.builder()
                     .message("Project Review Monthly Exceeded")
                     .requestId("abc123")
                     .statusCode(400)
@@ -246,7 +246,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
         val codeScanResponse = codeScanSessionSpy.run()
         assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
         if (codeScanResponse is CodeScanResponse.Failure) {
-            assertThat(codeScanResponse.failureReason).isInstanceOf<CodeWhispererException>()
+            assertThat(codeScanResponse.failureReason).isInstanceOf<CodeWhispererRuntimeException>()
             assertThat(codeScanResponse.failureReason.toString()).contains("Project Review Monthly Exceeded")
             assertThat(codeScanResponse.failureReason.cause.toString()).contains("java.lang.RuntimeException: Something went wrong")
         }
