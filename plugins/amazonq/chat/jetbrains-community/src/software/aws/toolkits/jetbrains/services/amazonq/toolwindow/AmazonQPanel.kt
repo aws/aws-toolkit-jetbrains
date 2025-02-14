@@ -7,9 +7,10 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.panels.Wrapper
+import com.intellij.ui.dsl.builder.Align
+import com.intellij.ui.dsl.builder.AlignX
+import com.intellij.ui.dsl.builder.AlignY
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.dsl.gridLayout.HorizontalAlign
-import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.ui.jcef.JBCefApp
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.webview.Browser
@@ -25,8 +26,7 @@ class AmazonQPanel(private val parent: Disposable) {
     val component = panel {
         row {
             cell(webviewContainer)
-                .horizontalAlign(HorizontalAlign.FILL)
-                .verticalAlign(VerticalAlign.FILL)
+                .align(Align.FILL)
         }.resizableRow()
 
         // Button to show the web debugger for debugging the UI:
@@ -44,8 +44,8 @@ class AmazonQPanel(private val parent: Disposable) {
                         )
                     },
                 )
-                    .horizontalAlign(HorizontalAlign.CENTER)
-                    .verticalAlign(VerticalAlign.BOTTOM)
+                    .align(AlignX.CENTER)
+                    .align(AlignY.BOTTOM)
             }
         }
     }

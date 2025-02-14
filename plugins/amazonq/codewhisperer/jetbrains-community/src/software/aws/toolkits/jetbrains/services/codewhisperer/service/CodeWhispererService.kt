@@ -543,6 +543,12 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         val recommendations = response.completions()
         val visualPosition = requestContext.editor.caretModel.visualPosition
 
+        if (CodeWhispererPopupManager.getInstance().hasConflictingPopups(requestContext.editor)) {
+            LOG.debug { "Detect conflicting popup window with CodeWhisperer popup, not showing CodeWhisperer popup" }
+            sendDiscardedUserDecisionEventForAll(requestContext, responseContext, recommendations)
+            return null
+        }
+
         if (caretMovement == CaretMovement.MOVE_BACKWARD) {
             LOG.debug { "Caret moved backward, discarding all of the recommendations. Request ID: $requestId" }
             sendDiscardedUserDecisionEventForAll(requestContext, responseContext, recommendations)
@@ -706,6 +712,8 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
     }
 
     private fun addPopupChildDisposables(project: Project, editor: Editor, popup: JBPopup) {
+        codeInsightSettingsFacade.disableCodeInsightUntil(popup)
+
         Disposer.register(popup) {
             CodeWhispererPopupManager.getInstance().reset()
         }
@@ -758,6 +766,11 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
 
         if (type == CodewhispererTriggerType.AutoTrigger && !CodeWhispererExplorerActionManager.getInstance().isAutoEnabled()) {
             LOG.debug { "CodeWhisperer auto-trigger is disabled, not invoking service" }
+            return false
+        }
+
+        if (CodeWhispererPopupManager.getInstance().hasConflictingPopups(editor)) {
+            LOG.debug { "Find other active popup windows before triggering CodeWhisperer, not invoking service" }
             return false
         }
 

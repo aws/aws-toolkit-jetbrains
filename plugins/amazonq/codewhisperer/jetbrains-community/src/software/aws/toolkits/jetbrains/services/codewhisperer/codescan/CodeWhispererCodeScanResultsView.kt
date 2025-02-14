@@ -7,10 +7,12 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionToolbar
+import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.AnimatedIcon
-import com.intellij.ui.ClickListener
 import com.intellij.ui.OnePixelSplitter
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.border.CustomLineBorder
@@ -19,7 +21,9 @@ import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.JBUI
 import icons.AwsIcons
 import kotlinx.coroutines.CoroutineScope
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanTreeMouseListener
+import software.aws.toolkits.core.utils.error
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.IssueGroupingStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.IssueSeverity
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addHorizontalGlue
@@ -30,7 +34,6 @@ import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
-import java.awt.event.MouseEvent
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import javax.swing.BorderFactory
@@ -47,21 +50,29 @@ import javax.swing.tree.TreePath
  */
 internal class CodeWhispererCodeScanResultsView(private val project: Project, private val defaultScope: CoroutineScope) : JPanel(BorderLayout()) {
 
+    private fun isGroupedBySeverity() = CodeWhispererCodeScanManager.getInstance(project).getGroupingStrategySelected() == IssueGroupingStrategy.SEVERITY
+
     private val codeScanTree: Tree = Tree().apply {
         isRootVisible = false
-        CodeWhispererCodeScanTreeMouseListener(project).installOn(this)
-        object : ClickListener() {
-            override fun onClick(event: MouseEvent, clickCount: Int): Boolean {
-                val issueNode = (event.source as Tree).selectionPath?.lastPathComponent as? DefaultMutableTreeNode
-                val issue = issueNode?.userObject as? CodeWhispererCodeScanIssue ?: return false
-                showIssueDetails(issue, defaultScope)
-                return true
+
+        addTreeSelectionListener { e ->
+            val issueNode = e.path.lastPathComponent as? DefaultMutableTreeNode
+            val issue = issueNode?.userObject as? CodeWhispererCodeScanIssue ?: return@addTreeSelectionListener
+
+            showIssueDetails(issue, defaultScope)
+
+            synchronized(issueNode) {
+                if (issueNode.userObject !is CodeWhispererCodeScanIssue) return@addTreeSelectionListener
+                navigateToIssue(issueNode.userObject as CodeWhispererCodeScanIssue)
             }
-        }.installOn(this)
+        }
         cellRenderer = ColoredTreeCellRenderer()
     }
 
     private fun expandItems() {
+        if (!isGroupedBySeverity()) {
+            return
+        }
         val criticalTreePath = TreePath(arrayOf(codeScanTree.model.root, codeScanTree.model.getChild(codeScanTree.model.root, 0)))
         val highTreePath = TreePath(arrayOf(codeScanTree.model.root, codeScanTree.model.getChild(codeScanTree.model.root, 1)))
         codeScanTree.expandPath(criticalTreePath)
@@ -326,7 +337,7 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project, pr
         return actionManager.createActionToolbar(ACTION_PLACE, group, false)
     }
 
-    private class ColoredTreeCellRenderer : TreeCellRenderer {
+    private inner class ColoredTreeCellRenderer : TreeCellRenderer {
         private fun getSeverityIcon(severity: String): Icon? = when (severity) {
             IssueSeverity.LOW.displayName -> AwsIcons.Resources.CodeWhisperer.SEVERITY_INITIAL_LOW
             IssueSeverity.MEDIUM.displayName -> AwsIcons.Resources.CodeWhisperer.SEVERITY_INITIAL_MEDIUM
@@ -359,7 +370,11 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project, pr
                     }
                     is CodeWhispererCodeScanIssue -> {
                         val cellText = obj.title.trimEnd('.')
-                        val cellDescription = "${obj.file.name} ${obj.displayTextRange()}"
+                        val cellDescription = if (this@CodeWhispererCodeScanResultsView.isGroupedBySeverity()) {
+                            "${obj.file.name} ${obj.displayTextRange()}"
+                        } else {
+                            obj.displayTextRange()
+                        }
                         if (obj.isInvalid) {
                             cell.text = message("codewhisperer.codescan.scan_recommendation_invalid", obj.title, cellDescription, INACTIVE_TEXT_COLOR)
                             cell.toolTipText = message("codewhisperer.codescan.scan_recommendation_invalid.tooltip_text")
@@ -367,7 +382,11 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project, pr
                         } else {
                             cell.text = message("codewhisperer.codescan.scan_recommendation", cellText, cellDescription, INACTIVE_TEXT_COLOR)
                             cell.toolTipText = cellText
-                            cell.icon = obj.issueSeverity.icon
+                            cell.icon = if (this@CodeWhispererCodeScanResultsView.isGroupedBySeverity()) {
+                                obj.issueSeverity.icon
+                            } else {
+                                getSeverityIcon(obj.severity)
+                            }
                         }
                     }
                 }
@@ -376,8 +395,30 @@ internal class CodeWhispererCodeScanResultsView(private val project: Project, pr
         }
     }
 
+    private fun navigateToIssue(codeScanIssue: CodeWhispererCodeScanIssue) {
+        val textRange = codeScanIssue.textRange ?: return
+        val startOffset = textRange.startOffset
+
+        if (codeScanIssue.isInvalid) return
+
+        runInEdt {
+            val editor = FileEditorManager.getInstance(project).openTextEditor(
+                OpenFileDescriptor(project, codeScanIssue.file, startOffset),
+                false
+            )
+            if (editor == null) {
+                LOG.error { "Cannot fetch editor for the file ${codeScanIssue.file.path}" }
+                return@runInEdt
+            }
+            if (codeScanIssue.rangeHighlighter == null) {
+                codeScanIssue.rangeHighlighter = codeScanIssue.addRangeHighlighter(editor.markupModel)
+            }
+        }
+    }
+
     private companion object {
         const val ACTION_PLACE = "CodeScanResultsPanel"
         const val CODE_SCAN_SPLITTER_PROPORTION_KEY = "CODE_SCAN_SPLITTER_PROPORTION"
+        private val LOG = getLogger<CodeWhispererCodeScanResultsView>()
     }
 }

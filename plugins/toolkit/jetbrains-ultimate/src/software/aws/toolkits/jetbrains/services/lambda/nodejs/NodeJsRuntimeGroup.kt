@@ -5,12 +5,12 @@ package software.aws.toolkits.jetbrains.services.lambda.nodejs
 
 import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterManager
 import com.intellij.lang.javascript.JavaScriptSupportLoader
-import com.intellij.lang.javascript.JavascriptLanguage
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleType
 import com.intellij.openapi.module.WebModuleTypeBase
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.Sdk
+import compat.com.intellij.lang.javascript.JavascriptLanguage
 import software.aws.toolkits.core.lambda.LambdaRuntime
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
 import software.aws.toolkits.jetbrains.services.lambda.SdkBasedRuntimeGroup
@@ -18,7 +18,7 @@ import software.aws.toolkits.jetbrains.services.lambda.SdkBasedRuntimeGroup
 class NodeJsRuntimeGroup : SdkBasedRuntimeGroup() {
     override val id: String = BuiltInRuntimeGroups.NodeJs
     override val languageIds: Set<String> = setOf(
-        JavascriptLanguage.INSTANCE.id,
+        JavascriptLanguage.id,
         JavaScriptSupportLoader.ECMA_SCRIPT_6.id
     )
     override val supportsPathMappings: Boolean = true

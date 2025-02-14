@@ -45,13 +45,14 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.SourceOfEntry
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.jetbrains.utils.pollFor
 import software.aws.toolkits.resources.AwsCoreBundle
-import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.AuthType
 import software.aws.toolkits.telemetry.AwsTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.CredentialType
 import software.aws.toolkits.telemetry.FeatureId
+import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.Telemetry
 import java.time.Duration
 import java.util.Timer
 import java.util.TimerTask
@@ -102,15 +103,15 @@ abstract class LoginBrowser(
                         authType = getAuthType(ssoRegion),
                         source = SourceOfEntry.LOGIN_BROWSER.toString(),
                     )
-                    AuthTelemetry.addConnection(
-                        result = Result.Failed,
-                        reason = "Browser authentication idle for more than 15min",
-                        credentialSourceId = if (startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter,
-                        isAggregated = false,
-                        featureId = getFeatureId(scopes),
-                        isReAuth = isReAuth(scopes, startUrl),
-                        source = SourceOfEntry.LOGIN_BROWSER.toString(),
-                    )
+                    Telemetry.auth.addConnection.use {
+                        it.result(MetricResult.Failed)
+                            .reason("Browser authentication idle for more than 15min")
+                            .credentialSourceId(if (startUrl == SONO_URL) CredentialSourceId.AwsId else CredentialSourceId.IamIdentityCenter)
+                            .isAggregated(false)
+                            .featureId(getFeatureId(scopes))
+                            .isReAuth(isReAuth(scopes, startUrl))
+                            .source(SourceOfEntry.LOGIN_BROWSER.toString())
+                    }
                     stopAndClearBrowserOpenTimer()
                 }
             },
@@ -201,15 +202,15 @@ abstract class LoginBrowser(
                 authType = getAuthType(SONO_REGION),
                 source = SourceOfEntry.LOGIN_BROWSER.toString(),
             )
-            AuthTelemetry.addConnection(
-                result = Result.Failed,
-                credentialSourceId = CredentialSourceId.AwsId,
-                reason = e.message,
-                isReAuth = isReauth,
-                featureId = featureId,
-                isAggregated = false,
-                source = SourceOfEntry.LOGIN_BROWSER.toString()
-            )
+            Telemetry.auth.addConnection.use {
+                it.result(MetricResult.Failed)
+                    .credentialSourceId(CredentialSourceId.AwsId)
+                    .reason(e.message)
+                    .isReAuth(isReauth)
+                    .featureId(featureId)
+                    .isAggregated(false)
+                    .source(SourceOfEntry.LOGIN_BROWSER.toString())
+            }
         }
         val onSuccess: () -> Unit = {
             stopAndClearBrowserOpenTimer()
@@ -222,14 +223,14 @@ abstract class LoginBrowser(
                 authType = getAuthType(SONO_REGION),
                 source = SourceOfEntry.LOGIN_BROWSER.toString(),
             )
-            AuthTelemetry.addConnection(
-                result = Result.Succeeded,
-                credentialSourceId = CredentialSourceId.AwsId,
-                isReAuth = isReauth,
-                featureId = featureId,
-                isAggregated = true,
-                source = SourceOfEntry.LOGIN_BROWSER.toString()
-            )
+            Telemetry.auth.addConnection.use {
+                it.result(MetricResult.Succeeded)
+                    .credentialSourceId(CredentialSourceId.AwsId)
+                    .isReAuth(isReauth)
+                    .featureId(featureId)
+                    .isAggregated(true)
+                    .source(SourceOfEntry.LOGIN_BROWSER.toString())
+            }
         }
 
         loginWithBackgroundContext {
@@ -281,15 +282,15 @@ abstract class LoginBrowser(
                 authType = getAuthType(region.name),
                 source = SourceOfEntry.LOGIN_BROWSER.toString()
             )
-            AuthTelemetry.addConnection(
-                result = result,
-                credentialSourceId = CredentialSourceId.IamIdentityCenter,
-                reason = message,
-                isReAuth = isReAuth,
-                featureId = featureId,
-                isAggregated = false,
-                source = SourceOfEntry.LOGIN_BROWSER.toString()
-            )
+            Telemetry.auth.addConnection.use {
+                it.result(result)
+                    .credentialSourceId(CredentialSourceId.IamIdentityCenter)
+                    .reason(message)
+                    .isReAuth(isReAuth)
+                    .featureId(featureId)
+                    .isAggregated(false)
+                    .source(SourceOfEntry.LOGIN_BROWSER.toString())
+            }
         }
         val onSuccess: () -> Unit = {
             stopAndClearBrowserOpenTimer()
@@ -303,15 +304,14 @@ abstract class LoginBrowser(
                 authType = getAuthType(region.name),
                 source = SourceOfEntry.LOGIN_BROWSER.toString(),
             )
-            AuthTelemetry.addConnection(
-                project = null,
-                result = Result.Succeeded,
-                isReAuth = isReAuth,
-                credentialSourceId = CredentialSourceId.IamIdentityCenter,
-                featureId = featureId,
-                isAggregated = true,
-                source = SourceOfEntry.LOGIN_BROWSER.toString()
-            )
+            Telemetry.auth.addConnection.use {
+                it.result(MetricResult.Succeeded)
+                    .isReAuth(isReAuth)
+                    .credentialSourceId(CredentialSourceId.IamIdentityCenter)
+                    .featureId(featureId)
+                    .isAggregated(true)
+                    .source(SourceOfEntry.LOGIN_BROWSER.toString())
+            }
         }
         return Pair(onError, onSuccess)
     }

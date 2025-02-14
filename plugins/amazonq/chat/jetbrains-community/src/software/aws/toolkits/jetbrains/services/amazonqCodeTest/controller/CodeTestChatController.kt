@@ -201,12 +201,11 @@ class CodeTestChatController(
 
             session.isCodeBlockSelected = selectionRange !== null
 
-            // This check is added to remove /test if user accidentally added while doing Regenerate unit tests.
-            val userPrompt = if (message.prompt.startsWith("/test")) {
-                message.prompt.substringAfter("/test ").trim()
-            } else {
-                message.prompt
-            }
+            // This removes /test if user accidentally added while doing Regenerate unit tests and truncates the user response to 4096 characters.
+            val userPrompt = message.prompt
+                .let { if (it.startsWith("/test")) it.substringAfter("/test ").trim() else it }
+                .take(4096)
+
             CodeWhispererUTGChatManager.getInstance(project).generateTests(userPrompt, codeTestChatHelper, null, selectionRange)
         } else {
             // Not adding a progress bar to unsupported language cases
@@ -458,6 +457,10 @@ class CodeTestChatController(
         when (message.actionID) {
             "utg_view_diff" -> {
                 withContext(EDT) {
+                    // virtual file only needed for syntax highlighting when viewing diff
+                    val tempPath = Files.createTempFile(null, ".${session.testFileName.substringAfterLast('.')}")
+                    val virtualFile = tempPath.toFile().toVirtualFile()
+
                     (DiffManager.getInstance() as DiffManagerEx).showDiffBuiltin(
                         context.project,
                         SimpleDiffRequest(
@@ -466,13 +469,18 @@ class CodeTestChatController(
                                 getFileContentAtTestFilePath(
                                     session.projectRoot,
                                     session.testFileRelativePathToProjectRoot
-                                )
+                                ),
+                                virtualFile
                             ),
-                            DiffContentFactory.getInstance().create(session.generatedTestDiffs.values.first()),
+                            DiffContentFactory.getInstance().create(
+                                session.generatedTestDiffs.values.first(),
+                                virtualFile
+                            ),
                             "Before",
                             "After"
                         )
                     )
+                    Files.deleteIfExists(tempPath)
                     session.openedDiffFile = FileEditorManager.getInstance(context.project).selectedEditor?.file
                     ApplicationManager.getApplication().runReadAction {
                         generatedFileContent = getGeneratedFileContent(session)
@@ -627,7 +635,7 @@ class CodeTestChatController(
                 sessionCleanUp(session.tabId)
                 codeTestChatHelper.updateUI(
                     promptInputDisabledState = false,
-                    promptInputPlaceholder = message("testgen.placeholder.waiting_on_your_inputs"),
+                    promptInputPlaceholder = message("testgen.placeholder.enter_slash_quick_actions"),
                 )
                 /*
                 val taskContext = session.buildAndExecuteTaskContext
@@ -946,6 +954,14 @@ class CodeTestChatController(
         }
     }
 
+    override suspend fun processAuthFollowUpClick(message: IncomingCodeTestMessage.AuthFollowUpWasClicked) {
+        codeTestChatHelper.sendUpdatePromptProgress(message.tabId, null)
+        authController.handleAuth(context.project, message.authType)
+        codeTestChatHelper.sendAuthenticationInProgressMessage(message.tabId) // show user that authentication is in progress
+        codeTestChatHelper.sendChatInputEnabledMessage(false) // disable the input field while authentication is in progress
+        sessionCleanUp(codeTestChatHelper.getActiveSession().tabId)
+    }
+
     private suspend fun updateBuildAndExecuteProgressCard(
         currentStatus: BuildAndExecuteProgressStatus,
         messageId: String?,
@@ -1004,7 +1020,7 @@ class CodeTestChatController(
         codeTestChatHelper.updateUI(
             promptInputDisabledState = false
         )
-        codeTestChatHelper.sendUpdatePlaceholder(tabId, message("testgen.placeholder.newtab"))
+        codeTestChatHelper.sendUpdatePlaceholder(tabId, message("testgen.placeholder.enter_slash_quick_actions"))
     }
 
     private fun openOrCreateTestFileAndApplyDiff(
@@ -1202,6 +1218,17 @@ class CodeTestChatController(
      * */
     private suspend fun handleChat(tabId: String, message: String) {
         val session = codeTestChatHelper.getActiveSession()
+        session.projectRoot
+        val credentialState = authController.getAuthNeededStates(context.project).amazonQ
+        if (credentialState != null) {
+            messenger.sendAuthNeededException(
+                tabId = tabId,
+                triggerId = UUID.randomUUID().toString(),
+                credentialState = credentialState,
+            )
+            session.isAuthenticating = true
+            return
+        }
         LOG.debug {
             "$FEATURE_NAME: " +
                 "Processing message: $message " +

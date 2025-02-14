@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.TargetCode
 import software.amazon.awssdk.services.codewhispererruntime.model.TestGenerationJobStatus
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportIntent
+import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -39,6 +40,7 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.Session
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.utils.combineBuildAndExecuteLogFiles
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.CodeTestException
+import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.fileTooLarge
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.sessionconfig.CodeTestSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.testGenStoppedError
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
@@ -57,7 +59,9 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
+import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipInputStream
@@ -97,6 +101,9 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         session.srcZipFileSize = codeTestResponseContext.payloadContext.srcZipFileSize
         session.artifactUploadDuration = codeTestResponseContext.serviceInvocationContext.artifactsUploadDuration
         val path = codeTestResponseContext.currentFileRelativePath
+        if (codeTestResponseContext.payloadContext.payloadLimitCrossed == true) {
+            fileTooLarge()
+        }
 
         val createUploadUrlResponse = codeTestResponseContext.createUploadUrlResponse ?: return
         throwIfCancelled(session)
@@ -109,31 +116,45 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
 
         // 2nd API call: StartTestGeneration
         val startTestGenerationResponse = try {
-            startTestGeneration(
-                uploadId = createUploadUrlResponse.uploadId(),
-                targetCode = listOf(
-                    TargetCode.builder()
-                        .relativeTargetPath(codeTestResponseContext.currentFileRelativePath.toString())
-                        .targetLineRangeList(
-                            if (selectionRange != null) {
-                                listOf(
-                                    selectionRange
+            var response: StartTestGenerationResponse? = null
+
+            waitUntil(
+                succeedOn = { response?.sdkHttpResponse()?.statusCode() == 200 },
+                maxDuration = Duration.ofSeconds(1), // 1 second timeout
+            ) {
+                try {
+                    response = startTestGeneration(
+                        uploadId = createUploadUrlResponse.uploadId(),
+                        targetCode = listOf(
+                            TargetCode.builder()
+                                .relativeTargetPath(codeTestResponseContext.currentFileRelativePath.toString())
+                                .targetLineRangeList(
+                                    if (selectionRange != null) {
+                                        listOf(selectionRange)
+                                    } else {
+                                        emptyList()
+                                    }
                                 )
-                            } else {
-                                emptyList()
-                            }
-                        )
-                        .build()
-                ),
-                userInput = prompt
-            )
-        } catch (e: Exception) {
-            val statusCode = when {
-                e is SdkServiceException -> e.statusCode()
-                else -> 400
+                                .build()
+                        ),
+                        userInput = prompt
+                    )
+                    delay(200)
+                    response?.testGenerationJob() != null
+                } catch (e: Exception) {
+                    throw e
+                }
             }
+
+            response ?: throw RuntimeException("Failed to start test generation")
+        } catch (e: Exception) {
             LOG.error(e) { "Unexpected error while creating test generation job" }
             val errorMessage = getTelemetryErrorMessage(e, CodeWhispererConstants.FeatureName.TEST_GENERATION)
+
+            // Sending requestId to telemetry if there is Validation Exception
+            if (e is SdkServiceException) {
+                session.startTestGenerationRequestId = e.requestId()
+            }
             throw CodeTestException(
                 "CreateTestJobError: $errorMessage",
                 "CreateTestJobError",
@@ -229,9 +250,10 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     if (shortAnswer.stopIteration == "true") {
                         throw CodeTestException("TestGenFailedError: ${shortAnswer.planSummary}", "TestGenFailedError", shortAnswer.planSummary)
                     }
+                    val fileName = shortAnswer.sourceFilePath?.let { Path.of(it).fileName.toString() } ?: path.fileName.toString()
                     codeTestChatHelper.updateAnswer(
                         CodeTestChatMessageContent(
-                            message = generateSummaryMessage(path.fileName.toString()) + shortAnswer.planSummary,
+                            message = generateSummaryMessage(fileName) + shortAnswer.planSummary,
                             type = ChatMessageType.Answer
                         ),
                         messageIdOverride = codeTestResponseContext.testSummaryMessageId
@@ -575,7 +597,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     codeTestChatHelper.deleteSession(session.tabId)
                     codeTestChatHelper.updateUI(
                         promptInputDisabledState = false,
-                        promptInputPlaceholder = message("testgen.placeholder.newtab"),
+                        promptInputPlaceholder = message("testgen.placeholder.enter_slash_quick_actions"),
                     )
                 }
                 session.isGeneratingTests = false
