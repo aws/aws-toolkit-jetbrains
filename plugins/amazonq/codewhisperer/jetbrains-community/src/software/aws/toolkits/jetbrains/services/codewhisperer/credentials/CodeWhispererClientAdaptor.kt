@@ -43,7 +43,6 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
@@ -250,9 +249,6 @@ interface CodeWhispererClientAdaptor : Disposable {
 
     companion object {
         fun getInstance(project: Project): CodeWhispererClientAdaptor = project.service()
-
-        private fun shouldUseSigv4Client(project: Project) =
-            CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.Accountless
 
         const val INVALID_CODESCANJOBID = "Invalid_CodeScanJobID"
         const val INVALID_CODEFIXJOBID = "Invalid_CodeFixJobID"
