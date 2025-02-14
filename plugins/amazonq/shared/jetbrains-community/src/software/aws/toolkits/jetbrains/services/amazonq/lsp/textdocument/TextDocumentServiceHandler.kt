@@ -5,34 +5,60 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFileManager
-import com.intellij.openapi.vfs.newvfs.BulkFileListener
-import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent
-import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
-import com.intellij.openapi.vfs.newvfs.events.VFileEvent
-import org.eclipse.lsp4j.CreateFilesParams
-import org.eclipse.lsp4j.DeleteFilesParams
-import org.eclipse.lsp4j.FileCreate
-import org.eclipse.lsp4j.FileDelete
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.FileEditorManagerListener
+import com.intellij.openapi.vfs.VirtualFile
+import org.eclipse.lsp4j.DidCloseTextDocumentParams
+import org.eclipse.lsp4j.DidOpenTextDocumentParams
+import org.eclipse.lsp4j.TextDocumentIdentifier
+import org.eclipse.lsp4j.TextDocumentItem
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
-import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class TextDocumentServiceHandler(
     private val project: Project,
-    private val languageServer: AmazonQLanguageServer
-) : Disposable {
+    private val languageServer: AmazonQLanguageServer,
+    private val serverInstance: Disposable
+) {
 
-    fun startTextDocumentServiceListeners() {
-
+    init {
+        subscribeToFileEditorEvents()
     }
 
-    private fun didClose() {
+    // for textDocument/ didOpen and didClose
+    private fun subscribeToFileEditorEvents() {
+        project.messageBus.connect(serverInstance).subscribe(
+            FileEditorManagerListener.FILE_EDITOR_MANAGER,
+            object: FileEditorManagerListener {
+                override fun fileOpened(
+                    source: FileEditorManager,
+                    file: VirtualFile
+                ) {
+                    languageServer.textDocumentService.didOpen(
+                        DidOpenTextDocumentParams().apply {
+                            textDocument = TextDocumentItem().apply {
+                                uri = file.url
+                                text = file.inputStream.readAllBytes().decodeToString()
+                            }
+                        }
+                    )
+                }
 
+                override fun fileClosed(
+                    source: FileEditorManager,
+                    file: VirtualFile
+                ) {
+                    languageServer.textDocumentService.didClose(
+                        DidCloseTextDocumentParams().apply {
+                            textDocument = TextDocumentIdentifier().apply {
+                                uri = file.url
+                            }
+                        }
+                    )
+                }
+            }
+        )
     }
 
-    private fun didOpen() {
-
-    }
      private fun didChange() {
 
     }
@@ -41,6 +67,4 @@ class TextDocumentServiceHandler(
 
     }
 
-    override fun dispose() {
-    }
 }
