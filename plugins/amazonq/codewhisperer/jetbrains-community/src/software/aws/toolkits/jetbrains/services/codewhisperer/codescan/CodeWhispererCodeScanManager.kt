@@ -52,7 +52,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.time.withTimeout
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.TestOnly
-import software.amazon.awssdk.services.codewhisperer.model.CodeWhispererException
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.aws.toolkits.core.utils.WaiterTimeoutException
@@ -592,7 +591,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
         }
     fun handleException(coroutineContext: CoroutineContext, e: Exception, scope: CodeWhispererConstants.CodeAnalysisScope): String {
         val errorMessage = when (e) {
-            is CodeWhispererException -> e.awsErrorDetails().errorMessage() ?: message("codewhisperer.codescan.run_scan_error")
+            is CodeWhispererRuntimeException -> e.awsErrorDetails().errorMessage() ?: message("codewhisperer.codescan.run_scan_error")
             is CodeWhispererCodeScanException -> getCodeScanExceptionMessage(e)
             is CodeWhispererCodeScanServerException -> getCodeScanServerExceptionMessage(e)
             is WaiterTimeoutException, is TimeoutCancellationException -> message("codewhisperer.codescan.scan_timed_out")
@@ -601,8 +600,8 @@ class CodeWhispererCodeScanManager(val project: Project) {
             else -> null
         } ?: message("codewhisperer.codescan.run_scan_error")
 
-        val errorCode = (e as? CodeWhispererException)?.awsErrorDetails()?.errorCode()
-        val requestId = if (e is CodeWhispererException) e.requestId() else null
+        val errorCode = (e as? CodeWhispererRuntimeException)?.awsErrorDetails()?.errorCode()
+        val requestId = if (e is CodeWhispererRuntimeException) e.requestId() else null
 
         if (!coroutineContext.isActive) {
             codeScanResultsPanel.setDefaultUI()
@@ -627,7 +626,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
         }
 
         val telemetryErrorMessage = when (e) {
-            is CodeWhispererException -> e.awsErrorDetails().errorMessage() ?: message("codewhisperer.codescan.run_scan_error_telemetry")
+            is CodeWhispererRuntimeException -> e.awsErrorDetails().errorMessage() ?: message("codewhisperer.codescan.run_scan_error_telemetry")
             is CodeWhispererCodeScanException -> when (e.message) {
                 message("codewhisperer.codescan.no_file_open") -> message("codewhisperer.codescan.no_file_open_telemetry")
                 message("codewhisperer.codescan.unsupported_language_error") -> message("codewhisperer.codescan.unsupported_language_error_telemetry")

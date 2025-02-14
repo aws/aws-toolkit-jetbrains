@@ -31,7 +31,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.core.util.DefaultSdkAutoConstructList
-import software.amazon.awssdk.services.codewhisperer.model.CodeWhispererException
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.FileContext
@@ -377,11 +376,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                         )
                     }
                     return@launch
-                } else if (e is CodeWhispererException) {
-                    requestId = e.requestId() ?: ""
-                    sessionId = e.awsErrorDetails().sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
-                    displayMessage = e.awsErrorDetails().errorMessage() ?: message("codewhisperer.trigger.error.server_side")
-                } else if (e is software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException) {
+                } else if (e is CodeWhispererRuntimeException) {
                     requestId = e.requestId() ?: ""
                     sessionId = e.awsErrorDetails().sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
                     displayMessage = e.awsErrorDetails().errorMessage() ?: message("codewhisperer.trigger.error.server_side")
