@@ -68,7 +68,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.Co
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererScrollListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.addIntelliSenseAcceptListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_DIM_HEX
@@ -453,9 +452,6 @@ class CodeWhispererPopupManager {
                         CodeWhispererEditorManager.getInstance().updateEditorWithRecommendation(states, sessionContext)
                     }
                     closePopup(states.popup)
-                    if (sessionContext.selectedIndex == 0) {
-                        CodeWhispererService.getInstance().promoteNextInvocationIfAvailable()
-                    }
                 }
             }
         )

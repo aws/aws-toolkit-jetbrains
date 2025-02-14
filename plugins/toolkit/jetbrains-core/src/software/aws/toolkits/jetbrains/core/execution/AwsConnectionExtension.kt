@@ -24,8 +24,7 @@ import software.aws.toolkits.jetbrains.core.execution.AwsCredentialInjectionOpti
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AwsTelemetry
-import software.aws.toolkits.telemetry.Result.Failed
-import software.aws.toolkits.telemetry.Result.Succeeded
+import software.aws.toolkits.telemetry.MetricResult
 
 class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
     fun addToTargetEnvironment(configuration: T, environment: MutableMap<String, TargetEnvironmentFunction<String>>, runtimeString: () -> String? = { null }) {
@@ -60,9 +59,9 @@ class AwsConnectionRunConfigurationExtension<T : RunConfigurationBase<*>> {
 
             val connection = getConnection(configuration, credentialConfiguration)
             environmentMutator(connection)
-            AwsTelemetry.injectCredentials(configuration.project, result = Succeeded, runtimeString = tryOrNull { runtimeString() })
+            AwsTelemetry.injectCredentials(configuration.project, result = MetricResult.Succeeded, runtimeString = tryOrNull { runtimeString() })
         } catch (e: Exception) {
-            AwsTelemetry.injectCredentials(configuration.project, result = Failed, runtimeString = tryOrNull { runtimeString() })
+            AwsTelemetry.injectCredentials(configuration.project, result = MetricResult.Failed, runtimeString = tryOrNull { runtimeString() })
             LOG.error(e) { message("run_configuration_extension.inject_aws_connection_exception") }
         }
     }

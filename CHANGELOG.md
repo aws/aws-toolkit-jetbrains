@@ -1,3 +1,11 @@
+# _3.55_ (2025-02-13)
+- **(Feature)** /transform: support transformations to Java 21
+- **(Bug Fix)** Enable syntax highlighting when viewing diff for /test
+- **(Bug Fix)** Amazon Q /test: Truncating user input to 4096 characters for unit test generation.
+- **(Bug Fix)** Amazon Q /review: Unable to navigate to code location when selecting issues
+- **(Bug Fix)** Amazon Q /test: Q identify active test file and infer source file for test generation.
+- **(Removal)** Amazon Q: Revert prefetch logic to enable more stable inline completion.
+
 # _3.54_ (2025-02-11)
 - **(Bug Fix)** Amazon Q: Reverting the behavior of making JetBrains suggestions(IntelliSense) and Q suggestions co-exist
 

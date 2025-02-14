@@ -9,37 +9,58 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.coroutineContext
 
-class GitIgnoreFilteringUtil(private val moduleDir: VirtualFile) {
+class GitIgnoreFilteringUtil(
+    private val moduleDir: VirtualFile,
+    private val useCase: CodeWhispererConstants.FeatureName? = null,
+) {
     private var ignorePatternsWithGitIgnore = emptyList<Regex>()
-    private val additionalGitIgnoreRules = setOf(
-        ".aws-sam",
-        ".gem",
-        ".git",
-        ".gitignore",
-        ".gradle",
-        ".hg",
-        ".idea",
-        ".project",
-        ".rvm",
-        ".svn",
-        "*.zip",
-        "*.bin",
-        "*.png",
-        "*.jpg",
-        "*.svg",
-        "*.pyc",
-        "license.txt",
-        "License.txt",
-        "LICENSE.txt",
-        "license.md",
-        "License.md",
-        "LICENSE.md",
-        "node_modules",
-        "build",
-        "dist",
-        "annotation-generated-src",
-        "annotation-generated-tst"
-    )
+    private val additionalGitIgnoreRules = buildSet {
+        addAll(
+            setOf(
+                ".aws-sam",
+                ".gem",
+                ".git",
+                ".gitignore",
+                ".gradle",
+                ".hg",
+                ".idea",
+                ".project",
+                ".rvm",
+                ".svn",
+                "*.zip",
+                "*.bin",
+                "*.png",
+                "*.jpg",
+                "*.svg",
+                "*.pyc",
+                "license.txt",
+                "License.txt",
+                "LICENSE.txt",
+                "license.md",
+                "License.md",
+                "LICENSE.md",
+                "node_modules",
+                "build",
+                "dist",
+                "annotation-generated-src",
+                "annotation-generated-tst"
+            )
+        )
+        if (useCase == CodeWhispererConstants.FeatureName.TEST_GENERATION) {
+            addAll(
+                setOf(
+                    "env",
+                    "release-info",
+                    "*.jar",
+                    "*.exe",
+                    "*.a",
+                    "*.map",
+                    "*.graph",
+                    "*.so"
+                )
+            )
+        }
+    }
 
     init {
         ignorePatternsWithGitIgnore = try {

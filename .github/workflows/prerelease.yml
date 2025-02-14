@@ -14,10 +14,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  generate_artifact_toolkit_standalone:
+  generate_artifact:
     strategy:
       matrix:
-        supported_versions: [ '2024.1', '2024.2', '2024.3' ]
+        build_target: [ ':plugin-core:buildPlugin', ':plugin-toolkit:intellij-standalone:buildPlugin', ':plugin-amazonq:buildPlugin' ]
+        version: [ '2024.1', '2024.2', '2024.3', '2025.1' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,71 +39,19 @@ jobs:
           dotnet-version: '6.x'
       - name: Generate artifact
         run: |
-          ./gradlew -PideProfileName=${{ matrix.supported_versions }} :plugin-toolkit:intellij-standalone:buildPlugin
+          ./gradlew -PideProfileName=${{ matrix.version }} ${{ matrix.build_target }}
+      - name: Fix artifact name
+        env:
+          BUILD_TARGET: "${{ matrix.build_target }}"
+          ARTIFACT_NAME: "${{ matrix.build_target }}-${{ matrix.version }}"
+        run: |
+          echo "ARTIFACT_SUBPATH=$(echo $BUILD_TARGET | sed -e 's/^:plugin-//' -e 's/:buildPlugin$//' -e 's/:/\//')" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=${ARTIFACT_NAME//:}" >> $GITHUB_ENV
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: plugin-standalone-${{ matrix.supported_versions }}
-          path: ./plugins/toolkit/intellij-standalone/build/distributions/*.zip
-          retention-days: 1
-
-  generate_artifact_q:
-    strategy:
-      matrix:
-        supported_versions: [ '2024.1', '2024.2', '2024.3' ]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: remove unwanted dependencies
-        run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'corretto'
-          java-version: '21'
-      - name: Generate artifact
-        run: |
-          ./gradlew -PideProfileName=${{ matrix.supported_versions }} :plugin-amazonq:buildPlugin
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: plugin-amazonq-${{ matrix.supported_versions }}
-          path: ./plugins/amazonq/build/distributions/*.zip
-          retention-days: 1
-
-  generate_artifact_core:
-    strategy:
-      matrix:
-        supported_versions: [ '2024.1', '2024.2', '2024.3' ]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: remove unwanted dependencies
-        run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'corretto'
-          java-version: '21'
-
-      - name: Generate artifact
-        run: |
-          ./gradlew -PideProfileName=${{ matrix.supported_versions }} :plugin-core:buildPlugin
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: plugin-core-${{ matrix.supported_versions }}
-          path: ./plugins/core/build/distributions/*.zip
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ./plugins/${{ env.ARTIFACT_SUBPATH }}/build/distributions/*.zip
           retention-days: 1
 
   generate_changelog:
@@ -148,7 +97,7 @@ jobs:
           echo 'EOF' >> $GITHUB_OUTPUT
 
   publish:
-    needs: [  generate_artifact_toolkit_standalone, generate_artifact_core, generate_artifact_q, generate_changelog ]
+    needs: [  generate_artifact, generate_changelog ]
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GH_REPO: ${{ github.repository }}
@@ -172,13 +121,7 @@ jobs:
       - name: Publish to GitHub Releases
         run: |
           envsubst < "$GITHUB_WORKSPACE/.github/workflows/prerelease_notes.md" > "$RUNNER_TEMP/prerelease_notes.md"
-          gh release create "$TAG_NAME" --prerelease --notes-file "$RUNNER_TEMP/prerelease_notes.md" --title "$SUBJECT" --target $GITHUB_SHA plugin-standalone-*/*.zip
-      - name: Publish core
-        run: |
-          gh release upload "$TAG_NAME" plugin-core-*/*.zip
-      - name: Publish Q
-        run: |
-          gh release upload "$TAG_NAME" plugin-amazonq-*/*.zip
+          gh release create "$TAG_NAME" --prerelease --notes-file "$RUNNER_TEMP/prerelease_notes.md" --title "$SUBJECT" --target $GITHUB_SHA plugin*/*.zip
       - name: Publish XML manifest
         run: |
           gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" --json assets | python3 "$GITHUB_WORKSPACE/.github/workflows/generateUpdatesXml.py" - > updatePlugins.xml

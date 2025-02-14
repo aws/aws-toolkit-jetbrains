@@ -94,6 +94,11 @@ sealed interface IncomingCodeTestMessage : CodeTestBaseMessage {
         @JsonProperty("tabID") val tabId: String,
         @JsonProperty("actionID") val actionID: String,
     ) : IncomingCodeTestMessage
+
+    data class AuthFollowUpWasClicked(
+        @JsonProperty("tabID") val tabId: String,
+        val authType: AuthFollowUpType,
+    ) : IncomingCodeTestMessage
 }
 
 data class UpdatePlaceholderMessage(

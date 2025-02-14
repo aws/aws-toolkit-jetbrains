@@ -457,7 +457,6 @@ class CodeWhispererTelemetryService {
         sessionContext: SessionContext,
         hasUserAccepted: Boolean,
         popupShownTime: Duration? = null,
-        nextInvocationContext: InvocationContext? = null,
     ) {
         val detailContexts = recommendationContext.details
         val decisions = mutableListOf<CodewhispererSuggestionState>()
@@ -505,19 +504,6 @@ class CodeWhispererTelemetryService {
             previousUserTriggerDecisions.add(this)
             // we need this as well because AutotriggerService will reset the queue periodically
             CodeWhispererAutoTriggerService.getInstance().addPreviousDecision(this)
-            // send possible next session event if current action is reject and next popup haven't shown up
-            if (CodewhispererSuggestionState.from(this.toString()) == CodewhispererSuggestionState.Reject) {
-                nextInvocationContext?.let {
-                    sendUserDecisionEventForAll(
-                        it.requestContext,
-                        it.responseContext,
-                        it.recommendationContext,
-                        SessionContext(),
-                        false,
-                        nextInvocationContext = null
-                    )
-                }
-            }
         }
     }
 
