@@ -4,9 +4,9 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.eclipse.lsp4j.DidCloseTextDocumentParams
 import org.eclipse.lsp4j.DidOpenTextDocumentParams
@@ -17,7 +17,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServe
 class TextDocumentServiceHandler(
     private val project: Project,
     private val languageServer: AmazonQLanguageServer,
-    private val serverInstance: Disposable
+    private val serverInstance: Disposable,
 ) : FileEditorManagerListener {
 
     init {
@@ -33,7 +33,7 @@ class TextDocumentServiceHandler(
 
     override fun fileOpened(
         source: FileEditorManager,
-        file: VirtualFile
+        file: VirtualFile,
     ) {
         languageServer.textDocumentService.didOpen(
             DidOpenTextDocumentParams().apply {
@@ -47,7 +47,7 @@ class TextDocumentServiceHandler(
 
     override fun fileClosed(
         source: FileEditorManager,
-        file: VirtualFile
+        file: VirtualFile,
     ) {
         languageServer.textDocumentService.didClose(
             DidCloseTextDocumentParams().apply {
@@ -58,12 +58,9 @@ class TextDocumentServiceHandler(
         )
     }
 
-     private fun didChange() {
-
+    private fun didChange() {
     }
 
     private fun didSave() {
-
     }
-
 }
