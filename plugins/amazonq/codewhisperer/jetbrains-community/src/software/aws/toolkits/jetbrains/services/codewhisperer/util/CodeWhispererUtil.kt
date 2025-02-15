@@ -247,12 +247,6 @@ object CodeWhispererUtil {
         CodeWhispererExplorerActionManager.getInstance().setSessionConfigurationMessageShown(true)
     }
 
-    fun getConnectionStartUrl(connection: ToolkitConnection?): String? {
-        connection ?: return null
-        if (connection !is ManagedBearerSsoConnection) return null
-        return connection.startUrl
-    }
-
     fun getCodeWhispererStartUrl(project: Project): String? {
         val connection = ToolkitConnectionManager.getInstance(
             project
