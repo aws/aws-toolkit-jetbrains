@@ -102,19 +102,19 @@ tasks.jacocoTestReport.configure {
     enabled = false
 }
 
-// Share the coverage data to be aggregated for the whole product
-// this can be removed once we're using jvm-test-suites properly
-configurations.register("coverageDataElements") {
-    isVisible = false
-    isCanBeResolved = false
-    isCanBeConsumed = true
-    extendsFrom(configurations.implementation.get())
-    attributes {
-        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
-        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
-        attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named("jacoco-coverage-data"))
-    }
-    tasks.withType<Test>().configureEach {
-        outgoing.artifact(extensions.getByType<JacocoTaskExtension>().destinationFile!!)
-    }
-}
+//// Share the coverage data to be aggregated for the whole product
+//// this can be removed once we're using jvm-test-suites properly
+//configurations.register("coverageDataElements") {
+//    isVisible = false
+//    isCanBeResolved = false
+//    isCanBeConsumed = true
+//    extendsFrom(configurations.implementation.get())
+//    attributes {
+//        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+//        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
+//        attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named("jacoco-coverage-data"))
+//    }
+//    tasks.withType<Test>().configureEach {
+//        outgoing.artifact(extensions.getByType<JacocoTaskExtension>().destinationFile!!)
+//    }
+//}
