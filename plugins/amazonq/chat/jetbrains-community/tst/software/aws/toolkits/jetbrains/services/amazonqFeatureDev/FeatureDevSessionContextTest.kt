@@ -161,4 +161,49 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
 
         assertEquals(zippedFiles, expectedFiles)
     }
+
+    @Test
+    fun testConvertGitIgnorePatternToRegex() {
+        val sampleGitIgnorePatterns = listOf(".*", "build/", "*.txt", "*.png")
+        val sampleFileNames = listOf(
+            ".gitignore/",
+            ".env/",
+            "file.txt/",
+            ".git/config/",
+            "src/file.txt/",
+            "build/",
+            "build/output.jar/",
+            "builds/",
+            "mybuild/",
+            "build.json/",
+            "log.txt/",
+            "file.txt.json/",
+            "file.png/",
+            "src/file.png/"
+        )
+
+        val patterns = sampleGitIgnorePatterns.map { pattern -> featureDevSessionContext.convertGitIgnorePatternToRegex(pattern).toRegex() }
+
+        val matchedFiles = sampleFileNames.filter { fileName ->
+            patterns.any { pattern ->
+                pattern.matches(fileName)
+            }
+        }
+
+        val expectedFilesToMatch =
+            listOf(
+                ".gitignore/",
+                ".env/",
+                "file.txt/",
+                ".git/config/",
+                "src/file.txt/",
+                "build/",
+                "build/output.jar/",
+                "log.txt/",
+                "file.png/",
+                "src/file.png/"
+            )
+
+        assertEquals(expectedFilesToMatch, matchedFiles)
+    }
 }
