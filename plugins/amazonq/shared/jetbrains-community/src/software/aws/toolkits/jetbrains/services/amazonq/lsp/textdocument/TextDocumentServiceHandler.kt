@@ -18,42 +18,41 @@ class TextDocumentServiceHandler(
     private val project: Project,
     private val languageServer: AmazonQLanguageServer,
     private val serverInstance: Disposable
-) {
+) : FileEditorManagerListener {
 
     init {
         subscribeToFileEditorEvents()
     }
 
-    // for textDocument/ didOpen and didClose
     private fun subscribeToFileEditorEvents() {
         project.messageBus.connect(serverInstance).subscribe(
             FileEditorManagerListener.FILE_EDITOR_MANAGER,
-            object: FileEditorManagerListener {
-                override fun fileOpened(
-                    source: FileEditorManager,
-                    file: VirtualFile
-                ) {
-                    languageServer.textDocumentService.didOpen(
-                        DidOpenTextDocumentParams().apply {
-                            textDocument = TextDocumentItem().apply {
-                                uri = file.url
-                                text = file.inputStream.readAllBytes().decodeToString()
-                            }
-                        }
-                    )
-                }
+            this
+        )
+    }
 
-                override fun fileClosed(
-                    source: FileEditorManager,
-                    file: VirtualFile
-                ) {
-                    languageServer.textDocumentService.didClose(
-                        DidCloseTextDocumentParams().apply {
-                            textDocument = TextDocumentIdentifier().apply {
-                                uri = file.url
-                            }
-                        }
-                    )
+    override fun fileOpened(
+        source: FileEditorManager,
+        file: VirtualFile
+    ) {
+        languageServer.textDocumentService.didOpen(
+            DidOpenTextDocumentParams().apply {
+                textDocument = TextDocumentItem().apply {
+                    uri = file.url
+                    text = file.inputStream.readAllBytes().decodeToString()
+                }
+            }
+        )
+    }
+
+    override fun fileClosed(
+        source: FileEditorManager,
+        file: VirtualFile
+    ) {
+        languageServer.textDocumentService.didClose(
+            DidCloseTextDocumentParams().apply {
+                textDocument = TextDocumentIdentifier().apply {
+                    uri = file.url
                 }
             }
         )
