@@ -13,4 +13,7 @@ class FileUriUtil {
         val file = VfsUtilCore.virtualToIoFile(virtualFile)
         return VfsUtil.toUri(file)
     }
+
+    fun toUriString(virtualFile: VirtualFile): String =
+        toUri(virtualFile).toString()
 }
