@@ -21,7 +21,7 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails
-import software.amazon.awssdk.services.codewhisperer.model.CodeWhispererException
+import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlRequest
 import software.aws.toolkits.core.utils.WaiterTimeoutException
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
@@ -85,9 +85,9 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
 
         mockClient.stub {
             onGeneric { createUploadUrl(any()) }.thenReturn(fakeCreateUploadUrlResponse)
-            onGeneric { createCodeScan(any(), any()) }.thenReturn(fakeCreateCodeScanResponse)
-            onGeneric { getCodeScan(any(), any()) }.thenReturn(fakeGetCodeScanResponse)
-            onGeneric { listCodeScanFindings(any(), any()) }.thenReturn(fakeListCodeScanFindingsResponse)
+            onGeneric { createCodeScan(any()) }.thenReturn(fakeCreateCodeScanResponse)
+            onGeneric { getCodeScan(any()) }.thenReturn(fakeGetCodeScanResponse)
+            onGeneric { listCodeScanFindings(any()) }.thenReturn(fakeListCodeScanFindingsResponse)
         }
     }
 
@@ -157,7 +157,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
     @Test
     fun `test mapToCodeScanIssues`() {
         val recommendations = listOf(
-            fakeListCodeScanFindingsResponse.codeScanFindings(),
+            fakeListCodeScanFindingsResponse.codeAnalysisFindings(),
             getFakeRecommendationsOnNonExistentFile()
         )
         val res = codeScanSessionSpy.mapToCodeScanIssues(recommendations, project, "jobId")
@@ -167,7 +167,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
     @Test
     fun `test mapToCodeScanIssues - handles index out of bounds`() {
         val recommendations = listOf(
-            fakeListCodeScanFindingsOutOfBoundsIndexResponse.codeScanFindings(),
+            fakeListCodeScanFindingsOutOfBoundsIndexResponse.codeAnalysisFindings(),
         )
         val res = codeScanSessionSpy.mapToCodeScanIssues(recommendations, project, "jobId")
         assertThat(res).hasSize(1)
@@ -226,7 +226,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
 
         mockClient.stub {
             onGeneric { zipUploadManagerSpy.createUploadUrlAndUpload(any(), any(), any(), any(), any()) }.thenThrow(
-                CodeWhispererException.builder()
+                CodeWhispererRuntimeException.builder()
                     .message("Project Review Monthly Exceeded")
                     .requestId("abc123")
                     .statusCode(400)
@@ -246,7 +246,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
         val codeScanResponse = codeScanSessionSpy.run()
         assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
         if (codeScanResponse is CodeScanResponse.Failure) {
-            assertThat(codeScanResponse.failureReason).isInstanceOf<CodeWhispererException>()
+            assertThat(codeScanResponse.failureReason).isInstanceOf<CodeWhispererRuntimeException>()
             assertThat(codeScanResponse.failureReason.toString()).contains("Project Review Monthly Exceeded")
             assertThat(codeScanResponse.failureReason.cause.toString()).contains("java.lang.RuntimeException: Something went wrong")
         }
@@ -255,7 +255,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
     @Test
     fun `test run() - createCodeScan failed`() = runTest {
         mockClient.stub {
-            onGeneric { createCodeScan(any(), any()) }.thenReturn(fakeCreateCodeScanResponseFailed)
+            onGeneric { createCodeScan(any()) }.thenReturn(fakeCreateCodeScanResponseFailed)
         }
 
         val codeScanResponse = codeScanSessionSpy.run()
@@ -267,7 +267,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
     @Test
     fun `test run() - createCodeScan error`() = runTest {
         mockClient.stub {
-            onGeneric { createCodeScan(any(), any()) }.thenThrow(CodeWhispererCodeScanServerException::class.java)
+            onGeneric { createCodeScan(any()) }.thenThrow(CodeWhispererCodeScanServerException::class.java)
         }
 
         val codeScanResponse = codeScanSessionSpy.run()
@@ -279,7 +279,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
     @Test
     fun `test run() - getCodeScan failed`() = runTest {
         mockClient.stub {
-            onGeneric { getCodeScan(any(), any()) }.thenReturn(fakeGetCodeScanResponseFailed)
+            onGeneric { getCodeScan(any()) }.thenReturn(fakeGetCodeScanResponseFailed)
         }
 
         val codeScanResponse = codeScanSessionSpy.run()
@@ -294,7 +294,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
             onGeneric { overallJobTimeoutInSeconds() }.thenReturn(5)
         }
         mockClient.stub {
-            onGeneric { getCodeScan(any(), any()) }.thenAnswer {
+            onGeneric { getCodeScan(any()) }.thenAnswer {
                 Thread.sleep(TIMEOUT)
                 fakeGetCodeScanResponsePending
             }
@@ -309,7 +309,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
     @Test
     fun `test run() - getCodeScan error`() = runTest {
         mockClient.stub {
-            onGeneric { getCodeScan(any(), any()) }.thenThrow(CodeWhispererCodeScanServerException::class.java)
+            onGeneric { getCodeScan(any()) }.thenThrow(CodeWhispererCodeScanServerException::class.java)
         }
 
         val codeScanResponse = codeScanSessionSpy.run()
@@ -321,7 +321,7 @@ class CodeWhispererCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeInsigh
     @Test
     fun `test run() - listCodeScanFindings error`() = runTest {
         mockClient.stub {
-            onGeneric { listCodeScanFindings(any(), any()) }.thenThrow(CodeWhispererCodeScanServerException::class.java)
+            onGeneric { listCodeScanFindings(any()) }.thenThrow(CodeWhispererCodeScanServerException::class.java)
         }
 
         val codeScanResponse = codeScanSessionSpy.run()
