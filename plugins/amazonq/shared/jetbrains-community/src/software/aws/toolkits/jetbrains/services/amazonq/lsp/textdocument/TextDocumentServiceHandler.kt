@@ -58,8 +58,8 @@ class TextDocumentServiceHandler(
         AmazonQLspService.getInstance(project).instance?.languageServer?.let { runnable(it) }
 
     override fun beforeDocumentSaving(document: Document) {
-        val file = FileDocumentManager.getInstance().getFile(document) ?: return
         executeIfRunning(project) {
+            val file = FileDocumentManager.getInstance().getFile(document) ?: return@executeIfRunning
             it.textDocumentService.didSave(
                 DidSaveTextDocumentParams().apply {
                     textDocument = TextDocumentIdentifier().apply {
@@ -72,11 +72,10 @@ class TextDocumentServiceHandler(
     }
 
     override fun after(events: MutableList<out VFileEvent>) {
-        pluginAwareExecuteOnPooledThread {
-            events.filterIsInstance<VFileContentChangeEvent>().forEach { event ->
-
-                val document = FileDocumentManager.getInstance().getCachedDocument(event.file) ?: return@forEach
-                executeIfRunning(project) {
+        executeIfRunning(project) {
+            pluginAwareExecuteOnPooledThread {
+                events.filterIsInstance<VFileContentChangeEvent>().forEach { event ->
+                    val document = FileDocumentManager.getInstance().getCachedDocument(event.file) ?: return@forEach
                     it.textDocumentService.didChange(
                         DidChangeTextDocumentParams().apply {
                             textDocument = VersionedTextDocumentIdentifier().apply {
