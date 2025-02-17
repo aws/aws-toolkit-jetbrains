@@ -15,59 +15,62 @@ import org.eclipse.lsp4j.DeleteFilesParams
 import org.eclipse.lsp4j.FileCreate
 import org.eclipse.lsp4j.FileDelete
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class WorkspaceServiceHandler(
     private val project: Project,
-    private val languageServer: AmazonQLanguageServer,
-    private val serverInstance: Disposable
-){
+    serverInstance: Disposable
+): BulkFileListener {
 
     init{
-        startFileLifecycleListener()
+        project.messageBus.connect(serverInstance).subscribe(
+            VirtualFileManager.VFS_CHANGES,
+            this
+        )
     }
 
+    private fun executeIfRunning(project: Project, runnable: (AmazonQLanguageServer) -> Unit) =
+        AmazonQLspService.getInstance(project).instance?.languageServer?.let { runnable(it) }
+
     private fun didCreateFiles(events: List<VFileEvent>){
-        if (events.isNotEmpty()) {
-            languageServer.workspaceService.didCreateFiles(
-                CreateFilesParams().apply {
-                    files = events.map { event ->
-                        FileCreate().apply {
-                            uri = event.file?.toNioPath()?.toUri().toString()
+        executeIfRunning(project) {
+            if (events.isNotEmpty()) {
+                it.workspaceService.didCreateFiles(
+                    CreateFilesParams().apply {
+                        files = events.map { event ->
+                            FileCreate().apply {
+                                uri = event.file?.toNioPath()?.toUri().toString()
+                            }
                         }
                     }
-                }
-            )
+                )
+            }
         }
     }
 
     private fun didDeleteFiles(events: List<VFileEvent>) {
-        if (events.isNotEmpty()) {
-            languageServer.workspaceService.didDeleteFiles(
-                DeleteFilesParams().apply {
-                    files = events.map { event ->
-                        FileDelete().apply {
-                            uri = event.file?.toNioPath()?.toUri().toString()
+        executeIfRunning(project) { languageServer ->
+            if (events.isNotEmpty()) {
+                languageServer.workspaceService.didDeleteFiles(
+                    DeleteFilesParams().apply {
+                        files = events.map { event ->
+                            FileDelete().apply {
+                                uri = event.file?.toNioPath()?.toUri().toString()
+                            }
                         }
                     }
-                }
-            )
+                )
+            }
         }
     }
 
-    private fun startFileLifecycleListener() {
-        project.messageBus.connect(serverInstance).subscribe(
-            VirtualFileManager.VFS_CHANGES,
-            object : BulkFileListener {
-                override fun after(events: List<VFileEvent>) {
-                    // since we are using synchronous FileListener
-                    pluginAwareExecuteOnPooledThread {
-                        didCreateFiles(events.filterIsInstance<VFileCreateEvent>())
-                        didDeleteFiles(events.filterIsInstance<VFileDeleteEvent>())
-                    }
-                }
-            }
-        )
+    override fun after(events: List<VFileEvent>) {
+        // since we are using synchronous FileListener
+        pluginAwareExecuteOnPooledThread {
+            didCreateFiles(events.filterIsInstance<VFileCreateEvent>())
+            didDeleteFiles(events.filterIsInstance<VFileDeleteEvent>())
+        }
     }
 
     // still need to implement
