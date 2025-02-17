@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileDocumentManagerListener
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -17,6 +18,7 @@ import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import org.eclipse.lsp4j.DidChangeTextDocumentParams
 import org.eclipse.lsp4j.DidCloseTextDocumentParams
 import org.eclipse.lsp4j.DidOpenTextDocumentParams
+import org.eclipse.lsp4j.DidSaveTextDocumentParams
 import org.eclipse.lsp4j.TextDocumentContentChangeEvent
 import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.TextDocumentItem
@@ -33,34 +35,65 @@ class TextDocumentServiceHandler(
     BulkFileListener {
 
     init {
-        subscribeToFileEditorEvents()
-        subscribeToDocumentEvents()
-    }
-
-    private fun subscribeToFileEditorEvents() {
+        // didOpen & didClose events
         project.messageBus.connect(serverInstance).subscribe(
             FileEditorManagerListener.FILE_EDITOR_MANAGER,
             this
         )
-    }
 
-    private fun subscribeToDocumentEvents() {
+        // didChange events
         project.messageBus.connect(serverInstance).subscribe(
             VirtualFileManager.VFS_CHANGES,
             this
         )
+
+        // didSave events
+        project.messageBus.connect(serverInstance).subscribe(
+            FileDocumentManagerListener.TOPIC,
+            this
+        )
+    }
+
+    private fun executeIfRunning(project: Project, runnable: (AmazonQLanguageServer) -> Unit) =
+        AmazonQLspService.getInstance(project).instance?.languageServer?.let { runnable(it) }
+
+    override fun beforeDocumentSaving(document: Document) {
+        val file = FileDocumentManager.getInstance().getFile(document) ?: return
+        executeIfRunning(project) {
+            it.textDocumentService.didSave(
+                DidSaveTextDocumentParams().apply {
+                    textDocument = TextDocumentIdentifier().apply {
+                        uri = file.url
+                    }
+                    text = document.text
+                }
+            )
+        }
     }
 
     override fun after(events: MutableList<out VFileEvent>) {
         pluginAwareExecuteOnPooledThread {
             events.filterIsInstance<VFileContentChangeEvent>().forEach { event ->
-                didChange(event)
+
+                val document = FileDocumentManager.getInstance().getCachedDocument(event.file) ?: return@forEach
+                executeIfRunning(project) {
+                    it.textDocumentService.didChange(
+                        DidChangeTextDocumentParams().apply {
+                            textDocument = VersionedTextDocumentIdentifier().apply {
+                                uri = event.file.url
+                                version = document.modificationStamp.toInt()
+                            }
+                            contentChanges = listOf(
+                                TextDocumentContentChangeEvent().apply {
+                                    text = document.text
+                                }
+                            )
+                        }
+                    )
+                }
             }
         }
     }
-
-    private fun executeIfRunning(project: Project, runnable: (AmazonQLanguageServer) -> Unit) =
-        AmazonQLspService.getInstance(project).instance?.languageServer?.let { runnable(it) }
 
     override fun fileOpened(
         source: FileEditorManager,
@@ -91,28 +124,5 @@ class TextDocumentServiceHandler(
                 }
             )
         }
-    }
-
-    private fun didChange(event: VFileContentChangeEvent) {
-        val document = FileDocumentManager.getInstance().getCachedDocument(event.file) ?: return
-
-        executeIfRunning(project) {
-            it.textDocumentService.didChange(
-                DidChangeTextDocumentParams().apply {
-                    textDocument = VersionedTextDocumentIdentifier().apply {
-                        uri = event.file.url
-                        version = document.modificationStamp.toInt()
-                    }
-                    contentChanges = listOf(
-                        TextDocumentContentChangeEvent().apply {
-                            text = document.text
-                        }
-                    )
-                }
-            )
-        }
-    }
-
-    private fun didSave() {
     }
 }
