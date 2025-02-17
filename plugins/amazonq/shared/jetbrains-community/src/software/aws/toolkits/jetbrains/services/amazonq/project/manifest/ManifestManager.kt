@@ -98,9 +98,9 @@ class ManifestManager {
         val versions: List<Version>? = emptyList(),
     )
 
-    fun getManifest(manifestUrl: String = cloudFrontUrl): Manifest? = fetchFromRemoteAndSave(manifestUrl)
+    fun getManifest(): Manifest? = fetchFromRemoteAndSave()
 
-    private fun readManifestFile(content: String): Manifest? {
+    fun readManifestFile(content: String): Manifest? {
         try {
             return mapper.readValue<Manifest>(content)
         } catch (e: Exception) {
@@ -128,9 +128,9 @@ class ManifestManager {
         return target.contents?.find { content -> content.filename?.contains("qserver") == true }
     }
 
-    private fun fetchFromRemoteAndSave(manifestUrl: String): Manifest? {
+    private fun fetchFromRemoteAndSave(): Manifest? {
         try {
-            val response = getTextFromUrl(manifestUrl)
+            val response = getTextFromUrl(cloudFrontUrl)
             return readManifestFile(response)
         } catch (e: Exception) {
             logger.warn { "failed to save manifest from remote: ${e.message}" }
