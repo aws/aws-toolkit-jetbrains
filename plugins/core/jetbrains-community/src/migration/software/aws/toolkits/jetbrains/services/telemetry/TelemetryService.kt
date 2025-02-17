@@ -13,7 +13,6 @@ import software.aws.toolkits.core.telemetry.MetricEvent
 import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.jetbrains.core.credentials.activeRegion
 import software.aws.toolkits.jetbrains.core.credentials.getConnectionSettings
 import software.aws.toolkits.jetbrains.core.getResourceIfPresent
 import software.aws.toolkits.jetbrains.services.sts.StsResources
@@ -54,9 +53,10 @@ abstract class TelemetryService(private val publisher: TelemetryPublisher, prote
                     awsRegion = DefaultMetricEvent.METADATA_INVALID
                 )
             } else {
+                val connectionSettings = project.getConnectionSettings()
                 MetricEventMetadata(
-                    awsAccount = project.getConnectionSettings()?.activeAwsAccountIfKnown() ?: DefaultMetricEvent.METADATA_NOT_SET,
-                    awsRegion = project.activeRegion().id
+                    awsAccount = connectionSettings?.activeAwsAccountIfKnown() ?: DefaultMetricEvent.METADATA_NOT_SET,
+                    awsRegion = connectionSettings?.region?.id ?: DefaultMetricEvent.METADATA_NOT_SET
                 )
             }
         } else {

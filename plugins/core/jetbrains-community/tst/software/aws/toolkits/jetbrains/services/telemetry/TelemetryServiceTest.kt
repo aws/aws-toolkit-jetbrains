@@ -152,7 +152,7 @@ class TelemetryServiceTest {
 
         verify(batcher).enqueue(eventCaptor.capture())
 
-        assertMetricEventsContains(eventCaptor.allValues, "Foo", METADATA_NOT_SET, "us-east-1")
+        assertMetricEventsContains(eventCaptor.allValues, "Foo", METADATA_NOT_SET, METADATA_NOT_SET)
     }
 
     @Test

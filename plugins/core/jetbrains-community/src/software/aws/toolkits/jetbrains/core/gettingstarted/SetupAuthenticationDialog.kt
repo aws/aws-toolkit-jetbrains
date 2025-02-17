@@ -52,10 +52,10 @@ import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.jetbrains.utils.ui.editorNotificationCompoundBorder
 import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.AwsCoreBundle
-import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.FeatureId
-import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.MetricResult
+import software.aws.toolkits.telemetry.Telemetry
 import java.awt.BorderLayout
 import java.util.Optional
 import javax.swing.Action
@@ -279,17 +279,16 @@ class SetupAuthenticationDialog(
 
                 val connection = authAndUpdateConfig(project, profile, configFilesFacade, {}, {}) { e ->
                     Messages.showErrorDialog(project, e.message, title)
-                    AuthTelemetry.addConnection(
-                        project,
-                        source = getSourceOfEntry(sourceOfEntry, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel),
-                        featureId = featureId,
-                        credentialSourceId = CredentialSourceId.IamIdentityCenter,
-                        isAggregated = false,
-                        attempts = ++attempts,
-                        result = Result.Failed,
-                        reason = "ConnectionUnsuccessful",
-                        isReAuth = false
-                    )
+                    Telemetry.auth.addConnection.use {
+                        it.source(getSourceOfEntry(sourceOfEntry, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel))
+                            .featureId(featureId)
+                            .credentialSourceId(CredentialSourceId.IamIdentityCenter)
+                            .isAggregated(false)
+                            .attempts(++attempts)
+                            .result(MetricResult.Failed)
+                            .reason("ConnectionUnsuccessful")
+                            .isReAuth(false)
+                    }
                 } ?: return
 
                 if (!promptForIdcPermissionSet) {
@@ -332,17 +331,16 @@ class SetupAuthenticationDialog(
 
                 if (existingProfiles.containsKey(profileName)) {
                     Messages.showErrorDialog(project, AwsCoreBundle.message("gettingstarted.setup.iam.profile.exists", profileName), title)
-                    AuthTelemetry.addConnection(
-                        project,
-                        source = getSourceOfEntry(sourceOfEntry, isFirstInstance, connectionInitiatedFromExplorer),
-                        featureId = featureId,
-                        credentialSourceId = CredentialSourceId.SharedCredentials,
-                        isAggregated = false,
-                        attempts = ++attempts,
-                        result = Result.Failed,
-                        reason = "DuplicateProfileName",
-                        isReAuth = false
-                    )
+                    Telemetry.auth.addConnection.use {
+                        it.source(getSourceOfEntry(sourceOfEntry, isFirstInstance, connectionInitiatedFromExplorer))
+                            .featureId(featureId)
+                            .credentialSourceId(CredentialSourceId.SharedCredentials)
+                            .isAggregated(false)
+                            .attempts(++attempts)
+                            .result(MetricResult.Failed)
+                            .reason("DuplicateProfileName")
+                            .isReAuth(false)
+                    }
                     return
                 }
 
@@ -359,17 +357,16 @@ class SetupAuthenticationDialog(
 
                 if (callerIdentity == null) {
                     Messages.showErrorDialog(project, AwsCoreBundle.message("gettingstarted.setup.iam.profile.invalid_credentials"), title)
-                    AuthTelemetry.addConnection(
-                        project,
-                        source = getSourceOfEntry(sourceOfEntry, isFirstInstance, connectionInitiatedFromExplorer),
-                        featureId = featureId,
-                        credentialSourceId = CredentialSourceId.SharedCredentials,
-                        isAggregated = false,
-                        attempts = ++attempts,
-                        result = Result.Failed,
-                        reason = "InvalidCredentials",
-                        isReAuth = false
-                    )
+                    Telemetry.auth.addConnection.use {
+                        it.source(getSourceOfEntry(sourceOfEntry, isFirstInstance, connectionInitiatedFromExplorer))
+                            .featureId(featureId)
+                            .credentialSourceId(CredentialSourceId.SharedCredentials)
+                            .isAggregated(false)
+                            .attempts(++attempts)
+                            .result(MetricResult.Failed)
+                            .reason("InvalidCredentials")
+                            .isReAuth(false)
+                    }
                     return
                 }
 
@@ -432,18 +429,16 @@ class SetupAuthenticationDialog(
 
     private fun handleConfigFacadeError(e: Exception) {
         val (errorMessage, errorType) = messageFromConfigFacadeError(e)
-
-        AuthTelemetry.addConnection(
-            project,
-            source = getSourceOfEntry(sourceOfEntry, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel),
-            featureId = featureId,
-            credentialSourceId = CredentialSourceId.IamIdentityCenter,
-            isAggregated = false,
-            attempts = ++attempts,
-            result = Result.Failed,
-            reason = errorType,
-            isReAuth = false
-        )
+        Telemetry.auth.addConnection.use {
+            it.source(getSourceOfEntry(sourceOfEntry, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel))
+                .featureId(featureId)
+                .credentialSourceId(CredentialSourceId.IamIdentityCenter)
+                .isAggregated(false)
+                .attempts(++attempts)
+                .result(MetricResult.Failed)
+                .reason(errorType)
+                .isReAuth(false)
+        }
 
         LOG.error(e) { errorMessage }
         Messages.showErrorDialog(project, errorMessage, title)

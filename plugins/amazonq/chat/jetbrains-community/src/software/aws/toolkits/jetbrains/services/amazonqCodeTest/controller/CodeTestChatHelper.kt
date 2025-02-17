@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonqCodeTest.controller
 
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.ChatInputEnabledMessage
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.CodeTestAddAnswerMessage
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.CodeTestChatMessage
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.CodeTestChatMessageContent
@@ -15,6 +16,8 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.UpdateP
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.Session
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.storage.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
+import software.aws.toolkits.jetbrains.services.cwc.messages.FollowUp
+import software.aws.toolkits.resources.message
 import java.util.UUID
 
 class CodeTestChatHelper(
@@ -152,5 +155,28 @@ class CodeTestChatHelper(
                 clearPreviousItemButtons = clearPreviousItemButtons as Boolean
             )
         )
+    }
+
+    suspend fun sendChatInputEnabledMessage(isEnabled: Boolean) {
+        if (isInvalidSession()) return
+        messagePublisher.publish(ChatInputEnabledMessage(activeCodeTestTabId as String, enabled = isEnabled))
+    }
+
+    suspend fun sendAuthenticationInProgressMessage(
+        tabId: String,
+        messageId: String? = null,
+        followUp: List<FollowUp>? = null,
+        canBeVoted: Boolean? = false,
+    ) {
+        val chatMessage =
+            CodeTestChatMessage(
+                tabId = tabId,
+                messageId = messageId ?: UUID.randomUUID().toString(),
+                messageType = ChatMessageType.Answer,
+                message = message("amazonqFeatureDev.follow_instructions_for_authentication"),
+                followUps = followUp,
+                canBeVoted = canBeVoted ?: false,
+            )
+        messagePublisher.publish(chatMessage)
     }
 }
