@@ -295,7 +295,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
             // TODO: Modify text according to FnF
             codeTestChatHelper.addAnswer(
                 CodeTestChatMessageContent(
-                    message = message("testgen.message.failed"),
+                    message = message("testgen.error.generic_technical_error_message"),
                     type = ChatMessageType.Answer,
                     canBeVoted = true
                 )
