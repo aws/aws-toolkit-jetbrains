@@ -8,8 +8,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VfsUtilCore
 import java.net.URI
 
-class FileUriUtil {
-    fun toUri(virtualFile: VirtualFile): URI {
+object FileUriUtil {
+     fun toUri(virtualFile: VirtualFile): URI {
         val file = VfsUtilCore.virtualToIoFile(virtualFile)
         return VfsUtil.toUri(file)
     }
