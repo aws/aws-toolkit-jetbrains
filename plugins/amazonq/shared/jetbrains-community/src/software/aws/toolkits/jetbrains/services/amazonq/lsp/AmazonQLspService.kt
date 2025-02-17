@@ -239,7 +239,6 @@ internal class AmazonQServerInstance(private val project: Project, private val c
 
         TextDocumentServiceHandler(
             project,
-            languageServer,
             this
         )
     }
