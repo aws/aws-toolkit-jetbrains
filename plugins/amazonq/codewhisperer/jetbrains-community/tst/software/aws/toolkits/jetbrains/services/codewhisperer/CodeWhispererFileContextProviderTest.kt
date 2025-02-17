@@ -60,7 +60,6 @@ import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtu
 import software.aws.toolkits.jetbrains.utils.rules.addClass
 import software.aws.toolkits.jetbrains.utils.rules.addModule
 import software.aws.toolkits.jetbrains.utils.rules.addTestClass
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.assertNotNull
 
 class CodeWhispererFileContextProviderTest {
@@ -231,26 +230,6 @@ class CodeWhispererFileContextProviderTest {
                 assertThat(serverContext.constructed()).hasSize(1)
 
                 whenever(providerContext.constructed()[0].queryInline(any(), any(), any())).thenThrow(RuntimeException("mock exception"))
-                whenever(providerContext.constructed()[0].isIndexComplete).thenReturn(AtomicBoolean(true))
-
-                val result = controller.queryInline("query", "filePath")
-                assertThat(result).isEmpty()
-            }
-        }
-    }
-
-    @Test
-    fun `projectContextController should return empty result if index is not ready`() = runTest {
-        mockConstruction(ProjectContextProvider::class.java).use { providerContext ->
-            mockConstruction(EncoderServer::class.java).use { serverContext ->
-                assertThat(providerContext.constructed()).hasSize(0)
-                assertThat(serverContext.constructed()).hasSize(0)
-                val controller = ProjectContextController(project, TestScope())
-                assertThat(providerContext.constructed()).hasSize(1)
-                assertThat(serverContext.constructed()).hasSize(1)
-
-                whenever(providerContext.constructed()[0].queryInline(any(), any(), any())).thenReturn(listOf(InlineBm25Chunk("foo", "path", 0.0)))
-                whenever(providerContext.constructed()[0].isIndexComplete).thenReturn(AtomicBoolean(false))
 
                 val result = controller.queryInline("query", "filePath")
                 assertThat(result).isEmpty()
