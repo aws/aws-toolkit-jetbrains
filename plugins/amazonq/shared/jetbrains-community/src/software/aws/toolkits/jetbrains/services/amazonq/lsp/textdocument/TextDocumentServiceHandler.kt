@@ -13,6 +13,7 @@ import org.eclipse.lsp4j.DidOpenTextDocumentParams
 import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.TextDocumentItem
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 
 class TextDocumentServiceHandler(
     private val project: Project,
@@ -31,31 +32,38 @@ class TextDocumentServiceHandler(
         )
     }
 
+    fun executeIfRunning(project: Project, runnable: (AmazonQLanguageServer) ->  Unit) =
+        AmazonQLspService.getInstance(project).instance?.languageServer?.let { runnable(it)}
+
     override fun fileOpened(
         source: FileEditorManager,
-        file: VirtualFile,
+        file: VirtualFile
     ) {
-        languageServer.textDocumentService.didOpen(
-            DidOpenTextDocumentParams().apply {
-                textDocument = TextDocumentItem().apply {
-                    uri = file.url
-                    text = file.inputStream.readAllBytes().decodeToString()
+        executeIfRunning(project) {
+            it.textDocumentService.didOpen(
+                DidOpenTextDocumentParams().apply {
+                    textDocument = TextDocumentItem().apply {
+                        uri = file.url
+                        text = file.inputStream.readAllBytes().decodeToString()
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 
     override fun fileClosed(
         source: FileEditorManager,
         file: VirtualFile,
     ) {
-        languageServer.textDocumentService.didClose(
-            DidCloseTextDocumentParams().apply {
-                textDocument = TextDocumentIdentifier().apply {
-                    uri = file.url
+        executeIfRunning(project) {
+            it.textDocumentService.didClose(
+                DidCloseTextDocumentParams().apply {
+                    textDocument = TextDocumentIdentifier().apply {
+                        uri = file.url
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 
     private fun didChange() {
