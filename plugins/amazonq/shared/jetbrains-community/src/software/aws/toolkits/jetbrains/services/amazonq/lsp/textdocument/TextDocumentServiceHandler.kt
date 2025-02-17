@@ -17,7 +17,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 
 class TextDocumentServiceHandler(
     private val project: Project,
-    private val languageServer: AmazonQLanguageServer,
     private val serverInstance: Disposable,
 ) : FileEditorManagerListener {
 
@@ -32,12 +31,12 @@ class TextDocumentServiceHandler(
         )
     }
 
-    fun executeIfRunning(project: Project, runnable: (AmazonQLanguageServer) ->  Unit) =
-        AmazonQLspService.getInstance(project).instance?.languageServer?.let { runnable(it)}
+    private fun executeIfRunning(project: Project, runnable: (AmazonQLanguageServer) -> Unit) =
+        AmazonQLspService.getInstance(project).instance?.languageServer?.let { runnable(it) }
 
     override fun fileOpened(
         source: FileEditorManager,
-        file: VirtualFile
+        file: VirtualFile,
     ) {
         executeIfRunning(project) {
             it.textDocumentService.didOpen(
