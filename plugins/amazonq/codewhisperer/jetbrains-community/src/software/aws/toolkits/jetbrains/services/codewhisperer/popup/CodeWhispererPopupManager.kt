@@ -74,6 +74,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhis
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_DIM_HEX
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.POPUP_INFO_TEXT_SIZE
+import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import java.awt.Point
 import java.awt.Rectangle
@@ -486,7 +487,7 @@ class CodeWhispererPopupManager {
             CodeWhispererPopupEnterHandler(EditorActionManager.getInstance().getActionHandler(ACTION_EDITOR_ENTER), states)
         )
 
-        if (AppMode.isRemoteDevHost()) {
+        if (isRunningOnRemoteBackend()) {
             setPopupActionHandler(ACTION_EDITOR_TAB, CodeWhispererPopupTabHandler(states))
         }
     }
