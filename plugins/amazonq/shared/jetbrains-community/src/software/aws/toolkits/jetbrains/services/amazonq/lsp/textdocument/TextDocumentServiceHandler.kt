@@ -29,7 +29,7 @@ import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class TextDocumentServiceHandler(
     private val project: Project,
-    private val serverInstance: Disposable,
+    serverInstance: Disposable,
 ) : FileDocumentManagerListener,
     FileEditorManagerListener,
     BulkFileListener {
