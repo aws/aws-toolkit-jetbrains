@@ -444,7 +444,7 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
 
 data class FeedbackComment(
     val conversationId: String,
-    val messageId: String,
+    val messageId: String?,
     val reason: String,
     val userComment: String,
     val type: String = "codewhisperer-chat-answer-feedback",
