@@ -9,9 +9,11 @@ import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 
 class CodeWhispererPopupTabHandler(states: InvocationContext) : CodeWhispererEditorActionHandler(states) {
     override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
+        if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()) return
         ApplicationManager.getApplication().messageBus.syncPublisher(
             CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED
         ).beforeAccept(states, CodeWhispererPopupManager.getInstance().sessionContext)
