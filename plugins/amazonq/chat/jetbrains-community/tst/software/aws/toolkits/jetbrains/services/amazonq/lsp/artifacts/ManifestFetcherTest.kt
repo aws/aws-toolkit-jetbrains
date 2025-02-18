@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
-
 import io.mockk.every
 import io.mockk.spyk
 import io.mockk.verify
@@ -23,10 +22,8 @@ class ManifestFetcherTest {
         manifest = ManifestManager.Manifest()
     }
 
-
     @Test
     fun `should return null when both local and remote manifests are null`() {
-
         val fetchLocalManifestMock = spyk<ManifestFetcher>(recordPrivateCalls = true)
 
         every { fetchLocalManifestMock["fetchManifestFromLocal"]() } returns null
@@ -39,7 +36,6 @@ class ManifestFetcherTest {
 
     @Test
     fun `should return valid result from local should not execute remote method`() {
-
         val fetchLocalManifestMock = spyk<ManifestFetcher>(recordPrivateCalls = true)
 
         every { fetchLocalManifestMock["fetchManifestFromLocal"]() } returns manifest
@@ -51,7 +47,6 @@ class ManifestFetcherTest {
 
     @Test
     fun `should return valid result from remote`() {
-
         val fetchLocalManifestMock = spyk<ManifestFetcher>(recordPrivateCalls = true)
 
         every { fetchLocalManifestMock["fetchManifestFromLocal"]() } returns null

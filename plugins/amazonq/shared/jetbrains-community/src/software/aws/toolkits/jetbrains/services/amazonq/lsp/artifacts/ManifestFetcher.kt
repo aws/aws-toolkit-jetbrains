@@ -16,7 +16,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.Manifes
 import java.nio.file.Path
 import java.nio.file.Paths
 
-
 class ManifestFetcher {
 
     private val lspManifestUrl = "https://aws-toolkit-language-servers.amazonaws.com/codewhisperer/0/manifest.json"
@@ -30,7 +29,7 @@ class ManifestFetcher {
     /**
      * Method which will be used to fetch latest manifest.
      * */
-    fun fetch() : ManifestManager.Manifest? {
+    fun fetch(): ManifestManager.Manifest? {
         val localManifest = fetchManifestFromLocal()
         if (localManifest != null) {
             return localManifest
@@ -39,13 +38,12 @@ class ManifestFetcher {
         return remoteManifest
     }
 
-    private fun fetchManifestFromRemote() : ManifestManager.Manifest? {
-        val manifest : ManifestManager.Manifest?
+    private fun fetchManifestFromRemote(): ManifestManager.Manifest? {
+        val manifest: ManifestManager.Manifest?
         try {
             val manifestString = getTextFromUrl(lspManifestUrl)
             manifest = manifestManager.readManifestFile(manifestString) ?: return null
-        }
-        catch (e: Exception) {
+        } catch (e: Exception) {
             logger.error("error fetching lsp manifest from remote URL ${e.message}", e)
             return null
         }
@@ -61,14 +59,13 @@ class ManifestFetcher {
     private fun updateManifestCache() {
         try {
             saveFileFromUrl(lspManifestUrl, lspManifestFilePath)
-        }
-        catch (e: Exception) {
+        } catch (e: Exception) {
             logger.error("error occurred while saving lsp manifest to local cache ${e.message}", e)
         }
     }
 
-    private fun fetchManifestFromLocal() : ManifestManager.Manifest? {
-        var manifest : ManifestManager.Manifest? = null
+    private fun fetchManifestFromLocal(): ManifestManager.Manifest? {
+        var manifest: ManifestManager.Manifest? = null
         val localETag = getManifestETagFromLocal()
         val remoteETag = getManifestETagFromUrl()
         // If local and remote have same ETag, we can re-use the manifest file from local to fetch artifacts.
@@ -76,8 +73,7 @@ class ManifestFetcher {
             try {
                 val manifestContent = lspManifestFilePath.readText()
                 manifest = manifestManager.readManifestFile(manifestContent) ?: return null
-            }
-            catch (e: Exception) {
+            } catch (e: Exception) {
                 logger.error("error reading lsp manifest file from local ${e.message}", e)
                 return null
             }
@@ -86,8 +82,8 @@ class ManifestFetcher {
         return manifest
     }
 
-    private fun getManifestETagFromLocal() : String? {
-        if(lspManifestFilePath.exists()) {
+    private fun getManifestETagFromLocal(): String? {
+        if (lspManifestFilePath.exists()) {
             val messageDigest = DigestUtil.md5()
             DigestUtil.updateContentHash(messageDigest, lspManifestFilePath)
             return StringUtil.toHexString(messageDigest.digest())
@@ -95,12 +91,11 @@ class ManifestFetcher {
         return null
     }
 
-    private fun getManifestETagFromUrl() : String? {
+    private fun getManifestETagFromUrl(): String? {
         try {
             val actualETag = getETagFromUrl(lspManifestUrl)
             return actualETag.trim('"')
-        }
-        catch (e: Exception) {
+        } catch (e: Exception) {
             logger.error("error fetching ETag of lsp manifest from url.", e)
         }
         return null

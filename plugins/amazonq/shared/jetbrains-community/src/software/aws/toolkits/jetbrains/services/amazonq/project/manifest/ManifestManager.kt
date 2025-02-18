@@ -44,21 +44,21 @@ class ManifestManager {
         @JsonProperty("name")
         val name: String? = null,
         @JsonProperty("version")
-        val version: String? = null
+        val version: String? = null,
     )
 
     data class Capabilities(
         @JsonProperty("name")
         val name: String? = null,
         @JsonProperty("version")
-        val version: String? = null
+        val version: String? = null,
     )
 
     data class Protocol(
         @JsonProperty("name")
-        val name: String?= null,
+        val name: String? = null,
         @JsonProperty("version")
-        val version: String? = null
+        val version: String? = null,
     )
 
     data class Version(
