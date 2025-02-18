@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.util.io.DigestUtil
 import com.intellij.util.io.HttpRequests
-import com.intellij.util.text.SemVer
 import software.amazon.awssdk.utils.UserHomeDirectoryUtils
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
@@ -25,18 +24,8 @@ class ManifestFetcher {
     private val lspManifestFilePath: Path = Paths.get(UserHomeDirectoryUtils.userHomeDirectory(), ".aws", "amazonq", "cache", "lspManifest.js")
 
     companion object {
-        private val LOG = getLogger<ManifestFetcher>()
+        private val logger = getLogger<ManifestFetcher>()
     }
-
-    data class SupportedManifestVersionRange(
-        val startVersion: SemVer,
-        val endVersion: SemVer
-    )
-
-    private val supportedManifestVersionRanges = SupportedManifestVersionRange(
-        SemVer("3.0.0", 3, 0,0),
-        SemVer("4.0.0", 4, 0,0)
-    )
 
     /**
      * Method which will be used to fetch latest manifest.
@@ -57,15 +46,15 @@ class ManifestFetcher {
             manifest = manifestManager.readManifestFile(manifestString) ?: return null
         }
         catch (e: Exception) {
-            LOG.error("error fetching lsp manifest from remote URL ${e.message}", e)
+            logger.error("error fetching lsp manifest from remote URL ${e.message}", e)
             return null
         }
         if (manifest.isManifestDeprecated == true) {
-            LOG.info("Manifest is deprecated")
+            logger.info("Manifest is deprecated")
             return null
         }
         updateManifestCache()
-        LOG.info("Using manifest found from remote URL")
+        logger.info("Using manifest found from remote URL")
         return manifest
     }
 
@@ -74,7 +63,7 @@ class ManifestFetcher {
             saveFileFromUrl(lspManifestUrl, lspManifestFilePath)
         }
         catch (e: Exception) {
-            LOG.error("error occurred while saving lsp manifest to local cache ${e.message}", e)
+            logger.error("error occurred while saving lsp manifest to local cache ${e.message}", e)
         }
     }
 
@@ -89,11 +78,11 @@ class ManifestFetcher {
                 manifest = manifestManager.readManifestFile(manifestContent) ?: return null
             }
             catch (e: Exception) {
-                LOG.error("error reading lsp manifest file from local ${e.message}", e)
+                logger.error("error reading lsp manifest file from local ${e.message}", e)
                 return null
             }
         }
-        LOG.info("Re-using lsp manifest from local.")
+        logger.info("Re-using lsp manifest from local.")
         return manifest
     }
 
@@ -107,11 +96,18 @@ class ManifestFetcher {
     }
 
     private fun getManifestETagFromUrl() : String? {
-        val actualETag = HttpRequests.head(lspManifestUrl)
-            .userAgent("AWS Toolkit for JetBrains")
-            .connect { request ->
-                request.connection.headerFields["ETag"]?.firstOrNull().orEmpty()
-            }
-        return actualETag
+        try {
+            val actualETag = HttpRequests.head(lspManifestUrl)
+
+                .userAgent("AWS Toolkit for JetBrains")
+                .connect { request ->
+                    request.connection.headerFields["ETag"]?.firstOrNull().orEmpty()
+                }
+            return actualETag.trim('"')
+        }
+        catch (e: Exception) {
+            logger.error("error fetching ETag of lsp manifest from url.", e)
+        }
+        return null
     }
 }
