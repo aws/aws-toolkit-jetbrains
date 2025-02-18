@@ -19,11 +19,11 @@ import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class WorkspaceServiceHandler(
     private val project: Project,
-    serverInstance: Disposable
-): BulkFileListener,
-ProjectManagerListener {
+    serverInstance: Disposable,
+) : BulkFileListener,
+    ProjectManagerListener {
 
-    init{
+    init {
         project.messageBus.connect(serverInstance).subscribe(
             VirtualFileManager.VFS_CHANGES,
             this
@@ -38,7 +38,7 @@ ProjectManagerListener {
     private fun executeIfRunning(project: Project, runnable: (AmazonQLanguageServer) -> Unit) =
         AmazonQLspService.getInstance(project).instance?.languageServer?.let { runnable(it) }
 
-    private fun didCreateFiles(events: List<VFileEvent>){
+    private fun didCreateFiles(events: List<VFileEvent>) {
         executeIfRunning(project) {
             if (events.isNotEmpty()) {
                 it.workspaceService.didCreateFiles(
@@ -79,14 +79,6 @@ ProjectManagerListener {
         }
     }
 
-    // still need to implement
-    //private fun didChangeWorkspaceFolders() {
-    //    languageServer.workspaceService.didChangeWorkspaceFolders()
-    //}
-
-    //didChangeWorkspaceFolders impl
-
-    //didChangeWatchedFiles
     private fun didChangeWatchedFiles(events: List<VFileEvent>) {
         executeIfRunning(project) {
             if (events.isNotEmpty()) {
