@@ -7,13 +7,15 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VfsUtilCore
 import java.net.URI
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 object FileUriUtil {
-     fun toUri(virtualFile: VirtualFile): URI {
-        val file = VfsUtilCore.virtualToIoFile(virtualFile)
-        return VfsUtil.toUri(file)
-    }
 
-    fun toUriString(virtualFile: VirtualFile): String =
-        toUri(virtualFile).toString()
+    fun toUriString(virtualFile: VirtualFile): String {
+        val file = VfsUtilCore.virtualToIoFile(virtualFile)
+        return VfsUtil.toUri(file).toString()
+
+    }
 }
+
