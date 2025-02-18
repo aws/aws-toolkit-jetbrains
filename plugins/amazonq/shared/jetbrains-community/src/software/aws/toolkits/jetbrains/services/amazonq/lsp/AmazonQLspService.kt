@@ -181,7 +181,7 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
     }
 }
 
-internal class AmazonQServerInstance(private val project: Project, private val cs: CoroutineScope) : Disposable {
+private class AmazonQServerInstance(private val project: Project, private val cs: CoroutineScope) : Disposable {
     private val encryptionManager = JwtEncryptionManager()
 
     private val launcher: Launcher<AmazonQLanguageServer>
