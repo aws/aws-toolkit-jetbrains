@@ -35,11 +35,8 @@ class WorkspaceServiceHandler(
         )
     }
 
-    private fun executeIfRunning(project: Project, runnable: (AmazonQLanguageServer) -> Unit) =
-        AmazonQLspService.getInstance(project).instance?.languageServer?.let { runnable(it) }
-
     private fun didCreateFiles(events: List<VFileEvent>) {
-        executeIfRunning(project) {
+        AmazonQLspService.executeIfRunning(project) {
             if (events.isNotEmpty()) {
                 it.workspaceService.didCreateFiles(
                     CreateFilesParams().apply {
@@ -55,7 +52,7 @@ class WorkspaceServiceHandler(
     }
 
     private fun didDeleteFiles(events: List<VFileEvent>) {
-        executeIfRunning(project) { languageServer ->
+        AmazonQLspService.executeIfRunning(project) { languageServer ->
             if (events.isNotEmpty()) {
                 languageServer.workspaceService.didDeleteFiles(
                     DeleteFilesParams().apply {
@@ -80,7 +77,7 @@ class WorkspaceServiceHandler(
     }
 
     private fun didChangeWatchedFiles(events: List<VFileEvent>) {
-        executeIfRunning(project) {
+        AmazonQLspService.executeIfRunning(project) {
             if (events.isNotEmpty()) {
                 it.workspaceService.didChangeWatchedFiles(
                     DidChangeWatchedFilesParams().apply {
