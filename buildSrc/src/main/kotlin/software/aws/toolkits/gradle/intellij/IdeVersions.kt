@@ -142,24 +142,24 @@ object IdeVersions {
         Profile(
             name = "2024.3",
             gateway = ProductProfile(
-                sdkVersion = "243.21565.196-CUSTOM-SNAPSHOT",
+                sdkVersion = "243.22562-EAP-CANDIDATE-SNAPSHOT",
                 bundledPlugins = listOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
-                sdkVersion = "2024.3",
+                sdkVersion = "2024.3.3",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
                 ),
                 marketplacePlugins = listOf(
-                    "org.toml.lang:243.21565.122",
-                    "PythonCore:243.21565.211",
-                    "Docker:243.21565.204"
+                    "org.toml.lang:243.23654.183",
+                    "PythonCore:243.24978.46",
+                    "Docker:243.24978.54"
                 )
             ),
             ultimate = ProductProfile(
-                sdkVersion = "2024.3",
+                sdkVersion = "2024.3.3",
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
                     "JavaScriptDebugger",
@@ -168,16 +168,16 @@ object IdeVersions {
                 ),
                 marketplacePlugins = listOf(
                     "org.toml.lang:243.21565.122",
-                    "Pythonid:243.21565.211",
-                    "org.jetbrains.plugins.go:243.21565.211",
+                    "Pythonid:243.24978.46",
+                    "org.jetbrains.plugins.go:243.24978.46",
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2024.3",
+                sdkVersion = "2024.3.3",
                 bundledPlugins = commonPlugins,
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2024.3.0",
-                nugetVersion = " 2024.3.0"
+                nugetVersion = " 2024.3.3"
             )
         ),
         Profile(
