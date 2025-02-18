@@ -14,14 +14,21 @@ import com.intellij.execution.process.ProcessOutputType
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.components.serviceIfCreated
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
 import com.intellij.util.io.await
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.time.withTimeout
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeout
 import org.eclipse.lsp4j.ClientCapabilities
 import org.eclipse.lsp4j.ClientInfo
 import org.eclipse.lsp4j.FileOperationsWorkspaceCapabilities
@@ -35,6 +42,7 @@ import org.eclipse.lsp4j.jsonrpc.Launcher
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.slf4j.event.Level
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
@@ -49,8 +57,8 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import java.net.URI
 import java.nio.charset.StandardCharsets
-import java.time.Duration
 import java.util.concurrent.Future
+import kotlin.time.Duration.Companion.seconds
 
 // https://github.com/redhat-developer/lsp4ij/blob/main/src/main/java/com/redhat/devtools/lsp4ij/server/LSPProcessListener.java
 // JB impl and redhat both use a wrapper to handle input buffering issue
@@ -87,28 +95,89 @@ internal class LSPProcessListener : ProcessListener {
 
 @Service(Service.Level.PROJECT)
 class AmazonQLspService(private val project: Project, private val cs: CoroutineScope) : Disposable {
-    internal var instance: AmazonQServerInstance? = null
+    private var instance: Deferred<AmazonQServerInstance>
 
-    init {
-        cs.launch {
-            // manage lifecycle RAII-like so we can restart at arbitrary time
-            // and suppress IDE error if server fails to start
+    // dont allow lsp commands if server is restarting
+    private val mutex = Mutex(false)
+
+    private fun start() = cs.async {
+        // manage lifecycle RAII-like so we can restart at arbitrary time
+        // and suppress IDE error if server fails to start
+        var attempts = 0
+        while (attempts < 3) {
             try {
-                instance = AmazonQServerInstance(project, cs).also {
-                    Disposer.register(this@AmazonQLspService, it)
+                return@async withTimeout(30.seconds) {
+                    val instance = AmazonQServerInstance(project, cs).also {
+                        Disposer.register(this@AmazonQLspService, it)
+                    }
+                    // wait for handshake to complete
+                    instance.initializer.join()
+
+                    instance
                 }
             } catch (e: Exception) {
                 LOG.warn(e) { "Failed to start LSP server" }
             }
+            attempts++
         }
+
+        error("Failed to start LSP server in 3 attempts")
+    }
+
+    init {
+        instance = start()
     }
 
     override fun dispose() {
     }
 
+    suspend fun restart() = mutex.withLock {
+        // stop if running
+        instance.let {
+            if (it.isActive) {
+                // not even running yet
+                return
+            }
+
+            try {
+                val i = it.await()
+                if (i.initializer.isActive) {
+                    // not initialized
+                    return
+                }
+
+                Disposer.dispose(i)
+            } catch (e: Exception) {
+                LOG.info(e) { "Exception while disposing LSP server" }
+            }
+        }
+
+        instance = start()
+    }
+
+    suspend fun execute(runnable: suspend (AmazonQLanguageServer) -> Unit) {
+        val lsp = withTimeout(10.seconds) {
+            val holder = mutex.withLock { instance }.await()
+            holder.initializer.join()
+
+            holder.languageServer
+        }
+
+        runnable(lsp)
+    }
+
+    fun executeSync(runnable: suspend (AmazonQLanguageServer) -> Unit) {
+        runBlocking(cs.coroutineContext) {
+            execute(runnable)
+        }
+    }
+
     companion object {
         private val LOG = getLogger<AmazonQLspService>()
         fun getInstance(project: Project) = project.service<AmazonQLspService>()
+
+        fun executeIfRunning(project: Project, runnable: (AmazonQLanguageServer) -> Unit) =
+            project.serviceIfCreated<AmazonQLspService>()?.executeSync(runnable)
     }
 }
 
@@ -117,12 +186,13 @@ internal class AmazonQServerInstance(private val project: Project, private val c
 
     private val launcher: Launcher<AmazonQLanguageServer>
 
-    internal val languageServer: AmazonQLanguageServer
+    val languageServer: AmazonQLanguageServer
         get() = launcher.remoteProxy
 
     @Suppress("ForbiddenVoid")
     private val launcherFuture: Future<Void>
     private val launcherHandler: KillableProcessHandler
+    val initializer: Job
 
     private fun createClientCapabilities(): ClientCapabilities =
         ClientCapabilities().apply {
@@ -214,12 +284,12 @@ internal class AmazonQServerInstance(private val project: Project, private val c
 
         launcherFuture = launcher.startListening()
 
-        cs.launch {
+        initializer = cs.launch {
             // encryption info must be sent within 5s or Flare process will exit
             encryptionManager.writeInitializationPayload(launcherHandler.process.outputStream)
 
             val initializeResult = try {
-                withTimeout(Duration.ofSeconds(10)) {
+                withTimeout(5.seconds) {
                     languageServer.initialize(createInitializeParams()).await()
                 }
             } catch (_: TimeoutCancellationException) {
