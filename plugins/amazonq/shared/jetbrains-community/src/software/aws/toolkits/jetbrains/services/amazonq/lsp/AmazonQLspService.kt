@@ -95,6 +95,7 @@ internal class LSPProcessListener : ProcessListener {
 @Service(Service.Level.PROJECT)
 class AmazonQLspService(private val project: Project, private val cs: CoroutineScope) : Disposable {
     private var instance: Deferred<AmazonQServerInstance>
+
     // dont allow lsp commands if server is restarting
     private val mutex = Mutex(false)
 
