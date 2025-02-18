@@ -30,13 +30,8 @@ import org.mockito.kotlin.verify
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsRequest
 import software.amazon.awssdk.services.codewhispererruntime.paginators.GenerateCompletionsIterable
-import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
-import software.aws.toolkits.jetbrains.core.credentials.ManagedSsoProfile
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
-import software.aws.toolkits.jetbrains.core.credentials.MockToolkitAuthManagerRule
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.codeWhispererRecommendationActionId
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonFileName
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
@@ -70,11 +65,10 @@ open class CodeWhispererTestBase {
     val mockClientManagerRule = MockClientManagerRule()
     val mockCredentialRule = MockCredentialManagerRule()
     val disposableRule = DisposableRule()
-    val authManagerRule = MockToolkitAuthManagerRule()
 
     @Rule
     @JvmField
-    val ruleChain = RuleChain(projectRule, mockCredentialRule, mockClientManagerRule, authManagerRule, disposableRule)
+    val ruleChain = RuleChain(projectRule, mockCredentialRule, mockClientManagerRule, disposableRule)
 
     protected lateinit var mockClient: CodeWhispererRuntimeClient
 
@@ -92,7 +86,6 @@ open class CodeWhispererTestBase {
     @Before
     open fun setUp() {
         mockClient = mockClientManagerRule.create()
-        mockClientManagerRule.create<SsoOidcClient>()
         val requestCaptor = argumentCaptor<GenerateCompletionsRequest>()
         mockClient.stub {
             on {
@@ -166,9 +159,6 @@ open class CodeWhispererTestBase {
         projectRule.project.replaceService(CodeWhispererClientAdaptor::class.java, clientAdaptorSpy, disposableRule.disposable)
         ApplicationManager.getApplication().replaceService(CodeWhispererExplorerActionManager::class.java, stateManager, disposableRule.disposable)
         stateManager.setAutoEnabled(false)
-
-        val conn = authManagerRule.createConnection(ManagedSsoProfile("us-east-1", "url", Q_SCOPES))
-        ToolkitConnectionManager.getInstance(projectRule.project).switchConnection(conn)
     }
 
     @After
