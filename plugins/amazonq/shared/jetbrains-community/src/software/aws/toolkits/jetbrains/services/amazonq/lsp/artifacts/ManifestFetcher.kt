@@ -5,11 +5,11 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.util.io.DigestUtil
-import com.intellij.util.io.HttpRequests
 import software.amazon.awssdk.utils.UserHomeDirectoryUtils
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.readText
+import software.aws.toolkits.jetbrains.core.getETagFromUrl
 import software.aws.toolkits.jetbrains.core.getTextFromUrl
 import software.aws.toolkits.jetbrains.core.saveFileFromUrl
 import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
@@ -97,12 +97,7 @@ class ManifestFetcher {
 
     private fun getManifestETagFromUrl() : String? {
         try {
-            val actualETag = HttpRequests.head(lspManifestUrl)
-
-                .userAgent("AWS Toolkit for JetBrains")
-                .connect { request ->
-                    request.connection.headerFields["ETag"]?.firstOrNull().orEmpty()
-                }
+            val actualETag = getETagFromUrl(lspManifestUrl)
             return actualETag.trim('"')
         }
         catch (e: Exception) {

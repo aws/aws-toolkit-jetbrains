@@ -3,8 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.project.manifest
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.util.SystemInfo
@@ -18,10 +18,9 @@ class ManifestManager {
     val currentVersion = "0.1.32"
     val currentOs = getOs()
     private val arch = CpuArch.CURRENT
-    private val mapper = jacksonObjectMapper()
+    private val mapper = jacksonObjectMapper().apply { configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) }
 
     data class TargetContent(
-        @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("filename")
         val filename: String? = null,
         @JsonProperty("url")
@@ -33,7 +32,6 @@ class ManifestManager {
     )
 
     data class VersionTarget(
-        @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("platform")
         val platform: String? = null,
         @JsonProperty("arch")
@@ -42,8 +40,7 @@ class ManifestManager {
         val contents: List<TargetContent>? = emptyList(),
     )
 
-    data class RunTime(
-        @JsonIgnoreProperties(ignoreUnknown = true)
+    data class Runtime(
         @JsonProperty("name")
         val name: String? = null,
         @JsonProperty("version")
@@ -51,7 +48,6 @@ class ManifestManager {
     )
 
     data class Capabilities(
-        @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("name")
         val name: String? = null,
         @JsonProperty("version")
@@ -59,7 +55,6 @@ class ManifestManager {
     )
 
     data class Protocol(
-        @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("name")
         val name: String?= null,
         @JsonProperty("version")
@@ -67,13 +62,12 @@ class ManifestManager {
     )
 
     data class Version(
-        @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("serverVersion")
         val serverVersion: String? = null,
         @JsonProperty("isDelisted")
         val isDelisted: Boolean? = null,
         @JsonProperty("runtime")
-        val runtime: RunTime? = null,
+        val runtime: Runtime? = null,
         @JsonProperty("capabilities")
         val capabilities: List<Capabilities>? = emptyList(),
         @JsonProperty("protocol")
@@ -85,7 +79,6 @@ class ManifestManager {
     )
 
     data class Manifest(
-        @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("manifestSchemaVersion")
         val manifestSchemaVersion: String? = null,
         @JsonProperty("artifactId")
