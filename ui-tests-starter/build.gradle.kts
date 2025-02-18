@@ -9,21 +9,26 @@ plugins {
     id("toolkit-kotlin-conventions")
     id("toolkit-intellij-plugin")
 
-    id("org.jetbrains.intellij.platform")
+    id("org.jetbrains.intellij.platform.module")
 }
 
 val ideProfile = IdeVersions.ideProfile(project)
 val testPlugins by configurations.registering
-val testPrep by sourceSets.creating {
-    java.srcDirs(findFolders(project, "tst-prep", ideProfile))
-}
 
-
-// Add our source sets per IDE profile version (i.e. src-211)
 sourceSets {
     test {
-        java.srcDirs(findFolders(project, "tst", ideProfile))
-        resources.srcDirs(findFolders(project, "tst-resources", ideProfile))
+        java.setSrcDirs(findFolders(project, "tst-prep", ideProfile))
+        resources.setSrcDirs(findFolders(project, "tst-resources", ideProfile))
+    }
+}
+
+val uiTestSource = sourceSets.create("uiTest") {
+    java.setSrcDirs(findFolders(project, "tst", ideProfile))
+}
+
+idea {
+    module {
+        testSources.from(uiTestSource.allSource.srcDirs)
     }
 }
 
@@ -32,56 +37,57 @@ intellijPlatform {
     instrumentCode = false
 }
 
+val uiTestImplementation by configurations.getting
 
+configurations.getByName(uiTestSource.compileClasspathConfigurationName) {
+    extendsFrom(uiTestImplementation)
+}
+
+configurations.getByName(uiTestSource.runtimeClasspathConfigurationName) {
+    extendsFrom(uiTestImplementation)
+}
 
 dependencies {
-    //testImplementation(platform("com.jetbrains.intellij.tools:ide-starter"))
     // should really be set by the BOM, but too much work to figure out right now
-    testImplementation("org.kodein.di:kodein-di-jvm:7.20.2")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
-
-    testImplementation(project(":plugin-core:jetbrains-community"))
-    testImplementation(project(":plugin-core:core"))
-    testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
-    val testPrepImplementation by configurations.getting
-
-    testPrepImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
-
-
-
+    uiTestImplementation("org.kodein.di:kodein-di-jvm:7.20.2")
+    uiTestImplementation(platform(libs.junit5.bom))
+    uiTestImplementation(libs.junit5.jupiter)
 
     intellijPlatform {
-        //intellijIdeaCommunity(IdeVersions.ideProfile(providers).map { it.name })
-        //intellijIdeaCommunity(ideProfile.community.sdkVersion)
         val version = ideProfile.community.sdkVersion
         intellijIdeaCommunity(version, !version.contains("SNAPSHOT"))
-        testFramework(TestFrameworkType.JUnit5)
-        testFramework(TestFrameworkType.Starter)
+
+        localPlugin(project(":plugin-core"))
+        testImplementation(project(":plugin-core:core"))
+        testImplementation(project(":plugin-core:jetbrains-community"))
+        testImplementation(testFixtures(project(":plugin-core:jetbrains-community")))
+
         testFramework(TestFrameworkType.Bundled)
+        testFramework(TestFrameworkType.JUnit5)
+
+        testFramework(TestFrameworkType.Starter, configurationName = uiTestImplementation.name)
     }
 
     testPlugins(project(":plugin-amazonq", "pluginZip"))
     testPlugins(project(":plugin-core", "pluginZip"))
 }
 
-val prepareAmazonQTest = tasks.register<Test>("prepareAmazonQTest") {
-//    dependsOn(":plugin-core:jetbrains-community:test:abc")
-//    filter {
-//        setIncludePatterns("abc.*")
-//        //includeTestsMatching("abc.AbcTest")
-//        //excludeTestsMatching("software.aws.toolkits.jetbrains.*")
-//    }
-    testClassesDirs = testPrep.output.classesDirs
-    classpath = testPrep.runtimeClasspath
-
-    useJUnitPlatform()// Assuming your test task is named amazonQTest
+tasks.test {
+    enabled = false
 }
 
-tasks.test {
-    dependsOn(testPlugins)
+val prepareAmazonQTest by intellijPlatformTesting.testIde.registering {
+    task {
+        useJUnitPlatform()
+    }
+}
+
+tasks.register<Test>("uiTest") {
+    testClassesDirs = uiTestSource.output.classesDirs
+    classpath = uiTestSource.runtimeClasspath
+
     dependsOn(prepareAmazonQTest)
-    useJUnitPlatform()
+    dependsOn(testPlugins)
 
     systemProperty("ui.test.plugins", testPlugins.get().asPath)
 }
