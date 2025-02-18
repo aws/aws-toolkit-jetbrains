@@ -9,6 +9,7 @@ import com.intellij.codeInsight.lookup.LookupManagerListener
 import com.intellij.idea.AppMode
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ENTER
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ESCAPE
+import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_TAB
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.components.Service
@@ -59,6 +60,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionConte
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererEditorActionHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupEnterHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupEscHandler
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupTabHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupTypedHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererAcceptButtonActionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererActionListener
@@ -72,6 +74,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhis
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_DIM_HEX
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.POPUP_INFO_TEXT_SIZE
+import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import java.awt.Point
 import java.awt.Rectangle
@@ -483,6 +486,10 @@ class CodeWhispererPopupManager {
             ACTION_EDITOR_ENTER,
             CodeWhispererPopupEnterHandler(EditorActionManager.getInstance().getActionHandler(ACTION_EDITOR_ENTER), states)
         )
+
+        if (isRunningOnRemoteBackend()) {
+            setPopupActionHandler(ACTION_EDITOR_TAB, CodeWhispererPopupTabHandler(states))
+        }
     }
 
     private fun setPopupTypedHandler(newHandler: CodeWhispererPopupTypedHandler) {
