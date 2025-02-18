@@ -5,15 +5,14 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.workspace
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
-import org.eclipse.lsp4j.CreateFilesParams
-import org.eclipse.lsp4j.DeleteFilesParams
-import org.eclipse.lsp4j.FileCreate
-import org.eclipse.lsp4j.FileDelete
+import org.eclipse.lsp4j.*
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
@@ -21,11 +20,17 @@ import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 class WorkspaceServiceHandler(
     private val project: Project,
     serverInstance: Disposable
-): BulkFileListener {
+): BulkFileListener,
+ProjectManagerListener {
 
     init{
         project.messageBus.connect(serverInstance).subscribe(
             VirtualFileManager.VFS_CHANGES,
+            this
+        )
+
+        project.messageBus.connect(serverInstance).subscribe(
+            ProjectManager.TOPIC,
             this
         )
     }
@@ -70,6 +75,7 @@ class WorkspaceServiceHandler(
         pluginAwareExecuteOnPooledThread {
             didCreateFiles(events.filterIsInstance<VFileCreateEvent>())
             didDeleteFiles(events.filterIsInstance<VFileDeleteEvent>())
+            didChangeWatchedFiles(events)
         }
     }
 
@@ -77,4 +83,28 @@ class WorkspaceServiceHandler(
     //private fun didChangeWorkspaceFolders() {
     //    languageServer.workspaceService.didChangeWorkspaceFolders()
     //}
+
+    //didChangeWorkspaceFolders impl
+
+    //didChangeWatchedFiles
+    private fun didChangeWatchedFiles(events: List<VFileEvent>) {
+        executeIfRunning(project) {
+            if (events.isNotEmpty()) {
+                it.workspaceService.didChangeWatchedFiles(
+                    DidChangeWatchedFilesParams().apply {
+                        changes = events.map { event ->
+                            FileEvent().apply {
+                                uri = event.file?.toNioPath()?.toUri().toString()
+                                type = when (event) {
+                                    is VFileCreateEvent -> FileChangeType.Created
+                                    is VFileDeleteEvent -> FileChangeType.Deleted
+                                    else -> FileChangeType.Changed
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+        }
+    }
 }
