@@ -54,7 +54,7 @@ class TextDocumentServiceHandler(
     }
 
     override fun beforeDocumentSaving(document: Document) {
-        AmazonQLspService.getInstance(project).executeIfRunning {
+        AmazonQLspService.executeIfRunning(project) {
             val file = FileDocumentManager.getInstance().getFile(document) ?: return@executeIfRunning
             it.textDocumentService.didSave(
                 DidSaveTextDocumentParams().apply {
@@ -68,7 +68,7 @@ class TextDocumentServiceHandler(
     }
 
     override fun after(events: MutableList<out VFileEvent>) {
-        AmazonQLspService.getInstance(project).executeIfRunning {
+        AmazonQLspService.executeIfRunning(project) {
             pluginAwareExecuteOnPooledThread {
                 events.filterIsInstance<VFileContentChangeEvent>().forEach { event ->
                     val document = FileDocumentManager.getInstance().getCachedDocument(event.file) ?: return@forEach
@@ -94,7 +94,7 @@ class TextDocumentServiceHandler(
         source: FileEditorManager,
         file: VirtualFile,
     ) {
-        AmazonQLspService.getInstance(project).executeIfRunning {
+        AmazonQLspService.executeIfRunning(project) {
             it.textDocumentService.didOpen(
                 DidOpenTextDocumentParams().apply {
                     textDocument = TextDocumentItem().apply {
@@ -110,7 +110,7 @@ class TextDocumentServiceHandler(
         source: FileEditorManager,
         file: VirtualFile,
     ) {
-        AmazonQLspService.getInstance(project).executeIfRunning {
+        AmazonQLspService.executeIfRunning(project) {
             it.textDocumentService.didClose(
                 DidCloseTextDocumentParams().apply {
                     textDocument = TextDocumentIdentifier().apply {

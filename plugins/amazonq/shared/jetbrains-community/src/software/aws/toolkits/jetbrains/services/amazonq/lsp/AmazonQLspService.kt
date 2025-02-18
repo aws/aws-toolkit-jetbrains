@@ -128,9 +128,6 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
         instance = start()
     }
 
-    fun executeIfRunning(runnable: (AmazonQLanguageServer) -> Unit) =
-        instance?.languageServer?.let { runnable(it) }
-
     override fun dispose() {
     }
 
