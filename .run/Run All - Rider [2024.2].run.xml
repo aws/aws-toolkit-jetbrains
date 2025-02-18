@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Run All - Rider [2024.2]" type="GradleRunConfiguration" factoryName="Gradle" folderName="2024.2">
-    <log_file alias="idea.log" path="$PROJECT_DIR$/plugins/sandbox-all/build/idea-sandbox/system/log/idea.log" />
+    <log_file alias="idea.log" path="$PROJECT_DIR$/plugins/sandbox-all/build/idea-sandbox/RD-2024.2/log/idea.log" />
     <ExternalSystemSettings>
       <option name="executionName" />
       <option name="externalProjectPath" value="$PROJECT_DIR$" />
