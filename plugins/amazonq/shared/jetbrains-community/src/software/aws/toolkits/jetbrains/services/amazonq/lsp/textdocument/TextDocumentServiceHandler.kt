@@ -23,7 +23,6 @@ import org.eclipse.lsp4j.TextDocumentContentChangeEvent
 import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.TextDocumentItem
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
@@ -54,11 +53,8 @@ class TextDocumentServiceHandler(
         )
     }
 
-    private fun executeIfRunning(project: Project, runnable: (AmazonQLanguageServer) -> Unit) =
-        AmazonQLspService.getInstance(project).instance?.languageServer?.let { runnable(it) }
-
     override fun beforeDocumentSaving(document: Document) {
-        executeIfRunning(project) {
+        AmazonQLspService.getInstance(project).executeIfRunning {
             val file = FileDocumentManager.getInstance().getFile(document) ?: return@executeIfRunning
             it.textDocumentService.didSave(
                 DidSaveTextDocumentParams().apply {
@@ -72,7 +68,7 @@ class TextDocumentServiceHandler(
     }
 
     override fun after(events: MutableList<out VFileEvent>) {
-        executeIfRunning(project) {
+        AmazonQLspService.getInstance(project).executeIfRunning {
             pluginAwareExecuteOnPooledThread {
                 events.filterIsInstance<VFileContentChangeEvent>().forEach { event ->
                     val document = FileDocumentManager.getInstance().getCachedDocument(event.file) ?: return@forEach
@@ -98,7 +94,7 @@ class TextDocumentServiceHandler(
         source: FileEditorManager,
         file: VirtualFile,
     ) {
-        executeIfRunning(project) {
+        AmazonQLspService.getInstance(project).executeIfRunning {
             it.textDocumentService.didOpen(
                 DidOpenTextDocumentParams().apply {
                     textDocument = TextDocumentItem().apply {
@@ -114,7 +110,7 @@ class TextDocumentServiceHandler(
         source: FileEditorManager,
         file: VirtualFile,
     ) {
-        executeIfRunning(project) {
+        AmazonQLspService.getInstance(project).executeIfRunning {
             it.textDocumentService.didClose(
                 DidCloseTextDocumentParams().apply {
                     textDocument = TextDocumentIdentifier().apply {

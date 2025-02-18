@@ -87,7 +87,7 @@ internal class LSPProcessListener : ProcessListener {
 
 @Service(Service.Level.PROJECT)
 class AmazonQLspService(private val project: Project, private val cs: CoroutineScope) : Disposable {
-    internal var instance: AmazonQServerInstance? = null
+    private var instance: AmazonQServerInstance? = null
 
     init {
         cs.launch {
@@ -103,6 +103,9 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
         }
     }
 
+    fun executeIfRunning(runnable: (AmazonQLanguageServer) -> Unit) =
+        instance?.languageServer?.let { runnable(it) }
+
     override fun dispose() {
     }
 
@@ -117,7 +120,7 @@ internal class AmazonQServerInstance(private val project: Project, private val c
 
     private val launcher: Launcher<AmazonQLanguageServer>
 
-    internal val languageServer: AmazonQLanguageServer
+    val languageServer: AmazonQLanguageServer
         get() = launcher.remoteProxy
 
     @Suppress("ForbiddenVoid")
