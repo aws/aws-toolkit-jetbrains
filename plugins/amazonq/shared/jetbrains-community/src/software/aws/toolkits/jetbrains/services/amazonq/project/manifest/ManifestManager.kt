@@ -41,12 +41,45 @@ class ManifestManager {
         @JsonProperty("contents")
         val contents: List<TargetContent>? = emptyList(),
     )
+
+    data class RunTime(
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        @JsonProperty("name")
+        val name: String? = null,
+        @JsonProperty("version")
+        val version: String? = null
+    )
+
+    data class Capabilities(
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        @JsonProperty("name")
+        val name: String? = null,
+        @JsonProperty("version")
+        val version: String? = null
+    )
+
+    data class Protocol(
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        @JsonProperty("name")
+        val name: String?= null,
+        @JsonProperty("version")
+        val version: String? = null
+    )
+
     data class Version(
         @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("serverVersion")
         val serverVersion: String? = null,
         @JsonProperty("isDelisted")
         val isDelisted: Boolean? = null,
+        @JsonProperty("runtime")
+        val runtime: RunTime? = null,
+        @JsonProperty("capabilities")
+        val capabilities: List<Capabilities>? = emptyList(),
+        @JsonProperty("protocol")
+        val protocol: List<Protocol>? = emptyList(),
+        @JsonProperty("thirdPartyLicenses")
+        val thirdPartyLicenses: String? = null,
         @JsonProperty("targets")
         val targets: List<VersionTarget>? = emptyList(),
     )
@@ -67,7 +100,7 @@ class ManifestManager {
 
     fun getManifest(): Manifest? = fetchFromRemoteAndSave()
 
-    private fun readManifestFile(content: String): Manifest? {
+    fun readManifestFile(content: String): Manifest? {
         try {
             return mapper.readValue<Manifest>(content)
         } catch (e: Exception) {
