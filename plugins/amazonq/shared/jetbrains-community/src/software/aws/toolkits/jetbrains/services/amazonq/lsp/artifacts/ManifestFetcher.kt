@@ -65,21 +65,19 @@ class ManifestFetcher {
     }
 
     private fun fetchManifestFromLocal(): ManifestManager.Manifest? {
-        var manifest: ManifestManager.Manifest? = null
         val localETag = getManifestETagFromLocal()
         val remoteETag = getManifestETagFromUrl()
         // If local and remote have same ETag, we can re-use the manifest file from local to fetch artifacts.
         if (localETag != null && remoteETag != null && localETag == remoteETag) {
             try {
                 val manifestContent = lspManifestFilePath.readText()
-                manifest = manifestManager.readManifestFile(manifestContent) ?: return null
+                return manifestManager.readManifestFile(manifestContent)
             } catch (e: Exception) {
                 logger.error("error reading lsp manifest file from local ${e.message}", e)
                 return null
             }
         }
-        logger.info("Re-using lsp manifest from local.")
-        return manifest
+        return null
     }
 
     private fun getManifestETagFromLocal(): String? {
