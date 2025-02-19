@@ -20,7 +20,6 @@ import software.aws.toolkits.jetbrains.common.session.SessionStateConfigData
 import software.aws.toolkits.jetbrains.common.util.AmazonQCodeGenService
 import software.aws.toolkits.jetbrains.common.util.resolveAndCreateOrUpdateFile
 import software.aws.toolkits.jetbrains.common.util.resolveAndDeleteFile
-import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqDoc.CODE_GENERATION_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqDoc.FEATURE_NAME
@@ -40,7 +39,7 @@ import java.security.MessageDigest
 private val logger = getLogger<AmazonQCodeGenerateClient>()
 
 class DocSession(val tabID: String, val project: Project) {
-    var context: FeatureDevSessionContext
+    var context: DocSessionContext = DocSessionContext(project, MAX_PROJECT_SIZE_BYTES)
     val sessionStartTime = System.currentTimeMillis()
 
     var state: SessionState?
@@ -59,7 +58,6 @@ class DocSession(val tabID: String, val project: Project) {
     var isAuthenticating: Boolean
 
     init {
-        context = FeatureDevSessionContext(project, MAX_PROJECT_SIZE_BYTES)
         proxyClient = AmazonQCodeGenerateClient.getInstance(project)
         amazonQCodeGenService = AmazonQCodeGenService(proxyClient, project)
         state = ConversationNotStartedState("", tabID, token = null)
