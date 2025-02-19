@@ -81,8 +81,8 @@ object CodeWhispererConstants {
     const val FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES: Long = 1024 * 200 // 200KB
     const val AUTO_SCAN_DEBOUNCE_DELAY_IN_SECONDS: Long = 30
     const val CODE_FIX_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS: Long = 10
-    const val CODE_FIX_POLLING_INTERVAL_IN_SECONDS: Long = 1
-    const val CODE_FIX_TIMEOUT_IN_SECONDS: Long = 60 // 60 seconds
+    const val CODE_FIX_POLLING_INTERVAL_IN_SECONDS: Long = 5
+    const val CODE_FIX_TIMEOUT_IN_SECONDS: Long = 120 // 120 seconds
     const val TOTAL_BYTES_IN_KB = 1024
     const val TOTAL_BYTES_IN_MB = 1024 * 1024
     const val TOTAL_MILLIS_IN_SECOND = 1000
