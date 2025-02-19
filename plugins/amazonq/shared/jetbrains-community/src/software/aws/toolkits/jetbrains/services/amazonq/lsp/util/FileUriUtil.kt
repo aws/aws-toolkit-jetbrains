@@ -6,9 +6,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.util
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VfsUtilCore
-import java.net.URI
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
+
 
 object FileUriUtil {
 
