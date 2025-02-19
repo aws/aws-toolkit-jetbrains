@@ -27,7 +27,7 @@ fun writeJsonToUrl(url: String, jsonString: String, indicator: ProgressIndicator
 
 fun getETagFromUrl(url: String): String =
     HttpRequests.head(url)
-        .userAgent("AWS Toolkit for JetBrains")
+        .userAgent(AwsClientManager.getUserAgent())
         .connect { request ->
             request.connection.headerFields["ETag"]?.firstOrNull().orEmpty()
         }

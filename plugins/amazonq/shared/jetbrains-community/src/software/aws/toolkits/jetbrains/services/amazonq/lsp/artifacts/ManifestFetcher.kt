@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.util.io.DigestUtil
-import software.amazon.awssdk.utils.UserHomeDirectoryUtils
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.readText
@@ -14,13 +13,13 @@ import software.aws.toolkits.jetbrains.core.getTextFromUrl
 import software.aws.toolkits.jetbrains.core.saveFileFromUrl
 import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 import java.nio.file.Path
-import java.nio.file.Paths
 
 class ManifestFetcher {
 
     private val lspManifestUrl = "https://aws-toolkit-language-servers.amazonaws.com/codewhisperer/0/manifest.json"
     private val manifestManager = ManifestManager()
-    private val lspManifestFilePath: Path = Paths.get(UserHomeDirectoryUtils.userHomeDirectory(), ".aws", "amazonq", "cache", "lspManifest.js")
+    private val lspManifestFilePath: Path = getToolkitsCommonCachePath().resolve("aws").resolve("toolkits").resolve("language-servers")
+        .resolve("lsp-manifest.json")
 
     companion object {
         private val logger = getLogger<ManifestFetcher>()

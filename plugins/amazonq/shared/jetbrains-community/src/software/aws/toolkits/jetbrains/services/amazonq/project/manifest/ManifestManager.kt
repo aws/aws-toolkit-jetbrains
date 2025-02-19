@@ -40,40 +40,11 @@ class ManifestManager {
         val contents: List<TargetContent>? = emptyList(),
     )
 
-    data class Runtime(
-        @JsonProperty("name")
-        val name: String? = null,
-        @JsonProperty("version")
-        val version: String? = null,
-    )
-
-    data class Capabilities(
-        @JsonProperty("name")
-        val name: String? = null,
-        @JsonProperty("version")
-        val version: String? = null,
-    )
-
-    data class Protocol(
-        @JsonProperty("name")
-        val name: String? = null,
-        @JsonProperty("version")
-        val version: String? = null,
-    )
-
     data class Version(
         @JsonProperty("serverVersion")
         val serverVersion: String? = null,
         @JsonProperty("isDelisted")
         val isDelisted: Boolean? = null,
-        @JsonProperty("runtime")
-        val runtime: Runtime? = null,
-        @JsonProperty("capabilities")
-        val capabilities: List<Capabilities>? = emptyList(),
-        @JsonProperty("protocol")
-        val protocol: List<Protocol>? = emptyList(),
-        @JsonProperty("thirdPartyLicenses")
-        val thirdPartyLicenses: String? = null,
         @JsonProperty("targets")
         val targets: List<VersionTarget>? = emptyList(),
     )
