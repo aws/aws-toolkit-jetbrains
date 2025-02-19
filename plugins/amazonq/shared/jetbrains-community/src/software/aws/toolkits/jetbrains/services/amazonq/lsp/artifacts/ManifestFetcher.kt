@@ -5,8 +5,10 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.util.io.DigestUtil
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.readText
 import software.aws.toolkits.jetbrains.core.getETagFromUrl
 import software.aws.toolkits.jetbrains.core.getTextFromUrl
@@ -42,15 +44,15 @@ class ManifestFetcher {
             val manifestString = getTextFromUrl(lspManifestUrl)
             manifest = manifestManager.readManifestFile(manifestString) ?: return null
         } catch (e: Exception) {
-            logger.error("error fetching lsp manifest from remote URL ${e.message}", e)
+            logger.error(e) { "error fetching lsp manifest from remote URL ${e.message}" }
             return null
         }
         if (manifest.isManifestDeprecated == true) {
-            logger.info("Manifest is deprecated")
+            logger.info { "Manifest is deprecated" }
             return null
         }
         updateManifestCache()
-        logger.info("Using manifest found from remote URL")
+        logger.info { "Using manifest found from remote URL" }
         return manifest
     }
 
@@ -58,7 +60,7 @@ class ManifestFetcher {
         try {
             saveFileFromUrl(lspManifestUrl, lspManifestFilePath)
         } catch (e: Exception) {
-            logger.error("error occurred while saving lsp manifest to local cache ${e.message}", e)
+            logger.error(e) { "error occurred while saving lsp manifest to local cache ${e.message}" }
         }
     }
 
@@ -71,7 +73,7 @@ class ManifestFetcher {
                 val manifestContent = lspManifestFilePath.readText()
                 return manifestManager.readManifestFile(manifestContent)
             } catch (e: Exception) {
-                logger.error("error reading lsp manifest file from local ${e.message}", e)
+                logger.error(e) { "error reading lsp manifest file from local ${e.message}" }
                 return null
             }
         }
@@ -92,7 +94,7 @@ class ManifestFetcher {
             val actualETag = getETagFromUrl(lspManifestUrl)
             return actualETag.trim('"')
         } catch (e: Exception) {
-            logger.error("error fetching ETag of lsp manifest from url.", e)
+            logger.error(e) { "error fetching ETag of lsp manifest from url." }
         }
         return null
     }
