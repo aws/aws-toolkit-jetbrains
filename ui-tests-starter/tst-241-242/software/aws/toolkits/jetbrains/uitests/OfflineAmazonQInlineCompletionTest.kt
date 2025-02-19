@@ -40,7 +40,7 @@ class OfflineAmazonQInlineCompletionTest {
             LocalProjectInfo(
                 Paths.get("tstData", "Hello")
             )
-        ).useRelease("2024.2")
+        ).useRelease("2024.3")
         Paths.get(System.getProperty("user.home"), ".aws", "sso", "cache", "ee1d2538cb8d358377d7661466c866af747a8a3f.json")
             .createParentDirectories()
             .writeText(
