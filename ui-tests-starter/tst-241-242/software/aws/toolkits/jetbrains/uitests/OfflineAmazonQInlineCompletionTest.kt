@@ -1,4 +1,4 @@
-// Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.uitests
 
@@ -6,8 +6,6 @@ import com.intellij.driver.sdk.openFile
 import com.intellij.driver.sdk.ui.ui
 import com.intellij.driver.sdk.waitForProjectOpen
 import com.intellij.ide.starter.ci.CIServer
-import com.intellij.ide.starter.config.ConfigurationStorage
-import com.intellij.ide.starter.config.logEnvironmentVariables
 import com.intellij.ide.starter.di.di
 import com.intellij.ide.starter.driver.engine.runIdeWithDriver
 import com.intellij.ide.starter.ide.IdeProductProvider
@@ -17,6 +15,7 @@ import com.intellij.ide.starter.project.LocalProjectInfo
 import com.intellij.ide.starter.runner.CurrentTestMethod
 import com.intellij.ide.starter.runner.Starter
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 import org.kodein.di.DI
 import org.kodein.di.bindSingleton
 import java.io.File
@@ -25,12 +24,12 @@ import java.nio.file.Paths
 import kotlin.io.path.createParentDirectories
 import kotlin.io.path.writeText
 
+@DisabledIfSystemProperty(named = "org.gradle.project.ideProfileName", matches = "2024.2", disabledReason = "Logging API not present for 242")
 class OfflineAmazonQInlineCompletionTest {
     init {
         di = DI {
             extend(di)
             bindSingleton<CIServer>(overrides = true) { TestCIServer }
-            ConfigurationStorage.Companion.logEnvironmentVariables(false)
         }
     }
 
@@ -41,7 +40,7 @@ class OfflineAmazonQInlineCompletionTest {
             LocalProjectInfo(
                 Paths.get("tstData", "Hello")
             )
-        ).useRelease("2024.3")
+        ).useRelease("2024.2")
         Paths.get(System.getProperty("user.home"), ".aws", "sso", "cache", "ee1d2538cb8d358377d7661466c866af747a8a3f.json")
             .createParentDirectories()
             .writeText(
