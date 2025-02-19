@@ -1,22 +1,14 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.util
 
-import com.intellij.openapi.vfs.JarFileSystem
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.newvfs.impl.VirtualFileSystemEntry
-import com.intellij.rt.coverage.util.ErrorReporter.setPath
 import com.intellij.testFramework.LightVirtualFile
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import io.mockk.every
-import io.mockk.mockk
-import java.io.File
 import org.junit.Test
-import kotlin.test.assertEquals
 
 class FileUriUtilTest : BasePlatformTestCase() {
 
     private fun createMockVirtualFile(path: String): VirtualFile =
         LightVirtualFile(path)
-
 
     @Test
     fun `test basic unix path`() {
