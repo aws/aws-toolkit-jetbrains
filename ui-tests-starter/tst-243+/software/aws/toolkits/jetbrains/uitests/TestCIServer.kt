@@ -4,11 +4,12 @@
 package software.aws.toolkits.jetbrains.uitests
 
 import com.intellij.ide.starter.ci.CIServer
+import com.intellij.ide.starter.config.ConfigurationStorage
 import com.intellij.ide.starter.junit5.config.LogEnvironmentVariables
 import java.nio.file.Path
 
 object TestCIServer : CIServer {
-    override val isBuildRunningOnCI: Boolean = false//System.getenv("CI").toBoolean()
+    override val isBuildRunningOnCI: Boolean = System.getenv("CI").toBoolean()
     override val buildNumber: String = ""
     override val branchName: String = ""
     override val buildParams: Map<String, String> = mapOf()
@@ -28,3 +29,5 @@ object TestCIServer : CIServer {
 
     override fun isTestFailureShouldBeIgnored(message: String) = false
 }
+
+

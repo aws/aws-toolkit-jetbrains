@@ -6,6 +6,8 @@ import com.intellij.driver.sdk.openFile
 import com.intellij.driver.sdk.ui.ui
 import com.intellij.driver.sdk.waitForProjectOpen
 import com.intellij.ide.starter.ci.CIServer
+import com.intellij.ide.starter.config.ConfigurationStorage
+import com.intellij.ide.starter.config.logEnvironmentVariables
 import com.intellij.ide.starter.di.di
 import com.intellij.ide.starter.driver.engine.runIdeWithDriver
 import com.intellij.ide.starter.ide.IdeProductProvider
@@ -28,6 +30,7 @@ class OfflineAmazonQInlineCompletionTest {
         di = DI {
             extend(di)
             bindSingleton<CIServer>(overrides = true) { TestCIServer }
+            ConfigurationStorage.Companion.logEnvironmentVariables(false)
         }
     }
 
