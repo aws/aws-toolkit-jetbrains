@@ -43,7 +43,7 @@ interface RepoSizeError {
 }
 class RepoSizeLimitError(override val message: String) : RuntimeException(), RepoSizeError
 
-class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Long? = null) {
+open class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Long? = null) {
     // TODO: Need to correct this class location in the modules going further to support both amazonq and codescan.
 
     private val additionalGitIgnoreFolderRules = setOf(
@@ -61,7 +61,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         "dist",
     )
 
-    private val additionalGitIgnoreBinaryFilesRules = setOf(
+    private val defaultAdditionalGitIgnoreBinaryFilesRules = setOf(
         "*.zip",
         "*.bin",
         "*.png",
@@ -91,17 +91,17 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     // selectedSourceFolder: is the directory selected in replacement of the root, this happens when the project is too big to bundle for uploading.
     private var _selectedSourceFolder = projectRoot
     private var ignorePatternsWithGitIgnore = emptyList<Regex>()
-    private var ignorePatternsForBinaryFiles = additionalGitIgnoreBinaryFilesRules
-        .map { convertGitIgnorePatternToRegex(it) }
-        .mapNotNull { pattern ->
-            runCatching { Regex(pattern) }.getOrNull()
-        }
+    private var ignorePatternsForBinaryFiles = buildIgnorePatternsForBinaryFiles()
+
     private val gitIgnoreFile = File(selectedSourceFolder.path, ".gitignore")
 
     init {
         ignorePatternsWithGitIgnore = try {
             buildList {
-                addAll(additionalGitIgnoreFolderRules.map { convertGitIgnorePatternToRegex(it) })
+                addAll(
+                    additionalGitIgnoreFolderRules
+                        .map { convertGitIgnorePatternToRegex(it) }
+                )
                 addAll(parseGitIgnore())
             }.mapNotNull { pattern ->
                 runCatching { Regex(pattern) }.getOrNull()
@@ -110,6 +110,15 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
             emptyList()
         }
     }
+
+    private fun buildIgnorePatternsForBinaryFiles(): List<Regex> =
+        getAdditionalGitIgnoreBinaryFilesRules()
+            .map { convertGitIgnorePatternToRegex(it) }
+            .mapNotNull { pattern ->
+                runCatching { Regex(pattern) }.getOrNull()
+            }
+
+    open fun getAdditionalGitIgnoreBinaryFilesRules(): Set<String> = defaultAdditionalGitIgnoreBinaryFilesRules
 
     // This function checks for existence of `devfile.yaml` in customer's repository, currently only `devfile.yaml` is supported for this feature.
     fun checkForDevFile(): Boolean {
@@ -129,7 +138,7 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
         return ZipCreationResult(zippedProject, checkSum256, zippedProject.length())
     }
 
-    fun isFileExtensionAllowed(file: VirtualFile): Boolean {
+    open fun isFileExtensionAllowed(file: VirtualFile): Boolean {
         // if it is a directory, it is allowed
         if (file.isDirectory) return true
         val extension = file.extension ?: return false
@@ -279,10 +288,17 @@ class FeatureDevSessionContext(val project: Project, val maxProjectSizeBytes: Lo
     }
 
     // gitignore patterns are not regex, method update needed.
-    private fun convertGitIgnorePatternToRegex(pattern: String): String = pattern
-        .replace(".", "\\.")
-        .replace("*", ".*")
-        .let { if (it.endsWith("/")) "$it.*" else "$it/.*" } // Add a trailing /* to all patterns. (we add a trailing / to all files when matching)
+    fun convertGitIgnorePatternToRegex(pattern: String): String {
+        // Special case for ".*" to match only dotfiles
+        if (pattern == ".*") {
+            return "^\\..*/.*"
+        }
+
+        return pattern
+            .replace(".", "\\.")
+            .replace("*", ".*")
+            .let { if (it.endsWith("/")) "$it.*" else "$it/.*" } // Add a trailing /* to all patterns. (we add a trailing / to all files when matching)
+    }
     var selectedSourceFolder: VirtualFile
         set(newRoot) {
             _selectedSourceFolder = newRoot

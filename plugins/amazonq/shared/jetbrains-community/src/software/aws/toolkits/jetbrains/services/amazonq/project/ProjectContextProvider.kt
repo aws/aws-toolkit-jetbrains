@@ -318,7 +318,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         logger.info { "sending message: ${msgType.endpoint} to lsp on port ${encoderServer.port}" }
         val url = URI("http://127.0.0.1:${encoderServer.port}/${msgType.endpoint}").toURL()
         if (!encoderServer.isNodeProcessRunning()) {
-            logger.warn { "language server is not running" }
+            logger.warn { "language server for ${project.name} is not running" }
             return@withContext null
         }
         // use 1h as timeout for index, 5 seconds for other APIs
