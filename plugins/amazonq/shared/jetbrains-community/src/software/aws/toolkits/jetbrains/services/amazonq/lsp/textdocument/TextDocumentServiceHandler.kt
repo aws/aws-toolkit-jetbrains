@@ -56,14 +56,16 @@ class TextDocumentServiceHandler(
     override fun beforeDocumentSaving(document: Document) {
         AmazonQLspService.executeIfRunning(project) {
             val file = FileDocumentManager.getInstance().getFile(document) ?: return@executeIfRunning
-            it.textDocumentService.didSave(
-                DidSaveTextDocumentParams().apply {
-                    textDocument = TextDocumentIdentifier().apply {
-                        uri = file.url
+            file.toNioPath().toUri().toString().takeIf { it.isNotEmpty() }?.let { uri ->
+                it.textDocumentService.didSave(
+                    DidSaveTextDocumentParams().apply {
+                        textDocument = TextDocumentIdentifier().apply {
+                            this.uri = uri
+                        }
+                        text = document.text
                     }
-                    text = document.text
-                }
-            )
+                )
+            }
         }
     }
 
@@ -72,19 +74,21 @@ class TextDocumentServiceHandler(
             pluginAwareExecuteOnPooledThread {
                 events.filterIsInstance<VFileContentChangeEvent>().forEach { event ->
                     val document = FileDocumentManager.getInstance().getCachedDocument(event.file) ?: return@forEach
-                    it.textDocumentService.didChange(
-                        DidChangeTextDocumentParams().apply {
-                            textDocument = VersionedTextDocumentIdentifier().apply {
-                                uri = event.file.url
-                                version = document.modificationStamp.toInt()
-                            }
-                            contentChanges = listOf(
-                                TextDocumentContentChangeEvent().apply {
-                                    text = document.text
+                    event.file.toNioPath().toUri().toString().takeIf { it.isNotEmpty() }?.let { uri ->
+                        it.textDocumentService.didChange(
+                            DidChangeTextDocumentParams().apply {
+                                textDocument = VersionedTextDocumentIdentifier().apply {
+                                    this.uri = uri
+                                    version = document.modificationStamp.toInt()
                                 }
-                            )
-                        }
-                    )
+                                contentChanges = listOf(
+                                    TextDocumentContentChangeEvent().apply {
+                                        text = document.text
+                                    }
+                                )
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -95,14 +99,16 @@ class TextDocumentServiceHandler(
         file: VirtualFile,
     ) {
         AmazonQLspService.executeIfRunning(project) {
-            it.textDocumentService.didOpen(
-                DidOpenTextDocumentParams().apply {
-                    textDocument = TextDocumentItem().apply {
-                        uri = file.url
-                        text = file.inputStream.readAllBytes().decodeToString()
+            file.toNioPath().toUri().toString().takeIf { it.isNotEmpty() }?.let { uri ->
+                it.textDocumentService.didOpen(
+                    DidOpenTextDocumentParams().apply {
+                        textDocument = TextDocumentItem().apply {
+                            this.uri = uri
+                            text = file.inputStream.readAllBytes().decodeToString()
+                        }
                     }
-                }
-            )
+                )
+            }
         }
     }
 
@@ -111,13 +117,15 @@ class TextDocumentServiceHandler(
         file: VirtualFile,
     ) {
         AmazonQLspService.executeIfRunning(project) {
-            it.textDocumentService.didClose(
-                DidCloseTextDocumentParams().apply {
-                    textDocument = TextDocumentIdentifier().apply {
-                        uri = file.url
+            file.toNioPath().toUri().toString().takeIf { it.isNotEmpty() }?.let { uri ->
+                it.textDocumentService.didClose(
+                    DidCloseTextDocumentParams().apply {
+                        textDocument = TextDocumentIdentifier().apply {
+                            this.uri = uri
+                        }
                     }
-                }
-            )
+                )
+            }
         }
     }
 }
