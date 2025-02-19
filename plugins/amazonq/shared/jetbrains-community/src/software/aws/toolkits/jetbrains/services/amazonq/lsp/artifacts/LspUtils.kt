@@ -7,9 +7,9 @@ import com.intellij.openapi.util.SystemInfo
 import java.nio.file.Path
 import java.nio.file.Paths
 
-fun getToolkitsCommonCachePath(): Path = when {
+fun getToolkitsCommonCacheRoot(): Path = when {
     SystemInfo.isWindows -> {
-        Paths.get(System.getenv("APPDATA"))
+        Paths.get(System.getenv("LOCALAPPDATA"))
     }
     SystemInfo.isMac -> {
         Paths.get(System.getProperty("user.home"), "Library", "Caches")

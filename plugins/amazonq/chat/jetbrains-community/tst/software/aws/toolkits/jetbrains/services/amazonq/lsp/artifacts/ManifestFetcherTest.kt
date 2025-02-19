@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 import io.mockk.every
 import io.mockk.spyk
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
@@ -29,7 +29,7 @@ class ManifestFetcherTest {
         every { fetchLocalManifestMock["fetchManifestFromLocal"]() } returns null
         every { fetchLocalManifestMock["fetchManifestFromRemote"]() } returns null
 
-        assertEquals(fetchLocalManifestMock.fetch(), null)
+        assertThat(fetchLocalManifestMock.fetch()).isNull()
         verify { fetchLocalManifestMock["fetchManifestFromLocal"]() }
         verify { fetchLocalManifestMock["fetchManifestFromRemote"]() }
     }
@@ -41,7 +41,7 @@ class ManifestFetcherTest {
         every { fetchLocalManifestMock["fetchManifestFromLocal"]() } returns manifest
         every { fetchLocalManifestMock["fetchManifestFromRemote"]() } returns null
 
-        assertEquals(fetchLocalManifestMock.fetch(), manifest)
+        assertThat(fetchLocalManifestMock.fetch()).isNotNull().isEqualTo(manifest)
         verify { fetchLocalManifestMock["fetchManifestFromLocal"]() }
     }
 
@@ -52,7 +52,7 @@ class ManifestFetcherTest {
         every { fetchLocalManifestMock["fetchManifestFromLocal"]() } returns null
         every { fetchLocalManifestMock["fetchManifestFromRemote"]() } returns manifest
 
-        assertEquals(fetchLocalManifestMock.fetch(), manifest)
+        assertThat(fetchLocalManifestMock.fetch()).isNotNull().isEqualTo(manifest)
         verify { fetchLocalManifestMock["fetchManifestFromLocal"]() }
         verify { fetchLocalManifestMock["fetchManifestFromRemote"]() }
     }

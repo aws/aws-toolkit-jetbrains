@@ -18,7 +18,7 @@ class ManifestFetcher {
 
     private val lspManifestUrl = "https://aws-toolkit-language-servers.amazonaws.com/codewhisperer/0/manifest.json"
     private val manifestManager = ManifestManager()
-    private val lspManifestFilePath: Path = getToolkitsCommonCachePath().resolve("aws").resolve("toolkits").resolve("language-servers")
+    private val lspManifestFilePath: Path = getToolkitsCommonCacheRoot().resolve("aws").resolve("toolkits").resolve("language-servers")
         .resolve("lsp-manifest.json")
 
     companion object {
@@ -33,8 +33,7 @@ class ManifestFetcher {
         if (localManifest != null) {
             return localManifest
         }
-        val remoteManifest = fetchManifestFromRemote() ?: return null
-        return remoteManifest
+        return fetchManifestFromRemote()
     }
 
     private fun fetchManifestFromRemote(): ManifestManager.Manifest? {
