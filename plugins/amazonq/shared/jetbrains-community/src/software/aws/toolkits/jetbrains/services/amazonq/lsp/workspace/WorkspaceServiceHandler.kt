@@ -35,15 +35,19 @@ class WorkspaceServiceHandler(
     }
 
     private fun didCreateFiles(events: List<VFileEvent>) {
-        AmazonQLspService.executeIfRunning(project) {
-            if (events.isNotEmpty()) {
-                it.workspaceService.didCreateFiles(
+        AmazonQLspService.executeIfRunning(project) { languageServer ->
+            val validFiles = events.mapNotNull { event ->
+                event.file?.toNioPath()?.toUri()?.toString()?.takeIf { it.isNotEmpty() }?.let { uri ->
+                    FileCreate().apply {
+                        this.uri = uri
+                    }
+                }
+            }
+
+            if (validFiles.isNotEmpty()) {
+                languageServer.workspaceService.didCreateFiles(
                     CreateFilesParams().apply {
-                        files = events.map { event ->
-                            FileCreate().apply {
-                                uri = event.file?.toNioPath()?.toUri().toString()
-                            }
-                        }
+                        files = validFiles
                     }
                 )
             }
@@ -52,14 +56,44 @@ class WorkspaceServiceHandler(
 
     private fun didDeleteFiles(events: List<VFileEvent>) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
-            if (events.isNotEmpty()) {
+            val validFiles = events.mapNotNull { event ->
+                event.file?.toNioPath()?.toUri()?.toString()?.takeIf { it.isNotEmpty() }?.let { uri ->
+                    FileDelete().apply {
+                        this.uri = uri
+                    }
+                }
+            }
+
+            if (validFiles.isNotEmpty()) {
                 languageServer.workspaceService.didDeleteFiles(
                     DeleteFilesParams().apply {
-                        files = events.map { event ->
-                            FileDelete().apply {
-                                uri = event.file?.toNioPath()?.toUri().toString()
-                            }
+                        files = validFiles
+                    }
+                )
+            }
+        }
+    }
+
+
+    private fun didChangeWatchedFiles(events: List<VFileEvent>) {
+        AmazonQLspService.executeIfRunning(project) { languageServer ->
+            val validChanges = events.mapNotNull { event ->
+                event.file?.toNioPath()?.toUri()?.toString()?.takeIf { it.isNotEmpty() }?.let { uri ->
+                    FileEvent().apply {
+                        this.uri = uri
+                        type = when (event) {
+                            is VFileCreateEvent -> FileChangeType.Created
+                            is VFileDeleteEvent -> FileChangeType.Deleted
+                            else -> FileChangeType.Changed
                         }
+                    }
+                }
+            }
+
+            if (validChanges.isNotEmpty()) {
+                languageServer.workspaceService.didChangeWatchedFiles(
+                    DidChangeWatchedFilesParams().apply {
+                        changes = validChanges
                     }
                 )
             }
@@ -72,27 +106,6 @@ class WorkspaceServiceHandler(
             didCreateFiles(events.filterIsInstance<VFileCreateEvent>())
             didDeleteFiles(events.filterIsInstance<VFileDeleteEvent>())
             didChangeWatchedFiles(events)
-        }
-    }
-
-    private fun didChangeWatchedFiles(events: List<VFileEvent>) {
-        AmazonQLspService.executeIfRunning(project) {
-            if (events.isNotEmpty()) {
-                it.workspaceService.didChangeWatchedFiles(
-                    DidChangeWatchedFilesParams().apply {
-                        changes = events.map { event ->
-                            FileEvent().apply {
-                                uri = event.file?.toNioPath()?.toUri().toString()
-                                type = when (event) {
-                                    is VFileCreateEvent -> FileChangeType.Created
-                                    is VFileDeleteEvent -> FileChangeType.Deleted
-                                    else -> FileChangeType.Changed
-                                }
-                            }
-                        }
-                    }
-                )
-            }
         }
     }
 }
