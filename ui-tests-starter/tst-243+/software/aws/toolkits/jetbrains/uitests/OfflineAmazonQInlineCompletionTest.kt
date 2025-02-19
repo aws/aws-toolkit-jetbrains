@@ -30,9 +30,13 @@ class OfflineAmazonQInlineCompletionTest {
         di = DI {
             extend(di)
             bindSingleton<CIServer>(overrides = true) { TestCIServer }
-            val starterConfigurationValues = starterConfigurationStorageDefaults.toMutableMap()
-            starterConfigurationValues["ENV_LOG_ENVIRONMENT_VARIABLES"] = (!System.getenv("CI").toBoolean()).toString()
-            bindSingleton<ConfigurationStorage> { ConfigurationStorage(this, starterConfigurationValues.toMap()) }
+            val defaults = ConfigurationStorage.instance().defaults.toMutableMap().apply {
+                put("LOG_ENVIRONMENT_VARIABLES", "false")
+            }
+
+            bindSingleton<ConfigurationStorage>(overrides = true) {
+                ConfigurationStorage(this, defaults)
+            }
         }
     }
 
