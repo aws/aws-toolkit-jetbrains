@@ -1,7 +1,6 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.util
 
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.testFramework.LightVirtualFile
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.mockk.every
@@ -85,7 +84,6 @@ class FileUriUtilTest : BasePlatformTestCase() {
 
     @Test
     fun `test jar protocol conversion`() {
-
         val virtualFile = mockk<VirtualFile> {
             every { fileSystem } returns mockk {
                 every { protocol } returns "jar"

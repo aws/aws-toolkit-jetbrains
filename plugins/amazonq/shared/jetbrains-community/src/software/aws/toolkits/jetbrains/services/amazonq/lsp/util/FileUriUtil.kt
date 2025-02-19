@@ -28,17 +28,15 @@ object FileUriUtil {
         }
     }
 
-
     private fun toUri(file: File): URI {
         try {
             // URI scheme specified by language server protocol
             return URI("file", "", file.absoluteFile.toURI().path, null)
         } catch (e: URISyntaxException) {
-            LOG.warn(e.localizedMessage, e)
+            LOG.warn { "${e.localizedMessage}: $e" }
             return file.absoluteFile.toURI()
         }
     }
 
     private val LOG = getLogger<FileUriUtil>()
 }
-
