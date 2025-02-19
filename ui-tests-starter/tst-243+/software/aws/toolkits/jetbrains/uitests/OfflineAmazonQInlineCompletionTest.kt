@@ -7,7 +7,7 @@ import com.intellij.driver.sdk.ui.ui
 import com.intellij.driver.sdk.waitForProjectOpen
 import com.intellij.ide.starter.ci.CIServer
 import com.intellij.ide.starter.config.ConfigurationStorage
-import com.intellij.ide.starter.config.logEnvironmentVariables
+import com.intellij.ide.starter.config.starterConfigurationStorageDefaults
 import com.intellij.ide.starter.di.di
 import com.intellij.ide.starter.driver.engine.runIdeWithDriver
 import com.intellij.ide.starter.ide.IdeProductProvider
@@ -30,7 +30,9 @@ class OfflineAmazonQInlineCompletionTest {
         di = DI {
             extend(di)
             bindSingleton<CIServer>(overrides = true) { TestCIServer }
-            ConfigurationStorage.Companion.logEnvironmentVariables(false)
+            val starterConfigurationValues = starterConfigurationStorageDefaults.toMutableMap()
+            starterConfigurationValues["ENV_LOG_ENVIRONMENT_VARIABLES"] = (!System.getenv("CI").toBoolean()).toString()
+            bindSingleton<ConfigurationStorage> { ConfigurationStorage(this, starterConfigurationValues.toMap()) }
         }
     }
 
@@ -41,7 +43,7 @@ class OfflineAmazonQInlineCompletionTest {
             LocalProjectInfo(
                 Paths.get("tstData", "Hello")
             )
-        ).useRelease("2024.3")
+        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
         Paths.get(System.getProperty("user.home"), ".aws", "sso", "cache", "ee1d2538cb8d358377d7661466c866af747a8a3f.json")
             .createParentDirectories()
             .writeText(
