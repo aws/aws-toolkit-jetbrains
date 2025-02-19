@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.util
 import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.editor.markup.EffectType
 import com.intellij.openapi.editor.markup.TextAttributes
+import com.intellij.openapi.util.registry.Registry
 import com.intellij.ui.JBColor
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
@@ -80,8 +81,8 @@ object CodeWhispererConstants {
     const val FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES: Long = 1024 * 200 // 200KB
     const val AUTO_SCAN_DEBOUNCE_DELAY_IN_SECONDS: Long = 30
     const val CODE_FIX_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS: Long = 10
-    const val CODE_FIX_POLLING_INTERVAL_IN_SECONDS: Long = 1
-    const val CODE_FIX_TIMEOUT_IN_SECONDS: Long = 60 // 60 seconds
+    const val CODE_FIX_POLLING_INTERVAL_IN_SECONDS: Long = 5
+    const val CODE_FIX_TIMEOUT_IN_SECONDS: Long = 120 // 120 seconds
     const val TOTAL_BYTES_IN_KB = 1024
     const val TOTAL_BYTES_IN_MB = 1024 * 1024
     const val TOTAL_MILLIS_IN_SECOND = 1000
@@ -153,7 +154,9 @@ object CodeWhispererConstants {
     }
 
     object Config {
-        const val CODEWHISPERER_ENDPOINT = "https://codewhisperer.us-east-1.amazonaws.com/" // PROD
+        val CODEWHISPERER_ENDPOINT
+            get() = Registry.get("amazon.q.endpoint").asString()
+
         const val CODEWHISPERER_IDPOOL_ID = "us-east-1:70717e99-906f-4add-908c-bd9074a2f5b9"
         val Sigv4ClientRegion = Region.US_EAST_1
         val BearerClientRegion = Region.US_EAST_1

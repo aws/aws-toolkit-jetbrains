@@ -23,7 +23,7 @@ class IdeVariant:
 
 TEMPLATE = '''<component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Run {plugin.name} - {variant.pretty} [{major_version}]" type="GradleRunConfiguration" factoryName="Gradle" folderName="{major_version}">
-    <log_file alias="idea.log" path="$PROJECT_DIR$/plugins/{plugin.path}/build/idea-sandbox/system/log/idea.log" />
+    <log_file alias="idea.log" path="$PROJECT_DIR$/plugins/{plugin.path}/build/idea-sandbox/{variant.short}-{major_version}/log/idea.log" />
     <ExternalSystemSettings>
       <option name="executionName" />
       <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -52,7 +52,7 @@ def write_config(mv: str, ide: IdeVariant, plugin: PluginVariant):
         f.write(TEMPLATE.format(plugin = plugin, variant = ide, major_version = mv))
 
 if __name__ == '__main__':
-    mvs = ["2024.1", "2024.2", "2024.3"]
+    mvs = ["2024.1", "2024.2", "2024.3", "2025.1"]
     ides = [
         IdeVariant("Community", "IC"),
         IdeVariant("Rider", "RD"),

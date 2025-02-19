@@ -66,6 +66,7 @@ dependencies {
         testFramework(TestFrameworkType.JUnit5)
 
         testFramework(TestFrameworkType.Starter, configurationName = uiTestImplementation.name)
+
     }
 
     testPlugins(project(":plugin-amazonq", "pluginZip"))

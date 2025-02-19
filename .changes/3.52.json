@@ -1,0 +1,23 @@
+{
+  "date" : "2025-02-06",
+  "version" : "3.52",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Adds event listener for notifying UI that AB feature configurations have been resolved"
+  }, {
+    "type" : "feature",
+    "description" : "Amazon Q /review: Code issues can now be grouped by severity or file location."
+  }, {
+    "type" : "feature",
+    "description" : "Inline suggestions: Pre-fetch recommendations to reduce suggestion latency."
+  }, {
+    "type" : "bugfix",
+    "description" : "fix(amazonq): Citation links are not clickable as numbers, but appear as non-clickable texts"
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q: Prevent IndexOutOfBoundsException by adding boundary checks for invalid range markers (#5187)"
+  }, {
+    "type" : "bugfix",
+    "description" : "/test placeholder text aligned across IDEs"
+  } ]
+}

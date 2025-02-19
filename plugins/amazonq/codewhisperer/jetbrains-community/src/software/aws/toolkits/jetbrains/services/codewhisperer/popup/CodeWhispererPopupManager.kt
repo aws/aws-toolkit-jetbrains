@@ -3,11 +3,13 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.popup
 
+import com.intellij.codeInsight.hint.ParameterInfoController
 import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.codeInsight.lookup.LookupManagerListener
 import com.intellij.idea.AppMode
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ENTER
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ESCAPE
+import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_TAB
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.components.Service
@@ -58,6 +60,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionConte
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererEditorActionHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupEnterHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupEscHandler
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupTabHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.CodeWhispererPopupTypedHandler
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererAcceptButtonActionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererActionListener
@@ -71,6 +74,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhis
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_DIM_HEX
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.POPUP_INFO_TEXT_SIZE
+import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import java.awt.Point
 import java.awt.Rectangle
@@ -85,7 +89,8 @@ import javax.swing.JLabel
 class CodeWhispererPopupManager {
     val popupComponents = CodeWhispererPopupComponents()
 
-    var shouldListenerCancelPopup: Boolean = true
+    var allowTypingDuringSuggestionPreview = false
+    var allowIntelliSenseDuringSuggestionPreview = false
     var sessionContext = SessionContext()
         private set
 
@@ -245,12 +250,13 @@ class CodeWhispererPopupManager {
         }
     }
 
+    // Don't want to block or throw any kinds of exceptions here if it can continue to provide suggestions
     fun dontClosePopupAndRun(runnable: () -> Unit) {
         try {
-            shouldListenerCancelPopup = false
+            allowTypingDuringSuggestionPreview = true
             runnable()
         } finally {
-            shouldListenerCancelPopup = true
+            allowTypingDuringSuggestionPreview = false
         }
     }
 
@@ -480,6 +486,10 @@ class CodeWhispererPopupManager {
             ACTION_EDITOR_ENTER,
             CodeWhispererPopupEnterHandler(EditorActionManager.getInstance().getActionHandler(ACTION_EDITOR_ENTER), states)
         )
+
+        if (isRunningOnRemoteBackend()) {
+            setPopupActionHandler(ACTION_EDITOR_TAB, CodeWhispererPopupTabHandler(states))
+        }
     }
 
     private fun setPopupTypedHandler(newHandler: CodeWhispererPopupTypedHandler) {
@@ -496,7 +506,7 @@ class CodeWhispererPopupManager {
         val editor = states.requestContext.editor
         val codewhispererSelectionListener: SelectionListener = object : SelectionListener {
             override fun selectionChanged(event: SelectionEvent) {
-                if (shouldListenerCancelPopup) {
+                if (!allowTypingDuringSuggestionPreview && !allowIntelliSenseDuringSuggestionPreview) {
                     cancelPopup(states.popup)
                 }
                 super.selectionChanged(event)
@@ -512,7 +522,7 @@ class CodeWhispererPopupManager {
                 if (!delete) return
                 if (editor.caretModel.offset == event.offset) {
                     changeStates(states, 0)
-                } else if (shouldListenerCancelPopup) {
+                } else if (!allowTypingDuringSuggestionPreview && !allowIntelliSenseDuringSuggestionPreview) {
                     cancelPopup(states.popup)
                 }
             }
@@ -521,7 +531,7 @@ class CodeWhispererPopupManager {
 
         val codewhispererCaretListener: CaretListener = object : CaretListener {
             override fun caretPositionChanged(event: CaretEvent) {
-                if (shouldListenerCancelPopup) {
+                if (!allowTypingDuringSuggestionPreview && !allowIntelliSenseDuringSuggestionPreview) {
                     cancelPopup(states.popup)
                 }
                 super.caretPositionChanged(event)
@@ -634,6 +644,10 @@ class CodeWhispererPopupManager {
         }
     }
 
+    fun hasConflictingPopups(editor: Editor): Boolean =
+        ParameterInfoController.existsWithVisibleHintForEditor(editor, true) ||
+            LookupManager.getActiveLookup(editor) != null
+
     private fun findNewSelectedIndex(
         isReverse: Boolean,
         detailContexts: List<DetailContext>,
@@ -702,6 +716,7 @@ class CodeWhispererPopupManager {
             "CodeWhisperer user action performed",
             CodeWhispererUserActionListener::class.java
         )
+        const val MAX_EDIT_SOURCE_DURING_SUGGESTION_PREVIEW = 2
     }
 }
 

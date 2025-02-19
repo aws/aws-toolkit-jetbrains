@@ -38,14 +38,19 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitConte
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededStates
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.EmptyPatchException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.GuardrailsException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataOperationName
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataResult
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PromptRefusalException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ThrottlingException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileCorruptedException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUp
@@ -614,6 +619,26 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             ),
             ErrorTestCase(
                 ThrottlingException(operation = "GenerateCode", desc = "Request throttled"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                MonthlyConversationLimitError(message = "Monthly limit reached", operation = "GenerateCode", desc = "Monthly limit reached"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                CodeIterationLimitException(operation = "GenerateCode", desc = "Code iteration limit reached"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                ContentLengthException(operation = "GenerateCode", desc = "Repo size is exceeding the limits"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                ZipFileCorruptedException(operation = "GenerateCode", desc = "Zipped file is corrupted"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                FeatureDevException(message = "Resource not found", operation = "GenerateCode", desc = null),
                 MetricDataResult.Error
             ),
             ErrorTestCase(

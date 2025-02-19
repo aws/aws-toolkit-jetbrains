@@ -65,7 +65,8 @@ const val DOWNLOAD_PROXY_WILDCARD_ERROR: String = "Dangling meta character '*' n
 const val DOWNLOAD_SSL_HANDSHAKE_ERROR: String = "Unable to execute HTTP request: javax.net.ssl.SSLHandshakeException"
 const val INVALID_ARTIFACT_ERROR: String = "Invalid artifact"
 val patchDescriptions = mapOf(
-    "Prepare minimal upgrade to Java 17" to "This diff patch covers the set of upgrades for Springboot, JUnit, and PowerMockito frameworks.",
+    "Prepare minimal upgrade to Java 17" to "This diff patch covers the set of upgrades for Springboot, JUnit, and PowerMockito frameworks in Java 17.",
+    "Prepare minimal upgrade to Java 21" to "This diff patch covers the set of upgrades for Springboot, JUnit, and PowerMockito frameworks in Java 21.",
     "Popular Enterprise Specifications and Application Frameworks upgrade" to "This diff patch covers the set of upgrades for Jakarta EE 10, Hibernate 6.2, " +
         "and Micronaut 3.",
     "HTTP Client Utilities, Apache Commons Utilities, and Web Frameworks" to "This diff patch covers the set of upgrades for Apache HTTP Client 5, Apache " +
