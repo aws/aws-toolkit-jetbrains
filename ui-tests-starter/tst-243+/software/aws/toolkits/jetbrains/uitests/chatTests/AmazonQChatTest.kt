@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.uitests.chatTests
 
 import com.intellij.driver.sdk.waitForProjectOpen
 import com.intellij.ide.starter.ci.CIServer
+import com.intellij.ide.starter.config.ConfigurationStorage
 import com.intellij.ide.starter.di.di
 import com.intellij.ide.starter.driver.engine.runIdeWithDriver
 import com.intellij.ide.starter.ide.IdeProductProvider
@@ -34,6 +35,13 @@ class AmazonQChatTest {
         di = DI {
             extend(di)
             bindSingleton<CIServer>(overrides = true) { TestCIServer }
+            val defaults = ConfigurationStorage.instance().defaults.toMutableMap().apply {
+                put("LOG_ENVIRONMENT_VARIABLES", (!System.getenv("CI").toBoolean()).toString())
+            }
+
+            bindSingleton<ConfigurationStorage>(overrides = true) {
+                ConfigurationStorage(this, defaults)
+            }
         }
     }
 
@@ -50,7 +58,7 @@ class AmazonQChatTest {
             LocalProjectInfo(
                 Paths.get("tstData", "Hello")
             )
-        ).useRelease("2024.3")
+        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
