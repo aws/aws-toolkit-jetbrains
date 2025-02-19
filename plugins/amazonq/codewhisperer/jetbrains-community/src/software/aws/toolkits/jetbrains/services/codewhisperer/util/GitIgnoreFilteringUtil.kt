@@ -56,7 +56,11 @@ class GitIgnoreFilteringUtil(
                     "*.a",
                     "*.map",
                     "*.graph",
-                    "*.so"
+                    "*.so",
+                    "*.csv",
+                    "*.dylib",
+                    "*.parquet",
+                    "*.xlsx"
                 )
             )
         }
@@ -101,6 +105,18 @@ class GitIgnoreFilteringUtil(
 
     suspend fun ignoreFile(file: VirtualFile): Boolean {
         // this method reads like something a JS dev would write and doesn't do what the author thinks
+
+        // ignores no extension files for test generation use case.
+        val allowedNoExtFiles = setOf("Config", "Dockerfile", "README")
+        if (useCase == CodeWhispererConstants.FeatureName.TEST_GENERATION &&
+            !file.isDirectory &&
+            file.extension.isNullOrEmpty() &&
+            !allowedNoExtFiles.any {
+                it.equals(file.name, ignoreCase = true)
+            }
+        ) {
+            return true
+        }
         val deferredResults = ignorePatternsWithGitIgnore.map { pattern ->
             withContext(coroutineContext) {
                 // avoid partial match (pattern.containsMatchIn) since it causes us matching files
