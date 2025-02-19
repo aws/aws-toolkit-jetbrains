@@ -17,7 +17,6 @@ import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.openapi.vfs.isFile
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -170,20 +169,17 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
 
     // TODO: rename queryChat
     suspend fun query(prompt: String, timeout: Long?): List<RelevantDocument> = withTimeout(timeout ?: CHAT_EXPLICIT_PROJECT_CONTEXT_TIMEOUT) {
-        cs.async {
-            val encrypted = encryptRequest(QueryChatRequest(prompt))
-            val response = sendMsgToLsp(LspMessage.QueryChat, encrypted) ?: return@async emptyList()
-            val parsedResponse = mapper.readValue<List<Chunk>>(response.responseBody)
-            queryResultToRelevantDocuments(parsedResponse)
-        }.await()
+        val encrypted = encryptRequest(QueryChatRequest(prompt))
+        val response = sendMsgToLsp(LspMessage.QueryChat, encrypted) ?: return@withTimeout emptyList()
+        val parsedResponse = mapper.readValue<List<Chunk>>(response.responseBody)
+
+        return@withTimeout queryResultToRelevantDocuments(parsedResponse)
     }
 
     suspend fun queryInline(query: String, filePath: String, target: InlineContextTarget): List<InlineBm25Chunk> = withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
-        cs.async {
-            val encrypted = encryptRequest(QueryInlineCompletionRequest(query, filePath, target.toString()))
-            val r = sendMsgToLsp(LspMessage.QueryInlineCompletion, encrypted) ?: return@async emptyList()
-            return@async mapper.readValue<List<InlineBm25Chunk>>(r.responseBody)
-        }.await()
+        val encrypted = encryptRequest(QueryInlineCompletionRequest(query, filePath, target.toString()))
+        val r = sendMsgToLsp(LspMessage.QueryInlineCompletion, encrypted) ?: return@withTimeout emptyList()
+        return@withTimeout mapper.readValue<List<InlineBm25Chunk>>(r.responseBody)
     }
 
     suspend fun getUsage(): Usage? {
@@ -200,7 +196,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     @RequiresBackgroundThread
     fun updateIndex(filePaths: List<String>, mode: IndexUpdateMode) {
         val encrypted = encryptRequest(UpdateIndexRequest(filePaths, mode.command))
-        runBlocking(IO) { sendMsgToLsp(LspMessage.UpdateIndex, encrypted) }
+        runBlocking { sendMsgToLsp(LspMessage.UpdateIndex, encrypted) }
     }
 
     private fun recordIndexWorkspace(
