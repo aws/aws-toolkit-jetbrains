@@ -3,57 +3,82 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqDoc.controller
 
-import software.amazon.awssdk.services.codewhispererruntime.model.DocGenerationEvent
-import software.amazon.awssdk.services.codewhispererruntime.model.DocGenerationFolderLevel
-import software.amazon.awssdk.services.codewhispererruntime.model.DocGenerationInteractionType
-import software.amazon.awssdk.services.codewhispererruntime.model.DocGenerationUserDecision
+import software.amazon.awssdk.services.codewhispererruntime.model.DocFolderLevel
+import software.amazon.awssdk.services.codewhispererruntime.model.DocInteractionType
+import software.amazon.awssdk.services.codewhispererruntime.model.DocUserDecision
+import software.amazon.awssdk.services.codewhispererruntime.model.DocV2AcceptanceEvent
+import software.amazon.awssdk.services.codewhispererruntime.model.DocV2GenerationEvent
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 
 class DocGenerationTask {
     // Telemetry fields
     var conversationId: String? = null
-    var numberOfAddChars: Int? = null
-    var numberOfAddLines: Int? = null
-    var numberOfAddFiles: Int? = null
-    var userDecision: DocGenerationUserDecision? = null
-    var interactionType: DocGenerationInteractionType? = null
-    var userIdentity: String? = null
-    var numberOfNavigation = 0
-    var folderLevel: DocGenerationFolderLevel? = DocGenerationFolderLevel.ENTIRE_WORKSPACE
-    fun docGenerationEventBase(): DocGenerationEvent {
+    var numberOfAddedChars: Int? = null
+    var numberOfAddedLines: Int? = null
+    var numberOfAddedFiles: Int? = null
+    var numberOfGeneratedChars: Int? = null
+    var numberOfGeneratedLines: Int? = null
+    var numberOfGeneratedFiles: Int? = null
+    var userDecision: DocUserDecision? = null
+    var interactionType: DocInteractionType? = null
+    var numberOfNavigations = 0
+    var folderLevel: DocFolderLevel? = DocFolderLevel.ENTIRE_WORKSPACE
+    fun docGenerationEventBase(): DocV2GenerationEvent {
         val undefinedProps = this::class.java.declaredFields
             .filter { it.get(this) == null }
             .map { it.name }
 
         if (undefinedProps.isNotEmpty()) {
             val undefinedValue = undefinedProps.joinToString(", ")
-            logger.debug { "DocGenerationEvent has undefined properties: $undefinedValue" }
+            logger.debug { "DocV2GenerationEvent has undefined properties: $undefinedValue" }
         }
 
-        return DocGenerationEvent.builder()
+        return DocV2GenerationEvent.builder()
             .conversationId(conversationId)
-            .numberOfAddChars(numberOfAddChars)
-            .numberOfAddLines(numberOfAddLines)
-            .numberOfAddFiles(numberOfAddFiles)
+            .numberOfGeneratedChars(numberOfGeneratedChars)
+            .numberOfGeneratedLines(numberOfGeneratedLines)
+            .numberOfGeneratedFiles(numberOfGeneratedFiles)
+            .interactionType(interactionType)
+            .numberOfNavigations(numberOfNavigations)
+            .folderLevel(folderLevel)
+            .build()
+    }
+
+    fun docAcceptanceEventBase(): DocV2AcceptanceEvent {
+        val undefinedProps = this::class.java.declaredFields
+            .filter { it.get(this) == null }
+            .map { it.name }
+
+        if (undefinedProps.isNotEmpty()) {
+            val undefinedValue = undefinedProps.joinToString(", ")
+            logger.debug { "DocV2AcceptanceEvent has undefined properties: $undefinedValue" }
+        }
+
+        return DocV2AcceptanceEvent.builder()
+            .conversationId(conversationId)
+            .numberOfAddedChars(numberOfAddedChars)
+            .numberOfAddedLines(numberOfAddedLines)
+            .numberOfAddedFiles(numberOfAddedFiles)
             .userDecision(userDecision)
             .interactionType(interactionType)
-            .userIdentity(userIdentity)
-            .numberOfNavigation(numberOfNavigation)
+            .numberOfNavigations(numberOfNavigations)
             .folderLevel(folderLevel)
             .build()
     }
 
     fun reset() {
         conversationId = null
-        numberOfAddChars = null
-        numberOfAddLines = null
-        numberOfAddFiles = null
+        numberOfAddedChars = null
+        numberOfAddedLines = null
+        numberOfAddedFiles = null
+        numberOfGeneratedChars = null
+        numberOfGeneratedLines = null
+        numberOfGeneratedFiles = null
         userDecision = null
         interactionType = null
-        userIdentity = null
-        numberOfNavigation = 0
-        folderLevel = null
+        numberOfNavigations = 0
+        folderLevel = DocFolderLevel.ENTIRE_WORKSPACE
     }
 
     companion object {

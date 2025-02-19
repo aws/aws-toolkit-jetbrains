@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.amazonqCodeTest.controller
-
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
 import com.intellij.diff.DiffManagerEx
@@ -44,8 +44,11 @@ import software.amazon.awssdk.services.codewhispererstreaming.model.TextDocument
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserInputMessage
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserInputMessageContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
+import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -81,14 +84,19 @@ import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerTy
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.v1.ChatSessionV1.Companion.validLanguages
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.StaticPrompt
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.StaticTextResponse
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.FeedbackComment
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContext
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContextExtractor
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTriggerType
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.FileContext
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
+import software.aws.toolkits.telemetry.FeatureId
+import software.aws.toolkits.telemetry.InteractionType
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.UiTelemetry
 import java.io.File
@@ -201,12 +209,11 @@ class CodeTestChatController(
 
             session.isCodeBlockSelected = selectionRange !== null
 
-            // This check is added to remove /test if user accidentally added while doing Regenerate unit tests.
-            val userPrompt = if (message.prompt.startsWith("/test")) {
-                message.prompt.substringAfter("/test ").trim()
-            } else {
-                message.prompt
-            }
+            // This removes /test if user accidentally added while doing Regenerate unit tests and truncates the user response to 4096 characters.
+            val userPrompt = message.prompt
+                .let { if (it.startsWith("/test")) it.substringAfter("/test ").trim() else it }
+                .take(4096)
+
             CodeWhispererUTGChatManager.getInstance(project).generateTests(userPrompt, codeTestChatHelper, null, selectionRange)
         } else {
             // Not adding a progress bar to unsupported language cases
@@ -404,6 +411,57 @@ class CodeTestChatController(
             .build()
     }
 
+    override suspend fun processChatItemFeedBack(message: IncomingCodeTestMessage.ChatItemFeedback) {
+        LOG.debug { "$FEATURE_NAME: Processing ChatItemFeedBackMessage: ${message.comment}" }
+
+        val session = codeTestChatHelper.getActiveSession()
+
+        val comment = FeedbackComment(
+            conversationId = session.startTestGenerationRequestId,
+            userComment = message.comment.orEmpty(),
+            reason = message.selectedOption,
+            type = "testgen-chat-answer-feedback",
+            messageId = "",
+        )
+
+        try {
+            TelemetryService.getInstance().sendFeedback(
+                sentiment = Sentiment.NEGATIVE,
+                comment = objectMapper.writeValueAsString(comment),
+            )
+            LOG.info { "$FEATURE_NAME answer feedback sent: \"Negative\"" }
+        } catch (e: Throwable) {
+            e.notifyError(message("feedback.submit_failed", e))
+            LOG.warn(e) { "Failed to submit feedback" }
+            return
+        }
+    }
+
+    override suspend fun processChatItemVoted(message: IncomingCodeTestMessage.ChatItemVoted) {
+        LOG.debug { "$FEATURE_NAME: Processing ChatItemVotedMessage: $message" }
+
+        val session = codeTestChatHelper.getActiveSession()
+        when (message.vote) {
+            "upvote" -> {
+                AmazonqTelemetry.feedback(
+                    featureId = FeatureId.AmazonQTest,
+                    interactionType = InteractionType.Upvote,
+                    credentialStartUrl = getStartUrl(project = context.project),
+                    amazonqConversationId = session.startTestGenerationRequestId
+
+                )
+            }
+            "downvote" -> {
+                AmazonqTelemetry.feedback(
+                    featureId = FeatureId.AmazonQTest,
+                    interactionType = InteractionType.Downvote,
+                    credentialStartUrl = getStartUrl(project = context.project),
+                    amazonqConversationId = session.startTestGenerationRequestId
+                )
+            }
+        }
+    }
+
     override suspend fun processNewTabCreatedMessage(message: IncomingCodeTestMessage.NewTabCreated) {
         newTabOpened(message.tabId)
         LOG.debug { "$FEATURE_NAME: New tab created: $message" }
@@ -458,6 +516,10 @@ class CodeTestChatController(
         when (message.actionID) {
             "utg_view_diff" -> {
                 withContext(EDT) {
+                    // virtual file only needed for syntax highlighting when viewing diff
+                    val tempPath = Files.createTempFile(null, ".${session.testFileName.substringAfterLast('.')}")
+                    val virtualFile = tempPath.toFile().toVirtualFile()
+
                     (DiffManager.getInstance() as DiffManagerEx).showDiffBuiltin(
                         context.project,
                         SimpleDiffRequest(
@@ -466,13 +528,18 @@ class CodeTestChatController(
                                 getFileContentAtTestFilePath(
                                     session.projectRoot,
                                     session.testFileRelativePathToProjectRoot
-                                )
+                                ),
+                                virtualFile
                             ),
-                            DiffContentFactory.getInstance().create(session.generatedTestDiffs.values.first()),
+                            DiffContentFactory.getInstance().create(
+                                session.generatedTestDiffs.values.first(),
+                                virtualFile
+                            ),
                             "Before",
                             "After"
                         )
                     )
+                    Files.deleteIfExists(tempPath)
                     session.openedDiffFile = FileEditorManager.getInstance(context.project).selectedEditor?.file
                     ApplicationManager.getApplication().runReadAction {
                         generatedFileContent = getGeneratedFileContent(session)
@@ -946,6 +1013,14 @@ class CodeTestChatController(
         }
     }
 
+    override suspend fun processAuthFollowUpClick(message: IncomingCodeTestMessage.AuthFollowUpWasClicked) {
+        codeTestChatHelper.sendUpdatePromptProgress(message.tabId, null)
+        authController.handleAuth(context.project, message.authType)
+        codeTestChatHelper.sendAuthenticationInProgressMessage(message.tabId) // show user that authentication is in progress
+        codeTestChatHelper.sendChatInputEnabledMessage(false) // disable the input field while authentication is in progress
+        sessionCleanUp(codeTestChatHelper.getActiveSession().tabId)
+    }
+
     private suspend fun updateBuildAndExecuteProgressCard(
         currentStatus: BuildAndExecuteProgressStatus,
         messageId: String?,
@@ -1202,6 +1277,17 @@ class CodeTestChatController(
      * */
     private suspend fun handleChat(tabId: String, message: String) {
         val session = codeTestChatHelper.getActiveSession()
+        session.projectRoot
+        val credentialState = authController.getAuthNeededStates(context.project).amazonQ
+        if (credentialState != null) {
+            messenger.sendAuthNeededException(
+                tabId = tabId,
+                triggerId = UUID.randomUUID().toString(),
+                credentialState = credentialState,
+            )
+            session.isAuthenticating = true
+            return
+        }
         LOG.debug {
             "$FEATURE_NAME: " +
                 "Processing message: $message " +
@@ -1285,5 +1371,7 @@ class CodeTestChatController(
 
     companion object {
         private val LOG = getLogger<CodeTestChatController>()
+
+        private val objectMapper = jacksonObjectMapper()
     }
 }

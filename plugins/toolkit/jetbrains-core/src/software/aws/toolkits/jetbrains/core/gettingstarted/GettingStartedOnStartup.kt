@@ -19,7 +19,9 @@ import software.aws.toolkits.jetbrains.settings.GettingStartedSettings
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.FeatureId
+import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.Telemetry
 
 class GettingStartedOnStartup : StartupActivity {
     override fun runActivity(project: Project) {
@@ -37,15 +39,14 @@ class GettingStartedOnStartup : StartupActivity {
                 return
             } else {
                 GettingStartedPanel.openPanel(project, firstInstance = true, connectionInitiatedFromExplorer = false)
-                AuthTelemetry.addConnection(
-                    project,
-                    source = SourceOfEntry.FIRST_STARTUP.toString(),
-                    featureId = FeatureId.Unknown,
-                    credentialSourceId = CredentialSourceId.Unknown,
-                    isAggregated = true,
-                    result = Result.Succeeded,
-                    isReAuth = false
-                )
+                Telemetry.auth.addConnection.use {
+                    it.source(SourceOfEntry.FIRST_STARTUP.toString())
+                        .featureId(FeatureId.Unknown)
+                        .credentialSourceId(CredentialSourceId.Unknown)
+                        .isAggregated(true)
+                        .result(MetricResult.Succeeded)
+                        .isReAuth(false)
+                }
                 AuthTelemetry.addedConnections(
                     project,
                     source = SourceOfEntry.FIRST_STARTUP.toString(),
@@ -60,16 +61,15 @@ class GettingStartedOnStartup : StartupActivity {
             }
         } catch (e: Exception) {
             LOG.error(e) { "Error opening getting started panel" }
-            AuthTelemetry.addConnection(
-                project,
-                source = SourceOfEntry.FIRST_STARTUP.toString(),
-                featureId = FeatureId.Unknown,
-                credentialSourceId = CredentialSourceId.Unknown,
-                isAggregated = false,
-                result = Result.Failed,
-                reason = "Error opening getting started panel",
-                isReAuth = false
-            )
+            Telemetry.auth.addConnection.use {
+                it.source(SourceOfEntry.FIRST_STARTUP.toString())
+                    .featureId(FeatureId.Unknown)
+                    .credentialSourceId(CredentialSourceId.Unknown)
+                    .isAggregated(false)
+                    .result(MetricResult.Failed)
+                    .reason("Error opening getting started panel")
+                    .isReAuth(false)
+            }
             AuthTelemetry.addedConnections(
                 project,
                 source = SourceOfEntry.FIRST_STARTUP.toString(),

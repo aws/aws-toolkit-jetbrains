@@ -59,6 +59,7 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
@@ -249,9 +250,10 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     if (shortAnswer.stopIteration == "true") {
                         throw CodeTestException("TestGenFailedError: ${shortAnswer.planSummary}", "TestGenFailedError", shortAnswer.planSummary)
                     }
+                    val fileName = shortAnswer.sourceFilePath?.let { Path.of(it).fileName.toString() } ?: path.fileName.toString()
                     codeTestChatHelper.updateAnswer(
                         CodeTestChatMessageContent(
-                            message = generateSummaryMessage(path.fileName.toString()) + shortAnswer.planSummary,
+                            message = generateSummaryMessage(fileName) + shortAnswer.planSummary,
                             type = ChatMessageType.Answer
                         ),
                         messageIdOverride = codeTestResponseContext.testSummaryMessageId
@@ -295,7 +297,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
             // TODO: Modify text according to FnF
             codeTestChatHelper.addAnswer(
                 CodeTestChatMessageContent(
-                    message = message("testgen.message.failed"),
+                    message = message("testgen.error.generic_technical_error_message"),
                     type = ChatMessageType.Answer,
                     canBeVoted = true
                 )

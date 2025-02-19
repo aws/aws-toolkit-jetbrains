@@ -593,6 +593,9 @@ export class Connector {
             case 'cwc':
                 this.cwChatConnector.onSendFeedback(tabId, feedbackPayload)
                 break
+            case 'codetest':
+                this.codeTestChatConnector.sendFeedback(tabId,feedbackPayload)
+                break
         }
     }
 
@@ -603,6 +606,9 @@ export class Connector {
                 break
             case 'featuredev':
                 this.featureDevChatConnector.onChatItemVoted(tabId, messageId, vote)
+                break
+            case 'codetest' :
+                this.codeTestChatConnector.onChatItemVoted(tabId,messageId,vote)
                 break
         }
     }
