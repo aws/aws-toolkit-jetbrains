@@ -395,8 +395,13 @@ class CodeModernizerPlanEditor(val project: Project, private val virtualFile: Vi
 
         val table = tableMapping[step.id()]
 
-        val parsedTable = table?.let {
+        var parsedTable = table?.let {
             MAPPER.readValue<PlanTable>(it)
+        }
+
+        if (parsedTable?.rows?.isEmpty() == true) {
+            descriptionText.text += "\n\nThere are no ${parsedTable.name.lowercase()} to display."
+            parsedTable = null
         }
 
         val renderedStepTable = parsedTable?.let {
