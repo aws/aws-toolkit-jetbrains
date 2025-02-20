@@ -20,7 +20,6 @@ import software.aws.toolkits.jetbrains.utils.extensions.SsoLoginExtension
 
 @ExtendWith(ApplicationExtension::class, SsoLoginExtension::class)
 @SsoLogin("amazonq-test-account")
-// @DisabledIfEnvironmentVariable(named = "IS_PROD", matches = "false")
 class PreAmazonQUiTest {
 
     @TestDisposable

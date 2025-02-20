@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.uitests.chatTests
 
+// language=JS
 val testFeatureAvailabilityOnSlash = """
 import puppeteer from "puppeteer";
 
