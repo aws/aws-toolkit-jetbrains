@@ -12,15 +12,18 @@ import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.diff.util.DiffUserDataKeys
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.testFramework.LightVirtualFile
 import kotlinx.coroutines.withContext
-import software.amazon.awssdk.services.codewhispererruntime.model.DocGenerationFolderLevel
-import software.amazon.awssdk.services.codewhispererruntime.model.DocGenerationInteractionType
-import software.amazon.awssdk.services.codewhispererruntime.model.DocGenerationUserDecision
+import org.intellij.images.fileTypes.impl.SvgFileType
+import software.amazon.awssdk.services.codewhispererruntime.model.DocFolderLevel
+import software.amazon.awssdk.services.codewhispererruntime.model.DocInteractionType
+import software.amazon.awssdk.services.codewhispererruntime.model.DocUserDecision
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -33,6 +36,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitConte
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.amazonqDoc.DEFAULT_RETRY_LIMIT
+import software.aws.toolkits.jetbrains.services.amazonqDoc.DIAGRAM_SVG_EXT
 import software.aws.toolkits.jetbrains.services.amazonqDoc.DocException
 import software.aws.toolkits.jetbrains.services.amazonqDoc.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqDoc.InboundAppMessagesHandler
@@ -168,25 +172,25 @@ class DocController(
             FollowUpTypes.NEW_TASK -> newTask(message.tabId)
             FollowUpTypes.CLOSE_SESSION -> closeSession(message.tabId)
             FollowUpTypes.CREATE_DOCUMENTATION -> {
-                docGenerationTask.interactionType = DocGenerationInteractionType.GENERATE_README
+                docGenerationTask.interactionType = DocInteractionType.GENERATE_README
                 mode = Mode.CREATE
                 promptForDocTarget(message.tabId)
             }
 
             FollowUpTypes.UPDATE_DOCUMENTATION -> {
-                docGenerationTask.interactionType = DocGenerationInteractionType.UPDATE_README
+                docGenerationTask.interactionType = DocInteractionType.UPDATE_README
                 updateDocumentation(message.tabId)
             }
 
             FollowUpTypes.CANCEL_FOLDER_SELECTION -> {
-                docGenerationTask.reset()
+                docGenerationTask.folderLevel = DocFolderLevel.ENTIRE_WORKSPACE
                 newTask(message.tabId)
             }
 
             FollowUpTypes.PROCEED_FOLDER_SELECTION -> if (mode == Mode.EDIT) makeChanges(message.tabId) else onDocsGeneration(message)
             FollowUpTypes.ACCEPT_CHANGES -> {
-                docGenerationTask.userDecision = DocGenerationUserDecision.ACCEPT
-                sendDocGenerationTelemetry(message.tabId)
+                docGenerationTask.userDecision = DocUserDecision.ACCEPT
+                sendDocAcceptanceTelemetry(message.tabId)
                 acceptChanges(message)
             }
 
@@ -196,8 +200,8 @@ class DocController(
             }
 
             FollowUpTypes.REJECT_CHANGES -> {
-                docGenerationTask.userDecision = DocGenerationUserDecision.REJECT
-                sendDocGenerationTelemetry(message.tabId)
+                docGenerationTask.userDecision = DocUserDecision.REJECT
+                sendDocAcceptanceTelemetry(message.tabId)
                 rejectChanges(message)
             }
 
@@ -208,7 +212,7 @@ class DocController(
 
             FollowUpTypes.EDIT_DOCUMENTATION -> {
                 mode = Mode.EDIT
-                docGenerationTask.interactionType = DocGenerationInteractionType.EDIT_README
+                docGenerationTask.interactionType = DocInteractionType.EDIT_README
                 promptForDocTarget(message.tabId)
             }
         }
@@ -374,45 +378,51 @@ class DocController(
 
     override suspend fun processOpenDiff(message: IncomingDocMessage.OpenDiff) {
         val session = getSessionInfo(message.tabId)
-
-        val project = context.project
         val sessionState = session.sessionState
 
-        when (sessionState) {
-            is PrepareDocGenerationState -> {
-                runInEdt {
-                    val existingFile = VfsUtil.findRelativeFile(message.filePath, session.context.selectedSourceFolder)
+        if (sessionState !is PrepareDocGenerationState) {
+            logger.error { "$FEATURE_NAME: OpenDiff event is received for a conversation that has ${session.sessionState.phase} phase" }
+            messenger.sendError(
+                tabId = message.tabId,
+                errMessage = message("amazonqFeatureDev.exception.open_diff_failed"),
+                retries = 0,
+                conversationId = session.conversationIdUnsafe
+            )
+            return
+        }
 
-                    val leftDiffContent = if (existingFile == null) {
-                        EmptyContent()
-                    } else {
-                        DiffContentFactory.getInstance().create(project, existingFile)
-                    }
+        runInEdt {
+            val newFileContent = sessionState.filePaths.find { it.zipFilePath == message.filePath }?.fileContent
 
-                    val newFileContent = sessionState.filePaths.find { it.zipFilePath == message.filePath }?.fileContent
-
-                    val rightDiffContent = if (message.deleted || newFileContent == null) {
-                        EmptyContent()
-                    } else {
-                        DiffContentFactory.getInstance().create(newFileContent)
-                    }
-
-                    val request = SimpleDiffRequest(message.filePath, leftDiffContent, rightDiffContent, null, null)
-                    request.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true)
-
-                    val newDiff = ChainDiffVirtualFile(SimpleDiffRequestChain(request), message.filePath)
-                    DiffEditorTabFilesManager.getInstance(context.project).showDiffFile(newDiff, true)
-                }
-            }
-
-            else -> {
-                logger.error { "$FEATURE_NAME: OpenDiff event is received for a conversation that has ${session.sessionState.phase} phase" }
-                messenger.sendError(
-                    tabId = message.tabId,
-                    errMessage = message("amazonqFeatureDev.exception.open_diff_failed"),
-                    retries = 0,
-                    conversationId = session.conversationIdUnsafe
+            val isSvgFile = message.filePath.lowercase().endsWith(".".plus(DIAGRAM_SVG_EXT))
+            if (isSvgFile && newFileContent != null) {
+                // instead of diff display generated svg in edit/preview window
+                val inMemoryFile = LightVirtualFile(
+                    message.filePath,
+                    SvgFileType.INSTANCE,
+                    newFileContent
                 )
+                inMemoryFile.isWritable = false
+                FileEditorManager.getInstance(context.project).openFile(inMemoryFile, true)
+            } else {
+                val existingFile = VfsUtil.findRelativeFile(message.filePath, session.context.selectedSourceFolder)
+                val leftDiffContent = if (existingFile == null) {
+                    EmptyContent()
+                } else {
+                    DiffContentFactory.getInstance().create(context.project, existingFile)
+                }
+
+                val rightDiffContent = if (message.deleted || newFileContent == null) {
+                    EmptyContent()
+                } else {
+                    DiffContentFactory.getInstance().create(newFileContent)
+                }
+
+                val request = SimpleDiffRequest(message.filePath, leftDiffContent, rightDiffContent, null, null)
+                request.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true)
+
+                val newDiff = ChainDiffVirtualFile(SimpleDiffRequestChain(request), message.filePath)
+                DiffEditorTabFilesManager.getInstance(context.project).showDiffFile(newDiff, true)
             }
         }
     }
@@ -454,8 +464,7 @@ class DocController(
                 session.isAuthenticating = true
                 return
             }
-            docGenerationTask.userIdentity = session.getUserIdentity()
-            docGenerationTask.numberOfNavigation += 1
+            docGenerationTask.numberOfNavigations += 1
             messenger.sendUpdatePlaceholder(tabId, message("amazonqDoc.prompt.placeholder"))
         } catch (err: Exception) {
             val message = createUserFacingErrorMessage(err.message)
@@ -733,13 +742,13 @@ class DocController(
                 session.isAuthenticating = true
                 return
             }
-            docGenerationTask.userIdentity = session.getUserIdentity()
             session.preloader(message, messenger)
 
             when (session.sessionState.phase) {
                 SessionStatePhase.CODEGEN -> {
                     onCodeGeneration(session, message, tabId, mode)
                 }
+
                 else -> null
             }
 
@@ -747,6 +756,7 @@ class DocController(
                 is PrepareDocGenerationState -> state.filePaths
                 else -> emptyList()
             }
+            sendDocGenerationTelemetry(filePaths, session)
             broadcastQEvent(QFeatureEvent.INVOCATION)
 
             if (filePaths.isNotEmpty()) {
@@ -810,6 +820,8 @@ class DocController(
                 handleEmptyFiles(followUpMessage, session)
                 return
             }
+
+            sendDocGenerationTelemetry(filePaths, session)
 
             messenger.sendAnswer(
                 message = docGenerationProgressMessage(DocGenerationStep.COMPLETE, mode),
@@ -988,9 +1000,9 @@ class DocController(
             }
 
             if (selectedFolder.path == projectRoot.path) {
-                docGenerationTask.folderLevel = DocGenerationFolderLevel.ENTIRE_WORKSPACE
+                docGenerationTask.folderLevel = DocFolderLevel.ENTIRE_WORKSPACE
             } else {
-                docGenerationTask.folderLevel = DocGenerationFolderLevel.SUB_FOLDER
+                docGenerationTask.folderLevel = DocFolderLevel.SUB_FOLDER
             }
 
             logger.info { "Selected correct folder inside workspace: ${selectedFolder.path}" }
@@ -1005,7 +1017,18 @@ class DocController(
         }
     }
 
-    private fun sendDocGenerationTelemetry(tabId: String) {
+    private fun sendDocGenerationTelemetry(filePaths: List<NewFileZipInfo>, session: DocSession) {
+        docGenerationTask.conversationId = session.conversationId
+        val (totalGeneratedChars, totalGeneratedLines, totalGeneratedFiles) = session.countedGeneratedContent(filePaths, docGenerationTask.interactionType)
+        docGenerationTask.numberOfGeneratedChars = totalGeneratedChars
+        docGenerationTask.numberOfGeneratedLines = totalGeneratedLines
+        docGenerationTask.numberOfGeneratedFiles = totalGeneratedFiles
+
+        val docGenerationEvent = docGenerationTask.docGenerationEventBase()
+        session.sendDocTelemetryEvent(docGenerationEvent)
+    }
+
+    private fun sendDocAcceptanceTelemetry(tabId: String) {
         val session = getSessionInfo(tabId)
         var filePaths: List<NewFileZipInfo> = emptyList()
 
@@ -1016,12 +1039,12 @@ class DocController(
         }
         docGenerationTask.conversationId = session.conversationId
         val (totalAddedChars, totalAddedLines, totalAddedFiles) = session.countAddedContent(filePaths, docGenerationTask.interactionType)
-        docGenerationTask.numberOfAddChars = totalAddedChars
-        docGenerationTask.numberOfAddLines = totalAddedLines
-        docGenerationTask.numberOfAddFiles = totalAddedFiles
+        docGenerationTask.numberOfAddedChars = totalAddedChars
+        docGenerationTask.numberOfAddedLines = totalAddedLines
+        docGenerationTask.numberOfAddedFiles = totalAddedFiles
 
-        val docGenerationEvent = docGenerationTask.docGenerationEventBase()
-        session.sendDocGenerationEvent(docGenerationEvent)
+        val docAcceptanceEvent = docGenerationTask.docAcceptanceEventBase()
+        session.sendDocTelemetryEvent(null, docAcceptanceEvent)
     }
 
     fun getProject() = context.project
