@@ -5,8 +5,8 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.workspace
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectManager
-import com.intellij.openapi.project.ProjectManagerListener
+import com.intellij.openapi.roots.ModuleRootEvent
+import com.intellij.openapi.roots.ModuleRootListener
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent
@@ -14,13 +14,16 @@ import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import org.eclipse.lsp4j.*
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class WorkspaceServiceHandler(
     private val project: Project,
     serverInstance: Disposable,
 ) : BulkFileListener,
-    ProjectManagerListener {
+    ModuleRootListener {
+
+    private var lastSnapshot: List<WorkspaceFolder> = emptyList()
 
     init {
         project.messageBus.connect(serverInstance).subscribe(
@@ -29,7 +32,7 @@ class WorkspaceServiceHandler(
         )
 
         project.messageBus.connect(serverInstance).subscribe(
-            ProjectManager.TOPIC,
+            ModuleRootListener.TOPIC,
             this
         )
     }
@@ -74,7 +77,6 @@ class WorkspaceServiceHandler(
         }
     }
 
-
     private fun didChangeWatchedFiles(events: List<VFileEvent>) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             val validChanges = events.mapNotNull { event ->
@@ -106,6 +108,31 @@ class WorkspaceServiceHandler(
             didCreateFiles(events.filterIsInstance<VFileCreateEvent>())
             didDeleteFiles(events.filterIsInstance<VFileDeleteEvent>())
             didChangeWatchedFiles(events)
+        }
+    }
+
+    override fun beforeRootsChange(event: ModuleRootEvent) {
+        lastSnapshot = createWorkspaceFolders(project)
+    }
+
+    override fun rootsChanged(event: ModuleRootEvent) {
+        AmazonQLspService.executeIfRunning(project) { languageServer ->
+            val currentSnapshot = createWorkspaceFolders(project)
+            val addedFolders = currentSnapshot.filter { folder -> lastSnapshot.none { it.uri == folder.uri } }
+            val removedFolders = lastSnapshot.filter { folder -> currentSnapshot.none { it.uri == folder.uri } }
+
+            if (addedFolders.isNotEmpty() || removedFolders.isNotEmpty()) {
+                languageServer.workspaceService.didChangeWorkspaceFolders(
+                    DidChangeWorkspaceFoldersParams().apply {
+                        this.event = WorkspaceFoldersChangeEvent().apply {
+                            added = addedFolders
+                            removed = removedFolders
+                        }
+                    }
+                )
+            }
+
+            lastSnapshot = currentSnapshot
         }
     }
 }
