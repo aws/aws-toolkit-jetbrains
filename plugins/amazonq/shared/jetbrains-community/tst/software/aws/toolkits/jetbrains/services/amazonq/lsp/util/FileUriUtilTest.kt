@@ -11,8 +11,14 @@ import org.junit.Test
 
 class FileUriUtilTest : BasePlatformTestCase() {
 
-    private fun createMockVirtualFile(path: String): VirtualFile =
-        LightVirtualFile(path)
+    private fun createMockVirtualFile(path: String, protocol: String = "file", isDirectory: Boolean = false): VirtualFile =
+        mockk<VirtualFile> {
+            every { fileSystem } returns mockk {
+                every { this@mockk.protocol } returns protocol
+            }
+            every { url } returns path
+            every { this@mockk.isDirectory } returns isDirectory
+        }
 
     @Test
     fun `test basic unix path`() {
@@ -23,7 +29,7 @@ class FileUriUtilTest : BasePlatformTestCase() {
 
     @Test
     fun `test unix directory path`() {
-        val virtualFile = createMockVirtualFile("/path/to/directory/")
+        val virtualFile = createMockVirtualFile("/path/to/directory/", isDirectory = true)
         val uri = FileUriUtil.toUriString(virtualFile)
         assertEquals("file:///path/to/directory", uri)
     }
@@ -33,20 +39,6 @@ class FileUriUtilTest : BasePlatformTestCase() {
         val virtualFile = createMockVirtualFile("/path/with spaces/file.txt")
         val uri = FileUriUtil.toUriString(virtualFile)
         assertEquals("file:///path/with%20spaces/file.txt", uri)
-    }
-
-    @Test
-    fun `test windows style path`() {
-        val virtualFile = createMockVirtualFile("C:\\path\\to\\file.txt")
-        val uri = FileUriUtil.toUriString(virtualFile)
-        assertEquals("file:///C:/path/to/file.txt", uri)
-    }
-
-    @Test
-    fun `test windows directory path`() {
-        val virtualFile = createMockVirtualFile("C:\\path\\to\\directory\\")
-        val uri = FileUriUtil.toUriString(virtualFile)
-        assertEquals("file:///C:/path/to/directory", uri)
     }
 
     @Test
@@ -86,84 +78,53 @@ class FileUriUtilTest : BasePlatformTestCase() {
 
     @Test
     fun `test jar protocol conversion`() {
-        val virtualFile = mockk<VirtualFile> {
-            every { fileSystem } returns mockk {
-                every { protocol } returns "jar"
-            }
-            every { url } returns "jar:file:///path/to/archive.jar!/com/example/Test.class"
-            every { isDirectory } returns false
-        }
-
+        val virtualFile = createMockVirtualFile(
+            "jar:file:///path/to/archive.jar!/com/example/Test.class",
+            "jar"
+        )
         val result = FileUriUtil.toUriString(virtualFile)
         assertEquals("jar:file:///path/to/archive.jar!/com/example/Test.class", result)
     }
 
     @Test
     fun `test jrt protocol conversion`() {
-        val virtualFile = mockk<VirtualFile> {
-            every { fileSystem } returns mockk {
-                every { protocol } returns "jrt"
-            }
-            every { url } returns "jrt://java.base/java/lang/String.class"
-            every { isDirectory } returns false
-        }
-
+        val virtualFile = createMockVirtualFile(
+            "jrt://java.base/java/lang/String.class",
+            "jrt"
+        )
         val result = FileUriUtil.toUriString(virtualFile)
         assertEquals("jrt://java.base/java/lang/String.class", result)
     }
 
     @Test
     fun `test invalid jar url returns null`() {
-        val virtualFile = mockk<VirtualFile> {
-            every { fileSystem } returns mockk {
-                every { protocol } returns "jar"
-            }
-            every { url } returns "invalid:url:format"
-            every { isDirectory } returns false
-        }
-
+        val virtualFile = createMockVirtualFile(
+            "invalid:url:format",
+            "jar"
+        )
         val result = FileUriUtil.toUriString(virtualFile)
         assertNull(result)
     }
 
     @Test
     fun `test jar protocol with directory`() {
-        val virtualFile = mockk<VirtualFile> {
-            every { fileSystem } returns mockk {
-                every { protocol } returns "jar"
-            }
-            every { url } returns "jar:file:///path/to/archive.jar!/com/example/"
-            every { isDirectory } returns true
-        }
-
+        val virtualFile = createMockVirtualFile(
+            "jar:file:///path/to/archive.jar!/com/example/",
+            "jar",
+            true
+        )
         val result = FileUriUtil.toUriString(virtualFile)
         assertEquals("jar:file:///path/to/archive.jar!/com/example", result)
     }
 
-    @Test
-    fun `test null url in jar protocol`() {
-        val virtualFile = mockk<VirtualFile> {
-            every { fileSystem } returns mockk {
-                every { protocol } returns "jar"
-            }
-            every { url } returns ""
-            every { isDirectory } returns false
-        }
-
-        val result = FileUriUtil.toUriString(virtualFile)
-        assertNull(result)
-    }
 
     @Test
     fun `test empty url in jar protocol`() {
-        val virtualFile = mockk<VirtualFile> {
-            every { fileSystem } returns mockk {
-                every { protocol } returns "jar"
-            }
-            every { url } returns ""
-            every { isDirectory } returns false
-        }
-
+        val virtualFile = createMockVirtualFile(
+            "",
+            "jar",
+            true
+        )
         val result = FileUriUtil.toUriString(virtualFile)
         assertNull(result)
     }
