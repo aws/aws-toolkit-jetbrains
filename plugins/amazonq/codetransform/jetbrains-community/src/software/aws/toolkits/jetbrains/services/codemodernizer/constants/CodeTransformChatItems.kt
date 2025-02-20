@@ -79,6 +79,13 @@ private val confirmOneOrMultipleDiffsSelectionButton = Button(
     id = CodeTransformButtonId.ConfirmOneOrMultipleDiffs.id,
 )
 
+private val confirmUserSelectionPermissionsButton = Button(
+    keepCardAfterClick = false,
+    waitMandatoryFormItems = true,
+    text = message("codemodernizer.chat.message.button.confirm"),
+    id = CodeTransformButtonId.ConfirmPermissions.id,
+)
+
 private val openMvnBuildButton = Button(
     id = CodeTransformButtonId.OpenMvnBuild.id,
     text = message("codemodernizer.chat.message.button.view_build"),
@@ -231,6 +238,50 @@ private val selectOneOrMultipleDiffsFlagFormItem = FormItem(
     )
 )
 
+private val selectCanRerunJobFormItem = FormItem(
+    id = CodeTransformFormItemId.SelectCanRerunJob.id,
+    title = "To improve our service, do we have permission to re-run your job?",
+    type = "radiogroup",
+    mandatory = true,
+    options = listOf(
+        FormItemOption(
+            label = "Yes",
+            value = "Yes",
+        ),
+        FormItemOption(
+            label = "No",
+            value = "No",
+        )
+    )
+)
+
+private val selectCanViewLogsFormItem = FormItem(
+    id = CodeTransformFormItemId.SelectCanViewLogs.id,
+    title = "Do we also have permission to view the logs?",
+    type = "radiogroup",
+    mandatory = true,
+    options = listOf(
+        FormItemOption(
+            label = "Yes",
+            value = "Yes",
+        ),
+        FormItemOption(
+            label = "No",
+            value = "No",
+        )
+    )
+)
+
+private fun getUserPermissionsSelectionMarkdown(canRerunJob: String, canViewLogs: String) = """
+        ### Feedback received
+        -------------
+
+        | | |
+        | :------------------- | -------: |
+        | **Can re-run job**             |   $canRerunJob   |
+        | **Can view logs** |  $canViewLogs   |
+""".trimIndent()
+
 private fun getUserLanguageUpgradeSelectionFormattedMarkdown(moduleName: String, targetJdkVersion: String): String = """
         ### ${message("codemodernizer.chat.prompt.title.details")}
         -------------
@@ -323,11 +374,13 @@ fun buildUserInputSkipTestsFlagChatContent(): CodeTransformChatMessageContent =
         formItems = listOf(selectSkipTestsFlagFormItem),
         type = CodeTransformChatMessageType.FinalizedAnswer,
     )
+
 fun buildUserInputOneOrMultipleDiffsChatIntroContent(version: String): CodeTransformChatMessageContent =
     CodeTransformChatMessageContent(
         message = message("codemodernizer.chat.message.one_or_multiple_diffs", version.substring(4)), // extract "17" / "21" from "JDK_17" / "JDK_21"
         type = CodeTransformChatMessageType.FinalizedAnswer,
     )
+
 fun buildUserInputOneOrMultipleDiffsFlagChatContent(): CodeTransformChatMessageContent =
     CodeTransformChatMessageContent(
         message = message("codemodernizer.chat.form.user_selection.title"),
@@ -336,6 +389,20 @@ fun buildUserInputOneOrMultipleDiffsFlagChatContent(): CodeTransformChatMessageC
             cancelUserSelectionButton,
         ),
         formItems = listOf(selectOneOrMultipleDiffsFlagFormItem),
+        type = CodeTransformChatMessageType.FinalizedAnswer,
+    )
+
+fun buildUserInputPermissionsFeedbackChatContent(): CodeTransformChatMessageContent =
+    CodeTransformChatMessageContent(
+        message = message("codemodernizer.chat.form.user_selection.title"),
+        buttons = listOf(
+            confirmUserSelectionPermissionsButton,
+            cancelUserSelectionButton,
+        ),
+        formItems = listOf(
+            selectCanRerunJobFormItem,
+            selectCanViewLogsFormItem,
+        ),
         type = CodeTransformChatMessageType.FinalizedAnswer,
     )
 
@@ -449,6 +516,11 @@ fun buildUserSQLConversionSelectionSummaryChatContent(moduleName: String, schema
 fun buildUserLanguageUpgradeSelectionSummaryChatContent(moduleName: String, targetJdkVersion: String) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.Prompt,
     message = getUserLanguageUpgradeSelectionFormattedMarkdown(moduleName, targetJdkVersion)
+)
+
+fun buildUserPermissionsSelectionChatContent(canRerunJob: String, canViewLogs: String) = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.Prompt,
+    message = getUserPermissionsSelectionMarkdown(canRerunJob, canViewLogs),
 )
 
 fun buildCompileLocalInProgressChatContent() = CodeTransformChatMessageContent(

@@ -15,6 +15,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
+import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -74,11 +75,13 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUs
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputLanguageUpgradeChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputOneOrMultipleDiffsChatIntroContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputOneOrMultipleDiffsFlagChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputPermissionsFeedbackChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputSQLConversionMetadataChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputSkipTestsFlagChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputSkipTestsFlagChatIntroContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserLanguageUpgradeSelectionSummaryChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserOneOrMultipleDiffsSelectionChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserPermissionsSelectionChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserSQLConversionSelectionSummaryChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserSkipTestsFlagSelectionChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserStopTransformChatContent
@@ -115,6 +118,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSct
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 
@@ -429,6 +433,20 @@ class CodeTransformChatController(
         }
     }
 
+    override suspend fun processCodeTransformConfirmPermissions(message: IncomingCodeTransformMessage.CodeTransformConfirmPermissions) {
+        val canRerunJob = message.canRerunJob
+        val canViewLogs = message.canViewLogs
+        codeTransformChatHelper.addNewMessage(buildUserPermissionsSelectionChatContent(canRerunJob, canViewLogs))
+        if (canRerunJob == "Yes" || canViewLogs == "Yes") {
+            val sessionState = CodeModernizerSessionState.getInstance(context.project)
+            val jobId: String = sessionState.currentJobId?.id ?: "None"
+            TelemetryService.getInstance().sendFeedback(
+                Sentiment.POSITIVE,
+                "Permission to re-run job: $canRerunJob\nPermission to view logs: $canViewLogs\njobId: $jobId",
+            )
+        }
+    }
+
     private fun getSourceJdk(moduleConfigurationFile: VirtualFile): JavaSdkVersion {
         // this should never throw the RuntimeException since invalid JDK case is already handled in previous validation step
         val moduleJdkVersion = ModuleUtil.findModuleForFile(moduleConfigurationFile, context.project)?.tryGetJdk(context.project)
@@ -719,7 +737,10 @@ class CodeTransformChatController(
                     when (downloadResult) {
                         is DownloadArtifactResult.Success -> {
                             if (downloadResult.artifact !is CodeModernizerArtifact) return artifactHandler.notifyUnableToApplyPatch("")
-                            codeTransformChatHelper.updateLastPendingMessage(
+                            if (result is CodeModernizerJobCompletedResult.JobPartiallySucceeded) {
+                                codeTransformChatHelper.addNewMessage(buildUserInputPermissionsFeedbackChatContent())
+                            }
+                            codeTransformChatHelper.addNewMessage(
                                 buildTransformResultChatContent(result, downloadResult.artifact.patches.size)
                             )
                         }
