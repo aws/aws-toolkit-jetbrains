@@ -32,12 +32,10 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
 import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
-import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
-import software.aws.toolkits.jetbrains.services.amazonq.CHAT_IMPLICIT_PROJECT_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
@@ -140,7 +138,6 @@ class ChatController private constructor(
         val triggerId = UUID.randomUUID().toString()
         var shouldAddIndexInProgressMessage: Boolean = false
         var shouldUseWorkspaceContext: Boolean = false
-        val startUrl = getStartUrl(context.project)
 
         if (prompt.contains("@workspace")) {
             if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
@@ -152,13 +149,6 @@ class ChatController private constructor(
                 logger.info { "project context relevant document count: ${queryResult.size}" }
             } else {
                 sendOpenSettingsMessage(message.tabId)
-            }
-        } else if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
-            if (ProjectContextController.getInstance(context.project).getProjectContextIndexComplete()) {
-                val projectContextController = ProjectContextController.getInstance(context.project)
-                queryResult = projectContextController.queryChat(prompt, timeout = CHAT_IMPLICIT_PROJECT_CONTEXT_TIMEOUT)
-            } else {
-                logger.debug { "skipping implicit workspace context as index is not ready" }
             }
         }
 
