@@ -1,3 +1,6 @@
+# _3.56_ (2025-02-20)
+- **(Feature)** Amazon Q /doc: support making changes to architecture diagrams
+
 # _3.55_ (2025-02-13)
 - **(Feature)** /transform: support transformations to Java 21
 - **(Bug Fix)** Enable syntax highlighting when viewing diff for /test
