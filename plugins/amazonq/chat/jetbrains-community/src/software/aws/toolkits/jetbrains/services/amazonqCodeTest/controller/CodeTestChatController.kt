@@ -828,7 +828,6 @@ class CodeTestChatController(
                     "Successfully sent test generation telemetry. RequestId: ${
                         testGenerationEventResponse.responseMetadata().requestId()}"
                 }
-                // sessionCleanUp(session.tabId)
                 codeTestChatHelper.updateUI(
                     promptInputDisabledState = false,
                     promptInputPlaceholder = message("testgen.placeholder.waiting_on_your_inputs"),
