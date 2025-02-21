@@ -93,11 +93,20 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         }
         val final = session.testGenerationJobGroupName
 
+        if(session.iteration == 1){
+            codeTestChatHelper.updateUI(
+                promptInputDisabledState = true,
+                promptInputProgress = testGenProgressField(0),
+            )
+        }else{
+            codeTestChatHelper.updateUI(
+                promptInputDisabledState = true,
+                promptInputProgress = buildAndExecuteProgrogressField,
+                )
+        }
+
         // Set the Progress bar to "Generating unit tests..."
-        codeTestChatHelper.updateUI(
-            promptInputDisabledState = true,
-            promptInputProgress = testGenProgressField(0),
-        )
+
 
         val codeTestResponseContext = createUploadUrl(codeTestChatHelper, previousIterationContext)
         session.srcPayloadSize = codeTestResponseContext.payloadContext.srcPayloadSize
@@ -263,10 +272,17 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                         messageIdOverride = codeTestResponseContext.testSummaryMessageId
                     )
                 }
-                codeTestChatHelper.updateUI(
-                    promptInputDisabledState = true,
-                    promptInputProgress = testGenProgressField(progressRate),
-                )
+                if(session.iteration == 1){
+                    codeTestChatHelper.updateUI(
+                        promptInputDisabledState = true,
+                        promptInputProgress = testGenProgressField(0),
+                    )
+                }else{
+                    codeTestChatHelper.updateUI(
+                        promptInputDisabledState = true,
+                        promptInputProgress = buildAndExecuteProgrogressField,
+                    )
+                }
             }
 
             // polling every 2 seconds to reduce # of API calls

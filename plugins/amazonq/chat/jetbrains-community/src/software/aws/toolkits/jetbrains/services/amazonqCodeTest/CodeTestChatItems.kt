@@ -36,3 +36,9 @@ fun testGenProgressField(value: Int) = ProgressField(
     valueText = "$value%",
     actions = listOf(cancelTestGenButton)
 )
+
+val buildAndExecuteProgrogressField = ProgressField(
+    status = "default",
+    text = message("testgen.progressbar.build_and_execute"),
+    actions = listOf(cancelTestGenButton)
+)
