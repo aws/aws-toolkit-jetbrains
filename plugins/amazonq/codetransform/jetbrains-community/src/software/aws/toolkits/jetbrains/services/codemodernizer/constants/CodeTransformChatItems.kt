@@ -212,12 +212,12 @@ private val selectSkipTestsFlagFormItem = FormItem(
     mandatory = true,
     options = listOf(
         FormItemOption(
-            label = message("codemodernizer.chat.message.skip_tests_form.skip"),
-            value = message("codemodernizer.chat.message.skip_tests_form.skip"),
-        ),
-        FormItemOption(
             label = message("codemodernizer.chat.message.skip_tests_form.run_tests"),
             value = message("codemodernizer.chat.message.skip_tests_form.run_tests"),
+        ),
+        FormItemOption(
+            label = message("codemodernizer.chat.message.skip_tests_form.skip"),
+            value = message("codemodernizer.chat.message.skip_tests_form.skip"),
         ),
     )
 )
@@ -240,7 +240,7 @@ private val selectOneOrMultipleDiffsFlagFormItem = FormItem(
 
 private val selectCanRerunJobFormItem = FormItem(
     id = CodeTransformFormItemId.SelectCanRerunJob.id,
-    title = "To improve our service, do we have permission to re-run your job?",
+    title = "To improve our service, do we have permission to re-run your job? You will *not* be charged.",
     type = "radiogroup",
     mandatory = true,
     options = listOf(
@@ -273,7 +273,7 @@ private val selectCanViewLogsFormItem = FormItem(
 )
 
 private fun getUserPermissionsSelectionMarkdown(canRerunJob: String, canViewLogs: String) = """
-        ### Feedback received
+        ### Response received
         -------------
 
         | | |
@@ -394,7 +394,7 @@ fun buildUserInputOneOrMultipleDiffsFlagChatContent(): CodeTransformChatMessageC
 
 fun buildUserInputPermissionsFeedbackChatContent(): CodeTransformChatMessageContent =
     CodeTransformChatMessageContent(
-        message = message("codemodernizer.chat.form.user_selection.title"),
+        message = message("codemodernizer.chat.form.user_permissions.title"),
         buttons = listOf(
             confirmUserSelectionPermissionsButton,
             cancelUserSelectionButton,
