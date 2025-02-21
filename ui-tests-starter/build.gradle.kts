@@ -58,6 +58,7 @@ tasks.test {
     useJUnitPlatform()
 
     systemProperty("ui.test.plugins", testPlugins.get().asPath)
+    systemProperty("org.gradle.project.ideProfileName", ideProfile.name)
 }
 
 // hack to disable ui tests in ./gradlew check
