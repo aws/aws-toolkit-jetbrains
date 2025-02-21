@@ -37,7 +37,6 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.PreviousUT
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.ShortAnswer
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.BuildAndExecuteProgressStatus
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.Session
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.utils.combineBuildAndExecuteLogFiles
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.CodeTestException
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.fileTooLarge
@@ -59,10 +58,10 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
-import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipInputStream
 
@@ -89,6 +88,10 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         val session = codeTestChatHelper.getActiveSession()
         session.isGeneratingTests = true
         session.iteration++
+        if (session.testGenerationJobGroupName.isNullOrEmpty()) {
+            session.testGenerationJobGroupName = UUID.randomUUID().toString()
+        }
+        val final = session.testGenerationJobGroupName
 
         // Set the Progress bar to "Generating unit tests..."
         codeTestChatHelper.updateUI(
@@ -137,7 +140,8 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                                 )
                                 .build()
                         ),
-                        userInput = prompt
+                        userInput = prompt,
+                        testGenerationJobGroupName = final
                     )
                     delay(200)
                     response?.testGenerationJob() != null
@@ -175,7 +179,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         var shortAnswer = ShortAnswer()
         LOG.debug {
             "Q TestGen session: ${codeTestChatHelper.getActiveCodeTestTabId()}: " +
-                "polling result for id: ${job.testGenerationJobId()}, group name: ${job.testGenerationJobGroupName()}, " +
+                "polling result for id: ${job.testGenerationJobId()}, group name: ${session.testGenerationJobGroupName}, " +
                 "request id: ${startTestGenerationResponse.responseMetadata().requestId()}"
         }
 
@@ -198,6 +202,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     // Setting default value to 0 if the value is null or invalid
                     session.numberOfUnitTestCasesGenerated = shortAnswer.numberOfTestMethods
                     session.testFileRelativePathToProjectRoot = getTestFilePathRelativeToRoot(shortAnswer)
+                    session.shortAnswer = shortAnswer
 
                     // update test summary card in success case
                     if (previousIterationContext == null) {
@@ -250,10 +255,9 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     if (shortAnswer.stopIteration == "true") {
                         throw CodeTestException("TestGenFailedError: ${shortAnswer.planSummary}", "TestGenFailedError", shortAnswer.planSummary)
                     }
-                    val fileName = shortAnswer.sourceFilePath?.let { Path.of(it).fileName.toString() } ?: path.fileName.toString()
                     codeTestChatHelper.updateAnswer(
                         CodeTestChatMessageContent(
-                            message = generateSummaryMessage(fileName) + shortAnswer.planSummary,
+                            message = generateSummaryMessage(path.fileName.toString()) + shortAnswer.planSummary,
                             type = ChatMessageType.Answer
                         ),
                         messageIdOverride = codeTestResponseContext.testSummaryMessageId
@@ -297,7 +301,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
             // TODO: Modify text according to FnF
             codeTestChatHelper.addAnswer(
                 CodeTestChatMessageContent(
-                    message = message("testgen.error.generic_technical_error_message"),
+                    message = message("testgen.message.failed"),
                     type = ChatMessageType.Answer,
                     canBeVoted = true
                 )
@@ -469,10 +473,8 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 previousIterationContext.selectedFile
             }
 
-        val combinedBuildAndExecuteLogFile = combineBuildAndExecuteLogFiles(
-            previousIterationContext?.buildLogFile,
-            previousIterationContext?.testLogFile
-        )
+        val combinedBuildAndExecuteLogFile =
+            previousIterationContext?.buildLogFile
         val codeTestSessionConfig = CodeTestSessionConfig(file, project, combinedBuildAndExecuteLogFile)
         codeTestChatHelper.getActiveSession().projectRoot = codeTestSessionConfig.projectRoot.path
 
@@ -481,8 +483,13 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         return codeWhispererCodeTestSession.run(codeTestChatHelper, previousIterationContext)
     }
 
-    private fun startTestGeneration(uploadId: String, targetCode: List<TargetCode>, userInput: String): StartTestGenerationResponse =
-        CodeWhispererClientAdaptor.getInstance(project).startTestGeneration(uploadId, targetCode, userInput)
+    private fun startTestGeneration(
+        uploadId: String,
+        targetCode: List<TargetCode>,
+        userInput: String,
+        testGenerationJobGroupName: String,
+    ): StartTestGenerationResponse =
+        CodeWhispererClientAdaptor.getInstance(project).startTestGeneration(uploadId, targetCode, userInput, testGenerationJobGroupName)
 
     private fun getTestGenerationStatus(jobId: String, jobGroupName: String): GetTestGenerationResponse =
         CodeWhispererClientAdaptor.getInstance(project).getTestGeneration(jobId, jobGroupName)

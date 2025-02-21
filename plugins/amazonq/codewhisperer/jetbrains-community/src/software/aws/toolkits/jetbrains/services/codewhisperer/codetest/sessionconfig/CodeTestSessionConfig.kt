@@ -29,7 +29,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.noFileOpe
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_PAYLOAD_LIMIT_IN_BYTES
@@ -156,7 +155,7 @@ class CodeTestSessionConfig(
         it.putNextEntry(utgEntry)
 
         // 3. Add the three empty subdirectories
-        val buildAndExecuteLogDir = "buildAndExecuteLogDir"
+        val buildAndExecuteLogDir = "buildAndExecuteLogDir/"
         val subDirs = listOf(buildAndExecuteLogDir, "repoMapData", "testCoverageDir")
         subDirs.forEach { subDir ->
             val subDirPathString = Path.of(utgDir, subDir).toString() + "/" // Added trailing slash similar to utgRequiredArtifactsDir
@@ -165,7 +164,11 @@ class CodeTestSessionConfig(
             it.putNextEntry(zipEntry)
         }
         if (buildAndExecuteLogFile != null) {
-            it.putNextEntry(Path.of(utgDir, buildAndExecuteLogDir, "buildAndExecuteLog").name, buildAndExecuteLogFile.inputStream)
+            val buildLogFilePath = Path.of(utgDir, buildAndExecuteLogDir, "buildAndExecuteLog")
+                .toString().replace("\\", "/") // Ensures consistent path format
+
+            LOG.debug { "Adding build logs to ZIP at: $buildLogFilePath" }
+            it.putNextEntry(buildLogFilePath, buildAndExecuteLogFile.inputStream)
         }
         if (payloadMetadata.payloadLimitCrossed == true) {
             // write payloadMetadata.payloadManifest into a json file in repoMapData directory. manifest is Set<Pair<String, Long>> write into file first or ina byte stream
@@ -218,7 +221,7 @@ class CodeTestSessionConfig(
             for (module in project.modules) {
                 val changeListManager = ChangeListManager.getInstance(module.project)
                 module.guessModuleDir()?.let { moduleDir ->
-                    val gitIgnoreFilteringUtil = GitIgnoreFilteringUtil(moduleDir, CodeWhispererConstants.FeatureName.TEST_GENERATION)
+                    val gitIgnoreFilteringUtil = GitIgnoreFilteringUtil(moduleDir)
                     stack.push(moduleDir)
                     while (stack.isNotEmpty()) {
                         val current = stack.pop()

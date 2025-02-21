@@ -35,6 +35,7 @@ data class Session(val tabId: String) {
     var artifactUploadDuration: Long = 0
 
     // First iteration will have a value of 1
+    var userPrompt: String = ""
     var iteration: Int = 0
     var projectRoot: String = "/"
     var shortAnswer: ShortAnswer = ShortAnswer()
@@ -62,6 +63,7 @@ enum class BuildAndExecuteProgressStatus {
     START_STEP,
     INSTALL_DEPENDENCIES,
     RUN_BUILD,
+    BUILD_FAILED,
     RUN_EXECUTION_TESTS,
     TESTS_EXECUTED,
     FIXING_TEST_CASES,

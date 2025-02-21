@@ -53,6 +53,7 @@ import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
@@ -67,6 +68,7 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.Incomin
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.PreviousUTGIterationContext
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.BuildAndExecuteProgressStatus
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.Session
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.UTG_CHAT_MAX_ITERATION
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.storage.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.utils.constructBuildAndExecutionSummaryText
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.utils.runBuildOrTestCommand
@@ -617,6 +619,8 @@ class CodeTestChatController(
             "utg_accept" -> {
                 // open the file at test path relative to the project root
                 val testFileAbsolutePath = Paths.get(session.projectRoot, session.testFileRelativePathToProjectRoot)
+                val startUrl = getStartUrl(context.project)
+                val isInternalUser = isInternalUser(startUrl)
                 openOrCreateTestFileAndApplyDiff(context.project, testFileAbsolutePath, session.generatedTestDiffs.values.first(), session.openedDiffFile)
                 session.codeReferences?.let { references ->
                     LOG.debug { "Accepted unit tests with references: $references" }
@@ -691,16 +695,20 @@ class CodeTestChatController(
                         canBeVoted = false
                     )
                 )
-                sessionCleanUp(session.tabId)
+                if (!isInternalUser) {
+                    sessionCleanUp(message.tabId)
+                    return
+                }
+
                 codeTestChatHelper.updateUI(
                     promptInputDisabledState = false,
                     promptInputPlaceholder = message("testgen.placeholder.enter_slash_quick_actions"),
                 )
-                /*
+
                 val taskContext = session.buildAndExecuteTaskContext
                 if (session.iteration < 2) {
-                    taskContext.buildCommand = getBuildCommand(message.tabId)
-                    taskContext.executionCommand = getExecutionCommand(message.tabId)
+                    taskContext.buildCommand = codeTestChatHelper.getSession(message.tabId).shortAnswer.buildCommand.toString()
+
                     codeTestChatHelper.addAnswer(
                         CodeTestChatMessageContent(
                             message = """
@@ -708,7 +716,6 @@ class CodeTestChatController(
 
                            ```sh
                            ${taskContext.buildCommand}
-                           ${taskContext.executionCommand}
                            ```
                             """.trimIndent(),
                             type = ChatMessageType.Answer,
@@ -790,10 +797,9 @@ class CodeTestChatController(
                         promptInputPlaceholder = message("testgen.placeholder.newtab")
                     )
                 }
-                 */
             }
-            /*
-            //TODO: this is for unit test regeneration build iteration loop
+
+            // TODO: this is for unit test regeneration build iteration loop
             "utg_regenerate" -> {
                 // close the existing open diff in the editor.
                 ApplicationManager.getApplication().invokeLater {
@@ -810,6 +816,7 @@ class CodeTestChatController(
                     session.testGenerationJob,
                     session.testGenerationJobGroupName,
                     session.programmingLanguage,
+                    IdeCategory.JETBRAINS,
                     session.numberOfUnitTestCasesGenerated,
                     0,
                     session.linesOfCodeGenerated,
@@ -821,13 +828,12 @@ class CodeTestChatController(
                     "Successfully sent test generation telemetry. RequestId: ${
                         testGenerationEventResponse.responseMetadata().requestId()}"
                 }
-                sessionCleanUp(session.tabId)
+                // sessionCleanUp(session.tabId)
                 codeTestChatHelper.updateUI(
                     promptInputDisabledState = false,
                     promptInputPlaceholder = message("testgen.placeholder.waiting_on_your_inputs"),
                 )
             }
-             */
 
             "utg_reject" -> {
                 ApplicationManager.getApplication().invokeLater {
@@ -917,43 +923,14 @@ class CodeTestChatController(
                         "tmpFile for build logs:\n ${buildLogsFile.path}"
                 }
 
-                runBuildOrTestCommand(taskContext.buildCommand, buildLogsFile, context.project, isBuildCommand = true, taskContext)
+                runBuildOrTestCommand(taskContext.buildCommand, buildLogsFile, context.project, isBuildCommand = true, taskContext, session.projectRoot)
                 while (taskContext.buildExitCode < 0) {
                     // wait until build command finished
                     delay(1000)
                 }
 
-                // TODO: only go to future iterations when buildExitCode or testExitCode > 0, right now iterate regardless
-                if (taskContext.buildExitCode > 0) {
-                    // TODO: handle build failure case
-                    // ...
-//                    return
-                }
-                taskContext.progressStatus = BuildAndExecuteProgressStatus.RUN_EXECUTION_TESTS
-                updateBuildAndExecuteProgressCard(taskContext.progressStatus, messageId, session.iteration)
-
-                val testLogsFile = VirtualFileManager.getInstance().findFileByNioPath(
-                    withContext(currentCoroutineContext()) {
-                        Files.createTempFile(null, null)
-                    }
-                )
-                if (testLogsFile == null) {
-                    // TODO: handle no log file case
-                    return
-                }
-                LOG.debug {
-                    "Q TestGen session: ${codeTestChatHelper.getActiveCodeTestTabId()}: " +
-                        "tmpFile for test logs:\n ${buildLogsFile.path}"
-                }
-                delay(1000)
-                runBuildOrTestCommand(taskContext.executionCommand, testLogsFile, context.project, isBuildCommand = false, taskContext)
-                while (taskContext.testExitCode < 0) {
-                    // wait until test command finished
-                    delay(1000)
-                }
-
-                if (taskContext.testExitCode == 0) {
-                    taskContext.progressStatus = BuildAndExecuteProgressStatus.TESTS_EXECUTED
+                if (taskContext.buildExitCode == 0) {
+                    taskContext.progressStatus = BuildAndExecuteProgressStatus.PROCESS_TEST_RESULTS
                     updateBuildAndExecuteProgressCard(taskContext.progressStatus, messageId, session.iteration)
                     codeTestChatHelper.addAnswer(
                         CodeTestChatMessageContent(
@@ -966,23 +943,90 @@ class CodeTestChatController(
                     return
                 }
 
-                // has test failure, we will zip the latest project and invoke backend again
-                taskContext.progressStatus = BuildAndExecuteProgressStatus.FIXING_TEST_CASES
-                val buildAndExecuteMessageId = updateBuildAndExecuteProgressCard(taskContext.progressStatus, messageId, session.iteration)
+                // TODO: only go to future iterations when buildExitCode or testExitCode > 0, right now iterate regardless
+                if (taskContext.buildExitCode > 0) {
+                    // handle build failure case
 
-                val previousUTGIterationContext = PreviousUTGIterationContext(
-                    buildLogFile = buildLogsFile,
-                    testLogFile = testLogsFile,
-                    selectedFile = session.selectedFile,
-                    buildAndExecuteMessageId = buildAndExecuteMessageId
-                )
+                    taskContext.progressStatus = BuildAndExecuteProgressStatus.BUILD_FAILED
+                    updateBuildAndExecuteProgressCard(taskContext.progressStatus, messageId, session.iteration)
+                    taskContext.progressStatus = BuildAndExecuteProgressStatus.FIXING_TEST_CASES
+                    val buildAndExecuteMessageId = updateBuildAndExecuteProgressCard(
+                        taskContext.progressStatus,
+                        messageId,
+                        session.iteration + 1
+                    )
 
-                val job = CodeWhispererUTGChatManager.getInstance(context.project).generateTests("", codeTestChatHelper, previousUTGIterationContext, null)
-                job?.join()
+                    val previousUTGIterationContext = PreviousUTGIterationContext(
+                        buildLogFile = buildLogsFile,
+                        testLogFile = null,
+                        selectedFile = session.selectedFile,
+                        buildAndExecuteMessageId = buildAndExecuteMessageId
+                    )
 
-                taskContext.progressStatus = BuildAndExecuteProgressStatus.PROCESS_TEST_RESULTS
-                // session.iteration already updated in generateTests
-                updateBuildAndExecuteProgressCard(taskContext.progressStatus, messageId, session.iteration - 1)
+                    session.isGeneratingTests = false
+                    session.conversationState = ConversationState.IDLE
+
+                    val job = CodeWhispererUTGChatManager.getInstance(
+                        context.project
+                    ).generateTests(session.userPrompt, codeTestChatHelper, previousUTGIterationContext, null)
+                    job?.join()
+
+                    return
+                }
+//                taskContext.progressStatus = BuildAndExecuteProgressStatus.RUN_EXECUTION_TESTS
+//                updateBuildAndExecuteProgressCard(taskContext.progressStatus, messageId, session.iteration)
+//
+//                val testLogsFile = VirtualFileManager.getInstance().findFileByNioPath(
+//                    withContext(currentCoroutineContext()) {
+//                        Files.createTempFile(null, null)
+//                    }
+//                )
+//                if (testLogsFile == null) {
+//                    // TODO: handle no log file case
+//                    return
+//                }
+//                LOG.debug {
+//                    "Q TestGen session: ${codeTestChatHelper.getActiveCodeTestTabId()}: " +
+//                        "tmpFile for test logs:\n ${buildLogsFile.path}"
+//                }
+//                delay(1000)
+//                runBuildOrTestCommand(taskContext.executionCommand, testLogsFile, context.project, isBuildCommand = false, taskContext)
+//                while (taskContext.testExitCode < 0) {
+//                    // wait until test command finished
+//                    delay(1000)
+//                }
+//
+//                if (taskContext.testExitCode == 0) {
+//                    taskContext.progressStatus = BuildAndExecuteProgressStatus.TESTS_EXECUTED
+//                    updateBuildAndExecuteProgressCard(taskContext.progressStatus, messageId, session.iteration)
+//                    codeTestChatHelper.addAnswer(
+//                        CodeTestChatMessageContent(
+//                            message = message("testgen.message.success"),
+//                            type = ChatMessageType.Answer,
+//                            canBeVoted = false
+//                        )
+//                    )
+//                    // sessionCleanUp(message.tabId)
+//                    return
+//                }
+//
+//                // has test failure, we will zip the latest project and invoke backend again
+//                taskContext.progressStatus = BuildAndExecuteProgressStatus.FIXING_TEST_CASES
+//                val buildAndExecuteMessageId = updateBuildAndExecuteProgressCard(taskContext.progressStatus, messageId, session.iteration)
+//
+//                val previousUTGIterationContext = PreviousUTGIterationContext(
+//                    buildLogFile = buildLogsFile,
+//                    testLogFile = testLogsFile,
+//                    selectedFile = session.selectedFile,
+//                    buildAndExecuteMessageId = buildAndExecuteMessageId
+//                )
+//
+//                val job = CodeWhispererUTGChatManager.getInstance(context.project).generateTests("", codeTestChatHelper, previousUTGIterationContext, null)
+//                job?.join()
+//
+//                taskContext.progressStatus = BuildAndExecuteProgressStatus.PROCESS_TEST_RESULTS
+//                // session.iteration already updated in generateTests
+//                updateBuildAndExecuteProgressCard(taskContext.progressStatus, messageId, session.iteration - 1)
             }
             "utg_modify_command" -> {
                 // TODO allow user input to modify the command

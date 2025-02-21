@@ -26,6 +26,7 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.getFixingT
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.BuildAndExecuteProgressStatus
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.BuildAndExecuteTaskContext
 import java.io.File
+import java.io.FileWriter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
@@ -33,7 +34,11 @@ fun constructBuildAndExecutionSummaryText(currentStatus: BuildAndExecuteProgress
     val progressMessages = mutableListOf<String>()
 
     if (currentStatus >= BuildAndExecuteProgressStatus.RUN_BUILD) {
-        val verb = if (currentStatus == BuildAndExecuteProgressStatus.RUN_BUILD) "in progress" else "complete"
+        val verb = when (currentStatus) {
+            BuildAndExecuteProgressStatus.RUN_BUILD -> "in progress"
+            BuildAndExecuteProgressStatus.BUILD_FAILED -> "failed"
+            else -> "complete"
+        }
         progressMessages.add("${getBuildIcon(currentStatus)}: Build $verb")
     }
 
@@ -42,7 +47,7 @@ fun constructBuildAndExecutionSummaryText(currentStatus: BuildAndExecuteProgress
         progressMessages.add("${getExecutionIcon(currentStatus)}: $verb passed tests")
     }
 
-    if (currentStatus >= BuildAndExecuteProgressStatus.FIXING_TEST_CASES) {
+    if (currentStatus >= BuildAndExecuteProgressStatus.FIXING_TEST_CASES || currentStatus == BuildAndExecuteProgressStatus.BUILD_FAILED) {
         val verb = if (currentStatus == BuildAndExecuteProgressStatus.FIXING_TEST_CASES) "Fixing" else "Fixed"
         progressMessages.add("${getFixingTestCasesIcon(currentStatus)}: $verb errors in tests")
     }
@@ -85,12 +90,13 @@ fun runBuildOrTestCommand(
     project: Project,
     isBuildCommand: Boolean,
     buildAndExecuteTaskContext: BuildAndExecuteTaskContext,
+    projectRoot: String,
 ) {
     if (localCommand.isEmpty()) {
         buildAndExecuteTaskContext.testExitCode = 0
         return
     }
-    val repositoryPath = project.basePath ?: return
+    // val repositoryPath = project.basePath ?: return
     val commandParts = localCommand.split(" ")
     val command = commandParts.first()
     val args = commandParts.drop(1)
@@ -109,9 +115,13 @@ fun runBuildOrTestCommand(
     }
 
     val processBuilder = ProcessBuilder()
-        .command(listOf(command) + args)
-        .directory(File(repositoryPath))
+        .command(listOf("zsh", "-c", "source ~/.zshrc && $command ${args.joinToString(" ")}"))
+        .directory(File(projectRoot))
         .redirectErrorStream(true)
+
+    val env = processBuilder.environment()
+
+    env["PATH"] = System.getenv("PATH")
 
     try {
         val process = processBuilder.start()
@@ -121,10 +131,12 @@ fun runBuildOrTestCommand(
         processHandler.addProcessListener(object : ProcessAdapter() {
             override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                 val cleanedText = cleanText(event.text)
+                FileWriter(file, true).use { writer ->
+                    writer.append(cleanedText)
+                    writer.append("\n")
+                }
                 ApplicationManager.getApplication().invokeLater {
-                    ApplicationManager.getApplication().runWriteAction {
-                        file.appendText(cleanedText)
-                    }
+                    VirtualFileManager.getInstance().refreshAndFindFileByNioPath(file.toPath())?.refresh(false, false)
                 }
             }
 
