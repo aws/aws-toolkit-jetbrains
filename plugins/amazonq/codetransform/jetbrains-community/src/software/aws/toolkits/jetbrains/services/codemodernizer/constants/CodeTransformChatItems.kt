@@ -218,7 +218,7 @@ private val selectSkipTestsFlagFormItem = FormItem(
         FormItemOption(
             label = message("codemodernizer.chat.message.skip_tests_form.skip"),
             value = message("codemodernizer.chat.message.skip_tests_form.skip"),
-        ),
+        )
     )
 )
 
