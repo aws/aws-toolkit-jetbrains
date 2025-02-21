@@ -316,31 +316,31 @@ class ProjectContextProviderTest {
     }
 
     @Test
-    fun `query inline should throw if resultset not deserializable`() {
-        assertThrows<Exception> {
-            runTest {
-                sut = ProjectContextProvider(project, encoderServer, this)
-                stubFor(
-                    any(urlPathEqualTo("/queryInlineProjectContext")).willReturn(
-                        aResponse().withStatus(200).withResponseBody(
-                            Body(
-                                """
+    fun `query inline should throw if resultset not deserializable`() =
+        runTest {
+            sut = ProjectContextProvider(project, encoderServer, this)
+            stubFor(
+                any(urlPathEqualTo("/queryInlineProjectContext")).willReturn(
+                    aResponse().withStatus(200).withResponseBody(
+                        Body(
+                            """
                             [
                                 "foo", "bar"
                             ]
-                                """.trimIndent()
-                            )
+                            """.trimIndent()
                         )
                     )
                 )
+            )
 
-                assertThrows<Exception> {
+            assertThrows<Exception> {
+                withContext(getCoroutineBgContext()) {
                     sut.queryInline("foo", "filepath", InlineContextTarget.CODEMAP)
-                    advanceUntilIdle()
                 }
+
+                advanceUntilIdle()
             }
         }
-    }
 
     @Test
     fun `query inline should return deserialized bm25 chunks`() = runTest {
