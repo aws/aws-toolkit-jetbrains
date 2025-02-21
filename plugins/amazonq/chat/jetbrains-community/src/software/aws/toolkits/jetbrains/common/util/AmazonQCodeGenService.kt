@@ -20,6 +20,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.common.clients.AmazonQCodeGenerateClient
 import software.aws.toolkits.jetbrains.common.session.Intent
+import software.aws.toolkits.jetbrains.services.amazonqDoc.docServiceError
 import software.aws.toolkits.jetbrains.services.amazonqDoc.session.DocGenerationStreamResult
 import software.aws.toolkits.jetbrains.services.amazonqDoc.session.ExportDocTaskAssistResultArchiveStreamResult
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
@@ -31,6 +32,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevOper
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileCorruptedException
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
+import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.MetricResult
 
@@ -82,7 +84,7 @@ class AmazonQCodeGenService(val proxyClient: AmazonQCodeGenerateClient, val proj
         }
     }
 
-    fun createUploadUrl(conversationId: String, contentChecksumSha256: String, contentLength: Long, uploadId: String):
+    fun createUploadUrl(conversationId: String, contentChecksumSha256: String, contentLength: Long, uploadId: String, featureName: String? = null):
         CreateUploadUrlResponse {
         try {
             logger.debug { "Executing createUploadUrl with conversationId $conversationId" }
@@ -104,6 +106,9 @@ class AmazonQCodeGenService(val proxyClient: AmazonQCodeGenerateClient, val proj
                 logger.warn(e) { "Create UploadUrl failed for request: ${e.requestId()}" }
 
                 if (e is ValidationException && e.message?.contains("Invalid contentLength") == true) {
+                    if (featureName?.equals("docGeneration") == true) {
+                        throw docServiceError(message("amazonqDoc.exception.content_length_error"))
+                    }
                     throw ContentLengthException(operation = FeatureDevOperation.CreateUploadUrl.toString(), desc = null, cause = e.cause)
                 }
             }
