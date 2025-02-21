@@ -19,12 +19,12 @@ class FileUriUtilTest : BasePlatformTestCase() {
             every { this@mockk.isDirectory } returns isDirectory
         }
 
-    private fun normalizeFileUri(uri: String) : String {
+    private fun normalizeFileUri(uri: String): String {
         if (!System.getProperty("os.name").lowercase().contains("windows")) {
             return uri
         }
 
-        if  (!uri.startsWith("file:///")) {
+        if (!uri.startsWith("file:///")) {
             return uri
         }
 
@@ -36,7 +36,7 @@ class FileUriUtilTest : BasePlatformTestCase() {
     fun `test basic unix path`() {
         val virtualFile = createMockVirtualFile("/path/to/file.txt")
         val uri = FileUriUtil.toUriString(virtualFile)
-        val expected =  normalizeFileUri("file:///path/to/file.txt")
+        val expected = normalizeFileUri("file:///path/to/file.txt")
         assertEquals(expected, uri)
     }
 
@@ -61,7 +61,7 @@ class FileUriUtilTest : BasePlatformTestCase() {
         val virtualFile = createMockVirtualFile("/")
         val uri = FileUriUtil.toUriString(virtualFile)
         val expected = normalizeFileUri("file:///")
-        assertEquals(expected , uri)
+        assertEquals(expected, uri)
     }
 
     @Test
