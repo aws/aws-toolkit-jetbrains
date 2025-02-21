@@ -57,7 +57,7 @@ fun runHilMavenCopyDependency(
     return MavenCopyCommandsResult.Success(destinationDir)
 }
 
-fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, logger: Logger, project: Project): MavenCopyCommandsResult {
+fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, logger: Logger, project: Project, shouldSkipTests: Boolean): MavenCopyCommandsResult {
     val currentTimestamp = System.currentTimeMillis()
     val destinationDir = Files.createTempDirectory("transformation_dependencies_temp_$currentTimestamp")
     val telemetry = CodeTransformTelemetryManager.getInstance(project)
@@ -112,7 +112,7 @@ fun runMavenCopyCommands(sourceFolder: File, buildlogBuilder: StringBuilder, log
         }
 
         // Run install
-        val installRunnable = runMavenInstall(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, logger, destinationDir)
+        val installRunnable = runMavenInstall(sourceFolder, buildlogBuilder, mvnSettings, transformMvnRunner, logger, destinationDir, shouldSkipTests)
         installRunnable.await()
         buildlogBuilder.appendLine(installRunnable.getOutput())
         if (installRunnable.isComplete()) {
@@ -217,13 +217,16 @@ private fun runMavenInstall(
     transformMavenRunner: TransformMavenRunner,
     logger: Logger,
     destinationDir: Path,
+    shouldSkipTests: Boolean,
 ): TransformRunnable {
     buildlogBuilder.appendLine("Command Run: IntelliJ IDEA bundled Maven install")
+    val flags = if (shouldSkipTests) listOf("-Dmaven.repo.local=$destinationDir", "install", "-DskipTests") else
+        listOf("-Dmaven.repo.local=$destinationDir", "install")
     val installParams = MavenRunnerParameters(
         false,
         sourceFolder.absolutePath,
         null,
-        listOf("-Dmaven.repo.local=$destinationDir", "install"),
+        flags,
         emptyList<String>(),
         null
     )
