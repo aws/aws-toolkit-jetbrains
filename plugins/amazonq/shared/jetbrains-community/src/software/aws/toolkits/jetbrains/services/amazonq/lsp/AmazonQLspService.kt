@@ -47,6 +47,7 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.createExtendedClientMetadata
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.workspace.WorkspaceServiceHandler
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import java.io.IOException
 import java.io.OutputStreamWriter
@@ -305,6 +306,11 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             }
             languageServer.initialized(InitializedParams())
         }
+
+        WorkspaceServiceHandler(
+            project,
+            this
+        )
     }
 
     override fun dispose() {
