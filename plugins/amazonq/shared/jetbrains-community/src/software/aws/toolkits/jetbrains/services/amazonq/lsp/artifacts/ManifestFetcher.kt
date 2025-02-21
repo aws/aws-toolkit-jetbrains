@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.util.io.DigestUtil
+import org.assertj.core.util.VisibleForTesting
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
@@ -38,7 +39,8 @@ class ManifestFetcher {
         return fetchManifestFromRemote()
     }
 
-    private fun fetchManifestFromRemote(): ManifestManager.Manifest? {
+    @VisibleForTesting
+    internal fun fetchManifestFromRemote(): ManifestManager.Manifest? {
         val manifest: ManifestManager.Manifest?
         try {
             val manifestString = getTextFromUrl(lspManifestUrl)
@@ -64,7 +66,8 @@ class ManifestFetcher {
         }
     }
 
-    private fun fetchManifestFromLocal(): ManifestManager.Manifest? {
+    @VisibleForTesting
+    internal fun fetchManifestFromLocal(): ManifestManager.Manifest? {
         val localETag = getManifestETagFromLocal()
         val remoteETag = getManifestETagFromUrl()
         // If local and remote have same ETag, we can re-use the manifest file from local to fetch artifacts.
