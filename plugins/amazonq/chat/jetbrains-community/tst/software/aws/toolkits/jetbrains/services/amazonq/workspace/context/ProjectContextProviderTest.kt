@@ -1,6 +1,6 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-
+@file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.amazonq.workspace.context
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -296,24 +296,24 @@ class ProjectContextProviderTest {
     fun `query chat should return deserialized relevantDocument`() = runTest {
         // use real time
         withContext(Dispatchers.Default.limitedParallelism(1)) {
-        sut = ProjectContextProvider(project, encoderServer, this)
-        val r = sut.query("foo", null)
-        advanceUntilIdle()
-        assertThat(r).hasSize(2)
-        assertThat(r[0]).isEqualTo(
-            RelevantDocument(
-                "relativeFilePath1",
-                "context1"
+            sut = ProjectContextProvider(project, encoderServer, this)
+            val r = sut.query("foo", null)
+            advanceUntilIdle()
+            assertThat(r).hasSize(2)
+            assertThat(r[0]).isEqualTo(
+                RelevantDocument(
+                    "relativeFilePath1",
+                    "context1"
+                )
             )
-        )
-        assertThat(r[1]).isEqualTo(
-            RelevantDocument(
-                "relativeFilePath2",
-                "context2"
+            assertThat(r[1]).isEqualTo(
+                RelevantDocument(
+                    "relativeFilePath2",
+                    "context2"
+                )
             )
-        )
-    }
         }
+    }
 
     @Test
     fun `query inline should throw if resultset not deserializable`() {
