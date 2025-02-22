@@ -7,7 +7,7 @@ import com.intellij.openapi.vfs.VirtualFile
 
 data class PreviousUTGIterationContext(
     val buildLogFile: VirtualFile,
-    val testLogFile: VirtualFile,
+    val testLogFile: VirtualFile?,
     val selectedFile: VirtualFile?,
     val buildAndExecuteMessageId: String?,
 )
