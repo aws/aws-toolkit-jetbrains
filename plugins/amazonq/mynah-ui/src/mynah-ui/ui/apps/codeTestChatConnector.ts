@@ -51,18 +51,18 @@ interface MessageData {
 
 function getIntroductionCardContent(): IntroductionCardContentType {
     const introductionBody = [
-        "I can generate unit tests for your active file. ",
+        "I can generate unit tests for the active file or open project in your IDE.",
         "\n\n",
-        "After you select the functions or methods I should focus on, I will:\n",
-        "1. Generate unit tests\n",
-        "2. Place them into relevant test file\n",
+        "I can do things like:\n",
+        "- Add unit tests for highlighted functions\n",
+        "- Generate tests for null and empty inputs\n",
         "\n\n",
-        "To learn more, check out our [user guide](https://aws.amazon.com/q/developer/)."
+        "To learn more, visit the [Amazon Q Developer User Guide](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/test-generation.html)."
     ].join("");
 
     return {
-        title: "/test",
-        description: "Included in your Q Developer subscription",
+        title: "/test -  Unit test generation",
+        description: "Generate unit tests for selected code",
         icon: MynahIcons.CHECK_LIST,
         content: {
             body: introductionBody
