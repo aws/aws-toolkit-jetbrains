@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix suggestion not visible in remote for 2024.3"
+}
