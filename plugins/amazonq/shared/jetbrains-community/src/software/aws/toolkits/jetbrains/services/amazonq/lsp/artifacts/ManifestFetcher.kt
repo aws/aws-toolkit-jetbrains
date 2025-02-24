@@ -3,9 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
-import com.intellij.openapi.util.text.StringUtil
-import com.intellij.util.io.DigestUtil
 import org.assertj.core.util.VisibleForTesting
+import software.aws.toolkits.core.utils.deleteIfExists
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
@@ -19,10 +18,10 @@ import java.nio.file.Path
 
 class ManifestFetcher {
 
-    private val lspManifestUrl = "https://aws-toolkit-language-servers.amazonaws.com/codewhisperer/0/manifest.json"
+    private val lspManifestUrl = "https://aws-toolkit-language-servers.amazonaws.com/codewhisperer/0/manifest.jso"
     private val manifestManager = ManifestManager()
     private val lspManifestFilePath: Path = getToolkitsCommonCacheRoot().resolve("aws").resolve("toolkits").resolve("language-servers")
-        .resolve("lsp-manifest.json")
+        .resolve("jetbrains-lsp-manifest.json")
 
     companion object {
         private val logger = getLogger<ManifestFetcher>()
@@ -71,10 +70,13 @@ class ManifestFetcher {
         val localETag = getManifestETagFromLocal()
         val remoteETag = getManifestETagFromUrl()
         // If local and remote have same ETag, we can re-use the manifest file from local to fetch artifacts.
-        if (localETag != null && remoteETag != null && localETag == remoteETag) {
+        // If remote manifest is null or system is offline, re-use localManifest
+        if ((localETag != null && remoteETag != null && localETag == remoteETag) or (localETag != null && remoteETag == null)) {
             try {
                 val manifestContent = lspManifestFilePath.readText()
-                return manifestManager.readManifestFile(manifestContent)
+                val manifest = manifestManager.readManifestFile(manifestContent)
+                if (manifest != null) return manifest
+                lspManifestFilePath.deleteIfExists()        // delete manifest if it fails to de-serialize
             } catch (e: Exception) {
                 logger.error(e) { "error reading lsp manifest file from local ${e.message}" }
                 return null
@@ -85,9 +87,7 @@ class ManifestFetcher {
 
     private fun getManifestETagFromLocal(): String? {
         if (lspManifestFilePath.exists()) {
-            val messageDigest = DigestUtil.md5()
-            DigestUtil.updateContentHash(messageDigest, lspManifestFilePath)
-            return StringUtil.toHexString(messageDigest.digest())
+            return generateMD5Hash(lspManifestFilePath)
         }
         return null
     }
