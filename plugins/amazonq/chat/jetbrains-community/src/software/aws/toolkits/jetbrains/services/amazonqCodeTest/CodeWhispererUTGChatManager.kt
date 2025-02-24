@@ -589,25 +589,46 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                         canBeVoted = false
                     )
                 )
+                if(session.iteration == 1){
+                    AmazonqTelemetry.utgGenerateTests(
+                        cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
+                        hasUserPromptSupplied = session.hasUserPromptSupplied,
+                        isFileInWorkspace = true,
+                        isSupportedLanguage = true,
+                        credentialStartUrl = getStartUrl(project),
+                        jobGroup = session.testGenerationJobGroupName,
+                        jobId = session.testGenerationJob,
+                        result = if (e.message == message("testgen.message.cancelled")) MetricResult.Cancelled else MetricResult.Failed,
+                        reason = (e as CodeTestException).code ?: "DefaultError",
+                        reasonDesc = if (e.message == message("testgen.message.cancelled")) "${e.code}: ${e.message}" else e.message,
+                        perfClientLatency = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration),
+                        isCodeBlockSelected = session.isCodeBlockSelected,
+                        artifactsUploadDuration = session.artifactUploadDuration,
+                        buildPayloadBytes = session.srcPayloadSize,
+                        buildZipFileBytes = session.srcZipFileSize,
+                        requestId = session.startTestGenerationRequestId
+                    )
 
-                AmazonqTelemetry.utgGenerateTests(
-                    cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
-                    hasUserPromptSupplied = session.hasUserPromptSupplied,
-                    isFileInWorkspace = true,
-                    isSupportedLanguage = true,
-                    credentialStartUrl = getStartUrl(project),
-                    jobGroup = session.testGenerationJobGroupName,
-                    jobId = session.testGenerationJob,
-                    result = if (e.message == message("testgen.message.cancelled")) MetricResult.Cancelled else MetricResult.Failed,
-                    reason = (e as CodeTestException).code ?: "DefaultError",
-                    reasonDesc = if (e.message == message("testgen.message.cancelled")) "${e.code}: ${e.message}" else e.message,
-                    perfClientLatency = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration),
-                    isCodeBlockSelected = session.isCodeBlockSelected,
-                    artifactsUploadDuration = session.artifactUploadDuration,
-                    buildPayloadBytes = session.srcPayloadSize,
-                    buildZipFileBytes = session.srcZipFileSize,
-                    requestId = session.startTestGenerationRequestId
-                )
+                }else{
+                    AmazonqTelemetry.unitTestGeneration(
+                        cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
+                        hasUserPromptSupplied = session.hasUserPromptSupplied,
+                        isSupportedLanguage = true,
+                        credentialStartUrl = getStartUrl(project),
+                        jobGroup = session.testGenerationJobGroupName,
+                        jobId = session.testGenerationJob,
+                        result = if (e.message == message("testgen.message.cancelled")) MetricResult.Cancelled else MetricResult.Failed,
+                        reason = (e as CodeTestException).code ?: "DefaultError",
+                        reasonDesc = if (e.message == message("testgen.message.cancelled")) "${e.code}: ${e.message}" else e.message,
+                        perfClientLatency = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration),
+                        isCodeBlockSelected = session.isCodeBlockSelected,
+                        artifactsUploadDuration = session.artifactUploadDuration,
+                        buildZipFileBytes = session.srcZipFileSize,
+                        requestId = session.startTestGenerationRequestId
+                    )
+                }
+
+
                 session.isGeneratingTests = false
             } finally {
                 // Reset the flow if there is any error

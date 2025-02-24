@@ -90,12 +90,27 @@ fun runBuildOrTestCommand(
     project: Project,
     isBuildCommand: Boolean,
     buildAndExecuteTaskContext: BuildAndExecuteTaskContext,
-    projectRoot: String,
+    testFileRelativePathToProjectRoot: String,
 ) {
     if (localCommand.isEmpty()) {
         buildAndExecuteTaskContext.testExitCode = 0
         return
     }
+    val projectRoot = File(project.basePath ?: return)
+    val testFileAbsolutePath = File(projectRoot, testFileRelativePathToProjectRoot)
+
+    // Find the nearest Gradle root directory
+    var packageRoot: File? = testFileAbsolutePath.parentFile
+    while (packageRoot != null && packageRoot != projectRoot) {
+        if (File(packageRoot, "settings.gradle.kts").exists() || File(packageRoot, "build.gradle.kts").exists()) {
+            break // top when we find a valid Gradle project root
+        }
+        packageRoot = packageRoot.parentFile
+    }
+
+    // If no valid Gradle directory is found, fallback to the project root
+    val workingDir = packageRoot ?: projectRoot
+    println("Running command in directory: ${workingDir.absolutePath}")
     // val repositoryPath = project.basePath ?: return
     val commandParts = localCommand.split(" ")
     val command = commandParts.first()
@@ -116,7 +131,7 @@ fun runBuildOrTestCommand(
 
     val processBuilder = ProcessBuilder()
         .command(listOf("zsh", "-c", "source ~/.zshrc && $command ${args.joinToString(" ")}"))
-        .directory(File(projectRoot))
+        .directory(packageRoot)
         .redirectErrorStream(true)
 
     val env = processBuilder.environment()

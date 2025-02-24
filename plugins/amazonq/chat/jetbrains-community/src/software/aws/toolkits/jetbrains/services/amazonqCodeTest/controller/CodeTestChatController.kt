@@ -116,6 +116,7 @@ class CodeTestChatController(
     private val authController: AuthController = AuthController(),
     private val cs: CoroutineScope,
 ) : InboundAppMessagesHandler {
+    var buildResult = false
     val messenger = context.messagesFromAppToUi
     private val codeTestChatHelper = CodeTestChatHelper(context.messagesFromAppToUi, chatSessionStorage)
     private val supportedLanguage = setOf("python", "java")
@@ -666,28 +667,59 @@ class CodeTestChatController(
 
                 UiTelemetry.click(null as Project?, "unitTestGeneration_acceptDiff")
 
-                AmazonqTelemetry.utgGenerateTests(
-                    cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
-                    hasUserPromptSupplied = session.hasUserPromptSupplied,
-                    isFileInWorkspace = true,
-                    isSupportedLanguage = true,
-                    credentialStartUrl = getStartUrl(project = context.project),
-                    jobGroup = session.testGenerationJobGroupName,
-                    jobId = session.testGenerationJob,
-                    acceptedCount = session.numberOfUnitTestCasesGenerated?.toLong(),
-                    generatedCount = session.numberOfUnitTestCasesGenerated?.toLong(),
-                    acceptedLinesCount = session.linesOfCodeGenerated?.toLong(),
-                    generatedLinesCount = session.linesOfCodeGenerated?.toLong(),
-                    acceptedCharactersCount = session.charsOfCodeGenerated?.toLong(),
-                    generatedCharactersCount = session.charsOfCodeGenerated?.toLong(),
-                    result = MetricResult.Succeeded,
-                    perfClientLatency = session.latencyOfTestGeneration,
-                    isCodeBlockSelected = session.isCodeBlockSelected,
-                    artifactsUploadDuration = session.artifactUploadDuration,
-                    buildPayloadBytes = session.srcPayloadSize,
-                    buildZipFileBytes = session.srcZipFileSize,
-                    requestId = session.startTestGenerationRequestId
-                )
+                if(session.iteration == 1){
+                    AmazonqTelemetry.utgGenerateTests(
+                        cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
+                        hasUserPromptSupplied = session.hasUserPromptSupplied,
+                        isFileInWorkspace = true,
+                        isSupportedLanguage = true,
+                        credentialStartUrl = getStartUrl(project = context.project),
+                        jobGroup = session.testGenerationJobGroupName,
+                        jobId = session.testGenerationJob,
+                        acceptedCount = session.numberOfUnitTestCasesGenerated?.toLong(),
+                        generatedCount = session.numberOfUnitTestCasesGenerated?.toLong(),
+                        acceptedLinesCount = session.linesOfCodeGenerated?.toLong(),
+                        generatedLinesCount = session.linesOfCodeGenerated?.toLong(),
+                        acceptedCharactersCount = session.charsOfCodeGenerated?.toLong(),
+                        generatedCharactersCount = session.charsOfCodeGenerated?.toLong(),
+                        result = MetricResult.Succeeded,
+                        perfClientLatency = session.latencyOfTestGeneration,
+                        isCodeBlockSelected = session.isCodeBlockSelected,
+                        artifactsUploadDuration = session.artifactUploadDuration,
+                        buildPayloadBytes = session.srcPayloadSize,
+                        buildZipFileBytes = session.srcZipFileSize,
+                        requestId = session.startTestGenerationRequestId
+                    )
+                }else{
+                    AmazonqTelemetry.unitTestGeneration(
+                        count = session.iteration.toLong() - 1,
+                        cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
+                        hasUserPromptSupplied = session.hasUserPromptSupplied,
+                        isSupportedLanguage = true,
+                        credentialStartUrl = getStartUrl(project = context.project),
+                        jobGroup = session.testGenerationJobGroupName,
+                        jobId = session.testGenerationJob,
+                        acceptedCount = session.numberOfUnitTestCasesGenerated?.toLong(),
+                        generatedCount = session.numberOfUnitTestCasesGenerated?.toLong(),
+                        acceptedLinesCount = session.linesOfCodeGenerated?.toLong(),
+                        generatedLinesCount = session.linesOfCodeGenerated?.toLong(),
+                        acceptedCharactersCount = session.charsOfCodeGenerated?.toLong(),
+                        generatedCharactersCount = session.charsOfCodeGenerated?.toLong(),
+                        result = if(buildResult){
+                             MetricResult.Succeeded
+                        }else{
+                             MetricResult.Failed
+                        },
+                        perfClientLatency = session.latencyOfTestGeneration,
+                        isCodeBlockSelected = session.isCodeBlockSelected,
+                        artifactsUploadDuration = session.artifactUploadDuration,
+                        buildZipFileBytes = session.srcZipFileSize,
+                        requestId = session.startTestGenerationRequestId,
+                        update = session.updateBuildCommands,
+                    )
+                }
+
+
                 codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
                         message = message("testgen.message.success"),
@@ -784,11 +816,10 @@ class CodeTestChatController(
                     )
                 } else {
                     // TODO: change this hardcoded string
-                    val monthlyLimitString = "25 out of 30"
                     codeTestChatHelper.addAnswer(
                         CodeTestChatMessageContent(
                             message = """
-                                 You have gone through all three iterations and this unit test generation workflow is complete. You have $monthlyLimitString Amazon Q Developer Agent invocations left this month.
+                                 You have gone through both iterations and this unit test generation workflow is complete.
                             """.trimIndent(),
                             type = ChatMessageType.Answer,
                         )
@@ -863,28 +894,58 @@ class CodeTestChatController(
                 }
 
                 UiTelemetry.click(null as Project?, "unitTestGeneration_rejectDiff")
-                AmazonqTelemetry.utgGenerateTests(
-                    cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
-                    hasUserPromptSupplied = session.hasUserPromptSupplied,
-                    isFileInWorkspace = true,
-                    isSupportedLanguage = true,
-                    credentialStartUrl = getStartUrl(project = context.project),
-                    jobGroup = session.testGenerationJobGroupName,
-                    jobId = session.testGenerationJob,
-                    acceptedCount = 0,
-                    generatedCount = session.numberOfUnitTestCasesGenerated?.toLong(),
-                    acceptedLinesCount = 0,
-                    generatedLinesCount = session.linesOfCodeGenerated?.toLong(),
-                    acceptedCharactersCount = 0,
-                    generatedCharactersCount = session.charsOfCodeGenerated?.toLong(),
-                    result = MetricResult.Succeeded,
-                    perfClientLatency = session.latencyOfTestGeneration,
-                    isCodeBlockSelected = session.isCodeBlockSelected,
-                    artifactsUploadDuration = session.artifactUploadDuration,
-                    buildPayloadBytes = session.srcPayloadSize,
-                    buildZipFileBytes = session.srcZipFileSize,
-                    requestId = session.startTestGenerationRequestId
-                )
+                if(session.iteration == 1){
+                    AmazonqTelemetry.utgGenerateTests(
+                        cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
+                        hasUserPromptSupplied = session.hasUserPromptSupplied,
+                        isFileInWorkspace = true,
+                        isSupportedLanguage = true,
+                        credentialStartUrl = getStartUrl(project = context.project),
+                        jobGroup = session.testGenerationJobGroupName,
+                        jobId = session.testGenerationJob,
+                        acceptedCount = 0,
+                        generatedCount = session.numberOfUnitTestCasesGenerated?.toLong(),
+                        acceptedLinesCount = 0,
+                        generatedLinesCount = session.linesOfCodeGenerated?.toLong(),
+                        acceptedCharactersCount = 0,
+                        generatedCharactersCount = session.charsOfCodeGenerated?.toLong(),
+                        result = MetricResult.Succeeded,
+                        perfClientLatency = session.latencyOfTestGeneration,
+                        isCodeBlockSelected = session.isCodeBlockSelected,
+                        artifactsUploadDuration = session.artifactUploadDuration,
+                        buildPayloadBytes = session.srcPayloadSize,
+                        buildZipFileBytes = session.srcZipFileSize,
+                        requestId = session.startTestGenerationRequestId
+                    )
+                }else{
+                    AmazonqTelemetry.unitTestGeneration(
+                        count = session.iteration.toLong() - 1,
+                        cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
+                        hasUserPromptSupplied = session.hasUserPromptSupplied,
+                        isSupportedLanguage = true,
+                        credentialStartUrl = getStartUrl(project = context.project),
+                        jobGroup = session.testGenerationJobGroupName,
+                        jobId = session.testGenerationJob,
+                        acceptedCount = 0,
+                        generatedCount = session.numberOfUnitTestCasesGenerated?.toLong(),
+                        acceptedLinesCount = 0,
+                        generatedLinesCount = session.linesOfCodeGenerated?.toLong(),
+                        acceptedCharactersCount = 0,
+                        generatedCharactersCount = session.charsOfCodeGenerated?.toLong(),
+                        result = if(buildResult){
+                            MetricResult.Succeeded
+                        }else{
+                            MetricResult.Failed
+                        },
+                        perfClientLatency = session.latencyOfTestGeneration,
+                        isCodeBlockSelected = session.isCodeBlockSelected,
+                        artifactsUploadDuration = session.artifactUploadDuration,
+                        buildZipFileBytes = session.srcZipFileSize,
+                        requestId = session.startTestGenerationRequestId,
+                        update = session.updateBuildCommands,
+                    )
+                }
+
                 sessionCleanUp(message.tabId)
             }
             "utg_skip_and_finish" -> {
@@ -922,7 +983,7 @@ class CodeTestChatController(
                         "tmpFile for build logs:\n ${buildLogsFile.path}"
                 }
 
-                runBuildOrTestCommand(taskContext.buildCommand, buildLogsFile, context.project, isBuildCommand = true, taskContext, session.projectRoot)
+                runBuildOrTestCommand(taskContext.buildCommand, buildLogsFile, context.project, isBuildCommand = true, taskContext, session.testFileRelativePathToProjectRoot)
                 while (taskContext.buildExitCode < 0) {
                     // wait until build command finished
                     delay(1000)
@@ -938,6 +999,7 @@ class CodeTestChatController(
                             canBeVoted = false
                         )
                     )
+                    buildResult = true
                     sessionCleanUp(message.tabId)
                     return
                 }
@@ -1029,6 +1091,7 @@ class CodeTestChatController(
             }
             "utg_modify_command" -> {
                 // TODO allow user input to modify the command
+                session.updateBuildCommands = true
                 codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
                         message = """
