@@ -667,7 +667,7 @@ class CodeTestChatController(
 
                 UiTelemetry.click(null as Project?, "unitTestGeneration_acceptDiff")
 
-                if(session.iteration == 1){
+                if (session.iteration == 1) {
                     AmazonqTelemetry.utgGenerateTests(
                         cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
                         hasUserPromptSupplied = session.hasUserPromptSupplied,
@@ -690,7 +690,7 @@ class CodeTestChatController(
                         buildZipFileBytes = session.srcZipFileSize,
                         requestId = session.startTestGenerationRequestId
                     )
-                }else{
+                } else {
                     AmazonqTelemetry.unitTestGeneration(
                         count = session.iteration.toLong() - 1,
                         cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
@@ -705,10 +705,10 @@ class CodeTestChatController(
                         generatedLinesCount = session.linesOfCodeGenerated?.toLong(),
                         acceptedCharactersCount = session.charsOfCodeGenerated?.toLong(),
                         generatedCharactersCount = session.charsOfCodeGenerated?.toLong(),
-                        result = if(buildResult){
-                             MetricResult.Succeeded
-                        }else{
-                             MetricResult.Failed
+                        result = if (buildResult) {
+                            MetricResult.Succeeded
+                        } else {
+                            MetricResult.Failed
                         },
                         perfClientLatency = session.latencyOfTestGeneration,
                         isCodeBlockSelected = session.isCodeBlockSelected,
@@ -718,7 +718,6 @@ class CodeTestChatController(
                         update = session.updateBuildCommands,
                     )
                 }
-
 
                 codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
@@ -894,7 +893,7 @@ class CodeTestChatController(
                 }
 
                 UiTelemetry.click(null as Project?, "unitTestGeneration_rejectDiff")
-                if(session.iteration == 1){
+                if (session.iteration == 1) {
                     AmazonqTelemetry.utgGenerateTests(
                         cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
                         hasUserPromptSupplied = session.hasUserPromptSupplied,
@@ -917,7 +916,7 @@ class CodeTestChatController(
                         buildZipFileBytes = session.srcZipFileSize,
                         requestId = session.startTestGenerationRequestId
                     )
-                }else{
+                } else {
                     AmazonqTelemetry.unitTestGeneration(
                         count = session.iteration.toLong() - 1,
                         cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
@@ -932,9 +931,9 @@ class CodeTestChatController(
                         generatedLinesCount = session.linesOfCodeGenerated?.toLong(),
                         acceptedCharactersCount = 0,
                         generatedCharactersCount = session.charsOfCodeGenerated?.toLong(),
-                        result = if(buildResult){
+                        result = if (buildResult) {
                             MetricResult.Succeeded
-                        }else{
+                        } else {
                             MetricResult.Failed
                         },
                         perfClientLatency = session.latencyOfTestGeneration,
@@ -983,7 +982,14 @@ class CodeTestChatController(
                         "tmpFile for build logs:\n ${buildLogsFile.path}"
                 }
 
-                runBuildOrTestCommand(taskContext.buildCommand, buildLogsFile, context.project, isBuildCommand = true, taskContext, session.testFileRelativePathToProjectRoot)
+                runBuildOrTestCommand(
+                    taskContext.buildCommand,
+                    buildLogsFile,
+                    context.project,
+                    isBuildCommand = true,
+                    taskContext,
+                    session.testFileRelativePathToProjectRoot
+                )
                 while (taskContext.buildExitCode < 0) {
                     // wait until build command finished
                     delay(1000)

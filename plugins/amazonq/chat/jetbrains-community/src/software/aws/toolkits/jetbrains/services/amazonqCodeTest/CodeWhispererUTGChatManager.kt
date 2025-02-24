@@ -93,20 +93,19 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         }
         val final = session.testGenerationJobGroupName
 
-        if(session.iteration == 1){
+        if (session.iteration == 1) {
             codeTestChatHelper.updateUI(
                 promptInputDisabledState = true,
                 promptInputProgress = testGenProgressField(0),
             )
-        }else{
+        } else {
             codeTestChatHelper.updateUI(
                 promptInputDisabledState = true,
                 promptInputProgress = buildAndExecuteProgrogressField,
-                )
+            )
         }
 
         // Set the Progress bar to "Generating unit tests..."
-
 
         val codeTestResponseContext = createUploadUrl(codeTestChatHelper, previousIterationContext)
         session.srcPayloadSize = codeTestResponseContext.payloadContext.srcPayloadSize
@@ -272,12 +271,12 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                         messageIdOverride = codeTestResponseContext.testSummaryMessageId
                     )
                 }
-                if(session.iteration == 1){
+                if (session.iteration == 1) {
                     codeTestChatHelper.updateUI(
                         promptInputDisabledState = true,
                         promptInputProgress = testGenProgressField(0),
                     )
-                }else{
+                } else {
                     codeTestChatHelper.updateUI(
                         promptInputDisabledState = true,
                         promptInputProgress = buildAndExecuteProgrogressField,
@@ -589,7 +588,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                         canBeVoted = false
                     )
                 )
-                if(session.iteration == 1){
+                if (session.iteration == 1) {
                     AmazonqTelemetry.utgGenerateTests(
                         cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
                         hasUserPromptSupplied = session.hasUserPromptSupplied,
@@ -608,8 +607,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                         buildZipFileBytes = session.srcZipFileSize,
                         requestId = session.startTestGenerationRequestId
                     )
-
-                }else{
+                } else {
                     AmazonqTelemetry.unitTestGeneration(
                         cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
                         hasUserPromptSupplied = session.hasUserPromptSupplied,
@@ -627,7 +625,6 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                         requestId = session.startTestGenerationRequestId
                     )
                 }
-
 
                 session.isGeneratingTests = false
             } finally {

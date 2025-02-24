@@ -33,7 +33,7 @@ data class Session(val tabId: String) {
     var srcPayloadSize: Long = 0
     var srcZipFileSize: Long = 0
     var artifactUploadDuration: Long = 0
-    var updateBuildCommands : Boolean = false
+    var updateBuildCommands: Boolean = false
 
     // First iteration will have a value of 1
     var userPrompt: String = ""
