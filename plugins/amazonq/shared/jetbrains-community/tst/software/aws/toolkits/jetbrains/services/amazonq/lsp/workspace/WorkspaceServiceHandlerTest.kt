@@ -18,6 +18,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.runs
 import io.mockk.slot
@@ -26,13 +27,16 @@ import kotlinx.coroutines.test.runTest
 import org.eclipse.lsp4j.CreateFilesParams
 import org.eclipse.lsp4j.DeleteFilesParams
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams
+import org.eclipse.lsp4j.DidChangeWorkspaceFoldersParams
 import org.eclipse.lsp4j.FileChangeType
+import org.eclipse.lsp4j.WorkspaceFolder
 import org.eclipse.lsp4j.services.WorkspaceService
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil
 import java.net.URI
 import java.nio.file.Path
 import java.util.concurrent.Callable
@@ -78,6 +82,7 @@ class WorkspaceServiceHandlerTest {
         every { mockWorkspaceService.didCreateFiles(any()) } returns Unit
         every { mockWorkspaceService.didDeleteFiles(any()) } returns Unit
         every { mockWorkspaceService.didChangeWatchedFiles(any()) } returns Unit
+        every { mockWorkspaceService.didChangeWorkspaceFolders(any()) } returns Unit
 
         // Mock message bus
         val messageBus = mockk<MessageBus>()
@@ -150,6 +155,162 @@ class WorkspaceServiceHandlerTest {
         verify(exactly = 0) { mockWorkspaceService.didCreateFiles(any()) }
         verify(exactly = 0) { mockWorkspaceService.didDeleteFiles(any()) }
         verify(exactly = 0) { mockWorkspaceService.didChangeWatchedFiles(any()) }
+    }
+
+    @Test
+    fun `rootsChanged does not notify when no changes`() = runTest {
+        // Arrange
+        mockkObject(WorkspaceFolderUtil)
+        val folders = listOf(
+            WorkspaceFolder().apply {
+                name = "folder1"
+                uri = "file:///path/to/folder1"
+            }
+        )
+        every { WorkspaceFolderUtil.createWorkspaceFolders(any()) } returns folders
+
+        // Act
+        sut.beforeRootsChange(mockk())
+        sut.rootsChanged(mockk())
+
+        // Assert
+        verify(exactly = 0) { mockWorkspaceService.didChangeWorkspaceFolders(any()) }
+    }
+
+    // rootsChanged handles
+    @Test
+    fun `rootsChanged handles init`() = runTest {
+        // Arrange
+        mockkObject(WorkspaceFolderUtil)
+        val oldFolders = emptyList<WorkspaceFolder>()
+        val newFolders = listOf(
+            WorkspaceFolder().apply {
+                name = "folder1"
+                uri = "file:///path/to/folder1"
+            }
+        )
+
+        // Act
+        every { WorkspaceFolderUtil.createWorkspaceFolders(project) } returns oldFolders
+        sut.beforeRootsChange(mockk())
+        every { WorkspaceFolderUtil.createWorkspaceFolders(project) } returns newFolders
+        sut.rootsChanged(mockk())
+
+        // Assert
+        val paramsSlot = slot<DidChangeWorkspaceFoldersParams>()
+        verify(exactly = 1) { mockWorkspaceService.didChangeWorkspaceFolders(capture(paramsSlot)) }
+        assertEquals(1, paramsSlot.captured.event.added.size)
+        assertEquals("folder1", paramsSlot.captured.event.added[0].name)
+    }
+
+    // rootsChanged handles additional files added to root
+    @Test
+    fun `rootsChanged handles additional files added to root`() = runTest {
+        // Arrange
+        mockkObject(WorkspaceFolderUtil)
+        val oldFolders = listOf(
+            WorkspaceFolder().apply {
+                name = "folder1"
+                uri = "file:///path/to/folder1"
+            }
+        )
+        val newFolders = listOf(
+            WorkspaceFolder().apply {
+                name = "folder1"
+                uri = "file:///path/to/folder1"
+            },
+            WorkspaceFolder().apply {
+                name = "folder2"
+                uri = "file:///path/to/folder2"
+            }
+        )
+
+        // Act
+        every { WorkspaceFolderUtil.createWorkspaceFolders(project) } returns oldFolders
+        sut.beforeRootsChange(mockk())
+        every { WorkspaceFolderUtil.createWorkspaceFolders(project) } returns newFolders
+        sut.rootsChanged(mockk())
+
+        // Assert
+        val paramsSlot = slot<DidChangeWorkspaceFoldersParams>()
+        verify(exactly = 1) { mockWorkspaceService.didChangeWorkspaceFolders(capture(paramsSlot)) }
+        assertEquals(1, paramsSlot.captured.event.added.size)
+        assertEquals("folder2", paramsSlot.captured.event.added[0].name)
+    }
+
+    // rootsChanged handles removal of files from root
+    @Test
+    fun `rootsChanged handles removal of files from root`() = runTest {
+        // Arrange
+        mockkObject(WorkspaceFolderUtil)
+        val oldFolders = listOf(
+            WorkspaceFolder().apply {
+                name = "folder1"
+                uri = "file:///path/to/folder1"
+            },
+            WorkspaceFolder().apply {
+                name = "folder2"
+                uri = "file:///path/to/folder2"
+            }
+        )
+        val newFolders = listOf(
+            WorkspaceFolder().apply {
+                name = "folder1"
+                uri = "file:///path/to/folder1"
+            }
+        )
+
+        // Act
+        every { WorkspaceFolderUtil.createWorkspaceFolders(project) } returns oldFolders
+        sut.beforeRootsChange(mockk())
+        every { WorkspaceFolderUtil.createWorkspaceFolders(project) } returns newFolders
+        sut.rootsChanged(mockk())
+
+        // Assert
+        val paramsSlot = slot<DidChangeWorkspaceFoldersParams>()
+        verify(exactly = 1) { mockWorkspaceService.didChangeWorkspaceFolders(capture(paramsSlot)) }
+        assertEquals(1, paramsSlot.captured.event.removed.size)
+        assertEquals("folder2", paramsSlot.captured.event.removed[0].name)
+    }
+
+    @Test
+    fun `rootsChanged handles multiple simultaneous additions and removals`() = runTest {
+        // Arrange
+        mockkObject(WorkspaceFolderUtil)
+        val oldFolders = listOf(
+            WorkspaceFolder().apply {
+                name = "folder1"
+                uri = "file:///path/to/folder1"
+            },
+            WorkspaceFolder().apply {
+                name = "folder2"
+                uri = "file:///path/to/folder2"
+            }
+        )
+        val newFolders = listOf(
+            WorkspaceFolder().apply {
+                name = "folder1"
+                uri = "file:///path/to/folder1"
+            },
+            WorkspaceFolder().apply {
+                name = "folder3"
+                uri = "file:///path/to/folder3"
+            }
+        )
+
+        // Act
+        every { WorkspaceFolderUtil.createWorkspaceFolders(project) } returns oldFolders
+        sut.beforeRootsChange(mockk())
+        every { WorkspaceFolderUtil.createWorkspaceFolders(project) } returns newFolders
+        sut.rootsChanged(mockk())
+
+        // Assert
+        val paramsSlot = slot<DidChangeWorkspaceFoldersParams>()
+        verify(exactly = 1) { mockWorkspaceService.didChangeWorkspaceFolders(capture(paramsSlot)) }
+        assertEquals(1, paramsSlot.captured.event.added.size)
+        assertEquals(1, paramsSlot.captured.event.removed.size)
+        assertEquals("folder3", paramsSlot.captured.event.added[0].name)
+        assertEquals("folder2", paramsSlot.captured.event.removed[0].name)
     }
 
     private fun createMockVFileEvent(uri: URI, type: FileChangeType = FileChangeType.Changed): VFileEvent {
