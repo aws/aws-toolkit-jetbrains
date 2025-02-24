@@ -18,7 +18,7 @@ import java.nio.file.Path
 
 class ManifestFetcher {
 
-    private val lspManifestUrl = "https://aws-toolkit-language-servers.amazonaws.com/codewhisperer/0/manifest.jso"
+    private val lspManifestUrl = "https://aws-toolkit-language-servers.amazonaws.com/codewhisperer/0/manifest.json"
     private val manifestManager = ManifestManager()
     private val lspManifestFilePath: Path = getToolkitsCommonCacheRoot().resolve("aws").resolve("toolkits").resolve("language-servers")
         .resolve("jetbrains-lsp-manifest.json")
