@@ -12,7 +12,16 @@ import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
-import org.eclipse.lsp4j.*
+import org.eclipse.lsp4j.CreateFilesParams
+import org.eclipse.lsp4j.DeleteFilesParams
+import org.eclipse.lsp4j.DidChangeWatchedFilesParams
+import org.eclipse.lsp4j.DidChangeWorkspaceFoldersParams
+import org.eclipse.lsp4j.FileChangeType
+import org.eclipse.lsp4j.FileCreate
+import org.eclipse.lsp4j.FileDelete
+import org.eclipse.lsp4j.FileEvent
+import org.eclipse.lsp4j.WorkspaceFolder
+import org.eclipse.lsp4j.WorkspaceFoldersChangeEvent
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
