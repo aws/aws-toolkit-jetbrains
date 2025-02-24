@@ -12,6 +12,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
+import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.util.messages.MessageBus
 import com.intellij.util.messages.MessageBusConnection
 import io.mockk.coEvery
@@ -220,6 +221,81 @@ class TextDocumentServiceHandlerTest {
             assertEquals(uri.toString(), textDocument.uri)
             assertEquals(123, textDocument.version)
             assertEquals("changed content", contentChanges[0].text)
+        }
+    }
+
+    @Test
+    fun `didSave does not run when URI is empty`() = runTest {
+        val document = mockk<Document>()
+        val path = mockk<Path> {
+            every { toUri() } returns URI.create("")
+        }
+        val file = mockk<VirtualFile> {
+            every { toNioPath() } returns path
+        }
+
+        val fileDocumentManager = mockk<FileDocumentManager> {
+            every { getFile(document) } returns file
+        }
+
+        mockkStatic(FileDocumentManager::class) {
+            every { FileDocumentManager.getInstance() } returns fileDocumentManager
+
+            sut.beforeDocumentSaving(document)
+
+            verify(exactly = 0) { mockTextDocumentService.didSave(any()) }
+        }
+    }
+
+    @Test
+    fun `didSave does not run when file is null`() = runTest {
+        val document = mockk<Document>()
+
+        val fileDocumentManager = mockk<FileDocumentManager> {
+            every { getFile(document) } returns null
+        }
+
+        mockkStatic(FileDocumentManager::class) {
+            every { FileDocumentManager.getInstance() } returns fileDocumentManager
+
+            sut.beforeDocumentSaving(document)
+
+            verify(exactly = 0) { mockTextDocumentService.didSave(any()) }
+        }
+    }
+
+    @Test
+    fun `didChange ignores non-content change events`() = runTest {
+        val nonContentEvent = mockk<VFileEvent>()  // Some other type of VFileEvent
+
+        sut.after(mutableListOf(nonContentEvent))
+
+        verify(exactly = 0) { mockTextDocumentService.didChange(any()) }
+    }
+
+    @Test
+    fun `didChange skips files without cached documents`() = runTest {
+        val uri = URI.create("file:///test/path/file.txt")
+        val path = mockk<Path> {
+            every { toUri() } returns uri
+        }
+        val file = mockk<VirtualFile> {
+            every { toNioPath() } returns path
+        }
+        val changeEvent = mockk<VFileContentChangeEvent> {
+            every { this@mockk.file } returns file
+        }
+
+        val fileDocumentManager = mockk<FileDocumentManager> {
+            every { getCachedDocument(file) } returns null
+        }
+
+        mockkStatic(FileDocumentManager::class) {
+            every { FileDocumentManager.getInstance() } returns fileDocumentManager
+
+            sut.after(mutableListOf(changeEvent))
+
+            verify(exactly = 0) { mockTextDocumentService.didChange(any()) }
         }
     }
 }
