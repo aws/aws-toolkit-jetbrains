@@ -76,7 +76,7 @@ class ManifestFetcher {
                 val manifestContent = lspManifestFilePath.readText()
                 val manifest = manifestManager.readManifestFile(manifestContent)
                 if (manifest != null) return manifest
-                lspManifestFilePath.deleteIfExists()        // delete manifest if it fails to de-serialize
+                lspManifestFilePath.deleteIfExists() // delete manifest if it fails to de-serialize
             } catch (e: Exception) {
                 logger.error(e) { "error reading lsp manifest file from local ${e.message}" }
                 return null
