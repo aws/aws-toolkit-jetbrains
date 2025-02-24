@@ -710,7 +710,7 @@ class CodeTransformChatController(
             else -> {
                 if (result is CodeModernizerJobCompletedResult.ZipUploadFailed && result.failureReason is UploadFailureReason.CREDENTIALS_EXPIRED) {
                     return
-                } else {
+                } else if (CodeModernizerSessionState.getInstance(context.project).currentJobId != null) {
                     val downloadResult = artifactHandler.downloadArtifact(
                         CodeModernizerSessionState.getInstance(context.project).currentJobId as JobId,
                         TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS
