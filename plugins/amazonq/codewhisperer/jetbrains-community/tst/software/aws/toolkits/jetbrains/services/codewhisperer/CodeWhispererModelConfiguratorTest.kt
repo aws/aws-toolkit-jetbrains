@@ -441,6 +441,7 @@ class CodeWhispererModelConfiguratorTest {
             "</entry>" +
             "</map>" +
             "</option>" +
+            "<option name=\"customizationArnOverrideV2\" value=\"arn:aws:codewhisperer:default\" />" +
             "<option name=\"previousAvailableCustomizations\">" +
             "<map>" +
             "<entry key=\"fake-sso-url\">" +
@@ -453,7 +454,6 @@ class CodeWhispererModelConfiguratorTest {
             "</entry>" +
             "</map>" +
             "</option>" +
-            "<option name=\"customizationArnOverrideV2\" value=\"arn:aws:codewhisperer:default\" />" +
             "</component>"
 
         assertThat(actual).isEqualTo(expected)
