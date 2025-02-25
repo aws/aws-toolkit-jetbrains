@@ -201,27 +201,3 @@ private fun cleanText(input: String): String {
     return cleaned.toString()
 }
 
-suspend fun combineBuildAndExecuteLogFiles(
-    buildLogFile: VirtualFile?,
-    testLogFile: VirtualFile?,
-): VirtualFile? {
-    if (buildLogFile == null || testLogFile == null) return null
-    val buildLogFileContent = String(buildLogFile.contentsToByteArray(), StandardCharsets.UTF_8)
-    val testLogFileContent = String(testLogFile.contentsToByteArray(), StandardCharsets.UTF_8)
-
-    val combinedContent = "Build Output:\n$buildLogFileContent\nTest Execution Output:\n$testLogFileContent"
-
-    // Create a new virtual file and write combined content
-    val newFile = VirtualFileManager.getInstance().findFileByNioPath(
-        withContext(currentCoroutineContext()) {
-            Files.createTempFile(null, null)
-        }
-    )
-    withContext(EDT) {
-        ApplicationManager.getApplication().runWriteAction {
-            newFile?.setBinaryContent(combinedContent.toByteArray(StandardCharsets.UTF_8))
-        }
-    }
-
-    return newFile
-}
