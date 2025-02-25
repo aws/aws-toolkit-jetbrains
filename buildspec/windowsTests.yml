@@ -10,7 +10,7 @@ phases:
     commands:
       # force install java21 while we work throuh path issues
       - |
-        $url = 'https://corretto.aws/downloads/latest/amazon-corretto-17-x64-windows-jdk.msi';
+        $url = 'https://corretto.aws/downloads/latest/amazon-corretto-21-x64-windows-jdk.msi';
         Write-Host ('Downloading from {0}' -f $url);
         [ Net.ServicePointManager ]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
         Invoke-WebRequest -Uri $url -OutFile 'corretto_jdk_build.msi';
