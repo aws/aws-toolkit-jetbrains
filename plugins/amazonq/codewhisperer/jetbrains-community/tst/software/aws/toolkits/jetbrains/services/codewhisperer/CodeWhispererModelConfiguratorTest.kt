@@ -421,7 +421,7 @@ class CodeWhispererModelConfiguratorTest {
                 )
             )
 
-            this.serviceDefaultArn = "arn:aws:codewhisperer:default"
+            this.customizationArnOverrideV2 = "arn:aws:codewhisperer:default"
         }
 
         XmlSerializer.serializeInto(state, element)
@@ -470,7 +470,7 @@ class CodeWhispererModelConfiguratorTest {
         val actual = XmlSerializer.deserialize(element, CodeWhispererCustomizationState::class.java)
         assertThat(actual.connectionIdToActiveCustomizationArn).hasSize(0)
         assertThat(actual.previousAvailableCustomizations).hasSize(0)
-        assertThat(actual.serviceDefaultArn).isNull()
+        assertThat(actual.customizationArnOverrideV2).isNull()
     }
 
     @Test
@@ -509,7 +509,7 @@ class CodeWhispererModelConfiguratorTest {
             """
         )
         val actual = XmlSerializer.deserialize(element, CodeWhispererCustomizationState::class.java)
-        assertThat(actual.serviceDefaultArn).isEqualTo("arn:aws:codewhisperer:default")
+        assertThat(actual.customizationArnOverrideV2).isEqualTo("arn:aws:codewhisperer:default")
         assertThat(actual.connectionIdToActiveCustomizationArn).hasSize(1)
         assertThat(actual.connectionIdToActiveCustomizationArn["fake-sso-url"]).isEqualTo(
             CodeWhispererCustomization(
@@ -546,7 +546,7 @@ class CodeWhispererModelConfiguratorTest {
         )
         val actual = XmlSerializer.deserialize(element, CodeWhispererCustomizationState::class.java)
         assertThat(actual.connectionIdToActiveCustomizationArn).hasSize(0)
-        assertThat(actual.serviceDefaultArn).isNull()
+        assertThat(actual.customizationArnOverrideV2).isNull()
         assertThat(actual.previousAvailableCustomizations).hasSize(1)
         assertThat(actual.previousAvailableCustomizations["fake-sso-url"]).isEqualTo(listOf("arn_1", "arn_2", "arn_3"))
     }

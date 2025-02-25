@@ -76,6 +76,7 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
 
     private val hasShownNewCustomizationNotification = AtomicBoolean(false)
 
+    @Deprecated("Use customizationArnOverrideV2 for the latest arn override persistence")
     private var serviceDefaultArn: String? = null
 
     private var customizationArnOverrideV2: String? = null
@@ -299,6 +300,7 @@ class CodeWhispererCustomizationState : BaseState() {
     @get:MapAnnotation
     val previousAvailableCustomizations by map<String, MutableList<String>>()
 
+    @Deprecated("Use customizationArnOverrideV2 for the latest arn override persistence")
     @get:Property
     var serviceDefaultArn by string()
 
