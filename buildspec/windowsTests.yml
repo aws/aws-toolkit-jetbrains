@@ -18,6 +18,11 @@ phases:
         Write-Host 'Removing ...';
         Remove-Item corretto_jdk_build.msi -Force;
       - |
+        $javaName = "C:\Program Files\Amazon Corretto" | ForEach-Object {
+          ls $_ | Sort-Object -Descending -Property Name | Select-Object -first 1 -expandproperty Name
+        }
+        $JAVA_HOME = "C:\Program Files\Amazon Corretto\$javaName"
+      - |
         if(-Not($Env:CODE_COV_TOKEN -eq $null)) {
             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
             Invoke-WebRequest -Uri https://uploader.codecov.io/latest/windows/codecov.exe -Outfile codecov.exe
