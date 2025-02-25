@@ -690,33 +690,6 @@ class CodeTestChatController(
                         buildZipFileBytes = session.srcZipFileSize,
                         requestId = session.startTestGenerationRequestId
                     )
-                } else {
-                    AmazonqTelemetry.unitTestGeneration(
-                        count = session.iteration.toLong() - 1,
-                        cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
-                        hasUserPromptSupplied = session.hasUserPromptSupplied,
-                        isSupportedLanguage = true,
-                        credentialStartUrl = getStartUrl(project = context.project),
-                        jobGroup = session.testGenerationJobGroupName,
-                        jobId = session.testGenerationJob,
-                        acceptedCount = session.numberOfUnitTestCasesGenerated?.toLong(),
-                        generatedCount = session.numberOfUnitTestCasesGenerated?.toLong(),
-                        acceptedLinesCount = session.linesOfCodeGenerated?.toLong(),
-                        generatedLinesCount = session.linesOfCodeGenerated?.toLong(),
-                        acceptedCharactersCount = session.charsOfCodeGenerated?.toLong(),
-                        generatedCharactersCount = session.charsOfCodeGenerated?.toLong(),
-                        result = if (buildResult) {
-                            MetricResult.Succeeded
-                        } else {
-                            MetricResult.Failed
-                        },
-                        perfClientLatency = session.latencyOfTestGeneration,
-                        isCodeBlockSelected = session.isCodeBlockSelected,
-                        artifactsUploadDuration = session.artifactUploadDuration,
-                        buildZipFileBytes = session.srcZipFileSize,
-                        requestId = session.startTestGenerationRequestId,
-                        update = session.updateBuildCommands,
-                    )
                 }
 
                 codeTestChatHelper.addAnswer(
@@ -825,6 +798,32 @@ class CodeTestChatController(
                     )
                     codeTestChatHelper.updateUI(
                         promptInputPlaceholder = message("testgen.placeholder.newtab")
+                    )
+                    AmazonqTelemetry.unitTestGeneration(
+                        count = session.iteration.toLong() - 1,
+                        cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
+                        hasUserPromptSupplied = session.hasUserPromptSupplied,
+                        isSupportedLanguage = true,
+                        credentialStartUrl = getStartUrl(project = context.project),
+                        jobGroup = session.testGenerationJobGroupName,
+                        jobId = session.testGenerationJob,
+                        acceptedCount = session.numberOfUnitTestCasesGenerated?.toLong(),
+                        generatedCount = session.numberOfUnitTestCasesGenerated?.toLong(),
+                        acceptedLinesCount = session.linesOfCodeGenerated?.toLong(),
+                        generatedLinesCount = session.linesOfCodeGenerated?.toLong(),
+                        acceptedCharactersCount = session.charsOfCodeGenerated?.toLong(),
+                        generatedCharactersCount = session.charsOfCodeGenerated?.toLong(),
+                        result = if (buildResult) {
+                            MetricResult.Succeeded
+                        } else {
+                            MetricResult.Failed
+                        },
+                        perfClientLatency = session.latencyOfTestGeneration,
+                        isCodeBlockSelected = session.isCodeBlockSelected,
+                        artifactsUploadDuration = session.artifactUploadDuration,
+                        buildZipFileBytes = session.srcZipFileSize,
+                        requestId = session.startTestGenerationRequestId,
+                        update = session.updateBuildCommands,
                     )
                 }
             }
@@ -955,6 +954,32 @@ class CodeTestChatController(
                         canBeVoted = false
                     )
                 )
+                AmazonqTelemetry.unitTestGeneration(
+                    count = session.iteration.toLong() - 1,
+                    cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
+                    hasUserPromptSupplied = session.hasUserPromptSupplied,
+                    isSupportedLanguage = true,
+                    credentialStartUrl = getStartUrl(project = context.project),
+                    jobGroup = session.testGenerationJobGroupName,
+                    jobId = session.testGenerationJob,
+                    acceptedCount = session.numberOfUnitTestCasesGenerated?.toLong(),
+                    generatedCount = session.numberOfUnitTestCasesGenerated?.toLong(),
+                    acceptedLinesCount = session.linesOfCodeGenerated?.toLong(),
+                    generatedLinesCount = session.linesOfCodeGenerated?.toLong(),
+                    acceptedCharactersCount = session.charsOfCodeGenerated?.toLong(),
+                    generatedCharactersCount = session.charsOfCodeGenerated?.toLong(),
+                    result = if (buildResult) {
+                        MetricResult.Succeeded
+                    } else {
+                        MetricResult.Failed
+                    },
+                    perfClientLatency = session.latencyOfTestGeneration,
+                    isCodeBlockSelected = session.isCodeBlockSelected,
+                    artifactsUploadDuration = session.artifactUploadDuration,
+                    buildZipFileBytes = session.srcZipFileSize,
+                    requestId = session.startTestGenerationRequestId,
+                    update = session.updateBuildCommands,
+                )
                 sessionCleanUp(message.tabId)
             }
             "utg_proceed", "utg_build_and_execute" -> {
@@ -1006,6 +1031,32 @@ class CodeTestChatController(
                         )
                     )
                     buildResult = true
+                    AmazonqTelemetry.unitTestGeneration(
+                        count = session.iteration.toLong() - 1,
+                        cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
+                        hasUserPromptSupplied = session.hasUserPromptSupplied,
+                        isSupportedLanguage = true,
+                        credentialStartUrl = getStartUrl(project = context.project),
+                        jobGroup = session.testGenerationJobGroupName,
+                        jobId = session.testGenerationJob,
+                        acceptedCount = session.numberOfUnitTestCasesGenerated?.toLong(),
+                        generatedCount = session.numberOfUnitTestCasesGenerated?.toLong(),
+                        acceptedLinesCount = session.linesOfCodeGenerated?.toLong(),
+                        generatedLinesCount = session.linesOfCodeGenerated?.toLong(),
+                        acceptedCharactersCount = session.charsOfCodeGenerated?.toLong(),
+                        generatedCharactersCount = session.charsOfCodeGenerated?.toLong(),
+                        result = if (buildResult) {
+                            MetricResult.Succeeded
+                        } else {
+                            MetricResult.Failed
+                        },
+                        perfClientLatency = session.latencyOfTestGeneration,
+                        isCodeBlockSelected = session.isCodeBlockSelected,
+                        artifactsUploadDuration = session.artifactUploadDuration,
+                        buildZipFileBytes = session.srcZipFileSize,
+                        requestId = session.startTestGenerationRequestId,
+                        update = session.updateBuildCommands,
+                    )
                     sessionCleanUp(message.tabId)
                     return
                 }
