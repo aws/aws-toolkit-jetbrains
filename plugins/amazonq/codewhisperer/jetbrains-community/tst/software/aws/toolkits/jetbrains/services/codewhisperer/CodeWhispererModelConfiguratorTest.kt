@@ -453,7 +453,7 @@ class CodeWhispererModelConfiguratorTest {
             "</entry>" +
             "</map>" +
             "</option>" +
-            "<option name=\"serviceDefaultArn\" value=\"arn:aws:codewhisperer:default\" />" +
+            "<option name=\"customizationArnOverrideV2\" value=\"arn:aws:codewhisperer:default\" />" +
             "</component>"
 
         assertThat(actual).isEqualTo(expected)
@@ -504,7 +504,7 @@ class CodeWhispererModelConfiguratorTest {
                             </entry>
                         </map>
                     </option>
-                    <option name="serviceDefaultArn" value="arn:aws:codewhisperer:default"/>
+                    <option name="customizationArnOverrideV2" value="arn:aws:codewhisperer:default"/>
                 </component>
             """
         )
