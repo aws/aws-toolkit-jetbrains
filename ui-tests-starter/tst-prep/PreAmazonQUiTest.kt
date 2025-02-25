@@ -35,9 +35,7 @@ class PreAmazonQUiTest {
 
     @BeforeEach
     fun setUp() {
-        System.setProperty("aws.profile", "ghtestlambda")
         System.setProperty("aws.dev.useDAG", "true")
-        System.setProperty("aws.region", "us-west-2")
     }
 
     @Test
