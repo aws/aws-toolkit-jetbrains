@@ -16,15 +16,22 @@ import software.aws.toolkits.jetbrains.core.saveFileFromUrl
 import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 import java.nio.file.Path
 
-class ManifestFetcher {
-
-    private val lspManifestUrl = "https://aws-toolkit-language-servers.amazonaws.com/codewhisperer/0/manifest.json"
-    private val manifestManager = ManifestManager()
-    private val lspManifestFilePath: Path = getToolkitsCommonCacheRoot().resolve("aws").resolve("toolkits").resolve("language-servers")
-        .resolve("jetbrains-lsp-manifest.json")
-
+class ManifestFetcher(
+    private val lspManifestUrl: String = DEFAULT_MANIFEST_URL,
+    private val manifestManager: ManifestManager = ManifestManager(),
+    private val lspManifestFilePath: Path = DEFAULT_MANIFEST_PATH,
+) {
     companion object {
         private val logger = getLogger<ManifestFetcher>()
+
+        private const val DEFAULT_MANIFEST_URL =
+            "https://aws-toolkit-language-servers.amazonaws.com/codewhisperer/0/manifest.json"
+
+        private val DEFAULT_MANIFEST_PATH: Path = getToolkitsCommonCacheRoot()
+            .resolve("aws")
+            .resolve("toolkits")
+            .resolve("language-servers")
+            .resolve("jetbrains-lsp-manifest.json")
     }
 
     /**
