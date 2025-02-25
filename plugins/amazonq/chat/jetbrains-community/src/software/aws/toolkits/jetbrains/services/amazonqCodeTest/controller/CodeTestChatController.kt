@@ -813,11 +813,7 @@ class CodeTestChatController(
                         generatedLinesCount = session.linesOfCodeGenerated?.toLong(),
                         acceptedCharactersCount = session.charsOfCodeGenerated?.toLong(),
                         generatedCharactersCount = session.charsOfCodeGenerated?.toLong(),
-                        result = if (buildResult) {
-                            MetricResult.Succeeded
-                        } else {
-                            MetricResult.Failed
-                        },
+                        result = MetricResult.Failed,
                         perfClientLatency = session.latencyOfTestGeneration,
                         isCodeBlockSelected = session.isCodeBlockSelected,
                         artifactsUploadDuration = session.artifactUploadDuration,
@@ -930,11 +926,7 @@ class CodeTestChatController(
                         generatedLinesCount = session.linesOfCodeGenerated?.toLong(),
                         acceptedCharactersCount = 0,
                         generatedCharactersCount = session.charsOfCodeGenerated?.toLong(),
-                        result = if (buildResult) {
-                            MetricResult.Succeeded
-                        } else {
-                            MetricResult.Failed
-                        },
+                        result = MetricResult.Succeeded,
                         perfClientLatency = session.latencyOfTestGeneration,
                         isCodeBlockSelected = session.isCodeBlockSelected,
                         artifactsUploadDuration = session.artifactUploadDuration,
@@ -968,11 +960,7 @@ class CodeTestChatController(
                     generatedLinesCount = session.linesOfCodeGenerated?.toLong(),
                     acceptedCharactersCount = session.charsOfCodeGenerated?.toLong(),
                     generatedCharactersCount = session.charsOfCodeGenerated?.toLong(),
-                    result = if (buildResult) {
-                        MetricResult.Succeeded
-                    } else {
-                        MetricResult.Failed
-                    },
+                    result = MetricResult.Failed,
                     perfClientLatency = session.latencyOfTestGeneration,
                     isCodeBlockSelected = session.isCodeBlockSelected,
                     artifactsUploadDuration = session.artifactUploadDuration,
@@ -1030,7 +1018,6 @@ class CodeTestChatController(
                             canBeVoted = false
                         )
                     )
-                    buildResult = true
                     AmazonqTelemetry.unitTestGeneration(
                         count = session.iteration.toLong() - 1,
                         cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
@@ -1045,11 +1032,7 @@ class CodeTestChatController(
                         generatedLinesCount = session.linesOfCodeGenerated?.toLong(),
                         acceptedCharactersCount = session.charsOfCodeGenerated?.toLong(),
                         generatedCharactersCount = session.charsOfCodeGenerated?.toLong(),
-                        result = if (buildResult) {
-                            MetricResult.Succeeded
-                        } else {
-                            MetricResult.Failed
-                        },
+                        result = MetricResult.Succeeded,
                         perfClientLatency = session.latencyOfTestGeneration,
                         isCodeBlockSelected = session.isCodeBlockSelected,
                         artifactsUploadDuration = session.artifactUploadDuration,
@@ -1091,60 +1074,7 @@ class CodeTestChatController(
 
                     return
                 }
-//                taskContext.progressStatus = BuildAndExecuteProgressStatus.RUN_EXECUTION_TESTS
-//                updateBuildAndExecuteProgressCard(taskContext.progressStatus, messageId, session.iteration)
-//
-//                val testLogsFile = VirtualFileManager.getInstance().findFileByNioPath(
-//                    withContext(currentCoroutineContext()) {
-//                        Files.createTempFile(null, null)
-//                    }
-//                )
-//                if (testLogsFile == null) {
-//                    // TODO: handle no log file case
-//                    return
-//                }
-//                LOG.debug {
-//                    "Q TestGen session: ${codeTestChatHelper.getActiveCodeTestTabId()}: " +
-//                        "tmpFile for test logs:\n ${buildLogsFile.path}"
-//                }
-//                delay(1000)
-//                runBuildOrTestCommand(taskContext.executionCommand, testLogsFile, context.project, isBuildCommand = false, taskContext)
-//                while (taskContext.testExitCode < 0) {
-//                    // wait until test command finished
-//                    delay(1000)
-//                }
-//
-//                if (taskContext.testExitCode == 0) {
-//                    taskContext.progressStatus = BuildAndExecuteProgressStatus.TESTS_EXECUTED
-//                    updateBuildAndExecuteProgressCard(taskContext.progressStatus, messageId, session.iteration)
-//                    codeTestChatHelper.addAnswer(
-//                        CodeTestChatMessageContent(
-//                            message = message("testgen.message.success"),
-//                            type = ChatMessageType.Answer,
-//                            canBeVoted = false
-//                        )
-//                    )
-//                    // sessionCleanUp(message.tabId)
-//                    return
-//                }
-//
-//                // has test failure, we will zip the latest project and invoke backend again
-//                taskContext.progressStatus = BuildAndExecuteProgressStatus.FIXING_TEST_CASES
-//                val buildAndExecuteMessageId = updateBuildAndExecuteProgressCard(taskContext.progressStatus, messageId, session.iteration)
-//
-//                val previousUTGIterationContext = PreviousUTGIterationContext(
-//                    buildLogFile = buildLogsFile,
-//                    testLogFile = testLogsFile,
-//                    selectedFile = session.selectedFile,
-//                    buildAndExecuteMessageId = buildAndExecuteMessageId
-//                )
-//
-//                val job = CodeWhispererUTGChatManager.getInstance(context.project).generateTests("", codeTestChatHelper, previousUTGIterationContext, null)
-//                job?.join()
-//
-//                taskContext.progressStatus = BuildAndExecuteProgressStatus.PROCESS_TEST_RESULTS
-//                // session.iteration already updated in generateTests
-//                updateBuildAndExecuteProgressCard(taskContext.progressStatus, messageId, session.iteration - 1)
+                // TO-DO ADD execute loop in the furture
             }
             "utg_modify_command" -> {
                 // TODO allow user input to modify the command

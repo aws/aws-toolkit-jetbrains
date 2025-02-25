@@ -166,8 +166,6 @@ class CodeTestSessionConfig(
         if (buildAndExecuteLogFile != null) {
             val buildLogFilePath = Path.of(utgDir, buildAndExecuteLogDir, "buildAndExecuteLog")
                 .toString().replace("\\", "/") // Ensures consistent path format
-
-            LOG.debug { "Adding build logs to ZIP at: $buildLogFilePath" }
             it.putNextEntry(buildLogFilePath, buildAndExecuteLogFile.inputStream)
         }
         if (payloadMetadata.payloadLimitCrossed == true) {
