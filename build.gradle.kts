@@ -71,6 +71,14 @@ tasks.coverageReport {
 }
 
 allprojects {
+    plugins.withType<JavaPlugin>().configureEach {
+        java {
+            toolchain {
+                languageVersion = JavaLanguageVersion.of(21)
+            }
+        }
+    }
+
     tasks.configureEach {
         if (this is JavaForkOptions) {
             jvmArgs("-XX:ErrorFile=${rootProject.file("build/reports").absolutePath}/hs_err_pid%p.log")
