@@ -34,3 +34,28 @@ async function testNavigation() {
 testNavigation().catch(console.error);
 
 """.trimIndent()
+
+// language=JS
+val dummyScript = """
+import puppeteer from "puppeteer";
+
+async function testNavigation() {
+    const browser = await puppeteer.connect({
+        browserURL: "http://localhost:9222"
+    })
+    try {
+        const pages = await browser.pages()
+        for(const page of pages) {
+            const contents = await page.evaluate(el => el.innerHTML, await page.${'$'}(':root'));
+            const element = await page.$('.mynah-chat-prompt-input')
+            if(element) {
+               
+            }
+        }
+    } finally {
+        await browser.close();
+    }
+}
+testNavigation().catch(console.error);
+
+""".trimIndent()

@@ -7,6 +7,7 @@ import com.intellij.testFramework.junit5.TestDisposable
 import org.junit.Rule
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable
 import org.junit.jupiter.api.extension.ExtendWith
 import software.aws.toolkits.core.rules.SystemPropertyHelper
 import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
@@ -18,6 +19,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 import software.aws.toolkits.jetbrains.utils.extensions.SsoLogin
 import software.aws.toolkits.jetbrains.utils.extensions.SsoLoginExtension
 
+@DisabledIfEnvironmentVariable(named = "CI", matches = "false")
 @ExtendWith(ApplicationExtension::class, SsoLoginExtension::class)
 @SsoLogin("amazonq-test-account")
 class PreAmazonQUiTest {
@@ -33,7 +35,9 @@ class PreAmazonQUiTest {
 
     @BeforeEach
     fun setUp() {
+        System.setProperty("aws.profile", "ghtestlambda")
         System.setProperty("aws.dev.useDAG", "true")
+        System.setProperty("aws.region", "us-west-2")
     }
 
     @Test
