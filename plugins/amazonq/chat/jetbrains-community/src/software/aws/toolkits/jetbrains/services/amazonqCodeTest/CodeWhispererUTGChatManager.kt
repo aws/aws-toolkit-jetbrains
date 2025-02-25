@@ -187,7 +187,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         var shortAnswer = ShortAnswer()
         LOG.debug {
             "Q TestGen session: ${codeTestChatHelper.getActiveCodeTestTabId()}: " +
-                "polling result for id: ${job.testGenerationJobId()}, group name: ${session.testGenerationJobGroupName}, " +
+                "polling result for id: ${job.testGenerationJobId()}, group name: ${job.testGenerationJobGroupName()}, " +
                 "request id: ${startTestGenerationResponse.responseMetadata().requestId()}"
         }
 
