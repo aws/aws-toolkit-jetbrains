@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 class LspException(message: String, private val errorCode: ErrorCode, cause: Throwable? = null) : Exception(message, cause) {
 
     enum class ErrorCode {
-        MANIFEST_INVALID,
         MANIFEST_FETCH_FAILED,
         DOWNLOAD_FAILED,
         HASH_MISMATCH,

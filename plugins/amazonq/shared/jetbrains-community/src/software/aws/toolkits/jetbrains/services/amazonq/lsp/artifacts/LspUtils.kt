@@ -11,6 +11,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
+import java.security.MessageDigest
 import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
 
@@ -39,6 +40,12 @@ fun getCurrentArchitecture() = when {
 
 fun generateMD5Hash(filePath: Path): String {
     val messageDigest = DigestUtil.md5()
+    DigestUtil.updateContentHash(messageDigest, filePath)
+    return StringUtil.toHexString(messageDigest.digest())
+}
+
+fun generateSHA384Hash(filePath: Path): String {
+    val messageDigest = MessageDigest.getInstance("SHA-384")
     DigestUtil.updateContentHash(messageDigest, filePath)
     return StringUtil.toHexString(messageDigest.digest())
 }

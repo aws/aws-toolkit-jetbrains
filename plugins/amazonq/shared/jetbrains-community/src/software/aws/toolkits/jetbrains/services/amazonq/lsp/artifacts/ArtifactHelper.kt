@@ -28,7 +28,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH)
         val localFolders: List<Path> = getSubFolders(lspArtifactsPath)
 
         deListedVersions.forEach { deListedVersion ->
-            val versionToDelete = deListedVersion.serverVersion ?: return
+            val versionToDelete = deListedVersion.serverVersion ?: return@forEach
 
             localFolders
                 .filter { folder -> folder.fileName.toString() == versionToDelete }
@@ -139,7 +139,10 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH)
         }
     }
 
-    private fun validateFileHash(filePath: Path, expectedHash: String): Boolean = generateMD5Hash(filePath) == expectedHash
+    private fun validateFileHash(filePath: Path, expectedHash: String): Boolean {
+        val contentHash = generateSHA384Hash(filePath)
+        return "sha384:$contentHash" == expectedHash
+    }
 
     private fun validateDownloadedFiles(downloadPath: Path, contents: List<ManifestManager.TargetContent>) {
         val missingFiles = contents
