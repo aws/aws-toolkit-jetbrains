@@ -3,7 +3,10 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.util.io.createDirectories
+import com.intellij.util.text.SemVer
 import software.aws.toolkits.core.utils.deleteIfExists
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
@@ -21,14 +24,14 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH)
         private val DEFAULT_ARTIFACT_PATH = getToolkitsCommonCacheRoot().resolve("aws").resolve("toolkits").resolve("language-servers")
         private val logger = getLogger<ArtifactHelper>()
         private const val MAX_DOWNLOAD_ATTEMPTS = 3
-        private val currentAttempt = AtomicInteger(0)
     }
+    private val currentAttempt = AtomicInteger(0)
 
-    fun removeDeListedVersions(deListedVersions: List<ManifestManager.Version>) {
-        val localFolders: List<Path> = getSubFolders(lspArtifactsPath)
+    fun removeDelistedVersions(delistedVersions: List<ManifestManager.Version>) {
+        val localFolders = getSubFolders(lspArtifactsPath)
 
-        deListedVersions.forEach { deListedVersion ->
-            val versionToDelete = deListedVersion.serverVersion ?: return@forEach
+        delistedVersions.forEach { delistedVersion ->
+            val versionToDelete = delistedVersion.serverVersion ?: return@forEach
 
             localFolders
                 .filter { folder -> folder.fileName.toString() == versionToDelete }
@@ -43,7 +46,31 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH)
         }
     }
 
-    fun getExistingLSPArtifacts(versions: List<ManifestManager.Version>, target: ManifestManager.VersionTarget?): Boolean {
+    fun deleteOlderLspArtifacts(manifestVersionRanges: ArtifactManager.SupportedManifestVersionRange) {
+        val localFolders = getSubFolders(lspArtifactsPath)
+
+        val validVersions = localFolders
+            .mapNotNull { localFolder ->
+                SemVer.parseFromText(localFolder.fileName.toString())?.let { semVer ->
+                    if (semVer in manifestVersionRanges.startVersion..manifestVersionRanges.endVersion) {
+                        localFolder to semVer
+                    } else null
+                }
+            }
+            .sortedByDescending { (_, semVer) -> semVer }
+
+        // Keep the latest 2 versions, delete others
+        validVersions.drop(2).forEach { (folder, _) ->
+            try {
+                folder.toFile().deleteRecursively()
+                logger.info { "Deleted older LSP artifact: ${folder.fileName}" }
+            } catch (e: Exception) {
+                logger.error(e) { "Failed to delete older LSP artifact: ${folder.fileName}" }
+            }
+        }
+    }
+
+    fun getExistingLspArtifacts(versions: List<ManifestManager.Version>, target: ManifestManager.VersionTarget?): Boolean {
         if (versions.isEmpty() || target?.contents == null) return false
 
         val localLSPPath = lspArtifactsPath.resolve(versions.first().serverVersion.toString())
@@ -52,7 +79,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH)
         val hasInvalidFiles = target.contents.any { content ->
             content.filename?.let { filename ->
                 val filePath = localLSPPath.resolve(filename)
-                !filePath.exists() || generateMD5Hash(filePath) != content.hashes?.firstOrNull()
+                !filePath.exists() || !validateFileHash(filePath, content.hashes?.firstOrNull())
             } ?: false
         }
 
@@ -64,7 +91,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH)
                 logger.error(e) { "Failed to delete mismatched LSP artifacts at: $localLSPPath" }
             }
         }
-        return hasInvalidFiles
+        return !hasInvalidFiles
     }
 
     fun tryDownloadLspArtifacts(versions: List<ManifestManager.Version>, target: ManifestManager.VersionTarget?) {
@@ -139,7 +166,8 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH)
         }
     }
 
-    private fun validateFileHash(filePath: Path, expectedHash: String): Boolean {
+    private fun validateFileHash(filePath: Path, expectedHash: String?): Boolean {
+        if(expectedHash == null) return false
         val contentHash = generateSHA384Hash(filePath)
         return "sha384:$contentHash" == expectedHash
     }

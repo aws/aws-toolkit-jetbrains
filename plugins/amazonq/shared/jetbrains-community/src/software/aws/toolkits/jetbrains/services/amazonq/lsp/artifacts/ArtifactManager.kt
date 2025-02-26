@@ -5,8 +5,8 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
 import com.intellij.util.text.SemVer
 import org.assertj.core.util.VisibleForTesting
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 
 class ArtifactManager {
@@ -53,7 +53,7 @@ class ArtifactManager {
         )
         val lspVersions = getLSPVersionsFromManifestWithSpecifiedRange(manifest)
 
-        this.artifactHelper.removeDeListedVersions(lspVersions.deListedVersions)
+        this.artifactHelper.removeDelistedVersions(lspVersions.deListedVersions)
 
         if (lspVersions.inRangeVersions.isEmpty()) {
             // No versions are found which are in the given range.
@@ -64,12 +64,11 @@ class ArtifactManager {
         val target = getTargetFromLspManifest(lspVersions.inRangeVersions)
 
         // Get Local LSP files and check if we can re-use existing LSP Artifacts
-        if (this.artifactHelper.getExistingLSPArtifacts(lspVersions.inRangeVersions, target)) {
-            return
+        if (!this.artifactHelper.getExistingLspArtifacts(lspVersions.inRangeVersions, target)) {
+            this.artifactHelper.tryDownloadLspArtifacts(lspVersions.inRangeVersions, target)
         }
 
-        this.artifactHelper.tryDownloadLspArtifacts(lspVersions.inRangeVersions, target)
-        logger.info { "Success" }
+        this.artifactHelper.deleteOlderLspArtifacts(manifestVersionRanges)
     }
 
     @VisibleForTesting
@@ -102,8 +101,11 @@ class ArtifactManager {
             target.platform == currentOS && target.arch == currentArchitecture
         }
         if (currentTarget == null) {
+            logger.error {"Failed to obtain target for $currentOS and $currentArchitecture" }
             throw LspException("Target not found in the current Version: ${versions.first().serverVersion}", LspException.ErrorCode.TARGET_NOT_FOUND)
         }
+        logger.info("Target found in the current Version: ${versions.first().serverVersion}")
         return currentTarget
     }
+
 }

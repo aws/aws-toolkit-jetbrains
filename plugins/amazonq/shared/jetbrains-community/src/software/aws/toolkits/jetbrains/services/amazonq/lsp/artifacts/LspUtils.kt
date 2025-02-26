@@ -33,9 +33,10 @@ fun getCurrentOS(): String = when {
     else -> "linux"
 }
 
-fun getCurrentArchitecture() = when {
-    CpuArch.CURRENT == CpuArch.X86_64 -> "x64"
-    else -> "arm64"
+fun getCurrentArchitecture() = when(CpuArch.CURRENT) {
+    CpuArch.X86_64 -> "x64"
+    CpuArch.ARM64 -> "arm64"
+    else -> "unknown"
 }
 
 fun generateMD5Hash(filePath: Path): String {
