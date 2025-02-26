@@ -7,6 +7,7 @@ import com.intellij.util.text.SemVer
 import org.assertj.core.util.VisibleForTesting
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 
 class ArtifactManager {
@@ -101,11 +102,10 @@ class ArtifactManager {
             target.platform == currentOS && target.arch == currentArchitecture
         }
         if (currentTarget == null) {
-            logger.error {"Failed to obtain target for $currentOS and $currentArchitecture" }
+            logger.error { "Failed to obtain target for $currentOS and $currentArchitecture" }
             throw LspException("Target not found in the current Version: ${versions.first().serverVersion}", LspException.ErrorCode.TARGET_NOT_FOUND)
         }
-        logger.info("Target found in the current Version: ${versions.first().serverVersion}")
+        logger.info { "Target found in the current Version: ${versions.first().serverVersion}" }
         return currentTarget
     }
-
 }

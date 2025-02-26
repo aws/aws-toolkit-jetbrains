@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.util.io.createDirectories
 import com.intellij.util.text.SemVer
 import software.aws.toolkits.core.utils.deleteIfExists
@@ -18,7 +16,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.Manifes
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 
-class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH) {
+class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH, private val maxDownloadAttempts: Int = MAX_DOWNLOAD_ATTEMPTS) {
 
     companion object {
         private val DEFAULT_ARTIFACT_PATH = getToolkitsCommonCacheRoot().resolve("aws").resolve("toolkits").resolve("language-servers")
@@ -54,7 +52,9 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH)
                 SemVer.parseFromText(localFolder.fileName.toString())?.let { semVer ->
                     if (semVer in manifestVersionRanges.startVersion..manifestVersionRanges.endVersion) {
                         localFolder to semVer
-                    } else null
+                    } else {
+                        null
+                    }
                 }
             }
             .sortedByDescending { (_, semVer) -> semVer }
@@ -98,9 +98,9 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH)
         val temporaryDownloadPath = lspArtifactsPath.resolve("temp")
         val downloadPath = lspArtifactsPath.resolve(versions.first().serverVersion.toString())
 
-        while (currentAttempt.get() < MAX_DOWNLOAD_ATTEMPTS) {
+        while (currentAttempt.get() < maxDownloadAttempts) {
             currentAttempt.incrementAndGet()
-            logger.info { "Attempt ${currentAttempt.get()} of $MAX_DOWNLOAD_ATTEMPTS to download LSP artifacts" }
+            logger.info { "Attempt ${currentAttempt.get()} of $maxDownloadAttempts to download LSP artifacts" }
 
             try {
                 if (downloadLspArtifacts(temporaryDownloadPath, target)) {
@@ -112,8 +112,8 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH)
                 logger.error(e) { "Failed to download/move LSP artifacts on attempt ${currentAttempt.get()}" }
                 temporaryDownloadPath.toFile().deleteRecursively()
 
-                if (currentAttempt.get() >= MAX_DOWNLOAD_ATTEMPTS) {
-                    throw LspException("Failed to download LSP artifacts after $MAX_DOWNLOAD_ATTEMPTS attempts", LspException.ErrorCode.DOWNLOAD_FAILED)
+                if (currentAttempt.get() >= maxDownloadAttempts) {
+                    throw LspException("Failed to download LSP artifacts after $maxDownloadAttempts attempts", LspException.ErrorCode.DOWNLOAD_FAILED)
                 }
             }
         }
@@ -167,7 +167,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH)
     }
 
     private fun validateFileHash(filePath: Path, expectedHash: String?): Boolean {
-        if(expectedHash == null) return false
+        if (expectedHash == null) return false
         val contentHash = generateSHA384Hash(filePath)
         return "sha384:$contentHash" == expectedHash
     }

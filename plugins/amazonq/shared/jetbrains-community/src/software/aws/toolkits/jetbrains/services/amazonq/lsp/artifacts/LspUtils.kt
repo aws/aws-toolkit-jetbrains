@@ -33,7 +33,7 @@ fun getCurrentOS(): String = when {
     else -> "linux"
 }
 
-fun getCurrentArchitecture() = when(CpuArch.CURRENT) {
+fun getCurrentArchitecture() = when (CpuArch.CURRENT) {
     CpuArch.X86_64 -> "x64"
     CpuArch.ARM64 -> "arm64"
     else -> "unknown"
