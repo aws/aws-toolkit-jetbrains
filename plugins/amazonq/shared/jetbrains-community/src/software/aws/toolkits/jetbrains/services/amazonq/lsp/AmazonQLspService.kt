@@ -154,28 +154,26 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
         instance = start()
     }
 
-    suspend fun execute(runnable: suspend (AmazonQLanguageServer) -> Unit) {
+    suspend fun<T> execute(runnable: suspend (AmazonQLanguageServer) -> T): T {
         val lsp = withTimeout(10.seconds) {
             val holder = mutex.withLock { instance }.await()
             holder.initializer.join()
 
             holder.languageServer
         }
-
-        runnable(lsp)
+        return runnable(lsp)
     }
 
-    fun executeSync(runnable: suspend (AmazonQLanguageServer) -> Unit) {
+    fun<T> executeSync(runnable: suspend (AmazonQLanguageServer) -> T): T =
         runBlocking(cs.coroutineContext) {
             execute(runnable)
         }
-    }
 
     companion object {
         private val LOG = getLogger<AmazonQLspService>()
         fun getInstance(project: Project) = project.service<AmazonQLspService>()
 
-        fun executeIfRunning(project: Project, runnable: (AmazonQLanguageServer) -> Unit) =
+        fun <T> executeIfRunning(project: Project, runnable: (AmazonQLanguageServer) -> T): T? =
             project.serviceIfCreated<AmazonQLspService>()?.executeSync(runnable)
     }
 }

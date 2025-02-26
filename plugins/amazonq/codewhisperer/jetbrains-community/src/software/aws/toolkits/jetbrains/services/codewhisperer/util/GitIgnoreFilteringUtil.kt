@@ -60,7 +60,14 @@ class GitIgnoreFilteringUtil(
                     "*.csv",
                     "*.dylib",
                     "*.parquet",
-                    "*.xlsx"
+                    "*.xlsx",
+                    "*.tar.gz",
+                    "*.tar",
+                    "*.pack",
+                    "*.pkg",
+                    "*.pkl",
+                    "*.deb",
+                    "*.model"
                 )
             )
         }

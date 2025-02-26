@@ -24,3 +24,10 @@ fun writeJsonToUrl(url: String, jsonString: String, indicator: ProgressIndicator
             request.write(jsonString)
             request.readString(indicator)
         }
+
+fun getETagFromUrl(url: String): String =
+    HttpRequests.head(url)
+        .userAgent(AwsClientManager.getUserAgent())
+        .connect { request ->
+            request.connection.headerFields["ETag"]?.firstOrNull().orEmpty()
+        }
