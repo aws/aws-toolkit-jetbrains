@@ -5,11 +5,8 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.auth
 
 import com.intellij.openapi.components.serviceIfCreated
 import com.intellij.openapi.project.Project
-import io.mockk.coEvery
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.runs
 import io.mockk.verify
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.junit.Before
@@ -38,10 +35,10 @@ class DefaultAuthCredentialsServiceTest {
         every { project.serviceIfCreated<AmazonQLspService>() } returns mockLspService
 
         // Mock the LSP service's executeSync method as a suspend function
-        coEvery {
-            mockLspService.executeSync(any())
+        every {
+            mockLspService.executeSync<CompletableFuture<ResponseMessage>>(any())
         } coAnswers {
-            val func = firstArg<suspend (AmazonQLanguageServer) -> Unit>()
+            val func = firstArg<suspend (AmazonQLanguageServer) -> CompletableFuture<ResponseMessage>>()
             func.invoke(mockLanguageServer)
         }
 
@@ -87,7 +84,7 @@ class DefaultAuthCredentialsServiceTest {
 
     @Test
     fun `test deleteTokenCredentials success`() {
-        every { mockLanguageServer.deleteTokenCredentials() } just runs
+        every { mockLanguageServer.deleteTokenCredentials() } returns CompletableFuture.completedFuture(Unit)
 
         sut.deleteTokenCredentials()
 

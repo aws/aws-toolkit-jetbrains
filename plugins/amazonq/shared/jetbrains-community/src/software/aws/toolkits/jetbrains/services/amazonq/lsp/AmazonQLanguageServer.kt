@@ -19,5 +19,5 @@ interface AmazonQLanguageServer : LanguageServer {
     fun updateTokenCredentials(payload: UpdateCredentialsPayload): CompletableFuture<ResponseMessage>
 
     @JsonNotification("aws/credentials/token/delete")
-    fun deleteTokenCredentials()
+    fun deleteTokenCredentials(): CompletableFuture<Unit>
 }

@@ -26,28 +26,18 @@ class DefaultAuthCredentialsService(
 
         val payload = createUpdateCredentialsPayload(token)
 
-        return CompletableFuture<ResponseMessage>().also { completableFuture ->
-            AmazonQLspService.executeIfRunning(project) { server ->
-                server.updateTokenCredentials(payload)
-                    .whenComplete { response, throwable ->
-                        if (throwable != null) {
-                            completableFuture.completeExceptionally(throwable)
-                        } else {
-                            completableFuture.complete(response)
-                        }
-                    }
-            } ?: completableFuture.completeExceptionally(IllegalStateException("LSP Server not running"))
-        }
+        return AmazonQLspService.executeIfRunning(project) { server ->
+            server.updateTokenCredentials(payload)
+        } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
     }
 
-    override fun deleteTokenCredentials(): CompletableFuture<Unit> {
-        return CompletableFuture<Unit>().also { completableFuture ->
+    override fun deleteTokenCredentials(): CompletableFuture<Unit> =
+        CompletableFuture<Unit>().also { completableFuture ->
             AmazonQLspService.executeIfRunning(project) { server ->
                 server.deleteTokenCredentials()
                 completableFuture.complete(null)
             } ?: completableFuture.completeExceptionally(IllegalStateException("LSP Server not running"))
         }
-    }
 
     private fun createUpdateCredentialsPayload(token: String): UpdateCredentialsPayload =
         UpdateCredentialsPayload(
