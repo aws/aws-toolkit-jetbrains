@@ -7,10 +7,13 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.application.ApplicationInfo
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.modules
+import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
@@ -375,8 +378,19 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
     private fun generateScanName(): String {
         val clientId = AwsSettings.getInstance().clientId
         val filePath = sessionContext.sessionConfig.getSelectedFile()?.toNioPath()?.pathString
-        val scope = CodeWhispererTelemetryService.getInstance().mapToTelemetryScope(sessionContext.codeAnalysisScope, sessionContext.sessionConfig.isInitiatedByChat())
-        val projectId = if (filePath != null && scope != CodewhispererCodeScanScope.PROJECT) filePath else sessionContext.project.basePath
+        val scope = CodeWhispererTelemetryService.getInstance().mapToTelemetryScope(
+            sessionContext.codeAnalysisScope,
+            sessionContext.sessionConfig.isInitiatedByChat()
+        )
+        val projectId = if (scope != CodewhispererCodeScanScope.PROJECT && filePath != null) {
+            filePath
+        } else {
+            ApplicationManager.getApplication().runReadAction<String> {
+                sessionContext.project.modules.map { module ->
+                    ModuleRootManager.getInstance(module).contentRoots.firstOrNull()?.path
+                }.joinToString(",")
+            }
+        }
 
         return DigestUtils.sha256("$clientId::$projectId::$scope").toHexString()
     }
