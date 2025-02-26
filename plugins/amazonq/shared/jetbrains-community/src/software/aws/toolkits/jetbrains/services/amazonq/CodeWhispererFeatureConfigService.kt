@@ -9,7 +9,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.FeatureValue
-import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsRequest
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
