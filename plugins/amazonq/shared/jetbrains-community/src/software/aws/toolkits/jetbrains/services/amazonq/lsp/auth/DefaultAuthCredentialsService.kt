@@ -40,8 +40,8 @@ class DefaultAuthCredentialsService(
         }
     }
 
-    override fun deleteTokenCredentials(): CompletableFuture<Void> {
-        return CompletableFuture<Void>().also { completableFuture ->
+    override fun deleteTokenCredentials(): CompletableFuture<Unit> {
+        return CompletableFuture<Unit>().also { completableFuture ->
             AmazonQLspService.executeIfRunning(project) { server ->
                 server.deleteTokenCredentials()
                 completableFuture.complete(null)
@@ -49,8 +49,8 @@ class DefaultAuthCredentialsService(
         }
     }
 
-    private fun createUpdateCredentialsPayload(token: String): UpdateCredentialsPayload {
-        return UpdateCredentialsPayload(
+    private fun createUpdateCredentialsPayload(token: String): UpdateCredentialsPayload =
+        UpdateCredentialsPayload(
             data = encryptionManager.encrypt(
                 UpdateCredentialsPayloadData(
                     BearerCredentials(token)
@@ -58,5 +58,4 @@ class DefaultAuthCredentialsService(
             ),
             encrypted = true
         )
-    }
 }

@@ -8,5 +8,5 @@ import java.util.concurrent.CompletableFuture
 
 interface AuthCredentialsService {
     fun updateTokenCredentials(accessToken: String, encrypted: Boolean): CompletableFuture<ResponseMessage>
-    fun deleteTokenCredentials(): CompletableFuture<Void>
+    fun deleteTokenCredentials(): CompletableFuture<Unit>
 }
