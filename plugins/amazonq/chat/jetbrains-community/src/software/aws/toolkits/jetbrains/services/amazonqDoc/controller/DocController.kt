@@ -31,9 +31,9 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.common.util.selectFolder
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
-import software.aws.toolkits.jetbrains.services.amazonq.RepoSizeError
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
+import software.aws.toolkits.jetbrains.services.amazonq.project.RepoSizeError
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.amazonqDoc.DEFAULT_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqDoc.DIAGRAM_SVG_EXT
@@ -308,7 +308,7 @@ class DocController(
         val session = getSessionInfo(tabId)
         val docGenerationTask = docGenerationTasks.getTask(tabId)
 
-        val currentSourceFolder = session.context.selectedSourceFolder
+        val currentSourceFolder = session.context.selectionRoot
 
         try {
             messenger.sendFolderConfirmationMessage(
@@ -405,7 +405,7 @@ class DocController(
                 inMemoryFile.isWritable = false
                 FileEditorManager.getInstance(context.project).openFile(inMemoryFile, true)
             } else {
-                val existingFile = VfsUtil.findRelativeFile(message.filePath, session.context.selectedSourceFolder)
+                val existingFile = VfsUtil.findRelativeFile(message.filePath, session.context.addressableRoot)
                 val leftDiffContent = if (existingFile == null) {
                     EmptyContent()
                 } else {
@@ -956,8 +956,7 @@ class DocController(
 
     private suspend fun modifyDefaultSourceFolder(tabId: String) {
         val session = getSessionInfo(tabId)
-        val currentSourceFolder = session.context.selectedSourceFolder
-        val projectRoot = session.context.projectRoot
+        val workspaceRoot = session.context.workspaceRoot
         val docGenerationTask = docGenerationTasks.getTask(tabId)
 
         withContext(EDT) {
@@ -967,7 +966,7 @@ class DocController(
                 message = message("amazonqDoc.prompt.choose_folder_to_continue")
             )
 
-            val selectedFolder = selectFolder(context.project, currentSourceFolder)
+            val selectedFolder = selectFolder(context.project, workspaceRoot)
 
             // No folder was selected
             if (selectedFolder == null) {
@@ -1004,7 +1003,7 @@ class DocController(
                 return@withContext
             }
 
-            if (selectedFolder.path == projectRoot.path) {
+            if (selectedFolder.path == workspaceRoot.path) {
                 docGenerationTask.folderLevel = DocFolderLevel.ENTIRE_WORKSPACE
             } else {
                 docGenerationTask.folderLevel = DocFolderLevel.SUB_FOLDER
@@ -1012,7 +1011,7 @@ class DocController(
 
             logger.info { "Selected correct folder inside workspace: ${selectedFolder.path}" }
 
-            session.context.selectedSourceFolder = selectedFolder
+            session.context.selectionRoot = selectedFolder
 
             promptForDocTarget(tabId)
 

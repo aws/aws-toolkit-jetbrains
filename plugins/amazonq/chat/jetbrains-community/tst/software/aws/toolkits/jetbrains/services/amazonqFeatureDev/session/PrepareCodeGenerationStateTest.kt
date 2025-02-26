@@ -21,9 +21,9 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
-import software.aws.toolkits.jetbrains.services.amazonq.ZipCreationResult
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
+import software.aws.toolkits.jetbrains.services.amazonq.project.FeatureDevSessionContext
+import software.aws.toolkits.jetbrains.services.amazonq.project.ZipCreationResult
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAnswerPart
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
@@ -88,6 +88,7 @@ class PrepareCodeGenerationStateTest : FeatureDevTestBase() {
         val repoZipResult = ZipCreationResult(mockFile, testChecksumSha, testContentLength)
         val action = SessionStateAction("test-task", userMessage)
 
+        whenever(repoContext.workspaceRoot).thenReturn(mock())
         whenever(repoContext.getProjectZip(false)).thenReturn(repoZipResult)
         every { featureDevService.createUploadUrl(any(), any(), any(), any()) } returns exampleCreateUploadUrlResponse
 
