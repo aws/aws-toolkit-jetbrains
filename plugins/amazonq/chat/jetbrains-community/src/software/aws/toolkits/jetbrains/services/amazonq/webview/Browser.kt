@@ -27,7 +27,7 @@ class Browser(parent: Disposable) : Disposable {
     init {
         assetRequestHandler.addWildcardHandler("mynah") { path ->
             val asset = path.replaceFirst("mynah/", "/mynah-ui/assets/")
-            Paths.get(asset).normalize().toString().let {
+            Paths.get(asset).normalize().toString().replace("\\", "/").let {
                 this::class.java.getResourceAsStream(it)
             }
         }
