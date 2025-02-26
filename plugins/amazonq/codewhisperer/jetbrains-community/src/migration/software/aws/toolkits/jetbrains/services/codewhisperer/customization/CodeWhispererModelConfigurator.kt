@@ -37,6 +37,11 @@ interface CodeWhispererModelConfigurator {
      */
     fun getNewUpdate(connectionId: String): Collection<CustomizationUiItem>?
 
+    /**
+     * Get any current persisted customization arn override config
+     */
+    fun getPersistedCustomizationOverride(): String?
+
     companion object {
         fun getInstance(): CodeWhispererModelConfigurator = service()
     }
