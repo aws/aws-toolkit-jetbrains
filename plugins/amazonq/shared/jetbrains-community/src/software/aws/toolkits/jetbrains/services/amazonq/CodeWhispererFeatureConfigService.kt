@@ -9,7 +9,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.FeatureValue
-import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsRequest
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
@@ -42,47 +41,8 @@ class CodeWhispererFeatureConfigService {
                 featureConfigs[it.feature()] = FeatureContext(it.feature(), it.variation(), it.value())
             }
 
-            // Only apply new auto-trigger UX to BID users
-            val isNewAutoTriggerUX = getNewAutoTriggerUX()
-            if (isNewAutoTriggerUX) {
-                calculateIfIamIdentityCenterConnection(project) {
-                    featureConfigs.remove(NEW_AUTO_TRIGGER_UX)
-                }
-            }
+            validateNewAutoTriggerUX(project)
 
-            val customizationArnOverride = featureConfigs[CUSTOMIZATION_ARN_OVERRIDE_NAME]?.value?.stringValue()
-            if (customizationArnOverride != null) {
-                // Double check if server-side wrongly returns a customizationArn to BID users
-                calculateIfBIDConnection(project) {
-                    featureConfigs.remove(CUSTOMIZATION_ARN_OVERRIDE_NAME)
-                }
-                val availableCustomizations =
-                    calculateIfIamIdentityCenterConnection(project) {
-                        try {
-                            connection.getConnectionSettings().awsClient<CodeWhispererRuntimeClient>().listAvailableCustomizationsPaginator(
-                                ListAvailableCustomizationsRequest.builder().build()
-                            )
-                                .stream()
-                                .toList()
-                                .flatMap { resp ->
-                                    resp.customizations().map {
-                                        it.arn()
-                                    }
-                                }
-                        } catch (e: Exception) {
-                            LOG.debug(e) { "Failed to list available customizations" }
-                            null
-                        }
-                    }
-
-                // If customizationArn from A/B is not available in listAvailableCustomizations response, don't use this value
-                if (availableCustomizations?.contains(customizationArnOverride) == false) {
-                    LOG.debug {
-                        "Customization arn $customizationArnOverride not available in listAvailableCustomizations, not using"
-                    }
-                    featureConfigs.remove(CUSTOMIZATION_ARN_OVERRIDE_NAME)
-                }
-            }
             CodeWhispererFeatureConfigListener.notifyUiFeatureConfigsAvailable()
         } catch (e: Exception) {
             LOG.debug(e) { "Error when fetching feature configs" }
@@ -131,6 +91,49 @@ class CodeWhispererFeatureConfigService {
 
     private fun connection(project: Project) =
         ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
+
+    private fun validateNewAutoTriggerUX(project: Project) {
+        // Only apply new auto-trigger UX to BID users
+        val isNewAutoTriggerUX = getNewAutoTriggerUX()
+        if (isNewAutoTriggerUX) {
+            calculateIfIamIdentityCenterConnection(project) {
+                featureConfigs.remove(NEW_AUTO_TRIGGER_UX)
+            }
+        }
+    }
+
+    fun validateCustomizationOverride(project: Project, customization: FeatureContext) {
+        val customizationArnOverride = customization.value.stringValue()
+        val connection = connection(project) ?: return
+        if (customizationArnOverride != null) {
+            // Double check if server-side wrongly returns a customizationArn to BID users
+            calculateIfBIDConnection(project) {
+                featureConfigs.remove(CUSTOMIZATION_ARN_OVERRIDE_NAME)
+            }
+            val availableCustomizations =
+                calculateIfIamIdentityCenterConnection(project) {
+                    try {
+                        connection.getConnectionSettings().awsClient<CodeWhispererRuntimeClient>().listAvailableCustomizationsPaginator {}
+                            .flatMap { resp ->
+                                resp.customizations().map {
+                                    it.arn()
+                                }
+                            }
+                    } catch (e: Exception) {
+                        LOG.debug(e) { "Failed to list available customizations" }
+                        null
+                    }
+                }
+
+            // If customizationArn from A/B is not available in listAvailableCustomizations response, don't use this value
+            if (availableCustomizations?.contains(customizationArnOverride) == false) {
+                LOG.debug {
+                    "Customization arn $customizationArnOverride not available in listAvailableCustomizations, not using"
+                }
+                featureConfigs.remove(CUSTOMIZATION_ARN_OVERRIDE_NAME)
+            }
+        }
+    }
 
     companion object {
         fun getInstance(): CodeWhispererFeatureConfigService = service()
