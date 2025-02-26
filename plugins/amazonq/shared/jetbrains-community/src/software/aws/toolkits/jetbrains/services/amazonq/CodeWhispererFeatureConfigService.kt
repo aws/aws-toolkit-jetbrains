@@ -114,11 +114,7 @@ class CodeWhispererFeatureConfigService {
             val availableCustomizations =
                 calculateIfIamIdentityCenterConnection(project) {
                     try {
-                        connection.getConnectionSettings().awsClient<CodeWhispererRuntimeClient>().listAvailableCustomizationsPaginator(
-                            ListAvailableCustomizationsRequest.builder().build()
-                        )
-                            .stream()
-                            .toList()
+                        connection.getConnectionSettings().awsClient<CodeWhispererRuntimeClient>().listAvailableCustomizationsPaginator {}
                             .flatMap { resp ->
                                 resp.customizations().map {
                                     it.arn()
