@@ -108,14 +108,18 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
             logger.info { "Attempt ${currentAttempt.get()} of $maxDownloadAttempts to download LSP artifacts" }
 
             try {
-                if (downloadLspArtifacts(temporaryDownloadPath, target)) {
+                if (downloadLspArtifacts(temporaryDownloadPath, target) && target != null && !target.contents.isNullOrEmpty()) {
                     moveFilesFromSourceToDestination(temporaryDownloadPath, downloadPath)
+                    target.contents
+                        .mapNotNull { it.filename }
+                        .forEach { filename -> extractZipFile(downloadPath.resolve(filename), downloadPath) }
                     logger.info { "Successfully downloaded and moved LSP artifacts to $downloadPath" }
                     return
                 }
             } catch (e: Exception) {
                 logger.error(e) { "Failed to download/move LSP artifacts on attempt ${currentAttempt.get()}" }
                 temporaryDownloadPath.toFile().deleteRecursively()
+                downloadPath.toFile().deleteRecursively()
             }
         }
         if (currentAttempt.get() >= maxDownloadAttempts) {

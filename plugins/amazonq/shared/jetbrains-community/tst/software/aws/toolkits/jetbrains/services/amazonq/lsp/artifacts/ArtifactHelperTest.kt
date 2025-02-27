@@ -204,13 +204,15 @@ class ArtifactHelperTest {
     @Test
     fun `tryDownloadLspArtifacts should not throw error on successful download`() {
         val versions = listOf(ManifestManager.Version(serverVersion = "1.0.0"))
-
+        val target = ManifestManager.VersionTarget(contents = contents)
         val spyArtifactHelper = spyk(artifactHelper)
+
         every { spyArtifactHelper.downloadLspArtifacts(any(), any()) } returns true
         mockkStatic("software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.LspUtilsKt")
         every { moveFilesFromSourceToDestination(any(), any()) } just Runs
+        every { extractZipFile(any(), any()) } just Runs
 
-        spyArtifactHelper.tryDownloadLspArtifacts(versions, null)
+        spyArtifactHelper.tryDownloadLspArtifacts(versions, target)
     }
 
     @Test
