@@ -45,6 +45,7 @@ phases:
         credential_source=EcsContainer"
         
       - chmod +x gradlew
+      - mkdir -p /etc/apparmor.d
       - touch /etc/apparmor.d/jcef
       - |
         >/etc/apparmor.d/jcef echo "
