@@ -10,7 +10,12 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 
-class ArtifactManager {
+class ArtifactManager
+    (
+    private val manifestFetcher: ManifestFetcher = ManifestFetcher(),
+    private val artifactHelper: ArtifactHelper = ArtifactHelper(),
+    manifestRange: SupportedManifestVersionRange?
+) {
 
     data class SupportedManifestVersionRange(
         val startVersion: SemVer,
@@ -21,20 +26,7 @@ class ArtifactManager {
         val inRangeVersions: List<ManifestManager.Version>,
     )
 
-    private val manifestFetcher: ManifestFetcher
-    private val artifactHelper: ArtifactHelper
-    private val manifestVersionRanges: SupportedManifestVersionRange
-
-    // Primary constructor with config
-    constructor(
-        manifestFetcher: ManifestFetcher = ManifestFetcher(),
-        artifactHelper: ArtifactHelper = ArtifactHelper(),
-        manifestRange: SupportedManifestVersionRange?,
-    ) {
-        manifestVersionRanges = manifestRange ?: DEFAULT_VERSION_RANGE
-        this.manifestFetcher = manifestFetcher
-        this.artifactHelper = artifactHelper
-    }
+    private val manifestVersionRanges: SupportedManifestVersionRange = manifestRange ?: DEFAULT_VERSION_RANGE
 
     // Secondary constructor with no parameters
     constructor() : this(ManifestFetcher(), ArtifactHelper(), null)
