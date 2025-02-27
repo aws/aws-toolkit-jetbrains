@@ -9,6 +9,8 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockkStatic
 import io.mockk.spyk
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.jetbrains.annotations.TestOnly
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -17,10 +19,6 @@ import org.mockito.kotlin.mock
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager.SupportedManifestVersionRange
 import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 import java.nio.file.Path
-import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
-
 
 @TestOnly
 class ArtifactHelperTest {
@@ -28,7 +26,7 @@ class ArtifactHelperTest {
     lateinit var tempDir: Path
 
     private lateinit var artifactHelper: ArtifactHelper
-    private lateinit var manifestVersionRanges: ArtifactManager.SupportedManifestVersionRange
+    private lateinit var manifestVersionRanges: SupportedManifestVersionRange
     private lateinit var mockManifestManager: ManifestManager
     private lateinit var contents: List<ManifestManager.TargetContent>
 
@@ -46,7 +44,6 @@ class ArtifactHelperTest {
 
     @Test
     fun `removeDelistedVersions removes specified versions`() {
-
         val version1Dir = tempDir.resolve("1.0.0").apply { toFile().mkdirs() }
         val version2Dir = tempDir.resolve("2.0.0").apply { toFile().mkdirs() }
 
@@ -56,8 +53,8 @@ class ArtifactHelperTest {
 
         artifactHelper.removeDelistedVersions(delistedVersions)
 
-        assertFalse(version1Dir.toFile().exists())
-        assertTrue(version2Dir.toFile().exists())
+        assertThat(version1Dir.toFile().exists()).isFalse()
+        assertThat(version2Dir.toFile().exists()).isTrue()
     }
 
     @Test
@@ -72,8 +69,8 @@ class ArtifactHelperTest {
 
         artifactHelper.deleteOlderLspArtifacts(manifestVersionRanges)
 
-        assertTrue(version1Dir.toFile().exists())
-        assertTrue(version2Dir.toFile().exists())
+        assertThat(version1Dir.toFile().exists()).isTrue()
+        assertThat(version2Dir.toFile().exists()).isTrue()
     }
 
     @Test
@@ -89,9 +86,9 @@ class ArtifactHelperTest {
 
         artifactHelper.deleteOlderLspArtifacts(manifestVersionRanges)
 
-        assertFalse(version1Dir.toFile().exists())
-        assertTrue(version2Dir.toFile().exists())
-        assertTrue(version3Dir.toFile().exists())
+        assertThat(version1Dir.toFile().exists()).isFalse()
+        assertThat(version2Dir.toFile().exists()).isTrue()
+        assertThat(version3Dir.toFile().exists()).isTrue()
     }
 
     @Test
@@ -113,8 +110,8 @@ class ArtifactHelperTest {
 
         val result = artifactHelper.getExistingLspArtifacts(versions, target)
 
-        assertTrue(result)
-        assertTrue(serverZipPath.toFile().exists())
+        assertThat(result).isTrue()
+        assertThat(serverZipPath.toFile().exists()).isTrue()
         version1Dir.toFile().deleteRecursively()
     }
 
@@ -137,14 +134,14 @@ class ArtifactHelperTest {
 
         val result = artifactHelper.getExistingLspArtifacts(versions, target)
 
-        assertFalse(result)
-        assertFalse(serverZipPath.toFile().exists())
+        assertThat(result).isFalse()
+        assertThat(serverZipPath.toFile().exists()).isFalse()
     }
 
     @Test
     fun `getExistingLspArtifacts should return false if versions are empty`() {
         val versions = emptyList<ManifestManager.Version>()
-        assertFalse { artifactHelper.getExistingLspArtifacts(versions, null) }
+        assertThat(artifactHelper.getExistingLspArtifacts(versions, null)).isFalse()
     }
 
     @Test
@@ -152,9 +149,7 @@ class ArtifactHelperTest {
         val versions = listOf(
             ManifestManager.Version(serverVersion = "1.0.0")
         )
-        val target = ManifestManager.VersionTarget()
-
-        assertFalse { artifactHelper.getExistingLspArtifacts(versions, target) }
+        assertThat(artifactHelper.getExistingLspArtifacts(versions, null)).isFalse()
     }
 
     @Test
@@ -162,18 +157,18 @@ class ArtifactHelperTest {
         val versions = listOf(
             ManifestManager.Version(serverVersion = "1.0.0")
         )
-
-        val target = ManifestManager.VersionTarget(contents = contents)
-
-        assertFalse { artifactHelper.getExistingLspArtifacts(versions, target) }
+        assertThat(artifactHelper.getExistingLspArtifacts(versions, null)).isFalse()
     }
 
     @Test
     fun `tryDownloadLspArtifacts should not download artifacts if target does not have contents`() {
-
         val versions = listOf(ManifestManager.Version(serverVersion = "2.0.0"))
-        assertFailsWith<LspException> { artifactHelper.tryDownloadLspArtifacts(versions, null) }
-        assertFalse(tempDir.resolve("2.0.0").toFile().exists())
+        assertThatThrownBy {
+            artifactHelper.tryDownloadLspArtifacts(versions, null)
+        }
+            .isInstanceOf(LspException::class.java)
+            .hasFieldOrPropertyWithValue("errorCode", LspException.ErrorCode.DOWNLOAD_FAILED)
+        assertThat(tempDir.resolve("2.0.0").toFile().exists()).isFalse()
     }
 
     @Test
@@ -183,9 +178,11 @@ class ArtifactHelperTest {
         val spyArtifactHelper = spyk(artifactHelper)
         every { spyArtifactHelper.downloadLspArtifacts(any(), any()) } returns false
 
-        assertFailsWith<LspException> {
+        assertThatThrownBy {
             spyArtifactHelper.tryDownloadLspArtifacts(versions, null)
         }
+            .isInstanceOf(LspException::class.java)
+            .hasFieldOrPropertyWithValue("errorCode", LspException.ErrorCode.DOWNLOAD_FAILED)
     }
 
     @Test
@@ -202,21 +199,20 @@ class ArtifactHelperTest {
 
     @Test
     fun `validateFileHash should return false if expected hash is null`() {
-        assertFalse(artifactHelper.validateFileHash(tempDir, null))
+        assertThat(artifactHelper.validateFileHash(tempDir, null)).isFalse()
     }
 
     @Test
     fun `validateFileHash should return false if hash did not match`() {
         mockkStatic("software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.LspUtilsKt")
         every { generateSHA384Hash(any()) } returns "1234"
-        assertFalse(artifactHelper.validateFileHash(tempDir, "1234"))
+        assertThat(artifactHelper.validateFileHash(tempDir, "1234")).isFalse()
     }
 
     @Test
     fun `validateFileHash should return true if hash matched`() {
         mockkStatic("software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.LspUtilsKt")
         every { generateSHA384Hash(any()) } returns "1234"
-        assertTrue(artifactHelper.validateFileHash(tempDir, "sha384:1234"))
+        assertThat(artifactHelper.validateFileHash(tempDir, "sha384:1234")).isTrue()
     }
-
 }
