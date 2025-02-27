@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
+import com.intellij.util.io.createDirectories
 import com.intellij.util.text.SemVer
 import io.mockk.Runs
 import io.mockk.every
@@ -93,9 +94,9 @@ class ArtifactHelperTest {
 
     @Test
     fun `getAllLocalLspArtifactsWithinManifestRange should return matching folder path`() {
-        tempDir.resolve("1.0.0").apply { toFile().mkdirs() }
-        tempDir.resolve("1.0.1").apply { toFile().mkdirs() }
-        tempDir.resolve("1.0.2").apply { toFile().mkdirs() }
+        tempDir.resolve("1.0.0").createDirectories()
+        tempDir.resolve("1.0.1").createDirectories()
+        tempDir.resolve("1.0.2").createDirectories()
         manifestVersionRanges = SupportedManifestVersionRange(
             startVersion = SemVer("1.0.0", 1, 0, 0),
             endVersion = SemVer("2.0.0", 2, 0, 0)
