@@ -10,11 +10,10 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 
-class ArtifactManager
-    (
+class ArtifactManager(
     private val manifestFetcher: ManifestFetcher = ManifestFetcher(),
     private val artifactHelper: ArtifactHelper = ArtifactHelper(),
-    manifestRange: SupportedManifestVersionRange?
+    manifestRange: SupportedManifestVersionRange?,
 ) {
 
     data class SupportedManifestVersionRange(
