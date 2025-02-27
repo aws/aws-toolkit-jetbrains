@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
 import com.intellij.util.io.createDirectories
 import com.intellij.util.text.SemVer
+import org.assertj.core.util.VisibleForTesting
 import software.aws.toolkits.core.utils.deleteIfExists
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
@@ -111,15 +112,15 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
             } catch (e: Exception) {
                 logger.error(e) { "Failed to download/move LSP artifacts on attempt ${currentAttempt.get()}" }
                 temporaryDownloadPath.toFile().deleteRecursively()
-
-                if (currentAttempt.get() >= maxDownloadAttempts) {
-                    throw LspException("Failed to download LSP artifacts after $maxDownloadAttempts attempts", LspException.ErrorCode.DOWNLOAD_FAILED)
-                }
             }
+        }
+        if (currentAttempt.get() >= maxDownloadAttempts) {
+            throw LspException("Failed to download LSP artifacts after $maxDownloadAttempts attempts", LspException.ErrorCode.DOWNLOAD_FAILED)
         }
     }
 
-    private fun downloadLspArtifacts(downloadPath: Path, target: ManifestManager.VersionTarget?): Boolean {
+    @VisibleForTesting
+    internal fun downloadLspArtifacts(downloadPath: Path, target: ManifestManager.VersionTarget?): Boolean {
         if (target == null || target.contents.isNullOrEmpty()) {
             logger.warn { "No target contents available for download" }
             return false
@@ -166,7 +167,8 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
         }
     }
 
-    private fun validateFileHash(filePath: Path, expectedHash: String?): Boolean {
+    @VisibleForTesting
+    internal fun validateFileHash(filePath: Path, expectedHash: String?): Boolean {
         if (expectedHash == null) return false
         val contentHash = generateSHA384Hash(filePath)
         return "sha384:$contentHash" == expectedHash
