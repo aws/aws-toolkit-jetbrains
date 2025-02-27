@@ -44,6 +44,7 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.auth.DefaultAuthCredentialsService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.DefaultModuleDependenciesService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.createExtendedClientMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument.TextDocumentServiceHandler
@@ -143,7 +144,7 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
 
             try {
                 val i = it.await()
-                if (i.initializeResult.isActive) {
+                if (i.initializer.isActive) {
                     // not initialized
                     return
                 }
@@ -192,7 +193,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
     @Suppress("ForbiddenVoid")
     private val launcherFuture: Future<Void>
     private val launcherHandler: KillableProcessHandler
-    val initializeResult: Deferred<InitializeResult>
+    val initializer: Job
 
     private fun createClientCapabilities(): ClientCapabilities =
         ClientCapabilities().apply {
@@ -301,6 +302,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         }
 
         DefaultAuthCredentialsService(project, encryptionManager, this)
+        DefaultModuleDependenciesService(project, this)
         TextDocumentServiceHandler(project, this)
         WorkspaceServiceHandler(project, this)
     }
