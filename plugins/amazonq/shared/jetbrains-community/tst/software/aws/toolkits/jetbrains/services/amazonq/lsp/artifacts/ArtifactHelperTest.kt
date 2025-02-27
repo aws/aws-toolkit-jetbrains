@@ -92,6 +92,22 @@ class ArtifactHelperTest {
     }
 
     @Test
+    fun `getAllLocalLspArtifactsWithinManifestRange should return matching folder path`() {
+        tempDir.resolve("1.0.0").apply { toFile().mkdirs() }
+        tempDir.resolve("1.0.1").apply { toFile().mkdirs() }
+        tempDir.resolve("1.0.2").apply { toFile().mkdirs() }
+        manifestVersionRanges = SupportedManifestVersionRange(
+            startVersion = SemVer("1.0.0", 1, 0, 0),
+            endVersion = SemVer("2.0.0", 2, 0, 0)
+        )
+
+        val actualResult = artifactHelper.getAllLocalLspArtifactsWithinManifestRange(manifestVersionRanges)
+        assertThat(actualResult).isNotNull()
+        assertThat(actualResult.size).isEqualTo(3)
+        assertThat(actualResult.first().first.fileName.toString()).isEqualTo("1.0.2")
+    }
+
+    @Test
     fun `getExistingLspArtifacts should find all the artifacts`() {
         val version1Dir = tempDir.resolve("1.0.0").apply { toFile().mkdirs() }
 

@@ -46,19 +46,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
     }
 
     fun deleteOlderLspArtifacts(manifestVersionRanges: ArtifactManager.SupportedManifestVersionRange) {
-        val localFolders = getSubFolders(lspArtifactsPath)
-
-        val validVersions = localFolders
-            .mapNotNull { localFolder ->
-                SemVer.parseFromText(localFolder.fileName.toString())?.let { semVer ->
-                    if (semVer in manifestVersionRanges.startVersion..manifestVersionRanges.endVersion) {
-                        localFolder to semVer
-                    } else {
-                        null
-                    }
-                }
-            }
-            .sortedByDescending { (_, semVer) -> semVer }
+        val validVersions = getAllLocalLspArtifactsWithinManifestRange(manifestVersionRanges)
 
         // Keep the latest 2 versions, delete others
         validVersions.drop(2).forEach { (folder, _) ->
@@ -69,6 +57,22 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
                 logger.error(e) { "Failed to delete older LSP artifact: ${folder.fileName}" }
             }
         }
+    }
+
+    fun getAllLocalLspArtifactsWithinManifestRange(manifestVersionRanges: ArtifactManager.SupportedManifestVersionRange): List<Pair<Path, SemVer>> {
+        val localFolders = getSubFolders(lspArtifactsPath)
+
+        return localFolders
+            .mapNotNull { localFolder ->
+                SemVer.parseFromText(localFolder.fileName.toString())?.let { semVer ->
+                    if (semVer in manifestVersionRanges.startVersion..manifestVersionRanges.endVersion) {
+                        localFolder to semVer
+                    } else {
+                        null
+                    }
+                }
+            }
+            .sortedByDescending { (_, semVer) -> semVer }
     }
 
     fun getExistingLspArtifacts(versions: List<ManifestManager.Version>, target: ManifestManager.VersionTarget?): Boolean {

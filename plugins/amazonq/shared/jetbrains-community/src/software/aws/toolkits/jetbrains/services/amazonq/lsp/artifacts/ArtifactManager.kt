@@ -28,12 +28,12 @@ class ArtifactManager {
     // Primary constructor with config
     constructor(
         manifestFetcher: ManifestFetcher = ManifestFetcher(),
-        artifactFetcher: ArtifactHelper = ArtifactHelper(),
+        artifactHelper: ArtifactHelper = ArtifactHelper(),
         manifestRange: SupportedManifestVersionRange?,
     ) {
         manifestVersionRanges = manifestRange ?: DEFAULT_VERSION_RANGE
         this.manifestFetcher = manifestFetcher
-        this.artifactHelper = artifactFetcher
+        this.artifactHelper = artifactHelper
     }
 
     // Secondary constructor with no parameters
@@ -57,7 +57,11 @@ class ArtifactManager {
         this.artifactHelper.removeDelistedVersions(lspVersions.deListedVersions)
 
         if (lspVersions.inRangeVersions.isEmpty()) {
-            // No versions are found which are in the given range.
+            // No versions are found which are in the given range. Fallback to local lsp artifacts.
+            val localLspArtifacts = this.artifactHelper.getAllLocalLspArtifactsWithinManifestRange(manifestVersionRanges)
+            if (localLspArtifacts.isNotEmpty()) {
+                return
+            }
             throw LspException("Language server versions not found in manifest.", LspException.ErrorCode.NO_COMPATIBLE_LSP_VERSION)
         }
 
