@@ -32,6 +32,7 @@ import org.eclipse.lsp4j.ClientInfo
 import org.eclipse.lsp4j.FileOperationsWorkspaceCapabilities
 import org.eclipse.lsp4j.InitializeParams
 import org.eclipse.lsp4j.InitializeResult
+import org.eclipse.lsp4j.InitializedParams
 import org.eclipse.lsp4j.SynchronizationCapabilities
 import org.eclipse.lsp4j.TextDocumentClientCapabilities
 import org.eclipse.lsp4j.WorkspaceClientCapabilities
@@ -244,8 +245,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
 
     init {
         val cmd = GeneralCommandLine(
-            "/opt/homebrew/opt/node@20/bin/node",
-            "/Users/richali/idetools/language-servers/app/aws-lsp-codewhisperer-runtimes/out/token-standalone.js",
+            "amazon-q-lsp",
             "--stdio",
             "--set-credentials-encryption-key",
         )
@@ -303,6 +303,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                 launcherHandler.destroyProcess()
                 error("LSP initialization failed")
             }
+            languageServer.initialized(InitializedParams())
 
             initializeResult
         }
