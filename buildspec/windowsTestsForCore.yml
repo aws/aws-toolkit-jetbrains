@@ -8,6 +8,12 @@ env:
 phases:
   install:
     commands:
+      # force install java21 while we work throuh path issues
+      - |
+        $javaName = "C:\Program Files\Amazon Corretto" | ForEach-Object {
+          ls $_ | Where-Object {$_ -Like "jdk*"} | Sort-Object -Descending -Property Name | Select-Object -first 1 -expandproperty Name
+        }
+        $JAVA_HOME = "C:\Program Files\Amazon Corretto\$javaName"
       - |
         if(-Not($Env:CODE_COV_TOKEN -eq $null)) {
             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
