@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
 import com.intellij.util.text.SemVer
-import org.assertj.core.util.VisibleForTesting
+import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info

@@ -79,7 +79,8 @@ fun extractZipFile(zipFilePath: Path, destDir: Path) {
 
     try {
         ZipFile(zipFilePath.toFile()).use { zipFile ->
-            zipFile.entries().asSequence()
+            zipFile.entries()
+                .asSequence()
                 .filterNot { it.isDirectory }
                 .map { zipEntry ->
                     val destPath = destDir.resolve(zipEntry.name)
