@@ -45,7 +45,7 @@ phases:
         credential_source=EcsContainer"
         
       - chmod +x gradlew
-
+      - touch /etc/apparmor.d/jcef
       - |
         >/etc/apparmor.d/jcef echo "
         abi <abi/4.0>,
