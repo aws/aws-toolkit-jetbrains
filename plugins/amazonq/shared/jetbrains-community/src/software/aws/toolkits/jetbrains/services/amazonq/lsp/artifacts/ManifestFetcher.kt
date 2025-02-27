@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
-import org.assertj.core.util.VisibleForTesting
+import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.deleteIfExists
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists

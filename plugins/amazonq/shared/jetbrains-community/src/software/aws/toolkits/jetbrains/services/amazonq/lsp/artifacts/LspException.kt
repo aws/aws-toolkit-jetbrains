@@ -11,6 +11,7 @@ class LspException(message: String, private val errorCode: ErrorCode, cause: Thr
         HASH_MISMATCH,
         TARGET_NOT_FOUND,
         NO_COMPATIBLE_LSP_VERSION,
+        UNZIP_FAILED,
     }
 
     override fun toString(): String = buildString {
