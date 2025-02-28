@@ -3,11 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqDoc
 
-import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.FollowUp
-import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.FollowUpStatusType
-import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.FollowUpTypes
-import software.aws.toolkits.resources.message
-
 const val FEATURE_EVALUATION_PRODUCT_NAME = "DocGeneration"
 
 const val FEATURE_NAME = "Amazon Q Documentation Generation"
@@ -21,25 +16,8 @@ const val DEFAULT_RETRY_LIMIT = 0
 // Max allowed size for a repository in bytes
 const val MAX_PROJECT_SIZE_BYTES: Long = 200 * 1024 * 1024
 
-enum class ModifySourceFolderErrorReason(
-    private val reasonText: String,
-) {
-    ClosedBeforeSelection("ClosedBeforeSelection"),
-    NotInWorkspaceFolder("NotInWorkspaceFolder"),
-    ;
-
-    override fun toString(): String = reasonText
-}
-
-val NEW_SESSION_FOLLOWUPS: List<FollowUp> = listOf(
-    FollowUp(
-        pillText = message("amazonqDoc.prompt.reject.new_task"),
-        type = FollowUpTypes.NEW_TASK,
-        status = FollowUpStatusType.Info
-    ),
-    FollowUp(
-        pillText = message("amazonqDoc.prompt.reject.close_session"),
-        type = FollowUpTypes.CLOSE_SESSION,
-        status = FollowUpStatusType.Info
-    )
-)
+const val INFRA_DIAGRAM_PREFIX = "infra."
+const val DIAGRAM_SVG_EXT = "svg"
+const val DIAGRAM_DOT_EXT = "dot"
+val SUPPORTED_DIAGRAM_EXT_SET: Set<String> = setOf(DIAGRAM_SVG_EXT, DIAGRAM_DOT_EXT)
+val SUPPORTED_DIAGRAM_FILE_NAME_SET: Set<String> = SUPPORTED_DIAGRAM_EXT_SET.map { INFRA_DIAGRAM_PREFIX + it }.toSet()
