@@ -183,24 +183,24 @@ object IdeVersions {
         Profile(
             name = "2025.1",
             gateway = ProductProfile(
-                sdkVersion = "251.21418-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "251.23536-EAP-CANDIDATE-SNAPSHOT",
                 bundledPlugins = listOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
-                sdkVersion = "251.21418.62-EAP-SNAPSHOT",
+                sdkVersion = "251.23536-EAP-CANDIDATE-SNAPSHOT",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
                 ),
                 marketplacePlugins = listOf(
-                    "org.toml.lang:251.21418.43",
-                    "PythonCore:251.21418.62",
-                    "Docker:251.21418.69"
+                    "org.toml.lang:251.23536.46",
+                    "PythonCore:251.23536.34",
+                    "Docker:251.23536.38"
                 )
             ),
             ultimate = ProductProfile(
-                sdkVersion = "251.21418.62-EAP-SNAPSHOT",
+                sdkVersion = "251.23536-EAP-CANDIDATE-SNAPSHOT",
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
                     "JavaScriptDebugger",
@@ -208,17 +208,17 @@ object IdeVersions {
                     "com.jetbrains.codeWithMe",
                 ),
                 marketplacePlugins = listOf(
-                    "org.toml.lang:251.21418.43",
-                    "Pythonid:251.21418.62",
-                    "org.jetbrains.plugins.go:251.21418.62",
+                    "org.toml.lang:251.23536.46",
+                    "Pythonid:251.23536.34",
+                    "org.jetbrains.plugins.go:251.23536.34",
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2025.1-EAP4-SNAPSHOT",
+                sdkVersion = "2025.1-EAP6-SNAPSHOT",
                 bundledPlugins = commonPlugins,
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2025.1.1",
-                nugetVersion = " 2025.1.0-eap04"
+                nugetVersion = " 2025.1.0-eap06"
             )
         ),
     ).associateBy { it.name }
