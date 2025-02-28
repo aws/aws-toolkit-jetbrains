@@ -99,8 +99,10 @@ fun runBuildOrTestCommand(
     // Find the nearest Gradle root directory
     var packageRoot: File? = testFileAbsolutePath.parentFile
     while (packageRoot != null && packageRoot != projectRoot) {
-        if (File(packageRoot, "settings.gradle.kts").exists() || File(packageRoot, "build.gradle.kts").exists()) {
-            break // top when we find a valid Gradle project root
+        if (File(packageRoot, "settings.gradle.kts").exists() || File(packageRoot, "build.gradle.kts").exists() ||
+            File(packageRoot, "settings.gradle").exists() || File(packageRoot, "build.gradle").exists()
+        ) {
+            break // Stop when we find a valid Gradle project root
         }
         packageRoot = packageRoot.parentFile
     }
