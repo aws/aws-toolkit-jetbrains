@@ -83,6 +83,11 @@
     <incompatible-with>com.intellij.jetbrains.client</incompatible-with>
     <incompatible-with>com.intellij.gateway</incompatible-with>
 
+    <extensions defaultExtensionNs="com.intellij">
+        <registryKey key="amazon.q.endpoint" description="Endpoint to use for Amazon Q"
+                     defaultValue="https://codewhisperer.us-east-1.amazonaws.com/" restartRequired="true"/>
+    </extensions>
+
     <xi:include href="/META-INF/module-amazonq.xml" />
 
     <xi:include href="/META-INF/change-notes.xml" xpointer="xpointer(/idea-plugin/*)">

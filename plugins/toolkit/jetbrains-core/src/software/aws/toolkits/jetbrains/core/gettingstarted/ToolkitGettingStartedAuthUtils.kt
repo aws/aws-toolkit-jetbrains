@@ -18,7 +18,9 @@ import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.FeatureId
+import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.Telemetry
 
 fun requestCredentialsForCodeCatalyst(
     project: Project?,
@@ -82,16 +84,15 @@ fun requestCredentialsForCodeCatalyst(
 
     val isAuthenticationSuccessful = authenticationDialog.showAndGet()
     if (isAuthenticationSuccessful) {
-        AuthTelemetry.addConnection(
-            project,
-            source = getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),
-            featureId = FeatureId.Codecatalyst,
-            credentialSourceId = authenticationDialog.authType,
-            isAggregated = true,
-            attempts = authenticationDialog.attempts + 1,
-            result = Result.Succeeded,
-            isReAuth = false
-        )
+        Telemetry.auth.addConnection.use {
+            it.source(getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer))
+                .featureId(FeatureId.Codecatalyst)
+                .credentialSourceId(authenticationDialog.authType)
+                .isAggregated(true)
+                .attempts(authenticationDialog.attempts + 1)
+                .result(MetricResult.Succeeded)
+                .isReAuth(false)
+        }
         AuthTelemetry.addedConnections(
             project,
             source = getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),
@@ -103,16 +104,15 @@ fun requestCredentialsForCodeCatalyst(
             result = Result.Succeeded
         )
     } else {
-        AuthTelemetry.addConnection(
-            project,
-            source = getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),
-            featureId = FeatureId.Codecatalyst,
-            credentialSourceId = authenticationDialog.authType,
-            isAggregated = false,
-            attempts = authenticationDialog.attempts + 1,
-            result = Result.Cancelled,
-            isReAuth = false
-        )
+        Telemetry.auth.addConnection.use {
+            it.source(getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer))
+                .featureId(FeatureId.Codecatalyst)
+                .credentialSourceId(authenticationDialog.authType)
+                .isAggregated(false)
+                .attempts(authenticationDialog.attempts + 1)
+                .result(MetricResult.Cancelled)
+                .isReAuth(false)
+        }
     }
     return isAuthenticationSuccessful
 }
@@ -152,16 +152,15 @@ fun requestCredentialsForExplorer(
     )
     val isAuthSuccessful = authenticationDialog.showAndGet()
     if (isAuthSuccessful) {
-        AuthTelemetry.addConnection(
-            project,
-            source = getSourceOfEntry(SourceOfEntry.RESOURCE_EXPLORER, isFirstInstance, connectionInitiatedFromExplorer),
-            featureId = FeatureId.AwsExplorer,
-            credentialSourceId = authenticationDialog.authType,
-            isAggregated = true,
-            attempts = authenticationDialog.attempts + 1,
-            result = Result.Succeeded,
-            isReAuth = false
-        )
+        Telemetry.auth.addConnection.use {
+            it.source(getSourceOfEntry(SourceOfEntry.RESOURCE_EXPLORER, isFirstInstance, connectionInitiatedFromExplorer))
+                .featureId(FeatureId.AwsExplorer)
+                .credentialSourceId(authenticationDialog.authType)
+                .isAggregated(true)
+                .attempts(authenticationDialog.attempts + 1)
+                .result(MetricResult.Succeeded)
+                .isReAuth(false)
+        }
         AuthTelemetry.addedConnections(
             project,
             source = getSourceOfEntry(SourceOfEntry.RESOURCE_EXPLORER, isFirstInstance, connectionInitiatedFromExplorer),
@@ -173,16 +172,15 @@ fun requestCredentialsForExplorer(
             result = Result.Succeeded
         )
     } else {
-        AuthTelemetry.addConnection(
-            project,
-            source = getSourceOfEntry(SourceOfEntry.RESOURCE_EXPLORER, isFirstInstance, connectionInitiatedFromExplorer),
-            featureId = FeatureId.AwsExplorer,
-            credentialSourceId = authenticationDialog.authType,
-            isAggregated = false,
-            attempts = authenticationDialog.attempts + 1,
-            result = Result.Cancelled,
-            isReAuth = false
-        )
+        Telemetry.auth.addConnection.use {
+            it.source(getSourceOfEntry(SourceOfEntry.RESOURCE_EXPLORER, isFirstInstance, connectionInitiatedFromExplorer))
+                .featureId(FeatureId.AwsExplorer)
+                .credentialSourceId(authenticationDialog.authType)
+                .isAggregated(false)
+                .attempts(authenticationDialog.attempts + 1)
+                .result(MetricResult.Cancelled)
+                .isReAuth(false)
+        }
     }
     return isAuthSuccessful
 }

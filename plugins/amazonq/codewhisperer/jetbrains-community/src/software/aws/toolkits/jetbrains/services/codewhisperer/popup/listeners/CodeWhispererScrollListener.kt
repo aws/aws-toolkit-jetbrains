@@ -16,7 +16,7 @@ class CodeWhispererScrollListener(private val states: InvocationContext) : Visib
     override fun visibleAreaChanged(e: VisibleAreaEvent) {
         val oldRect = e.oldRectangle
         val newRect = e.newRectangle
-        if (CodeWhispererInvocationStatus.getInstance().isPopupActive() &&
+        if (CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive() &&
             (oldRect.x != newRect.x || oldRect.y != newRect.y)
         ) {
             ApplicationManager.getApplication().messageBus.syncPublisher(

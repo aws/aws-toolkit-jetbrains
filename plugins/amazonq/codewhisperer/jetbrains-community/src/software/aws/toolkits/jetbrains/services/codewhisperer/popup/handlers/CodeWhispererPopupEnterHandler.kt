@@ -19,15 +19,11 @@ class CodeWhispererPopupEnterHandler(
     states: InvocationContext,
 ) : CodeWhispererEditorActionHandler(states) {
     override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
-        val popupManager = CodeWhispererPopupManager.getInstance()
-        popupManager.dontClosePopupAndRun {
-            val oldOffset = editor.caretModel.offset
+        CodeWhispererPopupManager.getInstance().dontClosePopupAndRun {
             defaultHandler.execute(editor, caret, dataContext)
-            val newOffset = editor.caretModel.offset
-            val newText = editor.document.getText(TextRange.create(oldOffset, newOffset))
             ApplicationManager.getApplication().messageBus.syncPublisher(
                 CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED
-            ).enter(states, newText)
+            ).enter(states)
         }
     }
 }

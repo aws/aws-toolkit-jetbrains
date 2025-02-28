@@ -75,12 +75,12 @@ class CodeWhispererCodeTestSession(val sessionContext: CodeTestSessionContext) {
 
             LOG.debug {
                 "Total size of source payload in KB: ${payloadContext.srcPayloadSize * 1.0 / TOTAL_BYTES_IN_KB} \n" +
-                    "Total size of build payload in KB: ${(payloadContext.buildPayloadSize ?: 0) * 1.0 / TOTAL_BYTES_IN_KB} \n" +
                     "Total size of source zip file in KB: ${payloadContext.srcZipFileSize * 1.0 / TOTAL_BYTES_IN_KB} \n" +
                     "Total number of lines included: ${payloadContext.totalLines} \n" +
                     "Total number of files included in payload: ${payloadContext.totalFiles} \n" +
                     "Total time taken for creating payload: ${payloadContext.totalTimeInMilliseconds * 1.0 / TOTAL_MILLIS_IN_SECOND} seconds\n" +
-                    "Payload context language: ${payloadContext.language}"
+                    "Payload context language: ${payloadContext.language}" +
+                    "Payload exceeded the limit: ${payloadContext.payloadLimitCrossed}"
             }
 
             //  2 & 3. CreateUploadURL and upload the context.

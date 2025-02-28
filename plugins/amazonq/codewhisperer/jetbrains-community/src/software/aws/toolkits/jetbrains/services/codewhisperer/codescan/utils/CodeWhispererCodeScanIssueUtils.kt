@@ -73,6 +73,11 @@ enum class IssueSeverity(val displayName: String) {
     INFO("Info"),
 }
 
+enum class IssueGroupingStrategy(val displayName: String) {
+    SEVERITY("Severity"),
+    FILE_LOCATION("File Location"),
+}
+
 fun getCodeScanIssueDetailsHtml(
     issue: CodeWhispererCodeScanIssue,
     display: CodeScanIssueDetailsDisplayType,

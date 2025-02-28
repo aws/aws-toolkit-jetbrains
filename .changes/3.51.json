@@ -1,0 +1,29 @@
+{
+  "date" : "2025-01-29",
+  "version" : "3.51",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Amazon Q: Now the Amazon Q suggestions can co-exist with Jetbrains suggestions, with tab behavior configurable in the settings."
+  }, {
+    "type" : "feature",
+    "description" : "Amazon Q: Amazon Q inline now has configurable shortcuts for various actions including accept and browsing through suggestions."
+  }, {
+    "type" : "feature",
+    "description" : "Add setting to allow Q /dev to run code and test commands"
+  }, {
+    "type" : "feature",
+    "description" : "Amazon Q: The suggestion popup will hide by default and will be displayed when the suggestion is being hovered over."
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q /doc: fix open diff in a tab when another modal is open"
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q /test: Fixed an issue which incorrectly caused payload size exceeded exception when collecting project payload files"
+  }, {
+    "type" : "bugfix",
+    "description" : "fix(amazonq): For security reasons, disabled auto linkify for link texts coming in markdown other than [TEXT](URL) format"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix UI freeze caused by updating workspace index on non background context"
+  } ]
+}

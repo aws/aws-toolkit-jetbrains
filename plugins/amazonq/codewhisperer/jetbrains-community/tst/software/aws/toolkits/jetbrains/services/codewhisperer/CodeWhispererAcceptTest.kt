@@ -7,12 +7,6 @@ import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DataContext
-import com.intellij.openapi.actionSystem.IdeActions
-import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_MOVE_CARET_LEFT
-import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_MOVE_CARET_RIGHT
-import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_TAB
-import com.intellij.openapi.editor.actionSystem.EditorActionManager
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -29,6 +23,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestU
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.metadata
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.sdkHttpResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererActionPromoter
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineAcceptActionId
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineForceAcceptActionId
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineNavigateNextActionId
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineNavigatePrevActionId
 import kotlin.test.fail
 
 class CodeWhispererAcceptTest : CodeWhispererTestBase() {
@@ -125,9 +123,10 @@ class CodeWhispererAcceptTest : CodeWhispererTestBase() {
 
     @Test
     fun `test CodeWhisperer keyboard shortcuts should be prioritized to be executed`() {
-        testCodeWhispererKeyboardShortcutShouldBePrioritized(ACTION_EDITOR_TAB)
-        testCodeWhispererKeyboardShortcutShouldBePrioritized(ACTION_EDITOR_MOVE_CARET_RIGHT)
-        testCodeWhispererKeyboardShortcutShouldBePrioritized(ACTION_EDITOR_MOVE_CARET_LEFT)
+        testCodeWhispererKeyboardShortcutShouldBePrioritized(qInlineAcceptActionId)
+        testCodeWhispererKeyboardShortcutShouldBePrioritized(qInlineNavigateNextActionId)
+        testCodeWhispererKeyboardShortcutShouldBePrioritized(qInlineNavigatePrevActionId)
+        testCodeWhispererKeyboardShortcutShouldBePrioritized(qInlineForceAcceptActionId)
     }
 
     private fun testCodeWhispererKeyboardShortcutShouldBePrioritized(actionId: String) {
@@ -176,8 +175,10 @@ class CodeWhispererAcceptTest : CodeWhispererTestBase() {
 
     private fun acceptHelper(useKeyboard: Boolean) {
         if (useKeyboard) {
-            EditorActionManager.getInstance().getActionHandler(IdeActions.ACTION_EDITOR_TAB)
-                .execute(projectRule.fixture.editor, null, DataContext.EMPTY_CONTEXT)
+            ActionManager.getInstance().getAction(qInlineAcceptActionId)
+                .actionPerformed(
+                    AnActionEvent.createFromDataContext("", null) { projectRule.project }
+                )
         } else {
             popupManagerSpy.popupComponents.acceptButton.doClick()
         }

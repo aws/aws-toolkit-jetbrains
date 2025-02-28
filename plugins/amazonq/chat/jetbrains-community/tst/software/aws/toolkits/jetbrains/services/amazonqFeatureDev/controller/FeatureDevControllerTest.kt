@@ -38,14 +38,19 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitConte
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededStates
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.EmptyPatchException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.GuardrailsException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataOperationName
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataResult
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PromptRefusalException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ThrottlingException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileCorruptedException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUp
@@ -171,7 +176,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
         every { AmazonqTelemetry.endChat(amazonqConversationId = any(), amazonqEndOfTheConversationLatency = any()) } just runs
 
         runTest {
-            spySession.preloader(userMessage, messenger)
+            spySession.preloader(messenger)
             controller.processFollowupClickedMessage(message)
         }
 
@@ -200,7 +205,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             mockkObject(AmazonqTelemetry)
             every { AmazonqTelemetry.isProvideFeedbackForCodeGen(amazonqConversationId = any(), enabled = any()) } just runs
 
-            spySession.preloader(userMessage, messenger)
+            spySession.preloader(messenger)
             controller.processFollowupClickedMessage(message)
 
             coVerifyOrder {
@@ -255,7 +260,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             doReturn(Unit).whenever(spySession).insertNewFiles(any())
             doReturn(Unit).whenever(spySession).applyDeleteFiles(any())
 
-            spySession.preloader(userMessage, messenger)
+            spySession.preloader(messenger)
             controller.processFollowupClickedMessage(message)
 
             mockitoVerify(
@@ -290,6 +295,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                     listOf(
                         FollowUp(FollowUpTypes.NEW_TASK, message("amazonqFeatureDev.follow_up.new_task"), status = FollowUpStatusType.Info),
                         FollowUp(FollowUpTypes.CLOSE_SESSION, message("amazonqFeatureDev.follow_up.close_session"), status = FollowUpStatusType.Info),
+                        FollowUp(FollowUpTypes.GENERATE_DEV_FILE, message("amazonqFeatureDev.follow_up.generate_dev_file"), status = FollowUpStatusType.Info)
                     ),
                 )
                 messenger.sendUpdatePlaceholder(testTabId, message("amazonqFeatureDev.placeholder.additional_improvements"))
@@ -616,6 +622,26 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
                 MetricDataResult.Error
             ),
             ErrorTestCase(
+                MonthlyConversationLimitError(message = "Monthly limit reached", operation = "GenerateCode", desc = "Monthly limit reached"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                CodeIterationLimitException(operation = "GenerateCode", desc = "Code iteration limit reached"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                ContentLengthException(operation = "GenerateCode", desc = "Repo size is exceeding the limits"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                ZipFileCorruptedException(operation = "GenerateCode", desc = "Zipped file is corrupted"),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
+                FeatureDevException(message = "Resource not found", operation = "GenerateCode", desc = null),
+                MetricDataResult.Error
+            ),
+            ErrorTestCase(
                 RuntimeException("Unknown error"),
                 MetricDataResult.Fault
             )
@@ -818,7 +844,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             mockkStatic("software.aws.toolkits.jetbrains.common.util.FileUtilsKt")
             every { selectFolder(any(), any()) } returns null
 
-            spySession.preloader(userMessage, messenger)
+            spySession.preloader(messenger)
             controller.processFollowupClickedMessage(message)
 
             coVerifyOrder {
@@ -849,7 +875,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             mockkStatic("software.aws.toolkits.jetbrains.common.util.FileUtilsKt")
             every { selectFolder(any(), any()) } returns LightVirtualFile("/path")
 
-            spySession.preloader(userMessage, messenger)
+            spySession.preloader(messenger)
             controller.processFollowupClickedMessage(message)
 
             coVerifyOrder {
@@ -886,7 +912,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             mockkStatic("software.aws.toolkits.jetbrains.common.util.FileUtilsKt")
             every { selectFolder(any(), any()) } returns folder
 
-            spySession.preloader(userMessage, messenger)
+            spySession.preloader(messenger)
             controller.processFollowupClickedMessage(message)
 
             coVerify {

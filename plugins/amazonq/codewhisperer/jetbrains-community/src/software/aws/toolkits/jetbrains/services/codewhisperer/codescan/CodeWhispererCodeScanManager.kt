@@ -71,6 +71,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.listeners.CodeWhispererCodeScanFileListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.AmazonQCodeReviewGitUtils.isInsideWorkTree
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.IssueGroupingStrategy
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.IssueSeverity
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.overlaps
@@ -138,8 +139,10 @@ class CodeWhispererCodeScanManager(val project: Project) {
         IssueSeverity.LOW.displayName to DefaultMutableTreeNode(IssueSeverity.LOW.displayName),
         IssueSeverity.INFO.displayName to DefaultMutableTreeNode(IssueSeverity.INFO.displayName)
     )
+    private val fileNodeLookup = mutableMapOf<VirtualFile, DefaultMutableTreeNode>()
     private val scanNodesLookup = mutableMapOf<VirtualFile, MutableList<DefaultMutableTreeNode>>()
     private val selectedSeverityValues = IssueSeverity.entries.associate { it.displayName to true }.toMutableMap()
+    private var selectedGroupingStrategy = IssueGroupingStrategy.SEVERITY
 
     private val documentListener = CodeWhispererCodeScanDocumentListener(project)
     private val editorMouseListener = CodeWhispererCodeScanEditorMouseMotionListener(project)
@@ -278,6 +281,12 @@ class CodeWhispererCodeScanManager(val project: Project) {
     fun isSeveritySelected(severity: String): Boolean = selectedSeverityValues[severity] ?: true
     fun setSeveritySelected(severity: String, selected: Boolean) {
         selectedSeverityValues[severity] = selected
+        updateCodeScanIssuesTree()
+    }
+
+    fun getGroupingStrategySelected() = selectedGroupingStrategy
+    fun setGroupingStrategySelected(groupingStrategy: IssueGroupingStrategy) {
+        selectedGroupingStrategy = groupingStrategy
         updateCodeScanIssuesTree()
     }
 
@@ -868,7 +877,18 @@ class CodeWhispererCodeScanManager(val project: Project) {
                 node.removeAllChildren()
             }
         }
+        synchronized(fileNodeLookup) {
+            fileNodeLookup.clear()
+        }
 
+        return if (selectedGroupingStrategy == IssueGroupingStrategy.SEVERITY) {
+            createCodeScanIssuesTreeBySeverity(codeScanIssues)
+        } else {
+            createCodeScanIssuesTreeByFileLocation(codeScanIssues)
+        }
+    }
+
+    private fun createCodeScanIssuesTreeBySeverity(codeScanIssues: List<CodeWhispererCodeScanIssue>): DefaultMutableTreeNode {
         severityNodeLookup.forEach { (severity, node) ->
             if (selectedSeverityValues[severity] == true) {
                 synchronized(codeScanTreeNodeRoot) {
@@ -887,6 +907,27 @@ class CodeWhispererCodeScanManager(val project: Project) {
             }
         }
 
+        return codeScanTreeNodeRoot
+    }
+
+    private fun createCodeScanIssuesTreeByFileLocation(codeScanIssues: List<CodeWhispererCodeScanIssue>): DefaultMutableTreeNode {
+        codeScanIssues.forEach { issue ->
+            val fileNode = synchronized(fileNodeLookup) {
+                fileNodeLookup.getOrPut(issue.file) {
+                    val node = DefaultMutableTreeNode(issue.file)
+                    synchronized(codeScanTreeNodeRoot) {
+                        codeScanTreeNodeRoot.add(node)
+                    }
+                    node
+                }
+            }
+
+            val scanNode = DefaultMutableTreeNode(issue)
+            fileNode.add(scanNode)
+            scanNodesLookup.getOrPut(issue.file) {
+                mutableListOf()
+            }.add(scanNode)
+        }
         return codeScanTreeNodeRoot
     }
 
@@ -997,6 +1038,8 @@ data class CodeWhispererCodeScanIssue(
     val isInvalid: Boolean = false,
     var rangeHighlighter: RangeHighlighterEx? = null,
     var isVisible: Boolean = true,
+    val autoDetected: Boolean = false,
+    val scanJobId: String,
 ) {
     override fun toString(): String = title
 

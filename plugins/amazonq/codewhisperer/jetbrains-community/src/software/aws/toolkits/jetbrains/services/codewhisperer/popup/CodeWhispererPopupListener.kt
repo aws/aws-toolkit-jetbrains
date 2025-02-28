@@ -30,7 +30,7 @@ class CodeWhispererPopupListener(private val states: InvocationContext) : JBPopu
             CodeWhispererInvocationStatus.getInstance().popupStartTimestamp?.let { Duration.between(it, Instant.now()) }
         )
 
-        CodeWhispererInvocationStatus.getInstance().setPopupActive(false)
+        CodeWhispererInvocationStatus.getInstance().setDisplaySessionActive(false)
     }
 }
 

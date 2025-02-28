@@ -48,15 +48,34 @@ sourceSets {
     }
 }
 
+// FIX_WHEN_MIN_IS_251
+// org.gradle.internal.resolve.ModuleVersionNotFoundException:
+// Could not find any version that matches com.jetbrains.intellij.platform:test-framework:{strictly [243, 243.21565.192]; prefer 243.21565.192}.
+if (providers.gradleProperty("ideProfileName").get() == "2024.3") {
+    configurations.all {
+        resolutionStrategy.dependencySubstitution {
+            listOf(
+                "com.jetbrains.intellij.java:java-test-framework",
+                "com.jetbrains.intellij.platform:test-framework",
+                "com.jetbrains.intellij.platform:test-framework-junit5"
+            ).forEach {
+                substitute(module(it))
+                    .using(module("$it:243.21565.193"))
+                    .because("Rider 2024.3.0 requires a newer version of test-framework")
+            }
+        }
+    }
+}
+
 dependencies {
     intellijPlatform {
         localPlugin(project(":plugin-core"))
         testFramework(TestFrameworkType.Bundled)
 
-        // https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1774
+        // FIX_WHEN_MIN_IS_251: https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1774
         when (providers.gradleProperty("ideProfileName").get()) {
             "2023.3", "2024.1" -> {}
-            else -> {
+            "2024.2", "2024.3" -> {
                 bundledModule("intellij.rider")
             }
         }

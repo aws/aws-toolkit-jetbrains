@@ -27,7 +27,9 @@ import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.FeatureId
+import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Result
+import software.aws.toolkits.telemetry.Telemetry
 
 fun requestCredentialsForCodeWhisperer(
     project: Project,
@@ -83,16 +85,15 @@ fun requestCredentialsForCodeWhisperer(
     )
     val isAuthenticationSuccessful = authenticationDialog.showAndGet()
     if (isAuthenticationSuccessful) {
-        AuthTelemetry.addConnection(
-            project,
-            source = getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance, connectionInitiatedFromExplorer),
-            featureId = FeatureId.Codewhisperer,
-            credentialSourceId = authenticationDialog.authType,
-            isAggregated = true,
-            attempts = authenticationDialog.attempts + 1,
-            result = Result.Succeeded,
-            isReAuth = isReauth
-        )
+        Telemetry.auth.addConnection.use {
+            it.source(getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance, connectionInitiatedFromExplorer))
+                .featureId(FeatureId.Codewhisperer)
+                .credentialSourceId(authenticationDialog.authType)
+                .isAggregated(true)
+                .attempts(authenticationDialog.attempts + 1)
+                .result(MetricResult.Succeeded)
+                .isReAuth(isReauth)
+        }
         AuthTelemetry.addedConnections(
             project,
             source = getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance, connectionInitiatedFromExplorer),
@@ -104,16 +105,15 @@ fun requestCredentialsForCodeWhisperer(
             result = Result.Succeeded
         )
     } else {
-        AuthTelemetry.addConnection(
-            project,
-            source = getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance, connectionInitiatedFromExplorer),
-            featureId = FeatureId.Codewhisperer,
-            credentialSourceId = authenticationDialog.authType,
-            isAggregated = false,
-            attempts = authenticationDialog.attempts + 1,
-            result = Result.Cancelled,
-            isReAuth = isReauth
-        )
+        Telemetry.auth.addConnection.use {
+            it.source(getSourceOfEntry(SourceOfEntry.CODEWHISPERER, isFirstInstance, connectionInitiatedFromExplorer))
+                .featureId(FeatureId.Codewhisperer)
+                .credentialSourceId(authenticationDialog.authType)
+                .isAggregated(false)
+                .attempts(authenticationDialog.attempts + 1)
+                .result(MetricResult.Cancelled)
+                .isReAuth(isReauth)
+        }
     }
     return isAuthenticationSuccessful
 }
@@ -193,16 +193,15 @@ fun requestCredentialsForQ(
 
     val isAuthenticationSuccessful = authenticationDialog.showAndGet()
     if (isAuthenticationSuccessful) {
-        AuthTelemetry.addConnection(
-            project,
-            source = getSourceOfEntry(SourceOfEntry.Q, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel),
-            featureId = FeatureId.AmazonQ,
-            credentialSourceId = authenticationDialog.authType,
-            isAggregated = true,
-            attempts = authenticationDialog.attempts + 1,
-            result = Result.Succeeded,
-            isReAuth = isReauth
-        )
+        Telemetry.auth.addConnection.use {
+            it.source(getSourceOfEntry(SourceOfEntry.Q, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel))
+                .featureId(FeatureId.AmazonQ)
+                .credentialSourceId(authenticationDialog.authType)
+                .isAggregated(true)
+                .attempts(authenticationDialog.attempts + 1)
+                .result(MetricResult.Succeeded)
+                .isReAuth(isReauth)
+        }
         AuthTelemetry.addedConnections(
             project,
             source = getSourceOfEntry(SourceOfEntry.Q, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel),
@@ -214,16 +213,15 @@ fun requestCredentialsForQ(
             result = Result.Succeeded
         )
     } else {
-        AuthTelemetry.addConnection(
-            project,
-            source = getSourceOfEntry(SourceOfEntry.Q, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel),
-            featureId = FeatureId.AmazonQ,
-            credentialSourceId = authenticationDialog.authType,
-            isAggregated = false,
-            attempts = authenticationDialog.attempts + 1,
-            result = Result.Cancelled,
-            isReAuth = isReauth
-        )
+        Telemetry.auth.addConnection.use {
+            it.source(getSourceOfEntry(SourceOfEntry.Q, isFirstInstance, connectionInitiatedFromExplorer, connectionInitiatedFromQChatPanel))
+                .featureId(FeatureId.AmazonQ)
+                .credentialSourceId(authenticationDialog.authType)
+                .isAggregated(false)
+                .attempts(authenticationDialog.attempts + 1)
+                .result(MetricResult.Cancelled)
+                .isReAuth(isReauth)
+        }
     }
     return isAuthenticationSuccessful
 }

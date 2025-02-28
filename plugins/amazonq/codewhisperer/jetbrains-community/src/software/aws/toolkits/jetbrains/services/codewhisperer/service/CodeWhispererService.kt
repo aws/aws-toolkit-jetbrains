@@ -424,7 +424,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     if (requestContext.triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
                         // We should only show error hint when CodeWhisperer popup is not visible,
                         // and make it silent if CodeWhisperer popup is showing.
-                        if (!CodeWhispererInvocationStatus.getInstance().isPopupActive()) {
+                        if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()) {
                             showCodeWhispererErrorHint(requestContext.editor, displayMessage)
                         }
                     }
@@ -548,6 +548,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             sendDiscardedUserDecisionEventForAll(requestContext, responseContext, recommendations)
             return null
         }
+
         if (caretMovement == CaretMovement.MOVE_BACKWARD) {
             LOG.debug { "Caret moved backward, discarding all of the recommendations. Request ID: $requestId" }
             sendDiscardedUserDecisionEventForAll(requestContext, responseContext, recommendations)
@@ -618,7 +619,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
     }
 
     private fun updateCodeWhisperer(states: InvocationContext, recommendationAdded: Boolean) {
-        CodeWhispererPopupManager.getInstance().changeStates(states, 0, "", true, recommendationAdded)
+        CodeWhispererPopupManager.getInstance().changeStates(states, 0, recommendationAdded)
     }
 
     private fun sendDiscardedUserDecisionEventForAll(
@@ -698,7 +699,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         recommendationContext: RecommendationContext,
         popup: JBPopup,
     ): InvocationContext {
-        addPopupChildDisposables(popup)
+        addPopupChildDisposables(requestContext.project, requestContext.editor, popup)
         // Creating a disposable for managing all listeners lifecycle attached to the popup.
         // previously(before pagination) we use popup as the parent disposable.
         // After pagination, listeners need to be updated as states are updated, for the same popup,
@@ -710,12 +711,25 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         return states
     }
 
-    private fun addPopupChildDisposables(popup: JBPopup) {
+    private fun addPopupChildDisposables(project: Project, editor: Editor, popup: JBPopup) {
         codeInsightSettingsFacade.disableCodeInsightUntil(popup)
 
         Disposer.register(popup) {
             CodeWhispererPopupManager.getInstance().reset()
         }
+        project.messageBus.connect(popup).subscribe(
+            CodeWhispererServiceNew.CODEWHISPERER_INTELLISENSE_POPUP_ON_HOVER,
+            object : CodeWhispererIntelliSenseOnHoverListener {
+                override fun onEnter() {
+                    CodeWhispererPopupManager.getInstance().bringSuggestionInlayToFront(
+                        editor,
+                        popup,
+                        CodeWhispererPopupManager.getInstance().sessionContext,
+                        opposite = true
+                    )
+                }
+            }
+        )
     }
 
     private fun logServiceInvocation(
@@ -760,7 +774,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             return false
         }
 
-        if (CodeWhispererInvocationStatus.getInstance().isPopupActive()) {
+        if (CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()) {
             LOG.debug { "Find an existing CodeWhisperer popup window before triggering CodeWhisperer, not invoking service" }
             return false
         }

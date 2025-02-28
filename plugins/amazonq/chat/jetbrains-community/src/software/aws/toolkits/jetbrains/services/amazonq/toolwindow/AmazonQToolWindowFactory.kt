@@ -58,7 +58,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         }
         val contentManager = toolWindow.contentManager
 
-        project.messageBus.connect().subscribe(
+        project.messageBus.connect(toolWindow.disposable).subscribe(
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
@@ -67,7 +67,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             }
         )
 
-        project.messageBus.connect().subscribe(
+        project.messageBus.connect(toolWindow.disposable).subscribe(
             RefreshQChatPanelButtonPressedListener.TOPIC,
             object : RefreshQChatPanelButtonPressedListener {
                 override fun onRefresh() {
@@ -78,7 +78,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             }
         )
 
-        project.messageBus.connect().subscribe(
+        project.messageBus.connect(toolWindow.disposable).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
                 override fun onChange(providerId: String, newScopes: List<String>?) {

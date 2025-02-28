@@ -444,7 +444,8 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
                     number = 11,
                     content = "processData(unsecureCode)"
                 )
-            )
+            ),
+            scanJobId = "scanJobId"
         )
 
 // You might need these data classes depending on your implementation

@@ -13,7 +13,8 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ContentChecksu
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateTaskAssistConversationRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateTaskAssistConversationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
-import software.amazon.awssdk.services.codewhispererruntime.model.DocGenerationEvent
+import software.amazon.awssdk.services.codewhispererruntime.model.DocV2AcceptanceEvent
+import software.amazon.awssdk.services.codewhispererruntime.model.DocV2GenerationEvent
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTaskAssistCodeGenerationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.IdeCategory
 import software.amazon.awssdk.services.codewhispererruntime.model.OperatingSystem
@@ -49,7 +50,7 @@ class AmazonQCodeGenerateClient(private val project: Project) {
             OptOutPreference.OPTOUT
         }
 
-    private val docGenerationUserContext = ClientMetadata.getDefault().let {
+    private val docUserContext = ClientMetadata.getDefault().let {
         val osForFeatureDev: OperatingSystem =
             when {
                 SystemInfo.isWindows -> OperatingSystem.WINDOWS
@@ -75,15 +76,17 @@ class AmazonQCodeGenerateClient(private val project: Project) {
     private val amazonQStreamingClient
         get() = AmazonQStreamingClient.getInstance(project)
 
-    fun sendDocGenerationTelemetryEvent(
-        docGenerationEvent: DocGenerationEvent,
+    fun sendDocTelemetryEvent(
+        generationEvent: DocV2GenerationEvent? = null,
+        acceptanceEvent: DocV2AcceptanceEvent? = null,
     ): SendTelemetryEventResponse =
         bearerClient().sendTelemetryEvent { requestBuilder ->
             requestBuilder.telemetryEvent { telemetryEventBuilder ->
-                telemetryEventBuilder.docGenerationEvent(docGenerationEvent)
+                generationEvent?.let { telemetryEventBuilder.docV2GenerationEvent(it) }
+                acceptanceEvent?.let { telemetryEventBuilder.docV2AcceptanceEvent(it) }
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
-            requestBuilder.userContext(docGenerationUserContext)
+            requestBuilder.userContext(docUserContext)
         }
 
     fun createTaskAssistConversation(): CreateTaskAssistConversationResponse = bearerClient().createTaskAssistConversation(

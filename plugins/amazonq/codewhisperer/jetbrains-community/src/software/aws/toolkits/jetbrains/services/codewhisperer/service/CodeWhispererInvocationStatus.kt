@@ -21,7 +21,7 @@ class CodeWhispererInvocationStatus {
     private var timeAtLastInvocationComplete: Instant? = null
     var timeAtLastDocumentChanged: Instant = Instant.now()
         private set
-    private var isPopupActive: Boolean = false
+    private var isDisplaySessionActive: Boolean = false
     private var timeAtLastInvocationStart: Instant? = null
     var popupStartTimestamp: Instant? = null
         private set
@@ -69,10 +69,10 @@ class CodeWhispererInvocationStatus {
         return timeCanShowCodeWhisperer.isBefore(Instant.now())
     }
 
-    fun isPopupActive(): Boolean = isPopupActive
+    fun isDisplaySessionActive(): Boolean = isDisplaySessionActive
 
-    fun setPopupActive(value: Boolean) {
-        isPopupActive = value
+    fun setDisplaySessionActive(value: Boolean) {
+        isDisplaySessionActive = value
     }
 
     fun setInvocationStart() {

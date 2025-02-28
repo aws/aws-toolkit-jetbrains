@@ -52,7 +52,7 @@ fun containsSQL(contentRoot: VirtualFile): Boolean {
     val searchers = patterns.map { StringSearcher(it, false, true) }
 
     return VfsUtilCore.iterateChildrenRecursively(contentRoot, null) { file ->
-        if (!file.isDirectory && !file.fileType.isBinary) {
+        if (file.extension?.lowercase() == "java") {
             val content = file.contentsToByteArray().toString(Charsets.UTF_8)
             if (searchers.any { it.scan(content) != -1 }) {
                 return@iterateChildrenRecursively false // found a match; stop searching

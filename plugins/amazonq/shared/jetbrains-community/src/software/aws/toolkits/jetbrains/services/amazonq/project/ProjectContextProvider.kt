@@ -130,7 +130,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     private fun initEncryption(): Boolean {
         val request = encoderServer.getEncryptionRequest()
         val response = sendMsgToLsp(LspMessage.Initialize, request)
-        return response.responseCode == 200
+        return response?.responseCode == 200
     }
 
     fun index(): Boolean {
@@ -138,6 +138,10 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
 
         val indexStartTime = System.currentTimeMillis()
         val filesResult = collectFiles()
+        if (filesResult.files.isEmpty()) {
+            logger.warn { "No file found in workspace" }
+            return false
+        }
         var duration = (System.currentTimeMillis() - indexStartTime).toDouble()
         logger.debug { "time elapsed to collect project context files: ${duration}ms, collected ${filesResult.files.size} files" }
 
@@ -149,12 +153,13 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         logger.debug { "project context index time: ${duration}ms" }
 
         val startUrl = getStartUrl(project)
-        if (response.responseCode == 200) {
+        if (response?.responseCode == 200) {
             val usage = getUsage()
             recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, true, usage?.memoryUsage, usage?.cpuUsage, startUrl)
             logger.debug { "project context index finished for ${project.name}" }
             return true
         } else {
+            logger.debug { "project context index failed" }
             recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, false, null, null, startUrl)
             return false
         }
@@ -164,8 +169,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     suspend fun query(prompt: String, timeout: Long?): List<RelevantDocument> = withTimeout(timeout ?: CHAT_EXPLICIT_PROJECT_CONTEXT_TIMEOUT) {
         cs.async {
             val encrypted = encryptRequest(QueryChatRequest(prompt))
-            val response = sendMsgToLsp(LspMessage.QueryChat, encrypted)
-
+            val response = sendMsgToLsp(LspMessage.QueryChat, encrypted) ?: return@async emptyList()
             val parsedResponse = mapper.readValue<List<Chunk>>(response.responseBody)
             queryResultToRelevantDocuments(parsedResponse)
         }.await()
@@ -174,13 +178,13 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     suspend fun queryInline(query: String, filePath: String, target: InlineContextTarget): List<InlineBm25Chunk> = withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
         cs.async {
             val encrypted = encryptRequest(QueryInlineCompletionRequest(query, filePath, target.toString()))
-            val r = sendMsgToLsp(LspMessage.QueryInlineCompletion, encrypted)
+            val r = sendMsgToLsp(LspMessage.QueryInlineCompletion, encrypted) ?: return@async emptyList()
             return@async mapper.readValue<List<InlineBm25Chunk>>(r.responseBody)
         }.await()
     }
 
     fun getUsage(): Usage? {
-        val response = sendMsgToLsp(LspMessage.GetUsageMetrics, request = null)
+        val response = sendMsgToLsp(LspMessage.GetUsageMetrics, request = null) ?: return null
         return try {
             val parsedResponse = mapper.readValue<Usage>(response.responseBody)
             parsedResponse
@@ -246,7 +250,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         return regex.find(fileName) != null
     }
 
-    private fun collectFiles(): FileCollectionResult {
+    fun collectFiles(): FileCollectionResult {
         val collectedFiles = mutableListOf<String>()
         var currentTotalFileSize = 0L
         val featureDevSessionContext = FeatureDevSessionContext(project)
@@ -306,9 +310,13 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         return encoderServer.encrypt(payloadJson)
     }
 
-    private fun sendMsgToLsp(msgType: LspMessage, request: String?): LspResponse {
+    private fun sendMsgToLsp(msgType: LspMessage, request: String?): LspResponse? {
         logger.info { "sending message: ${msgType.endpoint} to lsp on port ${encoderServer.port}" }
         val url = URL("http://localhost:${encoderServer.port}/${msgType.endpoint}")
+        if (!encoderServer.isNodeProcessRunning()) {
+            logger.warn { "language server for ${project.name} is not running" }
+            return null
+        }
         // use 1h as timeout for index, 5 seconds for other APIs
         val timeoutMs = if (msgType is LspMessage.Index) 60.minutes.inWholeMilliseconds.toInt() else 5000
         return with(url.openConnection() as HttpURLConnection) {

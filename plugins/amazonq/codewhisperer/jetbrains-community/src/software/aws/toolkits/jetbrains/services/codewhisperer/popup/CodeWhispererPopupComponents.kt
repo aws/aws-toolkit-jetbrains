@@ -44,14 +44,23 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 
 class CodeWhispererPopupComponents {
-    val prevButton = createNavigationButton(
-        message("codewhisperer.popup.button.prev", POPUP_DIM_HEX)
+    val prevButton = createNavigationButton(prevButtonText())
+    fun prevButtonText() =
+        message(
+            "codewhisperer.popup.button.prev",
+            POPUP_DIM_HEX,
+            KeymapUtil.getFirstKeyboardShortcutText(
+                ActionManager.getInstance().getAction("codewhisperer.inline.navigate.previous")
+            )
+        )
+    val nextButton = createNavigationButton(nextButtonText()).apply { preferredSize = prevButton.preferredSize }
+    fun nextButtonText() = message(
+        "codewhisperer.popup.button.next",
+        POPUP_DIM_HEX,
+        KeymapUtil.getFirstKeyboardShortcutText(
+            ActionManager.getInstance().getAction("codewhisperer.inline.navigate.next")
+        )
     )
-    val nextButton = createNavigationButton(
-        message("codewhisperer.popup.button.next", POPUP_DIM_HEX)
-    ).apply {
-        preferredSize = prevButton.preferredSize
-    }
     val acceptButton = createNavigationButton(
         message("codewhisperer.popup.button.accept", POPUP_DIM_HEX)
     )

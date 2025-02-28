@@ -38,7 +38,11 @@ class CodeTestChatApp(private val scope: CoroutineScope) : AmazonQApp {
             "tab-was-removed" to IncomingCodeTestMessage.TabRemoved::class,
             "start-test-gen" to IncomingCodeTestMessage.StartTestGen::class,
             "response-body-link-click" to IncomingCodeTestMessage.ClickedLink::class,
-            "button-click" to IncomingCodeTestMessage.ButtonClicked::class
+            "button-click" to IncomingCodeTestMessage.ButtonClicked::class,
+            "chat-item-voted" to IncomingCodeTestMessage.ChatItemVoted::class,
+            "chat-item-feedback" to IncomingCodeTestMessage.ChatItemFeedback::class,
+            "button-click" to IncomingCodeTestMessage.ButtonClicked::class,
+            "auth-follow-up-was-clicked" to IncomingCodeTestMessage.AuthFollowUpWasClicked::class
         )
 
         scope.launch {
@@ -79,6 +83,9 @@ class CodeTestChatApp(private val scope: CoroutineScope) : AmazonQApp {
             is IncomingCodeTestMessage.StartTestGen -> inboundAppMessagesHandler.processStartTestGen(message)
             is IncomingCodeTestMessage.ClickedLink -> inboundAppMessagesHandler.processLinkClick(message)
             is IncomingCodeTestMessage.ButtonClicked -> inboundAppMessagesHandler.processButtonClickedMessage(message)
+            is IncomingCodeTestMessage.ChatItemVoted -> inboundAppMessagesHandler.processChatItemVoted(message)
+            is IncomingCodeTestMessage.ChatItemFeedback -> inboundAppMessagesHandler.processChatItemFeedBack(message)
+            is IncomingCodeTestMessage.AuthFollowUpWasClicked -> inboundAppMessagesHandler.processAuthFollowUpClick(message)
         }
     }
 

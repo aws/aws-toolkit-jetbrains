@@ -112,7 +112,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
         toolWindow.activate(null)
         contentManager.setSelectedContent(content)
 
-        project.messageBus.connect().subscribe(
+        project.messageBus.connect(toolWindow.disposable).subscribe(
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
@@ -121,7 +121,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             }
         )
 
-        project.messageBus.connect().subscribe(
+        project.messageBus.connect(toolWindow.disposable).subscribe(
             AwsConnectionManager.CONNECTION_SETTINGS_STATE_CHANGED,
             object : ConnectionSettingsStateChangeNotifier {
                 override fun settingsStateChanged(newState: ConnectionState) {
@@ -130,7 +130,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             }
         )
 
-        project.messageBus.connect().subscribe(
+        project.messageBus.connect(toolWindow.disposable).subscribe(
             BearerTokenProviderListener.TOPIC,
             object : BearerTokenProviderListener {
                 override fun onChange(providerId: String, newScopes: List<String>?) {
@@ -143,7 +143,7 @@ class AwsToolkitExplorerFactory : ToolWindowFactory, DumbAware {
             }
         )
 
-        project.messageBus.connect().subscribe(
+        project.messageBus.connect(toolWindow.disposable).subscribe(
             ShowToolkitListener.TOPIC,
             object : ShowToolkitListener {
                 override fun showWebview(project: Project) {

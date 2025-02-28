@@ -315,7 +315,6 @@ class CodeWhispererTelemetryService {
                 "Number of security scan issues with fixes: $issuesWithFixes, \n" +
                 "Language: ${payloadContext.language}, \n" +
                 "Uncompressed source payload size in bytes: ${payloadContext.srcPayloadSize}, \n" +
-                "Uncompressed build payload size in bytes: ${payloadContext.buildPayloadSize}, \n" +
                 "Compressed source zip file size in bytes: ${payloadContext.srcZipFileSize}, \n" +
                 "Total project size in bytes: ${codeScanEvent.totalProjectSizeInBytes}, \n" +
                 "Total duration of the security scan job in milliseconds: ${codeScanEvent.duration}, \n" +
@@ -334,7 +333,6 @@ class CodeWhispererTelemetryService {
             codewhispererCodeScanJobId = codeScanJobId,
             codewhispererCodeScanProjectBytes = codeScanEvent.totalProjectSizeInBytes,
             codewhispererCodeScanSrcPayloadBytes = payloadContext.srcPayloadSize,
-            codewhispererCodeScanBuildPayloadBytes = payloadContext.buildPayloadSize,
             codewhispererCodeScanSrcZipFileBytes = payloadContext.srcZipFileSize,
             codewhispererCodeScanTotalIssues = totalIssues.toLong(),
             codewhispererCodeScanIssuesWithFixes = issuesWithFixes.toLong(),
@@ -371,7 +369,9 @@ class CodeWhispererTelemetryService {
             result = result,
             reason = reason,
             credentialStartUrl = getCodeWhispererStartUrl(issue.project),
-            codeFixAction = codeFixAction
+            codeFixAction = codeFixAction,
+            autoDetected = issue.autoDetected,
+            codewhispererCodeScanJobId = issue.scanJobId
         )
     }
 
@@ -402,6 +402,7 @@ class CodeWhispererTelemetryService {
         isRefresh: Boolean,
         result: MetricResult,
         reason: String? = null,
+        includesFix: Boolean? = false,
     ) {
         CodewhispererTelemetry.codeScanIssueGenerateFix(
             component = component,
@@ -411,7 +412,10 @@ class CodeWhispererTelemetryService {
             ruleId = issue.ruleId,
             variant = if (isRefresh) "refresh" else null,
             result = result,
-            reason = reason
+            reason = reason,
+            autoDetected = issue.autoDetected,
+            codewhispererCodeScanJobId = issue.scanJobId,
+            includesFix = includesFix
         )
     }
 

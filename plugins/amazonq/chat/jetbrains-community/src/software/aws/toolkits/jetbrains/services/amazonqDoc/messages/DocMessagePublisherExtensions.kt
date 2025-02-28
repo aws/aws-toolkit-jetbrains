@@ -7,7 +7,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.ProgressField
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.PromptProgressMessage
-import software.aws.toolkits.jetbrains.services.amazonqDoc.NEW_SESSION_FOLLOWUPS
+import software.aws.toolkits.jetbrains.services.amazonqDoc.ui.NEW_SESSION_FOLLOWUPS
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo

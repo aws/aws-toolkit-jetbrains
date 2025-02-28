@@ -76,6 +76,8 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
 
     private val hasShownNewCustomizationNotification = AtomicBoolean(false)
 
+    private var serviceDefaultArn: String? = null
+
     override fun showConfigDialog(project: Project) {
         runInEdt {
             calculateIfIamIdentityCenterConnection(project) {
@@ -165,20 +167,23 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
     override fun activeCustomization(project: Project): CodeWhispererCustomization? {
         val selectedCustomization = calculateIfIamIdentityCenterConnection(project) { connectionIdToActiveCustomizationArn[it.id] }
 
-        if (selectedCustomization != null) {
-            return selectedCustomization
-        } else {
-            val customizationOverride = CodeWhispererFeatureConfigService.getInstance().getCustomizationFeature()
-            if (customizationOverride == null || customizationOverride.value.stringValue().isEmpty()) return null
-            return CodeWhispererCustomization(
-                arn = customizationOverride.value.stringValue(),
-                name = customizationOverride.variation,
-            )
-        }
+        return selectedCustomization
     }
 
     override fun switchCustomization(project: Project, newCustomization: CodeWhispererCustomization?) {
+        switchCustomization(project, newCustomization, false)
+    }
+
+    /**
+     * Override happens when ALL following conditions are met
+     *  1. service returns non-empty override customization arn, refer to [CodeWhispererFeatureConfigService]
+     *  2. the override customization arn is different from the previous override customization if any. The purpose is to only do override once on users' behalf.
+     */
+    override fun switchCustomization(project: Project, newCustomization: CodeWhispererCustomization?, isOverride: Boolean) {
         calculateIfIamIdentityCenterConnection(project) {
+            if (isOverride && (newCustomization == null || newCustomization.arn.isEmpty() || serviceDefaultArn == newCustomization.arn)) {
+                return@calculateIfIamIdentityCenterConnection
+            }
             val oldCus = connectionIdToActiveCustomizationArn[it.id]
             if (oldCus != newCustomization) {
                 newCustomization?.let { newCus ->
@@ -190,6 +195,9 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
                 LOG.debug { "Switch from customization $oldCus to $newCustomization" }
 
                 CodeWhispererCustomizationListener.notifyCustomUiUpdate()
+            }
+            if (isOverride) {
+                serviceDefaultArn = newCustomization?.arn
             }
         }
     }
@@ -240,6 +248,7 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
         val state = CodeWhispererCustomizationState()
         state.connectionIdToActiveCustomizationArn.putAll(this.connectionIdToActiveCustomizationArn)
         state.previousAvailableCustomizations.putAll(this.connectionToCustomizationsShownLastTime)
+        state.serviceDefaultArn = this.serviceDefaultArn
 
         return state
     }
@@ -250,6 +259,8 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
 
         connectionToCustomizationsShownLastTime.clear()
         connectionToCustomizationsShownLastTime.putAll(state.previousAvailableCustomizations)
+
+        this.serviceDefaultArn = state.serviceDefaultArn
     }
 
     override fun dispose() {}
@@ -280,6 +291,9 @@ class CodeWhispererCustomizationState : BaseState() {
     @get:Property
     @get:MapAnnotation
     val previousAvailableCustomizations by map<String, MutableList<String>>()
+
+    @get:Property
+    var serviceDefaultArn by string()
 }
 
 data class CustomizationUiItem(

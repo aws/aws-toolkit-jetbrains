@@ -39,7 +39,7 @@ class PrepareDocGenerationState(
         var zipFileLength: Long? = null
         val nextState: SessionState
         try {
-            val repoZipResult = config.repoContext.getProjectZip()
+            val repoZipResult = config.repoContext.getProjectZip(false)
             val zipFileChecksum = repoZipResult.checksum
             zipFileLength = repoZipResult.contentLength
             val fileToUpload = repoZipResult.payload

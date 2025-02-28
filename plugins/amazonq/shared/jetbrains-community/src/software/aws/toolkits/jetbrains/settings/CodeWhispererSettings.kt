@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.settings
 
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
@@ -10,6 +11,8 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.util.xmlb.annotations.Property
+import software.aws.toolkits.jetbrains.utils.notifyInfo
+import software.aws.toolkits.resources.AmazonQBundle
 
 @Service
 @State(name = "codewhispererSettings", storages = [Storage("aws.xml")])
@@ -24,6 +27,16 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         CodeWhispererConfigurationType.IsIncludeCodeWithReference,
         false
     )
+
+    fun getAutoBuildSetting() = state.autoBuildSetting
+
+    fun toggleAutoBuildFeature(project: String?, value: Boolean) {
+        if (project == null) return
+
+        state.autoBuildSetting[project] = value
+    }
+
+    fun isAutoBuildFeatureEnabled(project: String?) = state.autoBuildSetting.getOrDefault(project, false)
 
     fun toggleImportAdder(value: Boolean) {
         state.value[CodeWhispererConfigurationType.IsImportAdderEnabled] = value
@@ -48,6 +61,14 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
             if (!hasEnabledProjectContextOnce()) {
                 toggleEnabledProjectContextOnce(true)
                 state.value[CodeWhispererConfigurationType.IsProjectContextEnabled] = value
+                // todo: hack to bypass module dependency issue (codewhisperer -> shared), should pass [CodeWhispererShowSettingsAction] instead when it's resolved
+                val actions = ActionManager.getInstance().getAction("codewhisperer.settings")?.let { listOf(it) }.orEmpty()
+
+                notifyInfo(
+                    AmazonQBundle.message("amazonq.title"),
+                    AmazonQBundle.message("amazonq.workspace.settings.open.prompt"),
+                    notificationActions = actions
+                )
             }
         } else {
             state.value[CodeWhispererConfigurationType.IsProjectContextEnabled] = value
@@ -95,6 +116,24 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         state.stringValue[CodeWhispererStringConfigurationType.IgnoredCodeReviewIssues] = value
     }
 
+    fun isQPrioritizedForTabAccept(): Boolean = state.value.getOrDefault(
+        CodeWhispererConfigurationType.IsQPrioritizedForTabAccept,
+        true
+    )
+
+    fun setQPrioritizedForTabAccept(value: Boolean) {
+        state.value[CodeWhispererConfigurationType.IsQPrioritizedForTabAccept] = value
+    }
+
+    fun isTabAcceptPriorityNotificationShownOnce(): Boolean = state.value.getOrDefault(
+        CodeWhispererConfigurationType.IsTabAcceptPriorityNotificationShownOnce,
+        false
+    )
+
+    fun setTabAcceptPriorityNotificationShownOnce(value: Boolean) {
+        state.value[CodeWhispererConfigurationType.IsTabAcceptPriorityNotificationShownOnce] = value
+    }
+
     companion object {
         fun getInstance(): CodeWhispererSettings = service()
     }
@@ -103,15 +142,18 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         value.putAll(state.value)
         intValue.putAll(state.intValue)
         stringValue.putAll(state.stringValue)
+        autoBuildSetting.putAll(state.autoBuildSetting)
     }
 
     override fun loadState(state: CodeWhispererConfiguration) {
         this.state.value.clear()
         this.state.intValue.clear()
         this.state.stringValue.clear()
+        this.state.autoBuildSetting.clear()
         this.state.value.putAll(state.value)
         this.state.intValue.putAll(state.intValue)
         this.state.stringValue.putAll(state.stringValue)
+        this.state.autoBuildSetting.putAll(state.autoBuildSetting)
     }
 }
 
@@ -124,6 +166,9 @@ class CodeWhispererConfiguration : BaseState() {
 
     @get:Property
     val stringValue by map<CodeWhispererStringConfigurationType, String>()
+
+    @get:Property
+    val autoBuildSetting by map<String, Boolean>()
 }
 
 enum class CodeWhispererConfigurationType {
@@ -136,6 +181,8 @@ enum class CodeWhispererConfigurationType {
     IsProjectContextEnabled,
     IsProjectContextGpu,
     HasEnabledProjectContextOnce,
+    IsQPrioritizedForTabAccept,
+    IsTabAcceptPriorityNotificationShownOnce,
 }
 
 enum class CodeWhispererStringConfigurationType {

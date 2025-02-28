@@ -17,8 +17,9 @@ open class FeatureDevException(override val message: String?, val operation: Str
     fun reason(): String = this.javaClass.simpleName
 
     fun reasonDesc(): String =
-        when (desc) {
-            desc -> "$operation | Description: $desc"
+        when {
+            !desc.isNullOrEmpty() -> "$operation | Description: $desc"
+            !message.isNullOrEmpty() -> "$operation | Description: $message"
             else -> operation
         }
 }

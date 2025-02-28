@@ -552,6 +552,17 @@ export const createMynahUI = (
                     tabsStorage.updateTabStatus(tabID, 'free')
                 }
             }
+        },
+        onFeatureConfigsAvailable: (
+            highlightCommand?: QuickActionCommand
+        ): void => {
+            tabDataGenerator.highlightCommand = highlightCommand
+
+            for (const tab of tabsStorage.getTabs()) {
+                mynahUI.updateStore(tab.id, {
+                    contextCommands: tabDataGenerator.getTabData(tab.type, true).contextCommands
+                })
+            }
         }
     })
 

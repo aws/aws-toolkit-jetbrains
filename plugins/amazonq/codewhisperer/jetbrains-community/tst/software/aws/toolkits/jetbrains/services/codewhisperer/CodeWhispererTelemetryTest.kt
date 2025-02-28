@@ -267,26 +267,12 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
     @Test
     fun `test user's typeahead before getting response will discard recommendations whose prefix not matching`() {
-        val editorManagerSpy = spy(editorManager)
-        val typeahead = "(x, y)"
-        editorManagerSpy.stub {
-            onGeneric {
-                getUserInputSinceInvocation(any(), any())
-            } doAnswer {
-                typeahead
-            }
-            onGeneric {
-                getCaretMovement(any(), any())
-            } doAnswer {
-                CaretMovement.MOVE_FORWARD
-            }
-        }
-        ApplicationManager.getApplication().replaceService(CodeWhispererEditorManager::class.java, editorManagerSpy, disposableRule.disposable)
-
+        val userInput = "(x, y)"
+        addUserInputAfterInvocation(userInput)
         withCodeWhispererServiceInvokedAndWait { }
-        val prefixNotMatchCount = pythonResponse.completions().filter {
-            !it.content().startsWith(typeahead)
-        }.size
+        val prefixNotMatchCount = pythonResponse.completions().count {
+            !it.content().startsWith(userInput)
+        }
         argumentCaptor<MetricEvent>().apply {
             verify(batcher, atLeast(1 + prefixNotMatchCount)).enqueue(capture())
             assertEventsContainsFieldsAndCount(
@@ -390,7 +376,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     fun `test userDecision events will record sessionId and requestId from response`() {
         val statesCaptor = argumentCaptor<InvocationContext>()
         withCodeWhispererServiceInvokedAndWait {}
-        verify(popupManagerSpy, timeout(5000).atLeastOnce()).render(statesCaptor.capture(), any(), any(), any(), any())
+        verify(popupManagerSpy, timeout(5000).atLeastOnce()).render(statesCaptor.capture(), any(), any())
         val states = statesCaptor.lastValue
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
@@ -401,38 +387,6 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             "codewhispererSessionId" to states.responseContext.sessionId,
             "codewhispererRequestId" to states.recommendationContext.details[0].requestId,
         )
-    }
-
-    @Test
-    fun `test showing IntelliSense after triggering CodeWhisperer will send userDecision events of state Discard`() {
-        val codewhispererServiceSpy = spy(codewhispererService)
-        codewhispererServiceSpy.stub {
-            onGeneric {
-                canDoInvocation(any(), any())
-            } doAnswer {
-                true
-            }
-        }
-        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
-        popupManagerSpy.stub {
-            onGeneric {
-                hasConflictingPopups(any())
-            } doAnswer {
-                true
-            }
-        }
-        invokeCodeWhispererService()
-
-        runInEdtAndWait {
-            val metricCaptor = argumentCaptor<MetricEvent>()
-            verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
-            assertEventsContainsFieldsAndCount(
-                metricCaptor.allValues,
-                userDecision,
-                pythonResponse.completions().size,
-                codewhispererSuggestionState to CodewhispererSuggestionState.Discard.toString(),
-            )
-        }
     }
 
     @Test
@@ -672,7 +626,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         }
         invokeCodeWhispererService()
 
-        verify(popupManagerSpy, never()).showPopup(any(), any(), any(), any(), any())
+        verify(popupManagerSpy, never()).showPopup(any(), any(), any(), any())
         runInEdtAndWait {
             val metricCaptor = argumentCaptor<MetricEvent>()
             verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
@@ -772,11 +726,11 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
 
         val numOfEmptyRecommendations = response.completions().filter { it.content().isEmpty() }.size
         if (numOfEmptyRecommendations == response.completions().size) {
-            verify(popupManagerSpy, never()).showPopup(any(), any(), any(), any(), any())
+            verify(popupManagerSpy, never()).showPopup(any(), any(), any(), any())
         } else {
             val popupCaptor = argumentCaptor<JBPopup>()
             verify(popupManagerSpy, timeout(5000))
-                .showPopup(any(), any(), popupCaptor.capture(), any(), any())
+                .showPopup(any(), any(), popupCaptor.capture(), any())
             runInEdtAndWait {
                 popupManagerSpy.closePopup(popupCaptor.lastValue)
             }

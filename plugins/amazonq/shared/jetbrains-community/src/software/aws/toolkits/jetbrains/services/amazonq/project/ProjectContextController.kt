@@ -13,12 +13,14 @@ import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import java.util.concurrent.TimeoutException
 
 @Service(Service.Level.PROJECT)
@@ -38,8 +40,10 @@ class ProjectContextController(private val project: Project, private val cs: Cor
                     val createdFiles = events.filterIsInstance<VFileCreateEvent>().mapNotNull { it.file?.path }
                     val deletedFiles = events.filterIsInstance<VFileDeleteEvent>().map { it.file.path }
 
-                    updateIndex(createdFiles, IndexUpdateMode.ADD)
-                    updateIndex(deletedFiles, IndexUpdateMode.REMOVE)
+                    pluginAwareExecuteOnPooledThread {
+                        updateIndex(createdFiles, IndexUpdateMode.ADD)
+                        updateIndex(deletedFiles, IndexUpdateMode.REMOVE)
+                    }
                 }
             }
         )
@@ -68,6 +72,7 @@ class ProjectContextController(private val project: Project, private val cs: Cor
             emptyList()
         }
 
+    @RequiresBackgroundThread
     fun updateIndex(filePaths: List<String>, mode: IndexUpdateMode) {
         try {
             return projectContextProvider.updateIndex(filePaths, mode)

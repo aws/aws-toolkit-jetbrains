@@ -3,12 +3,13 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
-import com.intellij.openapi.actionSystem.DataContext
-import com.intellij.openapi.actionSystem.IdeActions
-import com.intellij.openapi.editor.actionSystem.EditorActionManager
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.AnActionEvent
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineNavigateNextActionId
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineNavigatePrevActionId
 import javax.swing.JButton
 
 class CodeWhispererNavigationTest : CodeWhispererTestBase() {
@@ -75,13 +76,16 @@ class CodeWhispererNavigationTest : CodeWhispererTestBase() {
 
     private fun navigateHelper(isReverse: Boolean, useKeyboard: Boolean) {
         if (useKeyboard) {
-            val actionHandler = EditorActionManager.getInstance()
             if (isReverse) {
-                val leftArrowHandler = actionHandler.getActionHandler(IdeActions.ACTION_EDITOR_MOVE_CARET_LEFT)
-                leftArrowHandler.execute(projectRule.fixture.editor, null, DataContext.EMPTY_CONTEXT)
+                ActionManager.getInstance().getAction(qInlineNavigatePrevActionId)
+                    .actionPerformed(
+                        AnActionEvent.createFromDataContext("test", null) { projectRule.project }
+                    )
             } else {
-                val rightArrowHandler = actionHandler.getActionHandler(IdeActions.ACTION_EDITOR_MOVE_CARET_RIGHT)
-                rightArrowHandler.execute(projectRule.fixture.editor, null, DataContext.EMPTY_CONTEXT)
+                ActionManager.getInstance().getAction(qInlineNavigateNextActionId)
+                    .actionPerformed(
+                        AnActionEvent.createFromDataContext("test", null) { projectRule.project }
+                    )
             }
         } else {
             if (isReverse) {

@@ -1,3 +1,38 @@
+# _3.56_ (2025-02-20)
+- **(Feature)** Amazon Q /doc: support making changes to architecture diagrams
+
+# _3.55_ (2025-02-13)
+- **(Feature)** /transform: support transformations to Java 21
+- **(Bug Fix)** Enable syntax highlighting when viewing diff for /test
+- **(Bug Fix)** Amazon Q /test: Truncating user input to 4096 characters for unit test generation.
+- **(Bug Fix)** Amazon Q /review: Unable to navigate to code location when selecting issues
+- **(Bug Fix)** Amazon Q /test: Q identify active test file and infer source file for test generation.
+- **(Removal)** Amazon Q: Revert prefetch logic to enable more stable inline completion.
+
+# _3.54_ (2025-02-11)
+- **(Bug Fix)** Amazon Q: Reverting the behavior of making JetBrains suggestions(IntelliSense) and Q suggestions co-exist
+
+# _3.53_ (2025-02-07)
+- **(Bug Fix)** Amazon Q: Fixed an issue where in a specific scenario when receiving multiple suggestions with JetBrains suggestions visible, users are not able to accept the suggestion.
+
+# _3.52_ (2025-02-06)
+- **(Feature)** Adds event listener for notifying UI that AB feature configurations have been resolved
+- **(Feature)** Amazon Q /review: Code issues can now be grouped by severity or file location.
+- **(Feature)** Inline suggestions: Pre-fetch recommendations to reduce suggestion latency.
+- **(Bug Fix)** fix(amazonq): Citation links are not clickable as numbers, but appear as non-clickable texts
+- **(Bug Fix)** Amazon Q: Prevent IndexOutOfBoundsException by adding boundary checks for invalid range markers ([#5187](https://github.com/aws/aws-toolkit-jetbrains/issues/5187))
+- **(Bug Fix)** /test placeholder text aligned across IDEs
+
+# _3.51_ (2025-01-29)
+- **(Feature)** Amazon Q: Now the Amazon Q suggestions can co-exist with Jetbrains suggestions, with tab behavior configurable in the settings.
+- **(Feature)** Amazon Q: Amazon Q inline now has configurable shortcuts for various actions including accept and browsing through suggestions.
+- **(Feature)** Add setting to allow Q /dev to run code and test commands
+- **(Feature)** Amazon Q: The suggestion popup will hide by default and will be displayed when the suggestion is being hovered over.
+- **(Bug Fix)** Amazon Q /doc: fix open diff in a tab when another modal is open
+- **(Bug Fix)** Amazon Q /test: Fixed an issue which incorrectly caused payload size exceeded exception when collecting project payload files
+- **(Bug Fix)** fix(amazonq): For security reasons, disabled auto linkify for link texts coming in markdown other than [TEXT](URL) format
+- **(Bug Fix)** Fix UI freeze caused by updating workspace index on non background context
+
 # _3.50_ (2025-01-23)
 - **(Feature)** Amazon Q: Updated `/help` command to include re:invent 2024 features
 - **(Feature)** Amazon Q: UI improvements through more accurate code syntax highlighting

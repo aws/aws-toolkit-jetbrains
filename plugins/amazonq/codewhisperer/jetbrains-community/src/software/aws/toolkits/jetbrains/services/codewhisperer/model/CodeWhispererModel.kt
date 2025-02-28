@@ -145,9 +145,10 @@ data class SessionContext(
     val typeaheadOriginal: String = "",
     val selectedIndex: Int = 0,
     val seen: MutableSet<Int> = mutableSetOf(),
-    val isFirstTimeShowingPopup: Boolean = true,
     var toBeRemovedHighlighter: RangeHighlighter? = null,
     var insertEndOffset: Int = -1,
+    var isPopupShowing: Boolean = false,
+    var perceivedLatency: Double = -1.0,
 )
 
 data class SessionContextNew(
