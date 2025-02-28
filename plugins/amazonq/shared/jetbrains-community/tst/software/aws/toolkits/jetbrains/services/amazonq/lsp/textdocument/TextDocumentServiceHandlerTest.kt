@@ -15,7 +15,6 @@ import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.util.messages.MessageBus
 import com.intellij.util.messages.MessageBusConnection
-import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -28,6 +27,7 @@ import org.eclipse.lsp4j.DidChangeTextDocumentParams
 import org.eclipse.lsp4j.DidCloseTextDocumentParams
 import org.eclipse.lsp4j.DidOpenTextDocumentParams
 import org.eclipse.lsp4j.DidSaveTextDocumentParams
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.services.TextDocumentService
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -67,10 +67,10 @@ class TextDocumentServiceHandlerTest {
         every { project.serviceIfCreated<AmazonQLspService>() } returns mockLspService
 
         // Mock the LSP service's executeSync method as a suspend function
-        coEvery {
-            mockLspService.executeSync(any())
+        every {
+            mockLspService.executeSync<CompletableFuture<ResponseMessage>>(any())
         } coAnswers {
-            val func = firstArg<suspend (AmazonQLanguageServer) -> Unit>()
+            val func = firstArg<suspend (AmazonQLanguageServer) -> CompletableFuture<ResponseMessage>>()
             func.invoke(mockLanguageServer)
         }
 
