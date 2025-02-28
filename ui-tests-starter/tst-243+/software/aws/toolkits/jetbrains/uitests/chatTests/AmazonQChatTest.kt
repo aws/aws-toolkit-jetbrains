@@ -81,8 +81,7 @@ class AmazonQChatTest {
             .useDriverAndCloseIde {
                 waitForProjectOpen()
                 // required wait time for the system to be fully ready
-                waitForIndicators(2.minutes)
-                // Thread.sleep(30000)
+                Thread.sleep(30000)
 
                 val result = executePuppeteerScript(testFeatureAvailabilityOnSlash)
                 assertTrue(result.contains("/doc"))
@@ -93,7 +92,7 @@ class AmazonQChatTest {
                 assertTrue(result.contains("/review"))
                 assertTrue(result.contains("/test"))
                 println("Assertion done")
-                //Thread.sleep(20000)
+
             }
     }
 
