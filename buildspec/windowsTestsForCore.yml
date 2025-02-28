@@ -8,7 +8,7 @@ env:
 phases:
   install:
     commands:
-      # force install java21 while we work throuh path issues
+      # force install java21 while we work through path issues
       - |
         $javaName = "C:\Program Files\Amazon Corretto" | ForEach-Object {
           ls $_ | Where-Object {$_ -Like "jdk*"} | Sort-Object -Descending -Property Name | Select-Object -first 1 -expandproperty Name
