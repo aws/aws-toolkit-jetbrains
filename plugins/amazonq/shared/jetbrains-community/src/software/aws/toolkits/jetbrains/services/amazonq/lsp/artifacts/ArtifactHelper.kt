@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
+import com.intellij.openapi.project.Project
+import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.util.io.createDirectories
 import com.intellij.util.text.SemVer
 import org.jetbrains.annotations.VisibleForTesting
@@ -99,7 +101,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
         return !hasInvalidFiles
     }
 
-    fun tryDownloadLspArtifacts(versions: List<ManifestManager.Version>, target: ManifestManager.VersionTarget?) {
+    suspend fun tryDownloadLspArtifacts(project: Project, versions: List<ManifestManager.Version>, target: ManifestManager.VersionTarget?) {
         val temporaryDownloadPath = lspArtifactsPath.resolve("temp")
         val downloadPath = lspArtifactsPath.resolve(versions.first().serverVersion.toString())
 
@@ -108,23 +110,23 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
             logger.info { "Attempt ${currentAttempt.get()} of $maxDownloadAttempts to download LSP artifacts" }
 
             try {
-                if (downloadLspArtifacts(temporaryDownloadPath, target) && target != null && !target.contents.isNullOrEmpty()) {
-                    moveFilesFromSourceToDestination(temporaryDownloadPath, downloadPath)
-                    target.contents
-                        .mapNotNull { it.filename }
-                        .forEach { filename -> extractZipFile(downloadPath.resolve(filename), downloadPath) }
-                    logger.info { "Successfully downloaded and moved LSP artifacts to $downloadPath" }
-                    return
+                withBackgroundProgress(project, "Downloading & Extracting LSP artifacts...", cancellable = true) {
+                    if (downloadLspArtifacts(temporaryDownloadPath, target) && target != null && !target.contents.isNullOrEmpty()) {
+                        moveFilesFromSourceToDestination(temporaryDownloadPath, downloadPath)
+                        target.contents
+                            .mapNotNull { it.filename }
+                            .forEach { filename -> extractZipFile(downloadPath.resolve(filename), downloadPath) }
+                        logger.info { "Successfully downloaded and moved LSP artifacts to $downloadPath" }
+                    }
                 }
+                return
             } catch (e: Exception) {
                 logger.error(e) { "Failed to download/move LSP artifacts on attempt ${currentAttempt.get()}" }
                 temporaryDownloadPath.toFile().deleteRecursively()
                 downloadPath.toFile().deleteRecursively()
             }
         }
-        if (currentAttempt.get() >= maxDownloadAttempts) {
-            throw LspException("Failed to download LSP artifacts after $maxDownloadAttempts attempts", LspException.ErrorCode.DOWNLOAD_FAILED)
-        }
+        throw LspException("Failed to download LSP artifacts after $maxDownloadAttempts attempts", LspException.ErrorCode.DOWNLOAD_FAILED)
     }
 
     @VisibleForTesting

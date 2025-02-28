@@ -3,13 +3,16 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
+import com.intellij.openapi.project.Project
 import com.intellij.util.io.createDirectories
 import com.intellij.util.text.SemVer
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
+import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.spyk
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.jetbrains.annotations.TestOnly
@@ -30,6 +33,7 @@ class ArtifactHelperTest {
     private lateinit var manifestVersionRanges: SupportedManifestVersionRange
     private lateinit var mockManifestManager: ManifestManager
     private lateinit var contents: List<ManifestManager.TargetContent>
+    private lateinit var mockProject: Project
 
     @BeforeEach
     fun setUp() {
@@ -41,6 +45,10 @@ class ArtifactHelperTest {
                 hashes = listOf("sha384:1234")
             )
         )
+        mockProject = mockk<Project>(relaxed = true) {
+            every { basePath } returns tempDir.toString()
+            every { name } returns "TestProject"
+        }
     }
 
     @Test
@@ -181,7 +189,7 @@ class ArtifactHelperTest {
     fun `tryDownloadLspArtifacts should not download artifacts if target does not have contents`() {
         val versions = listOf(ManifestManager.Version(serverVersion = "2.0.0"))
         assertThatThrownBy {
-            artifactHelper.tryDownloadLspArtifacts(versions, null)
+            runBlocking { artifactHelper.tryDownloadLspArtifacts(mockProject, versions, null) }
         }
             .isInstanceOf(LspException::class.java)
             .hasFieldOrPropertyWithValue("errorCode", LspException.ErrorCode.DOWNLOAD_FAILED)
@@ -196,14 +204,14 @@ class ArtifactHelperTest {
         every { spyArtifactHelper.downloadLspArtifacts(any(), any()) } returns false
 
         assertThatThrownBy {
-            spyArtifactHelper.tryDownloadLspArtifacts(versions, null)
+            runBlocking { spyArtifactHelper.tryDownloadLspArtifacts(mockProject, versions, null) }
         }
             .isInstanceOf(LspException::class.java)
             .hasFieldOrPropertyWithValue("errorCode", LspException.ErrorCode.DOWNLOAD_FAILED)
     }
 
     @Test
-    fun `tryDownloadLspArtifacts should not throw error on successful download`() {
+    fun `tryDownloadLspArtifacts should throw error after attempts are exhausted`() {
         val versions = listOf(ManifestManager.Version(serverVersion = "1.0.0"))
         val target = ManifestManager.VersionTarget(contents = contents)
         val spyArtifactHelper = spyk(artifactHelper)
@@ -213,7 +221,10 @@ class ArtifactHelperTest {
         every { moveFilesFromSourceToDestination(any(), any()) } just Runs
         every { extractZipFile(any(), any()) } just Runs
 
-        spyArtifactHelper.tryDownloadLspArtifacts(versions, target)
+        assertThatThrownBy {
+            runBlocking { spyArtifactHelper.tryDownloadLspArtifacts(mockProject, versions, target) }
+        }
+            .isInstanceOf(LspException::class.java)
     }
 
     @Test
