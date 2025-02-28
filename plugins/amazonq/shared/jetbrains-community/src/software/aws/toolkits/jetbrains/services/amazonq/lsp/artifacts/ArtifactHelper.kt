@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.util.io.createDirectories
 import com.intellij.util.text.SemVer
+import kotlinx.coroutines.CancellationException
 import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.deleteIfExists
 import software.aws.toolkits.core.utils.error
@@ -16,6 +17,7 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.saveFileFromUrl
 import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
+import software.aws.toolkits.resources.AwsCoreBundle
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -101,7 +103,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
         return !hasInvalidFiles
     }
 
-    suspend fun tryDownloadLspArtifacts(project: Project, versions: List<ManifestManager.Version>, target: ManifestManager.VersionTarget?) {
+    suspend fun tryDownloadLspArtifacts(project: Project, versions: List<ManifestManager.Version>, target: ManifestManager.VersionTarget?): Path? {
         val temporaryDownloadPath = lspArtifactsPath.resolve("temp")
         val downloadPath = lspArtifactsPath.resolve(versions.first().serverVersion.toString())
 
@@ -110,7 +112,11 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
             logger.info { "Attempt ${currentAttempt.get()} of $maxDownloadAttempts to download LSP artifacts" }
 
             try {
-                withBackgroundProgress(project, "Downloading & Extracting LSP artifacts...", cancellable = true) {
+                withBackgroundProgress(
+                    project,
+                    AwsCoreBundle.message("amazonqFeatureDev.placeholder.downloading_and_extracting_lsp_artifacts"),
+                    cancellable = true
+                ) {
                     if (downloadLspArtifacts(temporaryDownloadPath, target) && target != null && !target.contents.isNullOrEmpty()) {
                         moveFilesFromSourceToDestination(temporaryDownloadPath, downloadPath)
                         target.contents
@@ -119,14 +125,18 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
                         logger.info { "Successfully downloaded and moved LSP artifacts to $downloadPath" }
                     }
                 }
-                return
+                return downloadPath
+            } catch (e: CancellationException) {
+                logger.error(e) { "User cancelled download and extracting of LSP artifacts.." } // fallback to older version of LSP artifacts if available.
             } catch (e: Exception) {
                 logger.error(e) { "Failed to download/move LSP artifacts on attempt ${currentAttempt.get()}" }
+            } finally {
                 temporaryDownloadPath.toFile().deleteRecursively()
                 downloadPath.toFile().deleteRecursively()
             }
         }
-        throw LspException("Failed to download LSP artifacts after $maxDownloadAttempts attempts", LspException.ErrorCode.DOWNLOAD_FAILED)
+        logger.error { "Failed to download LSP artifacts after $maxDownloadAttempts attempts" }
+        return null
     }
 
     @VisibleForTesting

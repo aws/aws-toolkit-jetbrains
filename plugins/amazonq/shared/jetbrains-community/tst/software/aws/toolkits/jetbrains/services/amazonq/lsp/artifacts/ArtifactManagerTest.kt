@@ -107,7 +107,7 @@ class ArtifactManagerTest {
         every { getCurrentArchitecture() }.returns("temp")
 
         every { artifactHelper.getExistingLspArtifacts(any(), any()) }.returns(false)
-        coEvery { artifactHelper.tryDownloadLspArtifacts(any(), any(), any()) } just Runs
+        coEvery { artifactHelper.tryDownloadLspArtifacts(any(), any(), any()) } returns tempDir
         every { artifactHelper.deleteOlderLspArtifacts(any()) } just Runs
 
         runBlocking { artifactManager.fetchArtifact() }
@@ -120,6 +120,7 @@ class ArtifactManagerTest {
     fun `fetch artifact does not have valid version in local system`() {
         val target = ManifestManager.VersionTarget(platform = "temp", arch = "temp")
         val versions = listOf(ManifestManager.Version("1.0.0", targets = listOf(target)))
+        val expectedResult = listOf(Pair(tempDir, SemVer("1.0.0", 1, 0, 0)))
 
         artifactManager = spyk(ArtifactManager(mockProject, manifestFetcher, artifactHelper, manifestVersionRanges))
 
@@ -134,6 +135,7 @@ class ArtifactManagerTest {
 
         every { artifactHelper.getExistingLspArtifacts(any(), any()) }.returns(true)
         every { artifactHelper.deleteOlderLspArtifacts(any()) } just Runs
+        every { artifactHelper.getAllLocalLspArtifactsWithinManifestRange(any()) }.returns(expectedResult)
 
         runBlocking { artifactManager.fetchArtifact() }
 

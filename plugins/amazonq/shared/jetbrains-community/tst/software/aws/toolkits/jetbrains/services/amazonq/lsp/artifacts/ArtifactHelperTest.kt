@@ -14,7 +14,6 @@ import io.mockk.mockkStatic
 import io.mockk.spyk
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.jetbrains.annotations.TestOnly
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -188,11 +187,7 @@ class ArtifactHelperTest {
     @Test
     fun `tryDownloadLspArtifacts should not download artifacts if target does not have contents`() {
         val versions = listOf(ManifestManager.Version(serverVersion = "2.0.0"))
-        assertThatThrownBy {
-            runBlocking { artifactHelper.tryDownloadLspArtifacts(mockProject, versions, null) }
-        }
-            .isInstanceOf(LspException::class.java)
-            .hasFieldOrPropertyWithValue("errorCode", LspException.ErrorCode.DOWNLOAD_FAILED)
+        assertThat(runBlocking { artifactHelper.tryDownloadLspArtifacts(mockProject, versions, null) }).isEqualTo(null)
         assertThat(tempDir.resolve("2.0.0").toFile().exists()).isFalse()
     }
 
@@ -203,11 +198,7 @@ class ArtifactHelperTest {
         val spyArtifactHelper = spyk(artifactHelper)
         every { spyArtifactHelper.downloadLspArtifacts(any(), any()) } returns false
 
-        assertThatThrownBy {
-            runBlocking { spyArtifactHelper.tryDownloadLspArtifacts(mockProject, versions, null) }
-        }
-            .isInstanceOf(LspException::class.java)
-            .hasFieldOrPropertyWithValue("errorCode", LspException.ErrorCode.DOWNLOAD_FAILED)
+        assertThat(runBlocking { artifactHelper.tryDownloadLspArtifacts(mockProject, versions, null) }).isEqualTo(null)
     }
 
     @Test
@@ -221,10 +212,7 @@ class ArtifactHelperTest {
         every { moveFilesFromSourceToDestination(any(), any()) } just Runs
         every { extractZipFile(any(), any()) } just Runs
 
-        assertThatThrownBy {
-            runBlocking { spyArtifactHelper.tryDownloadLspArtifacts(mockProject, versions, target) }
-        }
-            .isInstanceOf(LspException::class.java)
+        assertThat(runBlocking { artifactHelper.tryDownloadLspArtifacts(mockProject, versions, target) }).isEqualTo(null)
     }
 
     @Test
