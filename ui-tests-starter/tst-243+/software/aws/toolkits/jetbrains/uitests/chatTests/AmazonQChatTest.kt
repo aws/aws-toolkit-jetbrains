@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.uitests.chatTests
 
+import com.intellij.driver.sdk.waitForIndicators
 import com.intellij.driver.sdk.waitForProjectOpen
 import com.intellij.ide.starter.ci.CIServer
 import com.intellij.ide.starter.config.ConfigurationStorage
@@ -28,6 +29,10 @@ import software.aws.toolkits.jetbrains.uitests.useExistingConnectionForTest
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 class AmazonQChatTest {
 
@@ -76,7 +81,8 @@ class AmazonQChatTest {
             .useDriverAndCloseIde {
                 waitForProjectOpen()
                 // required wait time for the system to be fully ready
-                Thread.sleep(30000)
+                waitForIndicators(2.minutes)
+                // Thread.sleep(30000)
 
                 val result = executePuppeteerScript(testFeatureAvailabilityOnSlash)
                 assertTrue(result.contains("/doc"))
@@ -86,8 +92,8 @@ class AmazonQChatTest {
                 assertTrue(result.contains("/clear"))
                 assertTrue(result.contains("/review"))
                 assertTrue(result.contains("/test"))
-
-                Thread.sleep(20000)
+                println("Assertion done")
+                //Thread.sleep(20000)
             }
     }
 
