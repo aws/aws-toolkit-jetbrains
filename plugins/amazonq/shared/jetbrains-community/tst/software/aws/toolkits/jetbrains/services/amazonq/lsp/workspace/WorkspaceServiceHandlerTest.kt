@@ -30,6 +30,7 @@ import org.eclipse.lsp4j.DidChangeWatchedFilesParams
 import org.eclipse.lsp4j.DidChangeWorkspaceFoldersParams
 import org.eclipse.lsp4j.FileChangeType
 import org.eclipse.lsp4j.WorkspaceFolder
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.services.WorkspaceService
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -70,10 +71,10 @@ class WorkspaceServiceHandlerTest {
         every { project.serviceIfCreated<AmazonQLspService>() } returns mockLspService
 
         // Mock the LSP service's executeSync method as a suspend function
-        coEvery {
-            mockLspService.executeSync(any())
+        every {
+            mockLspService.executeSync<CompletableFuture<ResponseMessage>>(any())
         } coAnswers {
-            val func = firstArg<suspend (AmazonQLanguageServer) -> Unit>()
+            val func = firstArg<suspend (AmazonQLanguageServer) -> CompletableFuture<ResponseMessage>>()
             func.invoke(mockLanguageServer)
         }
 
