@@ -126,11 +126,11 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
                     }
                 }
                 return downloadPath
-            } catch (e: CancellationException) {
-                logger.error(e) { "User cancelled download and extracting of LSP artifacts.." } // fallback to older version of LSP artifacts if available.
             } catch (e: Exception) {
-                logger.error(e) { "Failed to download/move LSP artifacts on attempt ${currentAttempt.get()}" }
-            } finally {
+                when (e) {
+                    is CancellationException -> { logger.error(e) { "User cancelled download and extracting of LSP artifacts.." } }
+                    else -> { logger.error(e) { "Failed to download/move LSP artifacts on attempt ${currentAttempt.get()}" } }
+                }
                 temporaryDownloadPath.toFile().deleteRecursively()
                 downloadPath.toFile().deleteRecursively()
             }
