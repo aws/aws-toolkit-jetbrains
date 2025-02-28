@@ -7,11 +7,16 @@ import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.util.io.DigestUtil
 import com.intellij.util.system.CpuArch
+import software.aws.toolkits.core.utils.createParentDirectories
+import software.aws.toolkits.core.utils.exists
+import java.io.FileNotFoundException
+import java.io.FileOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
+import java.util.zip.ZipFile
 import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
 
@@ -64,5 +69,28 @@ fun moveFilesFromSourceToDestination(sourceDir: Path, targetDir: Path) {
         Files.move(sourceDir, targetDir, StandardCopyOption.REPLACE_EXISTING)
     } catch (e: Exception) {
         throw IllegalStateException("Failed to move files from $sourceDir to $targetDir", e)
+    }
+}
+
+fun extractZipFile(zipFilePath: Path, destDir: Path) {
+    if (!zipFilePath.exists()) {
+        throw FileNotFoundException("Zip file not found: $zipFilePath")
+    }
+
+    try {
+        ZipFile(zipFilePath.toFile()).use { zipFile ->
+            zipFile.entries()
+                .asSequence()
+                .filterNot { it.isDirectory }
+                .map { zipEntry ->
+                    val destPath = destDir.resolve(zipEntry.name)
+                    destPath.createParentDirectories()
+                    FileOutputStream(destPath.toFile()).use { targetFile ->
+                        zipFile.getInputStream(zipEntry).copyTo(targetFile)
+                    }
+                }.toList()
+        }
+    } catch (e: Exception) {
+        throw LspException("Failed to extract zip file: ${e.message}", LspException.ErrorCode.UNZIP_FAILED, cause = e)
     }
 }
