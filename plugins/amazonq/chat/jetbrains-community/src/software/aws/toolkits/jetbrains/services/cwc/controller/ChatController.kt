@@ -84,6 +84,7 @@ import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.CwsprChatCommandType
 import java.time.Instant
 import java.util.UUID
+import kotlin.time.Duration.Companion.milliseconds
 
 data class TestCommandMessage(
     val sender: String = "codetest",
@@ -136,15 +137,15 @@ class ChatController private constructor(
         var prompt = message.chatMessage
         var queryResult: List<RelevantDocument> = emptyList()
         val triggerId = UUID.randomUUID().toString()
-        var shouldAddIndexInProgressMessage: Boolean = false
-        var shouldUseWorkspaceContext: Boolean = false
+        var shouldAddIndexInProgressMessage = false
+        var shouldUseWorkspaceContext = false
 
         if (prompt.contains("@workspace")) {
             if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
                 shouldUseWorkspaceContext = true
                 prompt = prompt.replace("@workspace", "")
                 val projectContextController = ProjectContextController.getInstance(context.project)
-                queryResult = projectContextController.queryChat(prompt, timeout = null)
+                queryResult = projectContextController.queryChat(prompt, timeout = 500)
                 if (!projectContextController.getProjectContextIndexComplete()) shouldAddIndexInProgressMessage = true
                 logger.info { "project context relevant document count: ${queryResult.size}" }
             } else {
