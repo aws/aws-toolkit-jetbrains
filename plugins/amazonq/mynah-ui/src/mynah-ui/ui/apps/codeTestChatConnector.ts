@@ -4,7 +4,7 @@
 import {ExtensionMessage} from "../commands";
 import {ChatPayload, ConnectorProps} from "../connector";
 import {FormButtonIds} from "../forms/constants";
-import {ChatItem, ChatItemAction, ChatItemType, MynahIcons, MynahUIDataModel} from '@aws/mynah-ui-chat'
+import {ChatItem, ChatItemAction, ChatItemType, FeedbackPayload, MynahIcons, MynahUIDataModel} from '@aws/mynah-ui-chat'
 import {CodeReference} from "./amazonqCommonsConnector";
 import {Status} from "@aws/mynah-ui-chat/dist/static";
 import {EmptyMynahUIDataModel} from "@aws/mynah-ui-chat/dist/helper/store";
@@ -13,6 +13,7 @@ import {doesNotMatch} from "node:assert";
 export interface ICodeTestChatConnectorProps {
     sendMessageToExtension: (message: ExtensionMessage) => void
     onChatAnswerReceived?: (tabID: string, message: ChatItem) => void
+    sendFeedback?: (tabId: string, feedbackPayload: FeedbackPayload) => void | undefined
     onUpdateAuthentication: (
         featureDevEnabled: boolean,
         codeTransformEnabled: boolean,
@@ -50,18 +51,18 @@ interface MessageData {
 
 function getIntroductionCardContent(): IntroductionCardContentType {
     const introductionBody = [
-        "I can generate unit tests for your active file. ",
+        "I can generate unit tests for the active file or open project in your IDE.",
         "\n\n",
-        "After you select the functions or methods I should focus on, I will:\n",
-        "1. Generate unit tests\n",
-        "2. Place them into relevant test file\n",
+        "I can do things like:\n",
+        "- Add unit tests for highlighted functions\n",
+        "- Generate tests for null and empty inputs\n",
         "\n\n",
-        "To learn more, check out our [user guide](https://aws.amazon.com/q/developer/)."
+        "To learn more, visit the [Amazon Q Developer User Guide](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/test-generation.html)."
     ].join("");
 
     return {
-        title: "/test",
-        description: "Included in your Q Developer subscription",
+        title: "/test -  Unit test generation",
+        description: "Generate unit tests for selected code",
         icon: MynahIcons.CHECK_LIST,
         content: {
             body: introductionBody
@@ -568,6 +569,24 @@ export class CodeTestChatConnector {
             followUp,
             tabID,
             tabType: 'codetest',
+        })
+    }
+
+    onChatItemVoted = (tabId: string, messageId: string, vote: string): void | undefined => {
+        this.sendMessageToExtension({
+            tabID: tabId,
+            vote: vote,
+            command: 'chat-item-voted',
+            tabType: 'codetest',
+        })
+    }
+
+    sendFeedback = (tabId: string, feedbackPayload: FeedbackPayload): void | undefined => {
+        this.sendMessageToExtension({
+            command: 'chat-item-feedback',
+            ...feedbackPayload,
+            tabType: 'codetest',
+            tabID: tabId,
         })
     }
 

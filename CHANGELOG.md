@@ -1,3 +1,13 @@
+# _3.57_ (2025-02-28)
+- **(Bug Fix)** Fix suggestion not visible in remote for 2024.3
+- **(Bug Fix)** /test: update capability card text
+- **(Bug Fix)** Amazon Q /doc: update workspace too large error message
+- **(Bug Fix)** Amazon Q /doc: Fix uploading file method throwing incorrect workspace too large error message
+- **(Bug Fix)** /transform: skip running tests locally when user chooses to do so
+
+# _3.56_ (2025-02-20)
+- **(Feature)** Amazon Q /doc: support making changes to architecture diagrams
+
 # _3.55_ (2025-02-13)
 - **(Feature)** /transform: support transformations to Java 21
 - **(Bug Fix)** Enable syntax highlighting when viewing diff for /test

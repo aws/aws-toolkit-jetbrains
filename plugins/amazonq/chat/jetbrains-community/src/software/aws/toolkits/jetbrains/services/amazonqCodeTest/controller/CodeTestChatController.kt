@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.amazonqCodeTest.controller
-
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
 import com.intellij.diff.DiffManagerEx
@@ -44,8 +44,11 @@ import software.amazon.awssdk.services.codewhispererstreaming.model.TextDocument
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserInputMessage
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserInputMessageContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
+import software.amazon.awssdk.services.toolkittelemetry.model.Sentiment
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -81,14 +84,19 @@ import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerTy
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.v1.ChatSessionV1.Companion.validLanguages
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.StaticPrompt
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.StaticTextResponse
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.FeedbackComment
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContext
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContextExtractor
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTriggerType
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.FileContext
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
+import software.aws.toolkits.telemetry.FeatureId
+import software.aws.toolkits.telemetry.InteractionType
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.UiTelemetry
 import java.io.File
@@ -401,6 +409,57 @@ class CodeTestChatController(
         return GenerateAssistantResponseRequest.builder()
             .conversationState(conversationState)
             .build()
+    }
+
+    override suspend fun processChatItemFeedBack(message: IncomingCodeTestMessage.ChatItemFeedback) {
+        LOG.debug { "$FEATURE_NAME: Processing ChatItemFeedBackMessage: ${message.comment}" }
+
+        val session = codeTestChatHelper.getActiveSession()
+
+        val comment = FeedbackComment(
+            conversationId = session.startTestGenerationRequestId,
+            userComment = message.comment.orEmpty(),
+            reason = message.selectedOption,
+            type = "testgen-chat-answer-feedback",
+            messageId = "",
+        )
+
+        try {
+            TelemetryService.getInstance().sendFeedback(
+                sentiment = Sentiment.NEGATIVE,
+                comment = objectMapper.writeValueAsString(comment),
+            )
+            LOG.info { "$FEATURE_NAME answer feedback sent: \"Negative\"" }
+        } catch (e: Throwable) {
+            e.notifyError(message("feedback.submit_failed", e))
+            LOG.warn(e) { "Failed to submit feedback" }
+            return
+        }
+    }
+
+    override suspend fun processChatItemVoted(message: IncomingCodeTestMessage.ChatItemVoted) {
+        LOG.debug { "$FEATURE_NAME: Processing ChatItemVotedMessage: $message" }
+
+        val session = codeTestChatHelper.getActiveSession()
+        when (message.vote) {
+            "upvote" -> {
+                AmazonqTelemetry.feedback(
+                    featureId = FeatureId.AmazonQTest,
+                    interactionType = InteractionType.Upvote,
+                    credentialStartUrl = getStartUrl(project = context.project),
+                    amazonqConversationId = session.startTestGenerationRequestId
+
+                )
+            }
+            "downvote" -> {
+                AmazonqTelemetry.feedback(
+                    featureId = FeatureId.AmazonQTest,
+                    interactionType = InteractionType.Downvote,
+                    credentialStartUrl = getStartUrl(project = context.project),
+                    amazonqConversationId = session.startTestGenerationRequestId
+                )
+            }
+        }
     }
 
     override suspend fun processNewTabCreatedMessage(message: IncomingCodeTestMessage.NewTabCreated) {
@@ -1312,5 +1371,7 @@ class CodeTestChatController(
 
     companion object {
         private val LOG = getLogger<CodeTestChatController>()
+
+        private val objectMapper = jacksonObjectMapper()
     }
 }

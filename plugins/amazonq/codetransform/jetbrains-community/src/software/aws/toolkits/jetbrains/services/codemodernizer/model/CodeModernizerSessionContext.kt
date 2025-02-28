@@ -99,7 +99,10 @@ data class CodeModernizerSessionContext(
         return excluded
     }
 
-    fun executeMavenCopyCommands(sourceFolder: File, buildLogBuilder: StringBuilder) = runMavenCopyCommands(sourceFolder, buildLogBuilder, LOG, project)
+    fun executeMavenCopyCommands(sourceFolder: File, buildLogBuilder: StringBuilder): MavenCopyCommandsResult {
+        val shouldSkipTests = customBuildCommand == MAVEN_BUILD_SKIP_UNIT_TESTS
+        return runMavenCopyCommands(sourceFolder, buildLogBuilder, LOG, project, shouldSkipTests)
+    }
 
     private fun executeHilMavenCopyDependency(sourceFolder: File, destinationFolder: File, buildLogBuilder: StringBuilder) = runHilMavenCopyDependency(
         sourceFolder,

@@ -1,0 +1,20 @@
+{
+  "date" : "2025-02-28",
+  "version" : "3.57",
+  "entries" : [ {
+    "type" : "bugfix",
+    "description" : "Fix suggestion not visible in remote for 2024.3"
+  }, {
+    "type" : "bugfix",
+    "description" : "/test: update capability card text"
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q /doc: update workspace too large error message"
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q /doc: Fix uploading file method throwing incorrect workspace too large error message"
+  }, {
+    "type" : "bugfix",
+    "description" : "/transform: skip running tests locally when user chooses to do so"
+  } ]
+}
