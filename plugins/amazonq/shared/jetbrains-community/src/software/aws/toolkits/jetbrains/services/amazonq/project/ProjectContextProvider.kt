@@ -274,11 +274,6 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         return documents
     }
 
-    private fun encryptRequest(r: LspRequest): String {
-        val payloadJson = mapper.writeValueAsString(r)
-        return encoderServer.encrypt(payloadJson)
-    }
-
     override fun dispose() {
         retryCount.set(0)
     }
