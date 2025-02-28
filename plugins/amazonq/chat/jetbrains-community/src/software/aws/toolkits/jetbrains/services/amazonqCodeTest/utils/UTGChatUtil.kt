@@ -4,11 +4,11 @@
 package software.aws.toolkits.jetbrains.services.amazonqCodeTest.utils
 
 import com.intellij.build.BuildContentManager
+import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.impl.ConsoleViewImpl
 import com.intellij.execution.process.OSProcessHandler
 import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
-import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.ui.ConsoleView
 import com.intellij.execution.ui.ConsoleViewContentType
 import com.intellij.openapi.application.ApplicationManager
@@ -17,9 +17,6 @@ import com.intellij.openapi.util.Key
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.ui.content.impl.ContentImpl
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.withContext
-import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.getBuildIcon
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.getExecutionIcon
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.getFixingTestCasesIcon
@@ -27,8 +24,6 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.BuildAnd
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.BuildAndExecuteTaskContext
 import java.io.File
 import java.io.FileWriter
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
 
 fun constructBuildAndExecutionSummaryText(currentStatus: BuildAndExecuteProgressStatus, iterationNum: Int): String {
     val progressMessages = mutableListOf<String>()
@@ -92,12 +87,14 @@ fun runBuildOrTestCommand(
     buildAndExecuteTaskContext: BuildAndExecuteTaskContext,
     testFileRelativePathToProjectRoot: String,
 ) {
+    val brazilPath = "${System.getProperty("user.home")}/.toolbox/bin:/usr/local/bin:/usr/bin:/bin:/sbin"
     if (localCommand.isEmpty()) {
         buildAndExecuteTaskContext.testExitCode = 0
         return
     }
     val projectRoot = File(project.basePath ?: return)
     val testFileAbsolutePath = File(projectRoot, testFileRelativePathToProjectRoot)
+    val file = File(tmpFile.path)
 
     // Find the nearest Gradle root directory
     var packageRoot: File? = testFileAbsolutePath.parentFile
@@ -107,17 +104,9 @@ fun runBuildOrTestCommand(
         }
         packageRoot = packageRoot.parentFile
     }
-
     // If no valid Gradle directory is found, fallback to the project root
-    val workingDir = packageRoot ?: projectRoot
-    println("Running command in directory: ${workingDir.absolutePath}")
-    // val repositoryPath = project.basePath ?: return
-    val commandParts = localCommand.split(" ")
-    val command = commandParts.first()
-    val args = commandParts.drop(1)
-    val file = File(tmpFile.path)
-
-    // Create Console View for Build Output
+    val gradleWrapper = File(packageRoot, "gradlew")
+    val workingDir = if (gradleWrapper.exists()) packageRoot else projectRoot
     val console: ConsoleView = ConsoleViewImpl(project, true)
 
     // Attach Console View to Build Tool Window
@@ -125,22 +114,21 @@ fun runBuildOrTestCommand(
         val tabName = if (isBuildCommand) "Q TestGen Build Output" else "Q Test Gen Test Execution Output"
         val content = ContentImpl(console.component, tabName, true)
         BuildContentManager.getInstance(project).addContent(content)
-        // TODO: remove these tabs when they are not needed
         BuildContentManager.getInstance(project).setSelectedContent(content, false, false, true, null)
     }
 
-    val processBuilder = ProcessBuilder()
-        .command(listOf("zsh", "-c", "source ~/.zshrc && $command ${args.joinToString(" ")}"))
-        .directory(packageRoot)
-        .redirectErrorStream(true)
-
-    val env = processBuilder.environment()
-
-    env["PATH"] = System.getenv("PATH")
+    val commandLine = when {
+        System.getProperty("os.name").lowercase().contains("win") -> {
+            GeneralCommandLine("cmd.exe", "/c", "set PATH=%PATH%;$brazilPath && $localCommand")
+        }
+        else -> {
+            GeneralCommandLine("sh", "-c", "export PATH=\"$brazilPath\" && $localCommand")
+        }
+    }.withWorkDirectory(workingDir)
 
     try {
-        val process = processBuilder.start()
-        val processHandler: ProcessHandler = OSProcessHandler(process, localCommand, null)
+        // val process = processBuilder.start()
+        val processHandler = OSProcessHandler(commandLine)
 
         // Attach Process Listener for Output Handling
         processHandler.addProcessListener(object : ProcessAdapter() {
@@ -200,4 +188,3 @@ private fun cleanText(input: String): String {
     }
     return cleaned.toString()
 }
-
