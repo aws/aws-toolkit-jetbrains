@@ -21,15 +21,13 @@ import com.nimbusds.jwt.JWTClaimsSet
 import com.nimbusds.jwt.SignedJWT
 import org.apache.commons.codec.digest.DigestUtils
 import software.amazon.awssdk.utils.UserHomeDirectoryUtils
-import software.aws.toolkits.core.utils.createParentDirectories
-import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.tryDirOp
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.extractZipFile
 import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
-import java.io.FileOutputStream
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -39,7 +37,6 @@ import java.security.Key
 import java.security.SecureRandom
 import java.util.Base64
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.zip.ZipFile
 import javax.crypto.spec.SecretKeySpec
 
 class EncoderServer(val project: Project) : Disposable {
@@ -183,7 +180,7 @@ class EncoderServer(val project: Project) : Disposable {
             if (serverContent?.url != null) {
                 if (validateHash(serverContent.hashes?.first(), HttpRequests.request(serverContent.url).readBytes(null))) {
                     downloadFromRemote(serverContent.url, zipFilePath)
-                    unzipFile(zipFilePath, cachePath)
+                    extractZipFile(zipFilePath, cachePath)
                 }
             }
         } catch (e: Exception) {
@@ -229,26 +226,6 @@ class EncoderServer(val project: Project) : Disposable {
             PosixFilePermission.OTHERS_EXECUTE,
         )
         Files.setPosixFilePermissions(filePath, permissions)
-    }
-
-    private fun unzipFile(zipFilePath: Path, destDir: Path) {
-        if (!zipFilePath.exists()) return
-        try {
-            val zipFile = ZipFile(zipFilePath.toFile())
-            zipFile.use { file ->
-                file.entries().asSequence()
-                    .filterNot { it.isDirectory }
-                    .map { zipEntry ->
-                        val destPath = destDir.resolve(zipEntry.name)
-                        destPath.createParentDirectories()
-                        FileOutputStream(destPath.toFile()).use { targetFile ->
-                            zipFile.getInputStream(zipEntry).copyTo(targetFile)
-                        }
-                    }.toList()
-            }
-        } catch (e: Exception) {
-            logger.warn { "error while unzipping project context artifact: ${e.message}" }
-        }
     }
 
     private fun downloadFromRemote(url: String, path: Path) {
