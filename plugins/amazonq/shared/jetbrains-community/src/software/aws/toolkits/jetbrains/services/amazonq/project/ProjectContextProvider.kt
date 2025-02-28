@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.amazonq.project
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.BaseProjectDirectories.Companion.getBaseDirectories
@@ -31,8 +30,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIM
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.AmazonqTelemetry
-import java.io.OutputStreamWriter
-import java.net.HttpURLConnection
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.measureTimedValue
@@ -210,26 +207,6 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
             amazonqIndexCpuUsagePercentage = cpuUsage?.toLong(),
             credentialStartUrl = startUrl
         )
-    }
-
-    private fun setConnectionTimeout(connection: HttpURLConnection, timeout: Int) {
-        connection.connectTimeout = timeout
-        connection.readTimeout = timeout
-    }
-
-    private fun setConnectionProperties(connection: HttpURLConnection) {
-        connection.requestMethod = "POST"
-        connection.setRequestProperty("Content-Type", "text/plain")
-        connection.setRequestProperty("Accept", "text/plain")
-    }
-
-    private fun setConnectionRequest(connection: HttpURLConnection, payload: String) {
-        connection.doOutput = true
-        connection.outputStream.use { outputStream ->
-            OutputStreamWriter(outputStream).use { writer ->
-                writer.write(payload)
-            }
-        }
     }
 
     private fun willExceedPayloadLimit(currentTotalFileSize: Long, currentFileSize: Long): Boolean {

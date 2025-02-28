@@ -60,14 +60,12 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryp
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.createExtendedClientMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.project.EncoderServer
 import software.aws.toolkits.jetbrains.services.amazonq.project.IndexRequest
-import software.aws.toolkits.jetbrains.services.amazonq.project.IndexUpdateMode
 import software.aws.toolkits.jetbrains.services.amazonq.project.InlineBm25Chunk
-import software.aws.toolkits.jetbrains.services.amazonq.project.LspMessage
+import software.aws.toolkits.jetbrains.services.amazonq.project.LspRequest
 import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextProvider
 import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextProvider.Usage
 import software.aws.toolkits.jetbrains.services.amazonq.project.QueryChatRequest
 import software.aws.toolkits.jetbrains.services.amazonq.project.QueryInlineCompletionRequest
-import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.amazonq.project.UpdateIndexRequest
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import java.io.IOException
@@ -350,6 +348,8 @@ private class AmazonQServerInstance(private val project: Project, private val cs
 
 
 class EncoderServer2(private val encoderServer: EncoderServer, private val commandLine: GeneralCommandLine, private val project: Project, private val cs: CoroutineScope) : Disposable {
+    private val encryptionManager = JwtEncryptionManager()
+
     private val launcher: Launcher<EncoderServerLspInterface>
 
     val languageServer: EncoderServerLspInterface
@@ -465,8 +465,9 @@ class EncoderServer2(private val encoderServer: EncoderServer, private val comma
             )
             .wrapMessages { consumer ->
                 MessageConsumer { message ->
-                    if (message is RequestMessage && message.params is LspMessage) {
-                        message.params = encoderServer.encrypt(jacksonObjectMapper().writeValueAsString(message))
+                    if (message is RequestMessage && message.params is LspRequest) {
+                        println(message.params)
+                        message.params = encryptionManager.encrypt(jacksonObjectMapper().writeValueAsString(message.params))
                     }
                     consumer.consume(message)
                 }
@@ -479,7 +480,7 @@ class EncoderServer2(private val encoderServer: EncoderServer, private val comma
 
         initializer = cs.launch {
             // encryption info must be sent within 5s or Flare process will exit
-            launcherHandler.process.outputStream.write(encoderServer.getEncryptionRequest().toByteArray())
+            encryptionManager.writeInitializationPayload(launcherHandler.process.outputStream)
 
             val initializeResult = try {
                 withTimeout(5.seconds) {

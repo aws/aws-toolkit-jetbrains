@@ -3,27 +3,18 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.project
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.execution.configurations.GeneralCommandLine
-import com.intellij.execution.process.KillableProcessHandler
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.process.ProcessCloseUtil
+import com.intellij.openapi.util.Disposer
 import com.intellij.util.io.HttpRequests
 import com.intellij.util.io.createDirectories
 import com.intellij.util.net.NetUtils
-import com.nimbusds.jose.JOSEObjectType
-import com.nimbusds.jose.JWSAlgorithm
-import com.nimbusds.jose.JWSHeader
-import com.nimbusds.jose.crypto.MACSigner
-import com.nimbusds.jwt.JWTClaimsSet
-import com.nimbusds.jwt.SignedJWT
 import kotlinx.coroutines.CoroutineScope
 import org.apache.commons.codec.digest.DigestUtils
 import software.amazon.awssdk.utils.UserHomeDirectoryUtils
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.tryDirOp
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.EncoderServer2
@@ -35,11 +26,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.attribute.PosixFilePermission
-import java.security.Key
-import java.security.SecureRandom
-import java.util.Base64
-import java.util.concurrent.atomic.AtomicInteger
-import javax.crypto.spec.SecretKeySpec
 
 class EncoderServer(val project: Project, private val cs: CoroutineScope) : Disposable {
     val cachePath = Paths.get(
@@ -49,9 +35,6 @@ class EncoderServer(val project: Project, private val cs: CoroutineScope) : Disp
     private val serverDirectoryName = "qserver-${manifestManager.currentVersion}.zip"
     val port by lazy { NetUtils.findAvailableSocketPort() }
     private val nodeRunnableName = if (manifestManager.getOs() == "windows") "node.exe" else "node"
-    private val key = generateHmacKey()
-    private var processHandler: KillableProcessHandler? = null
-    private val mapper = jacksonObjectMapper()
     lateinit var encoderServer2: EncoderServer2
 
     fun downloadArtifactsAndStartServer() {
@@ -62,39 +45,7 @@ class EncoderServer(val project: Project, private val cs: CoroutineScope) : Disp
         start()
     }
 
-    fun isNodeProcessRunning() = processHandler != null && processHandler?.process?.isAlive == true
-
-    private fun generateHmacKey(): Key {
-        val keyBytes = ByteArray(32)
-        SecureRandom().nextBytes(keyBytes)
-        return SecretKeySpec(keyBytes, "HmacSHA256")
-    }
-
-    fun encrypt(data: String): String {
-        val header = JWSHeader.Builder(JWSAlgorithm.HS256)
-            .type(JOSEObjectType.JWT)
-            .build()
-
-        val claimsSet = JWTClaimsSet.Builder()
-            .subject(Base64.getUrlEncoder().withoutPadding().encodeToString(data.toByteArray()))
-            .build()
-
-        val signedJWT = SignedJWT(header, claimsSet)
-        signedJWT.sign(MACSigner(key.encoded))
-
-        return signedJWT.serialize()
-    }
-
-    data class EncryptionRequest(
-        val version: String = "1.0",
-        val mode: String = "JWT",
-        val key: String,
-    )
-
-    fun getEncryptionRequest(): String {
-        val request = EncryptionRequest(key = Base64.getUrlEncoder().withoutPadding().encodeToString(key.encoded))
-        return mapper.writeValueAsString(request) + "\n"
-    }
+    fun isNodeProcessRunning() = encoderServer2.initializer.isCompleted
 
     private fun getCommand(): GeneralCommandLine {
         val threadCount = CodeWhispererSettings.getInstance().getProjectContextIndexThreadCount()
@@ -123,7 +74,7 @@ class EncoderServer(val project: Project, private val cs: CoroutineScope) : Disp
     }
 
     private fun close() {
-        processHandler?.process?.let { ProcessCloseUtil.close(it) }
+        Disposer.dispose(encoderServer2)
     }
 
     private fun downloadArtifactsIfNeeded() {
