@@ -266,7 +266,7 @@ class TextDocumentServiceHandlerTest {
 
     @Test
     fun `didChange ignores non-content change events`() = runTest {
-        val nonContentEvent = mockk<VFileEvent>()  // Some other type of VFileEvent
+        val nonContentEvent = mockk<VFileEvent>() // Some other type of VFileEvent
 
         sut.after(mutableListOf(nonContentEvent))
 
