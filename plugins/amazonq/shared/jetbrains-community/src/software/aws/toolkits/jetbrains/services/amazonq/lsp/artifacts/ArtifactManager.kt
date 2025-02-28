@@ -4,13 +4,17 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
 import com.intellij.util.text.SemVer
-import org.assertj.core.util.VisibleForTesting
+import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 
-class ArtifactManager {
+class ArtifactManager(
+    private val manifestFetcher: ManifestFetcher = ManifestFetcher(),
+    private val artifactHelper: ArtifactHelper = ArtifactHelper(),
+    manifestRange: SupportedManifestVersionRange?,
+) {
 
     data class SupportedManifestVersionRange(
         val startVersion: SemVer,
@@ -21,20 +25,7 @@ class ArtifactManager {
         val inRangeVersions: List<ManifestManager.Version>,
     )
 
-    private val manifestFetcher: ManifestFetcher
-    private val artifactHelper: ArtifactHelper
-    private val manifestVersionRanges: SupportedManifestVersionRange
-
-    // Primary constructor with config
-    constructor(
-        manifestFetcher: ManifestFetcher = ManifestFetcher(),
-        artifactFetcher: ArtifactHelper = ArtifactHelper(),
-        manifestRange: SupportedManifestVersionRange?,
-    ) {
-        manifestVersionRanges = manifestRange ?: DEFAULT_VERSION_RANGE
-        this.manifestFetcher = manifestFetcher
-        this.artifactHelper = artifactFetcher
-    }
+    private val manifestVersionRanges: SupportedManifestVersionRange = manifestRange ?: DEFAULT_VERSION_RANGE
 
     // Secondary constructor with no parameters
     constructor() : this(ManifestFetcher(), ArtifactHelper(), null)
@@ -57,7 +48,11 @@ class ArtifactManager {
         this.artifactHelper.removeDelistedVersions(lspVersions.deListedVersions)
 
         if (lspVersions.inRangeVersions.isEmpty()) {
-            // No versions are found which are in the given range.
+            // No versions are found which are in the given range. Fallback to local lsp artifacts.
+            val localLspArtifacts = this.artifactHelper.getAllLocalLspArtifactsWithinManifestRange(manifestVersionRanges)
+            if (localLspArtifacts.isNotEmpty()) {
+                return
+            }
             throw LspException("Language server versions not found in manifest.", LspException.ErrorCode.NO_COMPATIBLE_LSP_VERSION)
         }
 
