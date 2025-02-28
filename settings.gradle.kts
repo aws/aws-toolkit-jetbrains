@@ -102,8 +102,9 @@ when (providers.gradleProperty("ideProfileName").get()) {
     // FIX_WHEN_MIN_IS_242: `tmp-all` test module no longer needed in 242+
     "2024.1" -> {
         include("tmp-all")
+        project(":ui-tests-starter").projectDir = file("noop")
     }
-    "2024.1", "2024.2" -> {
+    "2024.2" -> {
         // only available 243+
         project(":ui-tests-starter").projectDir = file("noop")
     }
