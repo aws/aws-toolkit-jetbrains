@@ -16,8 +16,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.openapi.vfs.isFile
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -33,10 +33,9 @@ import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
-import java.net.URL
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.time.Duration.Companion.minutes
+import kotlin.time.measureTimedValue
 
 class ProjectContextProvider(val project: Project, private val encoderServer: EncoderServer, private val cs: CoroutineScope) : Disposable {
     private val retryCount = AtomicInteger(0)
@@ -106,8 +105,8 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         cs.launch {
             while (retryCount.get() < 5) {
                 try {
-                    logger.info { "project context: about to init key" }
-                    val isInitSuccess = initEncryption()
+                    logger.info { "project context: waiting for server to start" }
+                    val isInitSuccess = encoderServer.encoderServer2.initializer.isCompleted
                     if (isInitSuccess) {
                         logger.info { "project context index starting" }
                         delay(300)
@@ -127,12 +126,6 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
-    private fun initEncryption(): Boolean {
-        val request = encoderServer.getEncryptionRequest()
-        val response = sendMsgToLsp(LspMessage.Initialize, request)
-        return response?.responseCode == 200
-    }
-
     fun index(): Boolean {
         val projectRoot = project.basePath ?: return false
 
@@ -146,48 +139,48 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         logger.debug { "time elapsed to collect project context files: ${duration}ms, collected ${filesResult.files.size} files" }
 
         val indexOption = if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) IndexOption.ALL else IndexOption.DEFAULT
-        val encrypted = encryptRequest(IndexRequest(filesResult.files, projectRoot, indexOption.command, ""))
-        val response = sendMsgToLsp(LspMessage.Index, encrypted)
-
-        duration = (System.currentTimeMillis() - indexStartTime).toDouble()
-        logger.debug { "project context index time: ${duration}ms" }
-
         val startUrl = getStartUrl(project)
-        if (response?.responseCode == 200) {
-            val usage = getUsage()
-            recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, true, usage?.memoryUsage, usage?.cpuUsage, startUrl)
-            logger.debug { "project context index finished for ${project.name}" }
-            return true
-        } else {
+        try {
+            val (_, indexTime) = measureTimedValue {
+                encoderServer.encoderServer2.languageServer.buildIndex(IndexRequest(filesResult.files, projectRoot, indexOption.command, ""))
+            }
+
+            logger.debug { "project context index time: ${indexTime}ms" }
+        } catch (e: Exception) {
             logger.debug { "project context index failed" }
             recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, false, null, null, startUrl)
             return false
         }
+
+        val usage = getUsage()
+        recordIndexWorkspace(duration, filesResult.files.size, filesResult.fileSize, true, usage?.memoryUsage, usage?.cpuUsage, startUrl)
+        logger.debug { "project context index finished for ${project.name}" }
+        return true
     }
 
     // TODO: rename queryChat
     suspend fun query(prompt: String, timeout: Long?): List<RelevantDocument> = withTimeout(timeout ?: CHAT_EXPLICIT_PROJECT_CONTEXT_TIMEOUT) {
-        cs.async {
-            val encrypted = encryptRequest(QueryChatRequest(prompt))
-            val response = sendMsgToLsp(LspMessage.QueryChat, encrypted) ?: return@async emptyList()
-            val parsedResponse = mapper.readValue<List<Chunk>>(response.responseBody)
-            queryResultToRelevantDocuments(parsedResponse)
-        }.await()
+        val response = try {
+            encoderServer.encoderServer2.languageServer.queryChat(QueryChatRequest(prompt)).await()
+        } catch (e: Exception) {
+            logger.warn { "error querying chat ${e.message}" }
+            return@withTimeout emptyList()
+        }
+        queryResultToRelevantDocuments(response)
     }
 
     suspend fun queryInline(query: String, filePath: String, target: InlineContextTarget): List<InlineBm25Chunk> = withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
-        cs.async {
-            val encrypted = encryptRequest(QueryInlineCompletionRequest(query, filePath, target.toString()))
-            val r = sendMsgToLsp(LspMessage.QueryInlineCompletion, encrypted) ?: return@async emptyList()
-            return@async mapper.readValue<List<InlineBm25Chunk>>(r.responseBody)
-        }.await()
+        try {
+            encoderServer.encoderServer2.languageServer.queryInline(QueryInlineCompletionRequest(query, filePath, target.toString())).await()
+        } catch (e: Exception) {
+            logger.warn { "error querying chat ${e.message}" }
+            return@withTimeout emptyList()
+        }
     }
 
-    fun getUsage(): Usage? {
-        val response = sendMsgToLsp(LspMessage.GetUsageMetrics, request = null) ?: return null
-        return try {
-            val parsedResponse = mapper.readValue<Usage>(response.responseBody)
-            parsedResponse
+    fun getUsage(): Usage? = runBlocking {
+        try {
+            encoderServer.encoderServer2.languageServer.getUsageMetrics().await()
         } catch (e: Exception) {
             logger.warn { "error parsing query response ${e.message}" }
             null
@@ -195,8 +188,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     fun updateIndex(filePaths: List<String>, mode: IndexUpdateMode) {
-        val encrypted = encryptRequest(UpdateIndexRequest(filePaths, mode.command))
-        sendMsgToLsp(LspMessage.UpdateIndex, encrypted)
+        encoderServer.encoderServer2.languageServer.updateIndex(UpdateIndexRequest(filePaths, mode.command))
     }
 
     private fun recordIndexWorkspace(
@@ -308,34 +300,6 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     private fun encryptRequest(r: LspRequest): String {
         val payloadJson = mapper.writeValueAsString(r)
         return encoderServer.encrypt(payloadJson)
-    }
-
-    private fun sendMsgToLsp(msgType: LspMessage, request: String?): LspResponse? {
-        logger.info { "sending message: ${msgType.endpoint} to lsp on port ${encoderServer.port}" }
-        val url = URL("http://localhost:${encoderServer.port}/${msgType.endpoint}")
-        if (!encoderServer.isNodeProcessRunning()) {
-            logger.warn { "language server for ${project.name} is not running" }
-            return null
-        }
-        // use 1h as timeout for index, 5 seconds for other APIs
-        val timeoutMs = if (msgType is LspMessage.Index) 60.minutes.inWholeMilliseconds.toInt() else 5000
-        return with(url.openConnection() as HttpURLConnection) {
-            setConnectionProperties(this)
-            setConnectionTimeout(this, timeoutMs)
-            request?.let { r ->
-                setConnectionRequest(this, r)
-            }
-            val responseCode = this.responseCode
-            logger.info { "receiving response for $msgType with responseCode $responseCode" }
-
-            val responseBody = if (responseCode == 200) {
-                this.inputStream.bufferedReader().use { reader -> reader.readText() }
-            } else {
-                ""
-            }
-
-            LspResponse(responseCode, responseBody)
-        }
     }
 
     override fun dispose() {
