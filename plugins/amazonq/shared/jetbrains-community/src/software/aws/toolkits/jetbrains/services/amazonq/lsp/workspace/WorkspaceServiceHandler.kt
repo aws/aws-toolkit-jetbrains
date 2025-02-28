@@ -7,6 +7,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootEvent
 import com.intellij.openapi.roots.ModuleRootListener
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent
@@ -25,6 +26,8 @@ import org.eclipse.lsp4j.WorkspaceFoldersChangeEvent
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
+import java.nio.file.FileSystems
+import java.nio.file.Paths
 
 class WorkspaceServiceHandler(
     private val project: Project,
@@ -33,6 +36,9 @@ class WorkspaceServiceHandler(
     ModuleRootListener {
 
     private var lastSnapshot: List<WorkspaceFolder> = emptyList()
+    private val supportedFilePatterns = FileSystems.getDefault().getPathMatcher(
+        "glob:**/*.{ts,js,py,java}"
+    )
 
     init {
         project.messageBus.connect(serverInstance).subscribe(
@@ -49,7 +55,8 @@ class WorkspaceServiceHandler(
     private fun didCreateFiles(events: List<VFileEvent>) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             val validFiles = events.mapNotNull { event ->
-                event.file?.toNioPath()?.toUri()?.toString()?.takeIf { it.isNotEmpty() }?.let { uri ->
+                val file = event.file?.takeIf { shouldHandleFile(it) } ?: return@mapNotNull null
+                file.toNioPath().toUri().toString().takeIf { it.isNotEmpty() }?.let { uri ->
                     FileCreate().apply {
                         this.uri = uri
                     }
@@ -69,7 +76,8 @@ class WorkspaceServiceHandler(
     private fun didDeleteFiles(events: List<VFileEvent>) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             val validFiles = events.mapNotNull { event ->
-                event.file?.toNioPath()?.toUri()?.toString()?.takeIf { it.isNotEmpty() }?.let { uri ->
+                val file = event.file?.takeIf { shouldHandleFile(it) } ?: return@mapNotNull null
+                file.toNioPath().toUri().toString().takeIf { it.isNotEmpty() }?.let { uri ->
                     FileDelete().apply {
                         this.uri = uri
                     }
@@ -143,5 +151,14 @@ class WorkspaceServiceHandler(
 
             lastSnapshot = currentSnapshot
         }
+    }
+
+    private fun shouldHandleFile(file: VirtualFile): Boolean {
+        if (file.isDirectory) {
+            return true // Matches "**/*" with matches: "folder"
+        }
+        val path = Paths.get(file.path)
+        val result = supportedFilePatterns.matches(path)
+        return result
     }
 }

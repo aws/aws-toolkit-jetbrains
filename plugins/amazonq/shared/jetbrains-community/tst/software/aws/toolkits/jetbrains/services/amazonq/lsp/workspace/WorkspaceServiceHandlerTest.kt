@@ -14,7 +14,6 @@ import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.util.messages.MessageBus
 import com.intellij.util.messages.MessageBusConnection
-import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -96,30 +95,143 @@ class WorkspaceServiceHandlerTest {
     }
 
     @Test
-    fun `test didCreateFiles with valid events`() = runTest {
-        val uri = URI("file:///test/path")
-        val event = createMockVFileEvent(uri, FileChangeType.Created)
+    fun `test didCreateFiles with Python file`() = runTest {
+        val pyUri = URI("file:///test/path")
+        val pyEvent = createMockVFileEvent(pyUri, FileChangeType.Created, false, "py")
 
-        sut.after(listOf(event))
+        sut.after(listOf(pyEvent))
 
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
-        assertEquals(uri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(pyUri.toString(), paramsSlot.captured.files[0].uri)
     }
 
     @Test
-    fun `test didDeleteFiles with valid event`() = runTest {
-        val uri = URI("file:///test/path")
-        val deleteEvent = createMockVFileEvent(uri, FileChangeType.Deleted)
+    fun `test didCreateFiles with TypeScript file`() = runTest {
+        val tsUri = URI("file:///test/path")
+        val tsEvent = createMockVFileEvent(tsUri, FileChangeType.Created, false, "ts")
 
-        // Act
-        sut.after(listOf(deleteEvent))
+        sut.after(listOf(tsEvent))
+
+        val paramsSlot = slot<CreateFilesParams>()
+        verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
+        assertEquals(tsUri.toString(), paramsSlot.captured.files[0].uri)
+    }
+
+    @Test
+    fun `test didCreateFiles with JavaScript file`() = runTest {
+        val jsUri = URI("file:///test/path")
+        val jsEvent = createMockVFileEvent(jsUri, FileChangeType.Created, false, "js")
+
+        sut.after(listOf(jsEvent))
+
+        val paramsSlot = slot<CreateFilesParams>()
+        verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
+        assertEquals(jsUri.toString(), paramsSlot.captured.files[0].uri)
+    }
+
+    @Test
+    fun `test didCreateFiles with Java file`() = runTest {
+        val javaUri = URI("file:///test/path")
+        val javaEvent = createMockVFileEvent(javaUri, FileChangeType.Created, false, "java")
+
+        sut.after(listOf(javaEvent))
+
+        val paramsSlot = slot<CreateFilesParams>()
+        verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
+        assertEquals(javaUri.toString(), paramsSlot.captured.files[0].uri)
+    }
+
+    @Test
+    fun `test didCreateFiles called for directory`() = runTest {
+        val dirUri = URI("file:///test/directory/path")
+        val dirEvent = createMockVFileEvent(dirUri, FileChangeType.Created, true, "")
+
+        sut.after(listOf(dirEvent))
+
+        val paramsSlot = slot<CreateFilesParams>()
+        verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
+        assertEquals(dirUri.toString(), paramsSlot.captured.files[0].uri)
+    }
+
+    @Test
+    fun `test didCreateFiles not called for unsupported file extension`() = runTest {
+        val txtUri = URI("file:///test/path")
+        val txtEvent = createMockVFileEvent(txtUri, FileChangeType.Created, false, "txt")
+
+        sut.after(listOf(txtEvent))
+
+        verify(exactly = 0) { mockWorkspaceService.didCreateFiles(any()) }
+    }
+
+    @Test
+    fun `test didDeleteFiles with Python file`() = runTest {
+        val pyUri = URI("file:///test/path")
+        val pyEvent = createMockVFileEvent(pyUri, FileChangeType.Deleted, false, "py")
+
+        sut.after(listOf(pyEvent))
 
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
-        assertEquals(uri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(pyUri.toString(), paramsSlot.captured.files[0].uri)
+    }
 
-        // Assert
+    @Test
+    fun `test didDeleteFiles with TypeScript file`() = runTest {
+        val tsUri = URI("file:///test/path")
+        val tsEvent = createMockVFileEvent(tsUri, FileChangeType.Deleted, false, "ts")
+
+        sut.after(listOf(tsEvent))
+
+        val paramsSlot = slot<DeleteFilesParams>()
+        verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
+        assertEquals(tsUri.toString(), paramsSlot.captured.files[0].uri)
+    }
+
+    @Test
+    fun `test didDeleteFiles with JavaScript file`() = runTest {
+        val jsUri = URI("file:///test/path")
+        val jsEvent = createMockVFileEvent(jsUri, FileChangeType.Deleted, false, "js")
+
+        sut.after(listOf(jsEvent))
+
+        val paramsSlot = slot<DeleteFilesParams>()
+        verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
+        assertEquals(jsUri.toString(), paramsSlot.captured.files[0].uri)
+    }
+
+    @Test
+    fun `test didDeleteFiles with Java file`() = runTest {
+        val javaUri = URI("file:///test/path")
+        val javaEvent = createMockVFileEvent(javaUri, FileChangeType.Deleted, false, "java")
+
+        sut.after(listOf(javaEvent))
+
+        val paramsSlot = slot<DeleteFilesParams>()
+        verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
+        assertEquals(javaUri.toString(), paramsSlot.captured.files[0].uri)
+    }
+
+    @Test
+    fun `test didDeleteFiles not called for unsupported file extension`() = runTest {
+        val txtUri = URI("file:///test/path")
+        val txtEvent = createMockVFileEvent(txtUri, FileChangeType.Deleted, false, "txt")
+
+        sut.after(listOf(txtEvent))
+
+        verify(exactly = 0) { mockWorkspaceService.didDeleteFiles(any()) }
+    }
+
+    @Test
+    fun `test didDeleteFiles called for directory`() = runTest {
+        val dirUri = URI("file:///test/directory/path")
+        val dirEvent = createMockVFileEvent(dirUri, FileChangeType.Deleted, true, "")
+
+        sut.after(listOf(dirEvent))
+
+        val paramsSlot = slot<DeleteFilesParams>()
+        verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
+        assertEquals(dirUri.toString(), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -129,9 +241,9 @@ class WorkspaceServiceHandlerTest {
         val deleteURI = URI("file:///test/pathOfDeletion")
         val changeURI = URI("file:///test/pathOfChange")
 
-        val virtualFileCreate = createMockVFileEvent(createURI, FileChangeType.Created)
-        val virtualFileDelete = createMockVFileEvent(deleteURI, FileChangeType.Deleted)
-        val virtualFileChange = createMockVFileEvent(changeURI)
+        val virtualFileCreate = createMockVFileEvent(createURI, FileChangeType.Created, false)
+        val virtualFileDelete = createMockVFileEvent(deleteURI, FileChangeType.Deleted, false)
+        val virtualFileChange = createMockVFileEvent(changeURI, FileChangeType.Changed, false)
 
         // Act
         sut.after(listOf(virtualFileCreate, virtualFileDelete, virtualFileChange))
@@ -314,12 +426,14 @@ class WorkspaceServiceHandlerTest {
         assertEquals("folder2", paramsSlot.captured.event.removed[0].name)
     }
 
-    private fun createMockVFileEvent(uri: URI, type: FileChangeType = FileChangeType.Changed): VFileEvent {
+    private fun createMockVFileEvent(uri: URI, type: FileChangeType = FileChangeType.Changed, isDirectory: Boolean, extension: String = "py"): VFileEvent {
         val virtualFile = mockk<VirtualFile>()
         val nioPath = mockk<Path>()
 
+        every { virtualFile.isDirectory } returns isDirectory
         every { virtualFile.toNioPath() } returns nioPath
         every { nioPath.toUri() } returns uri
+        every { virtualFile.path } returns "${uri.path}.$extension"
 
         return when (type) {
             FileChangeType.Deleted -> mockk<VFileDeleteEvent>()
