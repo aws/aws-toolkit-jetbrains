@@ -211,6 +211,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                 fileOperations = FileOperationsWorkspaceCapabilities().apply {
                     didCreate = true
                     didDelete = true
+                    didRename = true
                 }
             }
         }

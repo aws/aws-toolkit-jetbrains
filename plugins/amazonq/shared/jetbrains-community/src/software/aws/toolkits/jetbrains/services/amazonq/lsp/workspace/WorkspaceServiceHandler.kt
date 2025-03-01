@@ -13,6 +13,7 @@ import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
+import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent
 import org.eclipse.lsp4j.CreateFilesParams
 import org.eclipse.lsp4j.DeleteFilesParams
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams
@@ -21,6 +22,8 @@ import org.eclipse.lsp4j.FileChangeType
 import org.eclipse.lsp4j.FileCreate
 import org.eclipse.lsp4j.FileDelete
 import org.eclipse.lsp4j.FileEvent
+import org.eclipse.lsp4j.FileRename
+import org.eclipse.lsp4j.RenameFilesParams
 import org.eclipse.lsp4j.WorkspaceFolder
 import org.eclipse.lsp4j.WorkspaceFoldersChangeEvent
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
@@ -94,6 +97,36 @@ class WorkspaceServiceHandler(
         }
     }
 
+    private fun didRenameFiles(events: List<VFilePropertyChangeEvent>) {
+        AmazonQLspService.executeIfRunning(project) { languageServer ->
+            val validRenames = events
+                .filter { it.propertyName == VirtualFile.PROP_NAME }
+                .mapNotNull { event ->
+                    val file = event.file.takeIf { shouldHandleFile(it) } ?: return@mapNotNull null
+                    val oldName = event.oldValue as? String ?: return@mapNotNull null
+                    val newName = event.newValue as? String ?: return@mapNotNull null
+
+                    // Construct old and new URIs
+                    val parentPath = file.parent?.toNioPath() ?: return@mapNotNull null
+                    val oldUri = parentPath.resolve(oldName).toUri().toString()
+                    val newUri = file.toNioPath().toUri().toString()
+
+                    FileRename().apply {
+                        this.oldUri = oldUri
+                        this.newUri = newUri
+                    }
+                }
+
+            if (validRenames.isNotEmpty()) {
+                languageServer.workspaceService.didRenameFiles(
+                    RenameFilesParams().apply {
+                        files = validRenames
+                    }
+                )
+            }
+        }
+    }
+
     private fun didChangeWatchedFiles(events: List<VFileEvent>) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             val validChanges = events.mapNotNull { event ->
@@ -124,6 +157,7 @@ class WorkspaceServiceHandler(
         pluginAwareExecuteOnPooledThread {
             didCreateFiles(events.filterIsInstance<VFileCreateEvent>())
             didDeleteFiles(events.filterIsInstance<VFileDeleteEvent>())
+            didRenameFiles(events.filterIsInstance<VFilePropertyChangeEvent>())
             didChangeWatchedFiles(events)
         }
     }

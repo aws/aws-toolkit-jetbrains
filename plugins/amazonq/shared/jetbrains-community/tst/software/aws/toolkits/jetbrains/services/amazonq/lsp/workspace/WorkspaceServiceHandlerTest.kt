@@ -12,6 +12,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
+import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent
 import com.intellij.util.messages.MessageBus
 import com.intellij.util.messages.MessageBusConnection
 import io.mockk.every
@@ -28,12 +29,13 @@ import org.eclipse.lsp4j.DeleteFilesParams
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams
 import org.eclipse.lsp4j.DidChangeWorkspaceFoldersParams
 import org.eclipse.lsp4j.FileChangeType
+import org.eclipse.lsp4j.RenameFilesParams
 import org.eclipse.lsp4j.WorkspaceFolder
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.services.WorkspaceService
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil
@@ -49,7 +51,7 @@ class WorkspaceServiceHandlerTest {
     private lateinit var sut: WorkspaceServiceHandler
     private lateinit var mockApplication: Application
 
-    @Before
+    @BeforeEach
     fun setup() {
         project = mockk<Project>()
         mockWorkspaceService = mockk<WorkspaceService>()
@@ -81,6 +83,7 @@ class WorkspaceServiceHandlerTest {
         every { mockLanguageServer.workspaceService } returns mockWorkspaceService
         every { mockWorkspaceService.didCreateFiles(any()) } returns Unit
         every { mockWorkspaceService.didDeleteFiles(any()) } returns Unit
+        every { mockWorkspaceService.didRenameFiles(any()) } returns Unit
         every { mockWorkspaceService.didChangeWatchedFiles(any()) } returns Unit
         every { mockWorkspaceService.didChangeWorkspaceFolders(any()) } returns Unit
 
@@ -271,6 +274,91 @@ class WorkspaceServiceHandlerTest {
     }
 
     @Test
+    fun `test didRenameFiles with supported file`() = runTest {
+        // Arrange
+        val oldName = "oldFile.java"
+        val newName = "newFile.java"
+        val propertyEvent = createMockPropertyChangeEvent(
+            oldName = oldName,
+            newName = newName,
+            isDirectory = false,
+            extension = "java"
+        )
+
+        // Act
+        sut.after(listOf(propertyEvent))
+
+        // Assert
+        val paramsSlot = slot<RenameFilesParams>()
+        verify { mockWorkspaceService.didRenameFiles(capture(paramsSlot)) }
+        with(paramsSlot.captured.files[0]) {
+            assertEquals("file:///test/$oldName", oldUri)
+            assertEquals("file:///test/$newName", newUri)
+        }
+    }
+
+    @Test
+    fun `test didRenameFiles with unsupported file type`() = runTest {
+        // Arrange
+        val propertyEvent = createMockPropertyChangeEvent(
+            oldName = "oldFile.txt",
+            newName = "newFile.txt",
+            isDirectory = false,
+            extension = "txt"
+        )
+
+        // Act
+        sut.after(listOf(propertyEvent))
+
+        // Assert
+        verify(exactly = 0) { mockWorkspaceService.didRenameFiles(any()) }
+    }
+
+    @Test
+    fun `test didRenameFiles with directory`() = runTest {
+        // Arrange
+        val propertyEvent = createMockPropertyChangeEvent(
+            oldName = "oldDir",
+            newName = "newDir",
+            isDirectory = true
+        )
+
+        // Act
+        sut.after(listOf(propertyEvent))
+
+        // Assert
+        val paramsSlot = slot<RenameFilesParams>()
+        verify { mockWorkspaceService.didRenameFiles(capture(paramsSlot)) }
+        with(paramsSlot.captured.files[0]) {
+            assertEquals("file:///test/oldDir", oldUri)
+            assertEquals("file:///test/newDir", newUri)
+        }
+    }
+
+    @Test
+    fun `test didRenameFiles with multiple files`() = runTest {
+        // Arrange
+        val event1 = createMockPropertyChangeEvent(
+            oldName = "old1.java",
+            newName = "new1.java",
+            extension = "java"
+        )
+        val event2 = createMockPropertyChangeEvent(
+            oldName = "old2.py",
+            newName = "new2.py",
+            extension = "py"
+        )
+
+        // Act
+        sut.after(listOf(event1, event2))
+
+        // Assert
+        val paramsSlot = slot<RenameFilesParams>()
+        verify { mockWorkspaceService.didRenameFiles(capture(paramsSlot)) }
+        assertEquals(2, paramsSlot.captured.files.size)
+    }
+
+    @Test
     fun `rootsChanged does not notify when no changes`() = runTest {
         // Arrange
         mockkObject(WorkspaceFolderUtil)
@@ -441,6 +529,37 @@ class WorkspaceServiceHandlerTest {
             else -> mockk<VFileEvent>()
         }.apply {
             every { file } returns virtualFile
+        }
+    }
+
+    // for didRename events
+    private fun createMockPropertyChangeEvent(
+        oldName: String,
+        newName: String,
+        isDirectory: Boolean = false,
+        extension: String = "java",
+    ): VFilePropertyChangeEvent {
+        val file = mockk<VirtualFile>()
+        val parent = mockk<VirtualFile>()
+        val parentPath = mockk<Path>()
+        val filePath = mockk<Path>()
+
+        every { file.parent } returns parent
+        every { parent.toNioPath() } returns parentPath
+        every { file.toNioPath() } returns filePath
+        every { file.isDirectory } returns isDirectory
+        every { file.path } returns "/test/$newName"
+
+        every { parentPath.resolve(oldName) } returns mockk {
+            every { toUri() } returns URI("file:///test/$oldName")
+        }
+        every { filePath.toUri() } returns URI("file:///test/$newName")
+
+        return mockk<VFilePropertyChangeEvent>().apply {
+            every { propertyName } returns VirtualFile.PROP_NAME
+            every { this@apply.file } returns file
+            every { oldValue } returns oldName
+            every { newValue } returns newName
         }
     }
 }
