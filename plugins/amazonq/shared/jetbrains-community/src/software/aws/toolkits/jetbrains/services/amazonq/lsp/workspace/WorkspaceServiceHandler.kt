@@ -104,7 +104,7 @@ class WorkspaceServiceHandler(
                 .mapNotNull { event ->
                     val file = event.file.takeIf { shouldHandleFile(it) } ?: return@mapNotNull null
                     val oldName = event.oldValue as? String ?: return@mapNotNull null
-                    val newName = event.newValue as? String ?: return@mapNotNull null
+                    if (event.newValue !is String) return@mapNotNull null
 
                     // Construct old and new URIs
                     val parentPath = file.parent?.toNioPath() ?: return@mapNotNull null

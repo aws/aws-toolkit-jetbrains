@@ -282,7 +282,6 @@ class WorkspaceServiceHandlerTest {
             oldName = oldName,
             newName = newName,
             isDirectory = false,
-            extension = "java"
         )
 
         // Act
@@ -304,7 +303,6 @@ class WorkspaceServiceHandlerTest {
             oldName = "oldFile.txt",
             newName = "newFile.txt",
             isDirectory = false,
-            extension = "txt"
         )
 
         // Act
@@ -341,12 +339,10 @@ class WorkspaceServiceHandlerTest {
         val event1 = createMockPropertyChangeEvent(
             oldName = "old1.java",
             newName = "new1.java",
-            extension = "java"
         )
         val event2 = createMockPropertyChangeEvent(
             oldName = "old2.py",
             newName = "new2.py",
-            extension = "py"
         )
 
         // Act
@@ -537,7 +533,6 @@ class WorkspaceServiceHandlerTest {
         oldName: String,
         newName: String,
         isDirectory: Boolean = false,
-        extension: String = "java",
     ): VFilePropertyChangeEvent {
         val file = mockk<VirtualFile>()
         val parent = mockk<VirtualFile>()
