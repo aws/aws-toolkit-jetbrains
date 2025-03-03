@@ -19,7 +19,7 @@ import java.nio.file.Path
 class ManifestFetcher(
     private val lspManifestUrl: String = DEFAULT_MANIFEST_URL,
     private val manifestManager: ManifestManager = ManifestManager(),
-    private val lspManifestFilePath: Path = DEFAULT_MANIFEST_PATH,
+    private val manifestPath: Path = DEFAULT_MANIFEST_PATH,
 ) {
     companion object {
         private val logger = getLogger<ManifestFetcher>()
@@ -33,6 +33,10 @@ class ManifestFetcher(
             .resolve("language-servers")
             .resolve("jetbrains-lsp-manifest.json")
     }
+
+    @get:VisibleForTesting
+    internal val lspManifestFilePath: Path
+        get() = manifestPath
 
     /**
      * Method which will be used to fetch latest manifest.
