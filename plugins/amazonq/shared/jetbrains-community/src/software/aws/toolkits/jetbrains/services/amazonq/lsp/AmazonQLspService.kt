@@ -37,7 +37,6 @@ import org.eclipse.lsp4j.InitializedParams
 import org.eclipse.lsp4j.SynchronizationCapabilities
 import org.eclipse.lsp4j.TextDocumentClientCapabilities
 import org.eclipse.lsp4j.WorkspaceClientCapabilities
-import org.eclipse.lsp4j.WorkspaceFolder
 import org.eclipse.lsp4j.jsonrpc.Launcher
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.slf4j.event.Level
@@ -48,6 +47,8 @@ import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.auth.DefaultAuthCredentialsService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.createExtendedClientMetadata
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.workspace.WorkspaceServiceHandler
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import java.io.IOException
 import java.io.OutputStreamWriter
@@ -55,7 +56,6 @@ import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.io.PrintWriter
 import java.io.StringWriter
-import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.Future
 import kotlin.time.Duration.Companion.seconds
@@ -211,20 +211,10 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                 fileOperations = FileOperationsWorkspaceCapabilities().apply {
                     didCreate = true
                     didDelete = true
+                    didRename = true
                 }
             }
         }
-
-    // needs case handling when project's base path is null: default projects/unit tests
-    private fun createWorkspaceFolders(): List<WorkspaceFolder> =
-        project.basePath?.let { basePath ->
-            listOf(
-                WorkspaceFolder(
-                    URI("file://$basePath").toString(),
-                    project.name
-                )
-            )
-        }.orEmpty() // no folders to report or workspace not folder based
 
     private fun createClientInfo(): ClientInfo {
         val metadata = ClientMetadata.getDefault()
@@ -239,7 +229,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             processId = ProcessHandle.current().pid().toInt()
             capabilities = createClientCapabilities()
             clientInfo = createClientInfo()
-            workspaceFolders = createWorkspaceFolders()
+            workspaceFolders = createWorkspaceFolders(project)
             initializationOptions = createExtendedClientMetadata()
         }
 
@@ -306,6 +296,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         }
 
         DefaultAuthCredentialsService(project, encryptionManager, this)
+        WorkspaceServiceHandler(project, this)
     }
 
     override fun dispose() {
