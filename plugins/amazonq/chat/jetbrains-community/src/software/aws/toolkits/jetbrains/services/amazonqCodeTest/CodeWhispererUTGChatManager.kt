@@ -89,7 +89,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         val session = codeTestChatHelper.getActiveSession()
         session.isGeneratingTests = true
         session.iteration++
-        if (session.testGenerationJobGroupName.isNullOrEmpty()) {
+        if (session.testGenerationJobGroupName.isEmpty()) {
             session.testGenerationJobGroupName = UUID.randomUUID().toString()
         }
         val final = session.testGenerationJobGroupName
