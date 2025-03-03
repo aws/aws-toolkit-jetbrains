@@ -44,6 +44,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.auth.DefaultAuthCredentialsService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.createExtendedClientMetadata
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
@@ -307,6 +308,8 @@ private class AmazonQServerInstance(private val project: Project, private val cs
 
             initializeResult
         }
+
+        DefaultAuthCredentialsService(project, encryptionManager, this)
     }
 
     override fun dispose() {

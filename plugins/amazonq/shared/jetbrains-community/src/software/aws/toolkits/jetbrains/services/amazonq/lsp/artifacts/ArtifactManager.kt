@@ -3,14 +3,17 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
+import com.intellij.openapi.project.Project
 import com.intellij.util.text.SemVer
 import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
+import java.nio.file.Path
 
 class ArtifactManager(
+    private val project: Project,
     private val manifestFetcher: ManifestFetcher = ManifestFetcher(),
     private val artifactHelper: ArtifactHelper = ArtifactHelper(),
     manifestRange: SupportedManifestVersionRange?,
@@ -27,9 +30,6 @@ class ArtifactManager(
 
     private val manifestVersionRanges: SupportedManifestVersionRange = manifestRange ?: DEFAULT_VERSION_RANGE
 
-    // Secondary constructor with no parameters
-    constructor() : this(ManifestFetcher(), ArtifactHelper(), null)
-
     companion object {
         private val DEFAULT_VERSION_RANGE = SupportedManifestVersionRange(
             startVersion = SemVer("3.0.0", 3, 0, 0),
@@ -38,7 +38,7 @@ class ArtifactManager(
         private val logger = getLogger<ArtifactManager>()
     }
 
-    fun fetchArtifact() {
+    suspend fun fetchArtifact(): Path {
         val manifest = manifestFetcher.fetch() ?: throw LspException(
             "Language Support is not available, as manifest is missing.",
             LspException.ErrorCode.MANIFEST_FETCH_FAILED
@@ -51,20 +51,22 @@ class ArtifactManager(
             // No versions are found which are in the given range. Fallback to local lsp artifacts.
             val localLspArtifacts = this.artifactHelper.getAllLocalLspArtifactsWithinManifestRange(manifestVersionRanges)
             if (localLspArtifacts.isNotEmpty()) {
-                return
+                return localLspArtifacts.first().first
             }
             throw LspException("Language server versions not found in manifest.", LspException.ErrorCode.NO_COMPATIBLE_LSP_VERSION)
         }
 
         // If there is an LSP Manifest with the same version
         val target = getTargetFromLspManifest(lspVersions.inRangeVersions)
-
         // Get Local LSP files and check if we can re-use existing LSP Artifacts
-        if (!this.artifactHelper.getExistingLspArtifacts(lspVersions.inRangeVersions, target)) {
-            this.artifactHelper.tryDownloadLspArtifacts(lspVersions.inRangeVersions, target)
+        val artifactPath: Path = if (this.artifactHelper.getExistingLspArtifacts(lspVersions.inRangeVersions, target)) {
+            this.artifactHelper.getAllLocalLspArtifactsWithinManifestRange(manifestVersionRanges).first().first
+        } else {
+            this.artifactHelper.tryDownloadLspArtifacts(project, lspVersions.inRangeVersions, target)
+                ?: throw LspException("Failed to download LSP artifacts", LspException.ErrorCode.DOWNLOAD_FAILED)
         }
-
         this.artifactHelper.deleteOlderLspArtifacts(manifestVersionRanges)
+        return artifactPath
     }
 
     @VisibleForTesting
