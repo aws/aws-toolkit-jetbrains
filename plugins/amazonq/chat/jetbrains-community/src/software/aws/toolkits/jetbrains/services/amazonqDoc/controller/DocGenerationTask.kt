@@ -11,7 +11,24 @@ import software.amazon.awssdk.services.codewhispererruntime.model.DocV2Generatio
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 
+class DocGenerationTasks {
+    private val tasks: MutableMap<String, DocGenerationTask> = mutableMapOf()
+
+    fun getTask(tabId: String): DocGenerationTask {
+        if (!tasks.containsKey(tabId)) {
+            tasks[tabId] = DocGenerationTask()
+        }
+        return tasks[tabId]!!
+    }
+
+    fun deleteTask(tabId: String) {
+        tasks.remove(tabId)
+    }
+}
+
 class DocGenerationTask {
+    var mode: Mode = Mode.NONE
+
     // Telemetry fields
     var conversationId: String? = null
     var numberOfAddedChars: Int? = null
@@ -22,8 +39,8 @@ class DocGenerationTask {
     var numberOfGeneratedFiles: Int? = null
     var userDecision: DocUserDecision? = null
     var interactionType: DocInteractionType? = null
-    var numberOfNavigations = 0
-    var folderLevel: DocFolderLevel? = DocFolderLevel.ENTIRE_WORKSPACE
+    var numberOfNavigations: Int = 0
+    var folderLevel: DocFolderLevel = DocFolderLevel.ENTIRE_WORKSPACE
     fun docGenerationEventBase(): DocV2GenerationEvent {
         val undefinedProps = this::class.java.declaredFields
             .filter { it.get(this) == null }
@@ -35,10 +52,10 @@ class DocGenerationTask {
         }
 
         return DocV2GenerationEvent.builder()
-            .conversationId(conversationId)
-            .numberOfGeneratedChars(numberOfGeneratedChars)
-            .numberOfGeneratedLines(numberOfGeneratedLines)
-            .numberOfGeneratedFiles(numberOfGeneratedFiles)
+            .conversationId(conversationId ?: "")
+            .numberOfGeneratedChars(numberOfGeneratedChars ?: 0)
+            .numberOfGeneratedLines(numberOfGeneratedLines ?: 0)
+            .numberOfGeneratedFiles(numberOfGeneratedFiles ?: 0)
             .interactionType(interactionType)
             .numberOfNavigations(numberOfNavigations)
             .folderLevel(folderLevel)
@@ -56,12 +73,12 @@ class DocGenerationTask {
         }
 
         return DocV2AcceptanceEvent.builder()
-            .conversationId(conversationId)
-            .numberOfAddedChars(numberOfAddedChars)
-            .numberOfAddedLines(numberOfAddedLines)
-            .numberOfAddedFiles(numberOfAddedFiles)
-            .userDecision(userDecision)
-            .interactionType(interactionType)
+            .conversationId(conversationId ?: "")
+            .numberOfAddedChars(numberOfAddedChars ?: 0)
+            .numberOfAddedLines(numberOfAddedLines ?: 0)
+            .numberOfAddedFiles(numberOfAddedFiles ?: 0)
+            .userDecision(userDecision ?: DocUserDecision.ACCEPT)
+            .interactionType(interactionType ?: DocInteractionType.GENERATE_README)
             .numberOfNavigations(numberOfNavigations)
             .folderLevel(folderLevel)
             .build()
