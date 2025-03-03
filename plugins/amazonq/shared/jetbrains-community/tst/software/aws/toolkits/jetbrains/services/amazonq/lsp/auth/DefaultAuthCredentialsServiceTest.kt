@@ -3,10 +3,15 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.auth
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.serviceIfCreated
 import com.intellij.openapi.project.Project
+import com.intellij.util.messages.MessageBus
+import com.intellij.util.messages.MessageBusConnection
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.verify
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.junit.Before
@@ -42,7 +47,14 @@ class DefaultAuthCredentialsServiceTest {
             func.invoke(mockLanguageServer)
         }
 
-        sut = DefaultAuthCredentialsService(project, this.mockEncryptionManager)
+        // Mock message bus
+        val messageBus = mockk<MessageBus>()
+        every { project.messageBus } returns messageBus
+        val mockConnection = mockk<MessageBusConnection>()
+        every { messageBus.connect(any<Disposable>()) } returns mockConnection
+        every { mockConnection.subscribe(any(), any()) } just runs
+
+        sut = DefaultAuthCredentialsService(project, this.mockEncryptionManager, mockk())
     }
 
     @Test

@@ -3,8 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
+import com.intellij.openapi.project.Project
+import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.util.io.createDirectories
 import com.intellij.util.text.SemVer
+import kotlinx.coroutines.CancellationException
+import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.deleteIfExists
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
@@ -13,6 +17,7 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.saveFileFromUrl
 import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
+import software.aws.toolkits.resources.AwsCoreBundle
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -45,19 +50,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
     }
 
     fun deleteOlderLspArtifacts(manifestVersionRanges: ArtifactManager.SupportedManifestVersionRange) {
-        val localFolders = getSubFolders(lspArtifactsPath)
-
-        val validVersions = localFolders
-            .mapNotNull { localFolder ->
-                SemVer.parseFromText(localFolder.fileName.toString())?.let { semVer ->
-                    if (semVer in manifestVersionRanges.startVersion..manifestVersionRanges.endVersion) {
-                        localFolder to semVer
-                    } else {
-                        null
-                    }
-                }
-            }
-            .sortedByDescending { (_, semVer) -> semVer }
+        val validVersions = getAllLocalLspArtifactsWithinManifestRange(manifestVersionRanges)
 
         // Keep the latest 2 versions, delete others
         validVersions.drop(2).forEach { (folder, _) ->
@@ -68,6 +61,22 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
                 logger.error(e) { "Failed to delete older LSP artifact: ${folder.fileName}" }
             }
         }
+    }
+
+    fun getAllLocalLspArtifactsWithinManifestRange(manifestVersionRanges: ArtifactManager.SupportedManifestVersionRange): List<Pair<Path, SemVer>> {
+        val localFolders = getSubFolders(lspArtifactsPath)
+
+        return localFolders
+            .mapNotNull { localFolder ->
+                SemVer.parseFromText(localFolder.fileName.toString())?.let { semVer ->
+                    if (semVer in manifestVersionRanges.startVersion..manifestVersionRanges.endVersion) {
+                        localFolder to semVer
+                    } else {
+                        null
+                    }
+                }
+            }
+            .sortedByDescending { (_, semVer) -> semVer }
     }
 
     fun getExistingLspArtifacts(versions: List<ManifestManager.Version>, target: ManifestManager.VersionTarget?): Boolean {
@@ -94,7 +103,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
         return !hasInvalidFiles
     }
 
-    fun tryDownloadLspArtifacts(versions: List<ManifestManager.Version>, target: ManifestManager.VersionTarget?) {
+    suspend fun tryDownloadLspArtifacts(project: Project, versions: List<ManifestManager.Version>, target: ManifestManager.VersionTarget?): Path? {
         val temporaryDownloadPath = lspArtifactsPath.resolve("temp")
         val downloadPath = lspArtifactsPath.resolve(versions.first().serverVersion.toString())
 
@@ -103,23 +112,38 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
             logger.info { "Attempt ${currentAttempt.get()} of $maxDownloadAttempts to download LSP artifacts" }
 
             try {
-                if (downloadLspArtifacts(temporaryDownloadPath, target)) {
-                    moveFilesFromSourceToDestination(temporaryDownloadPath, downloadPath)
-                    logger.info { "Successfully downloaded and moved LSP artifacts to $downloadPath" }
-                    return
+                withBackgroundProgress(
+                    project,
+                    AwsCoreBundle.message("amazonqFeatureDev.placeholder.downloading_and_extracting_lsp_artifacts"),
+                    cancellable = true
+                ) {
+                    if (downloadLspArtifacts(temporaryDownloadPath, target) && target != null && !target.contents.isNullOrEmpty()) {
+                        moveFilesFromSourceToDestination(temporaryDownloadPath, downloadPath)
+                        target.contents
+                            .mapNotNull { it.filename }
+                            .forEach { filename -> extractZipFile(downloadPath.resolve(filename), downloadPath) }
+                        logger.info { "Successfully downloaded and moved LSP artifacts to $downloadPath" }
+                    }
                 }
+                return downloadPath
             } catch (e: Exception) {
-                logger.error(e) { "Failed to download/move LSP artifacts on attempt ${currentAttempt.get()}" }
-                temporaryDownloadPath.toFile().deleteRecursively()
-
-                if (currentAttempt.get() >= maxDownloadAttempts) {
-                    throw LspException("Failed to download LSP artifacts after $maxDownloadAttempts attempts", LspException.ErrorCode.DOWNLOAD_FAILED)
+                when (e) {
+                    is CancellationException -> {
+                        logger.error(e) { "User cancelled download and extracting of LSP artifacts.." }
+                        currentAttempt.set(maxDownloadAttempts) // To exit the while loop.
+                    }
+                    else -> { logger.error(e) { "Failed to download/move LSP artifacts on attempt ${currentAttempt.get()}" } }
                 }
+                temporaryDownloadPath.toFile().deleteRecursively()
+                downloadPath.toFile().deleteRecursively()
             }
         }
+        logger.error { "Failed to download LSP artifacts after $maxDownloadAttempts attempts" }
+        return null
     }
 
-    private fun downloadLspArtifacts(downloadPath: Path, target: ManifestManager.VersionTarget?): Boolean {
+    @VisibleForTesting
+    internal fun downloadLspArtifacts(downloadPath: Path, target: ManifestManager.VersionTarget?): Boolean {
         if (target == null || target.contents.isNullOrEmpty()) {
             logger.warn { "No target contents available for download" }
             return false
@@ -166,7 +190,8 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
         }
     }
 
-    private fun validateFileHash(filePath: Path, expectedHash: String?): Boolean {
+    @VisibleForTesting
+    internal fun validateFileHash(filePath: Path, expectedHash: String?): Boolean {
         if (expectedHash == null) return false
         val contentHash = generateSHA384Hash(filePath)
         return "sha384:$contentHash" == expectedHash
