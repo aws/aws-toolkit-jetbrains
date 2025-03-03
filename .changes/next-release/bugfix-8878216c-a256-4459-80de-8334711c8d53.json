@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Amazon Q /doc: Fix uploading file method throwing incorrect workspace too large error message"
-}
