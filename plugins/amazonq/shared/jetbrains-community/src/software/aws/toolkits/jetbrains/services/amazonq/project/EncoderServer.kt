@@ -3,28 +3,21 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.project
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.execution.configurations.GeneralCommandLine
-import com.intellij.execution.process.KillableProcessHandler
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.process.ProcessCloseUtil
+import com.intellij.openapi.util.Disposer
 import com.intellij.util.io.HttpRequests
 import com.intellij.util.io.createDirectories
 import com.intellij.util.net.NetUtils
-import com.nimbusds.jose.JOSEObjectType
-import com.nimbusds.jose.JWSAlgorithm
-import com.nimbusds.jose.JWSHeader
-import com.nimbusds.jose.crypto.MACSigner
-import com.nimbusds.jwt.JWTClaimsSet
-import com.nimbusds.jwt.SignedJWT
+import kotlinx.coroutines.CoroutineScope
 import org.apache.commons.codec.digest.DigestUtils
 import software.amazon.awssdk.utils.UserHomeDirectoryUtils
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.tryDirOp
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.EncoderServer2
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.extractZipFile
 import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
@@ -33,25 +26,16 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.attribute.PosixFilePermission
-import java.security.Key
-import java.security.SecureRandom
-import java.util.Base64
-import java.util.concurrent.atomic.AtomicInteger
-import javax.crypto.spec.SecretKeySpec
 
-class EncoderServer(val project: Project) : Disposable {
-    private val cachePath = Paths.get(
+class EncoderServer(val project: Project, private val cs: CoroutineScope) : Disposable {
+    val cachePath = Paths.get(
         UserHomeDirectoryUtils.userHomeDirectory()
     ).resolve(".aws").resolve("amazonq").resolve("cache")
     val manifestManager = ManifestManager()
     private val serverDirectoryName = "qserver-${manifestManager.currentVersion}.zip"
-    private val numberOfRetry = AtomicInteger(0)
     val port by lazy { NetUtils.findAvailableSocketPort() }
     private val nodeRunnableName = if (manifestManager.getOs() == "windows") "node.exe" else "node"
-    private val maxRetry: Int = 3
-    private val key = generateHmacKey()
-    private var processHandler: KillableProcessHandler? = null
-    private val mapper = jacksonObjectMapper()
+    lateinit var encoderServer2: EncoderServer2
 
     fun downloadArtifactsAndStartServer() {
         if (ApplicationManager.getApplication().isUnitTestMode) {
@@ -61,92 +45,36 @@ class EncoderServer(val project: Project) : Disposable {
         start()
     }
 
-    fun isNodeProcessRunning() = processHandler != null && processHandler?.process?.isAlive == true
-
-    private fun generateHmacKey(): Key {
-        val keyBytes = ByteArray(32)
-        SecureRandom().nextBytes(keyBytes)
-        return SecretKeySpec(keyBytes, "HmacSHA256")
-    }
-
-    fun encrypt(data: String): String {
-        val header = JWSHeader.Builder(JWSAlgorithm.HS256)
-            .type(JOSEObjectType.JWT)
-            .build()
-
-        val claimsSet = JWTClaimsSet.Builder()
-            .subject(Base64.getUrlEncoder().withoutPadding().encodeToString(data.toByteArray()))
-            .build()
-
-        val signedJWT = SignedJWT(header, claimsSet)
-        signedJWT.sign(MACSigner(key.encoded))
-
-        return signedJWT.serialize()
-    }
-
-    data class EncryptionRequest(
-        val version: String = "1.0",
-        val mode: String = "JWT",
-        val key: String,
-    )
-
-    fun getEncryptionRequest(): String {
-        val request = EncryptionRequest(key = Base64.getUrlEncoder().withoutPadding().encodeToString(key.encoded))
-        return mapper.writeValueAsString(request)
-    }
-
-    private fun runCommand(command: GeneralCommandLine): Boolean {
-        try {
-            logger.info { "starting encoder server for project context on $port for ${project.name}" }
-            processHandler = KillableProcessHandler(command)
-            val exitCode = processHandler?.waitFor()
-            if (exitCode == true) {
-                throw Exception("Encoder server exited")
-            } else {
-                return true
-            }
-        } catch (e: Exception) {
-            logger.warn(e) { "error running encoder server:" }
-            processHandler?.destroyProcess()
-            numberOfRetry.incrementAndGet()
-            return false
-        }
-    }
+    fun isNodeProcessRunning() = encoderServer2.initializer.isCompleted
 
     private fun getCommand(): GeneralCommandLine {
         val threadCount = CodeWhispererSettings.getInstance().getProjectContextIndexThreadCount()
         val isGpuEnabled = CodeWhispererSettings.getInstance().isProjectContextGpu()
-        val map = mutableMapOf<String, String>(
-            "PORT" to port.toString(),
-            "START_AMAZONQ_LSP" to "true",
-            "CACHE_DIR" to cachePath.toString(),
-            "MODEL_DIR" to cachePath.resolve("qserver").toString()
-        )
-        if (threadCount > 0) {
-            map["Q_WORKER_THREADS"] = threadCount.toString()
+        val environment = buildMap {
+            if (threadCount > 0) {
+                put("Q_WORKER_THREADS", threadCount.toString())
+            }
+
+            if (isGpuEnabled) {
+                put("Q_ENABLE_GPU", "true")
+            }
         }
-        if (isGpuEnabled) {
-            map["Q_ENABLE_GPU"] = "true"
-        }
-        val jsPath = cachePath.resolve("qserver").resolve("dist").resolve("extension.js").toString()
+
+        val jsPath = cachePath.resolve("qserver").resolve("lspServer.js").toString()
         val nodePath = cachePath.resolve(nodeRunnableName).toString()
         val command = GeneralCommandLine(nodePath, jsPath)
+            .withParameters("--stdio")
             .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
-            .withEnvironment(map)
+            .withEnvironment(environment)
         return command
     }
 
     fun start() {
-        while (numberOfRetry.get() < maxRetry) {
-            val isSuccess = runCommand(getCommand())
-            if (isSuccess) {
-                return
-            }
-        }
+        encoderServer2 = EncoderServer2(this, getCommand(), project, cs)
     }
 
     private fun close() {
-        processHandler?.process?.let { ProcessCloseUtil.close(it) }
+        Disposer.dispose(encoderServer2)
     }
 
     private fun downloadArtifactsIfNeeded() {

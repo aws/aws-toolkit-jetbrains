@@ -26,7 +26,7 @@ import java.util.concurrent.TimeoutException
 @Service(Service.Level.PROJECT)
 class ProjectContextController(private val project: Project, private val cs: CoroutineScope) : Disposable {
     // TODO: Ideally we should inject dependencies via constructor for easier testing, refer to how [TelemetryService] inject publisher and batcher
-    private val encoderServer: EncoderServer = EncoderServer(project)
+    private val encoderServer: EncoderServer = EncoderServer(project, cs)
     private val projectContextProvider: ProjectContextProvider = ProjectContextProvider(project, encoderServer, cs)
     val initJob: Job = cs.launch {
         encoderServer.downloadArtifactsAndStartServer()
