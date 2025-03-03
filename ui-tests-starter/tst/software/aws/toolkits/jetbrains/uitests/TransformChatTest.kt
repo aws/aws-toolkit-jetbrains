@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.uitests
 
 import com.intellij.driver.sdk.waitForProjectOpen
 import com.intellij.ide.starter.ci.CIServer
+import com.intellij.ide.starter.config.ConfigurationStorage
 import com.intellij.ide.starter.di.di
 import com.intellij.ide.starter.driver.engine.runIdeWithDriver
 import com.intellij.ide.starter.ide.IdeProductProvider
@@ -13,7 +14,7 @@ import com.intellij.ide.starter.models.TestCase
 import com.intellij.ide.starter.project.LocalProjectInfo
 import com.intellij.ide.starter.runner.CurrentTestMethod
 import com.intellij.ide.starter.runner.Starter
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -22,108 +23,10 @@ import org.kodein.di.bindSingleton
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
-import kotlin.io.path.createParentDirectories
-import kotlin.io.path.writeText
 
 class TransformChatTest {
 
-    init {
-        di = DI {
-            extend(di)
-            bindSingleton<CIServer>(overrides = true) { TestCIServer }
-        }
-    }
-
-    private val testResourcesPath = "src/test/tstData"
-
-    @BeforeEach
-    fun setUp() {
-        // Setup test environment
-        setupTestEnvironment()
-    }
-    private fun setupTestEnvironment() {
-        // Ensure Puppeteer is installed
-        val npmInstall = ProcessBuilder()
-            .command("npm", "install", "puppeteer")
-            .inheritIO()
-            .start()
-            .waitFor()
-
-        assertEquals(0, npmInstall, "Failed to install Puppeteer")
-
-    }
-
-    @Test
-    fun `can open up IDE`() {
-        val testCase = TestCase(
-            IdeProductProvider.IC,
-            LocalProjectInfo(
-                Paths.get("tstData", "Hello")
-            )
-        ).useRelease("2024.3")
-
-
-        Paths.get(System.getProperty("user.home"), ".aws", "sso", "cache", "ee1d2538cb8d358377d7661466c866af747a8a3f.json")
-            .createParentDirectories()
-            .writeText(
-                """
-                    auth goes here
-                """.trimIndent()
-            )
-
-        Paths.get(System.getProperty("user.home"), ".aws", "sso", "cache", "d3b447f809607422aac1470dd17fbb32e358cdb3.json")
-            .writeText(
-                """
-                    auth goes here
-                """.trimIndent()
-            )
-
-        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
-            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
-                pluginConfigurator.installPluginFromPath(
-                    Path.of(path)
-                )
-            }
-
-            copyExistingConfig(Paths.get("tstData", "config"))
-            updateGeneralSettings()
-        }.runIdeWithDriver()
-            .useDriverAndCloseIde {
-                waitForProjectOpen()
-                Thread.sleep(20000)
-
-
-                val result = executeScript(scr)
-                assertTrue(result.contains("Choose a module to transform"))
-                assertTrue(result.contains("Choose the target code version"))
-                assertTrue(result.contains("Skip tests form appeared: true"))
-                assertTrue(result.contains("One or multiple diffs form appeared: true"))
-                assertTrue(result.contains("couldn't run the Maven clean install command"))
-            }
-    }
-
-    private fun executeScript(scriptContent: String): String {
-        val scriptFile = File("$testResourcesPath/temp-script.js")
-        scriptFile.parentFile.mkdirs()
-        scriptFile.writeText(scriptContent)
-
-        val process = ProcessBuilder()
-            .command("node", scriptFile.absolutePath)
-            .redirectErrorStream(true)
-            .start()
-
-        val output = process.inputStream.bufferedReader().use { it.readText() }
-        val exitCode = process.waitFor()
-
-        scriptFile.delete()
-
-        assertEquals(0, exitCode, "Script execution failed with output: $output")
-        return output
-    }
-
-}
-
-private val scr = """
+    private val transformHappyPathScript = """
 const puppeteer = require('puppeteer');
 async function testNavigation() {
     const browser = await puppeteer.connect({
@@ -188,3 +91,66 @@ async function testNavigation() {
 }
 testNavigation().catch(console.error)
 """.trimIndent()
+
+    init {
+        di = DI {
+            extend(di)
+            bindSingleton<CIServer>(overrides = true) { TestCIServer }
+            val defaults = ConfigurationStorage.instance().defaults.toMutableMap().apply {
+                put("LOG_ENVIRONMENT_VARIABLES", (!System.getenv("CI").toBoolean()).toString())
+            }
+
+            bindSingleton<ConfigurationStorage>(overrides = true) {
+                ConfigurationStorage(this, defaults)
+            }
+        }
+    }
+
+    @BeforeEach
+    fun setUp() {
+        setupTestEnvironment()
+    }
+
+    @Test
+    fun `can run a transformation from the chat`() {
+        val testCase = TestCase(
+            IdeProductProvider.IC,
+            LocalProjectInfo(
+                Paths.get("tstData", "Hello")
+            )
+        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+
+        // inject connection
+        useExistingConnectionForTest()
+
+        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
+            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
+                pluginConfigurator.installPluginFromPath(
+                    Path.of(path)
+                )
+            }
+
+            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
+            updateGeneralSettings()
+        }.runIdeWithDriver()
+            .useDriverAndCloseIde {
+                waitForProjectOpen()
+                // required wait time for the system to be fully ready
+                Thread.sleep(30000)
+                val result = executePuppeteerScript(transformHappyPathScript)
+                assertTrue(result.contains("Choose a module to transform"))
+                assertTrue(result.contains("Choose the target code version"))
+                assertTrue(result.contains("Skip tests form appeared: true"))
+                assertTrue(result.contains("One or multiple diffs form appeared: true"))
+                assertTrue(result.contains("couldn't run the Maven clean install command"))
+            }
+    }
+
+    companion object {
+        @JvmStatic
+        @AfterAll
+        fun clearAwsXml() {
+            clearAwsXmlFile()
+        }
+    }
+}
