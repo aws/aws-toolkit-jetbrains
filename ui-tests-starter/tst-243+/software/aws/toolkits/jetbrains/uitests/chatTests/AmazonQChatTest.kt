@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.uitests.chatTests
 
-import com.intellij.driver.sdk.waitForIndicators
 import com.intellij.driver.sdk.waitForProjectOpen
 import com.intellij.ide.starter.ci.CIServer
 import com.intellij.ide.starter.config.ConfigurationStorage
@@ -29,10 +28,6 @@ import software.aws.toolkits.jetbrains.uitests.useExistingConnectionForTest
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
 
 class AmazonQChatTest {
 
@@ -91,8 +86,6 @@ class AmazonQChatTest {
                 assertTrue(result.contains("/clear"))
                 assertTrue(result.contains("/review"))
                 assertTrue(result.contains("/test"))
-                println("Assertion done")
-
             }
     }
 
