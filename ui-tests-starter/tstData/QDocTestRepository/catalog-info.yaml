@@ -1,0 +1,13 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: jbe-mines
+  description: It's a java minesweeper thing
+  labels:
+    example.com/custom: custom_label_value
+  tags:
+    - java
+spec:
+  type: service
+  lifecycle: experimental
+  owner: mines-relations-team
