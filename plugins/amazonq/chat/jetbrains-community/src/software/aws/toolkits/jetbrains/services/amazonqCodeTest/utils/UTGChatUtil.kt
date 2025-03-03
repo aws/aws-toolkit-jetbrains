@@ -17,6 +17,7 @@ import com.intellij.openapi.util.Key
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.ui.content.impl.ContentImpl
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.BuildAndExecuteStatusIcon
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.getBuildIcon
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.getExecutionIcon
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.getFixingTestCasesIcon
@@ -34,12 +35,12 @@ fun constructBuildAndExecutionSummaryText(currentStatus: BuildAndExecuteProgress
             BuildAndExecuteProgressStatus.BUILD_FAILED -> "failed"
             else -> "complete"
         }
-        progressMessages.add("${getBuildIcon(currentStatus)}: Build $verb")
+        progressMessages.add("${getBuildIcon(currentStatus)}: Project compiled $verb")
     }
 
     if (currentStatus >= BuildAndExecuteProgressStatus.RUN_EXECUTION_TESTS) {
         val verb = if (currentStatus == BuildAndExecuteProgressStatus.RUN_EXECUTION_TESTS) "Executing" else "Executed"
-        progressMessages.add("${getExecutionIcon(currentStatus)}: $verb passed tests")
+        progressMessages.add("${getExecutionIcon(currentStatus)}: $verb Ran tests")
     }
 
     if (currentStatus >= BuildAndExecuteProgressStatus.FIXING_TEST_CASES || currentStatus == BuildAndExecuteProgressStatus.BUILD_FAILED) {
@@ -51,9 +52,8 @@ fun constructBuildAndExecutionSummaryText(currentStatus: BuildAndExecuteProgress
         progressMessages.add("\n")
         progressMessages.add("**Test case summary**")
         progressMessages.add("\n")
-        progressMessages.add("Unit test coverage X%")
-        progressMessages.add("Build fails Y")
-        progressMessages.add("Assertion fails Z")
+        progressMessages.add(BuildAndExecuteStatusIcon.DONE.icon + "Build Success")
+        progressMessages.add(BuildAndExecuteStatusIcon.DONE.icon + "Assertion Success")
     }
 
     val prefix =
