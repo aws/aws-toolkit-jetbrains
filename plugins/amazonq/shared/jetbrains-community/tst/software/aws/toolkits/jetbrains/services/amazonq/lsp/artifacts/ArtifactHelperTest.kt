@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
 import com.intellij.openapi.project.Project
+import com.intellij.testFramework.ApplicationExtension
 import com.intellij.util.io.createDirectories
 import com.intellij.util.text.SemVer
 import io.mockk.Runs
@@ -14,16 +15,16 @@ import io.mockk.mockkStatic
 import io.mockk.spyk
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
-import org.jetbrains.annotations.TestOnly
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.io.TempDir
 import org.mockito.kotlin.mock
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager.SupportedManifestVersionRange
 import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 import java.nio.file.Path
 
-@TestOnly
+@ExtendWith(ApplicationExtension::class)
 class ArtifactHelperTest {
     @TempDir
     lateinit var tempDir: Path
