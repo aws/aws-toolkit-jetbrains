@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.uitests.chatTests
 
 // language=JS
 val testFeatureAvailabilityOnSlash = """
-import puppeteer from "puppeteer";
+const puppeteer = require('puppeteer');
 
 async function testNavigation() {
     const browser = await puppeteer.connect({
@@ -37,7 +37,7 @@ testNavigation().catch(console.error);
 
 // language=JS
 val dummyScript = """
-import puppeteer from "puppeteer";
+const puppeteer = require('puppeteer');
 
 async function testNavigation() {
     const browser = await puppeteer.connect({
