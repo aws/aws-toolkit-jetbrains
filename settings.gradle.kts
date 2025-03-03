@@ -100,10 +100,12 @@ include("sandbox-all")
 include("ui-tests-starter")
 when (providers.gradleProperty("ideProfileName").get()) {
     // FIX_WHEN_MIN_IS_242: `tmp-all` test module no longer needed in 242+
-    "2023.3", "2024.1" -> {
+    "2024.1" -> {
         include("tmp-all")
-
-        // only available 242+
+        project(":ui-tests-starter").projectDir = file("noop")
+    }
+    "2024.2" -> {
+        // only available 243+
         project(":ui-tests-starter").projectDir = file("noop")
     }
 }

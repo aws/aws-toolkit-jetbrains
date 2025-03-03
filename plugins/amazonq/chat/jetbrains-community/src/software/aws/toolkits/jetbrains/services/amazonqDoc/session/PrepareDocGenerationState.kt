@@ -48,7 +48,8 @@ class PrepareDocGenerationState(
                 config.conversationId,
                 zipFileChecksum,
                 zipFileLength,
-                uploadId
+                uploadId,
+                "docGeneration"
             )
 
             uploadArtifactToS3(
