@@ -119,7 +119,7 @@ class UpdateCodeChangesFlowTest {
                 Thread.sleep(30000)
 
                 val result = executePuppeteerScript(updateReadmeMakeChangesTestScript)
-                assertFalse(result.contains("Could not find the placeholder tex"))
+                assertFalse(result.contains("Could not find the placeholder text"))
                 assertTrue(result.contains("Found documentation change input text"))
             }
     }
