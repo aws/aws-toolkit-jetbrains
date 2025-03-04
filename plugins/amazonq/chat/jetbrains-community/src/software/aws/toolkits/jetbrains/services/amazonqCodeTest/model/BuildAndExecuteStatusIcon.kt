@@ -36,7 +36,7 @@ fun getExecutionIcon(progressStatus: BuildAndExecuteProgressStatus) =
 
 fun getFixingTestCasesIcon(progressStatus: BuildAndExecuteProgressStatus) =
     if (progressStatus == BuildAndExecuteProgressStatus.BUILD_FAILED) {
-        BuildAndExecuteStatusIcon.FAILED.icon
+        BuildAndExecuteStatusIcon.DONE.icon
     } else if (progressStatus == BuildAndExecuteProgressStatus.FIXING_TEST_CASES) {
         BuildAndExecuteStatusIcon.CURRENT.icon
     } else if (progressStatus >= BuildAndExecuteProgressStatus.PROCESS_TEST_RESULTS) {
