@@ -16,7 +16,6 @@ const val CODE_TEST_TAB_NAME = "codetest"
 
 enum class CodeTestButtonId(val id: String) {
     StopTestGeneration("stop_test_generation"),
-    StopTestGenBuildAndExecution("stop_test_gen_build_and_execution"),
 }
 
 data class Button(

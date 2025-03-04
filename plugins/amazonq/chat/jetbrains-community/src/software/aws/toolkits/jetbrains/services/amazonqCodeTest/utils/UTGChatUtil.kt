@@ -17,6 +17,7 @@ import com.intellij.openapi.util.Key
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.ui.content.impl.ContentImpl
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.BuildAndExecuteStatusIcon
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.getBuildIcon
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.getExecutionIcon
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.getFixingTestCasesIcon
@@ -25,42 +26,53 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.BuildAnd
 import java.io.File
 import java.io.FileWriter
 
-fun constructBuildAndExecutionSummaryText(currentStatus: BuildAndExecuteProgressStatus): String {
+fun constructBuildAndExecutionSummaryText(currentStatus: BuildAndExecuteProgressStatus, iterationNum: Int): String {
     val progressMessages = mutableListOf<String>()
 
     if (currentStatus >= BuildAndExecuteProgressStatus.RUN_BUILD) {
-        val buildStatus = when (currentStatus) {
+        val verb = when (currentStatus) {
             BuildAndExecuteProgressStatus.RUN_BUILD -> "in progress"
             BuildAndExecuteProgressStatus.BUILD_FAILED -> "failed"
             else -> "complete"
         }
-        progressMessages.add(
-            "${getBuildIcon(currentStatus)} Project ${
-                if (buildStatus == "in progress") "compiling" else "compiled"
-            }"
-        )
+        progressMessages.add("${getBuildIcon(currentStatus)}: Project compiled $verb")
     }
 
     if (currentStatus >= BuildAndExecuteProgressStatus.RUN_EXECUTION_TESTS) {
-        val buildStatus = if (currentStatus == BuildAndExecuteProgressStatus.RUN_EXECUTION_TESTS) "Running tests" else "Ran tests"
-        progressMessages.add("${getExecutionIcon(currentStatus)} $buildStatus")
+        val verb = if (currentStatus == BuildAndExecuteProgressStatus.RUN_EXECUTION_TESTS) "Executing" else "Executed"
+        progressMessages.add("${getExecutionIcon(currentStatus)}: $verb Ran tests")
     }
 
     if (currentStatus >= BuildAndExecuteProgressStatus.FIXING_TEST_CASES || currentStatus == BuildAndExecuteProgressStatus.BUILD_FAILED) {
-        val buildStatus = if (currentStatus == BuildAndExecuteProgressStatus.FIXING_TEST_CASES) "Fixing" else "Fixed"
-        progressMessages.add("${getFixingTestCasesIcon(currentStatus)}: $buildStatus test failures")
+        val verb = if (currentStatus == BuildAndExecuteProgressStatus.FIXING_TEST_CASES) "Fixing" else "Fixed"
+        progressMessages.add("${getFixingTestCasesIcon(currentStatus)}: $verb errors in tests")
     }
 
     if (currentStatus >= BuildAndExecuteProgressStatus.PROCESS_TEST_RESULTS) {
         progressMessages.add("\n")
-        progressMessages.add("**Results**")
+        progressMessages.add("**Test case summary**")
         progressMessages.add("\n")
-        progressMessages.add("Amazon Q executed the tests and identified at least one failure. Below are the suggested fixes.")
+        progressMessages.add(BuildAndExecuteStatusIcon.DONE.icon + "Build Success")
+        progressMessages.add(BuildAndExecuteStatusIcon.DONE.icon + "Assertion Success")
     }
+
+    val prefix =
+        if (iterationNum < 2) {
+            "Sure"
+        } else {
+            val timeString = when (iterationNum) {
+                2 -> "second"
+                3 -> "third"
+                4 -> "fourth"
+                // shouldn't reach
+                else -> "fifth"
+            }
+            "Working on the $timeString iteration now"
+        }
 
     // Join all progress messages into a single string
     return """
-            Sure, This may take a few minutes and I'll update the progress here.
+            $prefix. This may take a few minutes and I'll update the progress here.
         
             **Progress summary**
             
