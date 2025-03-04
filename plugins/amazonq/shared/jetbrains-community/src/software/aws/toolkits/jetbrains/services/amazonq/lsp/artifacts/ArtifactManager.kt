@@ -3,10 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
-import com.intellij.openapi.fileChooser.FileChooser
-import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.util.text.SemVer
 import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.error
@@ -14,7 +11,6 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 import java.nio.file.Path
-import java.nio.file.Paths
 
 class ArtifactManager(
     private val project: Project,
@@ -108,19 +104,5 @@ class ArtifactManager(
         }
         logger.info { "Target found in the current Version: ${versions.first().serverVersion}" }
         return currentTarget
-    }
-
-    fun overrideLspArtifacts(): Path? {
-        val baseDir = VfsUtil.getUserHomeDir()
-
-        val fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
-            .withTitle("Select Artifact")
-            .withDescription("Choose a file to upload")
-            .withExtensionFilter("js")
-        fileChooserDescriptor.isForcedToUseIdeaFileChooser = true
-
-        return FileChooser.chooseFile(fileChooserDescriptor, project, baseDir)?.path?.let {
-            Paths.get(it)
-        }
     }
 }
