@@ -50,6 +50,8 @@ data class Session(val tabId: String) {
 
     // Build loop execution
     val buildAndExecuteTaskContext = BuildAndExecuteTaskContext()
+    var listOfTestGenerationJobId: List<String> = listOf()
+    var buildStatus: BuildStatus = BuildStatus.SUCCESS
 }
 
 data class BuildAndExecuteTaskContext(
@@ -69,6 +71,12 @@ enum class BuildAndExecuteProgressStatus {
     TESTS_EXECUTED,
     FIXING_TEST_CASES,
     PROCESS_TEST_RESULTS,
+}
+
+enum class BuildStatus {
+    SUCCESS,
+    FAILURE,
+    CANCELLED,
 }
 
 const val UTG_CHAT_MAX_ITERATION = 4
