@@ -38,6 +38,7 @@ type MessageCommand =
     | 'codetransform-stop'
     | 'codetransform-confirm-skip-tests'
     | 'codetransform-confirm-one-or-multiple-diffs'
+    | 'codetransform-confirm-permissions'
     | 'codetransform-new'
     | 'codetransform-open-transform-hub'
     | 'codetransform-open-mvn-build'
