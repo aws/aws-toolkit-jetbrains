@@ -46,6 +46,7 @@ import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.auth.DefaultAuthCredentialsService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.createExtendedClientMetadata
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument.TextDocumentServiceHandler
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.workspace.WorkspaceServiceHandler
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
@@ -300,6 +301,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         }
 
         DefaultAuthCredentialsService(project, encryptionManager, this)
+        TextDocumentServiceHandler(project, this)
         WorkspaceServiceHandler(project, this)
     }
 
