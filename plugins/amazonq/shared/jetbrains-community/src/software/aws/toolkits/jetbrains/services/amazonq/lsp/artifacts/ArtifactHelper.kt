@@ -112,7 +112,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
             logger.info { "Attempt ${currentAttempt.get()} of $maxDownloadAttempts to download LSP artifacts" }
 
             try {
-                withBackgroundProgress(
+                return withBackgroundProgress(
                     project,
                     AwsCoreBundle.message("amazonqFeatureDev.placeholder.downloading_and_extracting_lsp_artifacts"),
                     cancellable = true
@@ -123,9 +123,12 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
                             .mapNotNull { it.filename }
                             .forEach { filename -> extractZipFile(downloadPath.resolve(filename), downloadPath) }
                         logger.info { "Successfully downloaded and moved LSP artifacts to $downloadPath" }
+
+                        return@withBackgroundProgress downloadPath
                     }
+
+                    return@withBackgroundProgress null
                 }
-                return downloadPath
             } catch (e: Exception) {
                 when (e) {
                     is CancellationException -> {
