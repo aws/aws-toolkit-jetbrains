@@ -91,14 +91,39 @@ class CodeWhispererUIChangeListener : CodeWhispererPopupStateChangeListener {
         CodeWhispererPopupManager.getInstance().render(
             states,
             sessionContext,
+            overlappingLinesCount,
             isRecommendationAdded = false
         )
     }
 
     override fun scrolled(states: InvocationContext, sessionContext: SessionContext) {
+        if (states.popup.isDisposed) return
+        val editor = states.requestContext.editor
+        val editorManager = CodeWhispererEditorManager.getInstance()
+        val selectedIndex = sessionContext.selectedIndex
+        val typeahead = sessionContext.typeahead
+        val detail = states.recommendationContext.details[selectedIndex]
+
+        // get matching brackets from recommendations to the brackets after caret position
+        val remaining = CodeWhispererPopupManager.getInstance().getReformattedRecommendation(
+            detail,
+            states.recommendationContext.userInputSinceInvocation
+        ).substring(typeahead.length)
+
+        val remainingLines = remaining.split("\n")
+        val otherLinesOfRemaining = remainingLines.drop(1)
+
+        // process other lines inlays, where we do tail-head matching as much as possible
+        val overlappingLinesCount = editorManager.findOverLappingLines(
+            editor,
+            otherLinesOfRemaining,
+            detail.isTruncatedOnRight,
+            sessionContext
+        )
         CodeWhispererPopupManager.getInstance().render(
             states,
             sessionContext,
+            overlappingLinesCount,
             isRecommendationAdded = false
         )
     }
@@ -107,6 +132,7 @@ class CodeWhispererUIChangeListener : CodeWhispererPopupStateChangeListener {
         CodeWhispererPopupManager.getInstance().render(
             states,
             sessionContext,
+            0,
             isRecommendationAdded = true
         )
     }
