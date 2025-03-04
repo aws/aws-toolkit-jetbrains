@@ -21,10 +21,8 @@ import com.intellij.openapi.util.Key
 import com.intellij.util.io.await
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -33,6 +31,7 @@ import org.eclipse.lsp4j.ClientCapabilities
 import org.eclipse.lsp4j.ClientInfo
 import org.eclipse.lsp4j.FileOperationsWorkspaceCapabilities
 import org.eclipse.lsp4j.InitializeParams
+import org.eclipse.lsp4j.InitializeResult
 import org.eclipse.lsp4j.InitializedParams
 import org.eclipse.lsp4j.SynchronizationCapabilities
 import org.eclipse.lsp4j.TextDocumentClientCapabilities
@@ -96,6 +95,8 @@ internal class LSPProcessListener : ProcessListener {
 @Service(Service.Level.PROJECT)
 class AmazonQLspService(private val project: Project, private val cs: CoroutineScope) : Disposable {
     private var instance: Deferred<AmazonQServerInstance>
+    val capabilities
+        get() = instance.getCompleted().initializeResult.getCompleted().capabilities
 
     // dont allow lsp commands if server is restarting
     private val mutex = Mutex(false)
@@ -111,7 +112,7 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
                         Disposer.register(this@AmazonQLspService, it)
                     }
                     // wait for handshake to complete
-                    instance.initializer.join()
+                    instance.initializeResult.join()
 
                     instance
                 }
@@ -141,7 +142,7 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
 
             try {
                 val i = it.await()
-                if (i.initializer.isActive) {
+                if (i.initializeResult.isActive) {
                     // not initialized
                     return
                 }
@@ -155,17 +156,17 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
         instance = start()
     }
 
-    suspend fun<T> execute(runnable: suspend (AmazonQLanguageServer) -> T): T {
+    suspend fun<T> execute(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T {
         val lsp = withTimeout(10.seconds) {
             val holder = mutex.withLock { instance }.await()
-            holder.initializer.join()
+            holder.initializeResult.join()
 
             holder.languageServer
         }
         return runnable(lsp)
     }
 
-    fun<T> executeSync(runnable: suspend (AmazonQLanguageServer) -> T): T =
+    fun<T> executeSync(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T =
         runBlocking(cs.coroutineContext) {
             execute(runnable)
         }
@@ -174,7 +175,7 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
         private val LOG = getLogger<AmazonQLspService>()
         fun getInstance(project: Project) = project.service<AmazonQLspService>()
 
-        fun <T> executeIfRunning(project: Project, runnable: (AmazonQLanguageServer) -> T): T? =
+        fun <T> executeIfRunning(project: Project, runnable: AmazonQLspService.(AmazonQLanguageServer) -> T): T? =
             project.serviceIfCreated<AmazonQLspService>()?.executeSync(runnable)
     }
 }
@@ -190,7 +191,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
     @Suppress("ForbiddenVoid")
     private val launcherFuture: Future<Void>
     private val launcherHandler: KillableProcessHandler
-    val initializer: Job
+    val initializeResult: Deferred<InitializeResult>
 
     private fun createClientCapabilities(): ClientCapabilities =
         ClientCapabilities().apply {
@@ -272,7 +273,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
 
         launcherFuture = launcher.startListening()
 
-        initializer = cs.launch {
+        initializeResult = cs.async {
             // encryption info must be sent within 5s or Flare process will exit
             encryptionManager.writeInitializationPayload(launcherHandler.process.outputStream)
 
@@ -291,8 +292,11 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             // then if this succeeds then we can allow the client to send requests
             if (initializeResult == null) {
                 launcherHandler.destroyProcess()
+                error("LSP initialization failed")
             }
             languageServer.initialized(InitializedParams())
+
+            initializeResult
         }
 
         DefaultAuthCredentialsService(project, encryptionManager, this)
