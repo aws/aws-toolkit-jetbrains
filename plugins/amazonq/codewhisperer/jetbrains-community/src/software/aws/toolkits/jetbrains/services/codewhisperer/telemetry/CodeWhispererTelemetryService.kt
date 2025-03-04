@@ -419,6 +419,18 @@ class CodeWhispererTelemetryService {
         )
     }
 
+    fun sendCodeScanIssueGenerated(issue: CodeWhispererCodeScanIssue) {
+        CodewhispererTelemetry.codeScanIssueDetected(
+            autoDetected = issue.autoDetected,
+            codewhispererCodeScanJobId = issue.scanJobId,
+            detectorId = issue.detectorId,
+            findingId = issue.findingId,
+            includesFix = issue.suggestedFixes.isNotEmpty(),
+            ruleId = issue.ruleId,
+            result = MetricResult.Succeeded
+        )
+    }
+
     fun enqueueAcceptedSuggestionEntry(
         requestId: String,
         requestContext: RequestContext,
