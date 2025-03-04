@@ -75,8 +75,8 @@ class WorkspaceServiceHandlerTest {
         every {
             mockLspService.executeSync<CompletableFuture<ResponseMessage>>(any())
         } coAnswers {
-            val func = firstArg<suspend (AmazonQLanguageServer) -> CompletableFuture<ResponseMessage>>()
-            func.invoke(mockLanguageServer)
+            val func = firstArg<suspend AmazonQLspService.(AmazonQLanguageServer) -> CompletableFuture<ResponseMessage>>()
+            func.invoke(mockLspService, mockLanguageServer)
         }
 
         // Mock workspace service
