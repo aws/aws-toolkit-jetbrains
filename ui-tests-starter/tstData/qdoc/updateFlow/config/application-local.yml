@@ -1,0 +1,11 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: sample-rest-app
+
+logging:
+  level:
+    root: INFO
+    com.example: DEBUG
