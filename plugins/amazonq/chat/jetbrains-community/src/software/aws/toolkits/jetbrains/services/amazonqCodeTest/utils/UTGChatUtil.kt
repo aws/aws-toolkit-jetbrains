@@ -48,7 +48,7 @@ fun constructBuildAndExecutionSummaryText(currentStatus: BuildAndExecuteProgress
 
     if (currentStatus >= BuildAndExecuteProgressStatus.FIXING_TEST_CASES || currentStatus == BuildAndExecuteProgressStatus.BUILD_FAILED) {
         val buildStatus = if (currentStatus == BuildAndExecuteProgressStatus.FIXING_TEST_CASES) "Fixing" else "Fixed"
-        progressMessages.add("${getFixingTestCasesIcon(currentStatus)}: $buildStatus test failures")
+        progressMessages.add("${getFixingTestCasesIcon(currentStatus)} $buildStatus test failures")
     }
 
     if (currentStatus >= BuildAndExecuteProgressStatus.PROCESS_TEST_RESULTS) {
@@ -86,17 +86,23 @@ fun runBuildOrTestCommand(
 
     // Find the nearest Gradle root directory
     var packageRoot: File? = testFileAbsolutePath.parentFile
+    var foundGradleRoot = false
     while (packageRoot != null && packageRoot != projectRoot) {
         if (File(packageRoot, "settings.gradle.kts").exists() || File(packageRoot, "build.gradle.kts").exists() ||
             File(packageRoot, "settings.gradle").exists() || File(packageRoot, "build.gradle").exists()
         ) {
-            break // Stop when we find a valid Gradle project root
+            foundGradleRoot = true
+            break // Store the last valid Gradle root found
         }
         packageRoot = packageRoot.parentFile
     }
+    var workingDir = if (foundGradleRoot) {
+        packageRoot ?: testFileAbsolutePath.parentFile
+    } else {
+        testFileAbsolutePath.parentFile
+    }
     // If no valid Gradle directory is found, fallback to the project root
-    val gradleWrapper = File(packageRoot, "gradlew")
-    val workingDir = if (gradleWrapper.exists()) packageRoot else projectRoot
+//    val gradleWrapper = File(packageRoot ?: projectRoot, "gradlew")
     val console: ConsoleView = ConsoleViewImpl(project, true)
 
     // Attach Console View to Build Tool Window

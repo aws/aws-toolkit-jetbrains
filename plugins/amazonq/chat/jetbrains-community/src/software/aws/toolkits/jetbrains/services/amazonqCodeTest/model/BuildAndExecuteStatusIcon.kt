@@ -6,8 +6,8 @@ package software.aws.toolkits.jetbrains.services.amazonqCodeTest.model
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.BuildAndExecuteProgressStatus
 
 enum class BuildAndExecuteStatusIcon(val icon: String) {
-    WAIT("<span>&#9744;</span>"),
-    CURRENT("<span>&#9744;</span>"),
+    WAIT("<span>&#9203;</span>"),
+    CURRENT("<span>&#9203;</span>"),
     DONE("<span style=\"color: green;\">&#10004;</span>"),
     FAILED("<span style=\"color: red;\">&#10060;</span>"),
 }
