@@ -5,13 +5,16 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.settings
 
 import com.intellij.icons.AllIcons
 import com.intellij.ide.DataManager
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.options.ex.Settings
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.emptyText
 import com.intellij.ui.components.ActionLink
 import com.intellij.ui.components.fields.ExpandableTextField
+import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.bindText
@@ -24,6 +27,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWh
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
+import software.aws.toolkits.jetbrains.settings.LspSettings
 import software.aws.toolkits.resources.message
 import java.awt.Font
 import java.util.concurrent.TimeUnit
@@ -58,6 +62,25 @@ class CodeWhispererConfigurable(private val project: Project) :
                         }
                     }
                 )
+            }
+        }
+
+        group("LSP") {
+            row("Select LSP Artifact") {
+                val fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
+                    .withExtensionFilter("js")
+                fileChooserDescriptor.isForcedToUseIdeaFileChooser = true
+
+                textFieldWithBrowseButton(fileChooserDescriptor = fileChooserDescriptor)
+                    .bindText(
+                        { LspSettings.getInstance().getArtifactPath() },
+                        { LspSettings.getInstance().setExecutablePath(it.takeIf { v -> v.isNotBlank() }) }
+                    )
+                    .applyToComponent {
+                        emptyText.text = "Choose a file to upload"
+                    }
+                    .resizableColumn()
+                    .align(Align.FILL)
             }
         }
 
