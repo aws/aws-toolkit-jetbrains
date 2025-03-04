@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.settings
 
 import com.intellij.openapi.components.PersistentStateComponent
+import com.intellij.openapi.components.RoamingType
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
@@ -11,7 +12,7 @@ import com.intellij.openapi.components.service
 import com.intellij.util.xmlb.annotations.Attribute
 
 @Service
-@State(name = "lspSettings", storages = [Storage("aws.xml")])
+@State(name = "lspSettings", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
 class LspSettings : PersistentStateComponent<LspConfiguration> {
     private var state = LspConfiguration()
 
@@ -29,12 +30,12 @@ class LspSettings : PersistentStateComponent<LspConfiguration> {
     }
 
     fun setExecutablePath(artifactPath: String?) {
-            if (artifactPath == null) {
-                state.artifactPath = ""
-            } else {
-                state.artifactPath = artifactPath
-            }
+        if (artifactPath == null) {
+            state.artifactPath = ""
+        } else {
+            state.artifactPath = artifactPath
         }
+    }
 
     companion object {
         fun getInstance(): LspSettings = service()
