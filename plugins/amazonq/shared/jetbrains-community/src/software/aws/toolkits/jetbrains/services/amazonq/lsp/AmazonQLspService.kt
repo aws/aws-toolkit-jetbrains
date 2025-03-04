@@ -144,7 +144,7 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
 
             try {
                 val i = it.await()
-                if (i.initializer.isActive) {
+                if (i.initializeResult.isActive) {
                     // not initialized
                     return
                 }
@@ -193,7 +193,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
     @Suppress("ForbiddenVoid")
     private val launcherFuture: Future<Void>
     private val launcherHandler: KillableProcessHandler
-    val initializer: Job
+    val initializeResult: Deferred<InitializeResult>
 
     private fun createClientCapabilities(): ClientCapabilities =
         ClientCapabilities().apply {

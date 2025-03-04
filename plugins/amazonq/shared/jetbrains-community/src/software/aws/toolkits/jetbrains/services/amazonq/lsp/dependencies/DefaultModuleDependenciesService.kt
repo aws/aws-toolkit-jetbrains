@@ -4,12 +4,12 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.module.Module
+import com.intellij.openapi.module.ModuleManager
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.projectRoots.JavaSdkType
 import com.intellij.openapi.roots.ModuleRootEvent
 import com.intellij.openapi.roots.ModuleRootListener
-import com.intellij.openapi.module.ModuleManager
-import com.intellij.openapi.projectRoots.JavaSdkType
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.vfs.VfsUtil
@@ -20,10 +20,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependenci
 
 class DefaultModuleDependenciesService(
     private val project: Project,
-    serverInstance: Disposable
+    serverInstance: Disposable,
 ) : ModuleDependenciesService,
-    ModuleRootListener
-{
+    ModuleRootListener {
 
     init {
         project.messageBus.connect(serverInstance).subscribe(
@@ -34,14 +33,11 @@ class DefaultModuleDependenciesService(
         syncAllModules()
     }
 
-
     override fun rootsChanged(event: ModuleRootEvent) {
         if (event.isCausedByFileTypesChange) return
         // call on change with updated dependencies
         syncAllModules()
     }
-
-
 
     override fun syncModuleDependencies(params: SyncModuleDependenciesParams) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
@@ -59,7 +55,6 @@ class DefaultModuleDependenciesService(
             }
             syncModuleDependencies(params)
         }
-
     }
 
     private fun getModuleLanguage(module: Module): String {
