@@ -3,3 +3,4 @@
 
 // project that does nothing
 tasks.register("test")
+tasks.register("uiTest")
