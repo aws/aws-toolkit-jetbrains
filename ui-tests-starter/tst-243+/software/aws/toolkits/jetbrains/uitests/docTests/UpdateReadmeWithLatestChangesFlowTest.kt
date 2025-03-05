@@ -60,7 +60,7 @@ class UpdateReadmeWithLatestChangesFlowTest {
         val testCase = TestCase(
             IdeProductProvider.IC,
             LocalProjectInfo(
-                Paths.get("tstData", "qdoc")
+                Paths.get("tstData", "qdoc", "updateFlow")
             )
         ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
 
@@ -93,7 +93,7 @@ class UpdateReadmeWithLatestChangesFlowTest {
         val testCase = TestCase(
             IdeProductProvider.IC,
             LocalProjectInfo(
-                Paths.get("tstData", "qdoc")
+                Paths.get("tstData", "qdoc", "updateFlow")
             )
         ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
 
@@ -126,7 +126,7 @@ class UpdateReadmeWithLatestChangesFlowTest {
         val testCase = TestCase(
             IdeProductProvider.IC,
             LocalProjectInfo(
-                Paths.get("tstData", "qdoc")
+                Paths.get("tstData", "qdoc", "updateFlow")
             )
         ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
 
