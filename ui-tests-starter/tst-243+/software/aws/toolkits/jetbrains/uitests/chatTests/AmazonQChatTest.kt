@@ -82,12 +82,11 @@ class AmazonQChatTest {
                 assertTrue(result.contains("/doc"))
                 assertTrue(result.contains("/dev"))
                 assertTrue(result.contains("/transform"))
-                assertTrue(result.contains("/helping"))
+                assertTrue(result.contains("/help"))
                 assertTrue(result.contains("/clear"))
                 assertTrue(result.contains("/review"))
                 assertTrue(result.contains("/test"))
                 println("Assertions done")
-                Thread.sleep(20000)
             }
     }
 
