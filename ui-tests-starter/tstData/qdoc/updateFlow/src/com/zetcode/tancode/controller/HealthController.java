@@ -1,7 +1,7 @@
 // Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package com.tancode.controller;
+package com.zetcode.tancode.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
