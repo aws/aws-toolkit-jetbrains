@@ -17,6 +17,7 @@ import com.jetbrains.python.packaging.management.PythonPackageManager
 import com.jetbrains.python.sdk.PythonSdkUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.SyncModuleDependenciesParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.ModuleDependencyProvider.Companion.EP_NAME
 import java.util.concurrent.CompletableFuture
 
 class DefaultModuleDependenciesService(
@@ -50,21 +51,12 @@ class DefaultModuleDependenciesService(
 
     private fun syncAllModules() {
         ModuleManager.getInstance(project).modules.forEach { module ->
-            val language = getModuleLanguage(module)
-            val params = when (language) {
-                "Java" -> createJavaParams(module)
-                "Python" -> createPythonParams(module)
-                else -> return
+            EP_NAME.forEachExtensionSafe {
+                if (it.isApplicable(module)) {
+                    syncModuleDependencies(it.createParams(module))
+                    return@forEachExtensionSafe
+                }
             }
-            syncModuleDependencies(params)
-        }
-    }
-
-    private fun getModuleLanguage(module: Module): String {
-        return when {
-            ModuleRootManager.getInstance(module).sdk?.sdkType is JavaSdkType -> "Java"
-            PythonSdkUtil.findPythonSdk(module) != null -> "Python"
-            else -> "Unknown"
         }
     }
 

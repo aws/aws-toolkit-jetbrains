@@ -6,7 +6,17 @@
     <xi:include href="/META-INF/plugin-codetransform.xml" />
     <xi:include href="/META-INF/plugin-codewhisperer.xml" />
 
+    <extensionPoints>
+        <extensionPoint name="moduleDependencyProvider"
+                        interface="software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.ModuleDependencyProvider"
+                        dynamic="true"/>
+    </extensionPoints>
+
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="migration.software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager"/>
     </extensions>
+
+    <depends optional="true" config-file="java-support.xml">com.intellij.modules.java</depends>
+    <depends optional="true" config-file="python-support.xml">com.intellij.modules.python</depends>
+
 </idea-plugin>
