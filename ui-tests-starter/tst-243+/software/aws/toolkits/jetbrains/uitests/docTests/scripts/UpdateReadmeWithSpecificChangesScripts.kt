@@ -36,14 +36,14 @@ val updateReadmeSpecificChangesMakeChangesFlowScript = """
                     await findAndClickButton(page, 'Yes', true, 10000);
                     
                     console.log('Typing specific change instructions in the chat window');
-                    await page.type('.mynah-chat-prompt-input', 'Add new section titled Programming Languages which describes the programming languages and version of programming language used in this project.');
+                    await page.type('.mynah-chat-prompt-input', 'Add a section with Installation instructions for this repository. Title this new section \"### Installation\"');
                     await page.keyboard.press('Enter');
     
                     console.log('Waiting for updated README to be generated');
                     await new Promise(resolve => setTimeout(resolve, 90000));
                     console.log('Attempting to find and click Make changes button');
                     await findAndClickButton(page, 'Make changes', true, 10000);
-                    
+                    const makeChangeText = await page.waitForSelector('[placeholder="Describe documentation changes"]');
                     if (!makeChangeText) {
                           console.log('Error: Test Failed');
                           console.log('Unable to find placeholder description test in Make Changes flow');
@@ -109,9 +109,6 @@ val updateReadmeSpecificChangesScript = """
                     
                     console.log('Attempting to find and click Accept button');
                     await findAndClickButton(page, 'Accept', true, 10000);
-                    
-                    // find and confirm the updated readme 
-
                 }
             }
 
