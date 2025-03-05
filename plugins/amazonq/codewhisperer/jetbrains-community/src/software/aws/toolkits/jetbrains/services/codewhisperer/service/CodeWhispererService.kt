@@ -699,7 +699,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         recommendationContext: RecommendationContext,
         popup: JBPopup,
     ): InvocationContext {
-        addPopupChildDisposables(requestContext.project, requestContext.editor, popup)
+        addPopupChildDisposables(popup)
         // Creating a disposable for managing all listeners lifecycle attached to the popup.
         // previously(before pagination) we use popup as the parent disposable.
         // After pagination, listeners need to be updated as states are updated, for the same popup,
@@ -711,25 +711,12 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         return states
     }
 
-    private fun addPopupChildDisposables(project: Project, editor: Editor, popup: JBPopup) {
+    private fun addPopupChildDisposables(popup: JBPopup) {
         codeInsightSettingsFacade.disableCodeInsightUntil(popup)
 
         Disposer.register(popup) {
             CodeWhispererPopupManager.getInstance().reset()
         }
-        project.messageBus.connect(popup).subscribe(
-            CodeWhispererServiceNew.CODEWHISPERER_INTELLISENSE_POPUP_ON_HOVER,
-            object : CodeWhispererIntelliSenseOnHoverListener {
-                override fun onEnter() {
-                    CodeWhispererPopupManager.getInstance().bringSuggestionInlayToFront(
-                        editor,
-                        popup,
-                        CodeWhispererPopupManager.getInstance().sessionContext,
-                        opposite = true
-                    )
-                }
-            }
-        )
     }
 
     private fun logServiceInvocation(
