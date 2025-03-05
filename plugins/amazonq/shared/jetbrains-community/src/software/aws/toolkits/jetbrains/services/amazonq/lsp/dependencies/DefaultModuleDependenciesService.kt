@@ -17,6 +17,7 @@ import com.jetbrains.python.packaging.management.PythonPackageManager
 import com.jetbrains.python.sdk.PythonSdkUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.SyncModuleDependenciesParams
+import java.util.concurrent.CompletableFuture
 
 class DefaultModuleDependenciesService(
     private val project: Project,
@@ -39,11 +40,13 @@ class DefaultModuleDependenciesService(
         syncAllModules()
     }
 
-    override fun syncModuleDependencies(params: SyncModuleDependenciesParams) {
-        AmazonQLspService.executeIfRunning(project) { languageServer ->
-            languageServer.syncModuleDependencies(params)
+    override fun syncModuleDependencies(params: SyncModuleDependenciesParams): CompletableFuture<Unit> =
+        CompletableFuture<Unit>().also { completableFuture ->
+            AmazonQLspService.executeIfRunning(project) { languageServer ->
+                languageServer.syncModuleDependencies(params)
+                completableFuture.complete(null)
+            } ?: completableFuture.completeExceptionally(IllegalStateException("LSP Server not running"))
         }
-    }
 
     private fun syncAllModules() {
         ModuleManager.getInstance(project).modules.forEach { module ->

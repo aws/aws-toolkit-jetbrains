@@ -4,7 +4,8 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies
 
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.SyncModuleDependenciesParams
+import java.util.concurrent.CompletableFuture
 
 interface ModuleDependenciesService {
-    fun syncModuleDependencies(params: SyncModuleDependenciesParams)
+    fun syncModuleDependencies(params: SyncModuleDependenciesParams): CompletableFuture<Unit>
 }
