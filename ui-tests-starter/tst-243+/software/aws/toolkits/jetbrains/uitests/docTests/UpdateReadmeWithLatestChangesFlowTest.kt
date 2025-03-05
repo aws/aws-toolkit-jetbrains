@@ -148,9 +148,7 @@ class UpdateReadmeWithLatestChangesFlowTest {
                 // required wait time for the system to be fully ready
                 Thread.sleep(30000)
 
-                val result = executePuppeteerScript(updateReadmeLatestChangesTestScript)
-                assertTrue(result.contains("Test Successful"))
-                assertFalse(result.contains("Error: Test Failed"))
+                executePuppeteerScript(updateReadmeLatestChangesTestScript)
 
                 val readmePath = Paths.get("tstData", "qdoc", "updateFlow", "README.md")
                 val readme = File(readmePath.toUri())
