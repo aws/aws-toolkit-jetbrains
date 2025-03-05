@@ -4,9 +4,9 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.providers
 
 import com.intellij.openapi.module.Module
+import com.intellij.openapi.projectRoots.JavaSdkType
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.OrderRootType
-import com.intellij.openapi.projectRoots.JavaSdkType
 import com.intellij.openapi.vfs.VfsUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.ModuleDependencyProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.SyncModuleDependenciesParams
@@ -45,4 +45,3 @@ class JavaModuleDependencyProvider : ModuleDependencyProvider {
             }
     }
 }
-

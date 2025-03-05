@@ -15,6 +15,3 @@ interface ModuleDependencyProvider {
     fun isApplicable(module: Module): Boolean
     fun createParams(module: Module): SyncModuleDependenciesParams
 }
-
-
-
