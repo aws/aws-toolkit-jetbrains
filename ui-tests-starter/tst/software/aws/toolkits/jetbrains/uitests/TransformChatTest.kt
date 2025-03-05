@@ -26,7 +26,7 @@ import java.nio.file.Paths
 
 class TransformChatTest {
 
-    private val transformHappyPathScript = """
+private val transformHappyPathScript = """
 const puppeteer = require('puppeteer');
 async function testNavigation() {
     const browser = await puppeteer.connect({
