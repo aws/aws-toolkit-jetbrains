@@ -198,13 +198,8 @@ class CodeScanSessionConfig(
             try {
                 val relativePath = "${project.name}/${file.relativeTo(projectRoot.toNioPath())}"
                 LOG.debug { "Selected file for truncation: $file" }
-                if (relativePath.contains("../") || relativePath.contains("..\\")) {
-                    CodeWhispererTelemetryService.getInstance().sendInvalidZipEvent(file, projectRoot.toNioPath(), relativePath)
-                    val normalizedPath = File(relativePath).normalize().path
-                    it.putNextEntry(normalizedPath, file)
-                } else {
-                    it.putNextEntry(relativePath.toString(), file)
-                }
+                val normalizedPath = File(relativePath).normalize().path
+                it.putNextEntry(normalizedPath, file)
             } catch (e: Exception) {
                 cannotFindFile("Zipping error: ${e.message}", file.pathString)
             }
