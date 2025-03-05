@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "/review: normalize relative file path before unzipping"
+  "description" : "/review: some reviews failed due to zip files created with invalid relative path"
 }
