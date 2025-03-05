@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.uitests.docTests.scripts
 
 // language=TS
 val findAndClickButtonScript = """
-export const findAndClickButton = async (
+const findAndClickButton = async (
   page,
   buttonText,
   clickButton = false,
