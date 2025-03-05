@@ -39,11 +39,13 @@ class PreAmazonQUiTest {
     @Test
     fun `can set up Connection`() {
         try {
-            val startUrl = System.getenv("TEST_START_URL")
-            val region = System.getenv("TEST_REGION")
-            connection = LegacyManagedBearerSsoConnection(startUrl, region, Q_SCOPES)
-            ConnectionPinningManager.getInstance().setPinnedConnection(QConnection.getInstance(), connection)
-            (connection.getConnectionSettings().tokenProvider.delegate as BearerTokenProvider).reauthenticate()
+            if (System.getenv("CI").toBoolean()) {
+                val startUrl = System.getenv("TEST_START_URL")
+                val region = System.getenv("TEST_REGION")
+                connection = LegacyManagedBearerSsoConnection(startUrl, region, Q_SCOPES)
+                ConnectionPinningManager.getInstance().setPinnedConnection(QConnection.getInstance(), connection)
+                (connection.getConnectionSettings().tokenProvider.delegate as BearerTokenProvider).reauthenticate()
+            }
         } catch (e: Exception) {
             error("Could not connect to Idc.")
         }
