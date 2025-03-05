@@ -25,7 +25,7 @@ class LspSettings : PersistentStateComponent<LspConfiguration> {
 
     fun getArtifactPath() = state.artifactPath
 
-    fun setExecutablePath(artifactPath: String?) {
+    fun setArtifactPath(artifactPath: String?) {
         if (artifactPath == null) {
             state.artifactPath = ""
         } else {
