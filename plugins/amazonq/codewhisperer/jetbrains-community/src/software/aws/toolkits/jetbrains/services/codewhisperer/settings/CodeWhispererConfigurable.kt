@@ -68,7 +68,6 @@ class CodeWhispererConfigurable(private val project: Project) :
         group("LSP") {
             row("Select LSP Artifact") {
                 val fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
-                    .withExtensionFilter("js")
                 fileChooserDescriptor.isForcedToUseIdeaFileChooser = true
 
                 textFieldWithBrowseButton(fileChooserDescriptor = fileChooserDescriptor)
