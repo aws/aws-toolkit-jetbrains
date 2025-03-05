@@ -93,10 +93,6 @@ val updateReadmeLatestChangesScript = """
                     await new Promise(resolve => setTimeout(resolve, 90000));
                     console.log('Attempting to find and click Accept button')
                     await findAndClickButton(page, 'Accept', true, 10000)
-                    
-                    // find and confirm the readme was generated successfully
-
-    
                 }
             }
     
@@ -147,7 +143,7 @@ val updateReadmeLatestChangesMakeChangesFlowScript = """
                     await new Promise(resolve => setTimeout(resolve, 90000));
                     console.log('Attempting to find and click Make changes button');
                     await findAndClickButton(page, 'Make changes', true, 10000);
-                    const makeChangeText = await page.${'$'}('[placeholder="Describe documentation changes"]');
+                    const makeChangeText = await page.waitForSelector('[placeholder="Describe documentation changes"]');
                     if (!makeChangeText) {
                       console.log('Error: Test Failed');
                       console.log('Unable to find placeholder description test in Make Changes flow');
