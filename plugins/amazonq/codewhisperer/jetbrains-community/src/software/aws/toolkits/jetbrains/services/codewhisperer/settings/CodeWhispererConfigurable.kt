@@ -65,8 +65,8 @@ class CodeWhispererConfigurable(private val project: Project) :
             }
         }
 
-        group("LSP") {
-            row("Select LSP Artifact") {
+        group(message("amazonqFeatureDev.placeholder.lsp")) {
+            row(message("amazonqFeatureDev.placeholder.select_lsp_artifact")) {
                 val fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
                 fileChooserDescriptor.isForcedToUseIdeaFileChooser = true
 
