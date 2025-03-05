@@ -3,20 +3,23 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.util
 
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.intellij.testFramework.ApplicationExtension
 import io.mockk.every
 import io.mockk.mockk
-import org.junit.Test
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 
-class FileUriUtilTest : BasePlatformTestCase() {
+@ExtendWith(ApplicationExtension::class)
+class FileUriUtilTest {
 
-    private fun createMockVirtualFile(path: String, protocol: String = "file", isDirectory: Boolean = false): VirtualFile =
+    private fun createMockVirtualFile(path: String, mockProtocol: String = "file", mockIsDirectory: Boolean = false): VirtualFile =
         mockk<VirtualFile> {
             every { fileSystem } returns mockk {
-                every { this@mockk.protocol } returns protocol
+                every { protocol } returns mockProtocol
             }
             every { url } returns path
-            every { this@mockk.isDirectory } returns isDirectory
+            every { isDirectory } returns mockIsDirectory
         }
 
     private fun normalizeFileUri(uri: String): String {
@@ -37,15 +40,15 @@ class FileUriUtilTest : BasePlatformTestCase() {
         val virtualFile = createMockVirtualFile("/path/to/file.txt")
         val uri = FileUriUtil.toUriString(virtualFile)
         val expected = normalizeFileUri("file:///path/to/file.txt")
-        assertEquals(expected, uri)
+        assertThat(uri).isEqualTo(expected)
     }
 
     @Test
     fun `test unix directory path`() {
-        val virtualFile = createMockVirtualFile("/path/to/directory/", isDirectory = true)
+        val virtualFile = createMockVirtualFile("/path/to/directory/", mockIsDirectory = true)
         val uri = FileUriUtil.toUriString(virtualFile)
         val expected = normalizeFileUri("file:///path/to/directory")
-        assertEquals(expected, uri)
+        assertThat(uri).isEqualTo(expected)
     }
 
     @Test
@@ -53,7 +56,7 @@ class FileUriUtilTest : BasePlatformTestCase() {
         val virtualFile = createMockVirtualFile("/path/with spaces/file.txt")
         val uri = FileUriUtil.toUriString(virtualFile)
         val expected = normalizeFileUri("file:///path/with%20spaces/file.txt")
-        assertEquals(expected, uri)
+        assertThat(uri).isEqualTo(expected)
     }
 
     @Test
@@ -61,7 +64,7 @@ class FileUriUtilTest : BasePlatformTestCase() {
         val virtualFile = createMockVirtualFile("/")
         val uri = FileUriUtil.toUriString(virtualFile)
         val expected = normalizeFileUri("file:///")
-        assertEquals(expected, uri)
+        assertThat(uri).isEqualTo(expected)
     }
 
     @Test
@@ -69,7 +72,7 @@ class FileUriUtilTest : BasePlatformTestCase() {
         val virtualFile = createMockVirtualFile("/path//to///file.txt")
         val uri = FileUriUtil.toUriString(virtualFile)
         val expected = normalizeFileUri("file:///path/to/file.txt")
-        assertEquals(expected, uri)
+        assertThat(uri).isEqualTo(expected)
     }
 
     @Test
@@ -78,8 +81,8 @@ class FileUriUtilTest : BasePlatformTestCase() {
         val virtualFile = createMockVirtualFile(longPath)
         val uri = FileUriUtil.toUriString(virtualFile)
         if (uri != null) {
-            assertTrue(uri.startsWith("file:///"))
-            assertTrue(uri.endsWith("/file.txt"))
+            assertThat(uri.startsWith("file:///")).isTrue
+            assertThat(uri.endsWith("/file.txt")).isTrue
         }
     }
 
@@ -88,8 +91,8 @@ class FileUriUtilTest : BasePlatformTestCase() {
         val virtualFile = createMockVirtualFile("./relative/path/file.txt")
         val uri = FileUriUtil.toUriString(virtualFile)
         if (uri != null) {
-            assertTrue(uri.contains("file.txt"))
-            assertTrue(uri.startsWith("file:///"))
+            assertThat(uri.contains("file.txt")).isTrue
+            assertThat(uri.startsWith("file:///")).isTrue
         }
     }
 
@@ -101,7 +104,7 @@ class FileUriUtilTest : BasePlatformTestCase() {
         )
         val result = FileUriUtil.toUriString(virtualFile)
         val expected = normalizeFileUri("jar:file:///path/to/archive.jar!/com/example/Test.class")
-        assertEquals(expected, result)
+        assertThat(result).isEqualTo(expected)
     }
 
     @Test
@@ -112,7 +115,7 @@ class FileUriUtilTest : BasePlatformTestCase() {
         )
         val result = FileUriUtil.toUriString(virtualFile)
         val expected = normalizeFileUri("jrt://java.base/java/lang/String.class")
-        assertEquals(expected, result)
+        assertThat(result).isEqualTo(expected)
     }
 
     @Test
@@ -122,7 +125,7 @@ class FileUriUtilTest : BasePlatformTestCase() {
             "jar"
         )
         val result = FileUriUtil.toUriString(virtualFile)
-        assertNull(result)
+        assertThat(result).isNull()
     }
 
     @Test
@@ -134,7 +137,7 @@ class FileUriUtilTest : BasePlatformTestCase() {
         )
         val result = FileUriUtil.toUriString(virtualFile)
         val expected = normalizeFileUri("jar:file:///path/to/archive.jar!/com/example")
-        assertEquals(expected, result)
+        assertThat(result).isEqualTo(expected)
     }
 
     @Test
@@ -145,6 +148,6 @@ class FileUriUtilTest : BasePlatformTestCase() {
             true
         )
         val result = FileUriUtil.toUriString(virtualFile)
-        assertNull(result)
+        assertThat(result).isNull()
     }
 }
