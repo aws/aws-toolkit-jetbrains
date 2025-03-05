@@ -26,7 +26,7 @@ import java.nio.file.Paths
 
 class TransformChatTest {
 
-private val transformHappyPathScript = """
+    private val transformHappyPathScript = """
 const puppeteer = require('puppeteer');
 async function testNavigation() {
     const browser = await puppeteer.connect({
@@ -89,8 +89,7 @@ async function testNavigation() {
         await browser.close()
     }
 }
-testNavigation().catch(console.error)
-""".trimIndent()
+testNavigation().catch(console.error)""".trimIndent()
 
     init {
         di = DI {
