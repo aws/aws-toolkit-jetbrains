@@ -86,6 +86,7 @@ class AmazonQChatTest {
                 assertTrue(result.contains("/clear"))
                 assertTrue(result.contains("/review"))
                 assertTrue(result.contains("/test"))
+                println("Assertions done")
             }
     }
 
