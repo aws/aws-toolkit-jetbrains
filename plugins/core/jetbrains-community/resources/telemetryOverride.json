@@ -192,6 +192,17 @@
             "name": "relativePath",
             "type": "string",
             "description": "The relative path of the file"
+        },
+        {
+            "name": "amazonqUploadIntent",
+            "type": "string",
+            "description": "The intent of the upload",
+            "allowedValues": [
+                "TRANSFORMATION",
+                "TASK_ASSIST_PLANNING",
+                "AUTOMATIC_FILE_SECURITY_SCAN",
+                "FULL_PROJECT_SECURITY_SCAN"
+            ]
         }
     ],
     "metrics": [
@@ -465,6 +476,28 @@
                 },
                 {
                     "type": "cwsprChatProjectContextQueryMs",
+                    "required": false
+                }
+            ]
+        },
+        {
+            "name": "amazonq_createUpload",
+            "description": "Captures createUploadUrl invocation process",
+            "metadata": [
+                {
+                    "type": "amazonqConversationId",
+                    "required": false
+                },
+                {
+                    "type": "amazonqRepositorySize",
+                    "required": false
+                },
+                {
+                    "type": "amazonqUploadIntent",
+                    "required": false
+                },
+                {
+                    "type": "credentialStartUrl",
                     "required": false
                 }
             ]

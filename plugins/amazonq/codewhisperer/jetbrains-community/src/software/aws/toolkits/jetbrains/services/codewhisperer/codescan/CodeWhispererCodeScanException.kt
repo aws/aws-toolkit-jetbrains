@@ -9,7 +9,12 @@ open class CodeWhispererCodeScanException(override val message: String?) : Runti
 
 open class CodeWhispererCodeFixException(override val message: String?) : RuntimeException()
 
-open class CodeWhispererCodeScanServerException(override val message: String?) : RuntimeException()
+open class CodeWhispererCodeScanServerException(
+    override val message: String?,
+    val requestId: String?,
+    val requestServiceType: String?,
+    val httpStatusCode: String?,
+) : RuntimeException()
 
 internal fun noFileOpenError(): Nothing =
     throw CodeWhispererCodeScanException(message("codewhisperer.codescan.no_file_open"))
@@ -29,8 +34,12 @@ internal fun fileFormatNotSupported(format: String): Nothing =
 internal fun fileTooLarge(): Nothing =
     throw CodeWhispererCodeScanException(message("codewhisperer.codescan.file_too_large"))
 
-internal fun codeScanServerException(errorMessage: String): Nothing =
-    throw CodeWhispererCodeScanServerException(errorMessage)
+internal fun codeScanServerException(
+    errorMessage: String,
+    requestId: String? = null,
+    requestServiceType: String? = null,
+    httpStatusCode: String? = null,
+): Nothing = throw CodeWhispererCodeScanServerException(errorMessage, requestId, requestServiceType, httpStatusCode)
 
 internal fun invalidSourceZipError(): Nothing =
     throw CodeWhispererCodeScanException(message("codewhisperer.codescan.invalid_source_zip_telemetry"))
