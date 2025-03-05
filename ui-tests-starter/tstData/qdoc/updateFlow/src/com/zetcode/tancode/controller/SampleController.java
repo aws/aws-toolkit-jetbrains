@@ -1,4 +1,4 @@
-package com.tancode.controller;
+package com.zetcode.tancode.controller;
 
 import com.example.model.DataItem;
 import org.springframework.http.ResponseEntity;
