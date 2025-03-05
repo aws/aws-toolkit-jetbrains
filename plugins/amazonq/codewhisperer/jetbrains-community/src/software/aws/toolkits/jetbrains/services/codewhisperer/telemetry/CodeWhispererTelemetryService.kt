@@ -356,7 +356,8 @@ class CodeWhispererTelemetryService {
             detectorId = issue.detectorId,
             ruleId = issue.ruleId,
             includesFix = issue.suggestedFixes.isNotEmpty(),
-            credentialStartUrl = getCodeWhispererStartUrl(issue.project)
+            credentialStartUrl = getCodeWhispererStartUrl(issue.project),
+            autoDetected = issue.autoDetected
         )
     }
 
@@ -392,7 +393,8 @@ class CodeWhispererTelemetryService {
             findingId = issue.findingId,
             detectorId = issue.detectorId,
             ruleId = issue.ruleId,
-            variant = if (isIgnoreAll) "all" else null
+            variant = if (isIgnoreAll) "all" else null,
+            autoDetected = issue.autoDetected
         )
     }
 
