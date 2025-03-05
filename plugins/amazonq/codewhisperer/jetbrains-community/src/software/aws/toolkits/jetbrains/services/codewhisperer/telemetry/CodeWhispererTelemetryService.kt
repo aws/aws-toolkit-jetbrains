@@ -285,7 +285,7 @@ class CodeWhispererTelemetryService {
         )
     }
 
-    private fun mapToTelemetryScope(codeAnalysisScope: CodeWhispererConstants.CodeAnalysisScope, initiatedByChat: Boolean): CodewhispererCodeScanScope =
+    fun mapToTelemetryScope(codeAnalysisScope: CodeWhispererConstants.CodeAnalysisScope, initiatedByChat: Boolean): CodewhispererCodeScanScope =
         when (codeAnalysisScope) {
             CodeWhispererConstants.CodeAnalysisScope.FILE -> {
                 if (initiatedByChat) {

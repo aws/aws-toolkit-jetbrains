@@ -7,16 +7,21 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.application.ApplicationInfo
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.modules
+import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.time.withTimeout
 import kotlinx.coroutines.withContext
+import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
+import org.apache.commons.codec.digest.DigestUtils
 import software.amazon.awssdk.services.codewhisperer.model.ArtifactType
 import software.amazon.awssdk.services.codewhisperer.model.CodeScanFindingsSchema
 import software.amazon.awssdk.services.codewhisperer.model.CodeScanStatus
@@ -33,6 +38,7 @@ import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.toHexString
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
@@ -53,12 +59,14 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.getTelemetryErrorMessage
 import software.aws.toolkits.jetbrains.utils.assertIsNonDispatchThread
 import software.aws.toolkits.resources.message
+import software.aws.toolkits.telemetry.CodewhispererCodeScanScope
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 import kotlin.coroutines.coroutineContext
+import kotlin.io.path.pathString
 
 class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
     private val clientToken: UUID = UUID.randomUUID()
@@ -104,7 +112,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             // 2 & 3. CreateUploadURL and upload the context.
             currentCoroutineContext.ensureActive()
             val artifactsUploadStartTime = now()
-            val codeScanName = UUID.randomUUID().toString()
+            val codeScanName = generateScanName()
 
             val taskType = if (sessionContext.codeAnalysisScope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
                 CodeWhispererConstants.UploadTaskType.SCAN_PROJECT
@@ -371,6 +379,26 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
 
     private fun isAutoScan(): Boolean =
         sessionContext.codeAnalysisScope == CodeWhispererConstants.CodeAnalysisScope.FILE && !sessionContext.sessionConfig.isInitiatedByChat()
+
+    private fun generateScanName(): String {
+        val clientId = AwsSettings.getInstance().clientId
+        val filePath = sessionContext.sessionConfig.getSelectedFile()?.toNioPath()?.pathString
+        val scope = CodeWhispererTelemetryService.getInstance().mapToTelemetryScope(
+            sessionContext.codeAnalysisScope,
+            sessionContext.sessionConfig.isInitiatedByChat()
+        )
+        val projectId = if (scope != CodewhispererCodeScanScope.PROJECT && filePath != null) {
+            filePath
+        } else {
+            ApplicationManager.getApplication().runReadAction<String> {
+                sessionContext.project.modules.map { module ->
+                    ModuleRootManager.getInstance(module).contentRoots.firstOrNull()?.path
+                }.joinToString(",")
+            }
+        }
+
+        return DigestUtils.sha256("$clientId::$projectId::$scope").toHexString()
+    }
 
     companion object {
         private val LOG = getLogger<CodeWhispererCodeScanSession>()
