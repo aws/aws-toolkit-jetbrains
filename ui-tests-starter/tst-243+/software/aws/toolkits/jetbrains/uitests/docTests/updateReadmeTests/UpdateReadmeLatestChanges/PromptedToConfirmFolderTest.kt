@@ -1,7 +1,7 @@
 // Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.uitests.docTests
+package software.aws.toolkits.jetbrains.uitests.docTests.updateReadmeTests.UpdateReadmeLatestChanges
 
 import com.intellij.driver.sdk.waitForProjectOpen
 import com.intellij.ide.starter.ci.CIServer
@@ -24,8 +24,6 @@ import org.kodein.di.bindSingleton
 import software.aws.toolkits.jetbrains.uitests.TestCIServer
 import software.aws.toolkits.jetbrains.uitests.clearAwsXmlFile
 import software.aws.toolkits.jetbrains.uitests.docTests.scripts.updateReadmeLatestChangesConfirmOptionsTestScript
-import software.aws.toolkits.jetbrains.uitests.docTests.scripts.updateReadmeLatestChangesMakeChangesFlowTestScript
-import software.aws.toolkits.jetbrains.uitests.docTests.scripts.updateReadmeLatestChangesTestScript
 import software.aws.toolkits.jetbrains.uitests.executePuppeteerScript
 import software.aws.toolkits.jetbrains.uitests.setupTestEnvironment
 import software.aws.toolkits.jetbrains.uitests.useExistingConnectionForTest
@@ -33,7 +31,7 @@ import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
 
-class UpdateReadmeWithLatestChangesFlowTest {
+class PromptedToConfirmFolderTest {
 
     init {
         di = DI {
@@ -88,76 +86,6 @@ class UpdateReadmeWithLatestChangesFlowTest {
             }
     }
 
-    @Test
-    fun `Make Changes button leads to UPDATE with specific changes flow`() {
-        val testCase = TestCase(
-            IdeProductProvider.IC,
-            LocalProjectInfo(
-                Paths.get("tstData", "qdoc", "updateFlow")
-            )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
-
-        // inject connection
-        useExistingConnectionForTest()
-
-        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
-            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
-                pluginConfigurator.installPluginFromPath(
-                    Path.of(path)
-                )
-            }
-
-            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
-            updateGeneralSettings()
-        }.runIdeWithDriver()
-            .useDriverAndCloseIde {
-                waitForProjectOpen()
-                // required wait time for the system to be fully ready
-                Thread.sleep(30000)
-
-                val result = executePuppeteerScript(updateReadmeLatestChangesMakeChangesFlowTestScript)
-                assertTrue(result.contains("Test Successful"))
-                assertFalse(result.contains("Error: Test Failed"))
-            }
-    }
-
-    @Test
-    fun `UpdateReadme with latest changes returns an updated Readme`() {
-        val testCase = TestCase(
-            IdeProductProvider.IC,
-            LocalProjectInfo(
-                Paths.get("tstData", "qdoc", "updateFlow")
-            )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
-
-        // inject connection
-        useExistingConnectionForTest()
-
-        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
-            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
-                pluginConfigurator.installPluginFromPath(
-                    Path.of(path)
-                )
-            }
-
-            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
-            updateGeneralSettings()
-        }.runIdeWithDriver()
-            .useDriverAndCloseIde {
-                waitForProjectOpen()
-                // required wait time for the system to be fully ready
-                Thread.sleep(30000)
-
-                executePuppeteerScript(updateReadmeLatestChangesTestScript)
-
-                val readmePath = Paths.get("tstData", "qdoc", "updateFlow", "README.md")
-                val readme = File(readmePath.toUri())
-                assertTrue(readme.exists())
-                assertTrue(readme.readText().contains("tancode"))
-                assertTrue(readme.readText().contains("HealthController"))
-            }
-    }
-
     companion object {
         @JvmStatic
         @AfterAll
@@ -166,3 +94,4 @@ class UpdateReadmeWithLatestChangesFlowTest {
         }
     }
 }
+
