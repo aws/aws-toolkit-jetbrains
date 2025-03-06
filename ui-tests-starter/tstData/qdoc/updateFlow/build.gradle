@@ -4,7 +4,7 @@ plugins {
     id 'java'
 }
 
-group = 'com.example'
+group = 'com.zetcode.tancode'
 version = '1.0-SNAPSHOT'
 sourceCompatibility = '17'
 
