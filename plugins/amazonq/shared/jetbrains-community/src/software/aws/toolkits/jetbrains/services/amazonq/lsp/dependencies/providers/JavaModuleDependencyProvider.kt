@@ -11,7 +11,7 @@ import com.intellij.openapi.vfs.VfsUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.ModuleDependencyProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.SyncModuleDependenciesParams
 
-class JavaModuleDependencyProvider : ModuleDependencyProvider {
+internal class JavaModuleDependencyProvider : ModuleDependencyProvider {
     override fun isApplicable(module: Module): Boolean =
         ModuleRootManager.getInstance(module).sdk?.sdkType is JavaSdkType
 
@@ -36,12 +36,11 @@ class JavaModuleDependencyProvider : ModuleDependencyProvider {
         )
     }
 
-    private fun getSourceRoots(module: Module): List<String> {
-        return ModuleRootManager.getInstance(module).contentEntries
+    private fun getSourceRoots(module: Module): List<String> =
+        ModuleRootManager.getInstance(module).contentEntries
             .flatMap { contentEntry ->
                 contentEntry.sourceFolders
                     .filter { !it.isTestSource }
                     .mapNotNull { it.file?.path }
             }
-    }
 }

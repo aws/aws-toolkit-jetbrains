@@ -10,7 +10,7 @@ import com.jetbrains.python.sdk.PythonSdkUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.ModuleDependencyProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.SyncModuleDependenciesParams
 
-class PythonModuleDependencyProvider : ModuleDependencyProvider {
+internal class PythonModuleDependencyProvider : ModuleDependencyProvider {
     override fun isApplicable(module: Module): Boolean =
         PythonSdkUtil.findPythonSdk(module) != null
 
@@ -35,12 +35,11 @@ class PythonModuleDependencyProvider : ModuleDependencyProvider {
         )
     }
 
-    private fun getSourceRoots(module: Module): List<String> {
-        return ModuleRootManager.getInstance(module).contentEntries
+    private fun getSourceRoots(module: Module): List<String> =
+        ModuleRootManager.getInstance(module).contentEntries
             .flatMap { contentEntry ->
                 contentEntry.sourceFolders
                     .filter { !it.isTestSource }
                     .mapNotNull { it.file?.path }
             }
-    }
 }

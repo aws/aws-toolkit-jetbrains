@@ -31,6 +31,7 @@ reported the issue. Please try to include as much information as you can. Detail
     brew install dotnet@6
     ```
   * If Gradle cannot find `dotnet`, run `./gradlew --stop` and `./gradlew projects` to reload the daemon. Note that this should be done in your terminal as invoking Gradle through the IDE will use the IDE's cached PATH.
+* It is recommended to [launch your IDE from the terminal](https://www.jetbrains.com/help/idea/working-with-the-ide-features-from-command-line.html) due to a known issue with Gradle/Java 21 where the Gradle daemon does not respect your PATH variable when the IDE is started from the desktop/Toolbox.
 
 ### Instructions
 
