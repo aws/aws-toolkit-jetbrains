@@ -9,7 +9,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependenci
 
 interface ModuleDependencyProvider {
     companion object {
-        val EP_NAME = ExtensionPointName<ModuleDependencyProvider>("com.intellij.moduleDependencyProvider")
+        val EP_NAME = ExtensionPointName<ModuleDependencyProvider>("software.aws.toolkits.jetbrains.moduleDependencyProvider")
     }
 
     fun isApplicable(module: Module): Boolean

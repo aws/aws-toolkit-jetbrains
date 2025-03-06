@@ -7,7 +7,7 @@
     <xi:include href="/META-INF/plugin-codewhisperer.xml" />
 
     <extensionPoints>
-        <extensionPoint name="moduleDependencyProvider"
+        <extensionPoint qualifiedName="software.aws.toolkits.jetbrains.moduleDependencyProvider"
                         interface="software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.ModuleDependencyProvider"
                         dynamic="true"/>
     </extensionPoints>
