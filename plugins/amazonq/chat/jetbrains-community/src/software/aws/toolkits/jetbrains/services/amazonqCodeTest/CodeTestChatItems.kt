@@ -35,6 +35,12 @@ val cancelTestGenBuildAndExecuteButton = Button(
     icon = "cancel"
 )
 
+val cancelFixingTestCasesButton = Button(
+    id = CodeTestButtonId.StopFixingTestCases.id,
+    text = message("general.cancel"),
+    icon = "cancel"
+)
+
 fun testGenProgressField(value: Int) = ProgressField(
     status = "default",
     text = message("testgen.progressbar.generate_unit_tests"),
@@ -42,14 +48,6 @@ fun testGenProgressField(value: Int) = ProgressField(
     valueText = "$value%",
     actions = listOf(cancelTestGenButton)
 )
-
-//val buildAndExecuteProgrogressField = ProgressField(
-//    status = "default",
-//    value= -1,
-//    text = message("testgen.progressbar.build_and_execute"),
-//    actions = listOf(cancelTestGenBuildAndExecuteButton)
-//)
-
 
 val fixingTestCasesProgressField = ProgressField(
     status = "default",
@@ -63,6 +61,6 @@ fun createProgressField(messageKey: String): ProgressField {
         status = "default",
         value = -1,
         text = message(messageKey),
-        actions = listOf(cancelTestGenBuildAndExecuteButton)
+        actions = listOf(if (messageKey == "testgen.progressbar.build_and_execute") cancelFixingTestCasesButton else cancelTestGenBuildAndExecuteButton)
     )
 }

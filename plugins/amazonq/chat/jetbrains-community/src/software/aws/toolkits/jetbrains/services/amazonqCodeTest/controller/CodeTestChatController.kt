@@ -1019,6 +1019,9 @@ class CodeTestChatController(
                     session.testFileRelativePathToProjectRoot,
                     codeTestChatHelper
                 )
+                if(session.buildStatus === BuildStatus.CANCELLED) {
+                    return
+                }
                 while (taskContext.buildExitCode < 0) {
                     // wait until build command finished
                     delay(1000)
@@ -1104,7 +1107,7 @@ class CodeTestChatController(
                     )
                 )
                 codeTestChatHelper.updateUI(
-                    promptInputDisabledState = true,
+                    promptInputDisabledState = false,
                     promptInputPlaceholder = message("testgen.placeholder.modifyCommand"),
                 )
 
@@ -1116,14 +1119,18 @@ class CodeTestChatController(
             "stop_test_generation" -> {
                 UiTelemetry.click(null as Project?, "unitTestGeneration_cancelTestGenerationProgress")
                 session.isGeneratingTests = false
-//                sessionCleanUp(message.tabId)
                 return
             }
             "stop_test_gen_build_and_execution" -> {
                 UiTelemetry.click(null as Project?, "unitTestGeneration_cancelBuildProgress")
                 // TODO: Cancel Build and execute
                 session.isGeneratingTests = false
-//                sessionCleanUp(message.tabId)
+                return
+            }
+            "stop_fixing_test_cases" -> {
+                UiTelemetry.click(null as Project?, "unitTestGeneration_cancelFixingTest")
+                session.isGeneratingTests = false
+                session.buildStatus=BuildStatus.CANCELLED
                 return
             }
             else -> {

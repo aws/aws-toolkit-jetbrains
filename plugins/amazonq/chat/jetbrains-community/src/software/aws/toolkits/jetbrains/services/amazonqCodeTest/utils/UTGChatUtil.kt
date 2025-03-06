@@ -158,17 +158,24 @@ fun runBuildOrTestCommand(
                 ApplicationManager.getApplication().invokeLater {
                     VirtualFileManager.getInstance().refreshAndFindFileByNioPath(file.toPath())?.refresh(false, false)
                 }
+                // Check if the build has been cancelled
+                if (codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.CANCELLED) {
+                    processHandler.destroyProcess()
+                    console.print("\nBuild cancelled by user\n", ConsoleViewContentType.SYSTEM_OUTPUT)
+                    if (isBuildCommand) {
+                        buildAndExecuteTaskContext.buildExitCode = 1
+                    } else {
+                        buildAndExecuteTaskContext.testExitCode = 1
+                    }
+                }
             }
-
             override fun processTerminated(event: ProcessEvent) {
                 val exitCode = event.exitCode
                 if (exitCode == 0) {
                     codeTestChatHelper.getActiveSession().buildStatus = BuildStatus.SUCCESS
-                    // green color
                     console.print("\nBUILD SUCCESSFUL\n", ConsoleViewContentType.USER_INPUT)
-                } else {
+                } else if (codeTestChatHelper.getActiveSession().buildStatus != BuildStatus.CANCELLED) {
                     codeTestChatHelper.getActiveSession().buildStatus = BuildStatus.FAILURE
-                    // red color
                     console.print("\nBUILD FAILED with exit code $exitCode\n", ConsoleViewContentType.ERROR_OUTPUT)
                 }
                 if (isBuildCommand) {
