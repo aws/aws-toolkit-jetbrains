@@ -61,6 +61,9 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.CodeWhispererUTG
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.ConversationState
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.InboundAppMessagesHandler
+//import software.aws.toolkits.jetbrains.services.amazonqCodeTest.buildAndExecuteProgrogressField
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.createProgressField
+//import software.aws.toolkits.jetbrains.services.amazonqCodeTest.fixingTestCasesProgressField
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.Button
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.CodeTestChatMessage
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.CodeTestChatMessageContent
@@ -71,6 +74,8 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.BuildSta
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.Session
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.UTG_CHAT_MAX_ITERATION
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.storage.ChatSessionStorage
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.testGenCompletedField
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.testGenProgressField
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.utils.constructBuildAndExecutionSummaryText
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.utils.runBuildOrTestCommand
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAuthNeededException
@@ -743,6 +748,7 @@ class CodeTestChatController(
                     )
                     codeTestChatHelper.updateUI(
                         promptInputDisabledState = true,
+                        promptInputPlaceholder = message("testgen.placeholder.select_an_action_to_proceed"),
                     )
                 } else if (session.listOfTestGenerationJobId.size < 4) {
                     // Already built and executed once, display # of iterations left message
@@ -777,6 +783,7 @@ class CodeTestChatController(
                     )
                     codeTestChatHelper.updateUI(
                         promptInputDisabledState = true,
+                        promptInputPlaceholder = message("testgen.placeholder.waiting_on_your_inputs"),
                     )
                 } else {
                     // TODO: change this hardcoded string
@@ -980,6 +987,10 @@ class CodeTestChatController(
                 // handle both "Proceed" and "Build and execute" button clicks since their actions are similar
                 // TODO: show install dependencies card if needed
                 session.conversationState = ConversationState.IN_PROGRESS
+                codeTestChatHelper.updateUI(
+                    promptInputDisabledState = true,
+                    promptInputProgress = createProgressField("testgen.progressbar.build_and_execute")
+                )
 
                 // display build in progress card
                 val taskContext = session.buildAndExecuteTaskContext
@@ -1005,7 +1016,8 @@ class CodeTestChatController(
                     context.project,
                     isBuildCommand = true,
                     taskContext,
-                    session.testFileRelativePathToProjectRoot
+                    session.testFileRelativePathToProjectRoot,
+                    codeTestChatHelper
                 )
                 while (taskContext.buildExitCode < 0) {
                     // wait until build command finished
@@ -1022,6 +1034,11 @@ class CodeTestChatController(
                             canBeVoted = false
                         )
                     )
+                    codeTestChatHelper.updateUI(
+                        promptInputProgress = testGenCompletedField,
+                    )
+                    delay(1000)
+                    codeTestChatHelper.sendUpdatePromptProgress(session.tabId, null)
                     AmazonqTelemetry.unitTestGeneration(
                         count = session.listOfTestGenerationJobId.size.toLong() - 1,
                         cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
@@ -1054,9 +1071,8 @@ class CodeTestChatController(
 
                     taskContext.progressStatus = BuildAndExecuteProgressStatus.BUILD_FAILED
                     updateBuildAndExecuteProgressCard(taskContext.progressStatus, messageId)
-                    taskContext.progressStatus = BuildAndExecuteProgressStatus.FIXING_TEST_CASES
+                    taskContext.progressStatus = BuildAndExecuteProgressStatus.RUN_EXECUTION_TESTS
                     val buildAndExecuteMessageId = updateBuildAndExecuteProgressCard(taskContext.progressStatus, messageId)
-
                     val previousUTGIterationContext = PreviousUTGIterationContext(
                         buildLogFile = buildLogsFile,
                         testLogFile = null,
@@ -1071,7 +1087,6 @@ class CodeTestChatController(
                         context.project
                     ).generateTests(session.userPrompt, codeTestChatHelper, previousUTGIterationContext, null)
                     job?.join()
-
                     return
                 }
             }
@@ -1088,6 +1103,11 @@ class CodeTestChatController(
                         canBeVoted = false
                     )
                 )
+                codeTestChatHelper.updateUI(
+                    promptInputDisabledState = true,
+                    promptInputPlaceholder = message("testgen.placeholder.modifyCommand"),
+                )
+
                 session.conversationState = ConversationState.WAITING_FOR_BUILD_COMMAND_INPUT
             }
             "utg_install_and_continue" -> {
@@ -1120,11 +1140,11 @@ class CodeTestChatController(
         sessionCleanUp(codeTestChatHelper.getActiveSession().tabId)
     }
 
-    private suspend fun updateBuildAndExecuteProgressCard(
+    suspend fun updateBuildAndExecuteProgressCard(
         currentStatus: BuildAndExecuteProgressStatus,
         messageId: String?,
     ): String? {
-        val updatedText = constructBuildAndExecutionSummaryText(currentStatus)
+        val updatedText = constructBuildAndExecutionSummaryText(currentStatus, codeTestChatHelper)
 
         if (currentStatus == BuildAndExecuteProgressStatus.RUN_BUILD) {
             val buildAndExecuteMessageId = codeTestChatHelper.addAnswer(

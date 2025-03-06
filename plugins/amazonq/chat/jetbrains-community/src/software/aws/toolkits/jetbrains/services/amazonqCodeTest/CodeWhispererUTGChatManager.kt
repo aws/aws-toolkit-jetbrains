@@ -37,6 +37,7 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.PreviousUT
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.ShortAnswer
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.BuildAndExecuteProgressStatus
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.Session
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.utils.constructBuildAndExecutionSummaryText
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.CodeTestException
 import software.aws.toolkits.jetbrains.services.codewhisperer.codetest.fileTooLarge
@@ -94,7 +95,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         codeTestChatHelper.updateUI(
             promptInputDisabledState = true,
             promptInputProgress = session.listOfTestGenerationJobId.takeUnless { it.isEmpty() }
-                ?.let { buildAndExecuteProgrogressField }
+                ?.let { fixingTestCasesProgressField }
                 ?: testGenProgressField(0)
         )
 
@@ -269,11 +270,13 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     promptInputProgress = if (session.listOfTestGenerationJobId.size == 1) {
                         testGenProgressField(progressRate)
                     } else {
-                        buildAndExecuteProgrogressField
+//                        fixingTestCasesProgressField
+                        createProgressField("testgen.progressbar.fixing_test_cases")
                     }
+
                 )
             }
-
+            throwIfCancelled(session)
             // polling every 2 seconds to reduce # of API calls
             delay(2000)
         }
@@ -300,6 +303,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 LOG.info { "ExportResultArchive latency: ${calculateTotalLatency(startTime, Instant.now())}" }
             }
         )
+        throwIfCancelled(session)
         val result = byteArray.reduce { acc, next -> acc + next } // To map the result it is needed to combine the  full byte array
         storeGeneratedTestDiffs(result, session)
         if (!session.isGeneratingTests) {
@@ -332,6 +336,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 )
             )
         } else {
+            throwIfCancelled(session)
             if (previousIterationContext == null) {
                 // show another card as the answer
                 val viewDiffMessageId = codeTestChatHelper.addAnswer(
@@ -354,13 +359,15 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     promptInputProgress = testGenCompletedField,
                 )
             } else {
+                val updatedText = constructBuildAndExecutionSummaryText(BuildAndExecuteProgressStatus.PROCESS_TEST_RESULTS, codeTestChatHelper)
                 codeTestChatHelper.updateAnswer(
                     CodeTestChatMessageContent(
                         type = ChatMessageType.Answer,
                         buttons = listOf(Button("utg_view_diff", "View Diff", keepCardAfterClick = true, position = "outside", status = "info")),
                         fileList = listOf(getTestFilePathRelativeToRoot(shortAnswer)),
                         projectRootName = project.name,
-                        codeReference = codeReference
+                        codeReference = codeReference,
+                        message = updatedText
                     ),
                     messageIdOverride = previousIterationContext.buildAndExecuteMessageId
                 )
@@ -374,6 +381,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 promptInputPlaceholder = message("testgen.placeholder.view_diff"),
                 promptInputProgress = testGenCompletedField,
             )
+            throwIfCancelled(session)
             delay(1000)
         }
 

@@ -37,7 +37,6 @@ data class Session(val tabId: String) {
 
     // First iteration will have a value of 1
     var userPrompt: String = ""
-    var iteration: Int = 0
     var projectRoot: String = "/"
     var shortAnswer: ShortAnswer = ShortAnswer()
     var selectedFile: VirtualFile? = null
@@ -68,7 +67,6 @@ enum class BuildAndExecuteProgressStatus {
     RUN_BUILD,
     BUILD_FAILED,
     RUN_EXECUTION_TESTS,
-    TESTS_EXECUTED,
     FIXING_TEST_CASES,
     PROCESS_TEST_RESULTS,
 }

@@ -43,8 +43,26 @@ fun testGenProgressField(value: Int) = ProgressField(
     actions = listOf(cancelTestGenButton)
 )
 
-val buildAndExecuteProgrogressField = ProgressField(
+//val buildAndExecuteProgrogressField = ProgressField(
+//    status = "default",
+//    value= -1,
+//    text = message("testgen.progressbar.build_and_execute"),
+//    actions = listOf(cancelTestGenBuildAndExecuteButton)
+//)
+
+
+val fixingTestCasesProgressField = ProgressField(
     status = "default",
-    text = message("testgen.progressbar.build_and_execute"),
+    value= -1,
+    text = message("testgen.progressbar.fixing_test_cases"),
     actions = listOf(cancelTestGenBuildAndExecuteButton)
 )
+
+fun createProgressField(messageKey: String): ProgressField {
+    return ProgressField(
+        status = "default",
+        value = -1,
+        text = message(messageKey),
+        actions = listOf(cancelTestGenBuildAndExecuteButton)
+    )
+}
