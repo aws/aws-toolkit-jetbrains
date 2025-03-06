@@ -3,6 +3,7 @@
 
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.tasks.PatchPluginXmlTask
+import org.jetbrains.intellij.platform.gradle.tasks.aware.SplitModeAware
 import software.aws.toolkits.gradle.intellij.IdeFlavor
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
 
@@ -74,4 +75,9 @@ tasks.runIde {
     val home = project.layout.buildDirectory.dir("USER_HOME").get()
     systemProperty("user.home", home)
     environment("HOME", home)
+}
+
+val runSplitIde by intellijPlatformTesting.runIde.registering {
+    splitMode = true
+    splitModeTarget = SplitModeAware.SplitModeTarget.BACKEND
 }

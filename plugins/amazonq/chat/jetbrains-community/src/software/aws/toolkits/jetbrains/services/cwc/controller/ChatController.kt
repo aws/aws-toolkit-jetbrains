@@ -209,7 +209,7 @@ class ChatController private constructor(
     override suspend fun processInsertCodeAtCursorPosition(message: IncomingCwcMessage.InsertCodeAtCursorPosition) {
         broadcastQEvent(QFeatureEvent.STARTS_EDITING)
         withContext(EDT) {
-            val editor: Editor = FileEditorManager.getInstance(context.project).selectedTextEditor ?: return@withContext
+            val editor: Editor = FileEditorManager.getInstance(context.project).selectedTextEditorWithRemotes.firstOrNull() ?: return@withContext
 
             val caret: Caret = editor.caretModel.primaryCaret
             val offset: Int = caret.offset

@@ -11,18 +11,20 @@ import icons.AwsIcons
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AMAZON_Q_WINDOW_ID
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindow
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.runScanKey
-import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.UiTelemetry
 
 class QOpenPanelAction : AnAction(message("action.q.openchat.text"), null, AwsIcons.Logos.AWS_Q) {
     override fun actionPerformed(e: AnActionEvent) {
-        if (isRunningOnRemoteBackend()) return
         val project = e.getRequiredData(CommonDataKeys.PROJECT)
         UiTelemetry.click(project, "q_openChat")
         ToolWindowManager.getInstance(project).getToolWindow(AMAZON_Q_WINDOW_ID)?.activate(null, true)
         if (e.getData(runScanKey) == true) {
             AmazonQToolWindow.openScanTab(project)
         }
+    }
+
+    override fun update(e: AnActionEvent) {
+        e.presentation.isEnabled = e.getData(CommonDataKeys.PROJECT) != null
     }
 }

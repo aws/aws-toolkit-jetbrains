@@ -15,7 +15,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 
 class CodeModernizerPlanEditorProvider : FileEditorProvider, DumbAware {
     override fun accept(project: Project, file: VirtualFile) = file is CodeModernizerPlanVirtualFile
@@ -31,8 +30,8 @@ class CodeModernizerPlanEditorProvider : FileEditorProvider, DumbAware {
         val MIGRATION_PLAN_KEY = Key.create<TransformationPlan>("TRANSFORMATION_PLAN")
         val MODULE_NAME_KEY = Key.create<String>("MODULE_NAME")
         val JAVA_VERSION = Key.create<String>("JAVA_VERSION")
+
         fun openEditor(project: Project, plan: TransformationPlan, module: String?, javaVersionNumber: String) {
-            if (isRunningOnRemoteBackend()) return
             val virtualFile = CodeModernizerPlanVirtualFile()
             virtualFile.putUserData(MIGRATION_PLAN_KEY, plan)
             virtualFile.putUserData(MODULE_NAME_KEY, module)

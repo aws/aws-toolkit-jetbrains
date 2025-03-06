@@ -207,7 +207,7 @@ class FeatureDevController(
 
         withContext(EDT) {
             broadcastQEvent(QFeatureEvent.STARTS_EDITING)
-            val editor: Editor = FileEditorManager.getInstance(context.project).selectedTextEditor ?: return@withContext
+            val editor: Editor = FileEditorManager.getInstance(context.project).selectedTextEditorWithRemotes.firstOrNull() ?: return@withContext
 
             val caret: Caret = editor.caretModel.primaryCaret
             val offset: Int = caret.offset

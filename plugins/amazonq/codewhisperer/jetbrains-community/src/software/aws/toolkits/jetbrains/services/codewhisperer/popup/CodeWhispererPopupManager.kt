@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.popup
 
 import com.intellij.codeInsight.hint.ParameterInfoController
 import com.intellij.codeInsight.lookup.LookupManager
-import com.intellij.idea.AppMode
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ENTER
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ESCAPE
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_TAB
@@ -304,7 +303,7 @@ class CodeWhispererPopupManager {
         CodeWhispererInvocationStatus.getInstance().setDisplaySessionActive(true)
 
         // Check if the current editor still has focus. If not, don't show the popup.
-        val isSameEditorAsTrigger = if (!AppMode.isRemoteDevHost()) {
+        val isSameEditorAsTrigger = if (!isRunningOnRemoteBackend()) {
             editor.contentComponent.isFocusOwner
         } else {
             FileEditorManager.getInstance(states.requestContext.project).selectedTextEditorWithRemotes.firstOrNull() == editor
@@ -340,12 +339,12 @@ class CodeWhispererPopupManager {
         // TODO: visibleAreaChanged listener is not getting triggered in remote environment when scrolling
         if (popup.isVisible) {
             // Changing the position of BackendBeAbstractPopup does not work
-            if (!noEnoughSpaceForPopup && !AppMode.isRemoteDevHost()) {
+            if (!noEnoughSpaceForPopup && !isRunningOnRemoteBackend()) {
                 popup.setLocation(relativePopupLocationToEditor.screenPoint)
                 popup.size = popup.preferredContentSize
             }
         } else {
-            if (!AppMode.isRemoteDevHost()) {
+            if (!isRunningOnRemoteBackend()) {
                 popupComponents.prevButton.text = popupComponents.prevButtonText()
                 popupComponents.nextButton.text = popupComponents.nextButtonText()
                 popup.show(relativePopupLocationToEditor)
@@ -378,7 +377,7 @@ class CodeWhispererPopupManager {
         }
 
         // popup.popupWindow is null in remote host
-        if (!AppMode.isRemoteDevHost()) {
+        if (!isRunningOnRemoteBackend()) {
             if (noEnoughSpaceForPopup) {
                 WindowManager.getInstance().setAlphaModeRatio(popup.popupWindow, 1f)
             } else {

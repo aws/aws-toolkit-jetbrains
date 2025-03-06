@@ -26,7 +26,7 @@ class FocusAreaContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter
     private val languageExtractor: LanguageExtractor = LanguageExtractor()
     suspend fun extract(): FocusAreaContext? {
         val editor = computeOnEdt {
-            FileEditorManager.getInstance(project).selectedTextEditor
+            FileEditorManager.getInstance(project).selectedTextEditorWithRemotes.firstOrNull()
         } ?: return null
 
         if (editor.document.text.isBlank()) return null
@@ -109,7 +109,7 @@ class FocusAreaContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter
             languageExtractor.extractLanguageNameFromCurrentFile(editor)
         }
         val fileText = editor.document.text
-        val fileName = FileEditorManager.getInstance(project).selectedFiles.first().name
+        val fileName = editor.virtualFile.name
 
         // Offset the selection range to the start of the trimmedFileText
         val selectionInsideTrimmedFileTextRange = codeSelectionRange.let {
