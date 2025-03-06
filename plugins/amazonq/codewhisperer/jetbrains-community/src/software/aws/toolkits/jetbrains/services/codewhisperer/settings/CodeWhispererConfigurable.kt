@@ -72,7 +72,7 @@ class CodeWhispererConfigurable(private val project: Project) :
 
                 textFieldWithBrowseButton(fileChooserDescriptor = fileChooserDescriptor)
                     .bindText(
-                        { LspSettings.getInstance().getArtifactPath() ?: "" },
+                        { LspSettings.getInstance().getArtifactPath().orEmpty() },
                         { LspSettings.getInstance().setArtifactPath(it) }
                     )
                     .applyToComponent {
