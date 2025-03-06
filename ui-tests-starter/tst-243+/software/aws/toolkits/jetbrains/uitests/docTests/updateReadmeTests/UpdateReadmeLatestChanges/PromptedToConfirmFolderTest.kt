@@ -93,6 +93,21 @@ class PromptedToConfirmFolderTest {
         fun clearAwsXml() {
             clearAwsXmlFile()
         }
+
+        @JvmStatic
+        @AfterAll
+        fun tearDown() {
+            val path = Paths.get("tstData", "qdoc", "updateFlow", "README.md").toUri()
+
+            val process = ProcessBuilder("git", "restore", path.path).start()
+            val exitCode = process.waitFor()
+            if (exitCode != 0) {
+                println("Warning: git stash command failed with exit code $exitCode")
+                process.errorStream.bufferedReader().use { reader ->
+                    println("Error: ${reader.readText()}")
+                }
+            }
+        }
     }
 }
 
