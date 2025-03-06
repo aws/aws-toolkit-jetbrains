@@ -83,6 +83,7 @@ class UpdateReadmeSpecificChangesTest {
                 val readmePath = Paths.get("tstData", "qdoc", "updateFlow", "README.md")
                 val readme = File(readmePath.toUri())
                 assertTrue(readme.exists())
+                println("result: ${readme.readText()}")
                 assertTrue(readme.readText().contains("### Installation"))
             }
     }

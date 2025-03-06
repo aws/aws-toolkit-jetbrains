@@ -81,6 +81,7 @@ class PromptedToConfirmFolderTest {
                 Thread.sleep(30000)
 
                 val result = executePuppeteerScript(updateReadmeLatestChangesConfirmOptionsTestScript)
+                println("result: $result")
                 assertTrue(result.contains("Test Successful"))
                 assertFalse(result.contains("Error: Test Failed"))
             }
