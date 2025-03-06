@@ -1,7 +1,7 @@
 // Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.uitests.chatTests.qTestGeneration
+package software.aws.toolkits.jetbrains.uitests.testTests
 
 import com.intellij.driver.sdk.openFile
 import com.intellij.driver.sdk.waitForProjectOpen
@@ -55,7 +55,7 @@ class QTestGenerationChatTest {
         val testCase = TestCase(
             IdeProductProvider.IC,
             LocalProjectInfo(
-                Paths.get("tstData", "Hello")
+                Paths.get("tstData", "qTestGenerationTestProject")
             )
         ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
 
@@ -87,7 +87,7 @@ class QTestGenerationChatTest {
         val testCase = TestCase(
             IdeProductProvider.IC,
             LocalProjectInfo(
-                Paths.get("tstData", "Hello/")
+                Paths.get("tstData", "qTestGenerationTestProject/")
             )
         ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
 
@@ -106,14 +106,77 @@ class QTestGenerationChatTest {
         }.runIdeWithDriver()
             .useDriverAndCloseIde {
                 waitForProjectOpen()
-                openFile(Paths.get("Example.java").toString())
-                // required wait time for the system to be fully ready
+                openFile(Paths.get("testModule1", "HappyPath.java").toString())
                 Thread.sleep(30000)
                 val result = executePuppeteerScript(testHappyPathScript)
                 assertTrue(result.contains("new tab opened"))
                 assertTrue(result.contains("View Diff opened"))
                 assertTrue(result.contains("Result Accepted"))
                 assertTrue(result.contains("Unit test generation completed."))
+            }
+    }
+
+    @Test
+    fun `test expected error path from the chat`() {
+        val testCase = TestCase(
+            IdeProductProvider.IC,
+            LocalProjectInfo(
+                Paths.get("tstData", "qTestGenerationTestProject/")
+            )
+        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+
+        // inject connection
+        useExistingConnectionForTest()
+
+        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
+            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
+                pluginConfigurator.installPluginFromPath(
+                    Path.of(path)
+                )
+            }
+
+            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
+            updateGeneralSettings()
+        }.runIdeWithDriver()
+            .useDriverAndCloseIde {
+                waitForProjectOpen()
+                openFile(Paths.get("testModule1", "ErrorPath.java").toString())
+                Thread.sleep(30000)
+                val result = executePuppeteerScript(expectedErrorPath)
+                assertTrue(result.contains("new tab opened"))
+                assertTrue(result.contains("Test generation complete with expected error"))
+            }
+    }
+
+    @Test
+    fun `test unsupported language error path from the chat`() {
+        val testCase = TestCase(
+            IdeProductProvider.IC,
+            LocalProjectInfo(
+                Paths.get("tstData", "qTestGenerationTestProject/")
+            )
+        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+
+        // inject connection
+        useExistingConnectionForTest()
+
+        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
+            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
+                pluginConfigurator.installPluginFromPath(
+                    Path.of(path)
+                )
+            }
+
+            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
+            updateGeneralSettings()
+        }.runIdeWithDriver()
+            .useDriverAndCloseIde {
+                waitForProjectOpen()
+                openFile(Paths.get("testModule2", "UnSupportedLanguage.kt").toString())
+                Thread.sleep(30000)
+                val result = executePuppeteerScript(unsupportedLanguagePath)
+                assertTrue(result.contains("new tab opened"))
+                assertTrue(result.contains("Test generation complete with expected error"))
             }
     }
 
