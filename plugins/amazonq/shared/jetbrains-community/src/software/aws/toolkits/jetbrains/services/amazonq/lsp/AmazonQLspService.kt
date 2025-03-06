@@ -18,6 +18,7 @@ import com.intellij.openapi.components.serviceIfCreated
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.io.await
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -240,8 +241,9 @@ private class AmazonQServerInstance(private val project: Project, private val cs
     init {
         // will cause slow service init, but maybe fine for now. will not block UI since fetch/extract will be under background progress
         val artifact = runBlocking { ArtifactManager(project, manifestRange = null).fetchArtifact() }.toAbsolutePath()
+        val node = if (SystemInfo.isWindows) "node.exe" else "node"
         val cmd = GeneralCommandLine(
-            artifact.resolve("node").toString(),
+            artifact.resolve(node).toString(),
             LspSettings.getInstance().getArtifactPath() ?: artifact.resolve("aws-lsp-codewhisperer.js").toString(),
             "--stdio",
             "--set-credentials-encryption-key",
