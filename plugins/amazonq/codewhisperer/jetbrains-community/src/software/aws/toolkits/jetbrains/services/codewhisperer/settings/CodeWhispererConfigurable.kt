@@ -72,8 +72,8 @@ class CodeWhispererConfigurable(private val project: Project) :
 
                 textFieldWithBrowseButton(fileChooserDescriptor = fileChooserDescriptor)
                     .bindText(
-                        { LspSettings.getInstance().getArtifactPath() },
-                        { LspSettings.getInstance().setArtifactPath(it.takeIf { v -> v.isNotBlank() }) }
+                        { LspSettings.getInstance().getArtifactPath() ?: "" },
+                        { LspSettings.getInstance().setArtifactPath(it) }
                     )
                     .applyToComponent {
                         emptyText.text = "Choose a file to upload"
