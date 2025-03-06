@@ -6,14 +6,14 @@ package software.aws.toolkits.jetbrains.settings
 import com.intellij.util.xmlb.XmlSerializer
 import org.assertj.core.api.Assertions.assertThat
 import org.jdom.output.XMLOutputter
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import software.aws.toolkits.jetbrains.utils.xmlElement
 
 class LspSettingsTest {
     private lateinit var lspSettings: LspSettings
 
-    @Before
+    @BeforeEach
     fun setUp() {
         lspSettings = LspSettings()
         lspSettings.loadState(LspConfiguration())
