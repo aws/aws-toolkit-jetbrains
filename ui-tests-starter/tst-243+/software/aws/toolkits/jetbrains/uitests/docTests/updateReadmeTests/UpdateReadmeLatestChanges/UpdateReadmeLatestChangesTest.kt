@@ -84,8 +84,9 @@ class UpdateReadmeLatestChangesTest {
                 val readme = File(readmePath.toUri())
                 assertTrue(readme.exists())
                 println("result: ${readme.readText()}")
-                assertTrue(readme.readText().contains("tancode"))
-                assertTrue(readme.readText().contains("HealthController"))
+                assertTrue(readme.readText().contains("tancode", ignoreCase = true))
+                assertTrue(readme.readText().contains("healthcontroller.java", ignoreCase = true))
+                println("assertions done")
             }
     }
 

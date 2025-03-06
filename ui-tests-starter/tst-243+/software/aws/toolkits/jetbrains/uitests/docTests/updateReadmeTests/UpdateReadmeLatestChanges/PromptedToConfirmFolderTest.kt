@@ -84,6 +84,7 @@ class PromptedToConfirmFolderTest {
                 println("result: $result")
                 assertTrue(result.contains("Test Successful"))
                 assertFalse(result.contains("Error: Test Failed"))
+                println("assertions done")
             }
     }
 
