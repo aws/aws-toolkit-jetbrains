@@ -11,7 +11,19 @@ import software.amazon.awssdk.services.codewhispererruntime.model.DocV2Generatio
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 
+class DocGenerationTasks {
+    private val tasks: MutableMap<String, DocGenerationTask> = mutableMapOf()
+
+    fun getTask(tabId: String): DocGenerationTask = tasks.getOrPut(tabId) { DocGenerationTask() }
+
+    fun deleteTask(tabId: String) {
+        tasks.remove(tabId)
+    }
+}
+
 class DocGenerationTask {
+    var mode: Mode = Mode.NONE
+
     // Telemetry fields
     var conversationId: String? = null
     var numberOfAddedChars: Int? = null
@@ -22,8 +34,8 @@ class DocGenerationTask {
     var numberOfGeneratedFiles: Int? = null
     var userDecision: DocUserDecision? = null
     var interactionType: DocInteractionType? = null
-    var numberOfNavigations = 0
-    var folderLevel: DocFolderLevel? = DocFolderLevel.ENTIRE_WORKSPACE
+    var numberOfNavigations: Int = 0
+    var folderLevel: DocFolderLevel = DocFolderLevel.ENTIRE_WORKSPACE
     fun docGenerationEventBase(): DocV2GenerationEvent {
         val undefinedProps = this::class.java.declaredFields
             .filter { it.get(this) == null }
