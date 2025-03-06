@@ -1,110 +1,108 @@
-# Spring Boot REST API: A Simple and Robust Microservice Template
+# Spring Boot REST API for Simple Data Management
 
-This Spring Boot application provides a lightweight REST API template with built-in health monitoring and data management capabilities. It offers a production-ready foundation for building microservices with comprehensive health checks, status monitoring, and data operations.
+This Spring Boot application provides a lightweight REST API for managing data items with a simple key-value storage mechanism. It offers a clean and efficient way to store and retrieve data items through RESTful endpoints with built-in monitoring capabilities via Spring Actuator.
 
-The application implements a RESTful service with health monitoring endpoints and a flexible data management interface. It features configurable logging levels, actuator endpoints for operational insights, and a clean architecture that separates concerns between controllers and data models. Built with Spring Boot 3.2.0, it leverages modern Java 17 features and includes comprehensive test support through JUnit.
+The application implements a RESTful service with in-memory storage, making it ideal for prototyping, testing, or scenarios requiring temporary data persistence. It features comprehensive logging configuration, health monitoring through Spring Actuator, and follows Spring Boot best practices for configuration management. The service is built using Java 17 and managed with Gradle, ensuring modern Java features and reliable dependency management.
 
 ## Repository Structure
 ```
 .
-├── build.gradle              # Gradle build configuration with Spring Boot 3.2.0 and dependencies
+├── build.gradle                 # Gradle build configuration with Spring Boot dependencies
 ├── config/
-│   └── application-local.yml # Local environment configuration (port, app name, logging)
+│   └── application-local.yml    # Local environment configuration (port, logging, app name)
 └── src/
     └── com/example/
-        ├── App.java         # Main application entry point with Spring Boot configuration
-        ├── controller/      # REST API endpoint definitions
-        │   ├── HealthController.java  # Health and status monitoring endpoints
-        │   └── SampleController.java  # Data management endpoints
+        ├── App.java             # Main application entry point with Spring Boot configuration
+        ├── controller/
+        │   └── SampleController.java    # REST endpoints for data management
         └── model/
-            └── DataItem.java          # Data model for API operations
+            └── DataItem.java    # Data model class for storing items
 ```
 
 ## Usage Instructions
 
 ### Prerequisites
 - Java Development Kit (JDK) 17 or higher
-- Gradle 8.x or higher
-- Basic understanding of Spring Boot and REST APIs
+- Gradle 8.x (or use the included Gradle wrapper)
 
-
-### Quick Start
-1. Start the application:
-```bash
-./gradlew bootRun
-```
-
-2. Verify the application is running by accessing the health endpoint:
-```bash
-curl http://localhost:8080/api/health
-```
+2. The application will be available at `http://localhost:8080`
 
 ### More Detailed Examples
 
-1. Check Application Status
+#### Storing a Data Item
 ```bash
-curl http://localhost:8080/api/status
+curl -X PUT http://localhost:8080/api/data/123 \
+  -H "Content-Type: application/json" \
+  -d '{"content": "Sample content"}'
 ```
+
 Expected response:
 ```json
 {
-    "timestamp": "2024-01-01T12:00:00",
-    "service": "sample-rest-app",
-    "status": "running"
+  "id": "123",
+  "content": "Sample content"
 }
 ```
 
-2. Health Check
+#### Retrieving a Data Item
 ```bash
-curl http://localhost:8080/api/health
+curl http://localhost:8080/api/data/123
 ```
+
 Expected response:
 ```json
 {
-    "status": "UP",
-    "message": "Service is healthy"
+  "id": "123",
+  "content": "Sample content"
 }
 ```
 
 ### Troubleshooting
 
-1. Application Won't Start
-- **Problem**: Application fails to start with port binding issues
-- **Solution**:
-  ```bash
-  # Check if port 8080 is already in use
-  lsof -i :8080
-  # Modify port in config/application-local.yml if needed
-  ```
+#### Common Issues
 
-2. Debugging
-- Enable debug logging by modifying `config/application-local.yml`:
-  ```yaml
-  logging:
-    level:
-      com.example: DEBUG
-  ```
-- Check logs in console output for detailed information
-- Use Spring Boot Actuator endpoints for health monitoring:
-  ```bash
-  curl http://localhost:8080/actuator/health
-  ```
+1. Application fails to start
+- **Problem**: Port 8080 already in use
+- **Solution**: Modify the port in `config/application-local.yml`:
+```yaml
+server:
+  port: 8081
+```
+
+2. Logging issues
+- **Problem**: Insufficient logging information
+- **Solution**: Adjust logging levels in `application-local.yml`:
+```yaml
+logging:
+  level:
+    com.example: DEBUG
+```
+
+#### Debugging
+- Enable debug logging by adding `--debug` flag:
+```bash
+./gradlew bootRun --debug
+```
+- View logs in console output
+- Application logs are written to standard output and can be redirected to a file:
+```bash
+./gradlew bootRun > application.log
+```
 
 ## Data Flow
 
-The application processes HTTP requests through a layered architecture, transforming REST calls into data operations with proper error handling and response formatting.
+The application implements a simple data flow where REST requests are processed through controllers and stored in an in-memory map structure.
 
 ```ascii
-Client Request → Controller Layer → Data Processing → Response
-     ↑              |                    |              ↓
-     └──────────────┴────────Error Handling─────────────┘
+Client Request → REST Controller → In-Memory Storage
+     ↑                                    |
+     └────────────────────────────────────┘
+         Response with stored data
 ```
 
 Key component interactions:
-1. Controllers receive HTTP requests and validate inputs
-2. Request data is mapped to internal data models
-3. Business logic processes the data operations
-4. Responses are formatted as JSON and returned to the client
-5. Error handling is managed across all layers
-6. Health monitoring provides real-time system status
-7. Logging captures operation details at configurable levels
+1. REST requests are received by `SampleController`
+2. Controller methods handle GET and PUT operations
+3. Data is stored in an in-memory HashMap within the controller
+4. Responses are wrapped in Spring's ResponseEntity for proper HTTP status codes
+5. Spring Boot handles JSON serialization/deserialization automatically

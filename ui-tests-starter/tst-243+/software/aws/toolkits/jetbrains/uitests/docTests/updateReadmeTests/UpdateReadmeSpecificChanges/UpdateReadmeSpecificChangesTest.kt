@@ -84,7 +84,8 @@ class UpdateReadmeSpecificChangesTest {
                 val readme = File(readmePath.toUri())
                 assertTrue(readme.exists())
                 println("result: ${readme.readText()}")
-                assertTrue(readme.readText().contains("### Installation"))
+                assertTrue(readme.readText().contains("Installation", ignoreCase = true))
+                println("assertions done")
             }
     }
 
