@@ -76,7 +76,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                         { LspSettings.getInstance().setArtifactPath(it) }
                     )
                     .applyToComponent {
-                        emptyText.text = "Choose a file to upload"
+                        emptyText.text = message("executableCommon.auto_managed")
                     }
                     .resizableColumn()
                     .align(Align.FILL)
