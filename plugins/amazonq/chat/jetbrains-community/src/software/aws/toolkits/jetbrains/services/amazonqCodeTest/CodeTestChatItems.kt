@@ -60,5 +60,5 @@ fun createProgressField(messageKey: String): ProgressField = ProgressField(
     status = "default",
     value = -1,
     text = message(messageKey),
-    actions = listOf(if (messageKey == "testgen.progressbar.build_and_execute") cancelFixingTestCasesButton else cancelTestGenBuildAndExecuteButton)
+    actions = listOf(if (messageKey == "testgen.progressbar.build_and_execute") cancelTestGenBuildAndExecuteButton else cancelFixingTestCasesButton)
 )

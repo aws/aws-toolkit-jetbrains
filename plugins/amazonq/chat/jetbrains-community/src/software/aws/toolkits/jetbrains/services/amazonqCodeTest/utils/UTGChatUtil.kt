@@ -40,7 +40,8 @@ fun constructBuildAndExecutionSummaryText(currentStatus: BuildAndExecuteProgress
     }
 
     if (currentStatus >= BuildAndExecuteProgressStatus.RUN_EXECUTION_TESTS && codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.SUCCESS) {
-        progressMessages.add("${BuildAndExecuteStatusIcon.DONE.icon} ${"Project compiled\n"}\${BuildAndExecuteStatusIcon.DONE.icon} ${"All tests passed\n"}")
+        progressMessages.add("${BuildAndExecuteStatusIcon.DONE.icon} ${"Project compiled"}")
+        progressMessages.add("${BuildAndExecuteStatusIcon.DONE.icon} ${"All tests passed\n"}")
     }
 // TODO: Commenting out this code to do a better UX in the V2 version after science support
 /*
@@ -110,7 +111,7 @@ fun constructBuildAndExecutionSummaryText(currentStatus: BuildAndExecuteProgress
     return """
             Sure, This may take a few minutes and I'll update the progress here.
         
-            **Progress summary**\n
+            **Progress summary**
             
     """.trimIndent() + progressMessages.joinToString("\n")
 }
@@ -145,13 +146,12 @@ fun runBuildOrTestCommand(
         }
         packageRoot = packageRoot.parentFile
     }
-    var workingDir = if (foundGradleRoot) {
+    val workingDir = if (foundGradleRoot) {
         packageRoot ?: testFileAbsolutePath.parentFile
     } else {
         testFileAbsolutePath.parentFile
     }
-    // If no valid Gradle directory is found, fallback to the project root
-//    val gradleWrapper = File(packageRoot ?: projectRoot, "gradlew")
+
     val console: ConsoleView = ConsoleViewImpl(project, true)
 
     // Attach Console View to Build Tool Window
@@ -187,7 +187,6 @@ fun runBuildOrTestCommand(
     }.withWorkDirectory(workingDir)
 
     try {
-        // val process = processBuilder.start()
         val processHandler = OSProcessHandler(commandLine)
 
         // Attach Process Listener for Output Handling

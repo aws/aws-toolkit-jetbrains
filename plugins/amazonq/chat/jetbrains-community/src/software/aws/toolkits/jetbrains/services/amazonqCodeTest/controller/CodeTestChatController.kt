@@ -61,6 +61,7 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.CodeWhispererUTG
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.ConversationState
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.InboundAppMessagesHandler
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.cancellingProgressField
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.createProgressField
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.Button
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.CodeTestChatMessage
@@ -103,6 +104,7 @@ import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.InteractionType
 import software.aws.toolkits.telemetry.MetricResult
+import software.aws.toolkits.telemetry.Status
 import software.aws.toolkits.telemetry.UiTelemetry
 import java.io.File
 import java.nio.file.Files
@@ -172,6 +174,7 @@ class CodeTestChatController(
     override suspend fun processStartTestGen(message: IncomingCodeTestMessage.StartTestGen) {
         codeTestChatHelper.setActiveCodeTestTabId(message.tabId)
         val session = codeTestChatHelper.getActiveSession()
+        sessionCleanUp(message.tabId)
         // check if IDE has active file open, yes return (fileName and filePath) else return null
         val project = context.project
         val fileInfo = checkActiveFileInIDE(project, message) ?: return
@@ -314,7 +317,7 @@ class CodeTestChatController(
                     result = MetricResult.Succeeded,
                     perfClientLatency = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration),
                     requestId = id,
-//                    status = Status.ACCEPTED
+                    status = Status.ACCEPTED
                 )
             }
             session.isGeneratingTests = false
@@ -689,7 +692,7 @@ class CodeTestChatController(
                         buildPayloadBytes = session.srcPayloadSize,
                         buildZipFileBytes = session.srcZipFileSize,
                         requestId = session.startTestGenerationRequestId,
-//                        status = Status.ACCEPTED
+                        status = Status.ACCEPTED
                     )
                 }
 
@@ -818,7 +821,7 @@ class CodeTestChatController(
                         buildZipFileBytes = session.srcZipFileSize,
                         requestId = session.startTestGenerationRequestId,
                         update = session.updateBuildCommands,
-//                        status = Status.ACCEPTED
+                        status = Status.ACCEPTED
                     )
                 }
             }
@@ -915,7 +918,7 @@ class CodeTestChatController(
                         buildPayloadBytes = session.srcPayloadSize,
                         buildZipFileBytes = session.srcZipFileSize,
                         requestId = session.startTestGenerationRequestId,
-//                        status = Status.REJECTED
+                        status = Status.REJECTED
                     )
                 } else {
                     AmazonqTelemetry.unitTestGeneration(
@@ -1064,7 +1067,7 @@ class CodeTestChatController(
                         buildZipFileBytes = session.srcZipFileSize,
                         requestId = session.startTestGenerationRequestId,
                         update = session.updateBuildCommands,
-//                        status = Status.ACCEPTED
+                        status = Status.ACCEPTED
                     )
                     sessionCleanUp(message.tabId)
                     return
@@ -1119,20 +1122,50 @@ class CodeTestChatController(
                 // TODO: install dependencies and build
             }
             "stop_test_generation" -> {
-                UiTelemetry.click(null as Project?, "unitTestGeneration_cancelTestGenerationProgress")
+                UiTelemetry.click(context.project, "unitTestGeneration_cancelTestGenerationProgress")
                 session.isGeneratingTests = false
                 return
             }
             "stop_test_gen_build_and_execution" -> {
-                UiTelemetry.click(null as Project?, "unitTestGeneration_cancelBuildProgress")
-                // TODO: Cancel Build and execute
+                UiTelemetry.click(context.project, "unitTestGeneration_cancelBuildProgress")
+                session.buildStatus = BuildStatus.CANCELLED
                 session.isGeneratingTests = false
+                AmazonqTelemetry.unitTestGeneration(
+                    cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
+                    hasUserPromptSupplied = session.hasUserPromptSupplied,
+                    isSupportedLanguage = true,
+                    credentialStartUrl = getStartUrl(project = context.project),
+                    jobGroup = session.testGenerationJobGroupName,
+                    jobId = session.testGenerationJob,
+                    result = MetricResult.Cancelled,
+                    reason = null,
+                    reasonDesc = null,
+                    perfClientLatency = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration),
+                    isCodeBlockSelected = session.isCodeBlockSelected,
+                    artifactsUploadDuration = session.artifactUploadDuration,
+                    buildZipFileBytes = session.srcZipFileSize,
+                    requestId = session.startTestGenerationRequestId,
+                    status = Status.CANCELLED,
+                )
+                codeTestChatHelper.updateUI(
+                    promptInputDisabledState = false,
+                    promptInputProgress = cancellingProgressField,
+                    promptInputPlaceholder = message("testgen.placeholder.enter_slash_quick_actions"),
+                )
+                delay(1000)
+                codeTestChatHelper.addAnswer(
+                    CodeTestChatMessageContent(
+                        message = message("testgen.message.cancelled"),
+                        type = ChatMessageType.Answer,
+                        canBeVoted = false
+                    )
+                )
+                codeTestChatHelper.sendUpdatePromptProgress(session.tabId, null)
                 return
             }
             "stop_fixing_test_cases" -> {
                 UiTelemetry.click(null as Project?, "unitTestGeneration_cancelFixingTest")
                 session.isGeneratingTests = false
-                session.buildStatus = BuildStatus.CANCELLED
                 return
             }
             else -> {
@@ -1149,7 +1182,7 @@ class CodeTestChatController(
         sessionCleanUp(codeTestChatHelper.getActiveSession().tabId)
     }
 
-    suspend fun updateBuildAndExecuteProgressCard(
+    private suspend fun updateBuildAndExecuteProgressCard(
         currentStatus: BuildAndExecuteProgressStatus,
         messageId: String?,
     ): String? {
