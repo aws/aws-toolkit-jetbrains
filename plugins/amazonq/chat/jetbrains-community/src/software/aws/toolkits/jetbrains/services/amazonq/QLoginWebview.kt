@@ -262,8 +262,8 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
 
     override fun loadWebView(query: JBCefJSQuery) {
         val webScriptUri = assetHandler.createResource(
-            "js/getStart.js",
-            QWebviewBrowser::class.java.getResourceAsStream("/webview/assets/js/getStart.js")
+            WEB_SCRIPT,
+            QWebviewBrowser::class.java.getResourceAsStream("/webview/assets/$WEB_SCRIPT")
         )
 
         jcefBrowser.loadURL(assetHandler.createResource("content.html", getWebviewHTML(webScriptUri, query)))
@@ -271,5 +271,6 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
 
     companion object {
         private val LOG = getLogger<QWebviewBrowser>()
+        private const val WEB_SCRIPT = "js/getStart.js"
     }
 }

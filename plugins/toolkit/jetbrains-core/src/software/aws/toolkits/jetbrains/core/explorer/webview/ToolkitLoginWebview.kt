@@ -323,8 +323,8 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
 
     override fun loadWebView(query: JBCefJSQuery) {
         val webScriptUri = assetHandler.createResource(
-            "js/toolkitGetStart.js",
-            ToolkitWebviewBrowser::class.java.getResourceAsStream("/webview/assets/js/toolkitGetStart.js")
+            WEB_SCRIPT,
+            ToolkitWebviewBrowser::class.java.getResourceAsStream("/webview/assets/$WEB_SCRIPT")
         )
 
         jcefBrowser.loadURL(assetHandler.createResource("content.html", getWebviewHTML(webScriptUri, query)))
@@ -334,6 +334,7 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
 
     companion object {
         private val LOG = getLogger<ToolkitWebviewBrowser>()
+        private const val WEB_SCRIPT = "js/toolkitGetStart.js"
     }
 }
 
