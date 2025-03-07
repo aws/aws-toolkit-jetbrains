@@ -12,6 +12,7 @@ import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.hasPosixFilePermissions
 import java.io.FileNotFoundException
+import java.net.URI
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
@@ -80,7 +81,8 @@ fun extractZipFile(zipFilePath: Path, destDir: Path) {
 
     try {
         FileSystems.newFileSystem(
-            zipFilePath,
+            // jar prefix due to potentially ambiguous resolution to wrong fs impl for zipfs on windows
+            URI("jar:${zipFilePath.toUri()}"),
             mapOf(ZIP_PROPERTY_POSIX to destDir.hasPosixFilePermissions())
         ).use { zipfs ->
             Files.walk(zipfs.getPath("/"))
