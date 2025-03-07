@@ -67,7 +67,7 @@ class BrowserConnector(
                                 it.elementId(source.asText())
                             }
                         } else if (module != null && trigger != null) {
-                            Telemetry.toolkit.openModule.use {
+                            Telemetry.toolkit.willOpenModule.use {
                                 it.module(module.asText())
                                 it.source(trigger.asText())
                             }
