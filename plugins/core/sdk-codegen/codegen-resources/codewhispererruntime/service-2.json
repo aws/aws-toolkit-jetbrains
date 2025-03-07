@@ -1386,7 +1386,8 @@
                 "customizationArn": { "shape": "CustomizationArn" },
                 "optOutPreference": { "shape": "OptOutPreference" },
                 "userContext": { "shape": "UserContext" },
-                "profileArn": { "shape": "ProfileArn" }
+                "profileArn": { "shape": "ProfileArn" },
+                "workspaceId": { "shape": "UUID" }
             }
         },
         "GenerateCompletionsRequestMaxResultsInteger": {
