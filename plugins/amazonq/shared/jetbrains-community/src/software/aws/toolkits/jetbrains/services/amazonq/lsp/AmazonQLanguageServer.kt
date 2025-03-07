@@ -16,7 +16,7 @@ import java.util.concurrent.CompletableFuture
  */
 @Suppress("unused")
 interface AmazonQLanguageServer : LanguageServer {
-    @JsonRequest("aws/syncModuleDependencies")
+    @JsonNotification("aws/syncModuleDependencies")
     fun syncModuleDependencies(params: SyncModuleDependenciesParams): CompletableFuture<Unit>
 
     @JsonRequest("aws/credentials/token/update")
