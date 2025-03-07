@@ -23,6 +23,9 @@ object TestCIServer : CIServer {
     }
 
     override fun ignoreTestFailure(testName: String, message: String) {
+        if (testName.startsWith("Not analyzed freeze")) {
+            println("Ignored freeze")
+        }
     }
 
     override fun isTestFailureShouldBeIgnored(message: String) = false
