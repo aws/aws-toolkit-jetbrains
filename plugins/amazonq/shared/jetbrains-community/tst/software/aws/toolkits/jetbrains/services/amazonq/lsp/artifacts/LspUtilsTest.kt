@@ -94,7 +94,7 @@ class LspUtilsTest {
         extractZipFile(sourceZip, target)
 
         assertThat(target).satisfiesKt {
-            val files = Files.list(it).toList()
+            val files = Files.list(it).use { stream -> stream.toList() }
             assertThat(files.size).isEqualTo(2)
             assertPosixPermissions(target.resolve("regularFile"), "rw-r--r--")
             assertPosixPermissions(target.resolve("executableFile"), "rwxr-xr-x")
