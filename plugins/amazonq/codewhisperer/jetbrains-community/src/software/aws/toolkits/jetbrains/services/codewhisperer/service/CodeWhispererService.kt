@@ -21,6 +21,7 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.messages.Topic
+import io.ktor.client.request.request
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
@@ -231,7 +232,8 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     buildCodeWhispererRequest(
                         requestContext.fileContextInfo,
                         requestContext.awaitSupplementalContext(),
-                        requestContext.customizationArn
+                        requestContext.customizationArn,
+                        requestContext.workspaceId
                     )
                 )
 
@@ -666,7 +668,12 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         // 5. customization
         val customizationArn = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn
 
-        return RequestContext(project, editor, triggerTypeInfo, caretPosition, fileContext, supplementalContext, connection, latencyContext, customizationArn)
+        // TODO: use workspaceID from LSP
+        // hardcoded for now!
+        val workspaceId = null
+
+        return RequestContext(project, editor, triggerTypeInfo, caretPosition,
+            fileContext, supplementalContext, connection, latencyContext, customizationArn, workspaceId)
     }
 
     fun validateResponse(response: GenerateCompletionsResponse): GenerateCompletionsResponse {
@@ -800,6 +807,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             fileContextInfo: FileContextInfo,
             supplementalContext: SupplementalContextInfo?,
             customizationArn: String?,
+            workspaceId: String?
         ): GenerateCompletionsRequest {
             val programmingLanguage = ProgrammingLanguage.builder()
                 .languageName(fileContextInfo.programmingLanguage.toCodeWhispererRuntimeLanguage().languageId)
@@ -828,6 +836,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 .referenceTrackerConfiguration { it.recommendationsWithReferences(includeCodeWithReference) }
                 .customizationArn(customizationArn)
                 .optOutPreference(getTelemetryOptOutPreference())
+                .workspaceId(workspaceId)
                 .build()
         }
     }
@@ -843,6 +852,7 @@ data class RequestContext(
     val connection: ToolkitConnection?,
     val latencyContext: LatencyContext,
     val customizationArn: String?,
+    val workspaceId: String?
 ) {
     // TODO: should make the entire getRequestContext() suspend function instead of making supplemental context only
     var supplementalContext: SupplementalContextInfo? = null
