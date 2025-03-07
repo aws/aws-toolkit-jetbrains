@@ -36,12 +36,15 @@ class LspUtilsTest {
 
         val sourceZip = tempDir.resolve("source.zip")
         ZipOutputStream(Files.newOutputStream(sourceZip)).use { zip ->
-            Files.walk(source).filter { it.isRegularFile() }.forEach {
-                zip.putNextEntry(source.relativize(it).toString(), it)
+            Files.walk(source).use { paths ->
+                paths
+                    .filter { it.isRegularFile() }
+                    .forEach {
+                        zip.putNextEntry(source.relativize(it).toString(), it)
+                    }
+                val precedingSlashFile = source.resolve("file4").also { it.writeText("contents4") }
+                zip.putNextEntry("/${source.relativize(precedingSlashFile)}", precedingSlashFile)
             }
-
-            val precedingSlashFile = source.resolve("file4").also { it.writeText("contents4") }
-            zip.putNextEntry("/${source.relativize(precedingSlashFile)}", precedingSlashFile)
         }
 
         extractZipFile(sourceZip, target)
@@ -80,11 +83,13 @@ class LspUtilsTest {
                 ZIP_PROPERTY_POSIX to true,
             )
         ).use { zipfs ->
-            Files.walk(source)
-                .filter { !it.isDirectory() }
-                .forEach { file ->
-                    Files.copy(file, zipfs.getPath("/").resolve(source.relativize(file).toString()), StandardCopyOption.COPY_ATTRIBUTES)
-                }
+            Files.walk(source).use { paths ->
+                paths
+                    .filter { it.isRegularFile() }
+                    .forEach { file ->
+                        Files.copy(file, zipfs.getPath("/").resolve(source.relativize(file).toString()), StandardCopyOption.COPY_ATTRIBUTES)
+                    }
+            }
         }
 
         extractZipFile(sourceZip, target)

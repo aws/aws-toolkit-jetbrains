@@ -85,13 +85,15 @@ fun extractZipFile(zipFilePath: Path, destDir: Path) {
             URI("jar:${zipFilePath.toUri()}"),
             mapOf(ZIP_PROPERTY_POSIX to destDir.hasPosixFilePermissions())
         ).use { zipfs ->
-            Files.walk(zipfs.getPath("/"))
-                .filter { !it.isDirectory() }
-                .forEach { zipEntry ->
-                    val destPath = Paths.get(destDir.toString(), zipEntry.toString())
-                    destPath.createParentDirectories()
-                    Files.copy(zipEntry, destPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
-                }
+            Files.walk(zipfs.getPath("/")).use { paths ->
+                paths
+                    .filter { !it.isDirectory() }
+                    .forEach { zipEntry ->
+                        val destPath = Paths.get(destDir.toString(), zipEntry.toString())
+                        destPath.createParentDirectories()
+                        Files.copy(zipEntry, destPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
+                    }
+            }
         }
     } catch (e: Exception) {
         throw LspException("Failed to extract zip file: ${e.message}", LspException.ErrorCode.UNZIP_FAILED, cause = e)
