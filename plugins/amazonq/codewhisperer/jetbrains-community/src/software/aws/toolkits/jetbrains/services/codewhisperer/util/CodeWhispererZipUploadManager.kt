@@ -100,6 +100,7 @@ class CodeWhispererZipUploadManager(private val project: Project) {
         } finally {
             if (featureUseCase == CodeWhispererConstants.FeatureName.CODE_REVIEW) {
                 AmazonqTelemetry.createUpload(
+                    amazonqConversationId = "",
                     amazonqUploadIntent = if (taskType == CodeWhispererConstants.UploadTaskType.SCAN_PROJECT) {
                         AmazonqUploadIntent.FULLPROJECTSECURITYSCAN
                     } else {
