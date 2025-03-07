@@ -12,6 +12,7 @@ import org.eclipse.lsp4j.PublishDiagnosticsParams
 import org.eclipse.lsp4j.ShowMessageRequestParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -58,6 +59,17 @@ class AmazonQLanguageClientImpl : AmazonQLanguageClient {
 
         return CompletableFuture.completedFuture(
             buildList {
+                params.items.forEach {
+                    when (it.section) {
+                        AmazonQLspConstants.LSP_CW_CONFIGURATION_KEY -> {
+                            add(
+                                CodeWhispererLspConfiguration(
+                                    shouldShareData = CodeWhispererSettings.getInstance().isMetricOptIn()
+                                )
+                            )
+                        }
+                    }
+                }
             }
         )
     }
