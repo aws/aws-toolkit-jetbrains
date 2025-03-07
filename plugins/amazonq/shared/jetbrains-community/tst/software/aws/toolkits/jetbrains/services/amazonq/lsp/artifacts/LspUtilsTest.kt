@@ -49,16 +49,13 @@ class LspUtilsTest {
         extractZipFile(sourceZip, target)
 
         assertThat(target).satisfiesKt {
-            val files = Files.list(it).toList()
+            val files = Files.list(it).use { stream -> stream.toList() }
             assertThat(files.size).isEqualTo(4)
             assertThat(target.resolve("file1")).hasContent("contents1")
             assertThat(target.resolve("file2")).hasContent("contents2")
             assertThat(target.resolve("file3")).hasContent("contents3")
             assertThat(target.resolve("file4")).hasContent("contents4")
         }
-
-        // windows hack
-        System.gc()
     }
 
     @Test
