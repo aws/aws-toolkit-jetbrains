@@ -5,13 +5,12 @@ package software.aws.toolkits.jetbrains.services.telemetry
 
 import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.ide.plugins.PluginManagerCore
-import io.mockk.called
 import io.mockk.every
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.verify
-import junit.framework.TestCase.assertEquals
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -34,7 +33,7 @@ class PluginResolverTest {
 
         val pluginResolver = PluginResolver.fromCurrentThread()
 
-        assertEquals(AWSProduct.AMAZON_Q_FOR_JET_BRAINS, pluginResolver.product)
+        assertThat(pluginResolver.product).isEqualTo(AWSProduct.AMAZON_Q_FOR_JET_BRAINS)
     }
 
     @Test
@@ -46,7 +45,7 @@ class PluginResolverTest {
 
         val pluginResolver = PluginResolver.fromCurrentThread()
 
-        assertEquals(AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS, pluginResolver.product)
+        assertThat(pluginResolver.product).isEqualTo(AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS)
     }
 
     @Test
@@ -58,7 +57,7 @@ class PluginResolverTest {
 
         val pluginResolver = PluginResolver.fromCurrentThread()
 
-        assertEquals("1.2.3", pluginResolver.version)
+        assertThat(pluginResolver.version).isEqualTo("1.2.3")
     }
 
     @Test
@@ -70,7 +69,7 @@ class PluginResolverTest {
 
         val pluginResolver = PluginResolver.fromCurrentThread()
 
-        assertEquals("unknown", pluginResolver.version)
+        assertThat(pluginResolver.version).isEqualTo("unknown")
     }
 
     @Test
@@ -89,8 +88,8 @@ class PluginResolverTest {
         val pluginResolver = PluginResolver.fromStackTrace(mockStackTrace)
         every { PluginManagerCore.getPluginDescriptorOrPlatformByClassName(any()) } returns pluginDescriptor
 
-        assertEquals(AWSProduct.AMAZON_Q_FOR_JET_BRAINS, pluginResolver.product)
-        assertEquals("1.2.3", pluginResolver.version)
+        assertThat(pluginResolver.product).isEqualTo(AWSProduct.AMAZON_Q_FOR_JET_BRAINS)
+        assertThat(pluginResolver.version).isEqualTo("1.2.3")
 
         verify {
             PluginManagerCore.getPluginDescriptorOrPlatformByClassName("software.aws.toolkits.plugins.amazonq.bar")
@@ -105,11 +104,11 @@ class PluginResolverTest {
         )
         val pluginResolver = PluginResolver.fromStackTrace(mockStackTrace)
 
-        assertEquals(AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS, pluginResolver.product)
-        assertEquals("unknown", pluginResolver.version)
+        assertThat(pluginResolver.product).isEqualTo(AWSProduct.AWS_TOOLKIT_FOR_JET_BRAINS)
+        assertThat(pluginResolver.version).isEqualTo("unknown")
 
-        verify {
-            PluginManagerCore.getPlugin(any())?.wasNot(called)
+        verify(exactly = 0) {
+            PluginManagerCore.getPlugin(any())
         }
     }
 }
