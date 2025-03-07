@@ -64,7 +64,8 @@ class AmazonQLanguageClientImpl : AmazonQLanguageClient {
                         AmazonQLspConstants.LSP_CW_CONFIGURATION_KEY -> {
                             add(
                                 CodeWhispererLspConfiguration(
-                                    shouldShareData = CodeWhispererSettings.getInstance().isMetricOptIn()
+                                    shouldShareData = CodeWhispererSettings.getInstance().isMetricOptIn(),
+                                    shouldEnableWorkspaceContext = CodeWhispererSettings.getInstance().isWorkspaceContextEnabled()
                                 )
                             )
                         }
