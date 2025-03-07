@@ -17,8 +17,6 @@ import com.intellij.openapi.util.Key
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.ui.content.impl.ContentImpl
-import kotlinx.coroutines.delay
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.cancellingProgressField
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.controller.CodeTestChatHelper
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.BuildAndExecuteStatusIcon
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.BuildAndExecuteProgressStatus
@@ -29,6 +27,23 @@ import java.io.FileWriter
 
 fun constructBuildAndExecutionSummaryText(currentStatus: BuildAndExecuteProgressStatus, codeTestChatHelper: CodeTestChatHelper): String {
     val progressMessages = mutableListOf<String>()
+    if (currentStatus == BuildAndExecuteProgressStatus.RUN_BUILD) {
+        progressMessages.add("${BuildAndExecuteStatusIcon.WAIT.icon} ${"Project compiling\n"}")
+    }
+
+    if (currentStatus == BuildAndExecuteProgressStatus.RUN_EXECUTION_TESTS && codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.FAILURE) {
+        progressMessages.add("${BuildAndExecuteStatusIcon.WAIT.icon} ${"Fixing test failures\n"}")
+    }
+
+    if (currentStatus > BuildAndExecuteProgressStatus.RUN_EXECUTION_TESTS && codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.FAILURE) {
+        progressMessages.add("${BuildAndExecuteStatusIcon.DONE.icon} ${"Fixed test failures\n"}")
+    }
+
+    if (currentStatus >= BuildAndExecuteProgressStatus.RUN_EXECUTION_TESTS && codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.SUCCESS) {
+        progressMessages.add("${BuildAndExecuteStatusIcon.DONE.icon} ${"Project compiled\n"}\${BuildAndExecuteStatusIcon.DONE.icon} ${"All tests passed\n"}")
+    }
+// TODO: Commenting out this code to do a better UX in the V2 version after science support
+/*
 
     if (currentStatus >= BuildAndExecuteProgressStatus.RUN_BUILD) {
         val buildStatus = when (currentStatus) {
@@ -36,26 +51,54 @@ fun constructBuildAndExecutionSummaryText(currentStatus: BuildAndExecuteProgress
             BuildAndExecuteProgressStatus.BUILD_FAILED -> "failed"
             else -> "complete"
         }
-        val icon = if (buildStatus == "in progress") BuildAndExecuteStatusIcon.WAIT.icon else if (codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.SUCCESS) BuildAndExecuteStatusIcon.DONE.icon else BuildAndExecuteStatusIcon.FAILED.icon
+        val icon = if (buildStatus == "in progress") {
+            BuildAndExecuteStatusIcon.WAIT.icon
+        } else if (codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.SUCCESS) {
+            BuildAndExecuteStatusIcon.DONE.icon
+        } else {
+            BuildAndExecuteStatusIcon.FAILED.icon
+        }
         progressMessages.add(
             "$icon ${
-                if (buildStatus == "in progress") "Project compiling" else if (codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.SUCCESS) "Project compiled" else "Unable to compile project"
+                if (buildStatus == "in progress") {
+                    "Project compiling"
+                } else if (codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.SUCCESS) {
+                    "Project compiled"
+                } else {
+                    "Unable to compile project"
+                }
             }"
         )
     }
 
     if (currentStatus >= BuildAndExecuteProgressStatus.RUN_EXECUTION_TESTS) {
-        val buildStatus = if (currentStatus == BuildAndExecuteProgressStatus.RUN_BUILD) "Running tests" else if (codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.SUCCESS) "Tests passed" else "Tests failed"
-        val icon = if (buildStatus == "Running tests") BuildAndExecuteStatusIcon.WAIT.icon else if (codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.SUCCESS) BuildAndExecuteStatusIcon.DONE.icon else BuildAndExecuteStatusIcon.FAILED.icon
+        val buildStatus = if (currentStatus == BuildAndExecuteProgressStatus.RUN_BUILD) {
+            "Running tests"
+        } else if (codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.SUCCESS) {
+            "Tests passed"
+        } else {
+            "Tests failed"
+        }
+        val icon = if (buildStatus == "Running tests") {
+            BuildAndExecuteStatusIcon.WAIT.icon
+        } else if (codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.SUCCESS) {
+            BuildAndExecuteStatusIcon.DONE.icon
+        } else {
+            BuildAndExecuteStatusIcon.FAILED.icon
+        }
         progressMessages.add("$icon $buildStatus")
     }
 
     if ((currentStatus >= BuildAndExecuteProgressStatus.BUILD_FAILED) && codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.FAILURE) {
         val buildStatus = if (currentStatus == BuildAndExecuteProgressStatus.RUN_EXECUTION_TESTS) "Fixing" else "Fixed"
-        val icon = if (currentStatus == BuildAndExecuteProgressStatus.RUN_EXECUTION_TESTS) BuildAndExecuteStatusIcon.WAIT.icon else BuildAndExecuteStatusIcon.DONE.icon
+        val icon = if (currentStatus == BuildAndExecuteProgressStatus.RUN_EXECUTION_TESTS) {
+            BuildAndExecuteStatusIcon.WAIT.icon
+        } else {
+            BuildAndExecuteStatusIcon.DONE.icon
+        }
         progressMessages.add("$icon $buildStatus test failures")
     }
-
+*/
     if (currentStatus >= BuildAndExecuteProgressStatus.FIXING_TEST_CASES && codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.FAILURE) {
         progressMessages.add("\n")
         progressMessages.add("**Results**")
@@ -67,7 +110,7 @@ fun constructBuildAndExecutionSummaryText(currentStatus: BuildAndExecuteProgress
     return """
             Sure, This may take a few minutes and I'll update the progress here.
         
-            **Progress summary**
+            **Progress summary**\n
             
     """.trimIndent() + progressMessages.joinToString("\n")
 }
@@ -79,7 +122,7 @@ fun runBuildOrTestCommand(
     isBuildCommand: Boolean,
     buildAndExecuteTaskContext: BuildAndExecuteTaskContext,
     testFileRelativePathToProjectRoot: String,
-    codeTestChatHelper: CodeTestChatHelper
+    codeTestChatHelper: CodeTestChatHelper,
 ) {
     val brazilPath = "${System.getProperty("user.home")}/.toolbox/bin:/usr/local/bin:/usr/bin:/bin:/sbin"
     if (localCommand.isEmpty()) {
@@ -161,7 +204,7 @@ fun runBuildOrTestCommand(
                 // Check if the build has been cancelled
                 if (codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.CANCELLED) {
                     processHandler.destroyProcess()
-                    console.print("\nBuild cancelled by user\n", ConsoleViewContentType.SYSTEM_OUTPUT)
+                    console.print("\nBuild cancelled by user\n", ConsoleViewContentType.ERROR_OUTPUT)
                     if (isBuildCommand) {
                         buildAndExecuteTaskContext.buildExitCode = 1
                     } else {

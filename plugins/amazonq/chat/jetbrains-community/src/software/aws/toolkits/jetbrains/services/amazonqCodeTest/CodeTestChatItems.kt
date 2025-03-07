@@ -51,16 +51,14 @@ fun testGenProgressField(value: Int) = ProgressField(
 
 val fixingTestCasesProgressField = ProgressField(
     status = "default",
-    value= -1,
+    value = -1,
     text = message("testgen.progressbar.fixing_test_cases"),
     actions = listOf(cancelTestGenBuildAndExecuteButton)
 )
 
-fun createProgressField(messageKey: String): ProgressField {
-    return ProgressField(
-        status = "default",
-        value = -1,
-        text = message(messageKey),
-        actions = listOf(if (messageKey == "testgen.progressbar.build_and_execute") cancelFixingTestCasesButton else cancelTestGenBuildAndExecuteButton)
-    )
-}
+fun createProgressField(messageKey: String): ProgressField = ProgressField(
+    status = "default",
+    value = -1,
+    text = message(messageKey),
+    actions = listOf(if (messageKey == "testgen.progressbar.build_and_execute") cancelFixingTestCasesButton else cancelTestGenBuildAndExecuteButton)
+)

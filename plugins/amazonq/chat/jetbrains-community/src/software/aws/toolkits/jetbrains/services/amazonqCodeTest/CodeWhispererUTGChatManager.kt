@@ -55,6 +55,7 @@ import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.MetricResult
+//import software.aws.toolkits.telemetry.Status
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -616,7 +617,8 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                         isCodeBlockSelected = session.isCodeBlockSelected,
                         artifactsUploadDuration = session.artifactUploadDuration,
                         buildZipFileBytes = session.srcZipFileSize,
-                        requestId = session.startTestGenerationRequestId
+                        requestId = session.startTestGenerationRequestId,
+//                        status = if (e.message == message("testgen.message.cancelled")) Status.CANCELLED else Status.FAILED,
                     )
                 }
                 session.isGeneratingTests = false

@@ -61,9 +61,7 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.CodeWhispererUTG
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.ConversationState
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.InboundAppMessagesHandler
-//import software.aws.toolkits.jetbrains.services.amazonqCodeTest.buildAndExecuteProgrogressField
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.createProgressField
-//import software.aws.toolkits.jetbrains.services.amazonqCodeTest.fixingTestCasesProgressField
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.Button
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.CodeTestChatMessage
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.CodeTestChatMessageContent
@@ -75,7 +73,6 @@ import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.Session
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.UTG_CHAT_MAX_ITERATION
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.storage.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.testGenCompletedField
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.testGenProgressField
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.utils.constructBuildAndExecutionSummaryText
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.utils.runBuildOrTestCommand
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendAuthNeededException
@@ -106,6 +103,7 @@ import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.InteractionType
 import software.aws.toolkits.telemetry.MetricResult
+//import software.aws.toolkits.telemetry.Status
 import software.aws.toolkits.telemetry.UiTelemetry
 import java.io.File
 import java.nio.file.Files
@@ -316,7 +314,8 @@ class CodeTestChatController(
                     credentialStartUrl = getStartUrl(project),
                     result = MetricResult.Succeeded,
                     perfClientLatency = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration),
-                    requestId = id
+                    requestId = id,
+//                    status = Status.ACCEPTED
                 )
             }
             session.isGeneratingTests = false
@@ -690,7 +689,8 @@ class CodeTestChatController(
                         artifactsUploadDuration = session.artifactUploadDuration,
                         buildPayloadBytes = session.srcPayloadSize,
                         buildZipFileBytes = session.srcZipFileSize,
-                        requestId = session.startTestGenerationRequestId
+                        requestId = session.startTestGenerationRequestId,
+//                        status = Status.ACCEPTED
                     )
                 }
 
@@ -819,6 +819,7 @@ class CodeTestChatController(
                         buildZipFileBytes = session.srcZipFileSize,
                         requestId = session.startTestGenerationRequestId,
                         update = session.updateBuildCommands,
+//                        status = Status.ACCEPTED
                     )
                 }
             }
@@ -914,7 +915,8 @@ class CodeTestChatController(
                         artifactsUploadDuration = session.artifactUploadDuration,
                         buildPayloadBytes = session.srcPayloadSize,
                         buildZipFileBytes = session.srcZipFileSize,
-                        requestId = session.startTestGenerationRequestId
+                        requestId = session.startTestGenerationRequestId,
+//                        status = Status.REJECTED
                     )
                 } else {
                     AmazonqTelemetry.unitTestGeneration(
@@ -1019,7 +1021,7 @@ class CodeTestChatController(
                     session.testFileRelativePathToProjectRoot,
                     codeTestChatHelper
                 )
-                if(session.buildStatus === BuildStatus.CANCELLED) {
+                if (session.buildStatus === BuildStatus.CANCELLED) {
                     return
                 }
                 while (taskContext.buildExitCode < 0) {
@@ -1063,6 +1065,7 @@ class CodeTestChatController(
                         buildZipFileBytes = session.srcZipFileSize,
                         requestId = session.startTestGenerationRequestId,
                         update = session.updateBuildCommands,
+//                        status = Status.ACCEPTED
                     )
                     sessionCleanUp(message.tabId)
                     return
@@ -1130,7 +1133,7 @@ class CodeTestChatController(
             "stop_fixing_test_cases" -> {
                 UiTelemetry.click(null as Project?, "unitTestGeneration_cancelFixingTest")
                 session.isGeneratingTests = false
-                session.buildStatus=BuildStatus.CANCELLED
+                session.buildStatus = BuildStatus.CANCELLED
                 return
             }
             else -> {
