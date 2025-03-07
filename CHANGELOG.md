@@ -1,3 +1,7 @@
+# _3.58_ (2025-03-06)
+- **(Bug Fix)** Amazon Q: Fix data isolation between tabs to prevent interference when using /doc in multiple tabs
+- **(Removal)** The Amazon Q inline suggestion popup goes back to being under the suggestions and is always showing.
+
 # _3.57_ (2025-02-28)
 - **(Bug Fix)** Fix suggestion not visible in remote for 2024.3
 - **(Bug Fix)** /test: update capability card text
