@@ -18,6 +18,7 @@ import com.intellij.openapi.components.serviceIfCreated
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.io.await
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -45,6 +46,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.auth.DefaultAuthCredentialsService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.DefaultModuleDependenciesService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
@@ -53,6 +55,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument.TextDoc
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.workspace.WorkspaceServiceHandler
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
+import software.aws.toolkits.jetbrains.settings.LspSettings
 import java.io.IOException
 import java.io.OutputStreamWriter
 import java.io.PipedInputStream
@@ -245,8 +248,12 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         }
 
     init {
+        // will cause slow service init, but maybe fine for now. will not block UI since fetch/extract will be under background progress
+        val artifact = runBlocking { ArtifactManager(project, manifestRange = null).fetchArtifact() }.toAbsolutePath()
+        val node = if (SystemInfo.isWindows) "node.exe" else "node"
         val cmd = GeneralCommandLine(
-            "amazon-q-lsp",
+            artifact.resolve(node).toString(),
+            LspSettings.getInstance().getArtifactPath() ?: artifact.resolve("aws-lsp-codewhisperer.js").toString(),
             "--stdio",
             "--set-credentials-encryption-key",
         )

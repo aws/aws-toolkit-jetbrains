@@ -7,16 +7,18 @@ import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.util.io.DigestUtil
 import com.intellij.util.system.CpuArch
+import software.aws.toolkits.core.utils.ZIP_PROPERTY_POSIX
 import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.exists
+import software.aws.toolkits.core.utils.hasPosixFilePermissions
 import java.io.FileNotFoundException
-import java.io.FileOutputStream
+import java.net.URI
+import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
-import java.util.zip.ZipFile
 import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
 
@@ -78,17 +80,20 @@ fun extractZipFile(zipFilePath: Path, destDir: Path) {
     }
 
     try {
-        ZipFile(zipFilePath.toFile()).use { zipFile ->
-            zipFile.entries()
-                .asSequence()
-                .filterNot { it.isDirectory }
-                .map { zipEntry ->
-                    val destPath = destDir.resolve(zipEntry.name)
-                    destPath.createParentDirectories()
-                    FileOutputStream(destPath.toFile()).use { targetFile ->
-                        zipFile.getInputStream(zipEntry).copyTo(targetFile)
+        FileSystems.newFileSystem(
+            // jar prefix due to potentially ambiguous resolution to wrong fs impl for zipfs on windows
+            URI("jar:${zipFilePath.toUri()}"),
+            mapOf(ZIP_PROPERTY_POSIX to destDir.hasPosixFilePermissions())
+        ).use { zipfs ->
+            Files.walk(zipfs.getPath("/")).use { paths ->
+                paths
+                    .filter { !it.isDirectory() }
+                    .forEach { zipEntry ->
+                        val destPath = Paths.get(destDir.toString(), zipEntry.toString())
+                        destPath.createParentDirectories()
+                        Files.copy(zipEntry, destPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
                     }
-                }.toList()
+            }
         }
     } catch (e: Exception) {
         throw LspException("Failed to extract zip file: ${e.message}", LspException.ErrorCode.UNZIP_FAILED, cause = e)

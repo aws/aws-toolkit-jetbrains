@@ -10,7 +10,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
-import com.intellij.util.xmlb.annotations.Property
+import com.intellij.util.text.nullize
 
 @Service
 @State(name = "lspSettings", storages = [Storage("aws.xml", roamingType = RoamingType.DISABLED)])
@@ -26,11 +26,7 @@ class LspSettings : PersistentStateComponent<LspConfiguration> {
     fun getArtifactPath() = state.artifactPath
 
     fun setArtifactPath(artifactPath: String?) {
-        if (artifactPath == null) {
-            state.artifactPath = ""
-        } else {
-            state.artifactPath = artifactPath
-        }
+        state.artifactPath = artifactPath.nullize(nullizeSpaces = true)
     }
 
     companion object {
@@ -39,6 +35,5 @@ class LspSettings : PersistentStateComponent<LspConfiguration> {
 }
 
 class LspConfiguration : BaseState() {
-    @get:Property
-    var artifactPath: String = ""
+    var artifactPath by string()
 }

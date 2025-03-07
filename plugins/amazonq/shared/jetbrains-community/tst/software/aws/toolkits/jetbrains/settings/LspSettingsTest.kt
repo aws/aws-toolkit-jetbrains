@@ -20,21 +20,27 @@ class LspSettingsTest {
     }
 
     @Test
-    fun `artifact path is empty by default`() {
-        assertThat(lspSettings.getArtifactPath()).isEmpty()
+    fun `artifact path is null by default`() {
+        assertThat(lspSettings.getArtifactPath()).isNull()
     }
 
     @Test
     fun `artifact path can be set`() {
         lspSettings.setArtifactPath("test\\lsp.js")
-        assertThat(lspSettings.getArtifactPath()).isNotEmpty()
-        assertThat(lspSettings.getArtifactPath()).isEqualTo("test\\lsp.js")
+        assertThat(lspSettings.getArtifactPath())
+            .isEqualTo("test\\lsp.js")
     }
 
     @Test
-    fun `artifact path cannot be null`() {
-        lspSettings.setArtifactPath(null)
-        assertThat(lspSettings.getArtifactPath()).isEmpty()
+    fun `empty artifact path is null`() {
+        lspSettings.setArtifactPath("")
+        assertThat(lspSettings.getArtifactPath()).isNull()
+    }
+
+    @Test
+    fun `blank artifact path is null`() {
+        lspSettings.setArtifactPath("               ")
+        assertThat(lspSettings.getArtifactPath()).isNull()
     }
 
     @Test
@@ -42,7 +48,7 @@ class LspSettingsTest {
         val element = xmlElement(
             """
             <component name="LspSettings">
-  </component>
+            </component>
             """.trimIndent()
         )
         lspSettings.setArtifactPath("temp\\lsp.js")
@@ -51,22 +57,26 @@ class LspSettingsTest {
 
         val actual = XMLOutputter().outputString(element)
 
-        val expected = "<component name=\"LspSettings\">\n" +
-            "<option name=\"artifactPath\" value=\"temp\\lsp.js\" /></component>"
+        // language=XML
+        val expected = """
+            <component name="LspSettings">
+                <option name="artifactPath" value="temp\lsp.js" />
+            </component>
+        """.trimIndent()
 
-        assertThat(actual).isEqualTo(expected)
+        assertThat(actual).isEqualToIgnoringWhitespace(expected)
     }
 
     @Test
     fun `deserialize empty settings to ensure backwards compatibility`() {
         val element = xmlElement(
             """
-                <component name="LspSettings">
-                </component>
-                """
+            <component name="LspSettings">
+            </component>
+            """
         )
         val actual = XmlSerializer.deserialize(element, LspConfiguration::class.java)
-        assertThat(actual.artifactPath).isEmpty()
+        assertThat(actual.artifactPath).isNull()
     }
 
     @Test
