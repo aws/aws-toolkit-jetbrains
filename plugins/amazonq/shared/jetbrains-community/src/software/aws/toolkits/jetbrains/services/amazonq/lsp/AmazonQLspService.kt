@@ -30,6 +30,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 import org.eclipse.lsp4j.ClientCapabilities
 import org.eclipse.lsp4j.ClientInfo
+import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.FileOperationsWorkspaceCapabilities
 import org.eclipse.lsp4j.InitializeParams
 import org.eclipse.lsp4j.InitializeResult
@@ -180,6 +181,12 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
 
         fun <T> executeIfRunning(project: Project, runnable: AmazonQLspService.(AmazonQLanguageServer) -> T): T? =
             project.serviceIfCreated<AmazonQLspService>()?.executeSync(runnable)
+
+        fun didChangeConfiguration(project: Project) {
+            executeIfRunning(project) {
+                it.workspaceService.didChangeConfiguration(DidChangeConfigurationParams())
+            }
+        }
     }
 }
 
