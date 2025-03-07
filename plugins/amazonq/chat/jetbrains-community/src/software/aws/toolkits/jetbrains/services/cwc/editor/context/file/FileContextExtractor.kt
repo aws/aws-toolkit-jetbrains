@@ -18,7 +18,7 @@ class FileContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter?, pr
     private val languageExtractor: LanguageExtractor = LanguageExtractor()
     suspend fun extract(): FileContext? {
         val editor = computeOnEdt {
-            FileEditorManager.getInstance(project).selectedTextEditorWithRemotes.firstOrNull()
+            FileEditorManager.getInstance(project).selectedTextEditor
         } ?: return null
 
         val fileLanguage = computeOnEdt {

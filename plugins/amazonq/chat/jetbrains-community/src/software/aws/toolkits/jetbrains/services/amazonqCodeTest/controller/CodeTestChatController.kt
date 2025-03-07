@@ -9,6 +9,8 @@ import com.intellij.diff.DiffManagerEx
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
@@ -1234,9 +1236,12 @@ class CodeTestChatController(
         message: IncomingCodeTestMessage.StartTestGen,
     ): ActiveFileInfo? {
         try {
-            val fileEditorManager = FileEditorManager.getInstance(project)
-            val activeEditor = fileEditorManager.selectedEditor
-            val activeFile = fileEditorManager.selectedFiles.firstOrNull()
+            val editors = EditorFactory.getInstance().allEditors
+            val activeEditor = editors.firstOrNull()
+
+            val activeFile = activeEditor?.document?.let { document ->
+                FileDocumentManager.getInstance().getFile(document)
+            }
             val projectRoot = project.basePath?.let { Path.of(it) }?.toFile()?.toVirtualFile() ?: run {
                 project.guessProjectDir() ?: error("Cannot guess base directory for project ${project.name}")
             }
