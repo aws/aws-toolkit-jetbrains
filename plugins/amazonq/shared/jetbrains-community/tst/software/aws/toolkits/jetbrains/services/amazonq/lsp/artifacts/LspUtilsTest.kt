@@ -20,7 +20,6 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.PosixFilePermissions
 import java.util.zip.ZipOutputStream
-import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.setPosixFilePermissions
 
@@ -57,6 +56,9 @@ class LspUtilsTest {
             assertThat(target.resolve("file3")).hasContent("contents3")
             assertThat(target.resolve("file4")).hasContent("contents4")
         }
+
+        // windows hack
+        System.gc()
     }
 
     @Test
