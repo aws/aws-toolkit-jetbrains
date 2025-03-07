@@ -16,7 +16,7 @@
         <applicationService serviceImplementation="migration.software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager"/>
     </extensions>
 
-    <depends optional="true" config-file="java-support.xml">com.intellij.modules.java</depends>
-    <depends optional="true" config-file="python-support.xml">com.intellij.modules.python</depends>
+    <depends optional="true" config-file="amazon-ext-java.xml">com.intellij.modules.java</depends>
+    <depends optional="true" config-file="amazon-ext-python.xml">com.intellij.modules.python</depends>
 
 </idea-plugin>
