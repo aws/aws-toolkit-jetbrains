@@ -14,6 +14,7 @@ import com.intellij.execution.ui.ConsoleViewContentType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
+import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.ui.content.impl.ContentImpl
@@ -137,7 +138,7 @@ fun runBuildOrTestCommand(
     // Find the nearest Gradle root directory
     var packageRoot: File? = testFileAbsolutePath.parentFile
     var foundGradleRoot = false
-    while (packageRoot != null && packageRoot != projectRoot) {
+    while (packageRoot != null && !FileUtil.filesEqual(packageRoot, projectRoot)) {
         if (File(packageRoot, "settings.gradle.kts").exists() || File(packageRoot, "build.gradle.kts").exists() ||
             File(packageRoot, "settings.gradle").exists() || File(packageRoot, "build.gradle").exists()
         ) {

@@ -571,11 +571,10 @@ class CodeTestChatController(
                     session.charsOfCodeGenerated = charDifference.coerceAtLeast(0)
                     session.latencyOfTestGeneration = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration)
                     UiTelemetry.click(
-                        null as Project?,
-                        if (session.listOfTestGenerationJobId.size == 1) {
-                            "unitTestGeneration_viewDiff"
-                        } else {
-                            "unitTestGeneration_viewDiff_Iteration"
+                        context.project,
+                        when (session.listOfTestGenerationJobId.size) {
+                            1 -> "unitTestGeneration_viewDiff"
+                            else -> "unitTestGeneration_viewDiff_Iteration"
                         }
                     )
 
@@ -646,11 +645,10 @@ class CodeTestChatController(
                 }
 
                 UiTelemetry.click(
-                    null as Project?,
-                    if (session.listOfTestGenerationJobId.size == 1) {
-                        "unitTestGeneration_acceptDiff"
-                    } else {
-                        "unitTestGeneration_acceptDiff_Iteration"
+                    context.project,
+                    when (session.listOfTestGenerationJobId.size) {
+                        1 -> "unitTestGeneration_acceptDiff"
+                        else -> "unitTestGeneration_acceptDiff_Iteration"
                     }
                 )
 
@@ -889,11 +887,10 @@ class CodeTestChatController(
                         testGenerationEventResponse.responseMetadata().requestId()}"
                 }
                 UiTelemetry.click(
-                    null as Project?,
-                    if (session.listOfTestGenerationJobId.size == 1) {
-                        "unitTestGeneration_rejectDiff"
-                    } else {
-                        "unitTestGeneration_rejectDiff_Iteration"
+                    context.project,
+                    when (session.listOfTestGenerationJobId.size) {
+                        1 -> "unitTestGeneration_rejectDiff"
+                        else -> "unitTestGeneration_rejectDiff_Iteration"
                     }
                 )
                 if (session.listOfTestGenerationJobId.size == 1) {
@@ -1164,7 +1161,7 @@ class CodeTestChatController(
                 return
             }
             "stop_fixing_test_cases" -> {
-                UiTelemetry.click(null as Project?, "unitTestGeneration_cancelFixingTest")
+                UiTelemetry.click(context.project, "unitTestGeneration_cancelFixingTest")
                 session.isGeneratingTests = false
                 return
             }

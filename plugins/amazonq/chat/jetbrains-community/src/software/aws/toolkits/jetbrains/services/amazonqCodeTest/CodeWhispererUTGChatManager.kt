@@ -269,12 +269,10 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 }
                 codeTestChatHelper.updateUI(
                     promptInputDisabledState = true,
-                    promptInputProgress = if (session.listOfTestGenerationJobId.size == 1) {
-                        testGenProgressField(progressRate)
-                    } else {
-                        createProgressField("testgen.progressbar.fixing_test_cases")
+                    promptInputProgress = when (session.listOfTestGenerationJobId.size) {
+                        1 -> testGenProgressField(progressRate)
+                        else -> createProgressField("testgen.progressbar.fixing_test_cases")
                     }
-
                 )
             }
             throwIfCancelled(session)
