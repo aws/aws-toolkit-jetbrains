@@ -35,12 +35,9 @@ class DefaultModuleDependenciesService(
     }
 
     override fun syncModuleDependencies(params: SyncModuleDependenciesParams): CompletableFuture<Unit> =
-        CompletableFuture<Unit>().also { completableFuture ->
-            AmazonQLspService.executeIfRunning(project) { languageServer ->
-                languageServer.syncModuleDependencies(params)
-                completableFuture.complete(null)
-            } ?: completableFuture.completeExceptionally(IllegalStateException("LSP Server not running"))
-        }
+        AmazonQLspService.executeIfRunning(project) { languageServer ->
+            languageServer.syncModuleDependencies(params)
+        }?.toCompletableFuture() ?: CompletableFuture.failedFuture(IllegalStateException("LSP Server not running"))
 
     private fun syncAllModules() {
         ModuleManager.getInstance(project).modules.forEach { module ->
