@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.core.utils
 
-import java.io.BufferedInputStream
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStream
@@ -17,7 +16,7 @@ import java.util.zip.ZipOutputStream
  */
 fun ZipOutputStream.putNextEntry(entryName: String, file: Path) {
     try {
-        BufferedInputStream(Files.newInputStream(file)).use { inputStream ->
+        Files.newInputStream(file).buffered().use { inputStream ->
             putNextEntry(entryName, inputStream)
         }
     } catch (e: IOException) {

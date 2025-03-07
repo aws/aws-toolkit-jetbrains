@@ -7,4 +7,10 @@
         <programmingLanguage implementation="software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava"/>
         <importAdder implementation="software.aws.toolkits.jetbrains.services.codewhisperer.importadder.CodeWhispererJavaImportAdder"/>
     </extensions>
+
+    <extensions defaultExtensionNs="software.aws.toolkits.jetbrains">
+        <moduleDependencyProvider
+            implementation="software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.providers.JavaModuleDependencyProvider"/>
+    </extensions>
 </idea-plugin>
+

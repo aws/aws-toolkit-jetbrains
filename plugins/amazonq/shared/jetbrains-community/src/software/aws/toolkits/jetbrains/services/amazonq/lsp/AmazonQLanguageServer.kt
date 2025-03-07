@@ -8,6 +8,7 @@ import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.LanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.SyncModuleDependenciesParams
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -15,6 +16,9 @@ import java.util.concurrent.CompletableFuture
  */
 @Suppress("unused")
 interface AmazonQLanguageServer : LanguageServer {
+    @JsonNotification("aws/syncModuleDependencies")
+    fun syncModuleDependencies(params: SyncModuleDependenciesParams): CompletableFuture<Unit>
+
     @JsonRequest("aws/credentials/token/update")
     fun updateTokenCredentials(payload: UpdateCredentialsPayload): CompletableFuture<ResponseMessage>
 
