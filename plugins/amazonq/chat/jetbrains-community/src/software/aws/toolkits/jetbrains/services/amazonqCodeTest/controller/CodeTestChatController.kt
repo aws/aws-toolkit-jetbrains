@@ -103,7 +103,6 @@ import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.InteractionType
 import software.aws.toolkits.telemetry.MetricResult
-//import software.aws.toolkits.telemetry.Status
 import software.aws.toolkits.telemetry.UiTelemetry
 import java.io.File
 import java.nio.file.Files
