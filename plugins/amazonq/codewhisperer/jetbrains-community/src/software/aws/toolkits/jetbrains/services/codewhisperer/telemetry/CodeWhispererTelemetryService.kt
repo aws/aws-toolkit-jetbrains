@@ -421,7 +421,7 @@ class CodeWhispererTelemetryService {
         )
     }
 
-    fun sendCodeScanIssueGenerated(issue: CodeWhispererCodeScanIssue) {
+    fun sendCodeScanIssueDetected(issue: CodeWhispererCodeScanIssue) {
         CodewhispererTelemetry.codeScanIssueDetected(
             autoDetected = issue.autoDetected,
             codewhispererCodeScanJobId = issue.scanJobId,

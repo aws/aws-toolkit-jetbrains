@@ -222,7 +222,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             val issues = mapToCodeScanIssues(documents, sessionContext.project, jobId).filter { it.isVisible }
             issues.forEach { issue ->
                 if (!issue.autoDetected) {
-                    CodeWhispererTelemetryService.getInstance().sendCodeScanIssueGenerated(issue)
+                    CodeWhispererTelemetryService.getInstance().sendCodeScanIssueDetected(issue)
                 }
             }
             codeScanResponseContext = codeScanResponseContext.copy(codeScanTotalIssues = issues.count())
