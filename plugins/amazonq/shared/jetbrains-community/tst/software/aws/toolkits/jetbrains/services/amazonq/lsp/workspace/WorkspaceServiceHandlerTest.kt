@@ -23,14 +23,22 @@ import io.mockk.mockkStatic
 import io.mockk.runs
 import io.mockk.slot
 import io.mockk.verify
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.runTest
 import org.eclipse.lsp4j.CreateFilesParams
 import org.eclipse.lsp4j.DeleteFilesParams
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams
 import org.eclipse.lsp4j.DidChangeWorkspaceFoldersParams
 import org.eclipse.lsp4j.FileChangeType
+import org.eclipse.lsp4j.FileOperationFilter
+import org.eclipse.lsp4j.FileOperationOptions
+import org.eclipse.lsp4j.FileOperationPattern
+import org.eclipse.lsp4j.FileOperationsServerCapabilities
+import org.eclipse.lsp4j.InitializeResult
 import org.eclipse.lsp4j.RenameFilesParams
+import org.eclipse.lsp4j.ServerCapabilities
 import org.eclipse.lsp4j.WorkspaceFolder
+import org.eclipse.lsp4j.WorkspaceServerCapabilities
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.services.WorkspaceService
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -94,7 +102,40 @@ class WorkspaceServiceHandlerTest {
         every { messageBus.connect(any<Disposable>()) } returns mockConnection
         every { mockConnection.subscribe(any(), any()) } just runs
 
-        sut = WorkspaceServiceHandler(project, mockk())
+        // Mock InitializeResult with file operation patterns
+        val mockInitializeResult = mockk<InitializeResult>()
+        val mockCapabilities = mockk<ServerCapabilities>()
+        val mockWorkspaceCapabilities = mockk<WorkspaceServerCapabilities>()
+        val mockFileOperations = mockk<FileOperationsServerCapabilities>()
+
+        val fileFilter = FileOperationFilter().apply {
+            pattern = FileOperationPattern().apply {
+                glob = "**/*.{ts,js,py,java}"
+                matches = "file"
+            }
+        }
+        val folderFilter = FileOperationFilter().apply {
+            pattern = FileOperationPattern().apply {
+                glob = "**/*"
+                matches = "folder"
+            }
+        }
+
+        val fileOperationOptions = FileOperationOptions().apply {
+            filters = listOf(fileFilter, folderFilter)
+        }
+
+        every { mockFileOperations.didCreate } returns fileOperationOptions
+        every { mockFileOperations.didDelete } returns fileOperationOptions
+        every { mockFileOperations.didRename } returns fileOperationOptions
+        every { mockWorkspaceCapabilities.fileOperations } returns mockFileOperations
+        every { mockCapabilities.workspace } returns mockWorkspaceCapabilities
+        every { mockInitializeResult.capabilities } returns mockCapabilities
+
+        val mockDeferred = CompletableDeferred(mockInitializeResult)
+
+        // Create WorkspaceServiceHandler with mocked InitializeResult
+        sut = WorkspaceServiceHandler(project, mockDeferred, mockk())
     }
 
     @Test
