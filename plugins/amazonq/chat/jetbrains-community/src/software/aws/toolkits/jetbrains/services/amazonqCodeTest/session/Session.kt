@@ -33,9 +33,10 @@ data class Session(val tabId: String) {
     var srcPayloadSize: Long = 0
     var srcZipFileSize: Long = 0
     var artifactUploadDuration: Long = 0
+    var updateBuildCommands: Boolean = false
 
     // First iteration will have a value of 1
-    var iteration: Int = 0
+    var userPrompt: String = ""
     var projectRoot: String = "/"
     var shortAnswer: ShortAnswer = ShortAnswer()
     var selectedFile: VirtualFile? = null
@@ -48,6 +49,8 @@ data class Session(val tabId: String) {
 
     // Build loop execution
     val buildAndExecuteTaskContext = BuildAndExecuteTaskContext()
+    var listOfTestGenerationJobId: List<String> = listOf()
+    var buildStatus: BuildStatus = BuildStatus.SUCCESS
 }
 
 data class BuildAndExecuteTaskContext(
@@ -62,10 +65,16 @@ enum class BuildAndExecuteProgressStatus {
     START_STEP,
     INSTALL_DEPENDENCIES,
     RUN_BUILD,
+    BUILD_FAILED,
     RUN_EXECUTION_TESTS,
-    TESTS_EXECUTED,
     FIXING_TEST_CASES,
     PROCESS_TEST_RESULTS,
+}
+
+enum class BuildStatus {
+    SUCCESS,
+    FAILURE,
+    CANCELLED,
 }
 
 const val UTG_CHAT_MAX_ITERATION = 4

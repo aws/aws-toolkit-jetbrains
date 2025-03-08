@@ -77,6 +77,10 @@ interface CodeWhispererClientAdaptor : Disposable {
         firstRequest: GenerateCompletionsRequest,
     ): Sequence<GenerateCompletionsResponse>
 
+    fun generateCompletions(
+        firstRequest: GenerateCompletionsRequest,
+    ): GenerateCompletionsResponse
+
     fun createUploadUrl(
         request: CreateUploadUrlRequest,
     ): CreateUploadUrlResponse
@@ -102,7 +106,7 @@ interface CodeWhispererClientAdaptor : Disposable {
 
     fun listAvailableCustomizations(): List<CodeWhispererCustomization>
 
-    fun startTestGeneration(uploadId: String, targetCode: List<TargetCode>, userInput: String): StartTestGenerationResponse
+    fun startTestGeneration(uploadId: String, targetCode: List<TargetCode>, userInput: String, testGenerationJobGroupName: String): StartTestGenerationResponse
 
     fun getTestGeneration(jobId: String, jobGroupName: String): GetTestGenerationResponse
 
@@ -323,6 +327,8 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             yield(response)
         } while (!nextToken.isNullOrEmpty())
     }
+    override fun generateCompletions(firstRequest: GenerateCompletionsRequest): GenerateCompletionsResponse =
+        bearerClient().generateCompletions(firstRequest)
 
     override fun createUploadUrl(request: CreateUploadUrlRequest): CreateUploadUrlResponse =
         bearerClient().createUploadUrl(request)
@@ -372,11 +378,17 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                 }
             }
 
-    override fun startTestGeneration(uploadId: String, targetCode: List<TargetCode>, userInput: String): StartTestGenerationResponse =
+    override fun startTestGeneration(
+        uploadId: String,
+        targetCode: List<TargetCode>,
+        userInput: String,
+        testGenerationJobGroupName: String,
+    ): StartTestGenerationResponse =
         bearerClient().startTestGeneration { builder ->
             builder.uploadId(uploadId)
             builder.targetCodeList(targetCode)
             builder.userInput(userInput)
+            builder.testGenerationJobGroupName(testGenerationJobGroupName)
             // TODO: client token
         }
 
