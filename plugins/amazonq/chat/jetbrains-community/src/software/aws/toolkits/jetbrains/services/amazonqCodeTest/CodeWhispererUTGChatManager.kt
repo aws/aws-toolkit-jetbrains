@@ -4,8 +4,6 @@
 package software.aws.toolkits.jetbrains.services.amazonqCodeTest
 
 import com.fasterxml.jackson.core.JsonParseException
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -34,12 +32,11 @@ import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreaming
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.controller.CodeTestChatHelper
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.Button
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.CodeTestChatMessageContent
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.PreviousUTGIterationContext
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.PackageInfoList
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.PackageInfo
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.TargetFileInfoList
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.PackageInfoList
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.PreviousUTGIterationContext
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.TargetFileInfo
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.CodeReferenceInfo
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.TargetFileInfoList
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.BuildAndExecuteProgressStatus
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.Session
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.utils.combineBuildAndExecuteLogFiles
@@ -75,7 +72,6 @@ import java.util.zip.ZipInputStream
 class CodeWhispererUTGChatManager(val project: Project, private val cs: CoroutineScope) {
     // TODO: consider combining this with session.isGeneratingTests
     private val isUTGInProgress = AtomicBoolean(false)
-    private val mapper = jacksonObjectMapper()
     private val generatedTestDiffs = mutableMapOf<String, String>()
 
     private fun throwIfCancelled(session: Session) {
@@ -195,48 +191,83 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                         "Test generation completed, package info: ${testGenerationResponse.testGenerationJob().packageInfoList()}"
                 }
                 finished = true
-                if (testGenerationResponse.testGenerationJob().packageInfoList() != null) {
-                    packageInfoList = parsePackageInfoList(testGenerationResponse.testGenerationJob().packageInfoList())
-                    session.packageInfoList = packageInfoList
+                var packageInfoList = testGenerationResponse.testGenerationJob().packageInfoList()
+                val packageInfo = packageInfoList.firstOrNull()
+                val targetFileInfo = packageInfo?.targetFileInfoList()?.firstOrNull()
+                if (packageInfo != null && targetFileInfo != null) {
+                    try {
+                        session.packageInfoList.member = PackageInfo(
+                            executionCommand = packageInfo.executionCommand(),
+                            buildCommand = packageInfo.buildCommand(),
+                            buildOrder = packageInfo.buildOrder(),
+                            testFramework = packageInfo.testFramework(),
+                            packageSummary = packageInfo.packageSummary(),
+                            packagePlan = packageInfo.packagePlan(),
+                            targetFileInfoList = TargetFileInfoList(
+                                member = listOf(
+                                    TargetFileInfo(
+                                        filePath = targetFileInfo.filePath(),
+                                        testFilePath = targetFileInfo.testFilePath(),
+                                        testCoverage = targetFileInfo.testCoverage(),
+                                        fileSummary = targetFileInfo.fileSummary(),
+                                        filePlan = targetFileInfo.filePlan(),
+                                        numberOfTestMethods = targetFileInfo.numberOfTestMethods()
 
-                    val targetFileInfo = packageInfoList.member?.targetFileInfoList?.member?.firstOrNull()
-                    val testFileName = targetFileInfo?.testFilePath?.let { File(it).name }.orEmpty()
-                    session.testFileName = testFileName
-                    // Setting default value to 0 if the value is null or invalid
-                    session.numberOfUnitTestCasesGenerated = targetFileInfo?.numberOfTestMethods ?: 0
-                    session.testFileRelativePathToProjectRoot = getTestFilePathRelativeToRoot(targetFileInfo)
+                                    )
+                                )
+                            )
+                        )
 
-                    // update test summary card in success case
-                    if (previousIterationContext == null) {
-                        codeTestChatHelper.updateAnswer(
-                            CodeTestChatMessageContent(
-                                message = generateSummaryMessage(path.fileName.toString()) + (packageInfoList.member?.packageSummary ?: ""),
-                                type = ChatMessageType.Answer,
-                                footer = listOf(testFileName)
-                            ),
-                            messageIdOverride = codeTestResponseContext.testSummaryMessageId
+                        val testFileName = targetFileInfo.testFilePath()?.let { File(it).name }.orEmpty()
+                        session.testFileName = testFileName
+                        session.numberOfUnitTestCasesGenerated = targetFileInfo.numberOfTestMethods() ?: 0
+                        session.testFileRelativePathToProjectRoot = getTestFilePathRelativeToRoot(targetFileInfo)
+
+                        if (previousIterationContext == null) {
+                            codeTestChatHelper.updateAnswer(
+                                CodeTestChatMessageContent(
+                                    message = generateSummaryMessage(path.fileName.toString()) + (targetFileInfo.filePlan() ?: ""),
+                                    type = ChatMessageType.Answer,
+                                ),
+                                messageIdOverride = codeTestResponseContext.testSummaryMessageId
+                            )
+                        }
+                        packageInfoList = session.packageInfoList
+                    } catch (e: Exception) {
+                        throw CodeTestException(
+                            "TestGenFailedError: " + message("testgen.message.failed"),
+                            "TestGenFailedError",
+                            message("testgen.error.generic_technical_error_message")
                         )
                     }
-                    // update test summary card
-                } else {
-                    // If job status is Completed and has no ShortAnswer then there might be some issue in the backend.
-                    throw CodeTestException(
-                        "TestGenFailedError: " + message("testgen.message.failed"),
-                        "TestGenFailedError",
-                        message("testgen.error.generic_technical_error_message")
-                    )
                 }
             } else if (status == TestGenerationJobStatus.FAILED) {
                 LOG.debug {
                     "Q TestGen session: ${codeTestChatHelper.getActiveCodeTestTabId()}: " +
                         "Test generation failed, package info: ${testGenerationResponse.testGenerationJob().packageInfoList()}"
                 }
+
+                val packageInfoList = testGenerationResponse.testGenerationJob().packageInfoList()
+                val packageInfo = packageInfoList.firstOrNull()
+                val targetFileInfo = packageInfo?.targetFileInfoList()?.firstOrNull()
+
 //                if (testGenerationResponse.testGenerationJob().packageInfoList() != null) {
 //                    shortAnswer = parseShortAnswerString(testGenerationResponse.testGenerationJob().shortAnswer())
 //                    if (shortAnswer.stopIteration == "true") {
 //                        throw CodeTestException("TestGenFailedError: ${shortAnswer.planSummary}", "TestGenFailedError", shortAnswer.planSummary)
 //                    }
 //                }
+                if (packageInfo != null) {
+                    session.packageInfoList.member = PackageInfo(
+                        executionCommand = packageInfo.executionCommand(),
+                        buildCommand = packageInfo.buildCommand(),
+                        buildOrder = packageInfo.buildOrder(),
+                        testFramework = packageInfo.testFramework(),
+                        packageSummary = packageInfo.packageSummary(),
+                        packagePlan = packageInfo.packagePlan(),
+                        targetFileInfoList = TargetFileInfoList(member = emptyList())
+                    )
+                }
 
                 // TO DO
                 // add TestGenerationJobStatus.STOPPED status
@@ -255,17 +286,26 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 }
                 val progressRate = testGenerationResponse.testGenerationJob().progressRate() ?: 0
 
-                if (previousIterationContext == null && testGenerationResponse.testGenerationJob().packageInfoList() != null) {
-                    packageInfoList = parsePackageInfoList(testGenerationResponse.testGenerationJob().packageInfoList())
-                    val targetFileInfo = packageInfoList.member?.targetFileInfoList?.member?.firstOrNull()
-                    val fileName = targetFileInfo?.filePath?.let { Path.of(it).fileName.toString() }?:path.fileName.toString()
-                    codeTestChatHelper.updateAnswer(
-                        CodeTestChatMessageContent(
-                            message = generateSummaryMessage(fileName) + (packageInfoList.member?.packagePlan ?: ""),
-                            type = ChatMessageType.Answer
-                        ),
-                        messageIdOverride = codeTestResponseContext.testSummaryMessageId
-                    )
+                if (previousIterationContext == null) {
+                    val packageInfoList = testGenerationResponse.testGenerationJob().packageInfoList()
+                    val packageInfo = packageInfoList.firstOrNull()
+                    if (packageInfo != null) {
+                        try {
+                            val targetFileInfo = packageInfo?.targetFileInfoList()?.firstOrNull()
+                            if (targetFileInfo != null) {
+                                val fileName = targetFileInfo?.filePath()?.let { Path.of(it).fileName.toString() } ?: path.fileName.toString()
+                                codeTestChatHelper.updateAnswer(
+                                    CodeTestChatMessageContent(
+                                        message = generateSummaryMessage(fileName) + (targetFileInfo.filePlan() ?: ""),
+                                        type = ChatMessageType.Answer
+                                    ),
+                                    messageIdOverride = codeTestResponseContext.testSummaryMessageId
+                                )
+                            }
+                        } catch (e: Exception) {
+                            LOG.debug("failed to process package info: ${e.message}")
+                        }
+                    }
                 }
                 codeTestChatHelper.updateUI(
                     promptInputDisabledState = true,
@@ -313,7 +353,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
             return
         }
 
-        val targetFileInfo = packageInfoList.member?.targetFileInfoList?.member?.firstOrNull()
+        val targetFileInfo = session.packageInfoList.member?.targetFileInfoList?.member?.firstOrNull()
         val codeReference = targetFileInfo?.codeReferences?.map { ref ->
             CodeReference(
                 licenseName = ref.licenseName,
@@ -386,55 +426,15 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
     // targetFileInfo.testFilePath has a format of <projectName>/<test file path relative to project root>.
     // test file path in generatedTestDiffs map has a format of resultArtifacts/<test file path relative to project root>.
     // both needs to be handled the same way which is remove the first sub-directory
-    private fun getTestFilePathRelativeToRoot(targetFileInfo: TargetFileInfo?): String {
-        val pathString = targetFileInfo?.testFilePath ?: generatedTestDiffs.keys.firstOrNull() ?: throw RuntimeException("No test file path found")
+    private fun getTestFilePathRelativeToRoot(targetFileInfo: Any?): String {
+        val pathString = when (targetFileInfo) {
+            is TargetFileInfo -> targetFileInfo.testFilePath
+            is software.amazon.awssdk.services.codewhispererruntime.model.TargetFileInfo -> targetFileInfo.testFilePath()
+            else -> generatedTestDiffs.keys.firstOrNull()
+        } ?: throw RuntimeException("No test file path found")
         val path = Paths.get(pathString)
         val updatedPath = path.subpath(1, path.nameCount).toString()
         return updatedPath
-    }
-
-    private fun parsePackageInfoList(packageInfoData: Any): PackageInfoList {
-        if(packageInfoData is PackageInfoList){
-            return packageInfoData
-        }
-
-        if(packageInfoData is String){
-            // Step 1: Replace single quotes with double quotes
-            var jsonString = packageInfoData.replace("'", "\"").replace("```", "")
-
-            // Step 2: Replace Python's None with JSON's null
-            jsonString = jsonString.replace(": None", ": null")
-
-            // Step 3: remove extra quotes in the head and tail
-            if (jsonString.startsWith("\"") && jsonString.endsWith("\"")) {
-                jsonString = jsonString.substring(1, jsonString.length - 1) // Remove the first and last quote
-            }
-
-            // Step 4: unescape it
-            jsonString = jsonString.replace("\\\"", "\"")
-                .replace("\\\\", "\\")
-            // Deserialize JSON to Kotlin data class
-            try {
-                val packageInfoList: PackageInfoList = mapper.readValue(jsonString, PackageInfoList::class.java)
-                return packageInfoList
-            } catch (e: JsonParseException) {
-                LOG.debug(e) { "Test Generation JSON parsing error: ${e.message}" }
-                throw e
-            } catch (e: Exception) {
-                LOG.debug(e) { "Error parsing JSON" }
-                throw e
-            }
-
-        }
-
-        try{
-            return mapper.convertValue(packageInfoData,PackageInfoList::class.java)
-        }catch (e: JsonParseException) {
-            LOG.debug(e) { "Failed to covert packageInfoData to PackageInfoList" }
-            throw e
-        }
-
-
     }
 
     private fun storeGeneratedTestDiffs(byteArray: ByteArray, session: Session) {
