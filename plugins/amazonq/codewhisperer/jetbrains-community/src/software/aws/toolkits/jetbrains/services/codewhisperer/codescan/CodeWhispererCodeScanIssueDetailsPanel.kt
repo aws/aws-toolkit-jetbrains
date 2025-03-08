@@ -242,6 +242,7 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
     }
     private val generateFixButton = JButton(message("codewhisperer.codescan.generate_fix_button_label")).apply {
         putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
+        isEnabled = issue.ruleId != "sbom-software-assurance-services"
         addActionListener {
             defaultScope.launch {
                 handleGenerateFix(issue)
