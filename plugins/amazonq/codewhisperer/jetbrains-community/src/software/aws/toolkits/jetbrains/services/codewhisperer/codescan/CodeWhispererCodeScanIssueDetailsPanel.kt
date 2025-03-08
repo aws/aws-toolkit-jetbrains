@@ -17,6 +17,7 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.Alarm
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.context.CodeScanIssueDetailsDisplayType
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.additionBackgroundColor
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.additionForegroundColor
@@ -55,6 +56,7 @@ import javax.swing.ScrollPaneConstants
 import javax.swing.event.HyperlinkEvent
 import javax.swing.text.html.HTMLEditorKit
 
+private val logger = getLogger<CodeWhispererCodeScanIssueDetailsPanel>()
 internal class CodeWhispererCodeScanIssueDetailsPanel(
     private val project: Project,
     issue: CodeWhispererCodeScanIssue,
@@ -66,6 +68,10 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
     private val codeScanManager = CodeWhispererCodeScanManager.getInstance(project)
 
     private suspend fun handleGenerateFix(issue: CodeWhispererCodeScanIssue, isRegenerate: Boolean = false) {
+        if (issue.ruleId == "sbom-software-assurance-services") {
+            logger.warn("GenerateFix is not available for SAS findings.")
+            return
+        }
         editorPane.text = getCodeScanIssueDetailsHtml(
             issue, CodeScanIssueDetailsDisplayType.DetailsPane, CodeWhispererConstants.FixGenerationState.GENERATING,
             project = project
