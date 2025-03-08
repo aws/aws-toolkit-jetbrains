@@ -18,6 +18,7 @@ import com.intellij.util.Alarm
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.context.CodeScanIssueDetailsDisplayType
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.additionBackgroundColor
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.additionForegroundColor
@@ -69,7 +70,7 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
 
     private suspend fun handleGenerateFix(issue: CodeWhispererCodeScanIssue, isRegenerate: Boolean = false) {
         if (issue.ruleId == "sbom-software-assurance-services") {
-            logger.warn("GenerateFix is not available for SAS findings.")
+            logger.warn { "GenerateFix is not available for SAS findings." }
             return
         }
         editorPane.text = getCodeScanIssueDetailsHtml(
