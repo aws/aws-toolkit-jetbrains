@@ -107,14 +107,12 @@ class DocSession(val tabID: String, val project: Project) {
      * Triggered by the Insert code follow-up button to apply code changes.
      */
     fun insertChanges(filePaths: List<NewFileZipInfo>, deletedFiles: List<DeletedFileInfo>) {
-        val selectedSourceFolder = context.selectedSourceFolder.toNioPath()
+        filePaths.forEach { resolveAndCreateOrUpdateFile(context.addressableRoot.toNioPath(), it.zipFilePath, it.fileContent) }
 
-        filePaths.forEach { resolveAndCreateOrUpdateFile(selectedSourceFolder, it.zipFilePath, it.fileContent) }
-
-        deletedFiles.forEach { resolveAndDeleteFile(selectedSourceFolder, it.zipFilePath) }
+        deletedFiles.forEach { resolveAndDeleteFile(context.addressableRoot.toNioPath(), it.zipFilePath) }
 
         // Taken from https://intellij-support.jetbrains.com/hc/en-us/community/posts/206118439-Refresh-after-external-changes-to-project-structure-and-sources
-        VfsUtil.markDirtyAndRefresh(true, true, true, context.selectedSourceFolder)
+        VfsUtil.markDirtyAndRefresh(true, true, true, context.addressableRoot)
     }
 
     private fun getFromReportedChanges(filePath: NewFileZipInfo): String? {
@@ -158,7 +156,7 @@ class DocSession(val tabID: String, val project: Project) {
                 }
             } else {
                 val sourceContent = reportedChange
-                    ?: VfsUtil.findRelativeFile(filePath.zipFilePath, context.selectedSourceFolder)?.content()
+                    ?: VfsUtil.findRelativeFile(filePath.zipFilePath, context.addressableRoot)?.content()
                         .orEmpty()
                 val diffMetrics = getDiffMetrics(sourceContent, content)
                 totalAddedLines += diffMetrics.insertedLines
@@ -185,7 +183,7 @@ class DocSession(val tabID: String, val project: Project) {
                 totalAddedChars += content.length
                 totalAddedLines += content.split('\n').size
             } else {
-                val existingFileContent = VfsUtil.findRelativeFile(filePath.zipFilePath, context.selectedSourceFolder)?.content()
+                val existingFileContent = VfsUtil.findRelativeFile(filePath.zipFilePath, context.addressableRoot)?.content()
                 val diffMetrics = getDiffMetrics(existingFileContent.orEmpty(), content)
                 totalAddedLines += diffMetrics.insertedLines
                 totalAddedChars += diffMetrics.insertedCharacters
