@@ -27,6 +27,7 @@ import org.eclipse.lsp4j.RenameFilesParams
 import org.eclipse.lsp4j.WorkspaceFolder
 import org.eclipse.lsp4j.WorkspaceFoldersChangeEvent
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil.toUriString
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import java.nio.file.FileSystems
@@ -59,7 +60,7 @@ class WorkspaceServiceHandler(
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             val validFiles = events.mapNotNull { event ->
                 val file = event.file?.takeIf { shouldHandleFile(it) } ?: return@mapNotNull null
-                file.toNioPath().toUri().toString().takeIf { it.isNotEmpty() }?.let { uri ->
+                toUriString(file)?.let { uri ->
                     FileCreate().apply {
                         this.uri = uri
                     }
@@ -80,7 +81,7 @@ class WorkspaceServiceHandler(
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             val validFiles = events.mapNotNull { event ->
                 val file = event.file?.takeIf { shouldHandleFile(it) } ?: return@mapNotNull null
-                file.toNioPath().toUri().toString().takeIf { it.isNotEmpty() }?.let { uri ->
+                toUriString(file)?.let { uri ->
                     FileDelete().apply {
                         this.uri = uri
                     }
@@ -109,7 +110,7 @@ class WorkspaceServiceHandler(
                     // Construct old and new URIs
                     val parentPath = file.parent?.toNioPath() ?: return@mapNotNull null
                     val oldUri = parentPath.resolve(oldName).toUri().toString()
-                    val newUri = file.toNioPath().toUri().toString()
+                    val newUri = toUriString(file)
 
                     FileRename().apply {
                         this.oldUri = oldUri
@@ -130,7 +131,7 @@ class WorkspaceServiceHandler(
     private fun didChangeWatchedFiles(events: List<VFileEvent>) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             val validChanges = events.mapNotNull { event ->
-                event.file?.toNioPath()?.toUri()?.toString()?.takeIf { it.isNotEmpty() }?.let { uri ->
+                event.file?.let { toUriString(it) }?.let { uri ->
                     FileEvent().apply {
                         this.uri = uri
                         type = when (event) {

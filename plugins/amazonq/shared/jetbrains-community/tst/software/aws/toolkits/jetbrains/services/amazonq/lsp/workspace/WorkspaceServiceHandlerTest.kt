@@ -511,13 +511,18 @@ class WorkspaceServiceHandlerTest {
     }
 
     private fun createMockVFileEvent(uri: URI, type: FileChangeType = FileChangeType.Changed, isDirectory: Boolean, extension: String = "py"): VFileEvent {
-        val virtualFile = mockk<VirtualFile>()
-        val nioPath = mockk<Path>()
-
-        every { virtualFile.isDirectory } returns isDirectory
-        every { virtualFile.toNioPath() } returns nioPath
-        every { nioPath.toUri() } returns uri
-        every { virtualFile.path } returns "${uri.path}.$extension"
+        val nioPath = mockk<Path> {
+            every { toUri() } returns uri
+        }
+        val virtualFile = mockk<VirtualFile> {
+            every { this@mockk.isDirectory } returns isDirectory
+            every { toNioPath() } returns nioPath
+            every { url } returns uri.path
+            every { path } returns "${uri.path}.$extension"
+            every { fileSystem } returns mockk {
+                every { protocol } returns "file"
+            }
+        }
 
         return when (type) {
             FileChangeType.Deleted -> mockk<VFileDeleteEvent>()
@@ -544,6 +549,10 @@ class WorkspaceServiceHandlerTest {
         every { file.toNioPath() } returns filePath
         every { file.isDirectory } returns isDirectory
         every { file.path } returns "/test/$newName"
+        every { file.url } returns "file:///test/$newName"
+        every { file.fileSystem } returns mockk {
+            every { protocol } returns "file"
+        }
 
         every { parentPath.resolve(oldName) } returns mockk {
             every { toUri() } returns URI("file:///test/$oldName")
