@@ -375,10 +375,21 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         } else {
             if (previousIterationContext == null) {
                 // show another card as the answer
+                val jobSummary = testGenerationResponse?.testGenerationJob()?.jobSummary()?.trim() ?: ""
+                val cleanedJobSummary = jobSummary
+                    .trim()
+                    .replace("```", "")
+                    .replace("`", "")
+                    .replace("\n", " ")
+                println(jobSummary)
                 val viewDiffMessageId = codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
                         message = """
-                    Please see the unit tests generated below. Click "View Diff" to review the changes in the code editor.
+                            **Job Summary:**  
+                            
+                            $cleanedJobSummary
+                            
+                            Please see the unit tests generated below. Click "View Diff" to review the changes in the code editor.
                         """.trimIndent(),
                         type = ChatMessageType.Answer,
                         buttons = listOf(Button("utg_view_diff", "View Diff", keepCardAfterClick = true, position = "outside", status = "info")),
