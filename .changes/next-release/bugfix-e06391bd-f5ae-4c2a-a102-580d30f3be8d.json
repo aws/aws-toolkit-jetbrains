@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Amazon Q: Attempt to reduce thread pool contention locking IDE caused by `@workspace` making a large number of requests"
+}

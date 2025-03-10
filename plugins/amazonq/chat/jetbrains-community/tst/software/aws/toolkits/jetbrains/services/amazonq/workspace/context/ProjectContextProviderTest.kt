@@ -1,6 +1,6 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-
+@file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.amazonq.workspace.context
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -19,6 +19,7 @@ import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.replaceService
 import io.mockk.every
 import io.mockk.spyk
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -136,7 +137,7 @@ class ProjectContextProviderTest {
     }
 
     @Test
-    fun `index should send files within the project to lsp - vector index enabled`() {
+    fun `index should send files within the project to lsp - vector index enabled`() = runTest {
         ApplicationManager.getApplication().replaceService(
             CodeWhispererSettings::class.java,
             mock { on { isProjectContextEnabled() } doReturn true },
@@ -171,7 +172,7 @@ class ProjectContextProviderTest {
     }
 
     @Test
-    fun `index should send files within the project to lsp - vector index disabled`() {
+    fun `index should send files within the project to lsp - vector index disabled`() = runTest {
         ApplicationManager.getApplication().replaceService(
             CodeWhispererSettings::class.java,
             mock { on { isProjectContextEnabled() } doReturn false },
@@ -225,43 +226,49 @@ class ProjectContextProviderTest {
 
     @Test
     fun `query should send correct encrypted request to lsp`() = runTest {
-        sut = ProjectContextProvider(project, encoderServer, this)
-        val r = sut.query("foo", null)
-        advanceUntilIdle()
+        // use real time
+        withContext(Dispatchers.Default.limitedParallelism(1)) {
+            sut = ProjectContextProvider(project, encoderServer, this)
+            val r = sut.query("foo", null)
+            advanceUntilIdle()
 
-        val request = QueryChatRequest("foo")
-        val requestJson = mapper.writeValueAsString(request)
+            val request = QueryChatRequest("foo")
+            val requestJson = mapper.writeValueAsString(request)
 
-        assertThat(mapper.readTree(requestJson)).isEqualTo(mapper.readTree("""{ "query": "foo" }"""))
+            assertThat(mapper.readTree(requestJson)).isEqualTo(mapper.readTree("""{ "query": "foo" }"""))
 
-        val encryptedRequest = encoderServer.encrypt(requestJson)
+            val encryptedRequest = encoderServer.encrypt(requestJson)
 
-        wireMock.verify(
-            1,
-            postRequestedFor(urlPathEqualTo("/query"))
-                .withHeader("Content-Type", equalTo("text/plain"))
-                .withRequestBody(equalTo(encryptedRequest))
-        )
+            wireMock.verify(
+                1,
+                postRequestedFor(urlPathEqualTo("/query"))
+                    .withHeader("Content-Type", equalTo("text/plain"))
+                    .withRequestBody(equalTo(encryptedRequest))
+            )
+        }
     }
 
     @Test
     fun `queryInline should send correct encrypted request to lsp`() = runTest {
-        sut = ProjectContextProvider(project, encoderServer, this)
-        sut.queryInline("foo", "Foo.java", InlineContextTarget.CODEMAP)
-        advanceUntilIdle()
+        // use real time
+        withContext(Dispatchers.Default.limitedParallelism(1)) {
+            sut = ProjectContextProvider(project, encoderServer, this)
+            sut.queryInline("foo", "Foo.java", InlineContextTarget.CODEMAP)
+            advanceUntilIdle()
 
-        val request = QueryInlineCompletionRequest("foo", "Foo.java", "codemap")
-        val requestJson = mapper.writeValueAsString(request)
+            val request = QueryInlineCompletionRequest("foo", "Foo.java", "codemap")
+            val requestJson = mapper.writeValueAsString(request)
 
-        assertThat(mapper.readTree(requestJson)).isEqualTo(mapper.readTree("""{ "query": "foo", "filePath": "Foo.java", "target": "codemap" }"""))
+            assertThat(mapper.readTree(requestJson)).isEqualTo(mapper.readTree("""{ "query": "foo", "filePath": "Foo.java", "target": "codemap" }"""))
 
-        val encryptedRequest = encoderServer.encrypt(requestJson)
-        wireMock.verify(
-            1,
-            postRequestedFor(urlPathEqualTo("/queryInlineProjectContext"))
-                .withHeader("Content-Type", equalTo("text/plain"))
-                .withRequestBody(equalTo(encryptedRequest))
-        )
+            val encryptedRequest = encoderServer.encrypt(requestJson)
+            wireMock.verify(
+                1,
+                postRequestedFor(urlPathEqualTo("/queryInlineProjectContext"))
+                    .withHeader("Content-Type", equalTo("text/plain"))
+                    .withRequestBody(equalTo(encryptedRequest))
+            )
+        }
     }
 
     @Test
@@ -287,78 +294,84 @@ class ProjectContextProviderTest {
 
     @Test
     fun `query chat should return deserialized relevantDocument`() = runTest {
-        sut = ProjectContextProvider(project, encoderServer, this)
-        val r = sut.query("foo", null)
-        advanceUntilIdle()
-        assertThat(r).hasSize(2)
-        assertThat(r[0]).isEqualTo(
-            RelevantDocument(
-                "relativeFilePath1",
-                "context1"
-            )
-        )
-        assertThat(r[1]).isEqualTo(
-            RelevantDocument(
-                "relativeFilePath2",
-                "context2"
-            )
-        )
-    }
-
-    @Test
-    fun `query inline should throw if resultset not deserializable`() {
-        assertThrows<Exception> {
-            runTest {
-                sut = ProjectContextProvider(project, encoderServer, this)
-                stubFor(
-                    any(urlPathEqualTo("/queryInlineProjectContext")).willReturn(
-                        aResponse().withStatus(200).withResponseBody(
-                            Body(
-                                """
-                            [
-                                "foo", "bar"
-                            ]
-                                """.trimIndent()
-                            )
-                        )
-                    )
+        // use real time
+        withContext(Dispatchers.Default.limitedParallelism(1)) {
+            sut = ProjectContextProvider(project, encoderServer, this)
+            val r = sut.query("foo", null)
+            advanceUntilIdle()
+            assertThat(r).hasSize(2)
+            assertThat(r[0]).isEqualTo(
+                RelevantDocument(
+                    "relativeFilePath1",
+                    "context1"
                 )
-
-                assertThrows<Exception> {
-                    sut.queryInline("foo", "filepath", InlineContextTarget.CODEMAP)
-                    advanceUntilIdle()
-                }
-            }
+            )
+            assertThat(r[1]).isEqualTo(
+                RelevantDocument(
+                    "relativeFilePath2",
+                    "context2"
+                )
+            )
         }
     }
 
     @Test
+    fun `query inline should throw if resultset not deserializable`() =
+        runTest {
+            sut = ProjectContextProvider(project, encoderServer, this)
+            stubFor(
+                any(urlPathEqualTo("/queryInlineProjectContext")).willReturn(
+                    aResponse().withStatus(200).withResponseBody(
+                        Body(
+                            """
+                            [
+                                "foo", "bar"
+                            ]
+                            """.trimIndent()
+                        )
+                    )
+                )
+            )
+
+            assertThrows<Exception> {
+                withContext(getCoroutineBgContext()) {
+                    sut.queryInline("foo", "filepath", InlineContextTarget.CODEMAP)
+                }
+
+                advanceUntilIdle()
+            }
+        }
+
+    @Test
     fun `query inline should return deserialized bm25 chunks`() = runTest {
-        sut = ProjectContextProvider(project, encoderServer, this)
-        advanceUntilIdle()
-        val r = sut.queryInline("foo", "filepath", InlineContextTarget.CODEMAP)
-        assertThat(r).hasSize(3)
-        assertThat(r[0]).isEqualTo(
-            InlineBm25Chunk(
-                "content1",
-                "file1",
-                0.1
+        // use real time
+        withContext(Dispatchers.Default.limitedParallelism(1)) {
+            sut = ProjectContextProvider(project, encoderServer, this)
+            advanceUntilIdle()
+            val r = sut.queryInline("foo", "filepath", InlineContextTarget.CODEMAP)
+            assertThat(r).hasSize(3)
+            assertThat(r[0]).isEqualTo(
+                InlineBm25Chunk(
+                    "content1",
+                    "file1",
+                    0.1
+                )
             )
-        )
-        assertThat(r[1]).isEqualTo(
-            InlineBm25Chunk(
-                "content2",
-                "file2",
-                0.2
+            assertThat(r[1]).isEqualTo(
+                InlineBm25Chunk(
+                    "content2",
+                    "file2",
+                    0.2
+                )
             )
-        )
-        assertThat(r[2]).isEqualTo(
-            InlineBm25Chunk(
-                "content3",
-                "file3",
-                0.3
+            assertThat(r[2]).isEqualTo(
+                InlineBm25Chunk(
+                    "content3",
+                    "file3",
+                    0.3
+                )
             )
-        )
+        }
     }
 
     @Test
@@ -431,10 +444,13 @@ class ProjectContextProviderTest {
 
     @Test
     fun `test query payload is encrypted`() = runTest {
-        sut = ProjectContextProvider(project, encoderServer, this)
-        sut.query("what does this project do", null)
-        advanceUntilIdle()
-        verify(encoderServer, times(1)).encrypt(any())
+        // use real time
+        withContext(Dispatchers.Default.limitedParallelism(1)) {
+            sut = ProjectContextProvider(project, encoderServer, this)
+            sut.query("what does this project do", null)
+            advanceUntilIdle()
+            verify(encoderServer, times(1)).encrypt(any())
+        }
     }
 
     private fun createMockServer() = WireMockRule(wireMockConfig().dynamicPort())
@@ -442,67 +458,67 @@ class ProjectContextProviderTest {
 
 // language=JSON
 val validQueryInlineResponse = """
-                            [
-                                {
-                                    "content": "content1",
-                                    "filePath": "file1",
-                                    "score": 0.1
-                                },
-                                {
-                                    "content": "content2",
-                                    "filePath": "file2",
-                                    "score": 0.2
-                                },
-                                {
-                                    "content": "content3",
-                                    "filePath": "file3",
-                                    "score": 0.3
-                                }
-                            ]    
+    [
+        {
+            "content": "content1",
+            "filePath": "file1",
+            "score": 0.1
+        },
+        {
+            "content": "content2",
+            "filePath": "file2",
+            "score": 0.2
+        },
+        {
+            "content": "content3",
+            "filePath": "file3",
+            "score": 0.3
+        }
+    ]    
 """.trimIndent()
 
 // language=JSON
 val validQueryChatResponse = """
-                            [
-                                {
-                                    "filePath": "file1",
-                                    "content": "content1",
-                                    "id": "id1",
-                                    "index": "index1",
-                                    "vec": [
-                                        "vec_1-1",
-                                        "vec_1-2",
-                                        "vec_1-3"
-                                    ],
-                                    "context": "context1",
-                                    "prev": "prev1",
-                                    "next": "next1",
-                                    "relativePath": "relativeFilePath1",
-                                    "programmingLanguage": "language1"
-                                },
-                                {
-                                    "filePath": "file2",
-                                    "content": "content2",
-                                    "id": "id2",
-                                    "index": "index2",
-                                    "vec": [
-                                        "vec_2-1",
-                                        "vec_2-2",
-                                        "vec_2-3"
-                                    ],
-                                    "context": "context2",
-                                    "prev": "prev2",
-                                    "next": "next2",
-                                    "relativePath": "relativeFilePath2",
-                                    "programmingLanguage": "language2"
-                                }
-                            ]
+    [
+        {
+            "filePath": "file1",
+            "content": "content1",
+            "id": "id1",
+            "index": "index1",
+            "vec": [
+                "vec_1-1",
+                "vec_1-2",
+                "vec_1-3"
+            ],
+            "context": "context1",
+            "prev": "prev1",
+            "next": "next1",
+            "relativePath": "relativeFilePath1",
+            "programmingLanguage": "language1"
+        },
+        {
+            "filePath": "file2",
+            "content": "content2",
+            "id": "id2",
+            "index": "index2",
+            "vec": [
+                "vec_2-1",
+                "vec_2-2",
+                "vec_2-3"
+            ],
+            "context": "context2",
+            "prev": "prev2",
+            "next": "next2",
+            "relativePath": "relativeFilePath2",
+            "programmingLanguage": "language2"
+        }
+    ]
 """.trimIndent()
 
 // language=JSON
 val validGetUsageResponse = """
-                                {
-                                  "memoryUsage":123,
-                                  "cpuUsage":456
-                                } 
+    {
+      "memoryUsage":123,
+      "cpuUsage":456
+    } 
 """.trimIndent()
