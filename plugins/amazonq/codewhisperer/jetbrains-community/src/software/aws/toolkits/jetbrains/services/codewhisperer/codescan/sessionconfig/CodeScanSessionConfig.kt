@@ -27,10 +27,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.noSupport
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.AmazonQCodeReviewGitUtils.getUnstagedFiles
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.AmazonQCodeReviewGitUtils.isGitRoot
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.AmazonQCodeReviewGitUtils.runGitDiffHead
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.PathUtils.getNormalizedRelativePath
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CodeAnalysisScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
@@ -196,10 +196,9 @@ class CodeScanSessionConfig(
     private fun zipFiles(files: List<Path>, codeDiff: String? = null): File = createTemporaryZipFile {
         files.forEach { file ->
             try {
-                val relativePath = "${project.name}/${file.relativeTo(projectRoot.toNioPath())}"
+                val relativePath = getNormalizedRelativePath(project.name, file.relativeTo(projectRoot.toNioPath()))
                 LOG.debug { "Selected file for truncation: $file" }
-                val normalizedPath = File(relativePath).normalize().path
-                it.putNextEntry(normalizedPath, file)
+                it.putNextEntry(relativePath, file)
             } catch (e: Exception) {
                 cannotFindFile("Zipping error: ${e.message}", file.pathString)
             }
