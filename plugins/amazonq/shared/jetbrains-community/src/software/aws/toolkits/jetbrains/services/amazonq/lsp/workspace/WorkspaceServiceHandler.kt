@@ -83,7 +83,7 @@ class WorkspaceServiceHandler(
     private fun createMatchers(filters: List<FileOperationFilter>?): List<Pair<PathMatcher, String>> =
         filters?.map { filter ->
             FileSystems.getDefault().getPathMatcher("glob:${filter.pattern.glob}") to filter.pattern.matches
-        } ?: emptyList()
+        }.orEmpty()
 
     private fun shouldHandleFile(file: VirtualFile, operation: FileOperationType): Boolean {
         val matchers = operationMatchers[operation] ?: return false
