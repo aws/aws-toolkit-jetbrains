@@ -26,6 +26,8 @@ class DefaultAuthCredentialsService(
     BearerTokenProviderListener {
     init {
         project.messageBus.connect(serverInstance).subscribe(BearerTokenProviderListener.TOPIC, this)
+
+        onChange("init", null)
     }
 
     override fun onChange(providerId: String, newScopes: List<String>?) {
