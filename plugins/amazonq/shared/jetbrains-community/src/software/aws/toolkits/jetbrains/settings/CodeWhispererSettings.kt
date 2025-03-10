@@ -93,6 +93,12 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
 
     fun toggleWorkspaceContextEnabled(value: Boolean, passive: Boolean = false) {
         state.value[CodeWhispererConfigurationType.IsWorkspaceContextEnabled] = value
+        ProjectManager.getInstance().openProjects.forEach {
+            if (it.isDisposed) {
+                return@forEach
+            }
+            AmazonQLspService.didChangeConfiguration(it)
+        }
     }
 
     fun isWorkspaceContextEnabled() = state.value.getOrDefault(CodeWhispererConfigurationType.IsWorkspaceContextEnabled, true)
