@@ -103,6 +103,13 @@ dependencies {
     }
 }
 
+tasks.prepareTestSandbox {
+    disabledPlugins = listOf(
+        "com.intellij.swagger",
+        "org.jetbrains.plugins.kotlin.jupyter",
+    )
+}
+
 tasks.jar {
     // :plugin-toolkit:jetbrains-community results in: --plugin-toolkit-jetbrains-community-IC-<version>.jar
     archiveBaseName.set(toolkitIntelliJ.ideFlavor.map { "${project.buildTreePath.replace(':', '-')}-$it" })
