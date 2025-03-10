@@ -3,7 +3,7 @@
 
 public class ErrorPath {
 
-    // test method for Q Test Generation.
+    // The below multiply method is private so science should throw an error from the backend as UTG supports only public methods for test generation.
     private static double multiply(double num1, double num2) {
         return num1 * num2;
     }
