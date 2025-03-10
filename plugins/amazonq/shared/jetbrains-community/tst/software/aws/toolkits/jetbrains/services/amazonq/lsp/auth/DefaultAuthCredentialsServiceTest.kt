@@ -4,32 +4,51 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.auth
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.components.service
 import com.intellij.openapi.components.serviceIfCreated
 import com.intellij.openapi.project.Project
+import com.intellij.testFramework.ProjectExtension
 import com.intellij.util.messages.MessageBus
 import com.intellij.util.messages.MessageBusConnection
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
+import io.mockk.spyk
 import io.mockk.verify
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
+import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.sso.PKCEAuthorizationGrantToken
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBearerTokenProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
+import java.time.Instant
 import java.util.concurrent.CompletableFuture
 
 class DefaultAuthCredentialsServiceTest {
+    companion object {
+        @JvmField
+        @RegisterExtension
+        val projectExtension = ProjectExtension()
+    }
+
     private lateinit var project: Project
     private lateinit var mockLanguageServer: AmazonQLanguageServer
     private lateinit var mockEncryptionManager: JwtEncryptionManager
     private lateinit var sut: DefaultAuthCredentialsService
 
-    @Before
+    // maybe better to use real project via junit extension
+    @BeforeEach
     fun setUp() {
-        project = mockk<Project>()
+        project = spyk(projectExtension.project)
         mockLanguageServer = mockk<AmazonQLanguageServer>()
         mockEncryptionManager = mockk<JwtEncryptionManager>()
         every { mockEncryptionManager.encrypt(any()) } returns "mock-encrypted-data"
@@ -54,6 +73,32 @@ class DefaultAuthCredentialsServiceTest {
         every { messageBus.connect(any<Disposable>()) } returns mockConnection
         every { mockConnection.subscribe(any(), any()) } just runs
 
+        // Mock ToolkitConnectionManager
+        val connectionManager = mockk<ToolkitConnectionManager>()
+        val connection = mockk<AwsBearerTokenConnection>()
+        val connectionSettings = mockk<TokenConnectionSettings>()
+        val provider = mockk<ToolkitBearerTokenProvider>()
+        val tokenDelegate = mockk<InteractiveBearerTokenProvider>()
+        val token = PKCEAuthorizationGrantToken(
+            issuerUrl = "https://example.com",
+            refreshToken = "refreshToken",
+            accessToken = "accessToken",
+            expiresAt = Instant.MAX,
+            createdAt = Instant.now(),
+            region = "us-fake-1",
+        )
+
+        every { project.service<ToolkitConnectionManager>() } returns connectionManager
+        every { connectionManager.activeConnectionForFeature(any()) } returns connection
+        every { connection.getConnectionSettings() } returns connectionSettings
+        every { connectionSettings.tokenProvider } returns provider
+        every { provider.delegate } returns tokenDelegate
+        every { tokenDelegate.currentToken() } returns token
+
+        every {
+            mockLanguageServer.updateTokenCredentials(any())
+        } returns CompletableFuture.completedFuture(ResponseMessage())
+
         sut = DefaultAuthCredentialsService(project, this.mockEncryptionManager, mockk())
     }
 
@@ -62,17 +107,15 @@ class DefaultAuthCredentialsServiceTest {
         val token = "unencryptedToken"
         val isEncrypted = false
 
-        every {
-            mockLanguageServer.updateTokenCredentials(any())
-        } returns CompletableFuture.completedFuture(ResponseMessage())
-
         sut.updateTokenCredentials(token, isEncrypted)
 
-        verify(exactly = 0) {
-            mockEncryptionManager.decrypt(any())
-        }
         verify(exactly = 1) {
-            mockLanguageServer.updateTokenCredentials(any())
+            mockLanguageServer.updateTokenCredentials(
+                UpdateCredentialsPayload(
+                    token,
+                    isEncrypted
+                )
+            )
         }
     }
 
@@ -82,16 +125,18 @@ class DefaultAuthCredentialsServiceTest {
         val decryptedToken = "decryptedToken"
         val isEncrypted = true
 
-        every { mockEncryptionManager.decrypt(encryptedToken) } returns decryptedToken
-        every { mockEncryptionManager.encrypt(any()) } returns "mock-encrypted-data"
-        every {
-            mockLanguageServer.updateTokenCredentials(any())
-        } returns CompletableFuture.completedFuture(ResponseMessage())
+        every { mockEncryptionManager.encrypt(any()) } returns encryptedToken
 
-        sut.updateTokenCredentials(encryptedToken, isEncrypted)
+        sut.updateTokenCredentials(decryptedToken, isEncrypted)
 
-        verify(exactly = 1) { mockEncryptionManager.decrypt(encryptedToken) }
-        verify(exactly = 1) { mockLanguageServer.updateTokenCredentials(any()) }
+        verify(atLeast = 1) {
+            mockLanguageServer.updateTokenCredentials(
+                UpdateCredentialsPayload(
+                    encryptedToken,
+                    isEncrypted
+                )
+            )
+        }
     }
 
     @Test
@@ -101,5 +146,10 @@ class DefaultAuthCredentialsServiceTest {
         sut.deleteTokenCredentials()
 
         verify(exactly = 1) { mockLanguageServer.deleteTokenCredentials() }
+    }
+
+    @Test
+    fun `init results in token update`() {
+        verify(exactly = 1) { mockLanguageServer.updateTokenCredentials(any()) }
     }
 }

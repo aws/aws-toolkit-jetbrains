@@ -41,7 +41,8 @@ class DefaultAuthCredentialsService(
             ?: return
 
         provider.currentToken()?.accessToken?.let { token ->
-            updateTokenCredentials(token, false)
+            // assume encryption is always on
+            updateTokenCredentials(token, true)
         }
     }
 
@@ -50,13 +51,7 @@ class DefaultAuthCredentialsService(
     }
 
     override fun updateTokenCredentials(accessToken: String, encrypted: Boolean): CompletableFuture<ResponseMessage> {
-        val token = if (encrypted) {
-            encryptionManager.decrypt(accessToken)
-        } else {
-            accessToken
-        }
-
-        val payload = createUpdateCredentialsPayload(token)
+        val payload = createUpdateCredentialsPayload(accessToken, encrypted)
 
         return AmazonQLspService.executeIfRunning(project) { server ->
             server.updateTokenCredentials(payload)
@@ -71,13 +66,20 @@ class DefaultAuthCredentialsService(
             } ?: completableFuture.completeExceptionally(IllegalStateException("LSP Server not running"))
         }
 
-    private fun createUpdateCredentialsPayload(token: String): UpdateCredentialsPayload =
-        UpdateCredentialsPayload(
-            data = encryptionManager.encrypt(
-                UpdateCredentialsPayloadData(
-                    BearerCredentials(token)
-                )
-            ),
-            encrypted = true
-        )
+    private fun createUpdateCredentialsPayload(token: String, encrypted: Boolean): UpdateCredentialsPayload =
+        if (encrypted) {
+            UpdateCredentialsPayload(
+                data = encryptionManager.encrypt(
+                    UpdateCredentialsPayloadData(
+                        BearerCredentials(token)
+                    )
+                ),
+                encrypted = true
+            )
+        } else {
+            UpdateCredentialsPayload(
+                data = token,
+                encrypted = false
+            )
+        }
 }
