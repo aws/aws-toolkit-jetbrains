@@ -251,12 +251,6 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 val packageInfo = packageInfoList.firstOrNull()
                 val targetFileInfo = packageInfo?.targetFileInfoList()?.firstOrNull()
 
-//                if (testGenerationResponse.testGenerationJob().packageInfoList() != null) {
-//                    shortAnswer = parseShortAnswerString(testGenerationResponse.testGenerationJob().shortAnswer())
-//                    if (shortAnswer.stopIteration == "true") {
-//                        throw CodeTestException("TestGenFailedError: ${shortAnswer.planSummary}", "TestGenFailedError", shortAnswer.planSummary)
-//                    }
-//                }
                 if (packageInfo != null) {
                     session.packageInfoList.member = PackageInfo(
                         executionCommand = packageInfo.executionCommand(),
