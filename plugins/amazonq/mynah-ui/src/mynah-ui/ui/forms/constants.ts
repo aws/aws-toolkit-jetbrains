@@ -10,6 +10,7 @@ export const enum FormButtonIds {
   CodeTransformInputCancel = 'codetransform-input-cancel',
   CodeTransformInputSkipTests = 'codetransform-input-confirm-skip-tests',
   CodeTransformInputOneOrMultipleDiffs = 'codetransform-input-confirm-one-or-multiple-diffs',
+  CodeTransformInputPermissions = 'codetransform-input-confirm-permissions',
   OpenMvnBuild = 'open_mvn_build',
   StopTransform = 'stop_transform',
   OpenTransformationHub = 'open_transformation_hub',
