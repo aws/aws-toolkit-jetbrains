@@ -45,62 +45,6 @@ fun constructBuildAndExecutionSummaryText(currentStatus: BuildAndExecuteProgress
         progressMessages.add("${BuildAndExecuteStatusIcon.DONE.icon} ${"All tests passed\n"}")
     }
 // TODO: Commenting out this code to do a better UX in the V2 version after science support
-/*
-
-    if (currentStatus >= BuildAndExecuteProgressStatus.RUN_BUILD) {
-        val buildStatus = when (currentStatus) {
-            BuildAndExecuteProgressStatus.RUN_BUILD -> "in progress"
-            BuildAndExecuteProgressStatus.BUILD_FAILED -> "failed"
-            else -> "complete"
-        }
-        val icon = if (buildStatus == "in progress") {
-            BuildAndExecuteStatusIcon.WAIT.icon
-        } else if (codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.SUCCESS) {
-            BuildAndExecuteStatusIcon.DONE.icon
-        } else {
-            BuildAndExecuteStatusIcon.FAILED.icon
-        }
-        progressMessages.add(
-            "$icon ${
-                if (buildStatus == "in progress") {
-                    "Project compiling"
-                } else if (codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.SUCCESS) {
-                    "Project compiled"
-                } else {
-                    "Unable to compile project"
-                }
-            }"
-        )
-    }
-
-    if (currentStatus >= BuildAndExecuteProgressStatus.RUN_EXECUTION_TESTS) {
-        val buildStatus = if (currentStatus == BuildAndExecuteProgressStatus.RUN_BUILD) {
-            "Running tests"
-        } else if (codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.SUCCESS) {
-            "Tests passed"
-        } else {
-            "Tests failed"
-        }
-        val icon = if (buildStatus == "Running tests") {
-            BuildAndExecuteStatusIcon.WAIT.icon
-        } else if (codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.SUCCESS) {
-            BuildAndExecuteStatusIcon.DONE.icon
-        } else {
-            BuildAndExecuteStatusIcon.FAILED.icon
-        }
-        progressMessages.add("$icon $buildStatus")
-    }
-
-    if ((currentStatus >= BuildAndExecuteProgressStatus.BUILD_FAILED) && codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.FAILURE) {
-        val buildStatus = if (currentStatus == BuildAndExecuteProgressStatus.RUN_EXECUTION_TESTS) "Fixing" else "Fixed"
-        val icon = if (currentStatus == BuildAndExecuteProgressStatus.RUN_EXECUTION_TESTS) {
-            BuildAndExecuteStatusIcon.WAIT.icon
-        } else {
-            BuildAndExecuteStatusIcon.DONE.icon
-        }
-        progressMessages.add("$icon $buildStatus test failures")
-    }
-*/
     if (currentStatus >= BuildAndExecuteProgressStatus.FIXING_TEST_CASES && codeTestChatHelper.getActiveSession().buildStatus == BuildStatus.FAILURE) {
         progressMessages.add("\n")
         progressMessages.add("**Results**")
