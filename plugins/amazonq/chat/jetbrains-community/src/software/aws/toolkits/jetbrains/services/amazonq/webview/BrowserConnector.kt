@@ -54,8 +54,8 @@ class BrowserConnector(
                     }
 
                     // some weird issue preventing deserialization from working
-                    "open-user-guide" -> {
-                        BrowserUtil.browse(node.get("userGuideLink").asText())
+                    "open-link" -> {
+                        BrowserUtil.browse(node.get("link").asText())
                     }
                     "send-telemetry" -> {
                         val source = node.get("source")
