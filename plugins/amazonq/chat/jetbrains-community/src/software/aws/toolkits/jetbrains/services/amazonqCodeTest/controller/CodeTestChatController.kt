@@ -98,6 +98,7 @@ import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.InteractionType
 import software.aws.toolkits.telemetry.MetricResult
+import software.aws.toolkits.telemetry.Status
 import software.aws.toolkits.telemetry.UiTelemetry
 import java.io.File
 import java.nio.file.Files
@@ -310,7 +311,8 @@ class CodeTestChatController(
                     credentialStartUrl = getStartUrl(project),
                     result = MetricResult.Succeeded,
                     perfClientLatency = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration),
-                    requestId = id
+                    requestId = id,
+                    status = Status.ACCEPTED,
                 )
             }
             session.isGeneratingTests = false
@@ -682,7 +684,8 @@ class CodeTestChatController(
                     artifactsUploadDuration = session.artifactUploadDuration,
                     buildPayloadBytes = session.srcPayloadSize,
                     buildZipFileBytes = session.srcZipFileSize,
-                    requestId = session.startTestGenerationRequestId
+                    requestId = session.startTestGenerationRequestId,
+                    status = Status.ACCEPTED,
                 )
                 codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
@@ -878,7 +881,8 @@ class CodeTestChatController(
                     artifactsUploadDuration = session.artifactUploadDuration,
                     buildPayloadBytes = session.srcPayloadSize,
                     buildZipFileBytes = session.srcZipFileSize,
-                    requestId = session.startTestGenerationRequestId
+                    requestId = session.startTestGenerationRequestId,
+                    status = Status.REJECTED,
                 )
                 sessionCleanUp(message.tabId)
             }
