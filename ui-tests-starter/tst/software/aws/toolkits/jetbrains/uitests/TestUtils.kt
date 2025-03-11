@@ -102,3 +102,43 @@ fun writeToAwsXml(configContent: String) {
         StandardOpenOption.TRUNCATE_EXISTING
     )
 }
+
+val testScriptPrefix = """
+const puppeteer = require('puppeteer');
+
+async function retryIfRequired(page, request) {
+    let retryCounts = 0;
+    const maxRetries = 3;
+
+    async function retry() {
+
+        await page.waitForSelector('::-p-text(Retry)', {timeout: 600_000})
+
+        const [retry] = await page.$$('.mynah-chat-item-followup-question-option');
+        await retry.click();
+
+        console.log(`Retrying ${'$'}{++retryCounts} time(s)`);
+    }
+
+    while (retryCounts < maxRetries) {
+        const currRetryCounts = retryCounts;
+        await Promise.race([
+            retry(),
+            request()
+        ]);
+
+        // This indicates request proceed successfully. There is no more need to retry.
+        if (retryCounts === currRetryCounts) {
+            return;
+        }
+    }
+}
+
+async function closeSelectedTab(page) {
+    const selectedTabId = await page.${'$'}eval('.mynah-nav-tabs-wrapper', (el) => el.getAttribute('selected-tab'));
+
+    const closeBtn = await page.${'$'}(`span[key=mynah-main-tabs-${'$'}{selectedTabId}] label button`);
+    await closeBtn.click();
+}
+
+""".trimIndent()
