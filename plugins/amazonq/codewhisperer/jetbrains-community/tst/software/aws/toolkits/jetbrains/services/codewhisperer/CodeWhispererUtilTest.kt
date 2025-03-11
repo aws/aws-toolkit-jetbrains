@@ -79,7 +79,7 @@ class CodeWhispererUtilTest {
             ${"b".repeat(11)}
             ${"c".repeat(11)}
             ${"d".repeat(11)}
-        """.trimIndent()
+            """.trimIndent()
         )
 
         val input2 = "b\n".repeat(10)
