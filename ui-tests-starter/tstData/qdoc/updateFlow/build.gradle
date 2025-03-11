@@ -4,7 +4,7 @@ plugins {
     id 'java'
 }
 
-group = 'com.zetcode.tancode'
+group = 'com.sample.qdoc'
 version = '1.0-SNAPSHOT'
 sourceCompatibility = '17'
 
