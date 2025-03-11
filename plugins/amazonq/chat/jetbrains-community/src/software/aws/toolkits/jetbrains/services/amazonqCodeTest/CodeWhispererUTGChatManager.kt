@@ -370,21 +370,21 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
             if (previousIterationContext == null) {
                 // show another card as the answer
                 val jobSummary = testGenerationResponse?.testGenerationJob()?.jobSummary()?.trim() ?: ""
-                val cleanedJobSummary = jobSummary
+
+                val cleanedPlanSummary = jobSummary
+                    .replace(Regex("^```\\s*"), "") // Remove leading triple backticks
+                    .replace(Regex("\\s*```$"), "") // Remove trailing triple backticks
                     .trim()
-                    .replace("```", "")
-                    .replace("`", "")
-                    .replace("\n", " ")
-                println(jobSummary)
+
+                val fullMessage = """
+$cleanedPlanSummary
+
+Please see the unit tests generated below. Click 'View Diff' to review the changes in the code editor.
+                """.trimIndent() // Ensures no extra indentation for the entire message
+
                 val viewDiffMessageId = codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
-                        message = """
-                            **Job Summary:**  
-                            
-                            $cleanedJobSummary
-                            
-                            Please see the unit tests generated below. Click "View Diff" to review the changes in the code editor.
-                        """.trimIndent(),
+                        message = fullMessage,
                         type = ChatMessageType.Answer,
                         buttons = listOf(Button("utg_view_diff", "View Diff", keepCardAfterClick = true, position = "outside", status = "info")),
                         fileList = listOf(getTestFilePathRelativeToRoot(targetFileInfo)),
@@ -393,6 +393,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                         codeReference = codeReference
                     )
                 )
+
                 session.viewDiffMessageId = viewDiffMessageId
                 codeTestChatHelper.updateUI(
                     promptInputDisabledState = false,
