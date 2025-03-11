@@ -50,16 +50,6 @@
             "description": "A detailed state of a specific auth connection. Use `authStatus` for a higher level view of an extension's general connection."
         },
         {
-            "name": "cwsprChatActiveEditorImportCount",
-            "type": "int",
-            "description": "Number of import statements in the active editor"
-        },
-        {
-            "name": "cwsprChatActiveEditorTotalCharacters",
-            "type": "int",
-            "description": "Total number of characters in the active editor"
-        },
-        {
             "name": "cwsprChatCommandName",
             "type": "string",
             "description": "Type of chat command name executed"
@@ -76,89 +66,9 @@
             "description": "Type of chat command (/command) executed"
         },
         {
-            "name": "cwsprChatConversationType",
-            "type": "string",
-            "allowedValues": [
-                "Chat",
-                "Assign",
-                "Transform"
-            ],
-            "description": "Identifies the type of conversation"
-        },
-        {
-            "name": "cwsprChatHasCodeSnippet",
-            "type": "boolean",
-            "description": "true if user has selected code snippet, false otherwise."
-        },
-        {
             "name": "cwsprChatModificationPercentage",
             "type": "double",
             "description": "Percentage of characters edited by user after copying/inserting code from a message"
-        },
-        {
-            "name": "cwsprChatReferencesCount",
-            "type": "int",
-            "description": "Number of references in response"
-        },
-        {
-            "name": "cwsprChatFollowUpCount",
-            "type": "int",
-            "description": "Number of follow ups in response"
-        },
-        {
-            "name": "cwsprChatTimeToFirstChunk",
-            "type": "int",
-            "description": "Time taken in ms to get back the first chunk"
-        },
-        {
-            "name": "cwsprChatTimeBetweenChunks",
-            "type": "string",
-            "description": "Time (list of int) taken in ms between chunks"
-        },
-        {
-            "name": "cwsprChatFullResponseLatency",
-            "type": "int",
-            "description": "Time taken to get the full response in ms"
-        },
-        {
-            "name": "cwsprChatProjectContextQueryMs",
-            "type": "int",
-            "description": "query latency in ms for local project context"
-        },
-        {
-            "name": "cwsprChatResponseLength",
-            "type": "int",
-            "description": "Number of characters in response"
-        },
-        {
-            "name": "cwsprChatRequestLength",
-            "type": "int",
-            "description": "Number of characters in request"
-        },
-        {
-            "name": "cwsprChatResponseCode",
-            "type": "int",
-            "description": "HTTP response code for message API invocation"
-        },
-        {
-            "name": "cwsprChatResponseCodeSnippetCount",
-            "type": "int",
-            "description": "Number of code snippets in response"
-        },
-        {
-            "name": "cwsprChatSourceLinkCount",
-            "type": "int",
-            "description": "Number of links in response"
-        },
-        {
-            "name": "cwsprChatTriggerInteraction",
-            "type": "string",
-            "allowedValues": [
-                "hotkeys",
-                "click",
-                "contextMenu"
-            ],
-            "description": "Identifies the specific interaction that opens the chat panel"
         },
         {
             "name": "executedCount",
@@ -195,95 +105,6 @@
         }
     ],
     "metrics": [
-        {
-            "name": "amazonq_addMessage",
-            "description": "When a message is added to the conversation",
-            "metadata": [
-                {
-                    "type": "cwsprChatConversationId"
-                },
-                {
-                    "type": "cwsprChatMessageId"
-                },
-                {
-                    "type": "cwsprChatTriggerInteraction"
-                },
-                {
-                    "type": "cwsprChatUserIntent",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatHasCodeSnippet",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatProgrammingLanguage",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatActiveEditorTotalCharacters",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatActiveEditorImportCount",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatResponseCodeSnippetCount",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatResponseCode"
-                },
-                {
-                    "type": "cwsprChatSourceLinkCount",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatReferencesCount",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatFollowUpCount",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatTimeToFirstChunk"
-                },
-                {
-                    "type": "cwsprChatTimeBetweenChunks"
-                },
-                {
-                    "type": "cwsprChatFullResponseLatency"
-                },
-                {
-                    "type": "cwsprChatRequestLength"
-                },
-                {
-                    "type": "cwsprChatResponseLength",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatConversationType"
-                },
-                {
-                    "type": "credentialStartUrl",
-                    "required": false
-                },
-                {
-                    "type": "codewhispererCustomizationArn",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatHasProjectContext",
-                    "required": false
-                },
-                {
-                    "type": "cwsprChatProjectContextQueryMs",
-                    "required": false
-                }
-            ]
-        },
         {
             "name": "amazonq_indexWorkspace",
             "description": "Indexing of local workspace",
