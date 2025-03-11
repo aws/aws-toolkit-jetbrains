@@ -78,15 +78,17 @@ class UpdateReadmeLatestChangesTest {
                 // required wait time for the system to be fully ready
                 Thread.sleep(30000)
 
-                executePuppeteerScript(updateReadmeLatestChangesTestScript)
+                val result = executePuppeteerScript(updateReadmeLatestChangesTestScript)
+
+                if (result.contains("Error: Test Failed")) {
+                    println("result: $result")
+                }
 
                 val readmePath = Paths.get("tstData", "qdoc", "updateFlow", "README.md")
                 val readme = File(readmePath.toUri())
                 assertTrue(readme.exists())
-                println("result: ${readme.readText()}")
                 assertTrue(readme.readText().contains("sample/qdoc", ignoreCase = true))
                 assertTrue(readme.readText().contains("healthcontroller.java", ignoreCase = true))
-                println("assertions done")
             }
     }
 
