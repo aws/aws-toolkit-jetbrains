@@ -46,7 +46,7 @@ val updateReadmeSpecificChangesMakeChangesFlowScript = """
                     const makeChangeText = await page.waitForSelector('[placeholder="Describe documentation changes"]');
                     if (!makeChangeText) {
                           console.log('Error: Test Failed');
-                          console.log('Unable to find placeholder description test in Make Changes flow');
+                          console.log('Unable to find placeholder description text in Make Changes flow');
                         } else {
                             console.log('Found expected placeholder text for Make Changes flow');
                             console.log('Test Successful');

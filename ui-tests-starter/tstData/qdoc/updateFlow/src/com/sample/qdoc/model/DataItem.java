@@ -1,4 +1,4 @@
-package com.zetcode.tancode.model;
+package com.sample.qdoc.model;
 
 public class DataItem {
     private String id;
