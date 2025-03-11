@@ -372,15 +372,16 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 val jobSummary = testGenerationResponse?.testGenerationJob()?.jobSummary()?.trim() ?: ""
 
                 val cleanedPlanSummary = jobSummary
-                    .replace(Regex("^```\\s*"), "") // Remove leading triple backticks
-                    .replace(Regex("\\s*```$"), "") // Remove trailing triple backticks
+                    .replace(Regex("^```\\s*"), "")  // Remove leading triple backticks
+                    .replace(Regex("\\s*```$"), "")  // Remove trailing triple backticks
                     .trim()
 
                 val fullMessage = """
 $cleanedPlanSummary
 
 Please see the unit tests generated below. Click 'View Diff' to review the changes in the code editor.
-                """.trimIndent() // Ensures no extra indentation for the entire message
+""".trimIndent()  // Ensures no extra indentation for the entire message
+
 
                 val viewDiffMessageId = codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
