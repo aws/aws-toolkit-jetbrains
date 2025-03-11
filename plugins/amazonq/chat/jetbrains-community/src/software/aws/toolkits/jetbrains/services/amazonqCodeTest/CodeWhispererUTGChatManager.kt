@@ -169,11 +169,11 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         session.testGenerationJob = job.testGenerationJobId()
         throwIfCancelled(session)
 
-        // 3rd API call: Step 3:  Polling mechanism on test job status with getTestGenStatus getTestGeneration
+        // 3rd API call: Step 3: Polling mechanism on test job status with getTestGenStatus getTestGeneration
         var finished = false
         var testGenerationResponse: GetTestGenerationResponse? = null
 
-        var packageInfoList = PackageInfoList()
+        var packageInfoList: List<software.amazon.awssdk.services.codewhispererruntime.model.PackageInfo> = emptyList()
         LOG.debug {
             "Q TestGen session: ${codeTestChatHelper.getActiveCodeTestTabId()}: " +
                 "polling result for id: ${job.testGenerationJobId()}, group name: ${job.testGenerationJobGroupName()}, " +
@@ -191,7 +191,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                         "Test generation completed, package info: ${testGenerationResponse.testGenerationJob().packageInfoList()}"
                 }
                 finished = true
-                var packageInfoList = testGenerationResponse.testGenerationJob().packageInfoList()
+                packageInfoList = testGenerationResponse.testGenerationJob().packageInfoList()
                 val packageInfo = packageInfoList.firstOrNull()
                 val targetFileInfo = packageInfo?.targetFileInfoList()?.firstOrNull()
                 if (packageInfo != null && targetFileInfo != null) {
@@ -247,7 +247,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                         "Test generation failed, package info: ${testGenerationResponse.testGenerationJob().packageInfoList()}"
                 }
 
-                val packageInfoList = testGenerationResponse.testGenerationJob().packageInfoList()
+                packageInfoList = testGenerationResponse.testGenerationJob().packageInfoList()
                 val packageInfo = packageInfoList.firstOrNull()
                 val targetFileInfo = packageInfo?.targetFileInfoList()?.firstOrNull()
 
@@ -263,10 +263,6 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     )
                 }
 
-                // TO DO
-                // add TestGenerationJobStatus.STOPPED status
-
-                // If job status is Failed and has no ShortAnswer then there might be some issue in the backend.
                 throw CodeTestException(
                     "TestGenFailedError: " + message("testgen.message.failed"),
                     "TestGenFailedError",
