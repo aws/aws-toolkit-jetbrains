@@ -559,12 +559,23 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     e is JsonParseException -> message("testgen.error.generic_technical_error_message")
                     else -> message("testgen.error.generic_error_message")
                 }
-
+                val buttonList = mutableListOf<Button>()
+                buttonList.add(
+                    Button(
+                        "utg_feedback",
+                        "How can we make /test better?",
+                        keepCardAfterClick = true,
+                        position = "outside",
+                        status = "info",
+                        icon = "comment"
+                    ),
+                )
                 codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
                         message = errorMessage,
                         type = ChatMessageType.Answer,
-                        canBeVoted = false
+                        canBeVoted = false,
+                        buttons = buttonList
                     )
                 )
 

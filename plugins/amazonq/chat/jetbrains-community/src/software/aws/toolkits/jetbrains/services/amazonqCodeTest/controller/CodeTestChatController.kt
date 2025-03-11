@@ -9,6 +9,7 @@ import com.intellij.diff.DiffManagerEx
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
@@ -92,6 +93,7 @@ import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTri
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.FileContext
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkits.jetbrains.ui.feedback.TestGenFeedbackDialog
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
@@ -168,13 +170,14 @@ class CodeTestChatController(
     override suspend fun processStartTestGen(message: IncomingCodeTestMessage.StartTestGen) {
         codeTestChatHelper.setActiveCodeTestTabId(message.tabId)
         val session = codeTestChatHelper.getActiveSession()
+        if (session.isGeneratingTests) {
+            return
+        }
+        sessionCleanUp(session.tabId)
         // check if IDE has active file open, yes return (fileName and filePath) else return null
         val project = context.project
         val fileInfo = checkActiveFileInIDE(project, message) ?: return
         session.programmingLanguage = fileInfo.fileLanguage
-        if (session.isGeneratingTests === true) {
-            return
-        }
         session.startTimeOfTestGeneration = Instant.now().toEpochMilli().toDouble()
         session.isGeneratingTests = true
 
@@ -687,14 +690,25 @@ class CodeTestChatController(
                     requestId = session.startTestGenerationRequestId,
                     status = Status.ACCEPTED,
                 )
+                val buttonList = mutableListOf<Button>()
+                buttonList.add(
+                    Button(
+                        "utg_feedback",
+                        "How can we make /test better?",
+                        keepCardAfterClick = true,
+                        position = "outside",
+                        status = "info",
+                        icon = "comment"
+                    ),
+                )
                 codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
                         message = message("testgen.message.success"),
                         type = ChatMessageType.Answer,
-                        canBeVoted = false
+                        canBeVoted = false,
+                        buttons = buttonList
                     )
                 )
-                sessionCleanUp(session.tabId)
                 codeTestChatHelper.updateUI(
                     promptInputDisabledState = false,
                     promptInputPlaceholder = message("testgen.placeholder.enter_slash_quick_actions"),
@@ -836,11 +850,24 @@ class CodeTestChatController(
                 ApplicationManager.getApplication().invokeLater {
                     session.openedDiffFile?.let { FileEditorManager.getInstance(context.project).closeFile(it) }
                 }
+                val buttonList = mutableListOf<Button>()
+                buttonList.add(
+                    Button(
+                        "utg_feedback",
+                        "How can we make /test better?",
+                        keepCardAfterClick = true,
+                        position = "outside",
+                        status = "info",
+                        disabled = true,
+                        icon = "comment"
+                    ),
+                )
                 codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
                         message = message("testgen.message.success"),
                         type = ChatMessageType.Answer,
-                        canBeVoted = false
+                        canBeVoted = false,
+                        buttons = buttonList
                     )
                 )
                 val testGenerationEventResponse = client.sendTestGenerationEvent(
@@ -884,7 +911,10 @@ class CodeTestChatController(
                     requestId = session.startTestGenerationRequestId,
                     status = Status.REJECTED,
                 )
-                sessionCleanUp(message.tabId)
+            }
+            "utg_feedback" -> {
+                sendFeedback()
+                UiTelemetry.click(context.project, "unitTestGeneration_provideFeedback")
             }
             "utg_skip_and_finish" -> {
                 codeTestChatHelper.addAnswer(
@@ -1371,6 +1401,16 @@ class CodeTestChatController(
             promptInputDisabledState = true,
         )
         println(message)
+    }
+
+    private fun sendFeedback() {
+        runInEdt {
+            TestGenFeedbackDialog(
+                context.project,
+                codeTestChatHelper.getActiveSession().startTestGenerationRequestId,
+                codeTestChatHelper.getActiveSession().testGenerationJob
+            ).show()
+        }
     }
 
     companion object {
