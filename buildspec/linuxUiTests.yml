@@ -21,11 +21,6 @@ phases:
     commands:
       - dnf install -y marco mate-media e2fsprogs
       - startDesktop.sh
-
-      # login to DockerHub so we don't get throttled
-      - export DOCKER_USERNAME=`echo $DOCKER_HUB_TOKEN | jq -r '.username'`
-      - export DOCKER_PASSWORD=`echo $DOCKER_HUB_TOKEN | jq -r '.password'`
-      - docker login --username $DOCKER_USERNAME --password $DOCKER_PASSWORD || true
       - export PATH="$PATH:$HOME/.dotnet/tools"
       - dotnet codeartifact-creds install
 
