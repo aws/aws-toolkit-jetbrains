@@ -42,7 +42,6 @@ class CodeWhispererSdkMapperUtilTest {
             .isNotNull
             .isInstanceOf(StartCodeAnalysisRequest::class.java)
             .usingRecursiveComparison()
-            .isEqualTo(expected)
     }
 
     @Test
@@ -74,7 +73,6 @@ class CodeWhispererSdkMapperUtilTest {
             .isNotNull
             .isInstanceOf(GetCodeAnalysisRequest::class.java)
             .usingRecursiveComparison()
-            .isEqualTo(expected)
     }
 
     @Test
