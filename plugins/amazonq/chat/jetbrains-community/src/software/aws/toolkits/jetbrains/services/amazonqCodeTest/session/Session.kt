@@ -38,7 +38,6 @@ data class Session(val tabId: String) {
     var iteration: Int = 0
     var projectRoot: String = "/"
 
-    // var shortAnswer: ShortAnswer = ShortAnswer()
     var packageInfoList: PackageInfoList = PackageInfoList()
     var selectedFile: VirtualFile? = null
     var testFileRelativePathToProjectRoot: String = ""
@@ -47,7 +46,6 @@ data class Session(val tabId: String) {
     var openedDiffFile: VirtualFile? = null
     val generatedTestDiffs = mutableMapOf<String, String>()
 
-    // var codeReferences: List<ShortAnswerReference>? = null
     var codeReferences: List<CodeReferenceInfo>? = null
 
     // Build loop execution
