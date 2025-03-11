@@ -27,7 +27,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.noSupport
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.AmazonQCodeReviewGitUtils.getUnstagedFiles
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.AmazonQCodeReviewGitUtils.isGitRoot
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.AmazonQCodeReviewGitUtils.runGitDiffHead
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.PathUtils.getNormalizedRelativePath
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
@@ -37,6 +36,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.EXPRESS_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getNormalizedRelativePath
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.GitIgnoreFilteringUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.resources.message
