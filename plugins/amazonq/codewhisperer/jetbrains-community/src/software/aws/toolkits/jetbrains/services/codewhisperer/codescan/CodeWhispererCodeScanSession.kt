@@ -105,10 +105,10 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             val artifactsUploadStartTime = now()
             val codeScanName = UUID.randomUUID().toString()
 
-            val taskType = if (sessionContext.codeAnalysisScope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
-                CodeWhispererConstants.UploadTaskType.SCAN_PROJECT
-            } else {
+            val taskType = if (isAutoScan()) {
                 CodeWhispererConstants.UploadTaskType.SCAN_FILE
+            } else {
+                CodeWhispererConstants.UploadTaskType.SCAN_PROJECT
             }
 
             val sourceZipUploadResponse =
