@@ -563,7 +563,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 buttonList.add(
                     Button(
                         "utg_feedback",
-                        "How can we make /test better?",
+                        message("testgen.button.feedback"),
                         keepCardAfterClick = true,
                         position = "outside",
                         status = "info",

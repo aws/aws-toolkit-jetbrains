@@ -568,7 +568,7 @@ class CodeTestChatController(
                     session.linesOfCodeGenerated = lineDifference.coerceAtLeast(0)
                     session.charsOfCodeGenerated = charDifference.coerceAtLeast(0)
                     session.latencyOfTestGeneration = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration)
-                    UiTelemetry.click(null as Project?, "unitTestGeneration_viewDiff")
+                    UiTelemetry.click(context.project, "unitTestGeneration_viewDiff")
 
                     val buttonList = mutableListOf<Button>()
                     buttonList.add(
@@ -665,7 +665,7 @@ class CodeTestChatController(
                         testGenerationEventResponse.responseMetadata().requestId()}"
                 }
 
-                UiTelemetry.click(null as Project?, "unitTestGeneration_acceptDiff")
+                UiTelemetry.click(context.project, "unitTestGeneration_acceptDiff")
 
                 AmazonqTelemetry.utgGenerateTests(
                     cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
@@ -694,7 +694,7 @@ class CodeTestChatController(
                 buttonList.add(
                     Button(
                         "utg_feedback",
-                        "How can we make /test better?",
+                        message("testgen.button.feedback"),
                         keepCardAfterClick = true,
                         position = "outside",
                         status = "info",
@@ -854,7 +854,7 @@ class CodeTestChatController(
                 buttonList.add(
                     Button(
                         "utg_feedback",
-                        "How can we make /test better?",
+                        message("testgen.button.feedback"),
                         keepCardAfterClick = true,
                         position = "outside",
                         status = "info",
