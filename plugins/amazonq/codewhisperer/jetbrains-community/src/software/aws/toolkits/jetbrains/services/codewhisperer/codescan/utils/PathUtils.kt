@@ -4,8 +4,9 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils
 
 import java.nio.file.Path
+import java.nio.file.Paths
 
 object PathUtils {
     fun getNormalizedRelativePath(projectName: String, relativePath: Path): String =
-        "$projectName/${relativePath.normalize()}"
+        Paths.get(projectName).resolve(relativePath).normalize().toString()
 }
