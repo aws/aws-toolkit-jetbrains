@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.uitests
 
 import com.intellij.ide.starter.ci.CIServer
+import com.intellij.ide.starter.report.ErrorType
 import java.nio.file.Path
 
 object TestCIServer : CIServer {
@@ -23,10 +24,8 @@ object TestCIServer : CIServer {
     }
 
     override fun ignoreTestFailure(testName: String, message: String) {
-        if (testName.startsWith("Not analyzed freeze")) {
-            println("Ignored freeze")
-        }
     }
 
-    override fun isTestFailureShouldBeIgnored(message: String) = false
+    override fun isTestFailureShouldBeIgnored(message: String): Boolean = ErrorType.fromMessage(message) == ErrorType.FREEZE
+
 }
