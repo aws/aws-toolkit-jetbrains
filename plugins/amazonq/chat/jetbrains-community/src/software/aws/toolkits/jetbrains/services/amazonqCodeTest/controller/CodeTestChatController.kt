@@ -54,6 +54,7 @@ import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
@@ -690,23 +691,12 @@ class CodeTestChatController(
                     requestId = session.startTestGenerationRequestId,
                     status = Status.ACCEPTED,
                 )
-                val buttonList = mutableListOf<Button>()
-                buttonList.add(
-                    Button(
-                        "utg_feedback",
-                        message("testgen.button.feedback"),
-                        keepCardAfterClick = true,
-                        position = "outside",
-                        status = "info",
-                        icon = "comment"
-                    ),
-                )
                 codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
                         message = message("testgen.message.success"),
                         type = ChatMessageType.Answer,
                         canBeVoted = false,
-                        buttons = buttonList
+                        buttons = this.showFeedbackButton()
                     )
                 )
                 codeTestChatHelper.updateUI(
@@ -850,24 +840,12 @@ class CodeTestChatController(
                 ApplicationManager.getApplication().invokeLater {
                     session.openedDiffFile?.let { FileEditorManager.getInstance(context.project).closeFile(it) }
                 }
-                val buttonList = mutableListOf<Button>()
-                buttonList.add(
-                    Button(
-                        "utg_feedback",
-                        message("testgen.button.feedback"),
-                        keepCardAfterClick = true,
-                        position = "outside",
-                        status = "info",
-                        disabled = true,
-                        icon = "comment"
-                    ),
-                )
                 codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
                         message = message("testgen.message.success"),
                         type = ChatMessageType.Answer,
                         canBeVoted = false,
-                        buttons = buttonList
+                        buttons = this.showFeedbackButton()
                     )
                 )
                 val testGenerationEventResponse = client.sendTestGenerationEvent(
@@ -1411,6 +1389,23 @@ class CodeTestChatController(
                 codeTestChatHelper.getActiveSession().testGenerationJob
             ).show()
         }
+    }
+
+    private fun showFeedbackButton(): MutableList<Button> {
+        val buttonList = mutableListOf<Button>()
+        if (isInternalUser(getStartUrl(context.project))) {
+            buttonList.add(
+                Button(
+                    "utg_feedback",
+                    message("testgen.button.feedback"),
+                    keepCardAfterClick = true,
+                    position = "outside",
+                    status = "info",
+                    icon = "comment"
+                ),
+            )
+        }
+        return buttonList
     }
 
     companion object {
