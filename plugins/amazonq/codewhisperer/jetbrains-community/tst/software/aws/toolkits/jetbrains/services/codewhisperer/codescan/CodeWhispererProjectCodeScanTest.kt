@@ -113,9 +113,9 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
     @Test
     fun `test getNormalizedRelativePath()`() {
         assertThat(getNormalizedRelativePath("projectName", Paths.get("src/PackageName")))
-            .isEqualTo("projectName/src/PackageName")
+            .isEqualTo("projectName\\src\\PackageName")
         assertThat(getNormalizedRelativePath("projectName", Paths.get("src/./Package1/../Package2")))
-            .isEqualTo("projectName/src/Package2")
+            .isEqualTo("projectName\\src\\Package2")
     }
 
     private fun setupCsharpProject() {
