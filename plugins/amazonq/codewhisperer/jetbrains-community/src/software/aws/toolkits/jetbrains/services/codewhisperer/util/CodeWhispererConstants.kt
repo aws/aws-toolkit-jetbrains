@@ -188,6 +188,7 @@ object CodeWhispererConstants {
         const val NUMBER_OF_LINE_IN_CHUNK = 50
         const val NUMBER_OF_CHUNK_TO_FETCH = 3
         const val MAX_TOTAL_LENGTH = 20480
+        const val MAX_LENGTH_PER_CHUNK = 10240
     }
 
     object Utg {

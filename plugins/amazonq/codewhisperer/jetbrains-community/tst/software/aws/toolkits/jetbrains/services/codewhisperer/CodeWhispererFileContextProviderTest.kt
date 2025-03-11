@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
+import ai.grazie.utils.chainIfNotNull
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.project.Project
@@ -13,6 +14,7 @@ import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
+import fleet.util.letIfNotNull
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
@@ -525,6 +527,47 @@ class CodeWhispererFileContextProviderTest {
         val r = sut.truncateContext(supplementalContext)
         assertThat(r.contents).hasSize(2)
         assertThat(r.contentLength).isEqualTo(20000)
+        assertThat(r.strategy).isEqualTo(CrossFileStrategy.Codemap)
+        assertThat(r.targetFileName).isEqualTo("foo")
+    }
+
+    @Test
+    fun `truncate context should make context length per item fit in 10240 cap`() {
+        val chunkA = Chunk(content = "a\n".repeat(4000), path = "a.java")
+        val chunkB = Chunk(content = "b\n".repeat(6000), path = "b.java")
+        val chunkC = Chunk(content = "c\n".repeat(1000), path = "c.java")
+        val chunkD = Chunk(content = "d\n".repeat(1500), path = "d.java")
+
+        assertThat(chunkA.content.length).isEqualTo(8000)
+        assertThat(chunkB.content.length).isEqualTo(12000)
+        assertThat(chunkC.content.length).isEqualTo(2000)
+        assertThat(chunkD.content.length).isEqualTo(3000)
+        assertThat(chunkA.content.length + chunkB.content.length + chunkC.content.length + chunkD.content.length).isEqualTo(25000)
+
+        val supplementalContext = SupplementalContextInfo(
+            isUtg = false,
+            contents = listOf(
+                chunkA,
+                chunkB,
+                chunkC,
+                chunkD,
+            ),
+            targetFileName = "foo",
+            strategy = CrossFileStrategy.Codemap
+        )
+
+        val r = sut.truncateContext(supplementalContext)
+
+        assertThat(r.contents).hasSize(3)
+        val truncatedChunkA = r.contents[0]
+        val truncatedChunkB = r.contents[1]
+        val truncatedChunkC = r.contents[2]
+
+        assertThat(truncatedChunkA.content.length).isEqualTo(8000)
+        assertThat(truncatedChunkB.content.length).isEqualTo(10240)
+        assertThat(truncatedChunkC.content.length).isEqualTo(2000)
+
+        assertThat(r.contentLength).isEqualTo(20240)
         assertThat(r.strategy).isEqualTo(CrossFileStrategy.Codemap)
         assertThat(r.targetFileName).isEqualTo("foo")
     }

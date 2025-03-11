@@ -26,6 +26,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
+import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
@@ -327,10 +328,26 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         return truncateContext(contextBeforeTruncation)
     }
 
+    /**
+     * Requirement
+     * - Maximum 5 supplemental context.
+     * - Each chunk can't exceed 10240 characters
+     * - Sum of all chunks can't exceed 20480 characters
+     */
     fun truncateContext(context: SupplementalContextInfo): SupplementalContextInfo {
-        var c = context.contents
-        while (c.sumOf { it.content.length } >= CodeWhispererConstants.CrossFile.MAX_TOTAL_LENGTH) {
+        var c = context.contents.map {
+            return@map if (it.content.length > CodeWhispererConstants.CrossFile.MAX_LENGTH_PER_CHUNK) {
+                it.copy(content = truncateLineByLine(it.content, CodeWhispererConstants.CrossFile.MAX_LENGTH_PER_CHUNK))
+            } else {
+                it
+            }
+        }
+
+        var curTotalLength = c.sumOf { it.content.length }
+        while (curTotalLength >= CodeWhispererConstants.CrossFile.MAX_TOTAL_LENGTH) {
+            val last = c.last()
             c = c.dropLast(1)
+            curTotalLength -= last.content.length
         }
 
         return context.copy(contents = c)
