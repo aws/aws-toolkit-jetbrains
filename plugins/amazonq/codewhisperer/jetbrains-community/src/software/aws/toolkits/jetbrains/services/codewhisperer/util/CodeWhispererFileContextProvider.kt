@@ -342,6 +342,10 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
             }
         }
 
+        if (c.size > CodeWhispererConstants.CrossFile.MAX_CONTEXT_COUNT) {
+            c = c.subList(0, CodeWhispererConstants.CrossFile.MAX_CONTEXT_COUNT)
+        }
+
         var curTotalLength = c.sumOf { it.content.length }
         while (curTotalLength >= CodeWhispererConstants.CrossFile.MAX_TOTAL_LENGTH) {
             val last = c.last()

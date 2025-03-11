@@ -530,6 +530,29 @@ class CodeWhispererFileContextProviderTest {
     }
 
     @Test
+    fun `truncate context should make context item lte 5`() {
+        val supplementalContext = SupplementalContextInfo(
+            isUtg = false,
+            contents = listOf(
+                Chunk(content = "a", path = "a.java"),
+                Chunk(content = "b", path = "b.java"),
+                Chunk(content = "c", path = "c.java"),
+                Chunk(content = "d", path = "d.java"),
+                Chunk(content = "e", path = "e.java"),
+                Chunk(content = "f", path = "e.java"),
+                Chunk(content = "g", path = "e.java"),
+            ),
+            targetFileName = "foo",
+            strategy = CrossFileStrategy.Codemap
+        )
+
+        val r = sut.truncateContext(supplementalContext)
+        assertThat(r.contents).hasSize(5)
+        assertThat(r.strategy).isEqualTo(CrossFileStrategy.Codemap)
+        assertThat(r.targetFileName).isEqualTo("foo")
+    }
+
+    @Test
     fun `truncate context should make context length per item fit in 10240 cap`() {
         val chunkA = Chunk(content = "a\n".repeat(4000), path = "a.java")
         val chunkB = Chunk(content = "b\n".repeat(6000), path = "b.java")
