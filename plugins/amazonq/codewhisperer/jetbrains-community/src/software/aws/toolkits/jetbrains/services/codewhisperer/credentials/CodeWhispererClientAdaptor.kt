@@ -60,8 +60,6 @@ import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import java.time.Instant
 import java.util.concurrent.TimeUnit
-import kotlin.reflect.KProperty0
-import kotlin.reflect.jvm.isAccessible
 
 // As the connection is project-level, we need to make this project-level too
 @Deprecated("Methods can throw a NullPointerException if callee does not check if connection is valid")
@@ -266,12 +264,6 @@ interface CodeWhispererClientAdaptor : Disposable {
 open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispererClientAdaptor {
     @Volatile
     private var myBearerClient: CodeWhispererRuntimeClient? = null
-
-    private val KProperty0<*>.isLazyInitialized: Boolean
-        get() {
-            isAccessible = true
-            return (getDelegate() as Lazy<*>).isInitialized()
-        }
 
     init {
         initClientUpdateListener()
