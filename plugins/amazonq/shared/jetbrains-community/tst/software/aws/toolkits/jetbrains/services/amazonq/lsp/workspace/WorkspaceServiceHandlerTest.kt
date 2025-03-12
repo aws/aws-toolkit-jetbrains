@@ -292,7 +292,7 @@ class WorkspaceServiceHandlerTest {
         verify { mockWorkspaceService.didRenameFiles(capture(paramsSlot)) }
         with(paramsSlot.captured.files[0]) {
             assertEquals("file:///test/$oldName", oldUri)
-            assertEquals("file:///test/$newName", newUri)
+            assertEquals(normalizeFileUri("file:///test/$newName"), newUri)
         }
     }
 
@@ -329,7 +329,7 @@ class WorkspaceServiceHandlerTest {
         verify { mockWorkspaceService.didRenameFiles(capture(paramsSlot)) }
         with(paramsSlot.captured.files[0]) {
             assertEquals("file:///test/oldDir", oldUri)
-            assertEquals("file:///test/newDir", newUri)
+            assertEquals(normalizeFileUri("file:///test/newDir"), newUri)
         }
     }
 
