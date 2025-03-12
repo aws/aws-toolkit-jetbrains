@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.common.session
 
 import software.aws.toolkits.jetbrains.common.util.AmazonQCodeGenService
-import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
+import software.aws.toolkits.jetbrains.services.amazonq.project.FeatureDevSessionContext
 
 open class SessionStateConfig(
     open val conversationId: String,
