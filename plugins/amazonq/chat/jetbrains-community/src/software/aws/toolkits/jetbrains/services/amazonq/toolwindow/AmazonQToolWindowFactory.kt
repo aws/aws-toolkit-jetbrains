@@ -25,6 +25,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 import software.aws.toolkits.jetbrains.core.notifications.NotificationPanel
 import software.aws.toolkits.jetbrains.core.notifications.ProcessNotificationsBase
 import software.aws.toolkits.jetbrains.core.webview.BrowserState
+import software.aws.toolkits.jetbrains.services.amazonq.LoadModuleCompletion
 import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.RefreshQChatPanelButtonPressedListener
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.openMeetQPage
@@ -33,6 +34,7 @@ import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeatureId
+import software.aws.toolkits.telemetry.Telemetry
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
 
@@ -107,9 +109,12 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         project: Project,
         qPanel: Wrapper,
     ) {
+        Telemetry.toolkit.didLoadModule.startSpan()
         val component = if (isQConnected(project) && !isQExpired(project)) {
+            LoadModuleCompletion.getInstance(project)?.start("Chat")
             AmazonQToolWindow.getInstance(project).component
         } else {
+            LoadModuleCompletion.getInstance(project)?.start("Login")
             QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AmazonQ))
             QWebviewPanel.getInstance(project).component
         }
@@ -149,10 +154,12 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             openMeetQPage(project)
         }
 
+        LoadModuleCompletion.getInstance(project)?.start("Login")
         QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AmazonQ))
 
         // isQConnected alone is not robust and there is race condition (read/update connection states)
         val component = if (isNewConnectionForQ || (isQConnected(project) && !isQExpired(project))) {
+            LoadModuleCompletion.getInstance(project)?.start("Chat")
             LOG.debug { "returning Q-chat window; isQConnection=$isNewConnectionForQ; hasPinnedConnection=$isNewConnectionForQ" }
             AmazonQToolWindow.getInstance(project).component
         } else {

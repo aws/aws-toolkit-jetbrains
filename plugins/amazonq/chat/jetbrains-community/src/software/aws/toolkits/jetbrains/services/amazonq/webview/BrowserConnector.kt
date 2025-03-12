@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
+import software.aws.toolkits.jetbrains.services.amazonq.LoadModuleCompletion
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
@@ -24,6 +25,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.AmazonQTheme
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.ThemeBrowserAdapter
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
+import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Telemetry
 import java.util.function.Function
 
@@ -47,6 +49,14 @@ class BrowserConnector(
                         RunOnceUtil.runOnceForApp("AmazonQ-UI-Ready") {
                             MeetQSettings.getInstance().reinvent2024OnboardingCount += 1
                         }
+
+                        Telemetry.toolkit.didLoadModule.use {
+                            // the Duration is usually 0 because it takes a few nanoseconds to load the module
+                            // so when it's translated to millis it is returned as 0
+                            it.module("Chat")
+                            it.result(MetricResult.Succeeded)
+                        }
+                        LoadModuleCompletion.getInstance(null)?.resetTimer()
                     }
 
                     "disclaimer-acknowledged" -> {
@@ -70,6 +80,7 @@ class BrowserConnector(
                             Telemetry.toolkit.willOpenModule.use {
                                 it.module(module.asText())
                                 it.source(trigger.asText())
+                                it.result(MetricResult.Succeeded)
                             }
                         }
                     }
