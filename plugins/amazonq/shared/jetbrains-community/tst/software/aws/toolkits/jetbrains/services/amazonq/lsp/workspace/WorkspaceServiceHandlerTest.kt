@@ -54,10 +54,11 @@ import java.util.concurrent.CompletableFuture
 
 class WorkspaceServiceHandlerTest {
     private lateinit var project: Project
+    private lateinit var mockApplication: Application
+    private lateinit var mockInitializeResult: InitializeResult
     private lateinit var mockLanguageServer: AmazonQLanguageServer
     private lateinit var mockWorkspaceService: WorkspaceService
     private lateinit var sut: WorkspaceServiceHandler
-    private lateinit var mockApplication: Application
 
     @BeforeEach
     fun setup() {
@@ -103,7 +104,7 @@ class WorkspaceServiceHandlerTest {
         every { mockConnection.subscribe(any(), any()) } just runs
 
         // Mock InitializeResult with file operation patterns
-        val mockInitializeResult = mockk<InitializeResult>()
+        mockInitializeResult = mockk<InitializeResult>()
         val mockCapabilities = mockk<ServerCapabilities>()
         val mockWorkspaceCapabilities = mockk<WorkspaceServerCapabilities>()
         val mockFileOperations = mockk<FileOperationsServerCapabilities>()
@@ -132,10 +133,8 @@ class WorkspaceServiceHandlerTest {
         every { mockCapabilities.workspace } returns mockWorkspaceCapabilities
         every { mockInitializeResult.capabilities } returns mockCapabilities
 
-        val mockDeferred = CompletableDeferred(mockInitializeResult)
-
         // Create WorkspaceServiceHandler with mocked InitializeResult
-        sut = WorkspaceServiceHandler(project, mockDeferred, mockk())
+        sut = WorkspaceServiceHandler(project, mockInitializeResult, mockk())
     }
 
     @Test
