@@ -4,9 +4,9 @@
 package software.aws.toolkits.jetbrains.services.amazonqCodeTest.session
 
 import com.intellij.openapi.vfs.VirtualFile
+import software.amazon.awssdk.services.codewhispererruntime.model.PackageInfo
+import software.amazon.awssdk.services.codewhispererruntime.model.Reference
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.ConversationState
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.CodeReferenceInfo
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.PackageInfoList
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 
@@ -38,7 +38,7 @@ data class Session(val tabId: String) {
     var iteration: Int = 0
     var projectRoot: String = "/"
 
-    var packageInfoList: PackageInfoList = PackageInfoList()
+    var packageInfoList: List<PackageInfo> = emptyList()
     var selectedFile: VirtualFile? = null
     var testFileRelativePathToProjectRoot: String = ""
     var testFileName: String = ""
@@ -46,7 +46,7 @@ data class Session(val tabId: String) {
     var openedDiffFile: VirtualFile? = null
     val generatedTestDiffs = mutableMapOf<String, String>()
 
-    var codeReferences: List<CodeReferenceInfo>? = null
+    var codeReferences: List<Reference>? = null
 
     // Build loop execution
     val buildAndExecuteTaskContext = BuildAndExecuteTaskContext()

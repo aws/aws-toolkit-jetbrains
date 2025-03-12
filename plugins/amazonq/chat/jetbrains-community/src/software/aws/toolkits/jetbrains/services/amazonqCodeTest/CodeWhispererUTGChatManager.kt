@@ -17,9 +17,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTestGenerationResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.PackageInfo
 import software.amazon.awssdk.services.codewhispererruntime.model.Range
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTestGenerationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.TargetCode
+import software.amazon.awssdk.services.codewhispererruntime.model.TargetFileInfo
 import software.amazon.awssdk.services.codewhispererruntime.model.TestGenerationJobStatus
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportIntent
@@ -32,11 +34,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreaming
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.controller.CodeTestChatHelper
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.Button
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.CodeTestChatMessageContent
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.PackageInfo
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.PackageInfoList
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.PreviousUTGIterationContext
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.TargetFileInfo
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.TargetFileInfoList
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.BuildAndExecuteProgressStatus
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.Session
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.utils.combineBuildAndExecuteLogFiles
@@ -61,7 +59,6 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
-import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
@@ -91,7 +88,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         session.isGeneratingTests = true
         session.iteration++
 
-        // Set the Progress bar to "Generating unit tests..."
+        // Set progress bar to "Generating unit tests..."
         codeTestChatHelper.updateUI(
             promptInputDisabledState = true,
             promptInputProgress = testGenProgressField(0),
@@ -102,6 +99,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         session.srcZipFileSize = codeTestResponseContext.payloadContext.srcZipFileSize
         session.artifactUploadDuration = codeTestResponseContext.serviceInvocationContext.artifactsUploadDuration
         val path = codeTestResponseContext.currentFileRelativePath
+
         if (codeTestResponseContext.payloadContext.payloadLimitCrossed == true) {
             fileTooLarge()
         }
@@ -110,54 +108,39 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         throwIfCancelled(session)
 
         LOG.debug {
-            "Q TestGen StartTestGenerationRequest: TabId= ${codeTestChatHelper.getActiveCodeTestTabId()}: " +
-                "uploadId: ${createUploadUrlResponse.uploadId()}, relativeTargetPath: ${codeTestResponseContext.currentFileRelativePath}, " +
-                "selectionRange: $selectionRange, "
+            "Q TestGen StartTestGenerationRequest: TabId=${codeTestChatHelper.getActiveCodeTestTabId()}, " +
+                "uploadId=${createUploadUrlResponse.uploadId()}, relativeTargetPath=${codeTestResponseContext.currentFileRelativePath}, " +
+                "selectionRange=$selectionRange"
         }
 
         // 2nd API call: StartTestGeneration
         val startTestGenerationResponse = try {
             var response: StartTestGenerationResponse? = null
-
             waitUntil(
                 succeedOn = { response?.sdkHttpResponse()?.statusCode() == 200 },
-                maxDuration = Duration.ofSeconds(1), // 1 second timeout
+                maxDuration = Duration.ofSeconds(1), // 1-second timeout
             ) {
-                try {
-                    response = startTestGeneration(
-                        uploadId = createUploadUrlResponse.uploadId(),
-                        targetCode = listOf(
-                            TargetCode.builder()
-                                .relativeTargetPath(codeTestResponseContext.currentFileRelativePath.toString())
-                                .targetLineRangeList(
-                                    if (selectionRange != null) {
-                                        listOf(selectionRange)
-                                    } else {
-                                        emptyList()
-                                    }
-                                )
-                                .build()
-                        ),
-                        userInput = prompt
-                    )
-                    delay(200)
-                    response?.testGenerationJob() != null
-                } catch (e: Exception) {
-                    throw e
-                }
+                response = startTestGeneration(
+                    uploadId = createUploadUrlResponse.uploadId(),
+                    targetCode = listOf(
+                        TargetCode.builder()
+                            .relativeTargetPath(codeTestResponseContext.currentFileRelativePath.toString())
+                            .targetLineRangeList(selectionRange?.let { listOf(it) } ?: emptyList())
+                            .build()
+                    ),
+                    userInput = prompt
+                )
+                delay(200)
+                response?.testGenerationJob() != null
             }
-
             response ?: throw RuntimeException("Failed to start test generation")
         } catch (e: Exception) {
             LOG.error(e) { "Unexpected error while creating test generation job" }
-            val errorMessage = getTelemetryErrorMessage(e, CodeWhispererConstants.FeatureName.TEST_GENERATION)
-
-            // Sending requestId to telemetry if there is Validation Exception
             if (e is SdkServiceException) {
                 session.startTestGenerationRequestId = e.requestId()
             }
             throw CodeTestException(
-                "CreateTestJobError: $errorMessage",
+                "CreateTestJobError: ${getTelemetryErrorMessage(e, CodeWhispererConstants.FeatureName.TEST_GENERATION)}",
                 "CreateTestJobError",
                 message("testgen.error.generic_technical_error_message")
             )
@@ -169,57 +152,29 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         session.testGenerationJob = job.testGenerationJobId()
         throwIfCancelled(session)
 
-        // 3rd API call: Step 3: Polling mechanism on test job status with getTestGenStatus getTestGeneration
+        // 3rd API call: Polling mechanism on test job status
         var finished = false
         var testGenerationResponse: GetTestGenerationResponse? = null
-
-        var packageInfoList: List<software.amazon.awssdk.services.codewhispererruntime.model.PackageInfo> = emptyList()
-        LOG.debug {
-            "Q TestGen session: ${codeTestChatHelper.getActiveCodeTestTabId()}: " +
-                "polling result for id: ${job.testGenerationJobId()}, group name: ${job.testGenerationJobGroupName()}, " +
-                "request id: ${startTestGenerationResponse.responseMetadata().requestId()}"
-        }
+        var packageInfoList = emptyList<software.amazon.awssdk.services.codewhispererruntime.model.PackageInfo>()
+        var packageInfo: software.amazon.awssdk.services.codewhispererruntime.model.PackageInfo? = null
+        var targetFileInfo: software.amazon.awssdk.services.codewhispererruntime.model.TargetFileInfo? = null
 
         while (!finished) {
             throwIfCancelled(session)
             testGenerationResponse = getTestGenerationStatus(job.testGenerationJobId(), job.testGenerationJobGroupName())
-
             val status = testGenerationResponse.testGenerationJob().status()
-            if (status == TestGenerationJobStatus.COMPLETED) {
-                LOG.debug {
-                    "Q TestGen session: ${codeTestChatHelper.getActiveCodeTestTabId()}: " +
-                        "Test generation completed, package info: ${testGenerationResponse.testGenerationJob().packageInfoList()}"
-                }
-                finished = true
-                packageInfoList = testGenerationResponse.testGenerationJob().packageInfoList()
-                val packageInfo = packageInfoList.firstOrNull()
-                val targetFileInfo = packageInfo?.targetFileInfoList()?.firstOrNull()
-                if (packageInfo != null && targetFileInfo != null) {
-                    try {
-                        session.packageInfoList.member = PackageInfo(
-                            executionCommand = packageInfo.executionCommand(),
-                            buildCommand = packageInfo.buildCommand(),
-                            buildOrder = packageInfo.buildOrder(),
-                            testFramework = packageInfo.testFramework(),
-                            packageSummary = packageInfo.packageSummary(),
-                            packagePlan = packageInfo.packagePlan(),
-                            targetFileInfoList = TargetFileInfoList(
-                                member = listOf(
-                                    TargetFileInfo(
-                                        filePath = targetFileInfo.filePath(),
-                                        testFilePath = targetFileInfo.testFilePath(),
-                                        testCoverage = targetFileInfo.testCoverage(),
-                                        fileSummary = targetFileInfo.fileSummary(),
-                                        filePlan = targetFileInfo.filePlan(),
-                                        numberOfTestMethods = targetFileInfo.numberOfTestMethods()
+            packageInfoList = testGenerationResponse.testGenerationJob().packageInfoList()
+            packageInfo = packageInfoList.firstOrNull()
+            targetFileInfo = packageInfo?.targetFileInfoList()?.firstOrNull()
 
-                                    )
-                                )
-                            )
-                        )
+            when (status) {
+                TestGenerationJobStatus.COMPLETED -> {
+                    LOG.debug { "Test generation completed, package info: $packageInfoList" }
+                    finished = true
 
-                        val testFileName = targetFileInfo.testFilePath()?.let { File(it).name }.orEmpty()
-                        session.testFileName = testFileName
+                    if (packageInfo != null && targetFileInfo != null) {
+                        session.packageInfoList = packageInfoList
+                        session.testFileName = targetFileInfo.testFilePath()?.let { File(it).name }.orEmpty()
                         session.numberOfUnitTestCasesGenerated = targetFileInfo.numberOfTestMethods() ?: 0
                         session.testFileRelativePathToProjectRoot = getTestFilePathRelativeToRoot(targetFileInfo)
 
@@ -232,78 +187,24 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                                 messageIdOverride = codeTestResponseContext.testSummaryMessageId
                             )
                         }
-                        packageInfoList = session.packageInfoList
-                    } catch (e: Exception) {
-                        throw CodeTestException(
-                            "TestGenFailedError: " + message("testgen.message.failed"),
-                            "TestGenFailedError",
-                            message("testgen.error.generic_technical_error_message")
-                        )
                     }
                 }
-            } else if (status == TestGenerationJobStatus.FAILED) {
-                LOG.debug {
-                    "Q TestGen session: ${codeTestChatHelper.getActiveCodeTestTabId()}: " +
-                        "Test generation failed, package info: ${testGenerationResponse.testGenerationJob().packageInfoList()}"
-                }
-
-                packageInfoList = testGenerationResponse.testGenerationJob().packageInfoList()
-                val packageInfo = packageInfoList.firstOrNull()
-                val targetFileInfo = packageInfo?.targetFileInfoList()?.firstOrNull()
-
-                if (packageInfo != null) {
-                    session.packageInfoList.member = PackageInfo(
-                        executionCommand = packageInfo.executionCommand(),
-                        buildCommand = packageInfo.buildCommand(),
-                        buildOrder = packageInfo.buildOrder(),
-                        testFramework = packageInfo.testFramework(),
-                        packageSummary = packageInfo.packageSummary(),
-                        packagePlan = packageInfo.packagePlan(),
-                        targetFileInfoList = TargetFileInfoList(member = emptyList())
+                TestGenerationJobStatus.FAILED -> {
+                    LOG.debug { "Test generation failed, package info: $packageInfoList" }
+                    throw CodeTestException(
+                        "TestGenFailedError: " + message("testgen.message.failed"),
+                        "TestGenFailedError",
+                        message("testgen.error.generic_technical_error_message")
                     )
                 }
-
-                throw CodeTestException(
-                    "TestGenFailedError: " + message("testgen.message.failed"),
-                    "TestGenFailedError",
-                    message("testgen.error.generic_technical_error_message")
-                )
-            } else {
-                // In progress
-                LOG.debug {
-                    "Q TestGen session: ${codeTestChatHelper.getActiveCodeTestTabId()}: " +
-                        "Test generation in progress, progress rate ${testGenerationResponse.testGenerationJob().progressRate()}}"
+                else -> {
+                    LOG.debug { "Test generation in progress, progress rate: ${testGenerationResponse.testGenerationJob().progressRate()}" }
+                    codeTestChatHelper.updateUI(
+                        promptInputDisabledState = true,
+                        promptInputProgress = testGenProgressField(testGenerationResponse.testGenerationJob().progressRate() ?: 0),
+                    )
                 }
-                val progressRate = testGenerationResponse.testGenerationJob().progressRate() ?: 0
-
-                if (previousIterationContext == null) {
-                    val packageInfoList = testGenerationResponse.testGenerationJob().packageInfoList()
-                    val packageInfo = packageInfoList.firstOrNull()
-                    if (packageInfo != null) {
-                        try {
-                            val targetFileInfo = packageInfo?.targetFileInfoList()?.firstOrNull()
-                            if (targetFileInfo != null) {
-                                val fileName = targetFileInfo?.filePath()?.let { Path.of(it).fileName.toString() } ?: path.fileName.toString()
-                                codeTestChatHelper.updateAnswer(
-                                    CodeTestChatMessageContent(
-                                        message = generateSummaryMessage(fileName) + (targetFileInfo.filePlan() ?: ""),
-                                        type = ChatMessageType.Answer
-                                    ),
-                                    messageIdOverride = codeTestResponseContext.testSummaryMessageId
-                                )
-                            }
-                        } catch (e: Exception) {
-                            LOG.debug("failed to process package info: ${e.message}")
-                        }
-                    }
-                }
-                codeTestChatHelper.updateUI(
-                    promptInputDisabledState = true,
-                    promptInputProgress = testGenProgressField(progressRate),
-                )
             }
-
-            // polling every 2 seconds to reduce # of API calls
             delay(2000)
         }
 
@@ -343,15 +244,15 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
             return
         }
 
-        val targetFileInfo = session.packageInfoList.member?.targetFileInfoList?.member?.firstOrNull()
-        val codeReference = targetFileInfo?.codeReferences?.map { ref ->
+        targetFileInfo = session.packageInfoList.firstOrNull()?.targetFileInfoList()?.firstOrNull()
+        val codeReference = targetFileInfo?.codeReferences()?.map { ref ->
             CodeReference(
-                licenseName = ref.licenseName,
-                url = ref.url,
-                information = "${ref.licenseName} - <a href=\"${ref.url}\">${ref.repository}</a>"
+                licenseName = ref.licenseName(),
+                url = ref.url(),
+                information = "${ref.licenseName()} - <a href=\"${ref.url()}\">${ref.repository()}</a>"
             )
         }
-        targetFileInfo?.codeReferences?.let { session.codeReferences = it }
+        targetFileInfo?.codeReferences()?.let { session.codeReferences = it }
         val isReferenceAllowed = CodeWhispererSettings.getInstance().isIncludeCodeWithReference()
         if (!isReferenceAllowed && codeReference?.isNotEmpty() == true) {
             codeTestChatHelper.addAnswer(
@@ -364,7 +265,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
             )
         } else {
             if (previousIterationContext == null) {
-                // show another card as the answer
+                // show another card as the answer, remove this once we remove 3 backticks from backend
                 val jobSummary = testGenerationResponse?.testGenerationJob()?.jobSummary()?.trim() ?: ""
 
                 val cleanedPlanSummary = jobSummary
@@ -430,7 +331,7 @@ Please see the unit tests generated below. Click 'View Diff' to review the chang
     // both needs to be handled the same way which is remove the first sub-directory
     private fun getTestFilePathRelativeToRoot(targetFileInfo: Any?): String {
         val pathString = when (targetFileInfo) {
-            is TargetFileInfo -> targetFileInfo.testFilePath
+            is TargetFileInfo -> targetFileInfo.testFilePath()
             is software.amazon.awssdk.services.codewhispererruntime.model.TargetFileInfo -> targetFileInfo.testFilePath()
             else -> generatedTestDiffs.keys.firstOrNull()
         } ?: throw RuntimeException("No test file path found")
@@ -534,7 +435,7 @@ Please see the unit tests generated below. Click 'View Diff' to review the chang
     private fun resetTestGenFlowSession(session: Session) {
         // session.selectedFile doesn't need to be reset since it will remain unchanged
         session.conversationState = ConversationState.IN_PROGRESS
-        session.packageInfoList = PackageInfoList()
+        session.packageInfoList = emptyList()
         session.openedDiffFile = null
         session.testFileRelativePathToProjectRoot = ""
         session.testFileName = ""
