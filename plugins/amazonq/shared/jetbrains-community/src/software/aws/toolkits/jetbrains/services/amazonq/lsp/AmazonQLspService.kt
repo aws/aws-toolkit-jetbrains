@@ -264,7 +264,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         launcherHandler.startNotify()
 
         launcher = LSPLauncher.Builder<AmazonQLanguageServer>()
-            .setLocalService(AmazonQLanguageClientImpl())
+            .setLocalService(AmazonQLanguageClientImpl(project))
             .setRemoteInterface(AmazonQLanguageServer::class.java)
             .configureGson {
                 // TODO: maybe need adapter for initialize:
