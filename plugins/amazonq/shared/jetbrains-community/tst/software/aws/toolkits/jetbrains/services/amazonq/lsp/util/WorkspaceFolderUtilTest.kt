@@ -10,6 +10,8 @@ import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import java.net.URI
+import java.nio.file.Path
 
 class WorkspaceFolderUtilTest {
 
@@ -27,17 +29,18 @@ class WorkspaceFolderUtilTest {
     fun `createWorkspaceFolders returns workspace folders for non-default project`() {
         val mockProject = mockk<Project>()
         val mockProjectRootManager = mockk<ProjectRootManager>()
-        val mockContentRoot1 = mockk<VirtualFile>()
-        val mockContentRoot2 = mockk<VirtualFile>()
+        val mockContentRoot1 = createMockVirtualFile(
+            URI("file:///path/to/root1"),
+            name = "root1"
+        )
+        val mockContentRoot2 = createMockVirtualFile(
+            URI("file:///path/to/root2"),
+            name = "root2"
+        )
 
         every { mockProject.isDefault } returns false
         every { ProjectRootManager.getInstance(mockProject) } returns mockProjectRootManager
         every { mockProjectRootManager.contentRoots } returns arrayOf(mockContentRoot1, mockContentRoot2)
-
-        every { mockContentRoot1.name } returns "root1"
-        every { mockContentRoot1.url } returns "file:///path/to/root1"
-        every { mockContentRoot2.name } returns "root2"
-        every { mockContentRoot2.url } returns "file:///path/to/root2"
 
         val result = WorkspaceFolderUtil.createWorkspaceFolders(mockProject)
 
@@ -49,7 +52,7 @@ class WorkspaceFolderUtilTest {
     }
 
     @Test
-    fun `reateWorkspaceFolders returns empty list when project has no content roots`() {
+    fun `createWorkspaceFolders returns empty list when project has no content roots`() {
         val mockProject = mockk<Project>()
         val mockProjectRootManager = mockk<ProjectRootManager>()
 
@@ -60,5 +63,20 @@ class WorkspaceFolderUtilTest {
         val result = WorkspaceFolderUtil.createWorkspaceFolders(mockProject)
 
         assertEquals(emptyList<VirtualFile>(), result)
+    }
+
+    private fun createMockVirtualFile(uri: URI, name: String): VirtualFile {
+        val path = mockk<Path> {
+            every { toUri() } returns uri
+        }
+        return mockk<VirtualFile> {
+            every { url } returns uri.toString()
+            every { getName() } returns name
+            every { toNioPath() } returns path
+            every { isDirectory } returns false
+            every { fileSystem } returns mockk {
+                every { protocol } returns "file"
+            }
+        }
     }
 }
