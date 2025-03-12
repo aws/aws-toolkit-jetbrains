@@ -219,6 +219,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     )
                 }
             }
+            // polling every 2 seconds to reduce # of API calls
             delay(2000)
         }
 
@@ -287,7 +288,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     .replace(Regex("\\s*```$"), "") // Remove trailing triple backticks
                     .trim()
 
-                val fullMessage = """
+                val summary = """
 $cleanedPlanSummary
 
 Please see the unit tests generated below. Click 'View Diff' to review the changes in the code editor.
@@ -295,7 +296,7 @@ Please see the unit tests generated below. Click 'View Diff' to review the chang
 
                 val viewDiffMessageId = codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
-                        message = fullMessage,
+                        message = summary,
                         type = ChatMessageType.Answer,
                         buttons = listOf(Button("utg_view_diff", "View Diff", keepCardAfterClick = true, position = "outside", status = "info")),
                         fileList = listOf(getTestFilePathRelativeToRoot(targetFileInfo)),
@@ -346,7 +347,6 @@ Please see the unit tests generated below. Click 'View Diff' to review the chang
     private fun getTestFilePathRelativeToRoot(targetFileInfo: Any?): String {
         val pathString = when (targetFileInfo) {
             is TargetFileInfo -> targetFileInfo.testFilePath()
-            is software.amazon.awssdk.services.codewhispererruntime.model.TargetFileInfo -> targetFileInfo.testFilePath()
             else -> generatedTestDiffs.keys.firstOrNull()
         } ?: throw RuntimeException("No test file path found")
         val path = Paths.get(pathString)

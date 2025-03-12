@@ -45,7 +45,6 @@ data class Session(val tabId: String) {
     var viewDiffMessageId: String? = null
     var openedDiffFile: VirtualFile? = null
     val generatedTestDiffs = mutableMapOf<String, String>()
-
     var codeReferences: List<Reference>? = null
 
     // Build loop execution
