@@ -29,6 +29,7 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.controller.CodeTestChatHelper
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.Button
@@ -559,12 +560,25 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     e is JsonParseException -> message("testgen.error.generic_technical_error_message")
                     else -> message("testgen.error.generic_error_message")
                 }
-
+                val buttonList = mutableListOf<Button>()
+                if (isInternalUser(getStartUrl(project))) {
+                    buttonList.add(
+                        Button(
+                            "utg_feedback",
+                            message("testgen.button.feedback"),
+                            keepCardAfterClick = true,
+                            position = "outside",
+                            status = "info",
+                            icon = "comment"
+                        ),
+                    )
+                }
                 codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
                         message = errorMessage,
                         type = ChatMessageType.Answer,
-                        canBeVoted = false
+                        canBeVoted = false,
+                        buttons = buttonList
                     )
                 )
 
