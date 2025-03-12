@@ -166,12 +166,16 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
             packageInfoList = testGenerationResponse.testGenerationJob().packageInfoList()
             packageInfo = packageInfoList.firstOrNull()
             targetFileInfo = packageInfo?.targetFileInfoList()?.firstOrNull()
+            val filePlan = targetFileInfo?.filePlan()
+            val cleanedfilePlan = filePlan
+                ?.replace(Regex("^```\\s*"), "") // Remove leading triple backticks
+                ?.replace(Regex("\\s*```$"), "") // Remove trailing triple backticks
+                ?.trim()
 
             when (status) {
                 TestGenerationJobStatus.COMPLETED -> {
                     LOG.debug { "Test generation completed, package info: $packageInfoList" }
                     finished = true
-
                     if (packageInfo != null && targetFileInfo != null) {
                         session.packageInfoList = packageInfoList
                         session.testFileName = targetFileInfo.testFilePath()?.let { File(it).name }.orEmpty()
@@ -181,7 +185,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                         if (previousIterationContext == null) {
                             codeTestChatHelper.updateAnswer(
                                 CodeTestChatMessageContent(
-                                    message = generateSummaryMessage(path.fileName.toString()) + (targetFileInfo.filePlan() ?: ""),
+                                    message = generateSummaryMessage(path.fileName.toString()) + (cleanedfilePlan ?: ""),
                                     type = ChatMessageType.Answer,
                                 ),
                                 messageIdOverride = codeTestResponseContext.testSummaryMessageId
@@ -199,6 +203,16 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 }
                 else -> {
                     LOG.debug { "Test generation in progress, progress rate: ${testGenerationResponse.testGenerationJob().progressRate()}" }
+
+                    if (previousIterationContext == null) {
+                        codeTestChatHelper.updateAnswer(
+                            CodeTestChatMessageContent(
+                                message = generateSummaryMessage(path.fileName.toString()) + (cleanedfilePlan ?: ""),
+                                type = ChatMessageType.Answer,
+                            ),
+                            messageIdOverride = codeTestResponseContext.testSummaryMessageId
+                        )
+                    }
                     codeTestChatHelper.updateUI(
                         promptInputDisabledState = true,
                         promptInputProgress = testGenProgressField(testGenerationResponse.testGenerationJob().progressRate() ?: 0),
