@@ -9,6 +9,7 @@ import com.intellij.diff.DiffManagerEx
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
@@ -53,6 +54,7 @@ import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
@@ -92,6 +94,7 @@ import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTri
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.file.FileContext
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
+import software.aws.toolkits.jetbrains.ui.feedback.TestGenFeedbackDialog
 import software.aws.toolkits.jetbrains.utils.notifyError
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
@@ -168,13 +171,14 @@ class CodeTestChatController(
     override suspend fun processStartTestGen(message: IncomingCodeTestMessage.StartTestGen) {
         codeTestChatHelper.setActiveCodeTestTabId(message.tabId)
         val session = codeTestChatHelper.getActiveSession()
+        if (session.isGeneratingTests) {
+            return
+        }
+        sessionCleanUp(session.tabId)
         // check if IDE has active file open, yes return (fileName and filePath) else return null
         val project = context.project
         val fileInfo = checkActiveFileInIDE(project, message) ?: return
         session.programmingLanguage = fileInfo.fileLanguage
-        if (session.isGeneratingTests === true) {
-            return
-        }
         session.startTimeOfTestGeneration = Instant.now().toEpochMilli().toDouble()
         session.isGeneratingTests = true
 
@@ -565,7 +569,7 @@ class CodeTestChatController(
                     session.linesOfCodeGenerated = lineDifference.coerceAtLeast(0)
                     session.charsOfCodeGenerated = charDifference.coerceAtLeast(0)
                     session.latencyOfTestGeneration = (Instant.now().toEpochMilli() - session.startTimeOfTestGeneration)
-                    UiTelemetry.click(null as Project?, "unitTestGeneration_viewDiff")
+                    UiTelemetry.click(context.project, "unitTestGeneration_viewDiff")
 
                     val buttonList = mutableListOf<Button>()
                     buttonList.add(
@@ -662,7 +666,7 @@ class CodeTestChatController(
                         testGenerationEventResponse.responseMetadata().requestId()}"
                 }
 
-                UiTelemetry.click(null as Project?, "unitTestGeneration_acceptDiff")
+                UiTelemetry.click(context.project, "unitTestGeneration_acceptDiff")
 
                 AmazonqTelemetry.utgGenerateTests(
                     cwsprChatProgrammingLanguage = session.programmingLanguage.languageId,
@@ -691,10 +695,10 @@ class CodeTestChatController(
                     CodeTestChatMessageContent(
                         message = message("testgen.message.success"),
                         type = ChatMessageType.Answer,
-                        canBeVoted = false
+                        canBeVoted = false,
+                        buttons = this.showFeedbackButton()
                     )
                 )
-                sessionCleanUp(session.tabId)
                 codeTestChatHelper.updateUI(
                     promptInputDisabledState = false,
                     promptInputPlaceholder = message("testgen.placeholder.enter_slash_quick_actions"),
@@ -840,7 +844,8 @@ class CodeTestChatController(
                     CodeTestChatMessageContent(
                         message = message("testgen.message.success"),
                         type = ChatMessageType.Answer,
-                        canBeVoted = false
+                        canBeVoted = false,
+                        buttons = this.showFeedbackButton()
                     )
                 )
                 val testGenerationEventResponse = client.sendTestGenerationEvent(
@@ -884,7 +889,10 @@ class CodeTestChatController(
                     requestId = session.startTestGenerationRequestId,
                     status = Status.REJECTED,
                 )
-                sessionCleanUp(message.tabId)
+            }
+            "utg_feedback" -> {
+                sendFeedback()
+                UiTelemetry.click(context.project, "unitTestGeneration_provideFeedback")
             }
             "utg_skip_and_finish" -> {
                 codeTestChatHelper.addAnswer(
@@ -1371,6 +1379,33 @@ class CodeTestChatController(
             promptInputDisabledState = true,
         )
         println(message)
+    }
+
+    private fun sendFeedback() {
+        runInEdt {
+            TestGenFeedbackDialog(
+                context.project,
+                codeTestChatHelper.getActiveSession().startTestGenerationRequestId,
+                codeTestChatHelper.getActiveSession().testGenerationJob
+            ).show()
+        }
+    }
+
+    private fun showFeedbackButton(): MutableList<Button> {
+        val buttonList = mutableListOf<Button>()
+        if (isInternalUser(getStartUrl(context.project))) {
+            buttonList.add(
+                Button(
+                    "utg_feedback",
+                    message("testgen.button.feedback"),
+                    keepCardAfterClick = true,
+                    position = "outside",
+                    status = "info",
+                    icon = "comment"
+                ),
+            )
+        }
+        return buttonList
     }
 
     companion object {
