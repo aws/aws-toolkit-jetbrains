@@ -284,8 +284,8 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 val jobSummary = testGenerationResponse?.testGenerationJob()?.jobSummary()?.trim().orEmpty()
 
                 val cleanedPlanSummary = jobSummary
-                    .replace(Regex("^```\\s*"), "") // Remove leading triple backticks
-                    .replace(Regex("\\s*```$"), "") // Remove trailing triple backticks
+                    .replace(Regex("(?m)^\\s*```(?:\\w+)?\\s*"), "") // Removes leading backticks with possible language specifier
+                    .replace(Regex("(?m)\\s*```\\s*$"), "") // Removes trailing backticks
                     .trim()
 
                 val summary = """
