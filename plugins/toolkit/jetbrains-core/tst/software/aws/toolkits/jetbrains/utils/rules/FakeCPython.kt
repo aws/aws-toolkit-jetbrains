@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.utils.rules
 
+import com.intellij.openapi.projectRoots.Sdk
 import com.jetbrains.python.psi.LanguageLevel
 import com.jetbrains.python.sdk.flavors.CPythonSdkFlavor
 import com.jetbrains.python.sdk.flavors.PyFlavorData
@@ -13,4 +14,6 @@ internal class FakeCPython(private val languageLevel: LanguageLevel) : CPythonSd
     override fun getName(): String = "FakeCPython"
 
     override fun getVersionString(sdkHome: String?) = "$name ${languageLevel.toPythonVersion()}"
+
+    override fun getLanguageLevel(sdk: Sdk) = languageLevel
 }
