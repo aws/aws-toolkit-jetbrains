@@ -14,7 +14,6 @@ import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent
-import kotlinx.coroutines.Deferred
 import org.eclipse.lsp4j.CreateFilesParams
 import org.eclipse.lsp4j.DeleteFilesParams
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams
@@ -38,7 +37,7 @@ import java.nio.file.Paths
 
 class WorkspaceServiceHandler(
     private val project: Project,
-    private val initializeResult: InitializeResult,
+    initializeResult: InitializeResult,
     serverInstance: Disposable,
 ) : BulkFileListener,
     ModuleRootListener {
