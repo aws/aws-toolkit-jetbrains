@@ -3,6 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws
 
-data class GetConfigurationFromServerPayload(
+data class GetConfigurationFromServerParams(
     val section: String,
 )

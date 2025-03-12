@@ -21,7 +21,6 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.messages.Topic
-import io.ktor.client.request.request
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
@@ -30,6 +29,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.nio.file.Paths
 import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.core.util.DefaultSdkAutoConstructList
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
@@ -54,6 +54,9 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.GetConfigurationFromServerParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
@@ -92,6 +95,8 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
+import java.net.URI
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
 @Service
@@ -669,11 +674,32 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         val customizationArn = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn
 
         // TODO: use workspaceID from LSP
-        // hardcoded for now!
-        val workspaceId = null
+        var workspaceId: String? = null
+        try {
+            val workspacesInfos = getWorkspaceIds(project).get().workspaces
+            for (workspaceInfo in workspacesInfos) {
+                val workspaceRootPath = Paths.get(URI(workspaceInfo.workspaceRoot)).toString()
+                if (psiFile.virtualFile.path.startsWith(workspaceRootPath)) {
+                    workspaceId = workspaceInfo.workspaceId
+                    break
+                }
 
+            }
+        } catch (e: Exception) {
+            LOG.info("Cannot get workspaceId from LSP'$e'")
+        }
+        LOG.info("Found workspaceId from LSP '$workspaceId'")
         return RequestContext(project, editor, triggerTypeInfo, caretPosition,
             fileContext, supplementalContext, connection, latencyContext, customizationArn, workspaceId)
+    }
+
+    fun getWorkspaceIds(project: Project): CompletableFuture<LspServerConfigurations> {
+        val payload = GetConfigurationFromServerParams(
+            section = "aws.q.workspaceContext"
+        )
+        return AmazonQLspService.executeIfRunning(project) { server ->
+            server.getConfigurationFromServer(payload)
+        } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
     }
 
     fun validateResponse(response: GenerateCompletionsResponse): GenerateCompletionsResponse {

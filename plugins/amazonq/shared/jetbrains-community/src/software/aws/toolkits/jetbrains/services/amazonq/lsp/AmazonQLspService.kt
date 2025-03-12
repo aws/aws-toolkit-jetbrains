@@ -55,7 +55,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument.TextDoc
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.workspace.WorkspaceServiceHandler
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
-import software.aws.toolkits.jetbrains.settings.LspSettings
 import java.io.IOException
 import java.io.OutputStreamWriter
 import java.io.PipedInputStream
