@@ -120,7 +120,7 @@ class TextDocumentServiceHandlerTest {
             verify { mockTextDocumentService.didSave(capture(paramsSlot)) }
 
             with(paramsSlot.captured) {
-                assertEquals(uri.toString(), textDocument.uri)
+                assertEquals(normalizeFileUri(uri.toString()), textDocument.uri)
                 assertEquals("test content", text)
             }
         }
@@ -142,7 +142,7 @@ class TextDocumentServiceHandlerTest {
         verify { mockTextDocumentService.didOpen(capture(paramsSlot)) }
 
         with(paramsSlot.captured.textDocument) {
-            assertEquals(uri.toString(), this.uri)
+            assertEquals(normalizeFileUri(uri.toString()), this.uri)
             assertEquals(content, text)
         }
     }
@@ -157,7 +157,7 @@ class TextDocumentServiceHandlerTest {
         val paramsSlot = slot<DidCloseTextDocumentParams>()
         verify { mockTextDocumentService.didClose(capture(paramsSlot)) }
 
-        assertEquals(uri.toString(), paramsSlot.captured.textDocument.uri)
+        assertEquals(normalizeFileUri(uri.toString()), paramsSlot.captured.textDocument.uri)
     }
 
     @Test
@@ -191,7 +191,7 @@ class TextDocumentServiceHandlerTest {
         verify { mockTextDocumentService.didChange(capture(paramsSlot)) }
 
         with(paramsSlot.captured) {
-            assertEquals(uri.toString(), textDocument.uri)
+            assertEquals(normalizeFileUri(uri.toString()), textDocument.uri)
             assertEquals(123, textDocument.version)
             assertEquals("changed content", contentChanges[0].text)
         }
@@ -285,5 +285,18 @@ class TextDocumentServiceHandlerTest {
             }
             every { this@mockk.inputStream } returns inputStream
         }
+    }
+
+    private fun normalizeFileUri(uri: String): String {
+        if (!System.getProperty("os.name").lowercase().contains("windows")) {
+            return uri
+        }
+
+        if (!uri.startsWith("file:///")) {
+            return uri
+        }
+
+        val path = uri.substringAfter("file:///")
+        return "file:///C:/$path"
     }
 }
