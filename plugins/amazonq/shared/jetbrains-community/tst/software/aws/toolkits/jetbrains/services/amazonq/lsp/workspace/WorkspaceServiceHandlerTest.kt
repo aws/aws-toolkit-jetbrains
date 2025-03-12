@@ -106,7 +106,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
-        assertEquals(pyUri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(pyUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -118,7 +118,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
-        assertEquals(tsUri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(tsUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -130,7 +130,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
-        assertEquals(jsUri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(jsUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -142,7 +142,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
-        assertEquals(javaUri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(javaUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -154,7 +154,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
-        assertEquals(dirUri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(dirUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -176,7 +176,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
-        assertEquals(pyUri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(pyUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -188,7 +188,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
-        assertEquals(tsUri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(tsUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -200,7 +200,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
-        assertEquals(jsUri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(jsUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -212,7 +212,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
-        assertEquals(javaUri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(javaUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -234,7 +234,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
-        assertEquals(dirUri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(dirUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -254,11 +254,11 @@ class WorkspaceServiceHandlerTest {
         // Assert
         val paramsSlot = slot<DidChangeWatchedFilesParams>()
         verify { mockWorkspaceService.didChangeWatchedFiles(capture(paramsSlot)) }
-        assertEquals(createURI.toString(), paramsSlot.captured.changes[0].uri)
+        assertEquals(normalizeFileUri(createURI.toString()), paramsSlot.captured.changes[0].uri)
         assertEquals(FileChangeType.Created, paramsSlot.captured.changes[0].type)
-        assertEquals(deleteURI.toString(), paramsSlot.captured.changes[1].uri)
+        assertEquals(normalizeFileUri(deleteURI.toString()), paramsSlot.captured.changes[1].uri)
         assertEquals(FileChangeType.Deleted, paramsSlot.captured.changes[1].type)
-        assertEquals(changeURI.toString(), paramsSlot.captured.changes[2].uri)
+        assertEquals(normalizeFileUri(changeURI.toString()), paramsSlot.captured.changes[2].uri)
         assertEquals(FileChangeType.Changed, paramsSlot.captured.changes[2].type)
     }
 
@@ -565,5 +565,19 @@ class WorkspaceServiceHandlerTest {
             every { oldValue } returns oldName
             every { newValue } returns newName
         }
+    }
+
+    // for windows unit tests
+    private fun normalizeFileUri(uri: String): String {
+        if (!System.getProperty("os.name").lowercase().contains("windows")) {
+            return uri
+        }
+
+        if (!uri.startsWith("file:///")) {
+            return uri
+        }
+
+        val path = uri.substringAfter("file:///")
+        return "file:///C:/$path"
     }
 }

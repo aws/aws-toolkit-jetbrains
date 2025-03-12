@@ -70,7 +70,7 @@ class WorkspaceFolderUtilTest {
             every { toUri() } returns uri
         }
         return mockk<VirtualFile> {
-            every { url } returns uri.toString()
+            every { url } returns normalizeFileUri(uri.toString())
             every { getName() } returns name
             every { toNioPath() } returns path
             every { isDirectory } returns false
@@ -78,5 +78,19 @@ class WorkspaceFolderUtilTest {
                 every { protocol } returns "file"
             }
         }
+    }
+
+    // for windows unit tests
+    private fun normalizeFileUri(uri: String): String {
+        if (!System.getProperty("os.name").lowercase().contains("windows")) {
+            return uri
+        }
+
+        if (!uri.startsWith("file:///")) {
+            return uri
+        }
+
+        val path = uri.substringAfter("file:///")
+        return "file:///C:/$path"
     }
 }
