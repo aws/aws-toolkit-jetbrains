@@ -155,9 +155,9 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         // 3rd API call: Polling mechanism on test job status
         var finished = false
         var testGenerationResponse: GetTestGenerationResponse? = null
-        var packageInfoList = emptyList<software.amazon.awssdk.services.codewhispererruntime.model.PackageInfo>()
-        var packageInfo: software.amazon.awssdk.services.codewhispererruntime.model.PackageInfo? = null
-        var targetFileInfo: software.amazon.awssdk.services.codewhispererruntime.model.TargetFileInfo? = null
+        var packageInfoList = emptyList<PackageInfo>()
+        var packageInfo : PackageInfo? = null
+        var targetFileInfo : TargetFileInfo? = null
 
         while (!finished) {
             throwIfCancelled(session)
