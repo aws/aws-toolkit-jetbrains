@@ -325,7 +325,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             this@AmazonQServerInstance.apply {
                 DefaultAuthCredentialsService(project, encryptionManager, this)
                 TextDocumentServiceHandler(project, this)
-                WorkspaceServiceHandler(project, this)
+                WorkspaceServiceHandler(project,  initializeResult.getCompleted(), this)
                 DefaultModuleDependenciesService(project, this)
             }
         }

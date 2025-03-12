@@ -38,7 +38,7 @@ import java.nio.file.Paths
 
 class WorkspaceServiceHandler(
     private val project: Project,
-    private val initializeResult: Deferred<InitializeResult>,
+    private val initializeResult: InitializeResult,
     serverInstance: Disposable,
 ) : BulkFileListener,
     ModuleRootListener {
@@ -47,9 +47,7 @@ class WorkspaceServiceHandler(
     private val operationMatchers: MutableMap<FileOperationType, List<Pair<PathMatcher, String>>> = mutableMapOf()
 
     init {
-        initializeResult.invokeOnCompletion {
-            operationMatchers.putAll(initializePatterns(initializeResult.getCompleted()))
-        }
+        operationMatchers.putAll(initializePatterns(initializeResult))
 
         project.messageBus.connect(serverInstance).subscribe(
             VirtualFileManager.VFS_CHANGES,
