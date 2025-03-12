@@ -291,7 +291,7 @@ class WorkspaceServiceHandlerTest {
         val paramsSlot = slot<RenameFilesParams>()
         verify { mockWorkspaceService.didRenameFiles(capture(paramsSlot)) }
         with(paramsSlot.captured.files[0]) {
-            assertEquals("file:///test/$oldName", oldUri)
+            assertEquals(normalizeFileUri("file:///test/$oldName"), oldUri)
             assertEquals(normalizeFileUri("file:///test/$newName"), newUri)
         }
     }
@@ -328,7 +328,7 @@ class WorkspaceServiceHandlerTest {
         val paramsSlot = slot<RenameFilesParams>()
         verify { mockWorkspaceService.didRenameFiles(capture(paramsSlot)) }
         with(paramsSlot.captured.files[0]) {
-            assertEquals("file:///test/oldDir", oldUri)
+            assertEquals(normalizeFileUri("file:///test/oldDir"), oldUri)
             assertEquals(normalizeFileUri("file:///test/newDir"), newUri)
         }
     }
@@ -539,19 +539,28 @@ class WorkspaceServiceHandlerTest {
         newName: String,
         isDirectory: Boolean = false,
     ): VFilePropertyChangeEvent {
-        val file = mockk<VirtualFile>()
-        val parent = mockk<VirtualFile>()
         val parentPath = mockk<Path>()
         val filePath = mockk<Path>()
 
-        every { file.parent } returns parent
-        every { parent.toNioPath() } returns parentPath
-        every { file.toNioPath() } returns filePath
-        every { file.isDirectory } returns isDirectory
-        every { file.path } returns "/test/$newName"
-        every { file.url } returns "file:///test/$newName"
-        every { file.fileSystem } returns mockk {
-            every { protocol } returns "file"
+        val parent = mockk<VirtualFile> {
+            every { toNioPath() } returns parentPath
+            every { this@mockk.isDirectory } returns isDirectory
+            every { path } returns "/test/$oldName"
+            every { url } returns "file:///test/$oldName"
+            every { fileSystem } returns mockk {
+                every { protocol } returns "file"
+            }
+        }
+
+        val file = mockk<VirtualFile> {
+            every { toNioPath() } returns filePath
+            every { this@mockk.parent } returns parent
+            every { this@mockk.isDirectory } returns isDirectory
+            every { path } returns "/test/$newName"
+            every { url } returns "file:///test/$newName"
+            every { fileSystem } returns mockk {
+                every { protocol } returns "file"
+            }
         }
 
         every { parentPath.resolve(oldName) } returns mockk {

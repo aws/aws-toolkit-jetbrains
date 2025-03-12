@@ -104,12 +104,11 @@ class WorkspaceServiceHandler(
                 .filter { it.propertyName == VirtualFile.PROP_NAME }
                 .mapNotNull { event ->
                     val file = event.file.takeIf { shouldHandleFile(it) } ?: return@mapNotNull null
-                    val oldName = event.oldValue as? String ?: return@mapNotNull null
                     if (event.newValue !is String) return@mapNotNull null
 
                     // Construct old and new URIs
-                    val parentPath = file.parent?.toNioPath() ?: return@mapNotNull null
-                    val oldUri = parentPath.resolve(oldName).toUri().toString()
+                    val parentFile = file.parent ?: return@mapNotNull null
+                    val oldUri = toUriString(parentFile)
                     val newUri = toUriString(file)
 
                     FileRename().apply {
