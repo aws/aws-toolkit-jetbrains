@@ -45,8 +45,8 @@ class WorkspaceFolderUtilTest {
         val result = WorkspaceFolderUtil.createWorkspaceFolders(mockProject)
 
         assertEquals(2, result.size)
-        assertEquals("file:///path/to/root1", result[0].uri)
-        assertEquals("file:///path/to/root2", result[1].uri)
+        assertEquals(normalizeFileUri("file:///path/to/root1"), result[0].uri)
+        assertEquals(normalizeFileUri("file:///path/to/root2"), result[1].uri)
         assertEquals("root1", result[0].name)
         assertEquals("root2", result[1].name)
     }
@@ -70,7 +70,7 @@ class WorkspaceFolderUtilTest {
             every { toUri() } returns uri
         }
         return mockk<VirtualFile> {
-            every { url } returns normalizeFileUri(uri.toString())
+            every { url } returns uri.toString()
             every { getName() } returns name
             every { toNioPath() } returns path
             every { isDirectory } returns false
