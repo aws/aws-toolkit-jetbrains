@@ -125,7 +125,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     targetCode = listOf(
                         TargetCode.builder()
                             .relativeTargetPath(codeTestResponseContext.currentFileRelativePath.toString())
-                            .targetLineRangeList(selectionRange?.let { listOf(it) } ?: emptyList())
+                            .targetLineRangeList(selectionRange?.let { listOf(it) }.orEmpty())
                             .build()
                     ),
                     userInput = prompt
@@ -185,7 +185,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                         if (previousIterationContext == null) {
                             codeTestChatHelper.updateAnswer(
                                 CodeTestChatMessageContent(
-                                    message = generateSummaryMessage(path.fileName.toString()) + (cleanedfilePlan ?: ""),
+                                    message = generateSummaryMessage(path.fileName.toString()) + (cleanedfilePlan.orEmpty()),
                                     type = ChatMessageType.Answer,
                                 ),
                                 messageIdOverride = codeTestResponseContext.testSummaryMessageId
@@ -207,7 +207,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     if (previousIterationContext == null) {
                         codeTestChatHelper.updateAnswer(
                             CodeTestChatMessageContent(
-                                message = generateSummaryMessage(path.fileName.toString()) + (cleanedfilePlan ?: ""),
+                                message = generateSummaryMessage(path.fileName.toString()) + (cleanedfilePlan.orEmpty()),
                                 type = ChatMessageType.Answer,
                             ),
                             messageIdOverride = codeTestResponseContext.testSummaryMessageId
@@ -281,7 +281,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         } else {
             if (previousIterationContext == null) {
                 // show another card as the answer, remove this once we remove 3 backticks from backend
-                val jobSummary = testGenerationResponse?.testGenerationJob()?.jobSummary()?.trim() ?: ""
+                val jobSummary = testGenerationResponse?.testGenerationJob()?.jobSummary()?.trim().orEmpty()
 
                 val cleanedPlanSummary = jobSummary
                     .replace(Regex("^```\\s*"), "") // Remove leading triple backticks

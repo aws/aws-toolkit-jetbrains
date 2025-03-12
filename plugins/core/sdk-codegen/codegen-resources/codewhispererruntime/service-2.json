@@ -2,15 +2,11 @@
     "version": "2.0",
     "metadata": {
         "apiVersion": "2022-11-11",
-        "auth": [
-            "smithy.api#httpBearerAuth"
-        ],
+        "auth": ["smithy.api#httpBearerAuth"],
         "endpointPrefix": "amazoncodewhispererservice",
         "jsonVersion": "1.0",
         "protocol": "json",
-        "protocols": [
-            "json"
-        ],
+        "protocols": ["json"],
         "serviceFullName": "Amazon CodeWhisperer",
         "serviceId": "CodeWhispererRuntime",
         "signatureVersion": "bearer",
@@ -818,9 +814,7 @@
     "shapes": {
         "AccessDeniedException": {
             "type": "structure",
-            "required": [
-                "message"
-            ],
+            "required": ["message"],
             "members": {
                 "message": {
                     "shape": "String"
@@ -835,9 +829,7 @@
         "AccessDeniedExceptionReason": {
             "type": "string",
             "documentation": "<p>Reason for AccessDeniedException</p>",
-            "enum": [
-                "UNAUTHORIZED_CUSTOMIZATION_RESOURCE_ACCESS"
-            ]
+            "enum": ["UNAUTHORIZED_CUSTOMIZATION_RESOURCE_ACCESS"]
         },
         "ActiveFunctionalityList": {
             "type": "list",
@@ -849,10 +841,7 @@
         },
         "AdditionalContentEntry": {
             "type": "structure",
-            "required": [
-                "name",
-                "description"
-            ],
+            "required": ["name", "description"],
             "members": {
                 "name": {
                     "shape": "AdditionalContentEntryNameString",
@@ -899,11 +888,7 @@
         },
         "AppStudioState": {
             "type": "structure",
-            "required": [
-                "namespace",
-                "propertyName",
-                "propertyContext"
-            ],
+            "required": ["namespace", "propertyName", "propertyContext"],
             "members": {
                 "namespace": {
                     "shape": "AppStudioStateNamespaceString",
@@ -950,12 +935,7 @@
         },
         "ApplicationProperties": {
             "type": "structure",
-            "required": [
-                "tenantId",
-                "applicationArn",
-                "tenantUrl",
-                "applicationType"
-            ],
+            "required": ["tenantId", "applicationArn", "tenantUrl", "applicationType"],
             "members": {
                 "tenantId": {
                     "shape": "TenantId"
@@ -996,16 +976,11 @@
         },
         "ArtifactType": {
             "type": "string",
-            "enum": [
-                "SourceCode",
-                "BuiltJars"
-            ]
+            "enum": ["SourceCode", "BuiltJars"]
         },
         "AssistantResponseMessage": {
             "type": "structure",
-            "required": [
-                "content"
-            ],
+            "required": ["content"],
             "members": {
                 "messageId": {
                     "shape": "MessageId"
@@ -1051,9 +1026,7 @@
         },
         "ByUserAnalytics": {
             "type": "structure",
-            "required": [
-                "toggle"
-            ],
+            "required": ["toggle"],
             "members": {
                 "s3Uri": {
                     "shape": "S3Uri"
@@ -1065,10 +1038,7 @@
         },
         "ChatAddMessageEvent": {
             "type": "structure",
-            "required": [
-                "conversationId",
-                "messageId"
-            ],
+            "required": ["conversationId", "messageId"],
             "members": {
                 "conversationId": {
                     "shape": "ConversationId"
@@ -1125,10 +1095,7 @@
         },
         "ChatInteractWithMessageEvent": {
             "type": "structure",
-            "required": [
-                "conversationId",
-                "messageId"
-            ],
+            "required": ["conversationId", "messageId"],
             "members": {
                 "conversationId": {
                     "shape": "ConversationId"
@@ -1182,34 +1149,16 @@
         "ChatMessageInteractionType": {
             "type": "string",
             "documentation": "<p>Chat Message Interaction Type</p>",
-            "enum": [
-                "INSERT_AT_CURSOR",
-                "COPY_SNIPPET",
-                "COPY",
-                "CLICK_LINK",
-                "CLICK_BODY_LINK",
-                "CLICK_FOLLOW_UP",
-                "HOVER_REFERENCE",
-                "UPVOTE",
-                "DOWNVOTE"
-            ]
+            "enum": ["INSERT_AT_CURSOR", "COPY_SNIPPET", "COPY", "CLICK_LINK", "CLICK_BODY_LINK", "CLICK_FOLLOW_UP", "HOVER_REFERENCE", "UPVOTE", "DOWNVOTE"]
         },
         "ChatTriggerType": {
             "type": "string",
             "documentation": "<p>Trigger Reason for Chat</p>",
-            "enum": [
-                "MANUAL",
-                "DIAGNOSTIC",
-                "INLINE_CHAT"
-            ]
+            "enum": ["MANUAL", "DIAGNOSTIC", "INLINE_CHAT"]
         },
         "ChatUserModificationEvent": {
             "type": "structure",
-            "required": [
-                "conversationId",
-                "messageId",
-                "modificationPercentage"
-            ],
+            "required": ["conversationId", "messageId", "modificationPercentage"],
             "members": {
                 "conversationId": {
                     "shape": "ConversationId"
@@ -1233,30 +1182,19 @@
         },
         "CodeAnalysisFindingsSchema": {
             "type": "string",
-            "enum": [
-                "codeanalysis/findings/1.0"
-            ]
+            "enum": ["codeanalysis/findings/1.0"]
         },
         "CodeAnalysisScope": {
             "type": "string",
-            "enum": [
-                "FILE",
-                "PROJECT"
-            ]
+            "enum": ["FILE", "PROJECT"]
         },
         "CodeAnalysisStatus": {
             "type": "string",
-            "enum": [
-                "Completed",
-                "Pending",
-                "Failed"
-            ]
+            "enum": ["Completed", "Pending", "Failed"]
         },
         "CodeAnalysisUploadContext": {
             "type": "structure",
-            "required": [
-                "codeScanName"
-            ],
+            "required": ["codeScanName"],
             "members": {
                 "codeScanName": {
                     "shape": "CodeScanName"
@@ -1265,12 +1203,7 @@
         },
         "CodeCoverageEvent": {
             "type": "structure",
-            "required": [
-                "programmingLanguage",
-                "acceptedCharacterCount",
-                "totalCharacterCount",
-                "timestamp"
-            ],
+            "required": ["programmingLanguage", "acceptedCharacterCount", "totalCharacterCount", "timestamp"],
             "members": {
                 "customizationArn": {
                     "shape": "CustomizationArn"
@@ -1314,9 +1247,7 @@
         },
         "CodeFixAcceptanceEvent": {
             "type": "structure",
-            "required": [
-                "jobId"
-            ],
+            "required": ["jobId"],
             "members": {
                 "jobId": {
                     "shape": "String"
@@ -1343,9 +1274,7 @@
         },
         "CodeFixGenerationEvent": {
             "type": "structure",
-            "required": [
-                "jobId"
-            ],
+            "required": ["jobId"],
             "members": {
                 "jobId": {
                     "shape": "String"
@@ -1372,11 +1301,7 @@
         },
         "CodeFixJobStatus": {
             "type": "string",
-            "enum": [
-                "Succeeded",
-                "InProgress",
-                "Failed"
-            ]
+            "enum": ["Succeeded", "InProgress", "Failed"]
         },
         "CodeFixName": {
             "type": "string",
@@ -1387,9 +1312,7 @@
         },
         "CodeFixUploadContext": {
             "type": "structure",
-            "required": [
-                "codeFixName"
-            ],
+            "required": ["codeFixName"],
             "members": {
                 "codeFixName": {
                     "shape": "CodeFixName"
@@ -1404,10 +1327,7 @@
         },
         "CodeGenerationStatus": {
             "type": "structure",
-            "required": [
-                "status",
-                "currentStage"
-            ],
+            "required": ["status", "currentStage"],
             "members": {
                 "status": {
                     "shape": "CodeGenerationWorkflowStatus"
@@ -1424,26 +1344,15 @@
         },
         "CodeGenerationWorkflowStage": {
             "type": "string",
-            "enum": [
-                "InitialCodeGeneration",
-                "CodeRefinement"
-            ]
+            "enum": ["InitialCodeGeneration", "CodeRefinement"]
         },
         "CodeGenerationWorkflowStatus": {
             "type": "string",
-            "enum": [
-                "InProgress",
-                "Complete",
-                "Failed"
-            ]
+            "enum": ["InProgress", "Complete", "Failed"]
         },
         "CodeScanEvent": {
             "type": "structure",
-            "required": [
-                "programmingLanguage",
-                "codeScanJobId",
-                "timestamp"
-            ],
+            "required": ["programmingLanguage", "codeScanJobId", "timestamp"],
             "members": {
                 "programmingLanguage": {
                     "shape": "ProgrammingLanguage"
@@ -1462,11 +1371,7 @@
         },
         "CodeScanFailedEvent": {
             "type": "structure",
-            "required": [
-                "programmingLanguage",
-                "codeScanJobId",
-                "timestamp"
-            ],
+            "required": ["programmingLanguage", "codeScanJobId", "timestamp"],
             "members": {
                 "programmingLanguage": {
                     "shape": "ProgrammingLanguage"
@@ -1532,20 +1437,11 @@
         "CodeScanRemediationsEventType": {
             "type": "string",
             "documentation": "<p>Code Scan Remediations Interaction Type</p>",
-            "enum": [
-                "CODESCAN_ISSUE_HOVER",
-                "CODESCAN_ISSUE_APPLY_FIX",
-                "CODESCAN_ISSUE_VIEW_DETAILS"
-            ]
+            "enum": ["CODESCAN_ISSUE_HOVER", "CODESCAN_ISSUE_APPLY_FIX", "CODESCAN_ISSUE_VIEW_DETAILS"]
         },
         "CodeScanSucceededEvent": {
             "type": "structure",
-            "required": [
-                "programmingLanguage",
-                "codeScanJobId",
-                "timestamp",
-                "numberOfFindings"
-            ],
+            "required": ["programmingLanguage", "codeScanJobId", "timestamp", "numberOfFindings"],
             "members": {
                 "programmingLanguage": {
                     "shape": "ProgrammingLanguage"
@@ -1567,9 +1463,7 @@
         },
         "Completion": {
             "type": "structure",
-            "required": [
-                "content"
-            ],
+            "required": ["content"],
             "members": {
                 "content": {
                     "shape": "CompletionContentString"
@@ -1590,10 +1484,7 @@
         },
         "CompletionType": {
             "type": "string",
-            "enum": [
-                "BLOCK",
-                "LINE"
-            ]
+            "enum": ["BLOCK", "LINE"]
         },
         "Completions": {
             "type": "list",
@@ -1605,9 +1496,7 @@
         },
         "ConflictException": {
             "type": "structure",
-            "required": [
-                "message"
-            ],
+            "required": ["message"],
             "members": {
                 "message": {
                     "shape": "String"
@@ -1622,11 +1511,7 @@
         "ConflictExceptionReason": {
             "type": "string",
             "documentation": "<p>Reason for ConflictException</p>",
-            "enum": [
-                "CUSTOMER_KMS_KEY_INVALID_KEY_POLICY",
-                "CUSTOMER_KMS_KEY_DISABLED",
-                "MISMATCHED_KMS_KEY"
-            ]
+            "enum": ["CUSTOMER_KMS_KEY_INVALID_KEY_POLICY", "CUSTOMER_KMS_KEY_DISABLED", "MISMATCHED_KMS_KEY"]
         },
         "ConsoleState": {
             "type": "structure",
@@ -1654,17 +1539,12 @@
         },
         "ContentChecksumType": {
             "type": "string",
-            "enum": [
-                "SHA_256"
-            ]
+            "enum": ["SHA_256"]
         },
         "ContextTruncationScheme": {
             "type": "string",
             "documentation": "<p>Workspace context truncation schemes based on usecase</p>",
-            "enum": [
-                "ANALYSIS",
-                "GUMBY"
-            ]
+            "enum": ["ANALYSIS", "GUMBY"]
         },
         "ConversationId": {
             "type": "string",
@@ -1674,10 +1554,7 @@
         },
         "ConversationState": {
             "type": "structure",
-            "required": [
-                "currentMessage",
-                "chatTriggerType"
-            ],
+            "required": ["currentMessage", "chatTriggerType"],
             "members": {
                 "conversationId": {
                     "shape": "ConversationId",
@@ -1712,9 +1589,7 @@
         },
         "CreateTaskAssistConversationResponse": {
             "type": "structure",
-            "required": [
-                "conversationId"
-            ],
+            "required": ["conversationId"],
             "members": {
                 "conversationId": {
                     "shape": "ConversationId"
@@ -1773,10 +1648,7 @@
         },
         "CreateUploadUrlResponse": {
             "type": "structure",
-            "required": [
-                "uploadId",
-                "uploadUrl"
-            ],
+            "required": ["uploadId", "uploadUrl"],
             "members": {
                 "uploadId": {
                     "shape": "UploadId"
@@ -1794,9 +1666,7 @@
         },
         "CreateWorkspaceRequest": {
             "type": "structure",
-            "required": [
-                "workspaceRoot"
-            ],
+            "required": ["workspaceRoot"],
             "members": {
                 "workspaceRoot": {
                     "shape": "CreateWorkspaceRequestWorkspaceRootString"
@@ -1813,9 +1683,7 @@
         },
         "CreateWorkspaceResponse": {
             "type": "structure",
-            "required": [
-                "workspace"
-            ],
+            "required": ["workspace"],
             "members": {
                 "workspace": {
                     "shape": "WorkspaceMetadata"
@@ -1839,9 +1707,7 @@
         },
         "Customization": {
             "type": "structure",
-            "required": [
-                "arn"
-            ],
+            "required": ["arn"],
             "members": {
                 "arn": {
                     "shape": "CustomizationArn"
@@ -1874,9 +1740,7 @@
         },
         "DashboardAnalytics": {
             "type": "structure",
-            "required": [
-                "toggle"
-            ],
+            "required": ["toggle"],
             "members": {
                 "toggle": {
                     "shape": "OptInFeatureToggle"
@@ -1885,9 +1749,7 @@
         },
         "DeleteTaskAssistConversationRequest": {
             "type": "structure",
-            "required": [
-                "conversationId"
-            ],
+            "required": ["conversationId"],
             "members": {
                 "conversationId": {
                     "shape": "ConversationId"
@@ -1900,9 +1762,7 @@
         },
         "DeleteTaskAssistConversationResponse": {
             "type": "structure",
-            "required": [
-                "conversationId"
-            ],
+            "required": ["conversationId"],
             "members": {
                 "conversationId": {
                     "shape": "ConversationId"
@@ -1912,9 +1772,7 @@
         },
         "DeleteWorkspaceRequest": {
             "type": "structure",
-            "required": [
-                "workspaceId"
-            ],
+            "required": ["workspaceId"],
             "members": {
                 "workspaceId": {
                     "shape": "UUID"
@@ -1952,12 +1810,7 @@
         "DiagnosticSeverity": {
             "type": "string",
             "documentation": "<p>Diagnostic Error types</p>",
-            "enum": [
-                "ERROR",
-                "WARNING",
-                "INFORMATION",
-                "HINT"
-            ]
+            "enum": ["ERROR", "WARNING", "INFORMATION", "HINT"]
         },
         "Dimension": {
             "type": "structure",
@@ -1993,16 +1846,11 @@
         "DocFolderLevel": {
             "type": "string",
             "documentation": "<p>Specifies the folder depth level where the document should be generated</p>",
-            "enum": [
-                "SUB_FOLDER",
-                "ENTIRE_WORKSPACE"
-            ]
+            "enum": ["SUB_FOLDER", "ENTIRE_WORKSPACE"]
         },
         "DocGenerationEvent": {
             "type": "structure",
-            "required": [
-                "conversationId"
-            ],
+            "required": ["conversationId"],
             "members": {
                 "conversationId": {
                     "shape": "ConversationId"
@@ -2037,18 +1885,11 @@
         "DocInteractionType": {
             "type": "string",
             "documentation": "<p>Tracks whether user chose to generate a new document, update an existing one, or edit document</p>",
-            "enum": [
-                "GENERATE_README",
-                "UPDATE_README",
-                "EDIT_README"
-            ]
+            "enum": ["GENERATE_README", "UPDATE_README", "EDIT_README"]
         },
         "DocUserDecision": {
             "type": "string",
-            "enum": [
-                "ACCEPT",
-                "REJECT"
-            ]
+            "enum": ["ACCEPT", "REJECT"]
         },
         "DocV2AcceptanceEvent": {
             "type": "structure",
@@ -2108,12 +1949,7 @@
         },
         "DocV2GenerationEvent": {
             "type": "structure",
-            "required": [
-                "conversationId",
-                "numberOfGeneratedChars",
-                "numberOfGeneratedLines",
-                "numberOfGeneratedFiles"
-            ],
+            "required": ["conversationId", "numberOfGeneratedChars", "numberOfGeneratedLines", "numberOfGeneratedFiles"],
             "members": {
                 "conversationId": {
                     "shape": "ConversationId"
@@ -2157,10 +1993,7 @@
         },
         "DocumentSymbol": {
             "type": "structure",
-            "required": [
-                "name",
-                "type"
-            ],
+            "required": ["name", "type"],
             "members": {
                 "name": {
                     "shape": "DocumentSymbolNameString",
@@ -2196,9 +2029,7 @@
         },
         "DocumentationIntentContext": {
             "type": "structure",
-            "required": [
-                "type"
-            ],
+            "required": ["type"],
             "members": {
                 "scope": {
                     "shape": "DocumentationIntentContextScopeString"
@@ -2216,9 +2047,7 @@
         },
         "DocumentationType": {
             "type": "string",
-            "enum": [
-                "README"
-            ]
+            "enum": ["README"]
         },
         "Double": {
             "type": "double",
@@ -2328,11 +2157,7 @@
         },
         "FeatureDevCodeAcceptanceEvent": {
             "type": "structure",
-            "required": [
-                "conversationId",
-                "linesOfCodeAccepted",
-                "charactersOfCodeAccepted"
-            ],
+            "required": ["conversationId", "linesOfCodeAccepted", "charactersOfCodeAccepted"],
             "members": {
                 "conversationId": {
                     "shape": "ConversationId"
@@ -2358,11 +2183,7 @@
         },
         "FeatureDevCodeGenerationEvent": {
             "type": "structure",
-            "required": [
-                "conversationId",
-                "linesOfCodeGenerated",
-                "charactersOfCodeGenerated"
-            ],
+            "required": ["conversationId", "linesOfCodeGenerated", "charactersOfCodeGenerated"],
             "members": {
                 "conversationId": {
                     "shape": "ConversationId"
@@ -2388,9 +2209,7 @@
         },
         "FeatureDevEvent": {
             "type": "structure",
-            "required": [
-                "conversationId"
-            ],
+            "required": ["conversationId"],
             "members": {
                 "conversationId": {
                     "shape": "ConversationId"
@@ -2399,11 +2218,7 @@
         },
         "FeatureEvaluation": {
             "type": "structure",
-            "required": [
-                "feature",
-                "variation",
-                "value"
-            ],
+            "required": ["feature", "variation", "value"],
             "members": {
                 "feature": {
                     "shape": "FeatureName"
@@ -2461,12 +2276,7 @@
         },
         "FileContext": {
             "type": "structure",
-            "required": [
-                "leftFileContent",
-                "rightFileContent",
-                "filename",
-                "programmingLanguage"
-            ],
+            "required": ["leftFileContent", "rightFileContent", "filename", "programmingLanguage"],
             "members": {
                 "leftFileContent": {
                     "shape": "FileContextLeftFileContentString"
@@ -2502,9 +2312,7 @@
         },
         "FollowupPrompt": {
             "type": "structure",
-            "required": [
-                "content"
-            ],
+            "required": ["content"],
             "members": {
                 "content": {
                     "shape": "FollowupPromptContentString",
@@ -2525,23 +2333,13 @@
         },
         "FunctionalityName": {
             "type": "string",
-            "enum": [
-                "COMPLETIONS",
-                "ANALYSIS",
-                "CONVERSATIONS",
-                "TASK_ASSIST",
-                "TRANSFORMATIONS",
-                "CHAT_CUSTOMIZATION",
-                "TRANSFORMATIONS_WEBAPP"
-            ],
+            "enum": ["COMPLETIONS", "ANALYSIS", "CONVERSATIONS", "TASK_ASSIST", "TRANSFORMATIONS", "CHAT_CUSTOMIZATION", "TRANSFORMATIONS_WEBAPP"],
             "max": 64,
             "min": 1
         },
         "GenerateCompletionsRequest": {
             "type": "structure",
-            "required": [
-                "fileContext"
-            ],
+            "required": ["fileContext"],
             "members": {
                 "fileContext": {
                     "shape": "FileContext"
@@ -2601,9 +2399,7 @@
         },
         "GetCodeAnalysisRequest": {
             "type": "structure",
-            "required": [
-                "jobId"
-            ],
+            "required": ["jobId"],
             "members": {
                 "jobId": {
                     "shape": "GetCodeAnalysisRequestJobIdString"
@@ -2620,9 +2416,7 @@
         },
         "GetCodeAnalysisResponse": {
             "type": "structure",
-            "required": [
-                "status"
-            ],
+            "required": ["status"],
             "members": {
                 "status": {
                     "shape": "CodeAnalysisStatus"
@@ -2634,9 +2428,7 @@
         },
         "GetCodeFixJobRequest": {
             "type": "structure",
-            "required": [
-                "jobId"
-            ],
+            "required": ["jobId"],
             "members": {
                 "jobId": {
                     "shape": "GetCodeFixJobRequestJobIdString"
@@ -2665,10 +2457,7 @@
         },
         "GetTaskAssistCodeGenerationRequest": {
             "type": "structure",
-            "required": [
-                "conversationId",
-                "codeGenerationId"
-            ],
+            "required": ["conversationId", "codeGenerationId"],
             "members": {
                 "conversationId": {
                     "shape": "ConversationId"
@@ -2684,10 +2473,7 @@
         },
         "GetTaskAssistCodeGenerationResponse": {
             "type": "structure",
-            "required": [
-                "conversationId",
-                "codeGenerationStatus"
-            ],
+            "required": ["conversationId", "codeGenerationStatus"],
             "members": {
                 "conversationId": {
                     "shape": "ConversationId"
@@ -2709,10 +2495,7 @@
         },
         "GetTestGenerationRequest": {
             "type": "structure",
-            "required": [
-                "testGenerationJobGroupName",
-                "testGenerationJobId"
-            ],
+            "required": ["testGenerationJobGroupName", "testGenerationJobId"],
             "members": {
                 "testGenerationJobGroupName": {
                     "shape": "TestGenerationJobGroupName"
@@ -2737,9 +2520,7 @@
         },
         "GetTransformationPlanRequest": {
             "type": "structure",
-            "required": [
-                "transformationJobId"
-            ],
+            "required": ["transformationJobId"],
             "members": {
                 "transformationJobId": {
                     "shape": "TransformationJobId"
@@ -2752,9 +2533,7 @@
         },
         "GetTransformationPlanResponse": {
             "type": "structure",
-            "required": [
-                "transformationPlan"
-            ],
+            "required": ["transformationPlan"],
             "members": {
                 "transformationPlan": {
                     "shape": "TransformationPlan"
@@ -2764,9 +2543,7 @@
         },
         "GetTransformationRequest": {
             "type": "structure",
-            "required": [
-                "transformationJobId"
-            ],
+            "required": ["transformationJobId"],
             "members": {
                 "transformationJobId": {
                     "shape": "TransformationJobId"
@@ -2779,9 +2556,7 @@
         },
         "GetTransformationResponse": {
             "type": "structure",
-            "required": [
-                "transformationJob"
-            ],
+            "required": ["transformationJob"],
             "members": {
                 "transformationJob": {
                     "shape": "TransformationJob"
@@ -2807,15 +2582,7 @@
         },
         "IdeCategory": {
             "type": "string",
-            "enum": [
-                "JETBRAINS",
-                "VSCODE",
-                "CLI",
-                "JUPYTER_MD",
-                "JUPYTER_SM",
-                "ECLIPSE",
-                "VISUAL_STUDIO"
-            ],
+            "enum": ["JETBRAINS", "VSCODE", "CLI", "JUPYTER_MD", "JUPYTER_SM", "ECLIPSE", "VISUAL_STUDIO"],
             "max": 64,
             "min": 1
         },
@@ -2857,10 +2624,7 @@
         },
         "InlineChatEvent": {
             "type": "structure",
-            "required": [
-                "requestId",
-                "timestamp"
-            ],
+            "required": ["requestId", "timestamp"],
             "members": {
                 "requestId": {
                     "shape": "UUID"
@@ -2905,11 +2669,7 @@
         },
         "InlineChatUserDecision": {
             "type": "string",
-            "enum": [
-                "ACCEPT",
-                "REJECT",
-                "DISMISS"
-            ]
+            "enum": ["ACCEPT", "REJECT", "DISMISS"]
         },
         "Integer": {
             "type": "integer",
@@ -2917,10 +2677,7 @@
         },
         "Intent": {
             "type": "string",
-            "enum": [
-                "DEV",
-                "DOC"
-            ]
+            "enum": ["DEV", "DOC"]
         },
         "IntentContext": {
             "type": "structure",
@@ -2933,9 +2690,7 @@
         },
         "InternalServerException": {
             "type": "structure",
-            "required": [
-                "message"
-            ],
+            "required": ["message"],
             "members": {
                 "message": {
                     "shape": "String"
@@ -2976,9 +2731,7 @@
         },
         "ListAvailableCustomizationsResponse": {
             "type": "structure",
-            "required": [
-                "customizations"
-            ],
+            "required": ["customizations"],
             "members": {
                 "customizations": {
                     "shape": "Customizations"
@@ -3007,9 +2760,7 @@
         },
         "ListAvailableProfilesResponse": {
             "type": "structure",
-            "required": [
-                "profiles"
-            ],
+            "required": ["profiles"],
             "members": {
                 "profiles": {
                     "shape": "ProfileList"
@@ -3021,10 +2772,7 @@
         },
         "ListCodeAnalysisFindingsRequest": {
             "type": "structure",
-            "required": [
-                "jobId",
-                "codeAnalysisFindingsSchema"
-            ],
+            "required": ["jobId", "codeAnalysisFindingsSchema"],
             "members": {
                 "jobId": {
                     "shape": "ListCodeAnalysisFindingsRequestJobIdString"
@@ -3047,9 +2795,7 @@
         },
         "ListCodeAnalysisFindingsResponse": {
             "type": "structure",
-            "required": [
-                "codeAnalysisFindings"
-            ],
+            "required": ["codeAnalysisFindings"],
             "members": {
                 "nextToken": {
                     "shape": "PaginationToken"
@@ -3061,9 +2807,7 @@
         },
         "ListFeatureEvaluationsRequest": {
             "type": "structure",
-            "required": [
-                "userContext"
-            ],
+            "required": ["userContext"],
             "members": {
                 "userContext": {
                     "shape": "UserContext"
@@ -3075,9 +2819,7 @@
         },
         "ListFeatureEvaluationsResponse": {
             "type": "structure",
-            "required": [
-                "featureEvaluations"
-            ],
+            "required": ["featureEvaluations"],
             "members": {
                 "featureEvaluations": {
                     "shape": "FeatureEvaluationsList"
@@ -3086,9 +2828,7 @@
         },
         "ListWorkspaceMetadataRequest": {
             "type": "structure",
-            "required": [
-                "workspaceRoot"
-            ],
+            "required": ["workspaceRoot"],
             "members": {
                 "workspaceRoot": {
                     "shape": "ListWorkspaceMetadataRequestWorkspaceRootString"
@@ -3111,9 +2851,7 @@
         },
         "ListWorkspaceMetadataResponse": {
             "type": "structure",
-            "required": [
-                "workspaces"
-            ],
+            "required": ["workspaces"],
             "members": {
                 "workspaces": {
                     "shape": "WorkspaceList"
@@ -3135,12 +2873,7 @@
         },
         "MetricData": {
             "type": "structure",
-            "required": [
-                "metricName",
-                "metricValue",
-                "timestamp",
-                "product"
-            ],
+            "required": ["metricName", "metricValue", "timestamp", "product"],
             "members": {
                 "metricName": {
                     "shape": "MetricDataMetricNameString"
@@ -3181,10 +2914,7 @@
         },
         "NotificationsFeature": {
             "type": "structure",
-            "required": [
-                "feature",
-                "toggle"
-            ],
+            "required": ["feature", "toggle"],
             "members": {
                 "feature": {
                     "shape": "FeatureName"
@@ -3196,20 +2926,13 @@
         },
         "OperatingSystem": {
             "type": "string",
-            "enum": [
-                "MAC",
-                "WINDOWS",
-                "LINUX"
-            ],
+            "enum": ["MAC", "WINDOWS", "LINUX"],
             "max": 64,
             "min": 1
         },
         "OptInFeatureToggle": {
             "type": "string",
-            "enum": [
-                "ON",
-                "OFF"
-            ]
+            "enum": ["ON", "OFF"]
         },
         "OptInFeatures": {
             "type": "structure",
@@ -3233,10 +2956,7 @@
         },
         "OptOutPreference": {
             "type": "string",
-            "enum": [
-                "OPTIN",
-                "OPTOUT"
-            ]
+            "enum": ["OPTIN", "OPTOUT"]
         },
         "Origin": {
             "type": "string",
@@ -3316,10 +3036,7 @@
         },
         "Position": {
             "type": "structure",
-            "required": [
-                "line",
-                "character"
-            ],
+            "required": ["line", "character"],
             "members": {
                 "line": {
                     "shape": "Integer",
@@ -3343,10 +3060,7 @@
         },
         "Profile": {
             "type": "structure",
-            "required": [
-                "arn",
-                "profileName"
-            ],
+            "required": ["arn", "profileName"],
             "members": {
                 "arn": {
                     "shape": "ProfileArn"
@@ -3409,28 +3123,15 @@
         },
         "ProfileStatus": {
             "type": "string",
-            "enum": [
-                "ACTIVE",
-                "CREATING",
-                "CREATE_FAILED",
-                "UPDATING",
-                "UPDATE_FAILED",
-                "DELETING",
-                "DELETE_FAILED"
-            ]
+            "enum": ["ACTIVE", "CREATING", "CREATE_FAILED", "UPDATING", "UPDATE_FAILED", "DELETING", "DELETE_FAILED"]
         },
         "ProfileType": {
             "type": "string",
-            "enum": [
-                "Q_DEVELOPER",
-                "CODEWHISPERER"
-            ]
+            "enum": ["Q_DEVELOPER", "CODEWHISPERER"]
         },
         "ProgrammingLanguage": {
             "type": "structure",
-            "required": [
-                "languageName"
-            ],
+            "required": ["languageName"],
             "members": {
                 "languageName": {
                     "shape": "ProgrammingLanguageLanguageNameString"
@@ -3452,10 +3153,7 @@
         },
         "PromptLogging": {
             "type": "structure",
-            "required": [
-                "s3Uri",
-                "toggle"
-            ],
+            "required": ["s3Uri", "toggle"],
             "members": {
                 "s3Uri": {
                     "shape": "S3Uri"
@@ -3467,10 +3165,7 @@
         },
         "Range": {
             "type": "structure",
-            "required": [
-                "start",
-                "end"
-            ],
+            "required": ["start", "end"],
             "members": {
                 "start": {
                     "shape": "Position",
@@ -3486,10 +3181,7 @@
         "RecommendationsWithReferencesPreference": {
             "type": "string",
             "documentation": "<p>Recommendations with references setting for CodeWhisperer</p>",
-            "enum": [
-                "BLOCK",
-                "ALLOW"
-            ]
+            "enum": ["BLOCK", "ALLOW"]
         },
         "Reference": {
             "type": "structure",
@@ -3525,9 +3217,7 @@
         },
         "ReferenceTrackerConfiguration": {
             "type": "structure",
-            "required": [
-                "recommendationsWithReferences"
-            ],
+            "required": ["recommendationsWithReferences"],
             "members": {
                 "recommendationsWithReferences": {
                     "shape": "RecommendationsWithReferencesPreference"
@@ -3557,9 +3247,7 @@
         },
         "RelevantTextDocument": {
             "type": "structure",
-            "required": [
-                "relativeFilePath"
-            ],
+            "required": ["relativeFilePath"],
             "members": {
                 "relativeFilePath": {
                     "shape": "RelevantTextDocumentRelativeFilePathString",
@@ -3622,9 +3310,7 @@
         },
         "ResourceNotFoundException": {
             "type": "structure",
-            "required": [
-                "message"
-            ],
+            "required": ["message"],
             "members": {
                 "message": {
                     "shape": "String"
@@ -3635,9 +3321,7 @@
         },
         "ResourcePolicy": {
             "type": "structure",
-            "required": [
-                "effect"
-            ],
+            "required": ["effect"],
             "members": {
                 "effect": {
                     "shape": "ResourcePolicyEffect"
@@ -3646,16 +3330,11 @@
         },
         "ResourcePolicyEffect": {
             "type": "string",
-            "enum": [
-                "ALLOW",
-                "DENY"
-            ]
+            "enum": ["ALLOW", "DENY"]
         },
         "ResumeTransformationRequest": {
             "type": "structure",
-            "required": [
-                "transformationJobId"
-            ],
+            "required": ["transformationJobId"],
             "members": {
                 "transformationJobId": {
                     "shape": "TransformationJobId"
@@ -3671,9 +3350,7 @@
         },
         "ResumeTransformationResponse": {
             "type": "structure",
-            "required": [
-                "transformationStatus"
-            ],
+            "required": ["transformationStatus"],
             "members": {
                 "transformationStatus": {
                     "shape": "TransformationStatus"
@@ -3683,11 +3360,7 @@
         },
         "RuntimeDiagnostic": {
             "type": "structure",
-            "required": [
-                "source",
-                "severity",
-                "message"
-            ],
+            "required": ["source", "severity", "message"],
             "members": {
                 "source": {
                     "shape": "RuntimeDiagnosticSourceString",
@@ -3724,10 +3397,7 @@
         },
         "SSOIdentityDetails": {
             "type": "structure",
-            "required": [
-                "instanceArn",
-                "oidcClientId"
-            ],
+            "required": ["instanceArn", "oidcClientId"],
             "members": {
                 "instanceArn": {
                     "shape": "ResourceArn"
@@ -3748,9 +3418,7 @@
         },
         "SendTelemetryEventRequest": {
             "type": "structure",
-            "required": [
-                "telemetryEvent"
-            ],
+            "required": ["telemetryEvent"],
             "members": {
                 "clientToken": {
                     "shape": "IdempotencyToken",
@@ -3786,9 +3454,7 @@
         },
         "ServiceQuotaExceededException": {
             "type": "structure",
-            "required": [
-                "message"
-            ],
+            "required": ["message"],
             "members": {
                 "message": {
                     "shape": "String"
@@ -3808,9 +3474,7 @@
         },
         "ShellHistoryEntry": {
             "type": "structure",
-            "required": [
-                "command"
-            ],
+            "required": ["command"],
             "members": {
                 "command": {
                     "shape": "ShellHistoryEntryCommandString",
@@ -3861,9 +3525,7 @@
         },
         "ShellState": {
             "type": "structure",
-            "required": [
-                "shellName"
-            ],
+            "required": ["shellName"],
             "members": {
                 "shellName": {
                     "shape": "ShellStateShellNameString",
@@ -3906,10 +3568,7 @@
         },
         "StartCodeAnalysisRequest": {
             "type": "structure",
-            "required": [
-                "artifacts",
-                "programmingLanguage"
-            ],
+            "required": ["artifacts", "programmingLanguage"],
             "members": {
                 "artifacts": {
                     "shape": "ArtifactMap"
@@ -3939,10 +3598,7 @@
         },
         "StartCodeAnalysisResponse": {
             "type": "structure",
-            "required": [
-                "jobId",
-                "status"
-            ],
+            "required": ["jobId", "status"],
             "members": {
                 "jobId": {
                     "shape": "StartCodeAnalysisResponseJobIdString"
@@ -3962,10 +3618,7 @@
         },
         "StartCodeFixJobRequest": {
             "type": "structure",
-            "required": [
-                "snippetRange",
-                "uploadId"
-            ],
+            "required": ["snippetRange", "uploadId"],
             "members": {
                 "snippetRange": {
                     "shape": "Range"
@@ -4021,10 +3674,7 @@
         },
         "StartTaskAssistCodeGenerationRequest": {
             "type": "structure",
-            "required": [
-                "conversationState",
-                "workspaceState"
-            ],
+            "required": ["conversationState", "workspaceState"],
             "members": {
                 "conversationState": {
                     "shape": "ConversationState"
@@ -4055,10 +3705,7 @@
         },
         "StartTaskAssistCodeGenerationResponse": {
             "type": "structure",
-            "required": [
-                "conversationId",
-                "codeGenerationId"
-            ],
+            "required": ["conversationId", "codeGenerationId"],
             "members": {
                 "conversationId": {
                     "shape": "ConversationId"
@@ -4071,11 +3718,7 @@
         },
         "StartTestGenerationRequest": {
             "type": "structure",
-            "required": [
-                "uploadId",
-                "targetCodeList",
-                "userInput"
-            ],
+            "required": ["uploadId", "targetCodeList", "userInput"],
             "members": {
                 "uploadId": {
                     "shape": "UploadId"
@@ -4122,10 +3765,7 @@
         },
         "StartTransformationRequest": {
             "type": "structure",
-            "required": [
-                "workspaceState",
-                "transformationSpec"
-            ],
+            "required": ["workspaceState", "transformationSpec"],
             "members": {
                 "workspaceState": {
                     "shape": "WorkspaceState"
@@ -4141,9 +3781,7 @@
         },
         "StartTransformationResponse": {
             "type": "structure",
-            "required": [
-                "transformationJobId"
-            ],
+            "required": ["transformationJobId"],
             "members": {
                 "transformationJobId": {
                     "shape": "TransformationJobId"
@@ -4158,9 +3796,7 @@
         },
         "StopTransformationRequest": {
             "type": "structure",
-            "required": [
-                "transformationJobId"
-            ],
+            "required": ["transformationJobId"],
             "members": {
                 "transformationJobId": {
                     "shape": "TransformationJobId"
@@ -4173,9 +3809,7 @@
         },
         "StopTransformationResponse": {
             "type": "structure",
-            "required": [
-                "transformationStatus"
-            ],
+            "required": ["transformationStatus"],
             "members": {
                 "transformationStatus": {
                     "shape": "TransformationStatus"
@@ -4214,20 +3848,11 @@
         },
         "SuggestionState": {
             "type": "string",
-            "enum": [
-                "ACCEPT",
-                "REJECT",
-                "DISCARD",
-                "EMPTY",
-                "MERGE"
-            ]
+            "enum": ["ACCEPT", "REJECT", "DISCARD", "EMPTY", "MERGE"]
         },
         "SupplementalContext": {
             "type": "structure",
-            "required": [
-                "filePath",
-                "content"
-            ],
+            "required": ["filePath", "content"],
             "members": {
                 "filePath": {
                     "shape": "SupplementalContextFilePathString"
@@ -4259,10 +3884,7 @@
         },
         "SupplementaryWebLink": {
             "type": "structure",
-            "required": [
-                "url",
-                "title"
-            ],
+            "required": ["url", "title"],
             "members": {
                 "url": {
                     "shape": "SupplementaryWebLinkUrlString",
@@ -4307,16 +3929,11 @@
         },
         "SymbolType": {
             "type": "string",
-            "enum": [
-                "DECLARATION",
-                "USAGE"
-            ]
+            "enum": ["DECLARATION", "USAGE"]
         },
         "TargetCode": {
             "type": "structure",
-            "required": [
-                "relativeTargetPath"
-            ],
+            "required": ["relativeTargetPath"],
             "members": {
                 "relativeTargetPath": {
                     "shape": "TargetCodeRelativeTargetPathString",
@@ -4404,10 +4021,7 @@
         },
         "TaskAssistPlanStep": {
             "type": "structure",
-            "required": [
-                "filePath",
-                "description"
-            ],
+            "required": ["filePath", "description"],
             "members": {
                 "filePath": {
                     "shape": "TaskAssistPlanStepFilePathString",
@@ -4435,12 +4049,7 @@
         "TaskAssistPlanStepAction": {
             "type": "string",
             "documentation": "<p>Action for task assist plan step</p>",
-            "enum": [
-                "MODIFY",
-                "CREATE",
-                "DELETE",
-                "UNKNOWN"
-            ]
+            "enum": ["MODIFY", "CREATE", "DELETE", "UNKNOWN"]
         },
         "TaskAssistPlanStepDescriptionString": {
             "type": "string",
@@ -4464,9 +4073,7 @@
         },
         "TaskAssistPlanningUploadContext": {
             "type": "structure",
-            "required": [
-                "conversationId"
-            ],
+            "required": ["conversationId"],
             "members": {
                 "conversationId": {
                     "shape": "ConversationId"
@@ -4588,17 +4195,11 @@
         "TerminalUserInteractionEventType": {
             "type": "string",
             "documentation": "<p>CodeWhisperer terminal Interaction Type</p>",
-            "enum": [
-                "CODEWHISPERER_TERMINAL_TRANSLATION_ACTION",
-                "CODEWHISPERER_TERMINAL_COMPLETION_INSERTED"
-            ]
+            "enum": ["CODEWHISPERER_TERMINAL_TRANSLATION_ACTION", "CODEWHISPERER_TERMINAL_COMPLETION_INSERTED"]
         },
         "TestGenerationEvent": {
             "type": "structure",
-            "required": [
-                "jobId",
-                "groupName"
-            ],
+            "required": ["jobId", "groupName"],
             "members": {
                 "jobId": {
                     "shape": "UUID"
@@ -4637,12 +4238,7 @@
         },
         "TestGenerationJob": {
             "type": "structure",
-            "required": [
-                "testGenerationJobId",
-                "testGenerationJobGroupName",
-                "status",
-                "creationTime"
-            ],
+            "required": ["testGenerationJobId", "testGenerationJobGroupName", "status", "creationTime"],
             "members": {
                 "testGenerationJobId": {
                     "shape": "UUID"
@@ -4704,17 +4300,11 @@
         },
         "TestGenerationJobStatus": {
             "type": "string",
-            "enum": [
-                "IN_PROGRESS",
-                "FAILED",
-                "COMPLETED"
-            ]
+            "enum": ["IN_PROGRESS", "FAILED", "COMPLETED"]
         },
         "TextDocument": {
             "type": "structure",
-            "required": [
-                "relativeFilePath"
-            ],
+            "required": ["relativeFilePath"],
             "members": {
                 "relativeFilePath": {
                     "shape": "TextDocumentRelativeFilePathString",
@@ -4737,13 +4327,7 @@
         },
         "TextDocumentDiagnostic": {
             "type": "structure",
-            "required": [
-                "document",
-                "range",
-                "source",
-                "severity",
-                "message"
-            ],
+            "required": ["document", "range", "source", "severity", "message"],
             "members": {
                 "document": {
                     "shape": "TextDocument",
@@ -4788,9 +4372,7 @@
         },
         "ThrottlingException": {
             "type": "structure",
-            "required": [
-                "message"
-            ],
+            "required": ["message"],
             "members": {
                 "message": {
                     "shape": "String"
@@ -4808,9 +4390,7 @@
         "ThrottlingExceptionReason": {
             "type": "string",
             "documentation": "<p>Reason for ThrottlingException</p>",
-            "enum": [
-                "MONTHLY_REQUEST_COUNT"
-            ]
+            "enum": ["MONTHLY_REQUEST_COUNT"]
         },
         "Timestamp": {
             "type": "timestamp"
@@ -4851,10 +4431,7 @@
         },
         "ToolResult": {
             "type": "structure",
-            "required": [
-                "toolUseId",
-                "content"
-            ],
+            "required": ["toolUseId", "content"],
             "members": {
                 "toolUseId": {
                     "shape": "ToolUseId"
@@ -4898,10 +4475,7 @@
         "ToolResultStatus": {
             "type": "string",
             "documentation": "<p>Status of the tools result.</p>",
-            "enum": [
-                "success",
-                "error"
-            ]
+            "enum": ["success", "error"]
         },
         "ToolResults": {
             "type": "list",
@@ -4913,10 +4487,7 @@
         },
         "ToolSpecification": {
             "type": "structure",
-            "required": [
-                "inputSchema",
-                "name"
-            ],
+            "required": ["inputSchema", "name"],
             "members": {
                 "inputSchema": {
                     "shape": "ToolInputSchema"
@@ -4932,11 +4503,7 @@
         },
         "ToolUse": {
             "type": "structure",
-            "required": [
-                "toolUseId",
-                "name",
-                "input"
-            ],
+            "required": ["toolUseId", "name", "input"],
             "members": {
                 "toolUseId": {
                     "shape": "ToolUseId"
@@ -4974,9 +4541,7 @@
         },
         "TransformEvent": {
             "type": "structure",
-            "required": [
-                "jobId"
-            ],
+            "required": ["jobId"],
             "members": {
                 "jobId": {
                     "shape": "TransformationJobId"
@@ -5003,14 +4568,7 @@
         },
         "TransformationDotNetRuntimeEnv": {
             "type": "string",
-            "enum": [
-                "NET_5_0",
-                "NET_6_0",
-                "NET_7_0",
-                "NET_8_0",
-                "NET_9_0",
-                "NET_STANDARD_2_0"
-            ]
+            "enum": ["NET_5_0", "NET_6_0", "NET_7_0", "NET_8_0", "NET_9_0", "NET_STANDARD_2_0"]
         },
         "TransformationDownloadArtifact": {
             "type": "structure",
@@ -5025,11 +4583,7 @@
         },
         "TransformationDownloadArtifactType": {
             "type": "string",
-            "enum": [
-                "ClientInstructions",
-                "Logs",
-                "GeneratedCode"
-            ]
+            "enum": ["ClientInstructions", "Logs", "GeneratedCode"]
         },
         "TransformationDownloadArtifacts": {
             "type": "list",
@@ -5041,12 +4595,7 @@
         },
         "TransformationJavaRuntimeEnv": {
             "type": "string",
-            "enum": [
-                "JVM_8",
-                "JVM_11",
-                "JVM_17",
-                "JVM_21"
-            ]
+            "enum": ["JVM_8", "JVM_11", "JVM_17", "JVM_21"]
         },
         "TransformationJob": {
             "type": "structure",
@@ -5083,16 +4632,7 @@
         },
         "TransformationLanguage": {
             "type": "string",
-            "enum": [
-                "JAVA_8",
-                "JAVA_11",
-                "JAVA_17",
-                "JAVA_21",
-                "C_SHARP",
-                "COBOL",
-                "PL_I",
-                "JCL"
-            ]
+            "enum": ["JAVA_8", "JAVA_11", "JAVA_17", "JAVA_21", "C_SHARP", "COBOL", "PL_I", "JCL"]
         },
         "TransformationLanguages": {
             "type": "list",
@@ -5102,22 +4642,15 @@
         },
         "TransformationMainframeRuntimeEnv": {
             "type": "string",
-            "enum": [
-                "MAINFRAME"
-            ]
+            "enum": ["MAINFRAME"]
         },
         "TransformationOperatingSystemFamily": {
             "type": "string",
-            "enum": [
-                "WINDOWS",
-                "LINUX"
-            ]
+            "enum": ["WINDOWS", "LINUX"]
         },
         "TransformationPlan": {
             "type": "structure",
-            "required": [
-                "transformationSteps"
-            ],
+            "required": ["transformationSteps"],
             "members": {
                 "transformationSteps": {
                     "shape": "TransformationSteps"
@@ -5134,10 +4667,7 @@
         },
         "TransformationProgressUpdate": {
             "type": "structure",
-            "required": [
-                "name",
-                "status"
-            ],
+            "required": ["name", "status"],
             "members": {
                 "name": {
                     "shape": "String"
@@ -5161,14 +4691,7 @@
         },
         "TransformationProgressUpdateStatus": {
             "type": "string",
-            "enum": [
-                "IN_PROGRESS",
-                "COMPLETED",
-                "FAILED",
-                "PAUSED",
-                "AWAITING_CLIENT_ACTION",
-                "SKIPPED"
-            ]
+            "enum": ["IN_PROGRESS", "COMPLETED", "FAILED", "PAUSED", "AWAITING_CLIENT_ACTION", "SKIPPED"]
         },
         "TransformationProjectArtifactDescriptor": {
             "type": "structure",
@@ -5260,12 +4783,7 @@
         },
         "TransformationStep": {
             "type": "structure",
-            "required": [
-                "id",
-                "name",
-                "description",
-                "status"
-            ],
+            "required": ["id", "name", "description", "status"],
             "members": {
                 "id": {
                     "shape": "StepId"
@@ -5292,15 +4810,7 @@
         },
         "TransformationStepStatus": {
             "type": "string",
-            "enum": [
-                "CREATED",
-                "COMPLETED",
-                "PARTIALLY_COMPLETED",
-                "STOPPED",
-                "FAILED",
-                "PAUSED",
-                "SKIPPED"
-            ]
+            "enum": ["CREATED", "COMPLETED", "PARTIALLY_COMPLETED", "STOPPED", "FAILED", "PAUSED", "SKIPPED"]
         },
         "TransformationSteps": {
             "type": "list",
@@ -5310,24 +4820,15 @@
         },
         "TransformationType": {
             "type": "string",
-            "enum": [
-                "LANGUAGE_UPGRADE",
-                "DOCUMENT_GENERATION"
-            ]
+            "enum": ["LANGUAGE_UPGRADE", "DOCUMENT_GENERATION"]
         },
         "TransformationUploadArtifactType": {
             "type": "string",
-            "enum": [
-                "Dependencies",
-                "ClientBuildResult"
-            ]
+            "enum": ["Dependencies", "ClientBuildResult"]
         },
         "TransformationUploadContext": {
             "type": "structure",
-            "required": [
-                "jobId",
-                "uploadArtifactType"
-            ],
+            "required": ["jobId", "uploadArtifactType"],
             "members": {
                 "jobId": {
                     "shape": "TransformationJobId"
@@ -5339,10 +4840,7 @@
         },
         "TransformationUserActionStatus": {
             "type": "string",
-            "enum": [
-                "COMPLETED",
-                "REJECTED"
-            ]
+            "enum": ["COMPLETED", "REJECTED"]
         },
         "UUID": {
             "type": "string",
@@ -5396,11 +4894,7 @@
         },
         "UserContext": {
             "type": "structure",
-            "required": [
-                "ideCategory",
-                "operatingSystem",
-                "product"
-            ],
+            "required": ["ideCategory", "operatingSystem", "product"],
             "members": {
                 "ideCategory": {
                     "shape": "IdeCategory"
@@ -5427,9 +4921,7 @@
         },
         "UserInputMessage": {
             "type": "structure",
-            "required": [
-                "content"
-            ],
+            "required": ["content"],
             "members": {
                 "content": {
                     "shape": "UserInputMessageContentString",
@@ -5627,9 +5119,7 @@
         },
         "ValidationException": {
             "type": "structure",
-            "required": [
-                "message"
-            ],
+            "required": ["message"],
             "members": {
                 "message": {
                     "shape": "String"
@@ -5644,17 +5134,11 @@
         "ValidationExceptionReason": {
             "type": "string",
             "documentation": "<p>Reason for ValidationException</p>",
-            "enum": [
-                "INVALID_CONVERSATION_ID",
-                "CONTENT_LENGTH_EXCEEDS_THRESHOLD",
-                "INVALID_KMS_GRANT"
-            ]
+            "enum": ["INVALID_CONVERSATION_ID", "CONTENT_LENGTH_EXCEEDS_THRESHOLD", "INVALID_KMS_GRANT"]
         },
         "WorkspaceContext": {
             "type": "structure",
-            "required": [
-                "toggle"
-            ],
+            "required": ["toggle"],
             "members": {
                 "toggle": {
                     "shape": "OptInFeatureToggle"
@@ -5663,11 +5147,7 @@
         },
         "WorkspaceContextUploadContext": {
             "type": "structure",
-            "required": [
-                "workspaceId",
-                "relativePath",
-                "programmingLanguage"
-            ],
+            "required": ["workspaceId", "relativePath", "programmingLanguage"],
             "members": {
                 "workspaceId": {
                     "shape": "UUID"
@@ -5688,10 +5168,7 @@
         },
         "WorkspaceMetadata": {
             "type": "structure",
-            "required": [
-                "workspaceId",
-                "workspaceStatus"
-            ],
+            "required": ["workspaceId", "workspaceStatus"],
             "members": {
                 "workspaceId": {
                     "shape": "UUID"
@@ -5706,10 +5183,7 @@
         },
         "WorkspaceState": {
             "type": "structure",
-            "required": [
-                "uploadId",
-                "programmingLanguage"
-            ],
+            "required": ["uploadId", "programmingLanguage"],
             "members": {
                 "uploadId": {
                     "shape": "UploadId",
@@ -5728,13 +5202,7 @@
         },
         "WorkspaceStatus": {
             "type": "string",
-            "enum": [
-                "CREATED",
-                "PENDING",
-                "READY",
-                "CONNECTED",
-                "DELETING"
-            ]
+            "enum": ["CREATED", "PENDING", "READY", "CONNECTED", "DELETING"]
         },
         "timeBetweenChunks": {
             "type": "list",
