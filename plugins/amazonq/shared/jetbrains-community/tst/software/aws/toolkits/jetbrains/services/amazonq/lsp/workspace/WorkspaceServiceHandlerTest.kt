@@ -291,8 +291,8 @@ class WorkspaceServiceHandlerTest {
         val paramsSlot = slot<RenameFilesParams>()
         verify { mockWorkspaceService.didRenameFiles(capture(paramsSlot)) }
         with(paramsSlot.captured.files[0]) {
-            assertEquals(normalizeFileUri("file:///test/$oldName"), oldUri)
-            assertEquals(normalizeFileUri("file:///test/$newName"), newUri)
+            assertEquals("file:///test/$oldName", oldUri)
+            assertEquals("file:///test/$newName", newUri)
         }
     }
 
@@ -328,8 +328,8 @@ class WorkspaceServiceHandlerTest {
         val paramsSlot = slot<RenameFilesParams>()
         verify { mockWorkspaceService.didRenameFiles(capture(paramsSlot)) }
         with(paramsSlot.captured.files[0]) {
-            assertEquals(normalizeFileUri("file:///test/oldDir"), oldUri)
-            assertEquals(normalizeFileUri("file:///test/newDir"), newUri)
+            assertEquals("file:///test/oldDir", oldUri)
+            assertEquals("file:///test/newDir", newUri)
         }
     }
 
