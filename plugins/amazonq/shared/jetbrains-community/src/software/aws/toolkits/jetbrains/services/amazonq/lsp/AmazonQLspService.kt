@@ -252,8 +252,8 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         val artifact = runBlocking { ArtifactManager(project, manifestRange = null).fetchArtifact() }.toAbsolutePath()
         val node = if (SystemInfo.isWindows) "node.exe" else "node"
         val cmd = GeneralCommandLine(
-            artifact.resolve(node).toString(),
-            LspSettings.getInstance().getArtifactPath() ?: artifact.resolve("aws-lsp-codewhisperer.js").toString(),
+            "/Users/leigaol/.nvm/versions/node/v18.20.2/bin/node",
+            "/Users/leigaol/workplace/aws-toolkit-lsp/language-servers/app/aws-lsp-codewhisperer-runtimes/out/token-standalone.js",
             "--stdio",
             "--set-credentials-encryption-key",
         )
