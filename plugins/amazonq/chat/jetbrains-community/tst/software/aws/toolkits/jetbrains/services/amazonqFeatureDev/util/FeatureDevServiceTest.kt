@@ -25,6 +25,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ExportParseExc
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ServiceException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeGenerationStreamResult
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
@@ -128,7 +129,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
 
         assertThatThrownBy {
             featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId.toString())
-        }.isExactlyInstanceOf(FeatureDevException::class.java).withFailMessage(cwExceptionMsg)
+        }.isExactlyInstanceOf(ServiceException::class.java).withFailMessage(cwExceptionMsg)
     }
 
     @Test
@@ -138,7 +139,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
 
         assertThatThrownBy {
             featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId.toString())
-        }.isExactlyInstanceOf(FeatureDevException::class.java).withFailMessage(otherExceptionMsg)
+        }.isExactlyInstanceOf(ServiceException::class.java).withFailMessage(otherExceptionMsg)
     }
 
     @Test
@@ -284,7 +285,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 codeGenerationId = codeGenerationId,
                 currentCodeGenerationId = "EMPTY_CURRENT_CODE_GENERATION_ID",
             )
-        }.isExactlyInstanceOf(FeatureDevException::class.java).withFailMessage(cwExceptionMsg)
+        }.isExactlyInstanceOf(ServiceException::class.java).withFailMessage(cwExceptionMsg)
     }
 
     @Test
@@ -308,7 +309,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 codeGenerationId = codeGenerationId,
                 currentCodeGenerationId = "EMPTY_CURRENT_CODE_GENERATION_ID",
             )
-        }.isExactlyInstanceOf(FeatureDevException::class.java).withFailMessage(otherExceptionMsg)
+        }.isExactlyInstanceOf(ServiceException::class.java).withFailMessage(otherExceptionMsg)
     }
 
     @Test
@@ -325,7 +326,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 whenever(featureDevClient.exportTaskAssistResultArchive(testConversationId)).thenThrow(exampleCWException)
                 featureDevService.exportTaskAssistArchiveResult(testConversationId)
             }
-        }.isExactlyInstanceOf(FeatureDevException::class.java).withFailMessage(cwExceptionMsg)
+        }.isExactlyInstanceOf(ServiceException::class.java).withFailMessage(cwExceptionMsg)
     }
 
     @Test
@@ -337,7 +338,7 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
                 whenever(featureDevClient.exportTaskAssistResultArchive(testConversationId)).thenThrow(exampleOtherException)
                 featureDevService.exportTaskAssistArchiveResult(testConversationId)
             }
-        }.isExactlyInstanceOf(FeatureDevException::class.java).withFailMessage(otherExceptionMsg)
+        }.isExactlyInstanceOf(ServiceException::class.java).withFailMessage(otherExceptionMsg)
     }
 
     @Test

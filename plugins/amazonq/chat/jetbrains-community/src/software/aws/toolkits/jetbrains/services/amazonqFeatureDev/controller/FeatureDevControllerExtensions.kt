@@ -7,17 +7,11 @@ import com.intellij.notification.NotificationAction
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CLIENT_ERROR_MESSAGES
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CODE_GENERATION_RETRY_LIMIT
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthException
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.EmptyPatchException
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.GuardrailsException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ClientException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.LlmException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataOperationName
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MetricDataResult
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PromptRefusalException
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ThrottlingException
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileCorruptedException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ServiceException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FeatureDevMessageType
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUp
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.FollowUpStatusType
@@ -158,43 +152,34 @@ suspend fun FeatureDevController.onCodeGeneration(
         messenger.sendSystemPrompt(tabId = tabId, followUp = getFollowUpOptions(session.sessionState.phase, InsertAction.ALL))
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
     } catch (err: Exception) {
+        val metricDataResult: MetricDataResult
         when (err) {
-            is GuardrailsException,
-            is NoChangeRequiredException,
-            is PromptRefusalException,
-            is ThrottlingException,
-            is CodeIterationLimitException,
-            is MonthlyConversationLimitError,
-            is ContentLengthException,
-            is ZipFileCorruptedException,
+            is ClientException,
             -> {
-                session.sendMetricDataTelemetry(
-                    MetricDataOperationName.EndCodeGeneration,
-                    MetricDataResult.Error
-                )
+                metricDataResult = MetricDataResult.Error
             }
-            is EmptyPatchException -> {
-                session.sendMetricDataTelemetry(
-                    MetricDataOperationName.EndCodeGeneration,
-                    MetricDataResult.LlmFailure
-                )
+
+            is LlmException -> {
+                metricDataResult = MetricDataResult.LlmFailure
             }
+
+            is ServiceException -> {
+                metricDataResult = MetricDataResult.Fault
+            }
+
             else -> {
                 val errorMessage = err.message.orEmpty()
-
-                if (CLIENT_ERROR_MESSAGES.any { errorMessage.contains(it) }) {
-                    session.sendMetricDataTelemetry(
-                        MetricDataOperationName.EndCodeGeneration,
-                        MetricDataResult.Error
-                    )
+                metricDataResult = if (CLIENT_ERROR_MESSAGES.any { errorMessage.contains(it) }) {
+                    MetricDataResult.Error
                 } else {
-                    session.sendMetricDataTelemetry(
-                        MetricDataOperationName.EndCodeGeneration,
-                        MetricDataResult.Fault
-                    )
+                    MetricDataResult.Fault
                 }
             }
         }
+        session.sendMetricDataTelemetry(
+            MetricDataOperationName.EndCodeGeneration,
+            metricDataResult
+        )
         throw err
     } finally {
         if (session.sessionState.token
