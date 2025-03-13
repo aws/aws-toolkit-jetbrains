@@ -1,0 +1,14 @@
+{
+  "date" : "2025-03-13",
+  "version" : "3.59",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "AmazonQ /dev and /doc: Add support for complex workspaces."
+  }, {
+    "type" : "bugfix",
+    "description" : "/review: normalize relative file path before unzipping"
+  }, {
+    "type" : "bugfix",
+    "description" : "fix Q chat request timeout"
+  } ]
+}
