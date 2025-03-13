@@ -1,7 +1,7 @@
 // Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.uitests.docTests.updateReadmeTests.UpdateReadmeSpecificChanges
+package software.aws.toolkits.jetbrains.uitests.docTests.updateReadmeTests.updateReadmeSpecificChanges
 
 import com.intellij.driver.sdk.waitForProjectOpen
 import com.intellij.ide.starter.ci.CIServer
