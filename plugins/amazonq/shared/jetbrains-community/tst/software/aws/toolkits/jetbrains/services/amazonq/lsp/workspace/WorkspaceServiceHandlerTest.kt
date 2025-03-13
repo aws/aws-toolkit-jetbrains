@@ -106,7 +106,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
-        assertEquals(pyUri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(pyUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -118,7 +118,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
-        assertEquals(tsUri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(tsUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -130,7 +130,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
-        assertEquals(jsUri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(jsUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -142,7 +142,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
-        assertEquals(javaUri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(javaUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -154,7 +154,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
-        assertEquals(dirUri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(dirUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -176,7 +176,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
-        assertEquals(pyUri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(pyUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -188,7 +188,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
-        assertEquals(tsUri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(tsUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -200,7 +200,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
-        assertEquals(jsUri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(jsUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -212,7 +212,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
-        assertEquals(javaUri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(javaUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -234,7 +234,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
-        assertEquals(dirUri.toString(), paramsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(dirUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
     @Test
@@ -254,11 +254,11 @@ class WorkspaceServiceHandlerTest {
         // Assert
         val paramsSlot = slot<DidChangeWatchedFilesParams>()
         verify { mockWorkspaceService.didChangeWatchedFiles(capture(paramsSlot)) }
-        assertEquals(createURI.toString(), paramsSlot.captured.changes[0].uri)
+        assertEquals(normalizeFileUri(createURI.toString()), paramsSlot.captured.changes[0].uri)
         assertEquals(FileChangeType.Created, paramsSlot.captured.changes[0].type)
-        assertEquals(deleteURI.toString(), paramsSlot.captured.changes[1].uri)
+        assertEquals(normalizeFileUri(deleteURI.toString()), paramsSlot.captured.changes[1].uri)
         assertEquals(FileChangeType.Deleted, paramsSlot.captured.changes[1].type)
-        assertEquals(changeURI.toString(), paramsSlot.captured.changes[2].uri)
+        assertEquals(normalizeFileUri(changeURI.toString()), paramsSlot.captured.changes[2].uri)
         assertEquals(FileChangeType.Changed, paramsSlot.captured.changes[2].type)
     }
 
@@ -291,8 +291,8 @@ class WorkspaceServiceHandlerTest {
         val paramsSlot = slot<RenameFilesParams>()
         verify { mockWorkspaceService.didRenameFiles(capture(paramsSlot)) }
         with(paramsSlot.captured.files[0]) {
-            assertEquals("file:///test/$oldName", oldUri)
-            assertEquals("file:///test/$newName", newUri)
+            assertEquals(normalizeFileUri("file:///test/$oldName"), oldUri)
+            assertEquals(normalizeFileUri("file:///test/$newName"), newUri)
         }
     }
 
@@ -328,8 +328,8 @@ class WorkspaceServiceHandlerTest {
         val paramsSlot = slot<RenameFilesParams>()
         verify { mockWorkspaceService.didRenameFiles(capture(paramsSlot)) }
         with(paramsSlot.captured.files[0]) {
-            assertEquals("file:///test/oldDir", oldUri)
-            assertEquals("file:///test/newDir", newUri)
+            assertEquals(normalizeFileUri("file:///test/oldDir"), oldUri)
+            assertEquals(normalizeFileUri("file:///test/newDir"), newUri)
         }
     }
 
@@ -511,13 +511,18 @@ class WorkspaceServiceHandlerTest {
     }
 
     private fun createMockVFileEvent(uri: URI, type: FileChangeType = FileChangeType.Changed, isDirectory: Boolean, extension: String = "py"): VFileEvent {
-        val virtualFile = mockk<VirtualFile>()
-        val nioPath = mockk<Path>()
-
-        every { virtualFile.isDirectory } returns isDirectory
-        every { virtualFile.toNioPath() } returns nioPath
-        every { nioPath.toUri() } returns uri
-        every { virtualFile.path } returns "${uri.path}.$extension"
+        val nioPath = mockk<Path> {
+            every { toUri() } returns uri
+        }
+        val virtualFile = mockk<VirtualFile> {
+            every { this@mockk.isDirectory } returns isDirectory
+            every { toNioPath() } returns nioPath
+            every { url } returns uri.path
+            every { path } returns "${uri.path}.$extension"
+            every { fileSystem } returns mockk {
+                every { protocol } returns "file"
+            }
+        }
 
         return when (type) {
             FileChangeType.Deleted -> mockk<VFileDeleteEvent>()
@@ -534,16 +539,29 @@ class WorkspaceServiceHandlerTest {
         newName: String,
         isDirectory: Boolean = false,
     ): VFilePropertyChangeEvent {
-        val file = mockk<VirtualFile>()
-        val parent = mockk<VirtualFile>()
         val parentPath = mockk<Path>()
         val filePath = mockk<Path>()
 
-        every { file.parent } returns parent
-        every { parent.toNioPath() } returns parentPath
-        every { file.toNioPath() } returns filePath
-        every { file.isDirectory } returns isDirectory
-        every { file.path } returns "/test/$newName"
+        val parent = mockk<VirtualFile> {
+            every { toNioPath() } returns parentPath
+            every { this@mockk.isDirectory } returns isDirectory
+            every { path } returns "/test/$oldName"
+            every { url } returns "file:///test/$oldName"
+            every { fileSystem } returns mockk {
+                every { protocol } returns "file"
+            }
+        }
+
+        val file = mockk<VirtualFile> {
+            every { toNioPath() } returns filePath
+            every { this@mockk.parent } returns parent
+            every { this@mockk.isDirectory } returns isDirectory
+            every { path } returns "/test/$newName"
+            every { url } returns "file:///test/$newName"
+            every { fileSystem } returns mockk {
+                every { protocol } returns "file"
+            }
+        }
 
         every { parentPath.resolve(oldName) } returns mockk {
             every { toUri() } returns URI("file:///test/$oldName")
@@ -556,5 +574,19 @@ class WorkspaceServiceHandlerTest {
             every { oldValue } returns oldName
             every { newValue } returns newName
         }
+    }
+
+    // for windows unit tests
+    private fun normalizeFileUri(uri: String): String {
+        if (!System.getProperty("os.name").lowercase().contains("windows")) {
+            return uri
+        }
+
+        if (!uri.startsWith("file:///")) {
+            return uri
+        }
+
+        val path = uri.substringAfter("file:///")
+        return "file:///C:/$path"
     }
 }

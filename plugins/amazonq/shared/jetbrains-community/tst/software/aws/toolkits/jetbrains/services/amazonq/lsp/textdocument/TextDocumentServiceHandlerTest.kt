@@ -18,6 +18,7 @@ import com.intellij.util.messages.MessageBusConnection
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.runs
 import io.mockk.slot
@@ -34,6 +35,7 @@ import org.junit.Before
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil
 import java.net.URI
 import java.nio.file.Path
 import java.util.concurrent.Callable
@@ -99,14 +101,7 @@ class TextDocumentServiceHandlerTest {
             every { text } returns "test content"
         }
 
-        val path = mockk<Path> {
-            every { toUri() } returns uri
-        }
-
-        val file = mockk<VirtualFile> {
-            every { this@mockk.path } returns uri.path
-            every { toNioPath() } returns path
-        }
+        val file = createMockVirtualFile(uri)
 
         // Mock FileDocumentManager
         val fileDocumentManager = mockk<FileDocumentManager> {
@@ -125,7 +120,7 @@ class TextDocumentServiceHandlerTest {
             verify { mockTextDocumentService.didSave(capture(paramsSlot)) }
 
             with(paramsSlot.captured) {
-                assertEquals(uri.toString(), textDocument.uri)
+                assertEquals(normalizeFileUri(uri.toString()), textDocument.uri)
                 assertEquals("test content", text)
             }
         }
@@ -136,17 +131,8 @@ class TextDocumentServiceHandlerTest {
         // Create test file
         val uri = URI.create("file:///test/path/file.txt")
         val content = "test content"
-        val inputStream = content.byteInputStream()
 
-        val path = mockk<Path> {
-            every { toUri() } returns uri
-        }
-
-        val file = mockk<VirtualFile> {
-            every { this@mockk.path } returns uri.path
-            every { toNioPath() } returns path
-            every { this@mockk.inputStream } returns inputStream
-        }
+        val file = createMockVirtualFile(uri, content)
 
         // Call the handler method
         sut.fileOpened(mockk(), file)
@@ -156,7 +142,7 @@ class TextDocumentServiceHandlerTest {
         verify { mockTextDocumentService.didOpen(capture(paramsSlot)) }
 
         with(paramsSlot.captured.textDocument) {
-            assertEquals(uri.toString(), this.uri)
+            assertEquals(normalizeFileUri(uri.toString()), this.uri)
             assertEquals(content, text)
         }
     }
@@ -164,20 +150,14 @@ class TextDocumentServiceHandlerTest {
     @Test
     fun `didClose runs on fileClosed`() = runTest {
         val uri = URI.create("file:///test/path/file.txt")
-        val path = mockk<Path> {
-            every { toUri() } returns uri
-        }
-        val file = mockk<VirtualFile> {
-            every { this@mockk.path } returns uri.path
-            every { toNioPath() } returns path
-        }
+        val file = createMockVirtualFile(uri)
 
         sut.fileClosed(mockk(), file)
 
         val paramsSlot = slot<DidCloseTextDocumentParams>()
         verify { mockTextDocumentService.didClose(capture(paramsSlot)) }
 
-        assertEquals(uri.toString(), paramsSlot.captured.textDocument.uri)
+        assertEquals(normalizeFileUri(uri.toString()), paramsSlot.captured.textDocument.uri)
     }
 
     @Test
@@ -188,14 +168,7 @@ class TextDocumentServiceHandlerTest {
             every { modificationStamp } returns 123L
         }
 
-        val path = mockk<Path> {
-            every { toUri() } returns uri
-        }
-
-        val file = mockk<VirtualFile> {
-            every { this@mockk.path } returns uri.path
-            every { toNioPath() } returns path
-        }
+        val file = createMockVirtualFile(uri)
 
         val changeEvent = mockk<VFileContentChangeEvent> {
             every { this@mockk.file } returns file
@@ -218,7 +191,7 @@ class TextDocumentServiceHandlerTest {
         verify { mockTextDocumentService.didChange(capture(paramsSlot)) }
 
         with(paramsSlot.captured) {
-            assertEquals(uri.toString(), textDocument.uri)
+            assertEquals(normalizeFileUri(uri.toString()), textDocument.uri)
             assertEquals(123, textDocument.version)
             assertEquals("changed content", contentChanges[0].text)
         }
@@ -227,23 +200,22 @@ class TextDocumentServiceHandlerTest {
     @Test
     fun `didSave does not run when URI is empty`() = runTest {
         val document = mockk<Document>()
-        val path = mockk<Path> {
-            every { toUri() } returns URI.create("")
-        }
-        val file = mockk<VirtualFile> {
-            every { toNioPath() } returns path
-        }
+        val file = createMockVirtualFile(URI.create(""))
 
-        val fileDocumentManager = mockk<FileDocumentManager> {
-            every { getFile(document) } returns file
-        }
+        mockkObject(FileUriUtil) {
+            every { FileUriUtil.toUriString(file) } returns null
 
-        mockkStatic(FileDocumentManager::class) {
-            every { FileDocumentManager.getInstance() } returns fileDocumentManager
+            val fileDocumentManager = mockk<FileDocumentManager> {
+                every { getFile(document) } returns file
+            }
 
-            sut.beforeDocumentSaving(document)
+            mockkStatic(FileDocumentManager::class) {
+                every { FileDocumentManager.getInstance() } returns fileDocumentManager
 
-            verify(exactly = 0) { mockTextDocumentService.didSave(any()) }
+                sut.beforeDocumentSaving(document)
+
+                verify(exactly = 0) { mockTextDocumentService.didSave(any()) }
+            }
         }
     }
 
@@ -297,5 +269,34 @@ class TextDocumentServiceHandlerTest {
 
             verify(exactly = 0) { mockTextDocumentService.didChange(any()) }
         }
+    }
+
+    private fun createMockVirtualFile(uri: URI, content: String = ""): VirtualFile {
+        val path = mockk<Path> {
+            every { toUri() } returns uri
+        }
+        val inputStream = content.byteInputStream()
+        return mockk<VirtualFile> {
+            every { url } returns uri.path
+            every { toNioPath() } returns path
+            every { isDirectory } returns false
+            every { fileSystem } returns mockk {
+                every { protocol } returns "file"
+            }
+            every { this@mockk.inputStream } returns inputStream
+        }
+    }
+
+    private fun normalizeFileUri(uri: String): String {
+        if (!System.getProperty("os.name").lowercase().contains("windows")) {
+            return uri
+        }
+
+        if (!uri.startsWith("file:///")) {
+            return uri
+        }
+
+        val path = uri.substringAfter("file:///")
+        return "file:///C:/$path"
     }
 }
