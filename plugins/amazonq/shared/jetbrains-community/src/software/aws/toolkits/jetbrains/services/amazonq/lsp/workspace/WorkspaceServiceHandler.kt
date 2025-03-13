@@ -10,9 +10,11 @@ import com.intellij.openapi.roots.ModuleRootListener
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
+import com.intellij.openapi.vfs.newvfs.events.VFileCopyEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
+import com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent
 import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent
 import org.eclipse.lsp4j.CreateFilesParams
 import org.eclipse.lsp4j.DeleteFilesParams
@@ -59,10 +61,24 @@ class WorkspaceServiceHandler(
     private fun didCreateFiles(events: List<VFileEvent>) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             val validFiles = events.mapNotNull { event ->
-                val file = event.file?.takeIf { shouldHandleFile(it) } ?: return@mapNotNull null
-                toUriString(file)?.let { uri ->
-                    FileCreate().apply {
-                        this.uri = uri
+                when (event) {
+                    is VFileCopyEvent -> {
+                        val newFile = event.newParent.findChild(event.newChildName)?.takeIf { shouldHandleFile(it) }
+                            ?: return@mapNotNull null
+                        toUriString(newFile)?.let { uri ->
+                            FileCreate().apply {
+                                this.uri = uri
+                            }
+                        }
+                    }
+                    else -> {
+                        val file = event.file?.takeIf { shouldHandleFile(it) }
+                            ?: return@mapNotNull null
+                        toUriString(file)?.let { uri ->
+                            FileCreate().apply {
+                                this.uri = uri
+                            }
+                        }
                     }
                 }
             }
@@ -80,8 +96,17 @@ class WorkspaceServiceHandler(
     private fun didDeleteFiles(events: List<VFileEvent>) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             val validFiles = events.mapNotNull { event ->
-                val file = event.file?.takeIf { shouldHandleFile(it) } ?: return@mapNotNull null
-                toUriString(file)?.let { uri ->
+                when (event) {
+                    is VFileDeleteEvent -> {
+                        val file = event.file.takeIf { shouldHandleFile(it) } ?: return@mapNotNull null
+                        toUriString(file)
+                    }
+                    is VFileMoveEvent -> {
+                        val oldFile = event.oldParent?.takeIf { shouldHandleFile(it) } ?: return@mapNotNull null
+                        toUriString(oldFile)
+                    }
+                    else -> null
+                }?.let { uri ->
                     FileDelete().apply {
                         this.uri = uri
                     }
@@ -129,15 +154,51 @@ class WorkspaceServiceHandler(
 
     private fun didChangeWatchedFiles(events: List<VFileEvent>) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
-            val validChanges = events.mapNotNull { event ->
-                event.file?.let { toUriString(it) }?.let { uri ->
-                    FileEvent().apply {
-                        this.uri = uri
-                        type = when (event) {
-                            is VFileCreateEvent -> FileChangeType.Created
-                            is VFileDeleteEvent -> FileChangeType.Deleted
-                            else -> FileChangeType.Changed
-                        }
+            val validChanges = events.flatMap { event ->
+                when (event) {
+                    is VFileCopyEvent -> {
+                        event.newParent.findChild(event.newChildName)?.let { newFile ->
+                            toUriString(newFile)?.let { uri ->
+                                listOf(
+                                    FileEvent().apply {
+                                        this.uri = uri
+                                        type = FileChangeType.Created
+                                    }
+                                )
+                            }
+                        }.orEmpty()
+                    }
+                    is VFileMoveEvent -> {
+                        listOfNotNull(
+                            toUriString(event.oldParent)?.let { oldUri ->
+                                FileEvent().apply {
+                                    uri = oldUri
+                                    type = FileChangeType.Deleted
+                                }
+                            },
+                            toUriString(event.file)?.let { newUri ->
+                                FileEvent().apply {
+                                    uri = newUri
+                                    type = FileChangeType.Created
+                                }
+                            }
+                        )
+                    }
+                    else -> {
+                        event.file?.let { file ->
+                            toUriString(file)?.let { uri ->
+                                listOf(
+                                    FileEvent().apply {
+                                        this.uri = uri
+                                        type = when (event) {
+                                            is VFileCreateEvent -> FileChangeType.Created
+                                            is VFileDeleteEvent -> FileChangeType.Deleted
+                                            else -> FileChangeType.Changed
+                                        }
+                                    }
+                                )
+                            }
+                        }.orEmpty()
                     }
                 }
             }
@@ -155,8 +216,8 @@ class WorkspaceServiceHandler(
     override fun after(events: List<VFileEvent>) {
         // since we are using synchronous FileListener
         pluginAwareExecuteOnPooledThread {
-            didCreateFiles(events.filterIsInstance<VFileCreateEvent>())
-            didDeleteFiles(events.filterIsInstance<VFileDeleteEvent>())
+            didCreateFiles(events.filter { it is VFileCreateEvent || it is VFileMoveEvent || it is VFileCopyEvent })
+            didDeleteFiles(events.filter { it is VFileMoveEvent || it is VFileDeleteEvent })
             didRenameFiles(events.filterIsInstance<VFilePropertyChangeEvent>())
             didChangeWatchedFiles(events)
         }
