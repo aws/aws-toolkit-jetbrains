@@ -166,7 +166,7 @@ class WorkspaceServiceHandler(
                                     }
                                 )
                             }
-                        } ?: emptyList()
+                        }.orEmpty()
                     }
                     is VFileMoveEvent -> {
                         listOfNotNull(
@@ -198,7 +198,7 @@ class WorkspaceServiceHandler(
                                     }
                                 )
                             }
-                        } ?: emptyList()
+                        }.orEmpty()
                     }
                 }
             }
