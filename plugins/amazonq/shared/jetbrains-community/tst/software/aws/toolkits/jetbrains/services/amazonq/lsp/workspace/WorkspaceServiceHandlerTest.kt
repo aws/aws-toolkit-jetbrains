@@ -265,6 +265,49 @@ class WorkspaceServiceHandlerTest {
         assertEquals(normalizeFileUri(dirUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
+
+    @Test
+    fun `test didDeleteFiles handles both delete and move events in same batch`() = runTest {
+        val deleteUri = URI("file:///test/deleteFile")
+        val oldMoveUri = URI("file:///test/oldMoveFile")
+        val newMoveUri = URI("file:///test/newMoveFile")
+
+        val deleteEvent = createMockVFileEvent(deleteUri, FileChangeType.Deleted, false, "py")
+        val moveEvent = createMockVFileMoveEvent(oldMoveUri, newMoveUri, "test.py")
+
+        sut.after(listOf(deleteEvent, moveEvent))
+
+        val deleteParamsSlot = slot<DeleteFilesParams>()
+        verify { mockWorkspaceService.didDeleteFiles(capture(deleteParamsSlot)) }
+        assertEquals(2, deleteParamsSlot.captured.files.size)
+        assertEquals(normalizeFileUri(deleteUri.toString()), deleteParamsSlot.captured.files[0].uri)
+        assertEquals(normalizeFileUri(oldMoveUri.toString()), deleteParamsSlot.captured.files[1].uri)
+    }
+
+    @Test
+    fun `test didDeleteFiles with move event of unsupported file type`() = runTest {
+        val oldUri = URI("file:///test/oldPath")
+        val newUri = URI("file:///test/newPath")
+        val moveEvent = createMockVFileMoveEvent(oldUri, newUri, "test.txt")
+
+        sut.after(listOf(moveEvent))
+
+        verify(exactly = 0) { mockWorkspaceService.didDeleteFiles(any()) }
+    }
+
+    @Test
+    fun `test didDeleteFiles with move event of directory`() = runTest {
+        val oldUri = URI("file:///test/oldDir")
+        val newUri = URI("file:///test/newDir")
+        val moveEvent = createMockVFileMoveEvent(oldUri, newUri, "", true)
+
+        sut.after(listOf(moveEvent))
+
+        val deleteParamsSlot = slot<DeleteFilesParams>()
+        verify { mockWorkspaceService.didDeleteFiles(capture(deleteParamsSlot)) }
+        assertEquals(normalizeFileUri(oldUri.toString()), deleteParamsSlot.captured.files[0].uri)
+    }
+
     @Test
     fun `test didChangeWatchedFiles with valid events`() = runTest {
         // Arrange
@@ -614,12 +657,13 @@ class WorkspaceServiceHandlerTest {
         }
     }
 
-    private fun createMockVFileMoveEvent(oldUri: URI, newUri: URI, fileName: String): VFileMoveEvent {
-        val newFile = createMockVirtualFile(newUri, fileName)
+    private fun createMockVFileMoveEvent(oldUri: URI, newUri: URI, fileName: String, isDirectory: Boolean = false): VFileMoveEvent {
+        val oldFile = createMockVirtualFile(oldUri, fileName, isDirectory)
+        val newFile = createMockVirtualFile(newUri, fileName, isDirectory)
         return mockk<VFileMoveEvent>().apply {
             every { file } returns newFile
             every { oldPath } returns oldUri.path
-            every { oldParent } returns createMockVirtualFile(oldUri, fileName)
+            every { oldParent } returns oldFile
         }
     }
 

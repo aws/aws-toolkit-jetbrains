@@ -213,7 +213,7 @@ class WorkspaceServiceHandler(
         // since we are using synchronous FileListener
         pluginAwareExecuteOnPooledThread {
             didCreateFiles(events.filter { it is VFileCreateEvent || it is VFileMoveEvent || it is VFileCopyEvent })
-            didDeleteFiles(events.filterIsInstance<VFileDeleteEvent>())
+            didDeleteFiles(events.filter { it is VFileMoveEvent || it is VFileDeleteEvent })
             didRenameFiles(events.filterIsInstance<VFilePropertyChangeEvent>())
             didChangeWatchedFiles(events)
         }
