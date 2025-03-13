@@ -3,11 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.util.net.HttpConfigurable
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
-import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.token.credentials.SdkTokenProvider
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder
@@ -19,14 +17,9 @@ import software.amazon.awssdk.core.retry.RetryPolicy
 import software.amazon.awssdk.http.SdkHttpRequest
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient
 import software.amazon.awssdk.http.nio.netty.ProxyConfiguration
-import software.amazon.awssdk.services.codewhisperer.CodeWhispererClientBuilder
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClientBuilder
 import software.amazon.awssdk.services.codewhispererstreaming.CodeWhispererStreamingAsyncClientBuilder
-import software.amazon.awssdk.services.cognitoidentity.CognitoIdentityClient
 import software.aws.toolkits.core.ToolkitClientCustomizer
-import software.aws.toolkits.jetbrains.core.AwsSdkClient
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
-import software.aws.toolkits.jetbrains.services.telemetry.AwsCognitoCredentialsProvider
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import java.net.Proxy
 import java.net.URI
@@ -101,44 +94,6 @@ class CodeWhispererEndpointCustomizer : ToolkitClientCustomizer {
                     clientBuilder
                         .tlsTrustManagersProvider { arrayOf<TrustManager>(CertificateManager.getInstance().trustManager) }
                 )
-            }
-        } else if (builder is CodeWhispererClientBuilder) {
-            clientOverrideConfiguration.addExecutionInterceptor(
-                object : ExecutionInterceptor {
-                    override fun modifyHttpRequest(context: Context.ModifyHttpRequest, executionAttributes: ExecutionAttributes): SdkHttpRequest {
-                        val requestBuilder = context.httpRequest().toBuilder()
-                        executionAttributes.attributes.forEach { (k, v) ->
-                            if (k.toString() != "OperationName") return@forEach
-                            if (v == "GetAccessToken") return requestBuilder.build()
-                            val token = CodeWhispererExplorerActionManager.getInstance().resolveAccessToken() ?: return requestBuilder.build()
-                            requestBuilder.putHeader(TOKEN_KEY_NAME, token)
-
-                            val isMetricOptIn = CodeWhispererSettings.getInstance().isMetricOptIn()
-                            if (v == "ListRecommendations") {
-                                requestBuilder.putHeader(OPTOUT_KEY_NAME, (!isMetricOptIn).toString())
-                            }
-                            return requestBuilder.build()
-                        }
-                        return context.httpRequest()
-                    }
-                }
-            )
-
-            builder
-                .region(CodeWhispererConstants.Config.Sigv4ClientRegion)
-
-            if (!ApplicationManager.getApplication().isUnitTestMode) {
-                builder
-                    .credentialsProvider(
-                        AwsCognitoCredentialsProvider(
-                            CodeWhispererConstants.Config.CODEWHISPERER_IDPOOL_ID,
-                            CognitoIdentityClient.builder()
-                                .credentialsProvider(AnonymousCredentialsProvider.create())
-                                .region(CodeWhispererConstants.Config.Sigv4ClientRegion)
-                                .httpClient(AwsSdkClient.getInstance().sharedSdkClient())
-                                .build()
-                        )
-                    )
             }
         }
     }

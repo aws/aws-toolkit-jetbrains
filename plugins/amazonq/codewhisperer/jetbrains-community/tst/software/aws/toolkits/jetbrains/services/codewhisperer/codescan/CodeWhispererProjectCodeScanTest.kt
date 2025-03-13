@@ -55,9 +55,9 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
 
         mockClient.stub {
             onGeneric { createUploadUrl(any()) }.thenReturn(fakeCreateUploadUrlResponse)
-            onGeneric { createCodeScan(any(), any()) }.thenReturn(fakeCreateCodeScanResponse)
-            onGeneric { getCodeScan(any(), any()) }.thenReturn(fakeGetCodeScanResponse)
-            onGeneric { listCodeScanFindings(any(), any()) }.thenReturn(fakeListCodeScanFindingsResponseE2E)
+            onGeneric { createCodeScan(any()) }.thenReturn(fakeCreateCodeScanResponse)
+            onGeneric { getCodeScan(any()) }.thenReturn(fakeGetCodeScanResponse)
+            onGeneric { listCodeScanFindings(any()) }.thenReturn(fakeListCodeScanFindingsResponseE2E)
         }
     }
 
