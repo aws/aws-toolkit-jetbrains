@@ -1,7 +1,7 @@
 // Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package software.aws.toolkits.jetbrains.uitests.docTests.updateReadmeTests.updateReadmeSpecificChanges
+package software.aws.toolkits.jetbrains.uitests.docTests.updateReadmeTests
 
 import com.intellij.driver.sdk.waitForProjectOpen
 import com.intellij.ide.starter.ci.CIServer
@@ -23,7 +23,9 @@ import org.kodein.di.DI
 import org.kodein.di.bindSingleton
 import software.aws.toolkits.jetbrains.uitests.TestCIServer
 import software.aws.toolkits.jetbrains.uitests.clearAwsXmlFile
+import software.aws.toolkits.jetbrains.uitests.docTests.prepTestData
 import software.aws.toolkits.jetbrains.uitests.docTests.scripts.updateReadmeSpecificChangesMakeChangesFlowTestScript
+import software.aws.toolkits.jetbrains.uitests.docTests.scripts.updateReadmeSpecificChangesTestScript
 import software.aws.toolkits.jetbrains.uitests.executePuppeteerScript
 import software.aws.toolkits.jetbrains.uitests.setupTestEnvironment
 import software.aws.toolkits.jetbrains.uitests.useExistingConnectionForTest
@@ -31,7 +33,7 @@ import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
 
-class MakeChangesFlowTest {
+class UpdateReadmeSpecificChangesTest {
     init {
         di = DI {
             extend(di)
@@ -50,6 +52,8 @@ class MakeChangesFlowTest {
     fun setUp() {
         // Setup test environment
         setupTestEnvironment()
+        // prep test data - restore readme contents
+        prepTestData(false)
     }
 
     @Test
@@ -90,26 +94,51 @@ class MakeChangesFlowTest {
             }
     }
 
+    @Test
+    fun `UpdateReadme with specific changes returns an updated Readme`() {
+        val testCase = TestCase(
+            IdeProductProvider.IC,
+            LocalProjectInfo(
+                Paths.get("tstData", "qdoc", "updateFlow")
+            )
+        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+
+        // inject connection
+        useExistingConnectionForTest()
+
+        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
+            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
+                pluginConfigurator.installPluginFromPath(
+                    Path.of(path)
+                )
+            }
+
+            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
+            updateGeneralSettings()
+        }.runIdeWithDriver()
+            .useDriverAndCloseIde {
+                waitForProjectOpen()
+                // required wait time for the system to be fully ready
+                Thread.sleep(30000)
+
+                val result = executePuppeteerScript(updateReadmeSpecificChangesTestScript)
+
+                if (result.contains("Error: Test Failed")) {
+                    println("result: $result")
+                }
+
+                val readmePath = Paths.get("tstData", "qdoc", "updateFlow", "README.md")
+                val readme = File(readmePath.toUri())
+                assertTrue(readme.exists())
+                assertTrue(readme.readText().contains("Installation", ignoreCase = true))
+            }
+    }
+
     companion object {
         @JvmStatic
         @AfterAll
         fun clearAwsXml() {
             clearAwsXmlFile()
-        }
-
-        @JvmStatic
-        @AfterAll
-        fun tearDown() {
-            val path = Paths.get("tstData", "qdoc", "updateFlow", "README.md").toUri()
-
-            val process = ProcessBuilder("git", "restore", path.path).start()
-            val exitCode = process.waitFor()
-            if (exitCode != 0) {
-                println("Warning: git stash command failed with exit code $exitCode")
-                process.errorStream.bufferedReader().use { reader ->
-                    println("Error: ${reader.readText()}")
-                }
-            }
         }
     }
 }
