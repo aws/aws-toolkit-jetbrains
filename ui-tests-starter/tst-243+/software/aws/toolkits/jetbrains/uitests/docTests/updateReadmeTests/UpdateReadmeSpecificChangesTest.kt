@@ -17,6 +17,7 @@ import com.intellij.ide.starter.runner.Starter
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.kodein.di.DI
@@ -49,9 +50,7 @@ class UpdateReadmeSpecificChangesTest {
     }
 
     @BeforeEach
-    fun setUp() {
-        // Setup test environment
-        setupTestEnvironment()
+    fun setUpTest() {
         // prep test data - restore readme contents
         prepTestData(false)
     }
@@ -139,6 +138,13 @@ class UpdateReadmeSpecificChangesTest {
         @AfterAll
         fun clearAwsXml() {
             clearAwsXmlFile()
+        }
+
+        @JvmStatic
+        @BeforeAll
+        fun setUpTestClass(): Unit {
+            // Setup test environment
+            setupTestEnvironment()
         }
     }
 }
