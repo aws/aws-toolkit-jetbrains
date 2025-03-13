@@ -182,7 +182,7 @@ class UpdateReadmeLatestChangesTest {
 
         @JvmStatic
         @BeforeAll
-        fun setUpTestClass(): Unit {
+        fun setUpTestClass() {
             // Setup test environment
             setupTestEnvironment()
         }
