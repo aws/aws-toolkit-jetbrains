@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.cwc
 
 object ChatConstants {
-    const val REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
+    const val REQUEST_TIMEOUT_MS = 180_000 // 180 seconds
 
     // API Constraints
     const val FILE_PATH_SIZE_LIMIT = 4_000 // Maximum length of file paths in characters (actual API limit: 4096)
