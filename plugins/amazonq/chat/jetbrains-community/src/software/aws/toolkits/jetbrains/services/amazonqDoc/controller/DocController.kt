@@ -13,9 +13,6 @@ import com.intellij.diff.util.DiffUserDataKeys
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.ProjectRootManager
-import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.testFramework.LightVirtualFile
@@ -31,9 +28,9 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.common.util.selectFolder
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
-import software.aws.toolkits.jetbrains.services.amazonq.RepoSizeError
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
+import software.aws.toolkits.jetbrains.services.amazonq.project.RepoSizeError
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.amazonqDoc.DEFAULT_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqDoc.DIAGRAM_SVG_EXT
@@ -81,7 +78,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.Cancellat
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.resources.message
-import java.nio.file.Paths
 import java.util.UUID
 
 enum class DocGenerationStep {
@@ -308,7 +304,7 @@ class DocController(
         val session = getSessionInfo(tabId)
         val docGenerationTask = docGenerationTasks.getTask(tabId)
 
-        val currentSourceFolder = session.context.selectedSourceFolder
+        val currentSourceFolder = session.context.selectionRoot
 
         try {
             messenger.sendFolderConfirmationMessage(
@@ -405,7 +401,7 @@ class DocController(
                 inMemoryFile.isWritable = false
                 FileEditorManager.getInstance(context.project).openFile(inMemoryFile, true)
             } else {
-                val existingFile = VfsUtil.findRelativeFile(message.filePath, session.context.selectedSourceFolder)
+                val existingFile = VfsUtil.findRelativeFile(message.filePath, session.context.addressableRoot)
                 val leftDiffContent = if (existingFile == null) {
                     EmptyContent()
                 } else {
@@ -945,19 +941,9 @@ class DocController(
         }
     }
 
-    private fun isFolderPathInProjectModules(project: Project, folderPath: String): Boolean {
-        val path = Paths.get(folderPath)
-        val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(path.toFile()) ?: return false
-
-        val projectFileIndex = ProjectRootManager.getInstance(project).fileIndex
-
-        return projectFileIndex.isInProject(virtualFile)
-    }
-
     private suspend fun modifyDefaultSourceFolder(tabId: String) {
         val session = getSessionInfo(tabId)
-        val currentSourceFolder = session.context.selectedSourceFolder
-        val projectRoot = session.context.projectRoot
+        val workspaceRoot = session.context.workspaceRoot
         val docGenerationTask = docGenerationTasks.getTask(tabId)
 
         withContext(EDT) {
@@ -967,7 +953,7 @@ class DocController(
                 message = message("amazonqDoc.prompt.choose_folder_to_continue")
             )
 
-            val selectedFolder = selectFolder(context.project, currentSourceFolder)
+            val selectedFolder = selectFolder(context.project, workspaceRoot)
 
             // No folder was selected
             if (selectedFolder == null) {
@@ -980,9 +966,7 @@ class DocController(
                 return@withContext
             }
 
-            val isFolderPathInProject = isFolderPathInProjectModules(context.project, selectedFolder.path)
-
-            if (!isFolderPathInProject) {
+            if (!selectedFolder.path.startsWith(workspaceRoot.path)) {
                 logger.info { "Selected folder not in workspace: ${selectedFolder.path}" }
 
                 messenger.sendAnswer(
@@ -1004,7 +988,7 @@ class DocController(
                 return@withContext
             }
 
-            if (selectedFolder.path == projectRoot.path) {
+            if (selectedFolder.path == workspaceRoot.path) {
                 docGenerationTask.folderLevel = DocFolderLevel.ENTIRE_WORKSPACE
             } else {
                 docGenerationTask.folderLevel = DocFolderLevel.SUB_FOLDER
@@ -1012,7 +996,7 @@ class DocController(
 
             logger.info { "Selected correct folder inside workspace: ${selectedFolder.path}" }
 
-            session.context.selectedSourceFolder = selectedFolder
+            session.context.selectionRoot = selectedFolder
 
             promptForDocTarget(tabId)
 

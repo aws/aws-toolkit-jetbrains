@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev
 
-import software.aws.toolkits.jetbrains.services.amazonq.RepoSizeError
+import software.aws.toolkits.jetbrains.services.amazonq.project.RepoSizeError
 import software.aws.toolkits.resources.message
 
 /**

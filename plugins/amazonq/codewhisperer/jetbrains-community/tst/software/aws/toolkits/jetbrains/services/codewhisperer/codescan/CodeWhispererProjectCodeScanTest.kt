@@ -14,11 +14,13 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getNormalizedRelativePath
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import software.aws.toolkits.jetbrains.utils.rules.addModule
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 import java.io.BufferedInputStream
+import java.nio.file.Paths
 import java.util.zip.ZipInputStream
 import kotlin.io.path.relativeTo
 import kotlin.test.assertNotNull
@@ -53,9 +55,9 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
 
         mockClient.stub {
             onGeneric { createUploadUrl(any()) }.thenReturn(fakeCreateUploadUrlResponse)
-            onGeneric { createCodeScan(any(), any()) }.thenReturn(fakeCreateCodeScanResponse)
-            onGeneric { getCodeScan(any(), any()) }.thenReturn(fakeGetCodeScanResponse)
-            onGeneric { listCodeScanFindings(any(), any()) }.thenReturn(fakeListCodeScanFindingsResponseE2E)
+            onGeneric { createCodeScan(any()) }.thenReturn(fakeCreateCodeScanResponse)
+            onGeneric { getCodeScan(any()) }.thenReturn(fakeGetCodeScanResponse)
+            onGeneric { listCodeScanFindings(any()) }.thenReturn(fakeListCodeScanFindingsResponseE2E)
         }
     }
 
@@ -106,6 +108,16 @@ class CodeWhispererProjectCodeScanTest : CodeWhispererCodeScanTestBase(PythonCod
     @Test
     fun `e2e happy path integration test`() = runTest {
         assertE2ERunsSuccessfully(sessionConfigSpy, project, totalLines, 10, totalSize, 1)
+    }
+
+    @Test
+    fun `test getNormalizedRelativePath()`() {
+        assertThat(
+            listOf("projectName\\src\\PackageName", "projectName/src/PackageName")
+        ).contains(getNormalizedRelativePath("projectName", Paths.get("src/PackageName")))
+        assertThat(
+            listOf("projectName\\src\\Package2", "projectName/src/Package2")
+        ).contains(getNormalizedRelativePath("projectName", Paths.get("src/./Package1/../Package2")))
     }
 
     private fun setupCsharpProject() {

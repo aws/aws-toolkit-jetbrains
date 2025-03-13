@@ -27,6 +27,7 @@ export const enum FormButtonIds {
   CodeTestStartGeneration = "code_test_start_generation",
   CodeTestViewDiff = "utg_view_diff",
   CodeTestAccept = "utg_accept",
+  CodeTestProvideFeedback = "utg_feedback",
   CodeTestRegenerate = "utg_regenerate",
   CodeTestReject = "utg_reject",
   CodeTestBuildAndExecute = "utg_build_and_execute",
