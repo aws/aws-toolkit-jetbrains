@@ -1,0 +1,4 @@
+{
+    "type" : "bugfix",
+    "description" : "Fix Q: Send to Prompt option to work in split panes on local and remote."
+}
