@@ -31,11 +31,11 @@ import software.aws.toolkits.jetbrains.core.MockClientManager
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererEndpointCustomizer
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererClientCustomizer
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 
 /**
- * If this test class failed, highly likely because the endpoint is overwritten by [CodeWhispererEndpointCustomizer]
+ * If this test class failed, highly likely because the endpoint is overwritten by [CodeWhispererClientCustomizer]
  */
 class CodeWhispererClientTest {
     val applicationRule = ApplicationRule()
@@ -90,8 +90,8 @@ class CodeWhispererClientTest {
         mockClient.getAccessToken {}
         verify(
             postRequestedFor(urlEqualTo("/"))
-                .withoutHeader(CodeWhispererEndpointCustomizer.OPTOUT_KEY_NAME)
-                .withoutHeader(CodeWhispererEndpointCustomizer.OPTOUT_KEY_NAME)
+                .withoutHeader(CodeWhispererClientCustomizer.OPTOUT_KEY_NAME)
+                .withoutHeader(CodeWhispererClientCustomizer.OPTOUT_KEY_NAME)
         )
     }
 
@@ -101,16 +101,16 @@ class CodeWhispererClientTest {
         // default is opt-in (thus opt-out = false)
         verify(
             postRequestedFor(urlEqualTo("/"))
-                .withHeader(CodeWhispererEndpointCustomizer.TOKEN_KEY_NAME, matching(CodeWhispererTestUtil.testValidAccessToken))
-                .withHeader(CodeWhispererEndpointCustomizer.OPTOUT_KEY_NAME, matching("false"))
+                .withHeader(CodeWhispererClientCustomizer.TOKEN_KEY_NAME, matching(CodeWhispererTestUtil.testValidAccessToken))
+                .withHeader(CodeWhispererClientCustomizer.OPTOUT_KEY_NAME, matching("false"))
         )
 
         CodeWhispererSettings.getInstance().toggleMetricOptIn(false)
         mockClient.listRecommendations {}
         verify(
             postRequestedFor(urlEqualTo("/"))
-                .withHeader(CodeWhispererEndpointCustomizer.TOKEN_KEY_NAME, matching(CodeWhispererTestUtil.testValidAccessToken))
-                .withHeader(CodeWhispererEndpointCustomizer.OPTOUT_KEY_NAME, matching("true"))
+                .withHeader(CodeWhispererClientCustomizer.TOKEN_KEY_NAME, matching(CodeWhispererTestUtil.testValidAccessToken))
+                .withHeader(CodeWhispererClientCustomizer.OPTOUT_KEY_NAME, matching("true"))
         )
     }
 
@@ -119,8 +119,8 @@ class CodeWhispererClientTest {
         mockClient.createCodeScan {}
         verify(
             postRequestedFor(urlEqualTo("/"))
-                .withHeader(CodeWhispererEndpointCustomizer.TOKEN_KEY_NAME, matching(CodeWhispererTestUtil.testValidAccessToken))
-                .withoutHeader(CodeWhispererEndpointCustomizer.OPTOUT_KEY_NAME)
+                .withHeader(CodeWhispererClientCustomizer.TOKEN_KEY_NAME, matching(CodeWhispererTestUtil.testValidAccessToken))
+                .withoutHeader(CodeWhispererClientCustomizer.OPTOUT_KEY_NAME)
 
         )
     }
@@ -130,8 +130,8 @@ class CodeWhispererClientTest {
         mockClient.createCodeScanUploadUrl {}
         verify(
             postRequestedFor(urlEqualTo("/"))
-                .withHeader(CodeWhispererEndpointCustomizer.TOKEN_KEY_NAME, matching(CodeWhispererTestUtil.testValidAccessToken))
-                .withoutHeader(CodeWhispererEndpointCustomizer.OPTOUT_KEY_NAME)
+                .withHeader(CodeWhispererClientCustomizer.TOKEN_KEY_NAME, matching(CodeWhispererTestUtil.testValidAccessToken))
+                .withoutHeader(CodeWhispererClientCustomizer.OPTOUT_KEY_NAME)
         )
     }
 
@@ -140,8 +140,8 @@ class CodeWhispererClientTest {
         mockClient.listCodeScanFindings {}
         verify(
             postRequestedFor(urlEqualTo("/"))
-                .withHeader(CodeWhispererEndpointCustomizer.TOKEN_KEY_NAME, matching(CodeWhispererTestUtil.testValidAccessToken))
-                .withoutHeader(CodeWhispererEndpointCustomizer.OPTOUT_KEY_NAME)
+                .withHeader(CodeWhispererClientCustomizer.TOKEN_KEY_NAME, matching(CodeWhispererTestUtil.testValidAccessToken))
+                .withoutHeader(CodeWhispererClientCustomizer.OPTOUT_KEY_NAME)
         )
     }
 }
