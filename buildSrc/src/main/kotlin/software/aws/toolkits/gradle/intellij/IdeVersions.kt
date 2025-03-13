@@ -187,7 +187,7 @@ object IdeVersions {
                 bundledPlugins = listOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
-                sdkVersion = "251.23774-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "251.23774.16-EAP-SNAPSHOT",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
                     "com.intellij.gradle",
@@ -199,7 +199,7 @@ object IdeVersions {
                 )
             ),
             ultimate = ProductProfile(
-                sdkVersion = "251.23774-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "251.23774.16-EAP-SNAPSHOT",
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
                     "JavaScriptDebugger",
