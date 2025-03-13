@@ -265,7 +265,6 @@ class WorkspaceServiceHandlerTest {
         assertEquals(normalizeFileUri(dirUri.toString()), paramsSlot.captured.files[0].uri)
     }
 
-
     @Test
     fun `test didDeleteFiles handles both delete and move events in same batch`() = runTest {
         val deleteUri = URI("file:///test/deleteFile")
@@ -628,7 +627,12 @@ class WorkspaceServiceHandlerTest {
         }
     }
 
-    private fun createMockVFileEvent(uri: URI, type: FileChangeType = FileChangeType.Changed, isDirectory: Boolean = false, extension: String = "py"): VFileEvent {
+    private fun createMockVFileEvent(
+        uri: URI,
+        type: FileChangeType = FileChangeType.Changed,
+        isDirectory: Boolean = false,
+        extension: String = "py",
+    ): VFileEvent {
         val virtualFile = createMockVirtualFile(uri, "test.$extension", isDirectory)
         return when (type) {
             FileChangeType.Deleted -> mockk<VFileDeleteEvent>()
@@ -680,8 +684,6 @@ class WorkspaceServiceHandlerTest {
             every { newChildName } returns fileName
         }
     }
-
-
 
     // for windows unit tests
     private fun normalizeFileUri(uri: String): String {

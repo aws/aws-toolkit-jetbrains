@@ -98,7 +98,7 @@ class WorkspaceServiceHandler(
             val validFiles = events.mapNotNull { event ->
                 when (event) {
                     is VFileDeleteEvent -> {
-                        val file = event.file?.takeIf { shouldHandleFile(it) } ?: return@mapNotNull null
+                        val file = event.file.takeIf { shouldHandleFile(it) } ?: return@mapNotNull null
                         toUriString(file)
                     }
                     is VFileMoveEvent -> {
@@ -159,10 +159,12 @@ class WorkspaceServiceHandler(
                     is VFileCopyEvent -> {
                         event.newParent.findChild(event.newChildName)?.let { newFile ->
                             toUriString(newFile)?.let { uri ->
-                                listOf(FileEvent().apply {
-                                    this.uri = uri
-                                    type = FileChangeType.Created
-                                })
+                                listOf(
+                                    FileEvent().apply {
+                                        this.uri = uri
+                                        type = FileChangeType.Created
+                                    }
+                                )
                             }
                         } ?: emptyList()
                     }
@@ -185,14 +187,16 @@ class WorkspaceServiceHandler(
                     else -> {
                         event.file?.let { file ->
                             toUriString(file)?.let { uri ->
-                                listOf(FileEvent().apply {
-                                    this.uri = uri
-                                    type = when (event) {
-                                        is VFileCreateEvent -> FileChangeType.Created
-                                        is VFileDeleteEvent -> FileChangeType.Deleted
-                                        else -> FileChangeType.Changed
+                                listOf(
+                                    FileEvent().apply {
+                                        this.uri = uri
+                                        type = when (event) {
+                                            is VFileCreateEvent -> FileChangeType.Created
+                                            is VFileDeleteEvent -> FileChangeType.Deleted
+                                            else -> FileChangeType.Changed
+                                        }
                                     }
-                                })
+                                )
                             }
                         } ?: emptyList()
                     }
