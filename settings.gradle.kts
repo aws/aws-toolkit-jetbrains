@@ -21,6 +21,7 @@ val codeArtifactMavenRepo = fun RepositoryHandler.(): MavenArtifactRepository? {
     pluginManagement {
         repositories {
             it()
+            maven("https://oss.sonatype.org/content/repositories/snapshots/")
             gradlePluginPortal()
         }
     }
