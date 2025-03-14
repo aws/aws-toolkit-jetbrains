@@ -180,6 +180,40 @@ class QTestGenerationChatTest {
             }
     }
 
+    @Test
+    fun `test reject path from the chat`() {
+        val testCase = TestCase(
+            IdeProductProvider.IC,
+            LocalProjectInfo(
+                Paths.get("tstData", "qTestGenerationTestProject/")
+            )
+        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+
+        // inject connection
+        useExistingConnectionForTest()
+
+        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
+            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
+                pluginConfigurator.installPluginFromPath(
+                    Path.of(path)
+                )
+            }
+
+            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
+            updateGeneralSettings()
+        }.runIdeWithDriver()
+            .useDriverAndCloseIde {
+                waitForProjectOpen()
+                openFile(Paths.get("testModule2", "UnSupportedLanguage.kt").toString())
+                Thread.sleep(30000)
+                val result = executePuppeteerScript(testRejectPathScript)
+                assertTrue(result.contains("new tab opened"))
+                assertTrue(result.contains("View Diff opened"))
+                assertTrue(result.contains("Result Reject"))
+                assertTrue(result.contains("Unit test generation completed."))
+            }
+    }
+
     companion object {
         @JvmStatic
         @AfterAll
