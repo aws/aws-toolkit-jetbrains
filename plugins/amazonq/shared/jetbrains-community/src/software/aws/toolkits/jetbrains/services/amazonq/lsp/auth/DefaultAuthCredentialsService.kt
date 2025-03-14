@@ -9,10 +9,10 @@ import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.BearerCredentials
@@ -36,7 +36,7 @@ class DefaultAuthCredentialsService(
             subscribe(ToolkitConnectionManagerListener.TOPIC, this@DefaultAuthCredentialsService)
         }
 
-        if(isQConnected(project) && !isQExpired(project)) {
+        if (isQConnected(project) && !isQExpired(project)) {
             updateTokenFromActiveConnection()
         }
     }
@@ -108,5 +108,4 @@ class DefaultAuthCredentialsService(
                 encrypted = false
             )
         }
-
 }
