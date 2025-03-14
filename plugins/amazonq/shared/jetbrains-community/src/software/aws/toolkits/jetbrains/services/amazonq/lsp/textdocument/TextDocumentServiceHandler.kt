@@ -24,6 +24,7 @@ import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.TextDocumentItem
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil.toUriString
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class TextDocumentServiceHandler(
@@ -56,7 +57,7 @@ class TextDocumentServiceHandler(
     override fun beforeDocumentSaving(document: Document) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             val file = FileDocumentManager.getInstance().getFile(document) ?: return@executeIfRunning
-            file.toNioPath().toUri().toString().takeIf { it.isNotEmpty() }?.let { uri ->
+            toUriString(file)?.let { uri ->
                 languageServer.textDocumentService.didSave(
                     DidSaveTextDocumentParams().apply {
                         textDocument = TextDocumentIdentifier().apply {
@@ -74,7 +75,7 @@ class TextDocumentServiceHandler(
             pluginAwareExecuteOnPooledThread {
                 events.filterIsInstance<VFileContentChangeEvent>().forEach { event ->
                     val document = FileDocumentManager.getInstance().getCachedDocument(event.file) ?: return@forEach
-                    event.file.toNioPath().toUri().toString().takeIf { it.isNotEmpty() }?.let { uri ->
+                    toUriString(event.file)?.let { uri ->
                         languageServer.textDocumentService.didChange(
                             DidChangeTextDocumentParams().apply {
                                 textDocument = VersionedTextDocumentIdentifier().apply {
@@ -99,7 +100,7 @@ class TextDocumentServiceHandler(
         file: VirtualFile,
     ) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
-            file.toNioPath().toUri().toString().takeIf { it.isNotEmpty() }?.let { uri ->
+            toUriString(file)?.let { uri ->
                 languageServer.textDocumentService.didOpen(
                     DidOpenTextDocumentParams().apply {
                         textDocument = TextDocumentItem().apply {
@@ -117,7 +118,7 @@ class TextDocumentServiceHandler(
         file: VirtualFile,
     ) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
-            file.toNioPath().toUri().toString().takeIf { it.isNotEmpty() }?.let { uri ->
+            toUriString(file)?.let { uri ->
                 languageServer.textDocumentService.didClose(
                     DidCloseTextDocumentParams().apply {
                         textDocument = TextDocumentIdentifier().apply {
