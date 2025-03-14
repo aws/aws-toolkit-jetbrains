@@ -18,6 +18,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryp
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.BearerCredentials
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayloadData
+import software.aws.toolkits.jetbrains.utils.isQConnected
+import software.aws.toolkits.jetbrains.utils.isQExpired
 import java.util.concurrent.CompletableFuture
 
 class DefaultAuthCredentialsService(
@@ -28,53 +30,15 @@ class DefaultAuthCredentialsService(
     BearerTokenProviderListener,
     ToolkitConnectionManagerListener {
 
-        init {
-        project.messageBus.connect(serverInstance).subscribe(BearerTokenProviderListener.TOPIC, this)
-        project.messageBus.connect(serverInstance).subscribe(ToolkitConnectionManagerListener.TOPIC, this)
-
-        val connection = ToolkitConnectionManager.getInstance(project)
-            .activeConnectionForFeature(QConnection.getInstance())
-
-        val provider = (connection?.getConnectionSettings() as? TokenConnectionSettings)
-            ?.tokenProvider
-            ?.delegate as? BearerTokenProvider
-
-        provider?.currentToken()?.accessToken?.let { token ->
-            updateTokenCredentials(token, true)
+    init {
+        project.messageBus.connect(serverInstance).apply {
+            subscribe(BearerTokenProviderListener.TOPIC, this@DefaultAuthCredentialsService)
+            subscribe(ToolkitConnectionManagerListener.TOPIC, this@DefaultAuthCredentialsService)
         }
-    }
 
-    override fun onChange(providerId: String, newScopes: List<String>?) {
-        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
-            ?: return
-        val provider = (connection.getConnectionSettings() as? TokenConnectionSettings)
-            ?.tokenProvider
-            ?.delegate as? BearerTokenProvider
-            ?: return
-
-        provider.currentToken()?.accessToken?.let { token ->
-            updateTokenCredentials(token, true)
+        if(isQConnected(project) && !isQExpired(project)) {
+            updateTokenFromActiveConnection()
         }
-    }
-
-    override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-        val qConnection = ToolkitConnectionManager.getInstance(project)
-            .activeConnectionForFeature(QConnection.getInstance())
-            ?: return
-        if (newConnection?.id != qConnection.id) return
-        // Handle new connection
-        val provider = (newConnection.getConnectionSettings() as? TokenConnectionSettings)
-            ?.tokenProvider
-            ?.delegate as? BearerTokenProvider
-            ?: return
-
-        provider.currentToken()?.accessToken?.let { token ->
-            updateTokenCredentials(token, true)
-        }
-    }
-
-    override fun invalidate(providerId: String) {
-        deleteTokenCredentials()
     }
 
     override fun updateTokenCredentials(accessToken: String, encrypted: Boolean): CompletableFuture<ResponseMessage> {
@@ -92,6 +56,41 @@ class DefaultAuthCredentialsService(
                 completableFuture.complete(null)
             } ?: completableFuture.completeExceptionally(IllegalStateException("LSP Server not running"))
         }
+
+    override fun onChange(providerId: String, newScopes: List<String>?) {
+        updateTokenFromActiveConnection()
+    }
+
+    override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+        val qConnection = ToolkitConnectionManager.getInstance(project)
+            .activeConnectionForFeature(QConnection.getInstance())
+            ?: return
+        if (newConnection?.id != qConnection.id) return
+
+        updateTokenFromConnection(newConnection)
+    }
+
+    private fun updateTokenFromActiveConnection() {
+        val connection = ToolkitConnectionManager.getInstance(project)
+            .activeConnectionForFeature(QConnection.getInstance())
+            ?: return
+
+        updateTokenFromConnection(connection)
+    }
+
+    private fun updateTokenFromConnection(connection: ToolkitConnection) {
+        (connection.getConnectionSettings() as? TokenConnectionSettings)
+            ?.tokenProvider
+            ?.delegate
+            ?.let { it as? BearerTokenProvider }
+            ?.currentToken()
+            ?.accessToken
+            ?.let { token -> updateTokenCredentials(token, true) }
+    }
+
+    override fun invalidate(providerId: String) {
+        deleteTokenCredentials()
+    }
 
     private fun createUpdateCredentialsPayload(token: String, encrypted: Boolean): UpdateCredentialsPayload =
         if (encrypted) {
