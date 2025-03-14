@@ -635,11 +635,11 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             ),
             ErrorTestCase(
                 ZipFileCorruptedException(operation = "GenerateCode", desc = "Zipped file is corrupted"),
-                MetricDataResult.Error
+                MetricDataResult.Fault
             ),
             ErrorTestCase(
                 FeatureDevException(message = "Resource not found", operation = "GenerateCode", desc = null),
-                MetricDataResult.Error
+                MetricDataResult.Fault
             ),
             ErrorTestCase(
                 RuntimeException("Unknown error"),
