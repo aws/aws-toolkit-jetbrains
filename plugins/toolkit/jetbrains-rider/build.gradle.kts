@@ -370,6 +370,14 @@ tasks.integrationTest {
     include("**/*Test.class")
 }
 
+// https://youtrack.jetbrains.com/issue/IJPL-180442
+tasks.withType<Test> {
+    classpath -= classpath.filter {
+        (it.name.startsWith("localization-") && it.name.endsWith(".jar"))
+            || it.name == "cwm-plugin.jar"
+    }
+}
+
 // fix implicit dependency on generated source
 tasks.withType<DetektCreateBaselineTask>().configureEach {
     dependsOn(generateModels)
