@@ -20,6 +20,7 @@ dependencies {
     compileOnly(project(":plugin-amazonq:shared:jetbrains-ultimate"))
 
     compileOnly(project(":plugin-core:jetbrains-ultimate"))
+    testCompileOnly(project(":plugin-core:jetbrains-ultimate"))
 
     testImplementation(testFixtures(project(":plugin-amazonq:codewhisperer:jetbrains-community")))
     testImplementation(project(path = ":plugin-toolkit:jetbrains-ultimate", configuration = "testArtifacts"))
