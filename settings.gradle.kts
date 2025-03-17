@@ -30,7 +30,7 @@ val codeArtifactMavenRepo = fun RepositoryHandler.(): MavenArtifactRepository? {
 plugins {
     id("com.github.burrunan.s3-build-cache") version "1.5"
     id("com.gradle.develocity") version "3.17.6"
-    id("org.jetbrains.intellij.platform.settings") version "2.2.1"
+    id("org.jetbrains.intellij.platform.settings") version "2.3.0"
 }
 
 dependencyResolutionManagement {
