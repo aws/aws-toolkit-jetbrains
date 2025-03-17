@@ -79,16 +79,17 @@ class SessionTest : FeatureDevTestBase() {
         val mockNewFile = listOf(NewFileZipInfo("test.ts", "testContent", rejected = false, changeApplied = false))
         val mockDeletedFile = listOf(DeletedFileInfo("deletedTest.ts", rejected = false, changeApplied = false))
 
-        session.context.selectedSourceFolder = mock()
-        whenever(session.context.selectedSourceFolder.toNioPath()).thenReturn(Path(""))
+        val addressableRootPath = Path("src")
+        session.context.addressableRoot = mock()
+        whenever(session.context.addressableRoot.toNioPath()).thenReturn(addressableRootPath)
 
         runBlocking {
             session.insertChanges(mockNewFile, mockDeletedFile, emptyList())
         }
 
-        verify(exactly = 1) { resolveAndDeleteFile(any(), "deletedTest.ts") }
-        verify(exactly = 1) { resolveAndCreateOrUpdateFile(any(), "test.ts", "testContent") }
+        verify(exactly = 1) { resolveAndDeleteFile(addressableRootPath, "deletedTest.ts") }
+        verify(exactly = 1) { resolveAndCreateOrUpdateFile(addressableRootPath, "test.ts", "testContent") }
         verify(exactly = 1) { ReferenceLogController.addReferenceLog(emptyList(), any()) }
-        verify(exactly = 1) { VfsUtil.markDirtyAndRefresh(true, true, true, any<VirtualFile>()) }
+        verify(exactly = 1) { VfsUtil.markDirtyAndRefresh(true, true, true, session.context.addressableRoot) }
     }
 }

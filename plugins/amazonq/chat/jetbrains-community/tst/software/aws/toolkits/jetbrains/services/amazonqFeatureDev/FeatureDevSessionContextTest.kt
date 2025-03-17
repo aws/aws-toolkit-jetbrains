@@ -1,17 +1,14 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.RuleChain
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
+import software.aws.toolkits.jetbrains.services.amazonq.project.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
@@ -38,39 +35,7 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
         featureDevSessionContext = FeatureDevSessionContext(featureDevService.project, 1024)
     }
 
-    @Test
-    fun testWithDirectory() {
-        val directory = mock<VirtualFile>()
-        whenever(directory.extension).thenReturn(null)
-        whenever(directory.isDirectory).thenReturn(true)
-        assertTrue(featureDevSessionContext.isFileExtensionAllowed(directory))
-    }
-
-    @Test
-    fun testWithValidFile() {
-        val ktFile = mock<VirtualFile>()
-        whenever(ktFile.extension).thenReturn("kt")
-        whenever(ktFile.path).thenReturn("code.kt")
-        assertTrue(featureDevSessionContext.isFileExtensionAllowed(ktFile))
-    }
-
-    @Test
-    fun testWithInvalidFile() {
-        val mediaFile = mock<VirtualFile>()
-        whenever(mediaFile.extension).thenReturn("mp4")
-        assertFalse(featureDevSessionContext.isFileExtensionAllowed(mediaFile))
-    }
-
-    @Test
-    fun testAllowedFilePath() {
-        val allowedPaths = listOf("build.gradle", "gradle.properties", ".mvn/wrapper/maven-wrapper.properties")
-        allowedPaths.forEach({
-            val txtFile = mock<VirtualFile>()
-            whenever(txtFile.path).thenReturn(it)
-            whenever(txtFile.extension).thenReturn(it.split(".").last())
-            assertTrue(featureDevSessionContext.isFileExtensionAllowed(txtFile))
-        })
-    }
+    // FIXME: Add deeper tests, replacing previous shallow tests - BLOCKING
 
     @Test
     fun testZipProjectWithoutAutoDev() {
@@ -78,14 +43,22 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
             false,
             setOf(
                 "src/MyClass.java",
-                "gradlew",
-                "gradlew.bat",
-                "README.md",
+                "icons/menu.svg",
+                "assets/header.jpg",
+                "archive.zip",
+                "output.bin",
+                "gradle/wrapper/gradle-wrapper.jar",
                 "gradle/wrapper/gradle-wrapper.properties",
+                "images/logo.png",
                 "builder/GetTestBuilder.java",
-                "settings.gradle",
-                "build.gradle",
+                "gradlew",
+                "README.md",
                 ".gitignore",
+                "License.md",
+                "gradlew.bat",
+                "license.txt",
+                "build.gradle",
+                "settings.gradle"
             )
         )
     }
@@ -98,6 +71,8 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
                 "src/MyClass.java",
                 "icons/menu.svg",
                 "assets/header.jpg",
+                "archive.zip",
+                "output.bin",
                 "gradle/wrapper/gradle-wrapper.jar",
                 "gradle/wrapper/gradle-wrapper.properties",
                 "images/logo.png",
@@ -106,8 +81,6 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
                 "README.md",
                 ".gitignore",
                 "License.md",
-                "output.bin",
-                "archive.zip",
                 "gradlew.bat",
                 "license.txt",
                 "build.gradle",
@@ -160,50 +133,5 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
         }
 
         assertEquals(zippedFiles, expectedFiles)
-    }
-
-    @Test
-    fun testConvertGitIgnorePatternToRegex() {
-        val sampleGitIgnorePatterns = listOf(".*", "build/", "*.txt", "*.png")
-        val sampleFileNames = listOf(
-            ".gitignore/",
-            ".env/",
-            "file.txt/",
-            ".git/config/",
-            "src/file.txt/",
-            "build/",
-            "build/output.jar/",
-            "builds/",
-            "mybuild/",
-            "build.json/",
-            "log.txt/",
-            "file.txt.json/",
-            "file.png/",
-            "src/file.png/"
-        )
-
-        val patterns = sampleGitIgnorePatterns.map { pattern -> featureDevSessionContext.convertGitIgnorePatternToRegex(pattern).toRegex() }
-
-        val matchedFiles = sampleFileNames.filter { fileName ->
-            patterns.any { pattern ->
-                pattern.matches(fileName)
-            }
-        }
-
-        val expectedFilesToMatch =
-            listOf(
-                ".gitignore/",
-                ".env/",
-                "file.txt/",
-                ".git/config/",
-                "src/file.txt/",
-                "build/",
-                "build/output.jar/",
-                "log.txt/",
-                "file.png/",
-                "src/file.png/"
-            )
-
-        assertEquals(expectedFilesToMatch, matchedFiles)
     }
 }

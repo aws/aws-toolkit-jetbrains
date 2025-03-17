@@ -49,7 +49,7 @@ class PrepareCodeGenerationState(
             messenger.sendAnswerPart(tabId = this.tabID, message = message("amazonqFeatureDev.chat_message.uploading_code"))
             messenger.sendUpdatePlaceholder(tabId = this.tabID, newPlaceholder = message("amazonqFeatureDev.chat_message.uploading_code"))
 
-            val isAutoBuildFeatureEnabled = CodeWhispererSettings.getInstance().isAutoBuildFeatureEnabled(this.config.repoContext.getWorkspaceRoot())
+            val isAutoBuildFeatureEnabled = CodeWhispererSettings.getInstance().isAutoBuildFeatureEnabled(this.config.repoContext.workspaceRoot.path)
             val repoZipResult = config.repoContext.getProjectZip(isAutoBuildFeatureEnabled = isAutoBuildFeatureEnabled)
             val zipFileChecksum = repoZipResult.checksum
             zipFileLength = repoZipResult.contentLength

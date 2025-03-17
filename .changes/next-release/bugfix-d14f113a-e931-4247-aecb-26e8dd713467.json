@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "/review: normalize relative file path before unzipping"
-}
