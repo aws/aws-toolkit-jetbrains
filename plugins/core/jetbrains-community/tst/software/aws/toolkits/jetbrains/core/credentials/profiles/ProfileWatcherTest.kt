@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.core.credentials.profiles
 
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Ref
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -13,6 +12,7 @@ import com.intellij.openapi.vfs.newvfs.RefreshQueue
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.AssumptionViolatedException
 import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Rule
@@ -21,6 +21,7 @@ import org.junit.rules.TemporaryFolder
 import software.aws.toolkits.core.rules.SystemPropertyHelper
 import software.aws.toolkits.jetbrains.utils.spinUntil
 import java.io.File
+import java.io.IOException
 import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -56,6 +57,18 @@ class ProfileWatcherTest {
 
         System.getProperties().setProperty("aws.configFile", profileFile.absolutePath)
         System.getProperties().setProperty("aws.sharedCredentialsFile", credentialsFile.absolutePath)
+
+        try {
+            assertFileChange {
+                profileFile.writeText("Test")
+            }
+        } catch (e: Exception) {
+            if (e.cause is IOException) {
+                throw AssumptionViolatedException("native file watcher is not executable; possibly an issue with intellij-platform-gradle-plugin", e)
+            }
+
+            throw e
+        }
     }
 
     @Test
@@ -106,15 +119,14 @@ class ProfileWatcherTest {
     private fun assertFileChange(block: () -> Unit) {
         val fileWatcher = (LocalFileSystem.getInstance() as LocalFileSystemImpl).fileWatcher
         Disposer.register(
-            disposableRule.disposable,
-            Disposable {
-                fileWatcher.shutdown()
+            disposableRule.disposable
+        ) {
+            fileWatcher.shutdown()
 
-                spinUntil(Duration.ofSeconds(10)) {
-                    !fileWatcher.isOperational
-                }
+            spinUntil(Duration.ofSeconds(10)) {
+                !fileWatcher.isOperational
             }
-        )
+        }
 
         val watcherTriggered = CountDownLatch(1)
         fileWatcher.startup {
