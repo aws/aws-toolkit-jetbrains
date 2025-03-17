@@ -55,6 +55,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument.TextDoc
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.workspace.WorkspaceServiceHandler
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
+import software.aws.toolkits.jetbrains.settings.LspSettings
 import java.io.IOException
 import java.io.OutputStreamWriter
 import java.io.PipedInputStream
@@ -251,8 +252,8 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         val artifact = runBlocking { ArtifactManager(project, manifestRange = null).fetchArtifact() }.toAbsolutePath()
         val node = if (SystemInfo.isWindows) "node.exe" else "node"
         val cmd = GeneralCommandLine(
-            "/Users/leigaol/.nvm/versions/node/v18.20.2/bin/node",
-            "/Users/leigaol/workplace/aws-toolkit-lsp/language-servers/app/aws-lsp-codewhisperer-runtimes/out/token-standalone.js",
+            artifact.resolve(node).toString(),
+            LspSettings.getInstance().getArtifactPath() ?: artifact.resolve("aws-lsp-codewhisperer.js").toString(),
             "--stdio",
             "--set-credentials-encryption-key",
         )
