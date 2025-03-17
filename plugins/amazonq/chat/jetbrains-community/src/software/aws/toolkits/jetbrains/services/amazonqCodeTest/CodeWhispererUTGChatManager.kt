@@ -156,8 +156,8 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         var finished = false
         var testGenerationResponse: GetTestGenerationResponse? = null
         var packageInfoList = emptyList<PackageInfo>()
-        var packageInfo : PackageInfo? = null
-        var targetFileInfo : TargetFileInfo? = null
+        var packageInfo: PackageInfo? = null
+        var targetFileInfo: TargetFileInfo? = null
 
         while (!finished) {
             throwIfCancelled(session)
@@ -195,11 +195,19 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                 }
                 TestGenerationJobStatus.FAILED -> {
                     LOG.debug { "Test generation failed, package info: $packageInfoList" }
-                    throw CodeTestException(
-                        "TestGenFailedError: " + message("testgen.message.failed"),
-                        "TestGenFailedError",
-                        message("testgen.error.generic_technical_error_message")
-                    )
+                    if (testGenerationResponse.testGenerationJob().jobStatusReason() == null) {
+                        throw CodeTestException(
+                            "TestGenFailedError: " + message("testgen.message.failed"),
+                            "TestGenFailedError",
+                            message("testgen.error.generic_technical_error_message")
+                        )
+                    } else {
+                        throw CodeTestException(
+                            "TestGenFailedError: ${testGenerationResponse.testGenerationJob().jobStatusReason()}",
+                            "TestGenFailedError",
+                            testGenerationResponse.testGenerationJob().jobStatusReason()
+                        )
+                    }
                 }
                 else -> {
                     LOG.debug { "Test generation in progress, progress rate: ${testGenerationResponse.testGenerationJob().progressRate()}" }
