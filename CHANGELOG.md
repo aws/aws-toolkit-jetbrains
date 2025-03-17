@@ -1,3 +1,8 @@
+# _3.59_ (2025-03-13)
+- **(Feature)** AmazonQ /dev and /doc: Add support for complex workspaces.
+- **(Bug Fix)** /review: normalize relative file path before unzipping
+- **(Bug Fix)** fix Q chat request timeout
+
 # _3.58_ (2025-03-06)
 - **(Bug Fix)** Amazon Q: Fix data isolation between tabs to prevent interference when using /doc in multiple tabs
 - **(Removal)** The Amazon Q inline suggestion popup goes back to being under the suggestions and is always showing.
