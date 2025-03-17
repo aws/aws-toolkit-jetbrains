@@ -30,6 +30,7 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.controller.CodeTestChatHelper
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.Button
@@ -55,6 +56,7 @@ import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.MetricResult
+import software.aws.toolkits.telemetry.Status
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -508,12 +510,25 @@ Please see the unit tests generated below. Click 'View Diff' to review the chang
                     e is JsonParseException -> message("testgen.error.generic_technical_error_message")
                     else -> message("testgen.error.generic_error_message")
                 }
-
+                val buttonList = mutableListOf<Button>()
+                if (isInternalUser(getStartUrl(project))) {
+                    buttonList.add(
+                        Button(
+                            "utg_feedback",
+                            message("testgen.button.feedback"),
+                            keepCardAfterClick = true,
+                            position = "outside",
+                            status = "info",
+                            icon = "comment"
+                        ),
+                    )
+                }
                 codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
                         message = errorMessage,
                         type = ChatMessageType.Answer,
-                        canBeVoted = false
+                        canBeVoted = false,
+                        buttons = buttonList
                     )
                 )
 
@@ -533,7 +548,8 @@ Please see the unit tests generated below. Click 'View Diff' to review the chang
                     artifactsUploadDuration = session.artifactUploadDuration,
                     buildPayloadBytes = session.srcPayloadSize,
                     buildZipFileBytes = session.srcZipFileSize,
-                    requestId = session.startTestGenerationRequestId
+                    requestId = session.startTestGenerationRequestId,
+                    status = if (e.message == message("testgen.message.cancelled")) Status.CANCELLED else Status.FAILED,
                 )
                 session.isGeneratingTests = false
             } finally {
