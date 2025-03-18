@@ -20,8 +20,6 @@ const val DEFAULT_RETRY_LIMIT = 0
 const val MAX_PROJECT_SIZE_BYTES: Long = 200 * 1024 * 1024
 
 val CLIENT_ERROR_MESSAGES = setOf(
-    "Improperly formed request",
-    "Resource not found",
     "StartTaskAssistCodeGeneration reached for this month.",
     "The folder you chose did not contain any source files in a supported language. Choose another folder and try again.",
     "reached the quota for number of iterations on code generation."
