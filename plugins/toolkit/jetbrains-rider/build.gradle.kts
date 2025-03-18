@@ -371,7 +371,7 @@ tasks.integrationTest {
 }
 
 // https://youtrack.jetbrains.com/issue/IJPL-180442
-tasks.withType<Test> {
+tasks.withType<Test>().configureEach {
     classpath -= classpath.filter {
         (it.name.startsWith("localization-") && it.name.endsWith(".jar")) ||
             it.name == "cwm-plugin.jar"

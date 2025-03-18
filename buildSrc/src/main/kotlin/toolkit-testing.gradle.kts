@@ -62,6 +62,11 @@ artifacts {
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 
+    classpath -= classpath.filter {
+        // pollutes test logger
+        it.name == "clouds-docker-impl.jar"
+    }
+
     ciOnly {
         retry {
             failOnPassedAfterRetry.set(false)
