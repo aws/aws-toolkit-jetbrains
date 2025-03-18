@@ -326,6 +326,11 @@ intellijPlatform {
 }
 
 tasks.withType<PrepareSandboxTask>().configureEach {
+    // com.jetbrains.rd.platform.diagnostics.BackendException:
+    // There is more than one package with the same ID JetBrains.Platform.UIInteractive.Common in the current deployed packages list.
+    // An item with the same key has already been added. Key: JetBrains.Platform.UIInteractive.Common
+    disabledPlugins.add("com.jetbrains.dotTrace.dotMemory")
+
     dependsOn(resharperDllsDir)
 
     intoChild(intellijPlatform.projectName.map { "$it/dotnet" })

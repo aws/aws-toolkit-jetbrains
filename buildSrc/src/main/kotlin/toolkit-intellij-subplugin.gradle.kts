@@ -104,7 +104,7 @@ dependencies {
 }
 
 tasks.prepareTestSandbox {
-    disabledPlugins = listOf(
+    disabledPlugins.addAll(
         "com.intellij.swagger",
         "org.jetbrains.plugins.kotlin.jupyter",
     )
