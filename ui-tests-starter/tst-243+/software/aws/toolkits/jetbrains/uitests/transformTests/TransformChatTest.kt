@@ -20,7 +20,11 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.kodein.di.DI
 import org.kodein.di.bindSingleton
-import software.aws.toolkits.jetbrains.uitests.*
+import software.aws.toolkits.jetbrains.uitests.TestCIServer
+import software.aws.toolkits.jetbrains.uitests.clearAwsXmlFile
+import software.aws.toolkits.jetbrains.uitests.executePuppeteerScript
+import software.aws.toolkits.jetbrains.uitests.setupTestEnvironment
+import software.aws.toolkits.jetbrains.uitests.useExistingConnectionForTest
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
