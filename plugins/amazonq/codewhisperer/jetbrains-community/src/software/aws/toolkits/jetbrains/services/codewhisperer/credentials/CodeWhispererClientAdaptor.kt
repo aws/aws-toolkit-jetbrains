@@ -254,7 +254,7 @@ interface CodeWhispererClientAdaptor {
     }
 }
 
-open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispererClientAdaptor {
+class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispererClientAdaptor {
     fun bearerClient(): CodeWhispererRuntimeClient =
         ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.getConnectionSettings()
             ?.awsClient<CodeWhispererRuntimeClient>()

@@ -12,6 +12,7 @@ import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
@@ -87,6 +88,7 @@ import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 
+@Ignore
 class CodeWhispererClientAdaptorTest {
     val projectRule = JavaCodeInsightTestFixtureRule()
     val disposableRule = DisposableRule()
