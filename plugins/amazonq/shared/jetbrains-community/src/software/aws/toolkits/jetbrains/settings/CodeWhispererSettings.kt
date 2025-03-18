@@ -23,6 +23,13 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
 
     fun toggleIncludeCodeWithReference(value: Boolean) {
         state.value[CodeWhispererConfigurationType.IsIncludeCodeWithReference] = value
+        ProjectManager.getInstance().openProjects.forEach {
+            if (it.isDisposed) {
+                return@forEach
+            }
+
+            AmazonQLspService.didChangeConfiguration(it)
+        }
     }
 
     fun isIncludeCodeWithReference() = state.value.getOrDefault(
