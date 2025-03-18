@@ -4,12 +4,16 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.project.Project
 import org.eclipse.lsp4j.ConfigurationParams
 import org.eclipse.lsp4j.MessageActionItem
 import org.eclipse.lsp4j.MessageParams
 import org.eclipse.lsp4j.MessageType
 import org.eclipse.lsp4j.PublishDiagnosticsParams
 import org.eclipse.lsp4j.ShowMessageRequestParams
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
@@ -18,7 +22,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
  */
-class AmazonQLanguageClientImpl : AmazonQLanguageClient {
+class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageClient {
     override fun telemetryEvent(`object`: Any) {
         println(`object`)
     }
@@ -46,11 +50,25 @@ class AmazonQLanguageClientImpl : AmazonQLanguageClient {
         showMessage(message)
     }
 
-    override fun getConnectionMetadata() = CompletableFuture.completedFuture(
-        ConnectionMetadata(
-            SsoProfileData("TODO")
-        )
-    )
+    override fun getConnectionMetadata(): CompletableFuture<ConnectionMetadata> =
+        CompletableFuture.supplyAsync {
+            val connection = ToolkitConnectionManager.getInstance(project)
+                .activeConnectionForFeature(QConnection.getInstance())
+
+            when (connection) {
+                is AwsBearerTokenConnection -> {
+                    ConnectionMetadata(
+                        SsoProfileData(connection.startUrl)
+                    )
+                }
+                else -> {
+                    // If no connection or not a bearer token connection return default builderID start url
+                    ConnectionMetadata(
+                        SsoProfileData(AmazonQLspConstants.AWS_BUILDER_ID_URL)
+                    )
+                }
+            }
+        }
 
     override fun configuration(params: ConfigurationParams): CompletableFuture<List<Any>> {
         if (params.items.isEmpty()) {
