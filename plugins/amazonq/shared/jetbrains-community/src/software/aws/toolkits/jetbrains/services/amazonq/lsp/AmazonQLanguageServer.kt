@@ -9,6 +9,8 @@ import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.LanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.SyncModuleDependenciesParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionWithReferencesParams
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -16,6 +18,9 @@ import java.util.concurrent.CompletableFuture
  */
 @Suppress("unused")
 interface AmazonQLanguageServer : LanguageServer {
+    @JsonRequest("aws/textDocument/inlineCompletionWithReferences")
+    fun inlineCompletionWithReferences(params: InlineCompletionWithReferencesParams): CompletableFuture<InlineCompletionListWithReferences>
+
     @JsonNotification("aws/syncModuleDependencies")
     fun syncModuleDependencies(params: SyncModuleDependenciesParams): CompletableFuture<Unit>
 
