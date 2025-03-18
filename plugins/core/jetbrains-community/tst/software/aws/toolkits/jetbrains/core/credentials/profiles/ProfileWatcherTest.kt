@@ -63,13 +63,13 @@ class ProfileWatcherTest {
             assertFileChange {
                 profileFile.parentFile.mkdirs()
                 profileFile.writeText("Test")
+                profileFile.parentFile.deleteRecursively()
             }
-        } catch (e: Exception) {
-            if (e.cause is IOException) {
+        } catch (e: Error) {
+            if (e is AssertionFailedError) {
+                // suppress
+            } else if (e.cause is IOException) {
                 throw AssumptionViolatedException("native file watcher is not executable; possibly an issue with intellij-platform-gradle-plugin", e)
-            } else if (e.cause !is AssertionFailedError) {
-                // suppress otherwise
-                throw e
             }
         }
     }
