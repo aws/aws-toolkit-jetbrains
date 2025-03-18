@@ -169,6 +169,10 @@ fun HeavyJavaCodeInsightTestFixtureRule.addBreakpoint() {
 
 private fun HeavyJavaCodeInsightTestFixtureRule.copyGradleFiles() {
     val gradleRoot = findGradlew()
+
+    // annoying and can't repro locally
+    VfsRootAccess.allowRootAccess(this.fixture.testRootDisposable, gradleRoot.toString())
+
     val gradleFiles = setOf("gradle/wrapper", "gradlew.bat", "gradlew")
 
     gradleFiles.forEach {
