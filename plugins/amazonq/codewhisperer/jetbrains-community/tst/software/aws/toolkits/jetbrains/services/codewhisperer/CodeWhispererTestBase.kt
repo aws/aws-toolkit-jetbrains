@@ -23,6 +23,9 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doNothing
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.timeout
@@ -31,12 +34,20 @@ import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntime
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsRequest
 import software.amazon.awssdk.services.codewhispererruntime.paginators.GenerateCompletionsIterable
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
+import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
+import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.jetbrains.core.credentials.LegacyManagedBearerSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedSsoProfile
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.MockToolkitAuthManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.codeWhispererRecommendationActionId
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonFileName
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
@@ -91,6 +102,20 @@ open class CodeWhispererTestBase {
 
     @Before
     open fun setUp() {
+        val mockTokenProviderDelegate: BearerTokenProvider = mock {
+            on { state() } doReturn BearerTokenAuthState.AUTHORIZED
+            on { id } doReturn "test_connection_id"
+        }
+        val mockConnectionSetting: LegacyManagedBearerSsoConnection = mock {
+            on { getConnectionSettings() } doReturn
+                TokenConnectionSettings(ToolkitBearerTokenProvider(mockTokenProviderDelegate), AwsRegion("us-east-1", "IAD", "aws"))
+        }
+        val mockAuth = mock<ToolkitConnectionManager> {
+            on { activeConnectionForFeature(eq(QConnection.getInstance())) } doReturn mockConnectionSetting
+            on { connectionStateForFeature(eq(QConnection.getInstance())) } doReturn BearerTokenAuthState.AUTHORIZED
+            on { connectionStateForFeature(eq(CodeWhispererConnection.getInstance())) } doReturn BearerTokenAuthState.AUTHORIZED
+        }
+        projectRule.project.replaceService(ToolkitConnectionManager::class.java, mockAuth, disposableRule.disposable)
         mockClient = mockClientManagerRule.create()
         mockClientManagerRule.create<SsoOidcClient>()
         val requestCaptor = argumentCaptor<GenerateCompletionsRequest>()
