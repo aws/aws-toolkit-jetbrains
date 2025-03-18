@@ -172,7 +172,7 @@ class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
             sourceFileName = "Function.cs",
             goldFileName = "Function.gold"
         ) {
-            waitForDaemon()
+            waitForDaemon(this@LambdaGutterMarkHighlightingTest.project)
             dumpHighlightersTree(
                 valueFilter = { it.attributeId().contains(LAMBDA_RUN_MARKER_ATTRIBUTE_ID) }
             )
