@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.RuleChain
@@ -137,11 +136,6 @@ class CodeWhispererClientAdaptorTest {
     @After
     fun tearDown() {
         AwsSettings.getInstance().isTelemetryEnabled = isTelemetryEnabledDefault
-    }
-
-    @After
-    fun cleanup() {
-        Disposer.dispose(sut)
     }
 
     @Test
