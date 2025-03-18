@@ -171,7 +171,7 @@ private fun HeavyJavaCodeInsightTestFixtureRule.copyGradleFiles() {
     val gradleRoot = findGradlew()
 
     // annoying and can't repro locally
-    VfsRootAccess.allowRootAccess(this.fixture.testRootDisposable, gradleRoot.toString())
+    VfsRootAccess.allowRootAccess(this.fixture.testRootDisposable, gradleRoot.toRealPath().toString())
 
     val gradleFiles = setOf("gradle/wrapper", "gradlew.bat", "gradlew")
 
