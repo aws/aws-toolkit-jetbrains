@@ -65,7 +65,7 @@ class AmazonQLanguageClientImpl : AmazonQLanguageClient {
                             add(
                                 CodeWhispererLspConfiguration(
                                     shouldShareData = CodeWhispererSettings.getInstance().isMetricOptIn(),
-                                    shouldShareCodeReferences = CodeWhispererSettings.getInstance().isIncludeCodeWithReference()
+                                    shouldShareCodeReferences = CodeWhispererSettings.getInstance().isIncludeCodeWithReference(),
                                 )
                             )
                         }
