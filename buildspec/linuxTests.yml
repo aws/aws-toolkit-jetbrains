@@ -18,6 +18,11 @@ phases:
       - chown -R codebuild-user:codebuild-user /codebuild/output
       - chown -R codebuild-user:codebuild-user /codebuild/local-cache
       - chown -R codebuild-user:codebuild-user /home/codebuild-user
+      - |
+        >/home/codebuild-user/gradle.properties echo "
+        org.gradle.jvmargs=-Xmx4096m
+        kotlin.daemon.jvmargs=-Xmx4096m
+        "
       - setfacl -m d:o::rwx,o::rwx /root
       - mkdir /tmp/testArtifacts; chmod 777 /tmp/testArtifacts
       - export AWS_CODEARTIFACT_NUGET_LOGFILE=/tmp/testArtifacts/codeArtifactNuGet.log
