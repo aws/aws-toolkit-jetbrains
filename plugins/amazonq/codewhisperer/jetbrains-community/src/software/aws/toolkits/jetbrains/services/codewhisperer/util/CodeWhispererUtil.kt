@@ -112,6 +112,28 @@ suspend fun String.toCodeChunk(path: String): List<Chunk> {
     }
 }
 
+fun truncateLineByLine(input: String, l: Int): String {
+    val maxLength = if (l > 0) l else -1 * l
+    if (input.isEmpty()) {
+        return ""
+    }
+    val shouldAddNewLineBack = input.last() == '\n'
+    var lines = input.trim().split("\n")
+    var curLen = input.length
+    while (curLen > maxLength) {
+        val last = lines.last()
+        lines = lines.dropLast(1)
+        curLen -= last.length + 1
+    }
+
+    val r = lines.joinToString("\n")
+    return if (shouldAddNewLineBack) {
+        r + "\n"
+    } else {
+        r
+    }
+}
+
 fun getAuthType(project: Project): CredentialSourceId? {
     val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
     var authType: CredentialSourceId? = null
