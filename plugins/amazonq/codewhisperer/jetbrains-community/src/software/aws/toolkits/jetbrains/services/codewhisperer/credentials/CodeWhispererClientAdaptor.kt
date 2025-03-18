@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.credentials
 
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.text.nullize
