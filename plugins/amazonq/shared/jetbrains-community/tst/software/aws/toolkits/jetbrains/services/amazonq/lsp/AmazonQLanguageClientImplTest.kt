@@ -65,7 +65,10 @@ class AmazonQLanguageClientImplTest {
         assertThat(sut.configuration(configurationParams("aws.codeWhisperer")).get())
             .singleElement()
             .isEqualTo(
-                CodeWhispererLspConfiguration(shouldShareData = false)
+                CodeWhispererLspConfiguration(
+                    shouldShareData = false,
+                    shouldShareCodeReferences = false
+                )
             )
     }
 
@@ -75,7 +78,10 @@ class AmazonQLanguageClientImplTest {
         assertThat(sut.configuration(configurationParams("aws.codeWhisperer")).get())
             .singleElement()
             .isEqualTo(
-                CodeWhispererLspConfiguration(shouldShareData = true)
+                CodeWhispererLspConfiguration(
+                    shouldShareData = true,
+                    shouldShareCodeReferences = false
+                )
             )
     }
 
@@ -87,11 +93,15 @@ class AmazonQLanguageClientImplTest {
 
     @Test
     fun `Gson serializes CodeWhispererLspConfiguration serializes correctly`() {
-        val sut = CodeWhispererLspConfiguration(shouldShareData = true)
+        val sut = CodeWhispererLspConfiguration(
+            shouldShareData = true,
+            shouldShareCodeReferences = true
+        )
         assertThat(Gson().toJson(sut)).isEqualToIgnoringWhitespace(
             """
                 {
-                    "shareCodeWhispererContentWithAWS": true
+                    "shareCodeWhispererContentWithAWS": true,
+                    "includeSuggestionsWithCodeReferences": true
                 }
             """.trimIndent()
         )
