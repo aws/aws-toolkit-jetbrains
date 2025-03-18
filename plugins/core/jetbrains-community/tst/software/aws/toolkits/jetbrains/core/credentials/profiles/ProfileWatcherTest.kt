@@ -65,11 +65,13 @@ class ProfileWatcherTest {
                 profileFile.writeText("Test")
                 profileFile.parentFile.deleteRecursively()
             }
-        } catch (e: Error) {
+        } catch (e: Throwable) {
             if (e is AssertionFailedError) {
                 // suppress
             } else if (e.cause is IOException) {
                 throw AssumptionViolatedException("native file watcher is not executable; possibly an issue with intellij-platform-gradle-plugin", e)
+            } else {
+                throw e
             }
         }
     }
