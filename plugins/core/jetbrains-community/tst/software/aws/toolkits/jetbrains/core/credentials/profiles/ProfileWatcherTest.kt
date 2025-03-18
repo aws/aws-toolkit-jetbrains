@@ -60,6 +60,7 @@ class ProfileWatcherTest {
 
         try {
             assertFileChange {
+                profileFile.parentFile.mkdirs()
                 profileFile.writeText("Test")
             }
         } catch (e: Exception) {

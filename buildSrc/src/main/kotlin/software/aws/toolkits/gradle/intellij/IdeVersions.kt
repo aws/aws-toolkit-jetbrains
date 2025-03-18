@@ -127,7 +127,7 @@ object IdeVersions {
                 ),
                 marketplacePlugins = listOf(
                     "org.toml.lang:242.20224.155",
-                    "Pythonid:242.20224.300",
+                    "PythonCore:242.20224.300",
                     "org.jetbrains.plugins.go:242.20224.300",
                 )
             ),

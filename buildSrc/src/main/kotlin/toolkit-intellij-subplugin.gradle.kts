@@ -103,6 +103,7 @@ dependencies {
     }
 }
 
+// https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1844
 tasks.prepareTestSandbox {
     disabledPlugins = listOf(
         "com.intellij.swagger",
