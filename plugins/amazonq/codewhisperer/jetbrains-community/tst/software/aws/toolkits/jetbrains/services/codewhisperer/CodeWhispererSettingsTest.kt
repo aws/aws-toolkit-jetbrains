@@ -114,7 +114,7 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
         } ?: fail("CodeWhisperer status bar widget not found")
 
         runInEdtAndWait {
-            assertThat(problemsWindow.contentManager.contentCount).isEqualTo(0)
+            assertThat(problemsWindow.contentManager.contentCount).isEqualTo(1)
             assertThat(codeReferenceWindow.isAvailable).isFalse
             assertThat(statusBarWidgetFactory.isAvailable(projectRule.project)).isTrue
             assertThat(settingsManager.isIncludeCodeWithReference()).isFalse

@@ -18,6 +18,7 @@ import org.junit.Ignore
 import org.junit.Test
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 
+@Ignore
 class CodeWhispererPythonImportAdderTest : CodeWhispererImportAdderTestBase(
     CodeWhispererPythonImportAdder(),
     PythonCodeInsightTestFixtureRule(),

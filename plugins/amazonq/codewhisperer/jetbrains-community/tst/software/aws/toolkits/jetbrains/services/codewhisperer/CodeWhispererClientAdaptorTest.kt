@@ -12,7 +12,6 @@ import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
@@ -25,7 +24,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.ArtifactType
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeAnalysisFindingsSchema
@@ -55,11 +53,9 @@ import software.amazon.awssdk.services.codewhispererruntime.model.SuggestionStat
 import software.amazon.awssdk.services.codewhispererruntime.paginators.GenerateCompletionsIterable
 import software.amazon.awssdk.services.codewhispererruntime.paginators.ListAvailableCustomizationsIterable
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
-import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.DefaultToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ManagedSsoProfile
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.MockToolkitAuthManagerRule
@@ -88,7 +84,6 @@ import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 
-@Ignore
 class CodeWhispererClientAdaptorTest {
     val projectRule = JavaCodeInsightTestFixtureRule()
     val disposableRule = DisposableRule()
@@ -98,13 +93,12 @@ class CodeWhispererClientAdaptorTest {
 
     @Rule
     @JvmField
-    val ruleChain = RuleChain(projectRule, mockCredentialRule, mockClientManagerRule, disposableRule)
+    val ruleChain = RuleChain(projectRule, mockCredentialRule, mockClientManagerRule, authManagerRule, disposableRule)
 
     private lateinit var bearerClient: CodeWhispererRuntimeClient
     private lateinit var ssoClient: SsoOidcClient
 
     private lateinit var sut: CodeWhispererClientAdaptorImpl
-    private lateinit var connectionManager: ToolkitConnectionManager
     private var isTelemetryEnabledDefault: Boolean = false
 
     @Before
@@ -122,15 +116,8 @@ class CodeWhispererClientAdaptorTest {
             on { listFeatureEvaluations(any<ListFeatureEvaluationsRequest>()) } doReturn listFeatureEvaluationsResponse
         }
 
-        val mockConnection = mock<AwsBearerTokenConnection>()
-        whenever(mockConnection.getConnectionSettings()) doReturn mock<TokenConnectionSettings>()
-
-        connectionManager = mock {
-            on {
-                activeConnectionForFeature(any())
-            } doReturn authManagerRule.createConnection(ManagedSsoProfile("us-east-1", aString(), listOf("scopes"))) as AwsBearerTokenConnection
-        }
-        projectRule.project.replaceService(ToolkitConnectionManager::class.java, connectionManager, disposableRule.disposable)
+        val conn = authManagerRule.createConnection(ManagedSsoProfile("us-east-1", "url", Q_SCOPES))
+        ToolkitConnectionManager.getInstance(projectRule.project).switchConnection(conn)
 
         isTelemetryEnabledDefault = AwsSettings.getInstance().isTelemetryEnabled
     }
@@ -147,24 +134,15 @@ class CodeWhispererClientAdaptorTest {
 
     @Test
     fun `should throw if there is no valid credential, otherwise return codewhispererRuntimeClient`() {
-        val connectionManager = DefaultToolkitConnectionManager()
-        projectRule.project.replaceService(ToolkitConnectionManager::class.java, DefaultToolkitConnectionManager(), disposableRule.disposable)
+        val connectionManager = ToolkitConnectionManager.getInstance(projectRule.project)
 
-        assertThat(ToolkitConnectionManager.getInstance(projectRule.project).activeConnectionForFeature(QConnection.getInstance())).isNull()
-        assertThrows<Exception>("attempt to get bearer client while there is no valid credential") {
-            sut.bearerClient()
-        }
-
-        val qConnection = authManagerRule.createConnection(ManagedSsoProfile("us-east-1", aString(), Q_SCOPES))
-        connectionManager.switchConnection(qConnection)
         assertThat(connectionManager.activeConnectionForFeature(QConnection.getInstance()))
             .isNotNull
-            .isEqualTo(qConnection)
         assertThat(sut.bearerClient())
             .isNotNull
             .isInstanceOf(CodeWhispererRuntimeClient::class.java)
 
-        logoutFromSsoConnection(projectRule.project, qConnection as AwsBearerTokenConnection)
+        logoutFromSsoConnection(projectRule.project, connectionManager.activeConnectionForFeature(QConnection.getInstance()) as AwsBearerTokenConnection)
         assertThat(connectionManager.activeConnectionForFeature(QConnection.getInstance())).isNull()
         assertThrows<Exception>("attempt to get bearer client while there is no valid credential") {
             sut.bearerClient()
