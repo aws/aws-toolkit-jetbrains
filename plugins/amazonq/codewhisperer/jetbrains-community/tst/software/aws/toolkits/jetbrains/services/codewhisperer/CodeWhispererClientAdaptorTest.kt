@@ -15,6 +15,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
@@ -58,17 +59,20 @@ import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.DefaultToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ManagedSsoProfile
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.MockToolkitAuthManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.services.amazonq.FEATURE_EVALUATION_PRODUCT_NAME
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.metadata
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonRequest
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponseWithToken
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.sdkHttpResponse
-import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptorImpl
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
@@ -98,7 +102,7 @@ class CodeWhispererClientAdaptorTest {
     private lateinit var bearerClient: CodeWhispererRuntimeClient
     private lateinit var ssoClient: SsoOidcClient
 
-    private lateinit var sut: CodeWhispererClientAdaptor
+    private lateinit var sut: CodeWhispererClientAdaptorImpl
     private lateinit var connectionManager: ToolkitConnectionManager
     private var isTelemetryEnabledDefault: Boolean = false
 
@@ -143,6 +147,41 @@ class CodeWhispererClientAdaptorTest {
     @Test
     fun `Sono region is us-east-1`() {
         assertThat("us-east-1").isEqualTo(SONO_REGION)
+    }
+
+    @Test
+    fun `should throw if there is no valid credential, otherwise return codewhispererRuntimeClient`() {
+        val connectionManager = DefaultToolkitConnectionManager()
+        projectRule.project.replaceService(ToolkitConnectionManager::class.java, DefaultToolkitConnectionManager(), disposableRule.disposable)
+
+        assertThat(ToolkitConnectionManager.getInstance(projectRule.project).activeConnectionForFeature(QConnection.getInstance())).isNull()
+        assertThrows<Exception>("attempt to get bearer client while there is no valid credential") {
+            sut.bearerClient()
+        }
+
+        val qConnection = authManagerRule.createConnection(ManagedSsoProfile("us-east-1", aString(), Q_SCOPES))
+        connectionManager.switchConnection(qConnection)
+        assertThat(connectionManager.activeConnectionForFeature(QConnection.getInstance()))
+            .isNotNull
+            .isEqualTo(qConnection)
+        assertThat(sut.bearerClient())
+            .isNotNull
+            .isInstanceOf(CodeWhispererRuntimeClient::class.java)
+
+        logoutFromSsoConnection(projectRule.project, qConnection as AwsBearerTokenConnection)
+        assertThat(connectionManager.activeConnectionForFeature(QConnection.getInstance())).isNull()
+        assertThrows<Exception>("attempt to get bearer client while there is no valid credential") {
+            sut.bearerClient()
+        }
+
+        val anotherQConnection = authManagerRule.createConnection(ManagedSsoProfile("us-east-1", aString(), Q_SCOPES))
+        connectionManager.switchConnection(anotherQConnection)
+        assertThat(connectionManager.activeConnectionForFeature(QConnection.getInstance()))
+            .isNotNull
+            .isEqualTo(anotherQConnection)
+        assertThat(sut.bearerClient())
+            .isNotNull
+            .isInstanceOf(CodeWhispererRuntimeClient::class.java)
     }
 
     @Test

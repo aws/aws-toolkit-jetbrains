@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.credentials
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.text.nullize
@@ -39,14 +38,9 @@ import software.amazon.awssdk.services.codewhispererruntime.model.TargetCode
 import software.amazon.awssdk.services.codewhispererruntime.model.UserIntent
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
@@ -63,7 +57,7 @@ import java.util.concurrent.TimeUnit
 
 // As the connection is project-level, we need to make this project-level too
 @Deprecated("Methods can throw a NullPointerException if callee does not check if connection is valid")
-interface CodeWhispererClientAdaptor : Disposable {
+interface CodeWhispererClientAdaptor {
     val project: Project
 
     fun generateCompletionsPaginator(
@@ -262,31 +256,10 @@ interface CodeWhispererClientAdaptor : Disposable {
 }
 
 open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispererClientAdaptor {
-    @Volatile
-    private var myBearerClient: CodeWhispererRuntimeClient? = null
-
-    init {
-        initClientUpdateListener()
-    }
-
-    private fun initClientUpdateListener() {
-        ApplicationManager.getApplication().messageBus.connect(this).subscribe(
-            ToolkitConnectionManagerListener.TOPIC,
-            object : ToolkitConnectionManagerListener {
-                override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                    if (newConnection is AwsBearerTokenConnection) {
-                        myBearerClient = getBearerClient(newConnection.getConnectionSettings().providerId)
-                    }
-                }
-            }
-        )
-    }
-
-    private fun bearerClient(): CodeWhispererRuntimeClient {
-        if (myBearerClient != null) return myBearerClient as CodeWhispererRuntimeClient
-        myBearerClient = getBearerClient()
-        return myBearerClient as CodeWhispererRuntimeClient
-    }
+    fun bearerClient(): CodeWhispererRuntimeClient =
+        ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.getConnectionSettings()
+            ?.awsClient<CodeWhispererRuntimeClient>()
+            ?: throw Exception("attempt to get bearer client while there is no valid credential")
 
     override fun generateCompletionsPaginator(firstRequest: GenerateCompletionsRequest) = sequence<GenerateCompletionsResponse> {
         var nextToken: String? = firstRequest.nextToken()
@@ -809,39 +782,9 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         requestBuilder.userContext(codeWhispererUserContext())
     }
 
-    override fun dispose() {
-        myBearerClient?.close()
-    }
-
-    /**
-     * Every different SSO/AWS Builder ID connection requires a new client which has its corresponding bearer token provider,
-     * thus we have to create them dynamically.
-     * Invalidate and recycle the old client first, and create a new client with the new connection.
-     * This makes sure when we invoke CW, we always use the up-to-date connection.
-     * In case this fails to close the client, myBearerClient is already set to null thus next time when we invoke CW,
-     * it will go through this again which should get the current up-to-date connection. This stale client would be
-     * unused and stay in memory for a while until eventually closed by ToolkitClientManager.
-     */
-    open fun getBearerClient(oldProviderIdToRemove: String = ""): CodeWhispererRuntimeClient? {
-        myBearerClient = null
-
-        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
-        connection as? AwsBearerTokenConnection ?: run {
-            LOG.warn { "$connection is not a bearer token connection" }
-            return null
-        }
-
-        return AwsClientManager.getInstance().getClient<CodeWhispererRuntimeClient>(connection.getConnectionSettings())
-    }
-
     companion object {
         private val LOG = getLogger<CodeWhispererClientAdaptorImpl>()
     }
-}
-
-class MockCodeWhispererClientAdaptor(override val project: Project) : CodeWhispererClientAdaptorImpl(project) {
-    override fun getBearerClient(oldProviderIdToRemove: String): CodeWhispererRuntimeClient = project.awsClient()
-    override fun dispose() {}
 }
 
 private fun CodewhispererSuggestionState.toCodeWhispererSdkType() = when {
