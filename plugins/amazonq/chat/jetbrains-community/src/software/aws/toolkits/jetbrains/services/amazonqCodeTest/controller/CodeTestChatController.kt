@@ -629,17 +629,18 @@ class CodeTestChatController(
                     val manager = CodeWhispererCodeReferenceManager.getInstance(context.project)
                     references.forEach { ref ->
                         var referenceContentSpan: Span? = null
-                        ref.recommendationContentSpan?.let {
-                            referenceContentSpan = Span.builder().start(ref.recommendationContentSpan.start).end(ref.recommendationContentSpan.end).build()
+                        ref.recommendationContentSpan()?.let {
+                            referenceContentSpan = Span.builder().start(ref.recommendationContentSpan().start())
+                                .end(ref.recommendationContentSpan().end()).build()
                         }
                         val reference = Reference.builder().url(
-                            ref.url
-                        ).licenseName(ref.licenseName).repository(ref.repository).recommendationContentSpan(referenceContentSpan).build()
+                            ref.url()
+                        ).licenseName(ref.licenseName()).repository(ref.repository()).recommendationContentSpan(referenceContentSpan).build()
                         var originalContent: String? = null
-                        ref.recommendationContentSpan?.let {
+                        ref.recommendationContentSpan()?.let {
                             originalContent = session.generatedTestDiffs.values.first().substring(
-                                ref.recommendationContentSpan.start,
-                                ref.recommendationContentSpan.end
+                                ref.recommendationContentSpan().start(),
+                                ref.recommendationContentSpan().end()
                             )
                         }
                         LOG.debug { "Original code content from reference span: $originalContent" }
