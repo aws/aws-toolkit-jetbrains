@@ -62,9 +62,9 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                     )
                 }
                 else -> {
-                    // If no connection or not a bearer token connection
+                    // If no connection or not a bearer token connection return default builderID start url
                     ConnectionMetadata(
-                        SsoProfileData("")
+                        SsoProfileData(AmazonQLspConstants.AWS_BUILDER_ID_URL)
                     )
                 }
             }

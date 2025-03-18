@@ -51,7 +51,7 @@ class AmazonQLanguageClientImplTest {
         every { mockConnectionManager.activeConnectionForFeature(QConnection.getInstance()) } returns null
 
         assertThat(sut.getConnectionMetadata().get())
-            .isEqualTo(ConnectionMetadata(SsoProfileData("")))
+            .isEqualTo(ConnectionMetadata(SsoProfileData(AmazonQLspConstants.AWS_BUILDER_ID_URL)))
     }
 
     @Test
