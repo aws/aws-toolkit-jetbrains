@@ -103,7 +103,6 @@ dependencies {
     }
 }
 
-// https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1844
 tasks.prepareTestSandbox {
     disabledPlugins = listOf(
         "com.intellij.swagger",
@@ -117,6 +116,9 @@ tasks.jar {
 }
 
 tasks.withType<Test>().configureEach {
+    // conflict with Docker logging impl; so bypass service loader
+    systemProperty("slf4j.provider", "org.slf4j.jul.JULServiceProvider")
+
     systemProperty("log.dir", intellijPlatform.sandboxContainer.map { "$it-test/logs" }.get())
     systemProperty("testDataPath", project.rootDir.resolve("testdata").absolutePath)
     val jetbrainsCoreTestResources = project(":plugin-toolkit:jetbrains-core").projectDir.resolve("tst-resources")
