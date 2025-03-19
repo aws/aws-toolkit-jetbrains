@@ -780,21 +780,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         }
     }
 
-    private fun buildInlineCompletionParams(requestContext: RequestContext): InlineCompletionWithReferencesParams {
-        return InlineCompletionWithReferencesParams(
-            context = InlineCompletionContext(
-                triggerKind = when (requestContext.triggerTypeInfo.triggerType) {
-                    CodewhispererTriggerType.OnDemand -> InlineCompletionTriggerKind.Invoke
-                    CodewhispererTriggerType.AutoTrigger -> InlineCompletionTriggerKind.Automatic
-                    else -> InlineCompletionTriggerKind.Invoke
-                }
-            )
-        ).apply {
-            textDocument = TextDocumentIdentifier(requestContext.fileContextInfo.filename)
-            position = Position(requestContext.caretPosition.line, requestContext.caretPosition.column)
-        }
-    }
-
     override fun dispose() {}
 
     companion object {
