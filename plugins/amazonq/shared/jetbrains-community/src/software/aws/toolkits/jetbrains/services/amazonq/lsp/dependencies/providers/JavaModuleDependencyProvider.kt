@@ -9,13 +9,13 @@ import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.vfs.VfsUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.ModuleDependencyProvider
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.SyncModuleDependenciesParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
 
 internal class JavaModuleDependencyProvider : ModuleDependencyProvider {
     override fun isApplicable(module: Module): Boolean =
         ModuleRootManager.getInstance(module).sdk?.sdkType is JavaSdkType
 
-    override fun createParams(module: Module): SyncModuleDependenciesParams {
+    override fun createParams(module: Module): DidChangeDependencyPathsParams {
         val sourceRoots = getSourceRoots(module)
         val dependencies = mutableListOf<String>()
 
@@ -26,7 +26,7 @@ internal class JavaModuleDependencyProvider : ModuleDependencyProvider {
             true
         }
 
-        return SyncModuleDependenciesParams(
+        return DidChangeDependencyPathsParams(
             moduleName = module.name,
             programmingLanguage = "Java",
             files = sourceRoots,

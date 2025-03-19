@@ -5,7 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies
 
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.module.Module
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.SyncModuleDependenciesParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
 
 interface ModuleDependencyProvider {
     companion object {
@@ -13,5 +13,5 @@ interface ModuleDependencyProvider {
     }
 
     fun isApplicable(module: Module): Boolean
-    fun createParams(module: Module): SyncModuleDependenciesParams
+    fun createParams(module: Module): DidChangeDependencyPathsParams
 }
