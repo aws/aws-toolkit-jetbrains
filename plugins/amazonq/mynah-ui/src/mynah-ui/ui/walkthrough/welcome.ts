@@ -14,6 +14,14 @@ export const welcomeScreenTabData = (tabs: TabDataGenerator): MynahUITabStoreTab
         tabTitle: 'Welcome to Q',
         tabBackground: true,
         chatItems: [
+            ...(tabs.profileName
+                ? [{
+                    type: ChatItemType.ANSWER,
+                    icon: MynahIcons.INFO,
+                    messageId: 'profile-info',
+                    body: `You're using the <b>${tabs.profileName}</b> profile for this chat.`,
+                }]
+                : []),
             {
                 type: ChatItemType.ANSWER,
                 icon: MynahIcons.ASTERISK,
