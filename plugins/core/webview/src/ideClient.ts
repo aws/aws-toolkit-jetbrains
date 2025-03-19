@@ -1,8 +1,9 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import { profile } from "console";
 import {Store} from "vuex";
-import {IdcInfo, Region, Stage, State, BrowserSetupData, AwsBearerTokenConnection} from "./model";
+import {IdcInfo, Region, Stage, State, BrowserSetupData, AwsBearerTokenConnection, Profile} from "./model";
 
 export class IdeClient {
     constructor(private readonly store: Store<State>) {}
@@ -16,7 +17,7 @@ export class IdeClient {
         this.updateLastLoginIdcInfo(state.idcInfo)
         this.store.commit("setCancellable", state.cancellable)
         this.store.commit("setFeature", state.feature)
-
+        this.store.commit('setProfiles', state.profiles);
         const existConnections = state.existConnections.map(it => {
             return {
                 sessionName: it.sessionName,
@@ -29,6 +30,13 @@ export class IdeClient {
 
         this.store.commit("setExistingConnections", existConnections)
         this.updateAuthorization(undefined)
+    }
+
+    handleProfiles(profilesData: { profiles: Profile[] }) {
+        this.store.commit('setStage', 'PROFILE_SELECT')
+        console.debug("received profile data")
+        const availableProfiles: Profile[] = profilesData.profiles;
+        this.store.commit('setProfiles', availableProfiles);
     }
 
     updateAuthorization(code: string | undefined) {
