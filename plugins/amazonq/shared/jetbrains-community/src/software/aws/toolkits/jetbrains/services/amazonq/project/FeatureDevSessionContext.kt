@@ -18,7 +18,7 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.FileUtils
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.services.amazonq.QConstants.MAX_FILE_SIZE_BYTES
-import software.aws.toolkits.jetbrains.utils.isDevFile
+import software.aws.toolkits.jetbrains.utils.isWorkspaceDevFile
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import java.io.File
@@ -73,32 +73,6 @@ open class FeatureDevSessionContext(val project: Project, val maxProjectSizeByte
         return ZipCreationResult(zippedProject, checkSum256, zippedProject.length())
     }
 
-    private fun shouldIncludeInZipFile(file: VirtualFile, isAutoBuildFeatureEnabled: Boolean): Boolean {
-        // Large files always ignored:
-        if (file.length > MAX_FILE_SIZE_BYTES) {
-            return false
-        }
-
-        // Exclude files specified by gitignore or outside the workspace:
-        if (!isWorkspaceSourceContent(file, workspaceContentRoots, changeListManager, additionalGlobalIgnoreRules)) {
-            return false
-        }
-
-        // Exclude files outside the selection root working on a subset of the workspace:
-        if (!VfsUtil.isAncestor(selectionRoot, file, false)) {
-            return false
-        }
-
-        // When auto build is enabled, include all other files:
-        return if (isAutoBuildFeatureEnabled) {
-            true
-        } else {
-            // When auto build is disabled, explicitly exclude devfile:
-            // FIXME: There should be a stronger signal to the agent than presence of the devfile in the uploaded files to enable auto build
-            !isDevFile(file)
-        }
-    }
-
     private suspend fun zipFiles(isAutoBuildFeatureEnabled: Boolean?): File = withContext(getCoroutineBgContext()) {
         val files = mutableListOf<VirtualFile>()
         val ignoredExtensionMap = mutableMapOf<String, Long>().withDefault { 0L }
@@ -109,21 +83,59 @@ open class FeatureDevSessionContext(val project: Project, val maxProjectSizeByte
                 contentRoot,
                 object : VirtualFileVisitor<Unit>(NO_FOLLOW_SYMLINKS) {
                     override fun visitFile(file: VirtualFile): Boolean {
-                        val isIncluded = shouldIncludeInZipFile(file, isAutoBuildFeatureEnabled == true)
-                        if (!isIncluded) {
+                        fun markIgnoredContent() {
                             val extension = file.extension.orEmpty()
                             ignoredExtensionMap[extension] = (ignoredExtensionMap[extension] ?: 0) + 1
+                        }
+
+                        fun addContent() {
+                            if (file.isFile) {
+                                totalSize += file.length
+                                files.add(file)
+
+                                if (maxProjectSizeBytes != null && totalSize > maxProjectSizeBytes) {
+                                    throw RepoSizeLimitError(AwsCoreBundle.message("amazonqFeatureDev.content_length.error_text"))
+                                }
+                            }
+                        }
+
+                        // Always include DevFile if it is enabled and present, taking precedence over other conditions:
+                        if (isAutoBuildFeatureEnabled == true && isWorkspaceDevFile(file, addressableRoot)) {
+                            addContent()
+                            return true
+                        }
+
+                        // Large files always ignored:
+                        if (file.length > MAX_FILE_SIZE_BYTES) {
+                            markIgnoredContent()
                             return false
                         }
 
-                        if (file.isFile) {
-                            totalSize += file.length
-                            files.add(file)
-
-                            if (maxProjectSizeBytes != null && totalSize > maxProjectSizeBytes) {
-                                throw RepoSizeLimitError(AwsCoreBundle.message("amazonqFeatureDev.content_length.error_text"))
-                            }
+                        // Exclude files specified by gitignore or outside the workspace:
+                        if (!isWorkspaceSourceContent(file, workspaceContentRoots, changeListManager, additionalGlobalIgnoreRules)) {
+                            markIgnoredContent()
+                            return false
                         }
+
+                        // Exclude files and directories outside the selection root when working on a subset of the workspace:
+                        if (!VfsUtil.isAncestor(selectionRoot, file, false)) {
+                            // Because we traverse from the content root, ensure we continue traverse toward the selection root:
+                            // (Handles when selection root is inside a content root)
+                            if (VfsUtil.isAncestor(file, selectionRoot, false)) {
+                                return true
+                            }
+                            markIgnoredContent()
+                            return false
+                        }
+
+                        // When auto build is disabled, explicitly exclude devfile:
+                        // FIXME: There should be a stronger signal to the agent than presence of the devfile in the uploaded files to enable auto build
+                        if (isAutoBuildFeatureEnabled == false && isWorkspaceDevFile(file, addressableRoot)) {
+                            markIgnoredContent()
+                            return false
+                        }
+
+                        addContent()
                         return true
                     }
                 }
