@@ -8,7 +8,7 @@ import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.LanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.SyncModuleDependenciesParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionWithReferencesParams
 import java.util.concurrent.CompletableFuture
@@ -21,8 +21,8 @@ interface AmazonQLanguageServer : LanguageServer {
     @JsonRequest("aws/textDocument/inlineCompletionWithReferences")
     fun inlineCompletionWithReferences(params: InlineCompletionWithReferencesParams): CompletableFuture<InlineCompletionListWithReferences>
 
-    @JsonNotification("aws/syncModuleDependencies")
-    fun syncModuleDependencies(params: SyncModuleDependenciesParams): CompletableFuture<Unit>
+    @JsonNotification("aws/didChangeDependencyPaths")
+    fun didChangeDependencyPaths(params: DidChangeDependencyPathsParams): CompletableFuture<Unit>
 
     @JsonRequest("aws/credentials/token/update")
     fun updateTokenCredentials(payload: UpdateCredentialsPayload): CompletableFuture<ResponseMessage>

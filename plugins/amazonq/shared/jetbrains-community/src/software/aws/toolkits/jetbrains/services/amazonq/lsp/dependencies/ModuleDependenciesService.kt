@@ -3,9 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies
 
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.SyncModuleDependenciesParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
 import java.util.concurrent.CompletableFuture
 
 interface ModuleDependenciesService {
-    fun syncModuleDependencies(params: SyncModuleDependenciesParams): CompletableFuture<Unit>
+    fun didChangeDependencyPaths(params: DidChangeDependencyPathsParams): CompletableFuture<Unit>
 }
