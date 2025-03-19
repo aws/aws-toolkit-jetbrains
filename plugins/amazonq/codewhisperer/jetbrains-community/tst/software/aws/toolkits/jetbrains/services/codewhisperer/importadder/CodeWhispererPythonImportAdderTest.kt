@@ -14,11 +14,9 @@ import com.jetbrains.python.psi.PyFromImportStatement
 import com.jetbrains.python.psi.PyImportStatement
 import com.jetbrains.python.psi.PyImportStatementBase
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Ignore
 import org.junit.Test
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 
-@Ignore
 class CodeWhispererPythonImportAdderTest : CodeWhispererImportAdderTestBase(
     CodeWhispererPythonImportAdder(),
     PythonCodeInsightTestFixtureRule(),
@@ -82,7 +80,6 @@ class CodeWhispererPythonImportAdderTest : CodeWhispererImportAdderTestBase(
         assertHasNoDuplicates(import, existingImports)
     }
 
-    @Ignore
     @Test
     fun `test hasDuplicatedImportsHelper returns null when there is a duplicate import from another module`() {
         val newImport = createImport("from os import path")
