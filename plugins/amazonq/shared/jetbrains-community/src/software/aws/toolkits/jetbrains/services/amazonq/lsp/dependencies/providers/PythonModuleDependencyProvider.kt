@@ -8,13 +8,13 @@ import com.intellij.openapi.roots.ModuleRootManager
 import com.jetbrains.python.packaging.management.PythonPackageManager
 import com.jetbrains.python.sdk.PythonSdkUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.ModuleDependencyProvider
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.SyncModuleDependenciesParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
 
 internal class PythonModuleDependencyProvider : ModuleDependencyProvider {
     override fun isApplicable(module: Module): Boolean =
         PythonSdkUtil.findPythonSdk(module) != null
 
-    override fun createParams(module: Module): SyncModuleDependenciesParams {
+    override fun createParams(module: Module): DidChangeDependencyPathsParams {
         val sourceRoots = getSourceRoots(module)
         val dependencies = mutableListOf<String>()
 
@@ -25,7 +25,7 @@ internal class PythonModuleDependencyProvider : ModuleDependencyProvider {
             }
         }
 
-        return SyncModuleDependenciesParams(
+        return DidChangeDependencyPathsParams(
             moduleName = module.name,
             programmingLanguage = "Python",
             files = sourceRoots,

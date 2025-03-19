@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies
 
-class SyncModuleDependenciesParams(
+class DidChangeDependencyPathsParams(
     val moduleName: String,
     val programmingLanguage: String,
     val files: List<String>,
