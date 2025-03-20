@@ -6,5 +6,5 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocum
 data class InlineCompletionItem(
     var itemId: String,
     var insertText: String,
-    var references: Array<InlineCompletionReference>,
+    var references: List<InlineCompletionReference>,
 )

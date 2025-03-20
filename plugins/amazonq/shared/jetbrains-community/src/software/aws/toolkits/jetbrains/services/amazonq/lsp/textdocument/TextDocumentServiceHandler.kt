@@ -109,7 +109,7 @@ class TextDocumentServiceHandler(
                 triggerKind = InlineCompletionTriggerKind.Invoke
             )
         ).apply {
-            textDocument = TextDocumentIdentifier(toUriString(editor.getVirtualFile()))
+            textDocument = TextDocumentIdentifier(toUriString(editor.virtualFile))
             position = Position(
                 editor.caretModel.primaryCaret.visualPosition.line,
                 editor.caretModel.primaryCaret.offset
