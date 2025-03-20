@@ -74,12 +74,18 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         runOnce = true
     }
 
-    // Start a job that runs every 30 mins
+    // Start a job that runs every 180 minutes
     private fun initFeatureConfigPollingJob(project: Project) {
         projectCoroutineScope(project).launch {
             while (isActive) {
                 CodeWhispererFeatureConfigService.getInstance().fetchFeatureConfigs(project)
                 CodeWhispererFeatureConfigService.getInstance().getCustomizationFeature()?.let { customization ->
+                    val persistedCustomizationOverride = CodeWhispererModelConfigurator.getInstance().getPersistedCustomizationOverride()
+                    val latestCustomizationOverride = customization.value.stringValue()
+                    if (persistedCustomizationOverride == latestCustomizationOverride) return@let
+
+                    // latest is different from the currently persisted, need update
+                    CodeWhispererFeatureConfigService.getInstance().validateCustomizationOverride(project, customization)
                     CodeWhispererModelConfigurator.getInstance().switchCustomization(
                         project,
                         CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation),

@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.popup
 
 import com.intellij.codeInsight.hint.ParameterInfoController
 import com.intellij.codeInsight.lookup.LookupManager
-import com.intellij.codeInsight.lookup.LookupManagerListener
 import com.intellij.idea.AppMode
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ENTER
 import com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ESCAPE
@@ -26,8 +25,6 @@ import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
-import com.intellij.openapi.editor.event.EditorMouseEvent
-import com.intellij.openapi.editor.event.EditorMouseMotionListener
 import com.intellij.openapi.editor.event.SelectionEvent
 import com.intellij.openapi.editor.event.SelectionListener
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -65,10 +62,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.handlers.Cod
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererAcceptButtonActionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererActionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererNextButtonActionListener
-import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererPopupIntelliSenseAcceptListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererPrevButtonActionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererScrollListener
-import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.addIntelliSenseAcceptListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
@@ -224,6 +219,7 @@ class CodeWhispererPopupManager {
     fun render(
         states: InvocationContext,
         sessionContext: SessionContext,
+        overlappingLinesCount: Int,
         isRecommendationAdded: Boolean,
     ) {
         updatePopupPanel(states, sessionContext)
@@ -246,7 +242,7 @@ class CodeWhispererPopupManager {
                 states.requestContext.latencyContext.getPerceivedLatency(states.requestContext.triggerTypeInfo.triggerType)
         }
         if (!isRecommendationAdded) {
-            showPopup(states, sessionContext, states.popup, visible = sessionContext.isPopupShowing)
+            showPopup(states, sessionContext, states.popup, overlappingLinesCount)
         }
     }
 
@@ -285,29 +281,27 @@ class CodeWhispererPopupManager {
         states: InvocationContext,
         sessionContext: SessionContext,
         popup: JBPopup,
-        visible: Boolean = false,
+        overlappingLinesCount: Int,
     ) {
         val caretPoint = states.requestContext.editor.offsetToXY(states.requestContext.caretPosition.offset)
         val editor = states.requestContext.editor
         val detailContexts = states.recommendationContext.details
         val userInputOriginal = states.recommendationContext.userInputOriginal
+        val userInput = states.recommendationContext.userInputSinceInvocation
         val selectedIndex = sessionContext.selectedIndex
         val typeaheadOriginal = sessionContext.typeaheadOriginal
         val typeahead = sessionContext.typeahead
         val userInputLines = userInputOriginal.split("\n").size - 1
+        val lineCount = getReformattedRecommendation(detailContexts[selectedIndex], userInput).split("\n").size
         val additionalLines = typeaheadOriginal.split("\n").size - typeahead.split("\n").size
         val popupSize = (popup as AbstractPopup).preferredContentSize
+        val yBelowLastLine = caretPoint.y + (lineCount + additionalLines + userInputLines - overlappingLinesCount) * editor.lineHeight
         val yAboveFirstLine = caretPoint.y - popupSize.height + (additionalLines + userInputLines) * editor.lineHeight
         val editorRect = editor.scrollingModel.visibleArea
-        val popupRect = Rectangle(caretPoint.x, yAboveFirstLine, popupSize.width, popupSize.height)
+        var popupRect = Rectangle(caretPoint.x, yBelowLastLine, popupSize.width, popupSize.height)
         var noEnoughSpaceForPopup = false
 
         CodeWhispererInvocationStatus.getInstance().setDisplaySessionActive(true)
-
-        if (!editorRect.contains(popupRect)) {
-            // popup location above first line don't work, so don't show the popup
-            noEnoughSpaceForPopup = true
-        }
 
         // Check if the current editor still has focus. If not, don't show the popup.
         val isSameEditorAsTrigger = if (!AppMode.isRemoteDevHost()) {
@@ -321,8 +315,25 @@ class CodeWhispererPopupManager {
             return
         }
 
-        // popup to always display above the current editing line
-        val popupLocation = Point(caretPoint.x, yAboveFirstLine)
+        val popupLocation =
+            if (!editorRect.contains(popupRect)) {
+                popupRect = Rectangle(caretPoint.x, yAboveFirstLine, popupSize.width, popupSize.height)
+                if (!editorRect.contains(popupRect)) {
+                    // both popup location (below last line and above first line) don't work, so don't show the popup
+                    noEnoughSpaceForPopup = true
+                }
+                LOG.debug {
+                    "Show popup above the first line of recommendation. " +
+                        "Editor position: $editorRect, popup position: $popupRect"
+                }
+                Point(caretPoint.x, yAboveFirstLine)
+            } else {
+                LOG.debug {
+                    "Show popup below the last line of recommendation. " +
+                        "Editor position: $editorRect, popup position: $popupRect"
+                }
+                Point(caretPoint.x, yBelowLastLine)
+            }
 
         val relativePopupLocationToEditor = RelativePoint(editor.contentComponent, popupLocation)
 
@@ -335,12 +346,9 @@ class CodeWhispererPopupManager {
             }
         } else {
             if (!AppMode.isRemoteDevHost()) {
-                if (visible && !noEnoughSpaceForPopup) {
-                    // TODO: will move to a keybinding listener once I found one
-                    popupComponents.prevButton.text = popupComponents.prevButtonText()
-                    popupComponents.nextButton.text = popupComponents.nextButtonText()
-                    popup.show(relativePopupLocationToEditor)
-                }
+                popupComponents.prevButton.text = popupComponents.prevButtonText()
+                popupComponents.nextButton.text = popupComponents.nextButtonText()
+                popup.show(relativePopupLocationToEditor)
             } else {
                 // TODO: For now, the popup will always display below the suggestions, without checking
                 // if the location the popup is about to show at stays in the editor window or not, due to
@@ -369,27 +377,14 @@ class CodeWhispererPopupManager {
             }
         }
 
-        bringSuggestionInlayToFront(editor, popup, sessionContext, !visible)
-    }
-
-    // opposite == false: show Q, hide IntelliSense
-    // opposite == true: show IntelliSense, hide Q
-    fun bringSuggestionInlayToFront(
-        editor: Editor,
-        popup: JBPopup?,
-        sessionContext: SessionContext,
-        opposite: Boolean = false,
-    ) {
-        val qInlinePopupAlpha = if (opposite) 1f else 0.1f
-        val intelliSensePopupAlpha = if (opposite) 0f else 0.8f
-
-        (popup as AbstractPopup?)?.popupWindow?.let {
-            WindowManager.getInstance().setAlphaModeRatio(it, qInlinePopupAlpha)
+        // popup.popupWindow is null in remote host
+        if (!AppMode.isRemoteDevHost()) {
+            if (noEnoughSpaceForPopup) {
+                WindowManager.getInstance().setAlphaModeRatio(popup.popupWindow, 1f)
+            } else {
+                WindowManager.getInstance().setAlphaModeRatio(popup.popupWindow, 0.1f)
+            }
         }
-        ComponentUtil.getWindow(LookupManager.getActiveLookup(editor)?.component)?.let {
-            WindowManager.getInstance().setAlphaModeRatio(it, intelliSensePopupAlpha)
-        }
-        sessionContext.isPopupShowing = !opposite
     }
 
     fun initPopup(): JBPopup = JBPopupFactory.getInstance()
@@ -458,13 +453,6 @@ class CodeWhispererPopupManager {
                 }
             }
         )
-        states.requestContext.project.messageBus.connect(states).subscribe(
-            LookupManagerListener.TOPIC,
-            CodeWhispererPopupIntelliSenseAcceptListener(states)
-        )
-        LookupManager.getActiveLookup(states.requestContext.editor)?.let {
-            addIntelliSenseAcceptListener(it, states)
-        }
     }
 
     private fun addButtonActionListeners(states: InvocationContext) {
@@ -556,18 +544,6 @@ class CodeWhispererPopupManager {
             window?.addComponentListener(windowListener)
             Disposer.register(states) { window?.removeComponentListener(windowListener) }
         }
-
-        val suggestionHoverEnterListener: EditorMouseMotionListener = object : EditorMouseMotionListener {
-            override fun mouseMoved(e: EditorMouseEvent) {
-                if (e.inlay != null) {
-                    showPopup(states, sessionContext, states.popup, visible = true)
-                } else {
-                    bringSuggestionInlayToFront(editor, states.popup, sessionContext, opposite = true)
-                }
-                super.mouseMoved(e)
-            }
-        }
-        editor.addEditorMouseMotionListener(suggestionHoverEnterListener, states)
     }
 
     private fun updateSelectedRecommendationLabelText(validSelectedIndex: Int, validCount: Int) {

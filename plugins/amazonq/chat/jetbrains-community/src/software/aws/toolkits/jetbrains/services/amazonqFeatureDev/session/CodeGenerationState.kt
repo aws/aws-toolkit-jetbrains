@@ -96,7 +96,7 @@ class CodeGenerationState(
                 var insertedCharacters = 0
                 codeGenerationResult.newFiles.forEach { file ->
                     // FIXME: Ideally, the before content should be read from the uploaded context instead of from disk, to avoid drift
-                    val before = config.repoContext.selectedSourceFolder
+                    val before = config.repoContext.addressableRoot
                         .toNioPath()
                         .resolve(file.zipFilePath)
                         .toFile()

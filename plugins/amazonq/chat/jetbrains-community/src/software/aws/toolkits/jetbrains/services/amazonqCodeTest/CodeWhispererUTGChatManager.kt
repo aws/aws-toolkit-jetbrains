@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.amazonqCodeTest
 
 import com.fasterxml.jackson.core.JsonParseException
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -18,9 +17,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTestGenerationResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.PackageInfo
 import software.amazon.awssdk.services.codewhispererruntime.model.Range
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTestGenerationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.TargetCode
+import software.amazon.awssdk.services.codewhispererruntime.model.TargetFileInfo
 import software.amazon.awssdk.services.codewhispererruntime.model.TestGenerationJobStatus
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportIntent
@@ -29,12 +30,12 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.controller.CodeTestChatHelper
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.Button
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.messages.CodeTestChatMessageContent
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.PreviousUTGIterationContext
-import software.aws.toolkits.jetbrains.services.amazonqCodeTest.model.ShortAnswer
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.BuildAndExecuteProgressStatus
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.session.Session
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.utils.combineBuildAndExecuteLogFiles
@@ -55,11 +56,11 @@ import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.MetricResult
+import software.aws.toolkits.telemetry.Status
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
-import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
@@ -70,7 +71,6 @@ import java.util.zip.ZipInputStream
 class CodeWhispererUTGChatManager(val project: Project, private val cs: CoroutineScope) {
     // TODO: consider combining this with session.isGeneratingTests
     private val isUTGInProgress = AtomicBoolean(false)
-    private val mapper = jacksonObjectMapper()
     private val generatedTestDiffs = mutableMapOf<String, String>()
 
     private fun throwIfCancelled(session: Session) {
@@ -90,7 +90,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         session.isGeneratingTests = true
         session.iteration++
 
-        // Set the Progress bar to "Generating unit tests..."
+        // Set progress bar to "Generating unit tests..."
         codeTestChatHelper.updateUI(
             promptInputDisabledState = true,
             promptInputProgress = testGenProgressField(0),
@@ -101,6 +101,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         session.srcZipFileSize = codeTestResponseContext.payloadContext.srcZipFileSize
         session.artifactUploadDuration = codeTestResponseContext.serviceInvocationContext.artifactsUploadDuration
         val path = codeTestResponseContext.currentFileRelativePath
+
         if (codeTestResponseContext.payloadContext.payloadLimitCrossed == true) {
             fileTooLarge()
         }
@@ -109,54 +110,39 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         throwIfCancelled(session)
 
         LOG.debug {
-            "Q TestGen StartTestGenerationRequest: TabId= ${codeTestChatHelper.getActiveCodeTestTabId()}: " +
-                "uploadId: ${createUploadUrlResponse.uploadId()}, relativeTargetPath: ${codeTestResponseContext.currentFileRelativePath}, " +
-                "selectionRange: $selectionRange, "
+            "Q TestGen StartTestGenerationRequest: TabId=${codeTestChatHelper.getActiveCodeTestTabId()}, " +
+                "uploadId=${createUploadUrlResponse.uploadId()}, relativeTargetPath=${codeTestResponseContext.currentFileRelativePath}, " +
+                "selectionRange=$selectionRange"
         }
 
         // 2nd API call: StartTestGeneration
         val startTestGenerationResponse = try {
             var response: StartTestGenerationResponse? = null
-
             waitUntil(
                 succeedOn = { response?.sdkHttpResponse()?.statusCode() == 200 },
-                maxDuration = Duration.ofSeconds(1), // 1 second timeout
+                maxDuration = Duration.ofSeconds(1), // 1-second timeout
             ) {
-                try {
-                    response = startTestGeneration(
-                        uploadId = createUploadUrlResponse.uploadId(),
-                        targetCode = listOf(
-                            TargetCode.builder()
-                                .relativeTargetPath(codeTestResponseContext.currentFileRelativePath.toString())
-                                .targetLineRangeList(
-                                    if (selectionRange != null) {
-                                        listOf(selectionRange)
-                                    } else {
-                                        emptyList()
-                                    }
-                                )
-                                .build()
-                        ),
-                        userInput = prompt
-                    )
-                    delay(200)
-                    response?.testGenerationJob() != null
-                } catch (e: Exception) {
-                    throw e
-                }
+                response = startTestGeneration(
+                    uploadId = createUploadUrlResponse.uploadId(),
+                    targetCode = listOf(
+                        TargetCode.builder()
+                            .relativeTargetPath(codeTestResponseContext.currentFileRelativePath.toString())
+                            .targetLineRangeList(selectionRange?.let { listOf(it) }.orEmpty())
+                            .build()
+                    ),
+                    userInput = prompt
+                )
+                delay(200)
+                response?.testGenerationJob() != null
             }
-
             response ?: throw RuntimeException("Failed to start test generation")
         } catch (e: Exception) {
             LOG.error(e) { "Unexpected error while creating test generation job" }
-            val errorMessage = getTelemetryErrorMessage(e, CodeWhispererConstants.FeatureName.TEST_GENERATION)
-
-            // Sending requestId to telemetry if there is Validation Exception
             if (e is SdkServiceException) {
                 session.startTestGenerationRequestId = e.requestId()
             }
             throw CodeTestException(
-                "CreateTestJobError: $errorMessage",
+                "CreateTestJobError: ${getTelemetryErrorMessage(e, CodeWhispererConstants.FeatureName.TEST_GENERATION)}",
                 "CreateTestJobError",
                 message("testgen.error.generic_technical_error_message")
             )
@@ -168,103 +154,81 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
         session.testGenerationJob = job.testGenerationJobId()
         throwIfCancelled(session)
 
-        // 3rd API call: Step 3:  Polling mechanism on test job status with getTestGenStatus getTestGeneration
+        // 3rd API call: Polling mechanism on test job status
         var finished = false
         var testGenerationResponse: GetTestGenerationResponse? = null
-
-        var shortAnswer = ShortAnswer()
-        LOG.debug {
-            "Q TestGen session: ${codeTestChatHelper.getActiveCodeTestTabId()}: " +
-                "polling result for id: ${job.testGenerationJobId()}, group name: ${job.testGenerationJobGroupName()}, " +
-                "request id: ${startTestGenerationResponse.responseMetadata().requestId()}"
-        }
+        var packageInfoList = emptyList<PackageInfo>()
+        var packageInfo: PackageInfo? = null
+        var targetFileInfo: TargetFileInfo? = null
 
         while (!finished) {
             throwIfCancelled(session)
             testGenerationResponse = getTestGenerationStatus(job.testGenerationJobId(), job.testGenerationJobGroupName())
-
             val status = testGenerationResponse.testGenerationJob().status()
-            if (status == TestGenerationJobStatus.COMPLETED) {
-                LOG.debug {
-                    "Q TestGen session: ${codeTestChatHelper.getActiveCodeTestTabId()}: " +
-                        "Test generation completed, short answer string: ${testGenerationResponse.testGenerationJob().shortAnswer()}"
+            packageInfoList = testGenerationResponse.testGenerationJob().packageInfoList()
+            packageInfo = packageInfoList.firstOrNull()
+            targetFileInfo = packageInfo?.targetFileInfoList()?.firstOrNull()
+            val filePlan = targetFileInfo?.filePlan()
+            val cleanedfilePlan = filePlan
+                ?.replace(Regex("^```\\s*"), "") // Remove leading triple backticks
+                ?.replace(Regex("\\s*```$"), "") // Remove trailing triple backticks
+                ?.trim()
+
+            when (status) {
+                TestGenerationJobStatus.COMPLETED -> {
+                    LOG.debug { "Test generation completed, package info: $packageInfoList" }
+                    finished = true
+                    if (packageInfo != null && targetFileInfo != null) {
+                        session.packageInfoList = packageInfoList
+                        session.testFileName = targetFileInfo.testFilePath()?.let { File(it).name }.orEmpty()
+                        session.numberOfUnitTestCasesGenerated = targetFileInfo.numberOfTestMethods() ?: 0
+                        session.testFileRelativePathToProjectRoot = getTestFilePathRelativeToRoot(targetFileInfo)
+
+                        if (previousIterationContext == null) {
+                            codeTestChatHelper.updateAnswer(
+                                CodeTestChatMessageContent(
+                                    message = generateSummaryMessage(path.fileName.toString()) + (cleanedfilePlan.orEmpty()),
+                                    type = ChatMessageType.Answer,
+                                ),
+                                messageIdOverride = codeTestResponseContext.testSummaryMessageId
+                            )
+                        }
+                    }
                 }
-                finished = true
-                if (testGenerationResponse.testGenerationJob().shortAnswer() != null) {
-                    shortAnswer = parseShortAnswerString(testGenerationResponse.testGenerationJob().shortAnswer())
+                TestGenerationJobStatus.FAILED -> {
+                    LOG.debug { "Test generation failed, package info: $packageInfoList" }
+                    if (testGenerationResponse.testGenerationJob().jobStatusReason() == null) {
+                        throw CodeTestException(
+                            "TestGenFailedError: " + message("testgen.message.failed"),
+                            "TestGenFailedError",
+                            message("testgen.error.generic_technical_error_message")
+                        )
+                    } else {
+                        throw CodeTestException(
+                            "TestGenFailedError: ${testGenerationResponse.testGenerationJob().jobStatusReason()}",
+                            "TestGenFailedError",
+                            testGenerationResponse.testGenerationJob().jobStatusReason()
+                        )
+                    }
+                }
+                else -> {
+                    LOG.debug { "Test generation in progress, progress rate: ${testGenerationResponse.testGenerationJob().progressRate()}" }
 
-                    val testFileName = shortAnswer.testFilePath?.let { File(it).name }.orEmpty()
-                    session.testFileName = testFileName
-                    // Setting default value to 0 if the value is null or invalid
-                    session.numberOfUnitTestCasesGenerated = shortAnswer.numberOfTestMethods
-                    session.testFileRelativePathToProjectRoot = getTestFilePathRelativeToRoot(shortAnswer)
-
-                    // update test summary card in success case
                     if (previousIterationContext == null) {
                         codeTestChatHelper.updateAnswer(
                             CodeTestChatMessageContent(
-                                message = generateSummaryMessage(path.fileName.toString()) + shortAnswer.planSummary,
+                                message = generateSummaryMessage(path.fileName.toString()) + (cleanedfilePlan.orEmpty()),
                                 type = ChatMessageType.Answer,
-                                footer = listOf(testFileName)
                             ),
                             messageIdOverride = codeTestResponseContext.testSummaryMessageId
                         )
                     }
-                    // update test summary card
-                } else {
-                    // If job status is Completed and has no ShortAnswer then there might be some issue in the backend.
-                    throw CodeTestException(
-                        "TestGenFailedError: " + message("testgen.message.failed"),
-                        "TestGenFailedError",
-                        message("testgen.error.generic_technical_error_message")
+                    codeTestChatHelper.updateUI(
+                        promptInputDisabledState = true,
+                        promptInputProgress = testGenProgressField(testGenerationResponse.testGenerationJob().progressRate() ?: 0),
                     )
                 }
-            } else if (status == TestGenerationJobStatus.FAILED) {
-                LOG.debug {
-                    "Q TestGen session: ${codeTestChatHelper.getActiveCodeTestTabId()}: " +
-                        "Test generation failed, short answer string: ${testGenerationResponse.testGenerationJob().shortAnswer()}"
-                }
-                if (testGenerationResponse.testGenerationJob().shortAnswer() != null) {
-                    shortAnswer = parseShortAnswerString(testGenerationResponse.testGenerationJob().shortAnswer())
-                    if (shortAnswer.stopIteration == "true") {
-                        throw CodeTestException("TestGenFailedError: ${shortAnswer.planSummary}", "TestGenFailedError", shortAnswer.planSummary)
-                    }
-                }
-
-                // If job status is Failed and has no ShortAnswer then there might be some issue in the backend.
-                throw CodeTestException(
-                    "TestGenFailedError: " + message("testgen.message.failed"),
-                    "TestGenFailedError",
-                    message("testgen.error.generic_technical_error_message")
-                )
-            } else {
-                // In progress
-                LOG.debug {
-                    "Q TestGen session: ${codeTestChatHelper.getActiveCodeTestTabId()}: " +
-                        "Test generation in progress, progress rate ${testGenerationResponse.testGenerationJob().progressRate()}}"
-                }
-                val progressRate = testGenerationResponse.testGenerationJob().progressRate() ?: 0
-
-                if (previousIterationContext == null && testGenerationResponse.testGenerationJob().shortAnswer() != null) {
-                    shortAnswer = parseShortAnswerString(testGenerationResponse.testGenerationJob().shortAnswer())
-                    if (shortAnswer.stopIteration == "true") {
-                        throw CodeTestException("TestGenFailedError: ${shortAnswer.planSummary}", "TestGenFailedError", shortAnswer.planSummary)
-                    }
-                    val fileName = shortAnswer.sourceFilePath?.let { Path.of(it).fileName.toString() } ?: path.fileName.toString()
-                    codeTestChatHelper.updateAnswer(
-                        CodeTestChatMessageContent(
-                            message = generateSummaryMessage(fileName) + shortAnswer.planSummary,
-                            type = ChatMessageType.Answer
-                        ),
-                        messageIdOverride = codeTestResponseContext.testSummaryMessageId
-                    )
-                }
-                codeTestChatHelper.updateUI(
-                    promptInputDisabledState = true,
-                    promptInputProgress = testGenProgressField(progressRate),
-                )
             }
-
             // polling every 2 seconds to reduce # of API calls
             delay(2000)
         }
@@ -305,14 +269,15 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
             return
         }
 
-        val codeReference = shortAnswer.codeReferences?.map { ref ->
+        targetFileInfo = session.packageInfoList.firstOrNull()?.targetFileInfoList()?.firstOrNull()
+        val codeReference = targetFileInfo?.codeReferences()?.map { ref ->
             CodeReference(
-                licenseName = ref.licenseName,
-                url = ref.url,
-                information = "${ref.licenseName} - <a href=\"${ref.url}\">${ref.repository}</a>"
+                licenseName = ref.licenseName(),
+                url = ref.url(),
+                information = "${ref.licenseName()} - <a href=\"${ref.url()}\">${ref.repository()}</a>"
             )
         }
-        shortAnswer.codeReferences?.let { session.codeReferences = it }
+        targetFileInfo?.codeReferences()?.let { session.codeReferences = it }
         val isReferenceAllowed = CodeWhispererSettings.getInstance().isIncludeCodeWithReference()
         if (!isReferenceAllowed && codeReference?.isNotEmpty() == true) {
             codeTestChatHelper.addAnswer(
@@ -325,20 +290,32 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
             )
         } else {
             if (previousIterationContext == null) {
-                // show another card as the answer
+                // show another card as the answer, remove this once we remove 3 backticks from backend
+                val jobSummary = testGenerationResponse?.testGenerationJob()?.jobSummary()?.trim().orEmpty()
+
+                val cleanedPlanSummary = jobSummary
+                    .replace(Regex("(?m)^\\s*```(?:\\w+)?\\s*"), "") // Removes leading backticks with possible language specifier
+                    .replace(Regex("(?m)\\s*```\\s*$"), "") // Removes trailing backticks
+                    .trim()
+
+                val summary = """
+$cleanedPlanSummary
+
+Please see the unit tests generated below. Click 'View Diff' to review the changes in the code editor.
+                """.trimIndent() // Ensures no extra indentation for the entire message
+
                 val viewDiffMessageId = codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
-                        message = """
-                    Please see the unit tests generated below. Click "View Diff" to review the changes in the code editor.
-                        """.trimIndent(),
+                        message = summary,
                         type = ChatMessageType.Answer,
                         buttons = listOf(Button("utg_view_diff", "View Diff", keepCardAfterClick = true, position = "outside", status = "info")),
-                        fileList = listOf(getTestFilePathRelativeToRoot(shortAnswer)),
+                        fileList = listOf(getTestFilePathRelativeToRoot(targetFileInfo)),
                         projectRootName = project.name,
                         canBeVoted = true,
                         codeReference = codeReference
                     )
                 )
+
                 session.viewDiffMessageId = viewDiffMessageId
                 codeTestChatHelper.updateUI(
                     promptInputDisabledState = false,
@@ -350,7 +327,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     CodeTestChatMessageContent(
                         type = ChatMessageType.Answer,
                         buttons = listOf(Button("utg_view_diff", "View Diff", keepCardAfterClick = true, position = "outside", status = "info")),
-                        fileList = listOf(getTestFilePathRelativeToRoot(shortAnswer)),
+                        fileList = listOf(getTestFilePathRelativeToRoot(targetFileInfo)),
                         projectRootName = project.name,
                         codeReference = codeReference
                     ),
@@ -374,42 +351,17 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
 
     // Input: test file path relative to project root's parent .
     // Output: test file path relative to project root.
-    // shortAnswer.testFilePath has a format of <projectName>/<test file path relative to project root>.
+    // targetFileInfo.testFilePath has a format of <projectName>/<test file path relative to project root>.
     // test file path in generatedTestDiffs map has a format of resultArtifacts/<test file path relative to project root>.
     // both needs to be handled the same way which is remove the first sub-directory
-    private fun getTestFilePathRelativeToRoot(shortAnswer: ShortAnswer): String {
-        val pathString = shortAnswer.testFilePath ?: generatedTestDiffs.keys.firstOrNull() ?: throw RuntimeException("No test file path found")
+    private fun getTestFilePathRelativeToRoot(targetFileInfo: Any?): String {
+        val pathString = when (targetFileInfo) {
+            is TargetFileInfo -> targetFileInfo.testFilePath()
+            else -> generatedTestDiffs.keys.firstOrNull()
+        } ?: throw RuntimeException("No test file path found")
         val path = Paths.get(pathString)
         val updatedPath = path.subpath(1, path.nameCount).toString()
         return updatedPath
-    }
-
-    private fun parseShortAnswerString(shortAnswerString: String): ShortAnswer {
-        // Step 1: Replace single quotes with double quotes
-        var jsonString = shortAnswerString.replace("'", "\"").replace("```", "")
-
-        // Step 2: Replace Python's None with JSON's null
-        jsonString = jsonString.replace(": None", ": null")
-
-        // Step 3: remove extra quotes in the head and tail
-        if (jsonString.startsWith("\"") && jsonString.endsWith("\"")) {
-            jsonString = jsonString.substring(1, jsonString.length - 1) // Remove the first and last quote
-        }
-
-        // Step 4: unescape it
-        jsonString = jsonString.replace("\\\"", "\"")
-            .replace("\\\\", "\\")
-        // Deserialize JSON to Kotlin data class
-        try {
-            val shortAnswer: ShortAnswer = mapper.readValue(jsonString, ShortAnswer::class.java)
-            return shortAnswer
-        } catch (e: JsonParseException) {
-            LOG.debug(e) { "Test Generation JSON parsing error: ${e.message}" }
-            throw e
-        } catch (e: Exception) {
-            LOG.debug(e) { "Error parsing JSON" }
-            throw e
-        }
     }
 
     private fun storeGeneratedTestDiffs(byteArray: ByteArray, session: Session) {
@@ -507,7 +459,7 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
     private fun resetTestGenFlowSession(session: Session) {
         // session.selectedFile doesn't need to be reset since it will remain unchanged
         session.conversationState = ConversationState.IN_PROGRESS
-        session.shortAnswer = ShortAnswer()
+        session.packageInfoList = emptyList()
         session.openedDiffFile = null
         session.testFileRelativePathToProjectRoot = ""
         session.testFileName = ""
@@ -558,12 +510,25 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     e is JsonParseException -> message("testgen.error.generic_technical_error_message")
                     else -> message("testgen.error.generic_error_message")
                 }
-
+                val buttonList = mutableListOf<Button>()
+                if (isInternalUser(getStartUrl(project))) {
+                    buttonList.add(
+                        Button(
+                            "utg_feedback",
+                            message("testgen.button.feedback"),
+                            keepCardAfterClick = true,
+                            position = "outside",
+                            status = "info",
+                            icon = "comment"
+                        ),
+                    )
+                }
                 codeTestChatHelper.addAnswer(
                     CodeTestChatMessageContent(
                         message = errorMessage,
                         type = ChatMessageType.Answer,
-                        canBeVoted = false
+                        canBeVoted = false,
+                        buttons = buttonList
                     )
                 )
 
@@ -583,7 +548,8 @@ class CodeWhispererUTGChatManager(val project: Project, private val cs: Coroutin
                     artifactsUploadDuration = session.artifactUploadDuration,
                     buildPayloadBytes = session.srcPayloadSize,
                     buildZipFileBytes = session.srcZipFileSize,
-                    requestId = session.startTestGenerationRequestId
+                    requestId = session.startTestGenerationRequestId,
+                    status = if (e.message == message("testgen.message.cancelled")) Status.CANCELLED else Status.FAILED,
                 )
                 session.isGeneratingTests = false
             } finally {

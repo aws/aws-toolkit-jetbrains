@@ -31,7 +31,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.core.util.DefaultSdkAutoConstructList
-import software.amazon.awssdk.services.codewhisperer.model.CodeWhispererException
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.FileContext
@@ -377,11 +376,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                         )
                     }
                     return@launch
-                } else if (e is CodeWhispererException) {
-                    requestId = e.requestId() ?: ""
-                    sessionId = e.awsErrorDetails().sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
-                    displayMessage = e.awsErrorDetails().errorMessage() ?: message("codewhisperer.trigger.error.server_side")
-                } else if (e is software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException) {
+                } else if (e is CodeWhispererRuntimeException) {
                     requestId = e.requestId() ?: ""
                     sessionId = e.awsErrorDetails().sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
                     displayMessage = e.awsErrorDetails().errorMessage() ?: message("codewhisperer.trigger.error.server_side")
@@ -699,7 +694,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         recommendationContext: RecommendationContext,
         popup: JBPopup,
     ): InvocationContext {
-        addPopupChildDisposables(requestContext.project, requestContext.editor, popup)
+        addPopupChildDisposables(popup)
         // Creating a disposable for managing all listeners lifecycle attached to the popup.
         // previously(before pagination) we use popup as the parent disposable.
         // After pagination, listeners need to be updated as states are updated, for the same popup,
@@ -711,25 +706,12 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         return states
     }
 
-    private fun addPopupChildDisposables(project: Project, editor: Editor, popup: JBPopup) {
+    private fun addPopupChildDisposables(popup: JBPopup) {
         codeInsightSettingsFacade.disableCodeInsightUntil(popup)
 
         Disposer.register(popup) {
             CodeWhispererPopupManager.getInstance().reset()
         }
-        project.messageBus.connect(popup).subscribe(
-            CodeWhispererServiceNew.CODEWHISPERER_INTELLISENSE_POPUP_ON_HOVER,
-            object : CodeWhispererIntelliSenseOnHoverListener {
-                override fun onEnter() {
-                    CodeWhispererPopupManager.getInstance().bringSuggestionInlayToFront(
-                        editor,
-                        popup,
-                        CodeWhispererPopupManager.getInstance().sessionContext,
-                        opposite = true
-                    )
-                }
-            }
-        )
     }
 
     private fun logServiceInvocation(

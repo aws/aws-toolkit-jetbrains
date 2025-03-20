@@ -180,7 +180,7 @@ class FocusAreaContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter
         val startOffset = 0.coerceAtLeast(offset - halfMaxCharacters)
         val endOffset = fileText.length.coerceAtMost(offset + halfMaxCharacters)
 
-        // Adjust the start and end offsets if necessary to ensure a total of 10k characters
+        // Adjust the start and end offsets if necessary to ensure a total of 40k characters
         val excessCharacters = maxCharacters - (endOffset - startOffset)
         val adjustedStartOffset = 0.coerceAtLeast(startOffset - excessCharacters)
         val adjustedEndOffset = fileText.length.coerceAtMost(endOffset + excessCharacters)
@@ -198,7 +198,7 @@ class FocusAreaContextExtractor(private val fqnWebviewAdapter: FqnWebviewAdapter
     }
 
     companion object {
-        const val MAX_LENGTH = 10000
+        const val MAX_LENGTH = 40000
     }
 }
 

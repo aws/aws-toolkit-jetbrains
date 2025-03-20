@@ -31,7 +31,7 @@ suspend fun DocController.onCodeGeneration(session: DocSession, message: String,
         messenger.sendAsyncEventProgress(tabId, inProgress = true)
         messenger.sendUpdatePromptProgress(tabId, inProgress(progress = 10, message("amazonqDoc.progress_message.scanning")))
         messenger.sendAnswer(
-            message = docGenerationProgressMessage(DocGenerationStep.UPLOAD_TO_S3, this.mode),
+            message = docGenerationProgressMessage(DocGenerationStep.UPLOAD_TO_S3, mode),
             messageType = DocMessageType.AnswerPart,
             tabId = tabId,
         )
@@ -108,7 +108,7 @@ suspend fun DocController.onCodeGeneration(session: DocSession, message: String,
             messenger.sendAnswer(
                 tabId = tabId,
                 messageType = DocMessageType.Answer,
-                message = if (this.mode === Mode.CREATE) {
+                message = if (mode === Mode.CREATE) {
                     message("amazonqDoc.answer.readmeCreated")
                 } else {
                     "${message("amazonqDoc.answer.readmeUpdated")} ${message("amazonqDoc.answer.codeResult")}"

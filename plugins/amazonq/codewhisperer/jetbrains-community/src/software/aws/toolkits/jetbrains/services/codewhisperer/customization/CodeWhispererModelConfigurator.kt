@@ -76,7 +76,10 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
 
     private val hasShownNewCustomizationNotification = AtomicBoolean(false)
 
+    @Deprecated("Use customizationArnOverrideV2 for the latest arn override persistence")
     private var serviceDefaultArn: String? = null
+
+    private var customizationArnOverrideV2: String? = null
 
     override fun showConfigDialog(project: Project) {
         runInEdt {
@@ -181,7 +184,7 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
      */
     override fun switchCustomization(project: Project, newCustomization: CodeWhispererCustomization?, isOverride: Boolean) {
         calculateIfIamIdentityCenterConnection(project) {
-            if (isOverride && (newCustomization == null || newCustomization.arn.isEmpty() || serviceDefaultArn == newCustomization.arn)) {
+            if (isOverride && (newCustomization == null || newCustomization.arn.isEmpty() || customizationArnOverrideV2 == newCustomization.arn)) {
                 return@calculateIfIamIdentityCenterConnection
             }
             val oldCus = connectionIdToActiveCustomizationArn[it.id]
@@ -197,7 +200,7 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
                 CodeWhispererCustomizationListener.notifyCustomUiUpdate()
             }
             if (isOverride) {
-                serviceDefaultArn = newCustomization?.arn
+                customizationArnOverrideV2 = newCustomization?.arn
             }
         }
     }
@@ -249,6 +252,7 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
         state.connectionIdToActiveCustomizationArn.putAll(this.connectionIdToActiveCustomizationArn)
         state.previousAvailableCustomizations.putAll(this.connectionToCustomizationsShownLastTime)
         state.serviceDefaultArn = this.serviceDefaultArn
+        state.customizationArnOverrideV2 = this.customizationArnOverrideV2
 
         return state
     }
@@ -261,7 +265,11 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
         connectionToCustomizationsShownLastTime.putAll(state.previousAvailableCustomizations)
 
         this.serviceDefaultArn = state.serviceDefaultArn
+        this.customizationArnOverrideV2 = state.customizationArnOverrideV2
     }
+
+    // current latest field is customizationArnOverrideV2
+    override fun getPersistedCustomizationOverride() = customizationArnOverrideV2
 
     override fun dispose() {}
 
@@ -292,8 +300,12 @@ class CodeWhispererCustomizationState : BaseState() {
     @get:MapAnnotation
     val previousAvailableCustomizations by map<String, MutableList<String>>()
 
+    @Deprecated("Use customizationArnOverrideV2 for the latest arn override persistence")
     @get:Property
     var serviceDefaultArn by string()
+
+    @get:Property
+    var customizationArnOverrideV2 by string()
 }
 
 data class CustomizationUiItem(

@@ -376,7 +376,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
     fun `test userDecision events will record sessionId and requestId from response`() {
         val statesCaptor = argumentCaptor<InvocationContext>()
         withCodeWhispererServiceInvokedAndWait {}
-        verify(popupManagerSpy, timeout(5000).atLeastOnce()).render(statesCaptor.capture(), any(), any())
+        verify(popupManagerSpy, timeout(5000).atLeastOnce()).render(statesCaptor.capture(), any(), any(), any())
         val states = statesCaptor.lastValue
         val metricCaptor = argumentCaptor<MetricEvent>()
         verify(batcher, atLeastOnce()).enqueue(metricCaptor.capture())
