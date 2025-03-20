@@ -55,7 +55,7 @@ import java.time.Instant
 import java.util.concurrent.TimeUnit
 
 // As the connection is project-level, we need to make this project-level too
-@Deprecated("Methods can throw a NullPointerException if callee does not check if connection is valid")
+@Deprecated("It was needed as we were supporting two service models (sigv4 & bearer), it's no longer needed as we remove sigv4 support")
 interface CodeWhispererClientAdaptor {
     val project: Project
 
