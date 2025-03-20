@@ -3,11 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument
 
-import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4j.Range
 
 data class SelectedCompletionInfo(
     var text: String,
-    var range: Range
+    var range: Range,
 )
-
-

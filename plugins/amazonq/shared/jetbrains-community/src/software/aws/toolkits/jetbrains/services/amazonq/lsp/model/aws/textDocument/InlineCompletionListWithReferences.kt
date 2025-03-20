@@ -5,5 +5,5 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocum
 
 data class InlineCompletionListWithReferences(
     var items: List<InlineCompletionItem>,
-    var sessionId: String
+    var sessionId: String,
 )

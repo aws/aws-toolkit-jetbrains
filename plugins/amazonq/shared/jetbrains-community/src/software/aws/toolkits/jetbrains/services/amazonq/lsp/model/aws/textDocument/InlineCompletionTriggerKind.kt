@@ -5,6 +5,5 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocum
 
 enum class InlineCompletionTriggerKind(val value: Int) {
     Invoke(0),
-    Automatic(1)
+    Automatic(1),
 }
-

@@ -5,6 +5,5 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocum
 
 data class InlineCompletionReferencePosition(
     var startCharacter: Int = 0,
-    var endCharacter: Int = 0
+    var endCharacter: Int = 0,
 )
-

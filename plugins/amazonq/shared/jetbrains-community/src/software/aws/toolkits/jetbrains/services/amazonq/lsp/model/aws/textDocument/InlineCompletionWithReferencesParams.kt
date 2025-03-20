@@ -6,5 +6,5 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocum
 import org.eclipse.lsp4j.TextDocumentPositionAndWorkDoneProgressParams
 
 data class InlineCompletionWithReferencesParams(
-    var context: InlineCompletionContext
+    var context: InlineCompletionContext,
 ) : TextDocumentPositionAndWorkDoneProgressParams()

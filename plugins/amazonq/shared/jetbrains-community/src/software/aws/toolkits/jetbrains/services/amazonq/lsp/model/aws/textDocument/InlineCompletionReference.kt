@@ -7,5 +7,5 @@ data class InlineCompletionReference(
     var referenceName: String,
     var referenceUrl: String,
     var licenseName: String,
-    var position: InlineCompletionReferencePosition
+    var position: InlineCompletionReferencePosition,
 )

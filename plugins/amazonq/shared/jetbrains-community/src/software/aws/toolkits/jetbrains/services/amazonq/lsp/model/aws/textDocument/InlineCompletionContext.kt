@@ -5,5 +5,5 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocum
 
 data class InlineCompletionContext(
     var triggerKind: InlineCompletionTriggerKind,
-    var selectedCompletionInfo: SelectedCompletionInfo? = null
+    var selectedCompletionInfo: SelectedCompletionInfo? = null,
 )

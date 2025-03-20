@@ -103,8 +103,8 @@ class TextDocumentServiceHandler(
         }
     }
 
-    private fun buildInlineCompletionParams(editor: Editor): InlineCompletionWithReferencesParams {
-        return InlineCompletionWithReferencesParams(
+    private fun buildInlineCompletionParams(editor: Editor): InlineCompletionWithReferencesParams =
+        InlineCompletionWithReferencesParams(
             context = InlineCompletionContext(
                 triggerKind = InlineCompletionTriggerKind.Invoke
             )
@@ -115,7 +115,6 @@ class TextDocumentServiceHandler(
                 editor.caretModel.primaryCaret.offset
             )
         }
-    }
 
     override fun beforeDocumentSaving(document: Document) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
