@@ -20,7 +20,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.coroutines.IO
+import software.aws.toolkits.jetbrains.core.coroutines.ioDispatcher
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import java.util.concurrent.TimeoutException
 
@@ -29,7 +29,7 @@ class ProjectContextController(private val project: Project, private val cs: Cor
     // TODO: Ideally we should inject dependencies via constructor for easier testing, refer to how [TelemetryService] inject publisher and batcher
     private val encoderServer: EncoderServer = EncoderServer(project)
     private val projectContextProvider: ProjectContextProvider = ProjectContextProvider(project, encoderServer, cs)
-    val initJob: Job = cs.launch(IO(1)) {
+    val initJob: Job = cs.launch(ioDispatcher(1)) {
         encoderServer.downloadArtifactsAndStartServer()
     }
 

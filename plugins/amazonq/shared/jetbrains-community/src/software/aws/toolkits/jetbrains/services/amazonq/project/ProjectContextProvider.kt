@@ -27,7 +27,7 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.coroutines.IO
+import software.aws.toolkits.jetbrains.core.coroutines.ioDispatcher
 import software.aws.toolkits.jetbrains.services.amazonq.CHAT_EXPLICIT_PROJECT_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
@@ -46,7 +46,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     private val mapper = jacksonObjectMapper()
 
     // max number of requests that can be ongoing to an given server instance, excluding index()
-    private val ioDispatcher = IO(20)
+    private val ioDispatcher = ioDispatcher(20)
 
     init {
         cs.launch {
@@ -324,7 +324,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         // use 1h as timeout for index, 5 seconds for other APIs
         val timeoutMs = if (msgType is LspMessage.Index) 60.minutes.inWholeMilliseconds.toInt() else 5000
         // dedicate single thread to index operation because it can be long running
-        val dispatcher = if (msgType is LspMessage.Index) IO(1) else ioDispatcher
+        val dispatcher = if (msgType is LspMessage.Index) ioDispatcher(1) else ioDispatcher
 
         return withContext(dispatcher) {
             with(url.openConnection() as HttpURLConnection) {
