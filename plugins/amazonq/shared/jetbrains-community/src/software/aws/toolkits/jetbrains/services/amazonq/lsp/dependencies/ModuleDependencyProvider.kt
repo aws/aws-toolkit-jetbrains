@@ -5,6 +5,8 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies
 
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.module.Module
+import com.intellij.openapi.roots.ModuleRootManager
+import com.intellij.openapi.vfs.VirtualFile
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
 
 interface ModuleDependencyProvider {
@@ -14,4 +16,9 @@ interface ModuleDependencyProvider {
 
     fun isApplicable(module: Module): Boolean
     fun createParams(module: Module): DidChangeDependencyPathsParams
+
+    fun getWorkspaceFolderPath(module: Module): String {
+        val contentRoots: Array<VirtualFile> = ModuleRootManager.getInstance(module).contentRoots
+        return contentRoots.firstOrNull()?.path ?: ""
+    }
 }
