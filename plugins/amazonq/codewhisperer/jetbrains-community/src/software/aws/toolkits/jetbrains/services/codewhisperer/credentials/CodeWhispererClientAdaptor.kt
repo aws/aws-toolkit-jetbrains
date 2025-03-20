@@ -55,7 +55,10 @@ import java.time.Instant
 import java.util.concurrent.TimeUnit
 
 // As the connection is project-level, we need to make this project-level too
-@Deprecated("It was needed as we were supporting two service models (sigv4 & bearer), it's no longer needed as we remove sigv4 support")
+@Deprecated(
+    "It was needed as we were supporting two service models (sigv4 & bearer), " +
+        "it's no longer the case as we remove sigv4 support, should use AwsClientManager.getClient() directly"
+)
 interface CodeWhispererClientAdaptor {
     val project: Project
 
