@@ -104,26 +104,24 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val programmingLanguage: String? = null,
     )
 
-    private fun initAndIndex() {
-        cs.launch {
-            while (retryCount.get() < 5) {
-                try {
-                    logger.info { "project context: about to init key" }
-                    val isInitSuccess = initEncryption()
-                    if (isInitSuccess) {
-                        logger.info { "project context index starting" }
-                        delay(300)
-                        val isIndexSuccess = index()
-                        if (isIndexSuccess) isIndexComplete.set(true)
-                        return@launch
-                    }
-                } catch (e: Exception) {
-                    if (e.stackTraceToString().contains("Connection refused")) {
-                        retryCount.incrementAndGet()
-                        delay(10000)
-                    } else {
-                        return@launch
-                    }
+    private suspend fun initAndIndex() {
+        while (retryCount.get() < 5) {
+            try {
+                logger.info { "project context: about to init key" }
+                val isInitSuccess = initEncryption()
+                if (isInitSuccess) {
+                    logger.info { "project context index starting" }
+                    delay(300)
+                    val isIndexSuccess = index()
+                    if (isIndexSuccess) isIndexComplete.set(true)
+                    return
+                }
+            } catch (e: Exception) {
+                if (e.stackTraceToString().contains("Connection refused")) {
+                    retryCount.incrementAndGet()
+                    delay(10000)
+                } else {
+                    return
                 }
             }
         }
