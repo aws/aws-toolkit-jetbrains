@@ -45,8 +45,11 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     val isIndexComplete = AtomicBoolean(false)
     private val mapper = jacksonObjectMapper()
 
+    // max number of requests that can be ongoing to an given server instance, excluding index()
+    private val ioDispatcher = IO(20)
+
     init {
-        cs.launch(IO) {
+        cs.launch {
             if (ApplicationManager.getApplication().isUnitTestMode) {
                 return@launch
             }
@@ -311,31 +314,36 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         return encoderServer.encrypt(payloadJson)
     }
 
-    private suspend fun sendMsgToLsp(msgType: LspMessage, request: String?): LspResponse? = withContext(IO) {
+    private suspend fun sendMsgToLsp(msgType: LspMessage, request: String?): LspResponse? {
         logger.info { "sending message: ${msgType.endpoint} to lsp on port ${encoderServer.port}" }
         val url = URI("http://127.0.0.1:${encoderServer.port}/${msgType.endpoint}").toURL()
         if (!encoderServer.isNodeProcessRunning()) {
             logger.warn { "language server for ${project.name} is not running" }
-            return@withContext null
+            return null
         }
         // use 1h as timeout for index, 5 seconds for other APIs
         val timeoutMs = if (msgType is LspMessage.Index) 60.minutes.inWholeMilliseconds.toInt() else 5000
-        return@withContext with(url.openConnection() as HttpURLConnection) {
-            setConnectionProperties(this)
-            setConnectionTimeout(this, timeoutMs)
-            request?.let { r ->
-                setConnectionRequest(this, r)
-            }
-            val responseCode = this.responseCode
-            logger.info { "receiving response for $msgType with responseCode $responseCode" }
+        // dedicate single thread to index operation because it can be long running
+        val dispatcher = if (msgType is LspMessage.Index) IO(1) else ioDispatcher
 
-            val responseBody = if (responseCode == 200) {
-                this.inputStream.bufferedReader().use { reader -> reader.readText() }
-            } else {
-                ""
-            }
+        return withContext(dispatcher) {
+            with(url.openConnection() as HttpURLConnection) {
+                setConnectionProperties(this)
+                setConnectionTimeout(this, timeoutMs)
+                request?.let { r ->
+                    setConnectionRequest(this, r)
+                }
+                val responseCode = this.responseCode
+                logger.info { "receiving response for $msgType with responseCode $responseCode" }
 
-            LspResponse(responseCode, responseBody)
+                val responseBody = if (responseCode == 200) {
+                    this.inputStream.bufferedReader().use { reader -> reader.readText() }
+                } else {
+                    ""
+                }
+
+                LspResponse(responseCode, responseBody)
+            }
         }
     }
 

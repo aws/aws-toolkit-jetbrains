@@ -18,7 +18,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.IO
@@ -30,7 +29,7 @@ class ProjectContextController(private val project: Project, private val cs: Cor
     // TODO: Ideally we should inject dependencies via constructor for easier testing, refer to how [TelemetryService] inject publisher and batcher
     private val encoderServer: EncoderServer = EncoderServer(project)
     private val projectContextProvider: ProjectContextProvider = ProjectContextProvider(project, encoderServer, cs)
-    val initJob: Job = cs.launch(IO) {
+    val initJob: Job = cs.launch(IO(1)) {
         encoderServer.downloadArtifactsAndStartServer()
     }
 
@@ -53,16 +52,16 @@ class ProjectContextController(private val project: Project, private val cs: Cor
 
     fun getProjectContextIndexComplete() = projectContextProvider.isIndexComplete.get()
 
-    suspend fun queryChat(prompt: String, timeout: Long?): List<RelevantDocument> = withContext(IO) {
+    suspend fun queryChat(prompt: String, timeout: Long?): List<RelevantDocument> {
         try {
-            projectContextProvider.query(prompt, timeout)
+            return projectContextProvider.query(prompt, timeout)
         } catch (e: Exception) {
             logger.warn { "error while querying for project context $e.message" }
-            emptyList()
+            return emptyList()
         }
     }
 
-    suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> = withContext(IO) {
+    suspend fun queryInline(query: String, filePath: String): List<InlineBm25Chunk> =
         try {
             projectContextProvider.queryInline(query, filePath, InlineContextTarget.CODEMAP)
         } catch (e: Exception) {
@@ -73,7 +72,6 @@ class ProjectContextController(private val project: Project, private val cs: Cor
             logger.warn { logStr }
             emptyList()
         }
-    }
 
     @RequiresBackgroundThread
     fun updateIndex(filePaths: List<String>, mode: IndexUpdateMode) {
