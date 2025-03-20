@@ -247,22 +247,6 @@ class WorkspaceServiceHandler(
         }
     }
 
-    private fun createFileRename(
-        parentFile: VirtualFile,
-        oldFileName: String,
-        newFile: VirtualFile
-    ): FileRename? {
-        val oldUri = toUriString(parentFile)?.let { parentUri -> "$parentUri/$oldFileName" }
-        val newUri = toUriString(newFile)
-
-        if (oldUri == null || newUri == null) return null
-
-        return FileRename().apply {
-            this.oldUri = oldUri
-            this.newUri = newUri
-        }
-    }
-
     private fun shouldHandleFile(file: VirtualFile): Boolean {
         if (file.isDirectory) {
             return true // Matches "**/*" with matches: "folder"
