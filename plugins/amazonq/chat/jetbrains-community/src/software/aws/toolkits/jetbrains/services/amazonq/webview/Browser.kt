@@ -92,7 +92,7 @@ class Browser(parent: Disposable) : Disposable {
         val postMessageToJavaJsCode = receiveMessageQuery.inject("JSON.stringify(message)")
 
         val jsScripts = """
-            <script type="text/javascript" src="http://toolkitasset/mynah/js/mynah-ui.js" defer onload="init()"></script>
+            <script type="text/javascript" src="${LocalAssetJBCefRequestHandler.PROTOCOL}://${LocalAssetJBCefRequestHandler.AUTHORITY}/mynah/js/mynah-ui.js" defer onload="init()"></script>
             <script type="text/javascript">
                 const init = () => {
                     mynahUI.createMynahUI(

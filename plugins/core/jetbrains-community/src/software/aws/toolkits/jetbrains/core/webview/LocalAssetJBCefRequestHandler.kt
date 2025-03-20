@@ -77,7 +77,7 @@ class LocalAssetJBCefRequestHandler(jbCefBrowser: JBCefBrowserBase) : JBCefLocal
     }
 
     companion object {
-        const val PROTOCOL = "http"
+        const val PROTOCOL = "https"
         const val AUTHORITY = "toolkitasset"
     }
 }
