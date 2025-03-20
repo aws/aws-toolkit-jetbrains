@@ -27,6 +27,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.toCodeChunk
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.truncateLineByLine
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
@@ -59,6 +60,54 @@ class CodeWhispererUtilTest {
     @After
     fun tearDown() {
         AwsSettings.getInstance().isTelemetryEnabled = isTelemetryEnabledDefault
+    }
+
+    @Test
+    fun `truncateLineByLine should drop the last line if max length is greater than threshold`() {
+        val input: String = """
+            ${"a".repeat(11)}
+            ${"b".repeat(11)}
+            ${"c".repeat(11)}
+            ${"d".repeat(11)}
+            ${"e".repeat(11)}
+        """.trimIndent()
+        assertThat(input.length).isGreaterThan(50)
+        val actual = truncateLineByLine(input, 50)
+        assertThat(actual).isEqualTo(
+            """
+            ${"a".repeat(11)}
+            ${"b".repeat(11)}
+            ${"c".repeat(11)}
+            ${"d".repeat(11)}
+            """.trimIndent()
+        )
+
+        val input2 = "b\n".repeat(10)
+        val actual2 = truncateLineByLine(input2, 8)
+        assertThat(actual2.length).isEqualTo(8)
+    }
+
+    @Test
+    fun `truncateLineByLine should return empty if empty string is provided`() {
+        val input = ""
+        val actual = truncateLineByLine(input, 50)
+        assertThat(actual).isEqualTo("")
+    }
+
+    @Test
+    fun `truncateLineByLine should return empty if 0 max length is provided`() {
+        val input = "aaaaa"
+        val actual = truncateLineByLine(input, 0)
+        assertThat(actual).isEqualTo("")
+    }
+
+    @Test
+    fun `truncateLineByLine should return flip the value if negative max length is provided`() {
+        val input = "aaaaa\nbbbbb"
+        val actual = truncateLineByLine(input, -6)
+        val expected1 = truncateLineByLine(input, 6)
+        assertThat(actual).isEqualTo(expected1)
+        assertThat(actual).isEqualTo("aaaaa")
     }
 
     @Test

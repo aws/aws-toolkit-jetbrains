@@ -24,21 +24,10 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import software.amazon.awssdk.services.codewhisperer.CodeWhispererClient
-import software.amazon.awssdk.services.codewhisperer.model.ArtifactType
-import software.amazon.awssdk.services.codewhisperer.model.CodeScanFindingsSchema
-import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanRequest
-import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanResponse
-import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanUploadUrlRequest
-import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanUploadUrlResponse
-import software.amazon.awssdk.services.codewhisperer.model.GetCodeScanRequest
-import software.amazon.awssdk.services.codewhisperer.model.GetCodeScanResponse
-import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsRequest
-import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsResponse
-import software.amazon.awssdk.services.codewhisperer.model.ProgrammingLanguage
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
+import software.amazon.awssdk.services.codewhispererruntime.model.ArtifactType
+import software.amazon.awssdk.services.codewhispererruntime.model.CodeAnalysisFindingsSchema
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeAnalysisStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.CompletionType
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlRequest
@@ -56,6 +45,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEva
 import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEvaluationsResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.OperatingSystem
 import software.amazon.awssdk.services.codewhispererruntime.model.OptOutPreference
+import software.amazon.awssdk.services.codewhispererruntime.model.ProgrammingLanguage
 import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeAnalysisRequest
@@ -105,7 +95,6 @@ class CodeWhispererClientAdaptorTest {
     @JvmField
     val ruleChain = RuleChain(projectRule, mockCredentialRule, mockClientManagerRule, disposableRule)
 
-    private lateinit var sigv4Client: CodeWhispererClient
     private lateinit var bearerClient: CodeWhispererRuntimeClient
     private lateinit var ssoClient: SsoOidcClient
 
@@ -117,13 +106,6 @@ class CodeWhispererClientAdaptorTest {
     fun setup() {
         sut = CodeWhispererClientAdaptorImpl(projectRule.project)
         ssoClient = mockClientManagerRule.create()
-
-        sigv4Client = mockClientManagerRule.create<CodeWhispererClient>().stub {
-            on { createCodeScanUploadUrl(any<CreateCodeScanUploadUrlRequest>()) } doReturn createCodeScanUploadUrlResponse
-            on { createCodeScan(any<CreateCodeScanRequest>()) } doReturn createCodeScanResponse
-            on { getCodeScan(any<GetCodeScanRequest>()) } doReturn getCodeScanResponse
-            on { listCodeScanFindings(any<ListCodeScanFindingsRequest>()) } doReturn listCodeScanFindingsResponse
-        }
 
         bearerClient = mockClientManagerRule.create<CodeWhispererRuntimeClient>().stub {
             on { generateCompletionsPaginator(any<GenerateCompletionsRequest>()) } doReturn generateCompletionsPaginatorResponse
@@ -229,7 +211,6 @@ class CodeWhispererClientAdaptorTest {
                 }
             }
             verify(bearerClient, times(3)).generateCompletions(capture())
-            verifyNoInteractions(sigv4Client)
             assertThat(this.firstValue.nextToken()).isEqualTo("")
             assertThat(this.secondValue.nextToken()).isEqualTo("first")
             assertThat(this.thirdValue.nextToken()).isEqualTo("second")
@@ -287,7 +268,6 @@ class CodeWhispererClientAdaptorTest {
 
         argumentCaptor<CreateUploadUrlRequest>().apply {
             verify(bearerClient).createUploadUrl(capture())
-            verifyNoInteractions(sigv4Client)
             assertThat(actual).isInstanceOf(CreateUploadUrlResponse::class.java)
             assertThat(actual).usingRecursiveComparison()
                 .comparingOnlyFields("uploadUrl", "uploadId")
@@ -296,25 +276,12 @@ class CodeWhispererClientAdaptorTest {
     }
 
     @Test
-    fun `createCodeScan - sigv4`() {
-        val actual = sut.createCodeScan(createCodeScanRequest, true)
-
-        argumentCaptor<CreateCodeScanRequest>().apply {
-            verify(sigv4Client).createCodeScan(capture())
-            verifyNoInteractions(bearerClient)
-            assertThat(firstValue).isSameAs(createCodeScanRequest)
-            assertThat(actual).isSameAs(createCodeScanResponse)
-        }
-    }
-
-    @Test
     fun `createCodeScan - bearer`() {
-        val actual = sut.createCodeScan(createCodeScanRequest, false)
+        val actual = sut.createCodeScan(createCodeScanRequest)
 
         argumentCaptor<StartCodeAnalysisRequest>().apply {
             verify(bearerClient).startCodeAnalysis(capture())
-            verifyNoInteractions(sigv4Client)
-            assertThat(actual).isInstanceOf(CreateCodeScanResponse::class.java)
+            assertThat(actual).isInstanceOf(StartCodeAnalysisResponse::class.java)
             assertThat(actual).usingRecursiveComparison()
                 .comparingOnlyFields("jobId", "status", "errorMessage")
                 .isEqualTo(startCodeAnalysisResponse)
@@ -322,25 +289,12 @@ class CodeWhispererClientAdaptorTest {
     }
 
     @Test
-    fun `getCodeScan - sigv4`() {
-        val actual = sut.getCodeScan(getCodeScanRequest, true)
-
-        argumentCaptor<GetCodeScanRequest>().apply {
-            verify(sigv4Client).getCodeScan(capture())
-            verifyNoInteractions(bearerClient)
-            assertThat(firstValue).isSameAs(getCodeScanRequest)
-            assertThat(actual).isSameAs(getCodeScanResponse)
-        }
-    }
-
-    @Test
     fun `getCodeScan - bearer`() {
-        val actual = sut.getCodeScan(getCodeScanRequest, false)
+        val actual = sut.getCodeScan(getCodeScanRequest)
 
         argumentCaptor<GetCodeAnalysisRequest>().apply {
             verify(bearerClient).getCodeAnalysis(capture())
-            verifyNoInteractions(sigv4Client)
-            assertThat(actual).isInstanceOf(GetCodeScanResponse::class.java)
+            assertThat(actual).isInstanceOf(GetCodeAnalysisResponse::class.java)
             assertThat(actual).usingRecursiveComparison()
                 .comparingOnlyFields("status", "errorMessage")
                 .isEqualTo(getCodeAnalysisResponse)
@@ -348,26 +302,13 @@ class CodeWhispererClientAdaptorTest {
     }
 
     @Test
-    fun `listCodeScanFindings - sigv4`() {
-        val actual = sut.listCodeScanFindings(listCodeScanFindingsRequest, true)
-
-        argumentCaptor<ListCodeScanFindingsRequest>().apply {
-            verify(sigv4Client).listCodeScanFindings(capture())
-            verifyNoInteractions(bearerClient)
-            assertThat(firstValue).isSameAs(listCodeScanFindingsRequest)
-            assertThat(actual).isSameAs(listCodeScanFindingsResponse)
-        }
-    }
-
-    @Test
     fun `listCodeScanFindings - bearer`() {
-        val actual = sut.listCodeScanFindings(listCodeScanFindingsRequest, false)
+        val actual = sut.listCodeScanFindings(listCodeScanFindingsRequest)
 
         argumentCaptor<ListCodeAnalysisFindingsRequest>().apply {
             verify(bearerClient).listCodeAnalysisFindings(capture())
-            verifyNoInteractions(sigv4Client)
-            assertThat(actual).isInstanceOf(ListCodeScanFindingsResponse::class.java)
-            assertThat(actual.codeScanFindings()).isEqualTo(listCodeAnalysisFindingsResponse.codeAnalysisFindings())
+            assertThat(actual).isInstanceOf(ListCodeAnalysisFindingsResponse::class.java)
+            assertThat(actual.codeAnalysisFindings()).isEqualTo(listCodeAnalysisFindingsResponse.codeAnalysisFindings())
             assertThat(actual.nextToken()).isEqualTo(listCodeAnalysisFindingsResponse.nextToken())
         }
     }
@@ -441,7 +382,7 @@ class CodeWhispererClientAdaptorTest {
     }
 
     private companion object {
-        val createCodeScanRequest = CreateCodeScanRequest.builder()
+        val createCodeScanRequest = StartCodeAnalysisRequest.builder()
             .artifacts(mapOf(ArtifactType.SOURCE_CODE to "foo"))
             .clientToken("token")
             .programmingLanguage(
@@ -456,12 +397,12 @@ class CodeWhispererClientAdaptorTest {
             .artifactType(software.amazon.awssdk.services.codewhispererruntime.model.ArtifactType.SOURCE_CODE)
             .build()
 
-        val getCodeScanRequest = GetCodeScanRequest.builder()
+        val getCodeScanRequest = GetCodeAnalysisRequest.builder()
             .jobId("jobid")
             .build()
 
-        val listCodeScanFindingsRequest = ListCodeScanFindingsRequest.builder()
-            .codeScanFindingsSchema(CodeScanFindingsSchema.CODESCAN_FINDINGS_1_0)
+        val listCodeScanFindingsRequest = ListCodeAnalysisFindingsRequest.builder()
+            .codeAnalysisFindingsSchema(CodeAnalysisFindingsSchema.CODEANALYSIS_FINDINGS_1_0)
             .jobId("listCodeScanFindings - JobId")
             .nextToken("nextToken")
             .build()
@@ -500,13 +441,5 @@ class CodeWhispererClientAdaptorTest {
         val listFeatureEvaluationsResponse = ListFeatureEvaluationsResponse.builder().build()
 
         private val generateCompletionsPaginatorResponse: GenerateCompletionsIterable = mock()
-
-        private val createCodeScanUploadUrlResponse: CreateCodeScanUploadUrlResponse = mock()
-
-        private val createCodeScanResponse: CreateCodeScanResponse = mock()
-
-        private val getCodeScanResponse: GetCodeScanResponse = mock()
-
-        private val listCodeScanFindingsResponse: ListCodeScanFindingsResponse = mock()
     }
 }

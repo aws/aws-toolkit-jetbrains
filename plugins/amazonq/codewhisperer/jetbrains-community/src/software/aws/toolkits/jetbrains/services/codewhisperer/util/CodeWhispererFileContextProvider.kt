@@ -327,10 +327,30 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         return truncateContext(contextBeforeTruncation)
     }
 
+    /**
+     * Requirement
+     * - Maximum 5 supplemental context.
+     * - Each chunk can't exceed 10240 characters
+     * - Sum of all chunks can't exceed 20480 characters
+     */
     fun truncateContext(context: SupplementalContextInfo): SupplementalContextInfo {
-        var c = context.contents
-        while (c.sumOf { it.content.length } >= CodeWhispererConstants.CrossFile.MAX_TOTAL_LENGTH) {
+        var c = context.contents.map {
+            return@map if (it.content.length > CodeWhispererConstants.CrossFile.MAX_LENGTH_PER_CHUNK) {
+                it.copy(content = truncateLineByLine(it.content, CodeWhispererConstants.CrossFile.MAX_LENGTH_PER_CHUNK))
+            } else {
+                it
+            }
+        }
+
+        if (c.size > CodeWhispererConstants.CrossFile.MAX_CONTEXT_COUNT) {
+            c = c.subList(0, CodeWhispererConstants.CrossFile.MAX_CONTEXT_COUNT)
+        }
+
+        var curTotalLength = c.sumOf { it.content.length }
+        while (curTotalLength >= CodeWhispererConstants.CrossFile.MAX_TOTAL_LENGTH) {
+            val last = c.last()
             c = c.dropLast(1)
+            curTotalLength -= last.content.length
         }
 
         return context.copy(contents = c)

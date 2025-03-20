@@ -151,7 +151,7 @@ export class CodeTestChatConnector {
                 text: '',
                 options: messageData.followUps,
             } : undefined,
-            canBeVoted: true,
+            canBeVoted: messageData.canBeVoted ?? false,
             fileList: messageData.fileList ? {
                 rootFolderTitle: messageData.projectRootName,
                 fileTreeTitle: 'READY FOR REVIEW',
@@ -477,7 +477,20 @@ export class CodeTestChatConnector {
                         disabled: true
                     }
                 ]
-                break;
+                break
+
+            case FormButtonIds.CodeTestProvideFeedback:
+                answer.buttons = [
+                    {
+                        keepCardAfterClick: true,
+                        text: 'Thanks for providing feedback.',
+                        id: 'utg_provided_feedback',
+                        status: 'success',
+                        position: 'outside',
+                        disabled: true
+                    }
+                ]
+                break
             default:
                 console.warn(`Unhandled action ID: ${action.id}`);
                 break;

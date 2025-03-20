@@ -56,6 +56,8 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
 import software.aws.toolkits.telemetry.CredentialSourceId
+import java.nio.file.Path
+import java.nio.file.Paths
 
 // Controls the condition to send telemetry event to CodeWhisperer service, currently:
 // 1. It will be sent for Builder ID users, only if they have optin telemetry sharing.
@@ -107,6 +109,28 @@ suspend fun String.toCodeChunk(path: String): List<Chunk> {
             path = path,
             nextChunk = nextChunkContent
         )
+    }
+}
+
+fun truncateLineByLine(input: String, l: Int): String {
+    val maxLength = if (l > 0) l else -1 * l
+    if (input.isEmpty()) {
+        return ""
+    }
+    val shouldAddNewLineBack = input.last() == '\n'
+    var lines = input.trim().split("\n")
+    var curLen = input.length
+    while (curLen > maxLength) {
+        val last = lines.last()
+        lines = lines.dropLast(1)
+        curLen -= last.length + 1
+    }
+
+    val r = lines.joinToString("\n")
+    return if (shouldAddNewLineBack) {
+        r + "\n"
+    } else {
+        r
     }
 }
 
@@ -329,6 +353,9 @@ object CodeWhispererUtil {
             WindowManager.getInstance().setAlphaModeRatio(it, alpha)
         }
     }
+
+    fun getNormalizedRelativePath(projectName: String, relativePath: Path): String =
+        Paths.get(projectName).resolve(relativePath).normalize().toString()
 }
 
 enum class CaretMovement {

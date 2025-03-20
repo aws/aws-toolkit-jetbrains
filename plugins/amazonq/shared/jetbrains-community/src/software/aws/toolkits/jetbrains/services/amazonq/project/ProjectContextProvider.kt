@@ -11,6 +11,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.BaseProjectDirectories.Companion.getBaseDirectories
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
@@ -19,14 +20,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.CHAT_EXPLICIT_PROJECT_CONTEXT_TIMEOUT
-import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
@@ -253,16 +252,19 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     fun collectFiles(): FileCollectionResult {
         val collectedFiles = mutableListOf<String>()
         var currentTotalFileSize = 0L
-        val featureDevSessionContext = FeatureDevSessionContext(project)
         val allFiles = mutableListOf<VirtualFile>()
-        project.getBaseDirectories().forEach {
+
+        val projectBaseDirectories = project.getBaseDirectories()
+        val changeListManager = ChangeListManager.getInstance(project)
+
+        projectBaseDirectories.forEach {
             VfsUtilCore.visitChildrenRecursively(
                 it,
                 object : VirtualFileVisitor<Unit>(NO_FOLLOW_SYMLINKS) {
                     // TODO: refactor this along with /dev & codescan file traversing logic
                     override fun visitFile(file: VirtualFile): Boolean {
                         if ((file.isDirectory && isBuildOrBin(file.name)) ||
-                            runBlocking { featureDevSessionContext.ignoreFile(file.name) } ||
+                            !isWorkspaceSourceContent(file, projectBaseDirectories, changeListManager, additionalGlobalIgnoreRulesForStrictSources) ||
                             (file.isFile && file.length > 10 * 1024 * 1024)
                         ) {
                             return false

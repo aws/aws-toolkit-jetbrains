@@ -33,11 +33,11 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.common.util.selectFolder
-import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededStates
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
+import software.aws.toolkits.jetbrains.services.amazonq.project.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.EmptyPatchException
@@ -635,11 +635,11 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             ),
             ErrorTestCase(
                 ZipFileCorruptedException(operation = "GenerateCode", desc = "Zipped file is corrupted"),
-                MetricDataResult.Error
+                MetricDataResult.Fault
             ),
             ErrorTestCase(
                 FeatureDevException(message = "Resource not found", operation = "GenerateCode", desc = null),
-                MetricDataResult.Error
+                MetricDataResult.Fault
             ),
             ErrorTestCase(
                 RuntimeException("Unknown error"),
@@ -908,7 +908,7 @@ class FeatureDevControllerTest : FeatureDevTestBase() {
             whenever(featureDevClient.sendFeatureDevTelemetryEvent(any())).thenReturn(exampleSendTelemetryEventResponse)
             whenever(chatSessionStorage.getSession(any(), any())).thenReturn(spySession)
 
-            val folder = LightVirtualFile("${spySession.context.projectRoot.name}/path/to/sub/folder")
+            val folder = LightVirtualFile("${spySession.context.workspaceRoot.path.removePrefix("/")}/path/to/sub/folder")
             mockkStatic("software.aws.toolkits.jetbrains.common.util.FileUtilsKt")
             every { selectFolder(any(), any()) } returns folder
 

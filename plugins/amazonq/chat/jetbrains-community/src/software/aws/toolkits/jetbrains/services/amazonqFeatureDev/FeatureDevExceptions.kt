@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev
 
-import software.aws.toolkits.jetbrains.services.amazonq.RepoSizeError
+import software.aws.toolkits.jetbrains.services.amazonq.project.RepoSizeError
 import software.aws.toolkits.resources.message
 
 /**
@@ -24,11 +24,37 @@ open class FeatureDevException(override val message: String?, val operation: Str
         }
 }
 
+/**
+ * Exceptions extending this class are considered "errors" in service metrics.
+ */
+open class ClientException(message: String, operation: String, desc: String?, cause: Throwable? = null) :
+    FeatureDevException(message, operation, desc, cause)
+
+/**
+ * Errors extending this class are considered "faults" in service metrics.
+ */
+open class ServiceException(message: String, operation: String, desc: String?, cause: Throwable? = null) :
+    FeatureDevException(message, operation, desc, cause)
+
+/**
+ * Errors extending this class are considered "LLM failures" in service metrics.
+ */
+open class LlmException(message: String, operation: String, desc: String?, cause: Throwable? = null) :
+    FeatureDevException(message, operation, desc, cause)
+
+object ApiException {
+    fun of(statusCode: Int, message: String, operation: String, desc: String?, cause: Throwable? = null): FeatureDevException =
+        when (statusCode in 400..499) {
+            true -> ClientException(message, operation, desc, cause)
+            false -> ServiceException(message, operation, desc, cause)
+        }
+}
+
 class NoChangeRequiredException(operation: String, desc: String?, cause: Throwable? = null) :
-    FeatureDevException(message("amazonqFeatureDev.exception.no_change_required_exception"), operation, desc, cause)
+    ClientException(message("amazonqFeatureDev.exception.no_change_required_exception"), operation, desc, cause)
 
 class EmptyPatchException(operation: String, desc: String?, cause: Throwable? = null) :
-    FeatureDevException(message("amazonqFeatureDev.exception.guardrails"), operation, desc, cause)
+    LlmException(message("amazonqFeatureDev.exception.guardrails"), operation, desc, cause)
 
 class ContentLengthException(
     override val message: String = message("amazonqFeatureDev.content_length.error_text"),
@@ -36,40 +62,40 @@ class ContentLengthException(
     desc: String?,
     cause: Throwable? = null,
 ) :
-    RepoSizeError, FeatureDevException(message, operation, desc, cause)
+    RepoSizeError, ClientException(message, operation, desc, cause)
 
 class ZipFileCorruptedException(operation: String, desc: String?, cause: Throwable? = null) :
-    FeatureDevException("The zip file is corrupted", operation, desc, cause)
+    ServiceException("The zip file is corrupted", operation, desc, cause)
 
 class UploadURLExpired(operation: String, desc: String?, cause: Throwable? = null) :
-    FeatureDevException(message("amazonqFeatureDev.exception.upload_url_expiry"), operation, desc, cause)
+    ClientException(message("amazonqFeatureDev.exception.upload_url_expiry"), operation, desc, cause)
 
 class CodeIterationLimitException(operation: String, desc: String?, cause: Throwable? = null) :
-    FeatureDevException(message("amazonqFeatureDev.code_generation.iteration_limit.error_text"), operation, desc, cause)
+    ClientException(message("amazonqFeatureDev.code_generation.iteration_limit.error_text"), operation, desc, cause)
 
 class MonthlyConversationLimitError(message: String, operation: String, desc: String?, cause: Throwable? = null) :
-    FeatureDevException(message, operation, desc, cause)
+    ClientException(message, operation, desc, cause)
 
 class GuardrailsException(operation: String, desc: String?, cause: Throwable? = null) :
-    FeatureDevException(message("amazonqFeatureDev.exception.guardrails"), operation, desc, cause)
+    ClientException(message("amazonqFeatureDev.exception.guardrails"), operation, desc, cause)
 
 class PromptRefusalException(operation: String, desc: String?, cause: Throwable? = null) :
-    FeatureDevException(message("amazonqFeatureDev.exception.prompt_refusal"), operation, desc, cause)
+    ClientException(message("amazonqFeatureDev.exception.prompt_refusal"), operation, desc, cause)
 
 class ThrottlingException(operation: String, desc: String?, cause: Throwable? = null) :
-    FeatureDevException(message("amazonqFeatureDev.exception.throttling"), operation, desc, cause)
+    ClientException(message("amazonqFeatureDev.exception.throttling"), operation, desc, cause)
 
 class ExportParseException(operation: String, desc: String?, cause: Throwable? = null) :
-    FeatureDevException(message("amazonqFeatureDev.exception.export_parsing_error"), operation, desc, cause)
+    ServiceException(message("amazonqFeatureDev.exception.export_parsing_error"), operation, desc, cause)
 
 class CodeGenerationException(operation: String, desc: String?, cause: Throwable? = null) :
-    FeatureDevException(message("amazonqFeatureDev.code_generation.failed_generation"), operation, desc, cause)
+    ServiceException(message("amazonqFeatureDev.code_generation.failed_generation"), operation, desc, cause)
 
 class UploadCodeException(operation: String, desc: String?, cause: Throwable? = null) :
-    FeatureDevException(message("amazonqFeatureDev.exception.upload_code"), operation, desc, cause)
+    ServiceException(message("amazonqFeatureDev.exception.upload_code"), operation, desc, cause)
 
 class ConversationIdNotFoundException(operation: String, desc: String?, cause: Throwable? = null) :
-    FeatureDevException(message("amazonqFeatureDev.exception.conversation_not_found"), operation, desc, cause)
+    ServiceException(message("amazonqFeatureDev.exception.conversation_not_found"), operation, desc, cause)
 
 val denyListedErrors = arrayOf("Deserialization error", "Inaccessible host", "UnknownHost")
 fun createUserFacingErrorMessage(message: String?): String? =

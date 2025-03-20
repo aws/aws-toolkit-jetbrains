@@ -24,7 +24,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails
-import software.amazon.awssdk.services.codewhisperer.model.CodeWhispererException
+import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlRequest
 import software.aws.toolkits.core.utils.WaiterTimeoutException
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
@@ -118,9 +118,9 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
         mockClient.stub {
             // setupResponse dynamically modifies these fake responses so this is very hard to follow and makes me question if we even need this
             onGeneric { createUploadUrl(any()) }.thenAnswer { fakeCreateUploadUrlResponse }
-            onGeneric { createCodeScan(any(), any()) }.thenAnswer { fakeCreateCodeScanResponse }
-            onGeneric { getCodeScan(any(), any()) }.thenAnswer { fakeGetCodeScanResponse }
-            onGeneric { listCodeScanFindings(any(), any()) }.thenAnswer { fakeListCodeScanFindingsResponse }
+            onGeneric { createCodeScan(any()) }.thenAnswer { fakeCreateCodeScanResponse }
+            onGeneric { getCodeScan(any()) }.thenAnswer { fakeGetCodeScanResponse }
+            onGeneric { listCodeScanFindings(any()) }.thenAnswer { fakeListCodeScanFindingsResponse }
         }
     }
 
@@ -282,7 +282,7 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     @Test
     fun `test mapToCodeScanIssues`() {
         val recommendations = listOf(
-            fakeListCodeScanFindingsResponse.codeScanFindings(),
+            fakeListCodeScanFindingsResponse.codeAnalysisFindings(),
             getFakeRecommendationsOnNonExistentFile()
         )
         val res = codeScanSessionSpy.mapToCodeScanIssues(recommendations, project, "jobId")
@@ -365,7 +365,7 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
 
         mockClient.stub {
             onGeneric { zipUploadManagerSpy.createUploadUrlAndUpload(any(), any(), any(), any(), any()) }.thenThrow(
-                CodeWhispererException.builder()
+                CodeWhispererRuntimeException.builder()
                     .message("File Scan Monthly Exceeded")
                     .requestId("abc123")
                     .statusCode(400)
@@ -384,7 +384,7 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
         val codeScanResponse = codeScanSessionSpy.run()
         assertThat(codeScanResponse).isInstanceOf<CodeScanResponse.Failure>()
         if (codeScanResponse is CodeScanResponse.Failure) {
-            assertThat(codeScanResponse.failureReason).isInstanceOf<CodeWhispererException>()
+            assertThat(codeScanResponse.failureReason).isInstanceOf<CodeWhispererRuntimeException>()
             assertThat(codeScanResponse.failureReason.toString()).contains("File Scan Monthly Exceeded")
             assertThat(codeScanResponse.failureReason.cause.toString()).contains("java.lang.RuntimeException: Something went wrong")
         }
@@ -393,7 +393,7 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     @Test
     fun `test run() - createCodeScan failed`() = runTest {
         mockClient.stub {
-            onGeneric { createCodeScan(any(), any()) }.thenReturn(fakeCreateCodeScanResponseFailed)
+            onGeneric { createCodeScan(any()) }.thenReturn(fakeCreateCodeScanResponseFailed)
         }
 
         val codeScanResponse = codeScanSessionSpy.run()
@@ -405,7 +405,7 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     @Test
     fun `test run() - createCodeScan error`() = runTest {
         mockClient.stub {
-            onGeneric { createCodeScan(any(), any()) }.thenThrow(CodeWhispererCodeScanServerException::class.java)
+            onGeneric { createCodeScan(any()) }.thenThrow(CodeWhispererCodeScanServerException::class.java)
         }
 
         val codeScanResponse = codeScanSessionSpy.run()
@@ -417,7 +417,7 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     @Test
     fun `test run() - getCodeScan failed`() = runTest {
         mockClient.stub {
-            onGeneric { getCodeScan(any(), any()) }.thenReturn(fakeGetCodeScanResponseFailed)
+            onGeneric { getCodeScan(any()) }.thenReturn(fakeGetCodeScanResponseFailed)
         }
 
         val codeScanResponse = codeScanSessionSpy.run()
@@ -432,7 +432,7 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
             onGeneric { overallJobTimeoutInSeconds() }.thenReturn(5)
         }
         mockClient.stub {
-            onGeneric { getCodeScan(any(), any()) }.thenAnswer {
+            onGeneric { getCodeScan(any()) }.thenAnswer {
                 Thread.sleep(TIMEOUT)
                 fakeGetCodeScanResponsePending
             }
@@ -447,7 +447,7 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     @Test
     fun `test run() - getCodeScan error`() = runTest {
         mockClient.stub {
-            onGeneric { getCodeScan(any(), any()) }.thenThrow(CodeWhispererCodeScanServerException::class.java)
+            onGeneric { getCodeScan(any()) }.thenThrow(CodeWhispererCodeScanServerException::class.java)
         }
 
         val codeScanResponse = codeScanSessionSpy.run()
@@ -459,7 +459,7 @@ class CodeWhispererCodeFileScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     @Test
     fun `test run() - listCodeScanFindings error`() = runTest {
         mockClient.stub {
-            onGeneric { listCodeScanFindings(any(), any()) }.thenThrow(CodeWhispererCodeScanServerException::class.java)
+            onGeneric { listCodeScanFindings(any()) }.thenThrow(CodeWhispererCodeScanServerException::class.java)
         }
 
         val codeScanResponse = codeScanSessionSpy.run()

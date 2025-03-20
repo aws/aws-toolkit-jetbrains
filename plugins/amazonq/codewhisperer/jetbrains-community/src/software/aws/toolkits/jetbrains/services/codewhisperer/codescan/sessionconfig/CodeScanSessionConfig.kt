@@ -30,13 +30,13 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.Ama
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererUnknownLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_CREATE_PAYLOAD_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CodeAnalysisScope
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.DEFAULT_PAYLOAD_LIMIT_IN_BYTES
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.EXPRESS_SCAN_TIMEOUT_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCAN_PAYLOAD_SIZE_LIMIT_IN_BYTES
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getNormalizedRelativePath
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.GitIgnoreFilteringUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.resources.message
@@ -196,12 +196,9 @@ class CodeScanSessionConfig(
     private fun zipFiles(files: List<Path>, codeDiff: String? = null): File = createTemporaryZipFile {
         files.forEach { file ->
             try {
-                val relativePath = "${project.name}/${file.relativeTo(projectRoot.toNioPath())}"
-                if (relativePath.contains("../") || relativePath.contains("..\\")) {
-                    CodeWhispererTelemetryService.getInstance().sendInvalidZipEvent(file, projectRoot.toNioPath(), relativePath)
-                }
+                val relativePath = getNormalizedRelativePath(project.name, file.relativeTo(projectRoot.toNioPath()))
                 LOG.debug { "Selected file for truncation: $file" }
-                it.putNextEntry(relativePath.toString(), file)
+                it.putNextEntry(relativePath, file)
             } catch (e: Exception) {
                 cannotFindFile("Zipping error: ${e.message}", file.pathString)
             }

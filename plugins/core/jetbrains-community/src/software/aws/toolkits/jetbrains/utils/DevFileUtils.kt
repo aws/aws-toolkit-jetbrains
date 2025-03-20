@@ -5,4 +5,6 @@ package software.aws.toolkits.jetbrains.utils
 
 import com.intellij.openapi.vfs.VirtualFile
 
-fun isDevFile(file: VirtualFile): Boolean = file.name.matches(Regex("devfile\\.ya?ml", RegexOption.IGNORE_CASE))
+fun isWorkspaceDevFile(file: VirtualFile, addressableRoot: VirtualFile): Boolean =
+    file.name.matches(Regex("devfile\\.ya?ml", RegexOption.IGNORE_CASE)) &&
+        file.parent?.path == addressableRoot.path

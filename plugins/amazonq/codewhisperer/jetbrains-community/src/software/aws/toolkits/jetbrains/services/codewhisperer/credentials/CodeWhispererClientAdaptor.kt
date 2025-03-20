@@ -8,14 +8,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.text.nullize
-import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
-import software.amazon.awssdk.services.codewhisperer.CodeWhispererClient
-import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanRequest
-import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanResponse
-import software.amazon.awssdk.services.codewhisperer.model.GetCodeScanRequest
-import software.amazon.awssdk.services.codewhisperer.model.GetCodeScanResponse
-import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsRequest
-import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsResponse
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatInteractWithMessageEvent
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatMessageInteractionType
@@ -25,14 +17,20 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUr
 import software.amazon.awssdk.services.codewhispererruntime.model.Dimension
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeAnalysisRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeAnalysisResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeFixJobRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeFixJobResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTestGenerationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.IdeCategory
 import software.amazon.awssdk.services.codewhispererruntime.model.InlineChatUserDecision
 import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.ListCodeAnalysisFindingsRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.ListCodeAnalysisFindingsResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEvaluationsResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeAnalysisRequest
+import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeAnalysisResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeFixJobRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeFixJobResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTestGenerationResponse
@@ -51,7 +49,6 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
-import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
@@ -59,15 +56,11 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestCon
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.transform
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import java.time.Instant
 import java.util.concurrent.TimeUnit
-import kotlin.reflect.KProperty0
-import kotlin.reflect.jvm.isAccessible
 
-// TODO: move this file to package "/client"
 // As the connection is project-level, we need to make this project-level too
 @Deprecated("Methods can throw a NullPointerException if callee does not check if connection is valid")
 interface CodeWhispererClientAdaptor : Disposable {
@@ -81,20 +74,11 @@ interface CodeWhispererClientAdaptor : Disposable {
         request: CreateUploadUrlRequest,
     ): CreateUploadUrlResponse
 
-    fun createCodeScan(
-        request: CreateCodeScanRequest,
-        isSigv4: Boolean = shouldUseSigv4Client(project),
-    ): CreateCodeScanResponse
+    fun createCodeScan(request: StartCodeAnalysisRequest): StartCodeAnalysisResponse
 
-    fun getCodeScan(
-        request: GetCodeScanRequest,
-        isSigv4: Boolean = shouldUseSigv4Client(project),
-    ): GetCodeScanResponse
+    fun getCodeScan(request: GetCodeAnalysisRequest): GetCodeAnalysisResponse
 
-    fun listCodeScanFindings(
-        request: ListCodeScanFindingsRequest,
-        isSigv4: Boolean = shouldUseSigv4Client(project),
-    ): ListCodeScanFindingsResponse
+    fun listCodeScanFindings(request: ListCodeAnalysisFindingsRequest): ListCodeAnalysisFindingsResponse
 
     fun startCodeFixJob(request: StartCodeFixJobRequest): StartCodeFixJobResponse
 
@@ -272,25 +256,14 @@ interface CodeWhispererClientAdaptor : Disposable {
     companion object {
         fun getInstance(project: Project): CodeWhispererClientAdaptor = project.service()
 
-        private fun shouldUseSigv4Client(project: Project) =
-            CodeWhispererExplorerActionManager.getInstance().checkActiveCodeWhispererConnectionType(project) == CodeWhispererLoginType.Accountless
-
         const val INVALID_CODESCANJOBID = "Invalid_CodeScanJobID"
         const val INVALID_CODEFIXJOBID = "Invalid_CodeFixJobID"
     }
 }
 
 open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispererClientAdaptor {
-    private val mySigv4Client by lazy { createUnmanagedSigv4Client() }
-
     @Volatile
     private var myBearerClient: CodeWhispererRuntimeClient? = null
-
-    private val KProperty0<*>.isLazyInitialized: Boolean
-        get() {
-            isAccessible = true
-            return (getDelegate() as Lazy<*>).isInitialized()
-        }
 
     init {
         initClientUpdateListener()
@@ -327,26 +300,12 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
     override fun createUploadUrl(request: CreateUploadUrlRequest): CreateUploadUrlResponse =
         bearerClient().createUploadUrl(request)
 
-    override fun createCodeScan(request: CreateCodeScanRequest, isSigv4: Boolean): CreateCodeScanResponse =
-        if (isSigv4) {
-            mySigv4Client.createCodeScan(request)
-        } else {
-            bearerClient().startCodeAnalysis(request.transform()).transform()
-        }
+    override fun createCodeScan(request: StartCodeAnalysisRequest): StartCodeAnalysisResponse = bearerClient().startCodeAnalysis(request)
 
-    override fun getCodeScan(request: GetCodeScanRequest, isSigv4: Boolean): GetCodeScanResponse =
-        if (isSigv4) {
-            mySigv4Client.getCodeScan(request)
-        } else {
-            bearerClient().getCodeAnalysis(request.transform()).transform()
-        }
+    override fun getCodeScan(request: GetCodeAnalysisRequest): GetCodeAnalysisResponse = bearerClient().getCodeAnalysis(request)
 
-    override fun listCodeScanFindings(request: ListCodeScanFindingsRequest, isSigv4: Boolean): ListCodeScanFindingsResponse =
-        if (isSigv4) {
-            mySigv4Client.listCodeScanFindings(request)
-        } else {
-            bearerClient().listCodeAnalysisFindings(request.transform()).transform()
-        }
+    override fun listCodeScanFindings(request: ListCodeAnalysisFindingsRequest): ListCodeAnalysisFindingsResponse =
+        bearerClient().listCodeAnalysisFindings(request)
 
     override fun startCodeFixJob(request: StartCodeFixJobRequest): StartCodeFixJobResponse = bearerClient().startCodeFixJob(request)
 
@@ -851,9 +810,6 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
     }
 
     override fun dispose() {
-        if (this::mySigv4Client.isLazyInitialized) {
-            mySigv4Client.close()
-        }
         myBearerClient?.close()
     }
 
@@ -880,11 +836,6 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
 
     companion object {
         private val LOG = getLogger<CodeWhispererClientAdaptorImpl>()
-        private fun createUnmanagedSigv4Client(): CodeWhispererClient = AwsClientManager.getInstance().createUnmanagedClient(
-            AnonymousCredentialsProvider.create(),
-            CodeWhispererConstants.Config.Sigv4ClientRegion,
-            CodeWhispererConstants.Config.CODEWHISPERER_ENDPOINT
-        )
     }
 }
 

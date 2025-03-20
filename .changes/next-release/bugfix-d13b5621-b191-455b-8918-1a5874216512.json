@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Amazon Q: Fix cases where content may be incorrectly excluded from workspace."
+}
