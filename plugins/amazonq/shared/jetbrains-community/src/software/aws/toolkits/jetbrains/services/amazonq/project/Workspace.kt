@@ -79,7 +79,7 @@ val additionalGlobalIgnoreRulesForStrictSources =
         listOf(
             // FIXME: It is incredibly brittle that this source of truth is a "telemetry" component
             // It would be worth considering sniffing text vs arbitrary binary file contents, and making decisions on that basis, rather than file extension.
-            fun (path: VirtualFile) = !ALLOWED_CODE_EXTENSIONS.contains(path.extension),
+            fun (path: VirtualFile) = path.extension != null && !ALLOWED_CODE_EXTENSIONS.contains(path.extension),
         )
 
 /**

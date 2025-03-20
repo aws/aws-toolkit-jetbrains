@@ -432,8 +432,8 @@ class WorkspaceServiceHandlerTest {
         val paramsSlot = slot<RenameFilesParams>()
         verify { mockWorkspaceService.didRenameFiles(capture(paramsSlot)) }
         with(paramsSlot.captured.files[0]) {
-            assertEquals(normalizeFileUri("file:///test/$oldName"), oldUri)
-            assertEquals(normalizeFileUri("file:///test/$newName"), newUri)
+            assertEquals(normalizeFileUri("file:///testDir/$oldName"), oldUri)
+            assertEquals(normalizeFileUri("file:///testDir/$newName"), newUri)
         }
     }
 
@@ -469,8 +469,8 @@ class WorkspaceServiceHandlerTest {
         val paramsSlot = slot<RenameFilesParams>()
         verify { mockWorkspaceService.didRenameFiles(capture(paramsSlot)) }
         with(paramsSlot.captured.files[0]) {
-            assertEquals(normalizeFileUri("file:///test/oldDir"), oldUri)
-            assertEquals(normalizeFileUri("file:///test/newDir"), newUri)
+            assertEquals(normalizeFileUri("file:///testDir/oldDir"), oldUri)
+            assertEquals(normalizeFileUri("file:///testDir/newDir"), newUri)
         }
     }
 
@@ -687,10 +687,10 @@ class WorkspaceServiceHandlerTest {
         newName: String,
         isDirectory: Boolean = false,
     ): VFilePropertyChangeEvent {
-        val oldUri = URI("file:///test/$oldName")
-        val newUri = URI("file:///test/$newName")
+        val parent = createMockVirtualFile(URI("file:///testDir/"), "testDir", true)
+        val newUri = URI("file:///testDir/$newName")
         val file = createMockVirtualFile(newUri, newName, isDirectory)
-        every { file.parent } returns createMockVirtualFile(oldUri, oldName, isDirectory)
+        every { file.parent } returns parent
 
         return mockk<VFilePropertyChangeEvent>().apply {
             every { propertyName } returns VirtualFile.PROP_NAME
