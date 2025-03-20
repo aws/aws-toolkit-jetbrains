@@ -128,13 +128,12 @@ class WorkspaceServiceHandler(
             val validRenames = events
                 .filter { it.propertyName == VirtualFile.PROP_NAME }
                 .mapNotNull { event ->
-                    val file = event.file.takeIf { shouldHandleFile(it) } ?: return@mapNotNull null
-                    if (event.newValue !is String) return@mapNotNull null
+                    val renamedFile = event.file.takeIf { shouldHandleFile(it) } ?: return@mapNotNull null
+                    val oldFileName = event.oldValue as? String ?: return@mapNotNull null
+                    val parentFile = renamedFile.parent ?: return@mapNotNull null
 
-                    // Construct old and new URIs
-                    val parentFile = file.parent ?: return@mapNotNull null
-                    val oldUri = toUriString(parentFile)
-                    val newUri = toUriString(file)
+                    val oldUri = toUriString(parentFile)?.let { parentUri -> "$parentUri/$oldFileName" }
+                    val newUri = toUriString(renamedFile)
 
                     FileRename().apply {
                         this.oldUri = oldUri
@@ -245,6 +244,22 @@ class WorkspaceServiceHandler(
             }
 
             lastSnapshot = currentSnapshot
+        }
+    }
+
+    private fun createFileRename(
+        parentFile: VirtualFile,
+        oldFileName: String,
+        newFile: VirtualFile
+    ): FileRename? {
+        val oldUri = toUriString(parentFile)?.let { parentUri -> "$parentUri/$oldFileName" }
+        val newUri = toUriString(newFile)
+
+        if (oldUri == null || newUri == null) return null
+
+        return FileRename().apply {
+            this.oldUri = oldUri
+            this.newUri = newUri
         }
     }
 
