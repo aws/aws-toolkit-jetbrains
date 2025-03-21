@@ -19,7 +19,7 @@ internal class JavaModuleDependencyProvider : ModuleDependencyProvider {
 
         ModuleRootManager.getInstance(module).orderEntries().forEachLibrary { library ->
             library.getFiles(OrderRootType.CLASSES).forEach { file ->
-                dependencies.add(file.path)
+                dependencies.add(file.path.removeSuffix("!/"))
             }
             true
         }
