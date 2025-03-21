@@ -80,6 +80,8 @@
         <group id="aws.toolkit.explorer.codewhisperer" popup="true" compact="true">
             <action id="codewhisperer.settings"
                     class="software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererShowSettingsAction"/>
+            <action id="codewhisperer.switchProfiles"
+                    class="software.aws.toolkits.jetbrains.services.amazonq.actions.QSwitchProfilesAction"/>
             <separator/>
             <action id="codewhisperer.whatIs"
                     class="software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererWhatIsAction"/>

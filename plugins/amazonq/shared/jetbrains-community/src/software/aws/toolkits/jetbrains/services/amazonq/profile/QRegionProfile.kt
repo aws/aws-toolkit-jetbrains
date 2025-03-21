@@ -3,23 +3,22 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.profile
 import software.amazon.awssdk.arns.Arn
+import software.aws.toolkits.core.utils.tryOrNull
 
 data class QRegionProfile(
     var profileName: String = "",
     var arn: String = "",
 ) {
-    val accountId: String by lazy {
-        try {
-            Arn.fromString(arn).accountId().get()
-        } catch (e: Exception) {
-            ""
+    private val parsedArn: Arn? by lazy {
+        tryOrNull {
+            Arn.fromString(arn)
         }
     }
+    val accountId: String by lazy {
+        parsedArn?.accountId()?.get().orEmpty()
+    }
+
     val region: String by lazy {
-        try {
-            Arn.fromString(arn).region().get()
-        } catch (e: Exception) {
-            ""
-        }
+        parsedArn?.region()?.get().orEmpty()
     }
 }
