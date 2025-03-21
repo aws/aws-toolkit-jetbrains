@@ -24,6 +24,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.AmazonQTheme
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.ThemeBrowserAdapter
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
+import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Telemetry
 import java.util.function.Function
 
@@ -70,6 +71,7 @@ class BrowserConnector(
                             Telemetry.toolkit.willOpenModule.use {
                                 it.module(module.asText())
                                 it.source(trigger.asText())
+                                it.result(MetricResult.Succeeded)
                             }
                         }
                     }
