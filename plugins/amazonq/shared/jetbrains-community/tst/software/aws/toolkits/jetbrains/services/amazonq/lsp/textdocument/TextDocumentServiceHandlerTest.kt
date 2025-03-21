@@ -9,6 +9,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.serviceIfCreated
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
@@ -43,6 +44,7 @@ import java.util.concurrent.CompletableFuture
 
 class TextDocumentServiceHandlerTest {
     private lateinit var project: Project
+    private lateinit var mockFileEditorManager: FileEditorManager
     private lateinit var mockLanguageServer: AmazonQLanguageServer
     private lateinit var mockTextDocumentService: TextDocumentService
     private lateinit var sut: TextDocumentServiceHandler
@@ -90,6 +92,11 @@ class TextDocumentServiceHandlerTest {
         every { messageBus.connect(any<Disposable>()) } returns mockConnection
         every { mockConnection.subscribe(any(), any()) } just runs
 
+        // Mock FileEditorManager
+        mockFileEditorManager = mockk<FileEditorManager>()
+        every { mockFileEditorManager.openFiles } returns emptyArray()
+        every { project.getService(FileEditorManager::class.java) } returns mockFileEditorManager
+
         sut = TextDocumentServiceHandler(project, mockk())
     }
 
@@ -123,6 +130,25 @@ class TextDocumentServiceHandlerTest {
                 assertEquals(normalizeFileUri(uri.toString()), textDocument.uri)
                 assertEquals("test content", text)
             }
+        }
+    }
+
+    @Test
+    fun `didOpen runs on service init`() = runTest {
+        val uri = URI.create("file:///test/path/file.txt")
+        val content = "test content"
+        val file = createMockVirtualFile(uri, content)
+
+        every { mockFileEditorManager.openFiles } returns arrayOf(file)
+
+        sut = TextDocumentServiceHandler(project, mockk())
+
+        val paramsSlot = slot<DidOpenTextDocumentParams>()
+        verify { mockTextDocumentService.didOpen(capture(paramsSlot)) }
+
+        with(paramsSlot.captured.textDocument) {
+            assertEquals(normalizeFileUri(uri.toString()), this.uri)
+            assertEquals(content, text)
         }
     }
 
