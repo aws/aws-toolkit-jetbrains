@@ -30,15 +30,15 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.awscore.DefaultAwsResponseMetadata
 import software.amazon.awssdk.awscore.util.AwsHeader
-import software.amazon.awssdk.services.codewhisperer.model.CodeScanStatus
-import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanResponse
-import software.amazon.awssdk.services.codewhisperer.model.GetCodeScanResponse
-import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.CodeAnalysisStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeFixJobStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeAnalysisResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeFixJobResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.ListCodeAnalysisFindingsResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.Reference
 import software.amazon.awssdk.services.codewhispererruntime.model.Span
+import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeAnalysisResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeFixJobResponse
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil
@@ -79,15 +79,15 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
     internal lateinit var s3endpoint: String
 
     internal lateinit var fakeCreateUploadUrlResponse: CreateUploadUrlResponse
-    internal lateinit var fakeCreateCodeScanResponse: CreateCodeScanResponse
-    internal lateinit var fakeCreateCodeScanResponseFailed: CreateCodeScanResponse
-    internal lateinit var fakeCreateCodeScanResponsePending: CreateCodeScanResponse
-    internal lateinit var fakeListCodeScanFindingsResponse: ListCodeScanFindingsResponse
-    internal lateinit var fakeListCodeScanFindingsResponseE2E: ListCodeScanFindingsResponse
-    internal lateinit var fakeListCodeScanFindingsOutOfBoundsIndexResponse: ListCodeScanFindingsResponse
-    internal lateinit var fakeGetCodeScanResponse: GetCodeScanResponse
-    internal lateinit var fakeGetCodeScanResponsePending: GetCodeScanResponse
-    internal lateinit var fakeGetCodeScanResponseFailed: GetCodeScanResponse
+    internal lateinit var fakeCreateCodeScanResponse: StartCodeAnalysisResponse
+    internal lateinit var fakeCreateCodeScanResponseFailed: StartCodeAnalysisResponse
+    internal lateinit var fakeCreateCodeScanResponsePending: StartCodeAnalysisResponse
+    internal lateinit var fakeListCodeScanFindingsResponse: ListCodeAnalysisFindingsResponse
+    internal lateinit var fakeListCodeScanFindingsResponseE2E: ListCodeAnalysisFindingsResponse
+    internal lateinit var fakeListCodeScanFindingsOutOfBoundsIndexResponse: ListCodeAnalysisFindingsResponse
+    internal lateinit var fakeGetCodeScanResponse: GetCodeAnalysisResponse
+    internal lateinit var fakeGetCodeScanResponsePending: GetCodeAnalysisResponse
+    internal lateinit var fakeGetCodeScanResponseFailed: GetCodeAnalysisResponse
     internal lateinit var fakeGetCodeFixJobResponse: GetCodeFixJobResponse
     internal lateinit var fakeStartCodeFixJobResponse: StartCodeFixJobResponse
 
@@ -257,53 +257,53 @@ open class CodeWhispererCodeScanTestBase(projectRule: CodeInsightTestFixtureRule
             .responseMetadata(metadata)
             .build() as StartCodeFixJobResponse
 
-        fakeCreateCodeScanResponse = CreateCodeScanResponse.builder()
-            .status(CodeScanStatus.COMPLETED)
+        fakeCreateCodeScanResponse = StartCodeAnalysisResponse.builder()
+            .status(CodeAnalysisStatus.COMPLETED)
             .jobId(JOB_ID)
             .responseMetadata(metadata)
-            .build() as CreateCodeScanResponse
+            .build() as StartCodeAnalysisResponse
 
-        fakeCreateCodeScanResponseFailed = CreateCodeScanResponse.builder()
-            .status(CodeScanStatus.FAILED)
+        fakeCreateCodeScanResponseFailed = StartCodeAnalysisResponse.builder()
+            .status(CodeAnalysisStatus.FAILED)
             .jobId(JOB_ID)
             .responseMetadata(metadata)
-            .build() as CreateCodeScanResponse
+            .build() as StartCodeAnalysisResponse
 
-        fakeCreateCodeScanResponsePending = CreateCodeScanResponse.builder()
-            .status(CodeScanStatus.PENDING)
+        fakeCreateCodeScanResponsePending = StartCodeAnalysisResponse.builder()
+            .status(CodeAnalysisStatus.PENDING)
             .jobId(JOB_ID)
             .responseMetadata(metadata)
-            .build() as CreateCodeScanResponse
+            .build() as StartCodeAnalysisResponse
 
-        fakeListCodeScanFindingsResponse = ListCodeScanFindingsResponse.builder()
-            .codeScanFindings(setupCodeScanFindings(filePath))
+        fakeListCodeScanFindingsResponse = ListCodeAnalysisFindingsResponse.builder()
+            .codeAnalysisFindings(setupCodeScanFindings(filePath))
             .responseMetadata(metadata)
-            .build() as ListCodeScanFindingsResponse
+            .build() as ListCodeAnalysisFindingsResponse
 
-        fakeListCodeScanFindingsResponseE2E = ListCodeScanFindingsResponse.builder()
-            .codeScanFindings(setupCodeScanFindingsE2E(filePath))
+        fakeListCodeScanFindingsResponseE2E = ListCodeAnalysisFindingsResponse.builder()
+            .codeAnalysisFindings(setupCodeScanFindingsE2E(filePath))
             .responseMetadata(metadata)
-            .build() as ListCodeScanFindingsResponse
+            .build() as ListCodeAnalysisFindingsResponse
 
-        fakeListCodeScanFindingsOutOfBoundsIndexResponse = ListCodeScanFindingsResponse.builder()
-            .codeScanFindings(setupCodeScanFindingsOutOfBounds(filePath))
+        fakeListCodeScanFindingsOutOfBoundsIndexResponse = ListCodeAnalysisFindingsResponse.builder()
+            .codeAnalysisFindings(setupCodeScanFindingsOutOfBounds(filePath))
             .responseMetadata(metadata)
-            .build() as ListCodeScanFindingsResponse
+            .build() as ListCodeAnalysisFindingsResponse
 
-        fakeGetCodeScanResponse = GetCodeScanResponse.builder()
-            .status(CodeScanStatus.COMPLETED)
+        fakeGetCodeScanResponse = GetCodeAnalysisResponse.builder()
+            .status(CodeAnalysisStatus.COMPLETED)
             .responseMetadata(metadata)
-            .build() as GetCodeScanResponse
+            .build() as GetCodeAnalysisResponse
 
-        fakeGetCodeScanResponsePending = GetCodeScanResponse.builder()
-            .status(CodeScanStatus.PENDING)
+        fakeGetCodeScanResponsePending = GetCodeAnalysisResponse.builder()
+            .status(CodeAnalysisStatus.PENDING)
             .responseMetadata(metadata)
-            .build() as GetCodeScanResponse
+            .build() as GetCodeAnalysisResponse
 
-        fakeGetCodeScanResponseFailed = GetCodeScanResponse.builder()
-            .status(CodeScanStatus.FAILED)
+        fakeGetCodeScanResponseFailed = GetCodeAnalysisResponse.builder()
+            .status(CodeAnalysisStatus.FAILED)
             .responseMetadata(metadata)
-            .build() as GetCodeScanResponse
+            .build() as GetCodeAnalysisResponse
     }
 
     protected fun getFakeRecommendationsOnNonExistentFile() = """

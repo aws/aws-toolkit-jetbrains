@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.RuleChain
@@ -15,6 +14,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
@@ -24,21 +24,9 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoInteractions
-import org.mockito.kotlin.whenever
-import software.amazon.awssdk.services.codewhisperer.CodeWhispererClient
-import software.amazon.awssdk.services.codewhisperer.model.ArtifactType
-import software.amazon.awssdk.services.codewhisperer.model.CodeScanFindingsSchema
-import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanRequest
-import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanResponse
-import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanUploadUrlRequest
-import software.amazon.awssdk.services.codewhisperer.model.CreateCodeScanUploadUrlResponse
-import software.amazon.awssdk.services.codewhisperer.model.GetCodeScanRequest
-import software.amazon.awssdk.services.codewhisperer.model.GetCodeScanResponse
-import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsRequest
-import software.amazon.awssdk.services.codewhisperer.model.ListCodeScanFindingsResponse
-import software.amazon.awssdk.services.codewhisperer.model.ProgrammingLanguage
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
+import software.amazon.awssdk.services.codewhispererruntime.model.ArtifactType
+import software.amazon.awssdk.services.codewhispererruntime.model.CodeAnalysisFindingsSchema
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeAnalysisStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.CompletionType
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlRequest
@@ -56,6 +44,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEva
 import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEvaluationsResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.OperatingSystem
 import software.amazon.awssdk.services.codewhispererruntime.model.OptOutPreference
+import software.amazon.awssdk.services.codewhispererruntime.model.ProgrammingLanguage
 import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.SendTelemetryEventResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeAnalysisRequest
@@ -64,7 +53,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.SuggestionStat
 import software.amazon.awssdk.services.codewhispererruntime.paginators.GenerateCompletionsIterable
 import software.amazon.awssdk.services.codewhispererruntime.paginators.ListAvailableCustomizationsIterable
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
-import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
@@ -72,13 +60,15 @@ import software.aws.toolkits.jetbrains.core.credentials.ManagedSsoProfile
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.MockToolkitAuthManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.services.amazonq.FEATURE_EVALUATION_PRODUCT_NAME
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.metadata
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonRequest
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponseWithToken
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.sdkHttpResponse
-import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptorImpl
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
@@ -103,27 +93,18 @@ class CodeWhispererClientAdaptorTest {
 
     @Rule
     @JvmField
-    val ruleChain = RuleChain(projectRule, mockCredentialRule, mockClientManagerRule, disposableRule)
+    val ruleChain = RuleChain(projectRule, mockCredentialRule, mockClientManagerRule, authManagerRule, disposableRule)
 
-    private lateinit var sigv4Client: CodeWhispererClient
     private lateinit var bearerClient: CodeWhispererRuntimeClient
     private lateinit var ssoClient: SsoOidcClient
 
-    private lateinit var sut: CodeWhispererClientAdaptor
-    private lateinit var connectionManager: ToolkitConnectionManager
+    private lateinit var sut: CodeWhispererClientAdaptorImpl
     private var isTelemetryEnabledDefault: Boolean = false
 
     @Before
     fun setup() {
         sut = CodeWhispererClientAdaptorImpl(projectRule.project)
         ssoClient = mockClientManagerRule.create()
-
-        sigv4Client = mockClientManagerRule.create<CodeWhispererClient>().stub {
-            on { createCodeScanUploadUrl(any<CreateCodeScanUploadUrlRequest>()) } doReturn createCodeScanUploadUrlResponse
-            on { createCodeScan(any<CreateCodeScanRequest>()) } doReturn createCodeScanResponse
-            on { getCodeScan(any<GetCodeScanRequest>()) } doReturn getCodeScanResponse
-            on { listCodeScanFindings(any<ListCodeScanFindingsRequest>()) } doReturn listCodeScanFindingsResponse
-        }
 
         bearerClient = mockClientManagerRule.create<CodeWhispererRuntimeClient>().stub {
             on { generateCompletionsPaginator(any<GenerateCompletionsRequest>()) } doReturn generateCompletionsPaginatorResponse
@@ -135,15 +116,8 @@ class CodeWhispererClientAdaptorTest {
             on { listFeatureEvaluations(any<ListFeatureEvaluationsRequest>()) } doReturn listFeatureEvaluationsResponse
         }
 
-        val mockConnection = mock<AwsBearerTokenConnection>()
-        whenever(mockConnection.getConnectionSettings()) doReturn mock<TokenConnectionSettings>()
-
-        connectionManager = mock {
-            on {
-                activeConnectionForFeature(any())
-            } doReturn authManagerRule.createConnection(ManagedSsoProfile("us-east-1", aString(), listOf("scopes"))) as AwsBearerTokenConnection
-        }
-        projectRule.project.replaceService(ToolkitConnectionManager::class.java, connectionManager, disposableRule.disposable)
+        val conn = authManagerRule.createConnection(ManagedSsoProfile("us-east-1", "url", Q_SCOPES))
+        ToolkitConnectionManager.getInstance(projectRule.project).switchConnection(conn)
 
         isTelemetryEnabledDefault = AwsSettings.getInstance().isTelemetryEnabled
     }
@@ -153,14 +127,35 @@ class CodeWhispererClientAdaptorTest {
         AwsSettings.getInstance().isTelemetryEnabled = isTelemetryEnabledDefault
     }
 
-    @After
-    fun cleanup() {
-        Disposer.dispose(sut)
-    }
-
     @Test
     fun `Sono region is us-east-1`() {
         assertThat("us-east-1").isEqualTo(SONO_REGION)
+    }
+
+    @Test
+    fun `should throw if there is no valid credential, otherwise return codewhispererRuntimeClient`() {
+        val connectionManager = ToolkitConnectionManager.getInstance(projectRule.project)
+
+        assertThat(connectionManager.activeConnectionForFeature(QConnection.getInstance()))
+            .isNotNull
+        assertThat(sut.bearerClient())
+            .isNotNull
+            .isInstanceOf(CodeWhispererRuntimeClient::class.java)
+
+        logoutFromSsoConnection(projectRule.project, connectionManager.activeConnectionForFeature(QConnection.getInstance()) as AwsBearerTokenConnection)
+        assertThat(connectionManager.activeConnectionForFeature(QConnection.getInstance())).isNull()
+        assertThrows<Exception>("attempt to get bearer client while there is no valid credential") {
+            sut.bearerClient()
+        }
+
+        val anotherQConnection = authManagerRule.createConnection(ManagedSsoProfile("us-east-1", aString(), Q_SCOPES))
+        connectionManager.switchConnection(anotherQConnection)
+        assertThat(connectionManager.activeConnectionForFeature(QConnection.getInstance()))
+            .isNotNull
+            .isEqualTo(anotherQConnection)
+        assertThat(sut.bearerClient())
+            .isNotNull
+            .isInstanceOf(CodeWhispererRuntimeClient::class.java)
     }
 
     @Test
@@ -229,7 +224,6 @@ class CodeWhispererClientAdaptorTest {
                 }
             }
             verify(bearerClient, times(3)).generateCompletions(capture())
-            verifyNoInteractions(sigv4Client)
             assertThat(this.firstValue.nextToken()).isEqualTo("")
             assertThat(this.secondValue.nextToken()).isEqualTo("first")
             assertThat(this.thirdValue.nextToken()).isEqualTo("second")
@@ -287,7 +281,6 @@ class CodeWhispererClientAdaptorTest {
 
         argumentCaptor<CreateUploadUrlRequest>().apply {
             verify(bearerClient).createUploadUrl(capture())
-            verifyNoInteractions(sigv4Client)
             assertThat(actual).isInstanceOf(CreateUploadUrlResponse::class.java)
             assertThat(actual).usingRecursiveComparison()
                 .comparingOnlyFields("uploadUrl", "uploadId")
@@ -296,25 +289,12 @@ class CodeWhispererClientAdaptorTest {
     }
 
     @Test
-    fun `createCodeScan - sigv4`() {
-        val actual = sut.createCodeScan(createCodeScanRequest, true)
-
-        argumentCaptor<CreateCodeScanRequest>().apply {
-            verify(sigv4Client).createCodeScan(capture())
-            verifyNoInteractions(bearerClient)
-            assertThat(firstValue).isSameAs(createCodeScanRequest)
-            assertThat(actual).isSameAs(createCodeScanResponse)
-        }
-    }
-
-    @Test
     fun `createCodeScan - bearer`() {
-        val actual = sut.createCodeScan(createCodeScanRequest, false)
+        val actual = sut.createCodeScan(createCodeScanRequest)
 
         argumentCaptor<StartCodeAnalysisRequest>().apply {
             verify(bearerClient).startCodeAnalysis(capture())
-            verifyNoInteractions(sigv4Client)
-            assertThat(actual).isInstanceOf(CreateCodeScanResponse::class.java)
+            assertThat(actual).isInstanceOf(StartCodeAnalysisResponse::class.java)
             assertThat(actual).usingRecursiveComparison()
                 .comparingOnlyFields("jobId", "status", "errorMessage")
                 .isEqualTo(startCodeAnalysisResponse)
@@ -322,25 +302,12 @@ class CodeWhispererClientAdaptorTest {
     }
 
     @Test
-    fun `getCodeScan - sigv4`() {
-        val actual = sut.getCodeScan(getCodeScanRequest, true)
-
-        argumentCaptor<GetCodeScanRequest>().apply {
-            verify(sigv4Client).getCodeScan(capture())
-            verifyNoInteractions(bearerClient)
-            assertThat(firstValue).isSameAs(getCodeScanRequest)
-            assertThat(actual).isSameAs(getCodeScanResponse)
-        }
-    }
-
-    @Test
     fun `getCodeScan - bearer`() {
-        val actual = sut.getCodeScan(getCodeScanRequest, false)
+        val actual = sut.getCodeScan(getCodeScanRequest)
 
         argumentCaptor<GetCodeAnalysisRequest>().apply {
             verify(bearerClient).getCodeAnalysis(capture())
-            verifyNoInteractions(sigv4Client)
-            assertThat(actual).isInstanceOf(GetCodeScanResponse::class.java)
+            assertThat(actual).isInstanceOf(GetCodeAnalysisResponse::class.java)
             assertThat(actual).usingRecursiveComparison()
                 .comparingOnlyFields("status", "errorMessage")
                 .isEqualTo(getCodeAnalysisResponse)
@@ -348,26 +315,13 @@ class CodeWhispererClientAdaptorTest {
     }
 
     @Test
-    fun `listCodeScanFindings - sigv4`() {
-        val actual = sut.listCodeScanFindings(listCodeScanFindingsRequest, true)
-
-        argumentCaptor<ListCodeScanFindingsRequest>().apply {
-            verify(sigv4Client).listCodeScanFindings(capture())
-            verifyNoInteractions(bearerClient)
-            assertThat(firstValue).isSameAs(listCodeScanFindingsRequest)
-            assertThat(actual).isSameAs(listCodeScanFindingsResponse)
-        }
-    }
-
-    @Test
     fun `listCodeScanFindings - bearer`() {
-        val actual = sut.listCodeScanFindings(listCodeScanFindingsRequest, false)
+        val actual = sut.listCodeScanFindings(listCodeScanFindingsRequest)
 
         argumentCaptor<ListCodeAnalysisFindingsRequest>().apply {
             verify(bearerClient).listCodeAnalysisFindings(capture())
-            verifyNoInteractions(sigv4Client)
-            assertThat(actual).isInstanceOf(ListCodeScanFindingsResponse::class.java)
-            assertThat(actual.codeScanFindings()).isEqualTo(listCodeAnalysisFindingsResponse.codeAnalysisFindings())
+            assertThat(actual).isInstanceOf(ListCodeAnalysisFindingsResponse::class.java)
+            assertThat(actual.codeAnalysisFindings()).isEqualTo(listCodeAnalysisFindingsResponse.codeAnalysisFindings())
             assertThat(actual.nextToken()).isEqualTo(listCodeAnalysisFindingsResponse.nextToken())
         }
     }
@@ -441,7 +395,7 @@ class CodeWhispererClientAdaptorTest {
     }
 
     private companion object {
-        val createCodeScanRequest = CreateCodeScanRequest.builder()
+        val createCodeScanRequest = StartCodeAnalysisRequest.builder()
             .artifacts(mapOf(ArtifactType.SOURCE_CODE to "foo"))
             .clientToken("token")
             .programmingLanguage(
@@ -456,12 +410,12 @@ class CodeWhispererClientAdaptorTest {
             .artifactType(software.amazon.awssdk.services.codewhispererruntime.model.ArtifactType.SOURCE_CODE)
             .build()
 
-        val getCodeScanRequest = GetCodeScanRequest.builder()
+        val getCodeScanRequest = GetCodeAnalysisRequest.builder()
             .jobId("jobid")
             .build()
 
-        val listCodeScanFindingsRequest = ListCodeScanFindingsRequest.builder()
-            .codeScanFindingsSchema(CodeScanFindingsSchema.CODESCAN_FINDINGS_1_0)
+        val listCodeScanFindingsRequest = ListCodeAnalysisFindingsRequest.builder()
+            .codeAnalysisFindingsSchema(CodeAnalysisFindingsSchema.CODEANALYSIS_FINDINGS_1_0)
             .jobId("listCodeScanFindings - JobId")
             .nextToken("nextToken")
             .build()
@@ -500,13 +454,5 @@ class CodeWhispererClientAdaptorTest {
         val listFeatureEvaluationsResponse = ListFeatureEvaluationsResponse.builder().build()
 
         private val generateCompletionsPaginatorResponse: GenerateCompletionsIterable = mock()
-
-        private val createCodeScanUploadUrlResponse: CreateCodeScanUploadUrlResponse = mock()
-
-        private val createCodeScanResponse: CreateCodeScanResponse = mock()
-
-        private val getCodeScanResponse: GetCodeScanResponse = mock()
-
-        private val listCodeScanFindingsResponse: ListCodeScanFindingsResponse = mock()
     }
 }

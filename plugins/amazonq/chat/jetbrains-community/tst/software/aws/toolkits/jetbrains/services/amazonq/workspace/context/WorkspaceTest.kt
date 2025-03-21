@@ -3,12 +3,19 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.workspace.context
 
+import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.refreshAndFindVirtualDirectory
 import com.intellij.openapi.vfs.refreshAndFindVirtualFile
 import com.intellij.testFramework.LightPlatformTestCase
+import org.mockito.Mockito.mock
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.whenever
+import software.aws.toolkits.jetbrains.services.amazonq.project.additionalGlobalIgnoreRules
+import software.aws.toolkits.jetbrains.services.amazonq.project.additionalGlobalIgnoreRulesForStrictSources
 import software.aws.toolkits.jetbrains.services.amazonq.project.findWorkspaceRoot
 import software.aws.toolkits.jetbrains.services.amazonq.project.isContentInWorkspace
+import software.aws.toolkits.jetbrains.services.amazonq.project.isWorkspaceSourceContent
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
@@ -105,5 +112,98 @@ class WorkspaceTest : LightPlatformTestCase() {
         val testPath = createFile("other/path/file.txt")
 
         assertFalse(isContentInWorkspace(testPath, setOf(projectPath, modulePath)))
+    }
+
+    fun `test isWorkspaceSourceContent returns true for non-ignored file or directory with default ignore rules`() {
+        val projectPath = createDir("test/project")
+        val directoryPath = createDir("test/project/module")
+        val codeFilePath = createDir("test/project/module/example.java")
+        val nonCodeFilePath = createDir("test/project/module/example.bin")
+
+        val changeListManager = mock<ChangeListManager>().apply {
+            whenever(isIgnoredFile(directoryPath)) doReturn false
+        }
+
+        assertTrue(
+            isWorkspaceSourceContent(
+                directoryPath,
+                setOf(projectPath),
+                changeListManager,
+                additionalGlobalIgnoreRules
+            )
+        )
+
+        assertTrue(
+            isWorkspaceSourceContent(
+                codeFilePath,
+                setOf(projectPath),
+                changeListManager,
+                additionalGlobalIgnoreRules
+            )
+        )
+
+        assertTrue(
+            isWorkspaceSourceContent(
+                nonCodeFilePath,
+                setOf(projectPath),
+                changeListManager,
+                additionalGlobalIgnoreRules
+            )
+        )
+
+        assertTrue(
+            isWorkspaceSourceContent(
+                directoryPath,
+                setOf(projectPath),
+                changeListManager,
+                additionalGlobalIgnoreRulesForStrictSources
+            )
+        )
+
+        assertTrue(
+            isWorkspaceSourceContent(
+                codeFilePath,
+                setOf(projectPath),
+                changeListManager,
+                additionalGlobalIgnoreRulesForStrictSources
+            )
+        )
+    }
+
+    fun `test isWorkspaceSourceContent returns false for ignored file or directory with default ignore rules`() {
+        val projectPath = createDir("test/project")
+        val directoryPath = createDir("test/project/node_modules")
+        val nonCodeFilePath = createDir("test/project/module/example.bin")
+
+        val changeListManager = mock<ChangeListManager>().apply {
+            whenever(isIgnoredFile(directoryPath)) doReturn false
+        }
+
+        assertFalse(
+            isWorkspaceSourceContent(
+                directoryPath,
+                setOf(projectPath),
+                changeListManager,
+                additionalGlobalIgnoreRules
+            )
+        )
+
+        assertFalse(
+            isWorkspaceSourceContent(
+                directoryPath,
+                setOf(projectPath),
+                changeListManager,
+                additionalGlobalIgnoreRulesForStrictSources
+            )
+        )
+
+        assertFalse(
+            isWorkspaceSourceContent(
+                nonCodeFilePath,
+                setOf(projectPath),
+                changeListManager,
+                additionalGlobalIgnoreRulesForStrictSources
+            )
+        )
     }
 }

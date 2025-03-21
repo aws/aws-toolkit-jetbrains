@@ -1,3 +1,13 @@
+# _3.60_ (2025-03-20)
+- **(Feature)** AmazonQ /test now displays a concise test plan summary to users.
+- **(Bug Fix)** Fix inline completion failure due to context length exceeding the threshold
+- **(Bug Fix)** Amazon Q: Fix cases where content may be incorrectly excluded from workspace.
+
+# _3.59_ (2025-03-13)
+- **(Feature)** AmazonQ /dev and /doc: Add support for complex workspaces.
+- **(Bug Fix)** /review: normalize relative file path before unzipping
+- **(Bug Fix)** fix Q chat request timeout
+
 # _3.58_ (2025-03-06)
 - **(Bug Fix)** Amazon Q: Fix data isolation between tabs to prevent interference when using /doc in multiple tabs
 - **(Removal)** The Amazon Q inline suggestion popup goes back to being under the suggestions and is always showing.

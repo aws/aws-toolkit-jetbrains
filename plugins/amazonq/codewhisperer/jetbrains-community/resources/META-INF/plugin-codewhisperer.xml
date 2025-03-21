@@ -33,8 +33,7 @@
                             serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.customization.DefaultCodeWhispererModelConfigurator"/>
 
         <projectService serviceInterface="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor"
-                        serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptorImpl"
-                        testServiceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.MockCodeWhispererClientAdaptor"/>
+                        serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptorImpl"/>
         <projectService serviceInterface="software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider"
                         serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.util.DefaultCodeWhispererFileContextProvider"/>
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager"/>
