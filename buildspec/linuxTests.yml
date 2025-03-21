@@ -13,6 +13,11 @@ env:
 phases:
   install:
     commands:
+      - |
+        >/home/codebuild-user/.gradle/gradle.properties echo "
+        org.gradle.jvmargs=-Xmx4g
+        kotlin.daemon.jvmargs=-Xmx4g
+        "
       - useradd codebuild-user
       - dnf install -y acl
       - chown -R codebuild-user:codebuild-user /codebuild/output

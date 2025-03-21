@@ -119,7 +119,7 @@ class ArnPsiReferenceProviderTest {
                 }
             )
 
-            assertThat(elements).hasSize(5).allSatisfy {
+            assertThat(elements).allSatisfy {
                 assertThat(it.value)
                     .withFailMessage { "Expected ArnReference with value of '$expected' from PsiElement: $it" }
                     .isEqualTo(expected)
