@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.RuleChain
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -11,6 +12,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.runs
+import io.mockk.slot
 import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
@@ -29,6 +31,8 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendA
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.FeatureDevService
 import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
 import software.aws.toolkits.resources.message
+import java.nio.file.Files
+import java.nio.file.Paths
 
 class CodeGenerationStateTest : FeatureDevTestBase() {
     @Rule
@@ -39,13 +43,14 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
     private lateinit var messenger: MessagePublisher
     private val action = SessionStateAction("test-task", userMessage)
     private lateinit var featureDevService: FeatureDevService
+    private lateinit var repoContext: FeatureDevSessionContext
 
     @Before
     override fun setup() {
         featureDevService = mockk<FeatureDevService>()
         every { featureDevService.project } returns projectRule.project
         messenger = mock()
-        val repoContext = mock<FeatureDevSessionContext>()
+        repoContext = mockk<FeatureDevSessionContext>()
         val sessionStateConfig = SessionStateConfig(testConversationId, repoContext, featureDevService)
 
         codeGenerationState =
@@ -99,6 +104,66 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
         assertThat(codeGenerationState.phase).isEqualTo(SessionStatePhase.CODEGEN)
         coVerify(exactly = 1) { messenger.sendAnswerPart(testTabId, message("amazonqFeatureDev.code_generation.generating_code")) }
 
+        verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId) }
+        coVerify(exactly = 1) { featureDevService.exportTaskAssistArchiveResult(testConversationId) }
+    }
+
+    @Test
+    fun `test code generated is complete with run_command log contents verification`() {
+        val action = SessionStateAction("test-task", userMessage)
+
+        val tempDir = Files.createTempDirectory("testRepo")
+        val mockedFile = mockk<VirtualFile>()
+        every { mockedFile.exists() } returns true
+        every { mockedFile.isDirectory } returns true
+        every { mockedFile.path } returns tempDir.toAbsolutePath().toString()
+        every { mockedFile.toNioPath() } returns tempDir
+
+        val pathSlot = slot<String>()
+        every { mockedFile.findFileByRelativePath(capture(pathSlot)) } answers {
+            val path = pathSlot.captured
+            val filePath = tempDir.resolve(path)
+            if (!Files.exists(filePath)) {
+                Files.createFile(filePath)
+            }
+            val file = mockk<VirtualFile>()
+            every { file.exists() } returns true
+            every { file.isDirectory } returns Files.isDirectory(filePath)
+            every { file.path } returns filePath.toAbsolutePath().toString()
+            file
+        }
+
+        every { repoContext.addressableRoot } returns mockedFile
+
+        every { featureDevService.getTaskAssistCodeGeneration(any(), any()) } returns exampleCompleteGetTaskAssistCodeGenerationResponse
+        every { featureDevService.startTaskAssistCodeGeneration(any(), any(), any(), any(), any()) } returns exampleStartTaskAssistConversationResponse
+        coEvery { featureDevService.exportTaskAssistArchiveResult(any()) } returns
+            CodeGenerationStreamResult(testLogPath, testDeletedFiles, testReferences)
+
+        runTest {
+            val actual = codeGenerationState.interact(action)
+            assertThat(actual.nextState).isInstanceOf(PrepareCodeGenerationState::class.java)
+            val nextState = actual.nextState as PrepareCodeGenerationState
+            assertThat(nextState.phase).isEqualTo(SessionStatePhase.CODEGEN)
+            assertThat(nextState.filePaths).doesNotContain(
+                NewFileZipInfo(testRunCommandLogPath, "This is a log", rejected = false, changeApplied = false)
+            )
+            assertThat(nextState.filePaths.size).isEqualTo(0)
+            assertThat(nextState.deletedFiles).isEqualTo(
+                listOf(DeletedFileInfo("deleted.ts", rejected = false, changeApplied = false))
+            )
+            assertThat(nextState.references).isEqualTo(testReferences)
+            assertThat(nextState.codeGenerationRemainingIterationCount).isEqualTo(2)
+            assertThat(nextState.codeGenerationTotalIterationCount).isEqualTo(3)
+            assertThat(actual.interaction.interactionSucceeded).isEqualTo(true)
+            assertThat(actual.interaction.content).isEqualTo("")
+            assertThat(mockedFile.findFileByRelativePath(testRunCommandLogPath)).isNotNull
+            val file = requireNotNull(mockedFile.findFileByRelativePath(testRunCommandLogPath)) { "File not found" }
+            assertThat(Files.readString(Paths.get(file.path))).isEqualTo("This is a log")
+        }
+
+        assertThat(codeGenerationState.phase).isEqualTo(SessionStatePhase.CODEGEN)
+        coVerify(exactly = 1) { messenger.sendAnswerPart(testTabId, message("amazonqFeatureDev.code_generation.generating_code")) }
         verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId) }
         coVerify(exactly = 1) { featureDevService.exportTaskAssistArchiveResult(testConversationId) }
     }

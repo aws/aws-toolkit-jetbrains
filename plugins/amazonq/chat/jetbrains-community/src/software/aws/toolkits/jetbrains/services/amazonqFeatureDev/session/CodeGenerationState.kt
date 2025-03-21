@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session
 
+import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.delay
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeGenerationWorkflowStatus
 import software.aws.toolkits.core.utils.getLogger
@@ -27,8 +28,13 @@ import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.ge
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.MetricResult
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.UUID
 
+fun VirtualFile.toNioPath(): Path = Paths.get(this.path)
 private val logger = getLogger<CodeGenerationState>()
 
 class CodeGenerationState(
@@ -181,6 +187,20 @@ class CodeGenerationState(
     }
 }
 
+private fun writeLogFile(addressableRoot: Any?, fileRelativePath: String, contents: String) {
+    val addressablePath = when (addressableRoot) {
+        is VirtualFile -> addressableRoot.toNioPath()
+        is Path -> addressableRoot
+        else -> Paths.get(System.getProperty("java.io.tmpdir"))
+    }
+    val filePath = addressablePath.resolve(fileRelativePath)
+
+    // Ensure parent directories exist
+    Files.createDirectories(filePath.parent)
+    // This call replaces the need to manually create and check the file.
+    Files.write(filePath, contents.toByteArray(StandardCharsets.UTF_8))
+}
+
 private suspend fun CodeGenerationState.generateCode(
     codeGenerationId: String,
     messenger: MessagePublisher,
@@ -210,6 +230,13 @@ private suspend fun CodeGenerationState.generateCode(
                     config.featureDevService.exportTaskAssistArchiveResult(
                         conversationId = config.conversationId,
                     )
+
+                for (file in codeGenerationStreamResult.new_file_contents.keys) {
+                    if (file.endsWith(".amazonq/dev/run_command.log")) {
+                        val contents = codeGenerationStreamResult.new_file_contents[file].orEmpty()
+                        writeLogFile(config.repoContext.addressableRoot, file, contents)
+                    }
+                }
 
                 val newFileInfo = registerNewFiles(newFileContents = codeGenerationStreamResult.new_file_contents)
                 val deletedFileInfo = registerDeletedFiles(deletedFiles = codeGenerationStreamResult.deleted_files)
@@ -267,14 +294,17 @@ private suspend fun CodeGenerationState.generateCode(
 }
 
 fun registerNewFiles(newFileContents: Map<String, String>): List<NewFileZipInfo> =
-    newFileContents.map {
-        NewFileZipInfo(
-            // Note: When managing file state, we normalize file paths returned from the agent in order to ensure they are handled as relative paths.
-            zipFilePath = it.key.removePrefix("/"),
-            fileContent = it.value,
-            rejected = false,
-            changeApplied = false
-        )
+    newFileContents.mapNotNull { (key, value) ->
+        if (key.endsWith(".amazonq/dev/run_command.log")) {
+            null
+        } else {
+            NewFileZipInfo(
+                zipFilePath = key.removePrefix("/"),
+                fileContent = value,
+                rejected = false,
+                changeApplied = false
+            )
+        }
     }
 
 fun registerDeletedFiles(deletedFiles: List<String>): List<DeletedFileInfo> =
