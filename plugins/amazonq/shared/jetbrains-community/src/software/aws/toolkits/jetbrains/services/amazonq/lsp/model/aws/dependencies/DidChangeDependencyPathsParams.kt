@@ -6,8 +6,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependenc
 class DidChangeDependencyPathsParams(
     val moduleName: String,
     val programmingLanguage: String,
-    val files: List<String>,
-    val dirs: List<String>,
+    val paths: List<String>,
     val includePatterns: List<String>,
     val excludePatterns: List<String>,
 )
