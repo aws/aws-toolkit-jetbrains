@@ -185,7 +185,6 @@ class DefaultModuleDependenciesServiceTest {
         verify(exactly = 2) { mockLanguageServer.didChangeDependencyPaths(params) }
     }
 
-
     private fun prepDependencyProvider(moduleParamPairs: List<Pair<Module, DidChangeDependencyPathsParams>>) {
         every { mockModuleManager.modules } returns moduleParamPairs.map { it.first }.toTypedArray()
 

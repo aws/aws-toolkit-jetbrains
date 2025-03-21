@@ -19,6 +19,6 @@ interface ModuleDependencyProvider {
 
     fun getWorkspaceFolderPath(module: Module): String {
         val contentRoots: Array<VirtualFile> = ModuleRootManager.getInstance(module).contentRoots
-        return contentRoots.firstOrNull()?.path ?: ""
+        return contentRoots.firstOrNull()?.path.orEmpty()
     }
 }
