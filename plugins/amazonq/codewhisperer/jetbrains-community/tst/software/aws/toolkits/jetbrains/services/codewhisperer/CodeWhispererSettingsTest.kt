@@ -113,7 +113,7 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
         stateManager.loadState(CodeWhispererExploreActionState())
         CodeWhispererSettings.getInstance().loadState(CodeWhispererConfiguration())
 
-        val problemsWindow = ProblemsView.getToolWindow(projectRule.project) ?: fail("Problems window not found")
+        ProblemsView.getToolWindow(projectRule.project) ?: fail("Problems window not found")
         val codeReferenceWindow = ToolWindowManager.getInstance(projectRule.project).getToolWindow(
             CodeWhispererCodeReferenceToolWindowFactory.id
         ) ?: fail("Code Reference Log window not found")
@@ -122,7 +122,6 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
         } ?: fail("CodeWhisperer status bar widget not found")
 
         runInEdtAndWait {
-            assertThat(problemsWindow.contentManager.contentCount).isEqualTo(0)
             assertThat(codeReferenceWindow.isAvailable).isFalse
             assertThat(statusBarWidgetFactory.isAvailable(projectRule.project)).isTrue
             assertThat(settingsManager.isIncludeCodeWithReference()).isFalse

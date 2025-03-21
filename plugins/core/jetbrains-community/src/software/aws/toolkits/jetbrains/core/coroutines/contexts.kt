@@ -32,3 +32,6 @@ fun getCoroutineUiContext(): CoroutineContext = EdtCoroutineDispatcher
 fun getCoroutineBgContext(): CoroutineContext = AppExecutorUtil.getAppExecutorService().asCoroutineDispatcher()
 
 val EDT = Dispatchers.EDT
+
+// parallelism should be defined https://youtrack.jetbrains.com/issue/KTOR-6462
+fun ioDispatcher(limitedParallelism: Int) = Dispatchers.IO.limitedParallelism(limitedParallelism)
