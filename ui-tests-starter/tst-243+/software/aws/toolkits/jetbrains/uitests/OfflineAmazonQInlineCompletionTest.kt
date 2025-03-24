@@ -15,13 +15,13 @@ import com.intellij.ide.starter.models.TestCase
 import com.intellij.ide.starter.project.LocalProjectInfo
 import com.intellij.ide.starter.runner.CurrentTestMethod
 import com.intellij.ide.starter.runner.Starter
+import com.intellij.util.io.createParentDirectories
 import org.junit.jupiter.api.Test
 import org.kodein.di.DI
 import org.kodein.di.bindSingleton
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
-import kotlin.io.path.createParentDirectories
 import kotlin.io.path.writeText
 
 class OfflineAmazonQInlineCompletionTest {
