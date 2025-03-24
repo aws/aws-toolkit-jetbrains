@@ -5,8 +5,8 @@ package software.aws.toolkits.jetbrains.services.lambda.dotnet
 
 import base.BaseTestWithMarkup
 import base.backendStartTimeout
-import com.jetbrains.rdclient.testFramework.waitForDaemon
 import com.jetbrains.rider.projectView.solution
+import com.jetbrains.rider.test.scriptingApi.waitForDaemon
 import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
 import software.aws.toolkits.jetbrains.protocol.awsSettingModel
@@ -172,7 +172,7 @@ class LambdaGutterMarkHighlightingTest : BaseTestWithMarkup() {
             sourceFileName = "Function.cs",
             goldFileName = "Function.gold"
         ) {
-            waitForDaemon()
+            waitForDaemon(this@LambdaGutterMarkHighlightingTest.project)
             dumpHighlightersTree(
                 valueFilter = { it.attributeId().contains(LAMBDA_RUN_MARKER_ATTRIBUTE_ID) }
             )
