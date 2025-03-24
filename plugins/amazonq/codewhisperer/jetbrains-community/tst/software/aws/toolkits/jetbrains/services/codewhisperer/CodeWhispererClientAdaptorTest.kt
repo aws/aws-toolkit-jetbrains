@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.RuleChain
@@ -15,6 +14,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
@@ -24,7 +24,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.ArtifactType
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeAnalysisFindingsSchema
@@ -54,7 +53,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.SuggestionStat
 import software.amazon.awssdk.services.codewhispererruntime.paginators.GenerateCompletionsIterable
 import software.amazon.awssdk.services.codewhispererruntime.paginators.ListAvailableCustomizationsIterable
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
-import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.utils.test.aString
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
@@ -62,13 +60,15 @@ import software.aws.toolkits.jetbrains.core.credentials.ManagedSsoProfile
 import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.MockToolkitAuthManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.services.amazonq.FEATURE_EVALUATION_PRODUCT_NAME
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.metadata
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonRequest
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponseWithToken
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.sdkHttpResponse
-import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptorImpl
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
@@ -93,13 +93,12 @@ class CodeWhispererClientAdaptorTest {
 
     @Rule
     @JvmField
-    val ruleChain = RuleChain(projectRule, mockCredentialRule, mockClientManagerRule, disposableRule)
+    val ruleChain = RuleChain(projectRule, mockCredentialRule, mockClientManagerRule, authManagerRule, disposableRule)
 
     private lateinit var bearerClient: CodeWhispererRuntimeClient
     private lateinit var ssoClient: SsoOidcClient
 
-    private lateinit var sut: CodeWhispererClientAdaptor
-    private lateinit var connectionManager: ToolkitConnectionManager
+    private lateinit var sut: CodeWhispererClientAdaptorImpl
     private var isTelemetryEnabledDefault: Boolean = false
 
     @Before
@@ -117,15 +116,8 @@ class CodeWhispererClientAdaptorTest {
             on { listFeatureEvaluations(any<ListFeatureEvaluationsRequest>()) } doReturn listFeatureEvaluationsResponse
         }
 
-        val mockConnection = mock<AwsBearerTokenConnection>()
-        whenever(mockConnection.getConnectionSettings()) doReturn mock<TokenConnectionSettings>()
-
-        connectionManager = mock {
-            on {
-                activeConnectionForFeature(any())
-            } doReturn authManagerRule.createConnection(ManagedSsoProfile("us-east-1", aString(), listOf("scopes"))) as AwsBearerTokenConnection
-        }
-        projectRule.project.replaceService(ToolkitConnectionManager::class.java, connectionManager, disposableRule.disposable)
+        val conn = authManagerRule.createConnection(ManagedSsoProfile("us-east-1", "url", Q_SCOPES))
+        ToolkitConnectionManager.getInstance(projectRule.project).switchConnection(conn)
 
         isTelemetryEnabledDefault = AwsSettings.getInstance().isTelemetryEnabled
     }
@@ -135,14 +127,35 @@ class CodeWhispererClientAdaptorTest {
         AwsSettings.getInstance().isTelemetryEnabled = isTelemetryEnabledDefault
     }
 
-    @After
-    fun cleanup() {
-        Disposer.dispose(sut)
-    }
-
     @Test
     fun `Sono region is us-east-1`() {
         assertThat("us-east-1").isEqualTo(SONO_REGION)
+    }
+
+    @Test
+    fun `should throw if there is no valid credential, otherwise return codewhispererRuntimeClient`() {
+        val connectionManager = ToolkitConnectionManager.getInstance(projectRule.project)
+
+        assertThat(connectionManager.activeConnectionForFeature(QConnection.getInstance()))
+            .isNotNull
+        assertThat(sut.bearerClient())
+            .isNotNull
+            .isInstanceOf(CodeWhispererRuntimeClient::class.java)
+
+        logoutFromSsoConnection(projectRule.project, connectionManager.activeConnectionForFeature(QConnection.getInstance()) as AwsBearerTokenConnection)
+        assertThat(connectionManager.activeConnectionForFeature(QConnection.getInstance())).isNull()
+        assertThrows<Exception>("attempt to get bearer client while there is no valid credential") {
+            sut.bearerClient()
+        }
+
+        val anotherQConnection = authManagerRule.createConnection(ManagedSsoProfile("us-east-1", aString(), Q_SCOPES))
+        connectionManager.switchConnection(anotherQConnection)
+        assertThat(connectionManager.activeConnectionForFeature(QConnection.getInstance()))
+            .isNotNull
+            .isEqualTo(anotherQConnection)
+        assertThat(sut.bearerClient())
+            .isNotNull
+            .isInstanceOf(CodeWhispererRuntimeClient::class.java)
     }
 
     @Test
