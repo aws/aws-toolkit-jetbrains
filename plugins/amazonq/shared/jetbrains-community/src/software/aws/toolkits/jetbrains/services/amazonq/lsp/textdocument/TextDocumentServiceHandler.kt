@@ -3,14 +3,17 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument
 
+import com.intellij.codeInsight.editorActions.TypedHandlerDelegate
 import com.intellij.codeInsight.lookup.Lookup
 import com.intellij.codeInsight.lookup.LookupEvent
 import com.intellij.codeInsight.lookup.LookupListener
 import com.intellij.codeInsight.lookup.LookupManagerListener
 import com.intellij.codeInsight.lookup.impl.LookupImpl
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.actionSystem.EditorActionManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileDocumentManagerListener
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -21,6 +24,7 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
+import com.intellij.psi.PsiFile
 import org.eclipse.lsp4j.DidChangeTextDocumentParams
 import org.eclipse.lsp4j.DidCloseTextDocumentParams
 import org.eclipse.lsp4j.DidOpenTextDocumentParams
@@ -43,7 +47,8 @@ class TextDocumentServiceHandler(
 ) : FileDocumentManagerListener,
     FileEditorManagerListener,
     BulkFileListener,
-    LookupManagerListener {
+    LookupManagerListener,
+    TypedHandlerDelegate() {
 
     init {
         // didOpen & didClose events
@@ -68,6 +73,13 @@ class TextDocumentServiceHandler(
         project.messageBus.connect(serverInstance).subscribe(
             LookupManagerListener.TOPIC,
             this
+        )
+
+        val editorActionManager = EditorActionManager.getInstance()
+        val originalHandler = editorActionManager.getActionHandler(IdeActions.ACTION_EDITOR_ENTER)
+        editorActionManager.setActionHandler(
+            IdeActions.ACTION_EDITOR_ENTER,
+            AmazonQLspEnterHandler(originalHandler, this)
         )
 
         // open files on startup
@@ -117,7 +129,12 @@ class TextDocumentServiceHandler(
         })
     }
 
-    private fun handleInlineCompletion(editor: Editor) {
+    override fun charTyped(c: Char, project: Project, editor: Editor, psiFiles: PsiFile): Result {
+        handleInlineCompletion(editor)
+        return Result.CONTINUE
+    }
+
+    fun handleInlineCompletion(editor: Editor) {
         AmazonQLspService.executeIfRunning(project) { server ->
             val params = buildInlineCompletionParams(editor)
             server.inlineCompletionWithReferences(params)
