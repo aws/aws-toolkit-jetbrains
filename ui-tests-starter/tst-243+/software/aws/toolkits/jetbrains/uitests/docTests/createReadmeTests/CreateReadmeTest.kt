@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.uitests.docTests.createReadmeTests
 
+import com.intellij.driver.sdk.ui.ui
 import com.intellij.driver.sdk.waitForProjectOpen
 import com.intellij.ide.starter.ci.CIServer
 import com.intellij.ide.starter.config.ConfigurationStorage
@@ -27,6 +28,7 @@ import software.aws.toolkits.jetbrains.uitests.docTests.prepTestData
 import software.aws.toolkits.jetbrains.uitests.docTests.scripts.createReadmeScripts.acceptReadmeTestScript
 import software.aws.toolkits.jetbrains.uitests.docTests.scripts.createReadmeScripts.createReadmePromptedToConfirmFolderTestScript
 import software.aws.toolkits.jetbrains.uitests.docTests.scripts.createReadmeScripts.makeChangesFlowTestScript
+import software.aws.toolkits.jetbrains.uitests.docTests.scripts.createReadmeScripts.newReadmeDiffViewerTestScript
 import software.aws.toolkits.jetbrains.uitests.docTests.scripts.createReadmeScripts.rejectReadmeTestScript
 import software.aws.toolkits.jetbrains.uitests.docTests.scripts.createReadmeScripts.validateFeatureAvailabilityTestScript
 import software.aws.toolkits.jetbrains.uitests.executePuppeteerScript
@@ -243,6 +245,49 @@ class CreateReadmeTest {
                 val newReadmePath = Paths.get("tstData", "qdoc", "createFlow", "README.md")
                 val newReadme = File(newReadmePath.toUri())
                 assertThat(newReadme).doesNotExist()
+            }
+    }
+
+    @Test
+    fun `New Readme opens in diff viewer`() {
+        val testCase = TestCase(
+            IdeProductProvider.IC,
+            LocalProjectInfo(
+                Paths.get("tstData", "qdoc", "createFlow")
+            )
+        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+
+        // inject connection
+        useExistingConnectionForTest()
+
+        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
+            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
+                pluginConfigurator.installPluginFromPath(
+                    Path.of(path)
+                )
+            }
+
+            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
+            updateGeneralSettings()
+        }.runIdeWithDriver()
+            .useDriverAndCloseIde {
+                waitForProjectOpen()
+                // required wait time for the system to be fully ready
+                Thread.sleep(30000)
+
+                val readmePath = Paths.get("tstData", "qdoc", "createFlow", "README.md")
+                val readme = File(readmePath.toUri())
+                assertFalse(readme.exists())
+
+                val result = executePuppeteerScript(newReadmeDiffViewerTestScript)
+                assertFalse(result.contains("Error: Test Failed"))
+
+                if (result.contains("Error: Test Failed")) {
+                    println("result: $result")
+                }
+
+                val panel = this.ui.x("//div[contains(@class, 'SimpleDiffPanel')]")
+                assertTrue(panel.present())
             }
     }
 
