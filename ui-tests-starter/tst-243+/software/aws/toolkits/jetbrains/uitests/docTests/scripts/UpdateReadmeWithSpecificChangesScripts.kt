@@ -3,7 +3,9 @@
 
 package software.aws.toolkits.jetbrains.uitests.docTests.scripts
 
-// language=TS
+import software.aws.toolkits.jetbrains.uitests.findAndClickButtonScript
+
+// language=JS
 val updateReadmeSpecificChangesMakeChangesFlowScript = """
     
      const puppeteer = require('puppeteer');
@@ -67,7 +69,7 @@ val updateReadmeSpecificChangesMakeChangesFlowScript = """
 
 """.trimIndent()
 
-// language=TS
+// language=JS
 val updateReadmeSpecificChangesScript = """
     
     const puppeteer = require('puppeteer');
