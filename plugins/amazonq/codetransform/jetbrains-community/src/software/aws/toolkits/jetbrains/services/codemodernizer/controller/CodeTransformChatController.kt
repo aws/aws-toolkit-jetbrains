@@ -11,6 +11,7 @@ import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.util.io.FileUtil.createTempDirectory
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.readText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -43,6 +44,9 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCo
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalFailedNoJdkChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalInProgressChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCompileLocalSuccessChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildContinueTransformationChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCustomDependencyVersionsFileInvalidChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCustomDependencyVersionsFileValidChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildDownloadFailureChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilCannotResumeContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildHilErrorContent
@@ -71,6 +75,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTr
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformStoppingChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserCancelledChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserHilSelection
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputCustomDependencyVersionsChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputLanguageUpgradeChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputOneOrMultipleDiffsChatIntroContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputOneOrMultipleDiffsFlagChatContent
@@ -112,9 +117,14 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toVirtualFi
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateYamlFile
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.testFramework.LightVirtualFile
+import org.jetbrains.yaml.YAMLFileType
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 
@@ -353,7 +363,7 @@ class CodeTransformChatController(
         withContext(EDT) {
             val descriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
                 .withDescription("Select metadata file")
-                .withFileFilter { it.extension == "zip" }
+                .withExtensionFilter("zip")
 
             val selectedZipFile = FileChooser.chooseFile(descriptor, null, null) ?: return@withContext
             val extractedZip = createTempDirectory("codeTransformSQLMetadata", null)
@@ -422,9 +432,65 @@ class CodeTransformChatController(
         }
         telemetry.submitSelection(message.oneOrMultipleDiffsSelection)
         codeTransformChatHelper.addNewMessage(buildUserOneOrMultipleDiffsSelectionChatContent(message.oneOrMultipleDiffsSelection))
-        codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
+        codeTransformChatHelper.addNewMessage(buildUserInputCustomDependencyVersionsChatContent())
+        val sampleYAML = """
+name: "custom-dependency-management"
+description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
+
+dependencyManagement:
+  dependencies:
+    - identifier: "com.example:library1"
+      targetVersion: "2.1.0"
+      versionProperty: "library1.version"  # Optional
+      originType: "FIRST_PARTY" # or "THIRD_PARTY"  # Optional
+    - identifier: "com.example:library2"
+      targetVersion: "3.0.0"
+      originType: "THIRD_PARTY"
+  plugins:
+    - identifier: "com.example.plugin"
+      targetVersion: "1.2.0"
+      versionProperty: "plugin.version"  # Optional
+""".trimIndent()
+
+        val virtualFile = LightVirtualFile("sample-dependency-management.yaml", YAMLFileType.YML, sampleYAML)
+        virtualFile.isWritable = true
+        ApplicationManager.getApplication().invokeLater {
+            FileEditorManager.getInstance(context.project).openFile(virtualFile, true)
+        }
         codeModernizerManager.codeTransformationSession?.let {
             it.sessionContext.transformCapabilities = transformCapabilities
+        }
+    }
+
+    override suspend fun processCodeTransformCustomDependencyVersions(message: IncomingCodeTransformMessage.CodeTransformConfirmCustomDependencyVersions) {
+        withContext(EDT) {
+            val descriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
+                .withDescription("Select .yaml file")
+                .withExtensionFilter("yaml")
+            val selectedFile = FileChooser.chooseFile(descriptor, null, null) ?: return@withContext
+            val isValid = validateYamlFile(selectedFile.readText())
+            if (!isValid) {
+                codeTransformChatHelper.addNewMessage(buildCustomDependencyVersionsFileInvalidChatContent())
+                codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
+                return@withContext
+            }
+            codeModernizerManager.codeTransformationSession?.let {
+                it.sessionContext.customDependencyVersionsFile = selectedFile
+            }
+            codeTransformChatHelper.addNewMessage(buildCustomDependencyVersionsFileValidChatContent())
+            codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
+            codeModernizerManager.codeTransformationSession?.let {
+                codeModernizerManager.runLocalMavenBuild(context.project, it)
+            }
+        }
+    }
+
+    override suspend fun processCodeTransformContinueAction(message: IncomingCodeTransformMessage.CodeTransformContinue) {
+        codeTransformChatHelper.addNewMessage(buildContinueTransformationChatContent())
+        // if user doesn't provide a custom .yaml file, just move on with local build
+        // TODO: potentially we want to ask user to provide target JDK path?
+        codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
+        codeModernizerManager.codeTransformationSession?.let {
             codeModernizerManager.runLocalMavenBuild(context.project, it)
         }
     }

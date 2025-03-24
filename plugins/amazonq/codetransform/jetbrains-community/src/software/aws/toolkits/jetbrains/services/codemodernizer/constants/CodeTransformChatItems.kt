@@ -44,6 +44,14 @@ private val cancelUserSelectionButton = Button(
     id = CodeTransformButtonId.CancelTransformation.id,
 )
 
+// used to continue transformation without providing custom YAML file
+private val continueTransformationButton = Button(
+    keepCardAfterClick = false,
+    waitMandatoryFormItems = false,
+    text = "Continue without this",
+    id = CodeTransformButtonId.ContinueTransformation.id,
+)
+
 private val confirmUserSelectionLanguageUpgradeButton = Button(
     keepCardAfterClick = false,
     waitMandatoryFormItems = true,
@@ -77,6 +85,13 @@ private val confirmOneOrMultipleDiffsSelectionButton = Button(
     waitMandatoryFormItems = true,
     text = message("codemodernizer.chat.message.button.confirm"),
     id = CodeTransformButtonId.ConfirmOneOrMultipleDiffs.id,
+)
+
+private val confirmCustomDependencyVersionsButton = Button(
+    keepCardAfterClick = true,
+    waitMandatoryFormItems = true, // TODO: what does this do?
+    text = "Select file",
+    id = CodeTransformButtonId.ConfirmCustomDependencyVersions.id,
 )
 
 private val openMvnBuildButton = Button(
@@ -375,6 +390,20 @@ fun buildUserInputSQLConversionMetadataChatContent() = CodeTransformChatMessageC
     type = CodeTransformChatMessageType.FinalizedAnswer,
 )
 
+fun buildUserInputCustomDependencyVersionsChatContent() = CodeTransformChatMessageContent(
+    message = "Optionally, provide a .YAML file which specifies custom dependency versions you want Q to upgrade to.",
+    buttons = listOf(
+        confirmCustomDependencyVersionsButton,
+        continueTransformationButton,
+    ),
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+)
+
+fun buildCustomDependencyVersionsFileValidChatContent() = CodeTransformChatMessageContent(
+    message = "I received your .yaml file and will upload it to Q.",
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+)
+
 fun buildModuleSchemaFormChatContent(project: Project, javaModules: List<VirtualFile>, schemaOptions: Set<String>) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
     buttons = listOf(
@@ -416,6 +445,11 @@ fun buildSQLMetadataValidationErrorChatContent(errorReason: String) = CodeTransf
     message = errorReason,
 )
 
+fun buildCustomDependencyVersionsFileInvalidChatContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = "The .yaml file you uploaded does not follow the format of the sample YAML file provided.",
+)
+
 fun buildUserCancelledChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
     message = message("codemodernizer.chat.message.transform_cancelled_by_user"),
@@ -449,6 +483,11 @@ fun buildUserSQLConversionSelectionSummaryChatContent(moduleName: String, schema
 fun buildUserLanguageUpgradeSelectionSummaryChatContent(moduleName: String, targetJdkVersion: String) = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.Prompt,
     message = getUserLanguageUpgradeSelectionFormattedMarkdown(moduleName, targetJdkVersion)
+)
+
+fun buildContinueTransformationChatContent() = CodeTransformChatMessageContent(
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    message = "Ok, I will continue without this information.",
 )
 
 fun buildCompileLocalInProgressChatContent() = CodeTransformChatMessageContent(

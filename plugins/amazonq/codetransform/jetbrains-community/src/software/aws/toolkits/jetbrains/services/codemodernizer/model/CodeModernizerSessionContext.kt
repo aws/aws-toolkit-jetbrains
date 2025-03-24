@@ -74,6 +74,7 @@ data class CodeModernizerSessionContext(
     val sourceServerName: String? = null,
     var schema: String? = null,
     val sqlMetadataZip: File? = null,
+    var customDependencyVersionsFile: VirtualFile? = null,
 ) : Disposable {
     private val mapper = jacksonObjectMapper()
     private val ignoredDependencyFileExtensions = setOf(INVALID_SUFFIX_SHA, INVALID_SUFFIX_REPOSITORIES)

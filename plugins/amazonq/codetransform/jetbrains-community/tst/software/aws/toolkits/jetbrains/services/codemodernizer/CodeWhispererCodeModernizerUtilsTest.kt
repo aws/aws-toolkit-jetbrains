@@ -28,6 +28,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransfo
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.refreshToken
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
 import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateYamlFile
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import software.aws.toolkits.resources.message
 import java.util.concurrent.atomic.AtomicBoolean
@@ -238,6 +239,46 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
             "Amazon Q Developer pricing</a>.</p>"
         val actual = getBillingText(376)
         assertThat(expected).isEqualTo(actual)
+    }
+
+    @Test
+    fun `WHEN validateYamlFile on fully valid yaml file THEN passes validation`() {
+        val sampleFileContents = """name: "custom-dependency-management"
+description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
+dependencyManagement:
+  dependencies:
+    - identifier: "com.example:library1"
+        targetVersion: "2.1.0"
+        versionProperty: "library1.version"
+        originType: "FIRST_PARTY"
+  plugins:
+    - identifier: "com.example.plugin"
+        targetVersion: "1.2.0"
+        versionProperty: "plugin.version"
+        """.trimIndent()
+
+        val isValidYaml = validateYamlFile(sampleFileContents)
+        assertThat(isValidYaml).isTrue()
+    }
+
+    @Test
+    fun `WHEN validateYamlFile on invalid yaml file THEN fails validation`() {
+        val sampleFileContents = """name: "custom-dependency-management"
+description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
+invalidKey:
+  dependencies:
+    - identifier: "com.example:library1"
+        targetVersion: "2.1.0"
+        versionProperty: "library1.version"
+        originType: "FIRST_PARTY"
+  plugins:
+    - identifier: "com.example.plugin"
+        targetVersion: "1.2.0"
+        versionProperty: "plugin.version"
+        """.trimIndent()
+
+        val isValidYaml = validateYamlFile(sampleFileContents)
+        assertThat(isValidYaml).isFalse()
     }
 
     @Test

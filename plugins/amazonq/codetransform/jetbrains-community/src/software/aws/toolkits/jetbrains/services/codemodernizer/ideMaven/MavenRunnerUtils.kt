@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -19,6 +20,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTele
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
+import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.telemetry.CodeTransformBuildCommand
 import software.aws.toolkits.telemetry.Result
 import java.io.File
@@ -80,6 +82,11 @@ fun runMavenCopyCommands(
         val transformMvnRunner = TransformMavenRunner(project)
         context.mavenRunnerQueue.add(transformMvnRunner)
         val mvnSettings = MavenRunner.getInstance(project).settings.clone() // clone required to avoid editing user settings
+        notifyStickyInfo("current jreName", mvnSettings.jreName)
+        mvnSettings.setJreName("corretto-21")
+        // use ProjectJdkTable.getInstance().allJdks to join all of the "name"s of the list
+        val jreNames = ProjectJdkTable.getInstance().allJdks.joinToString(", ") { it.name }
+        notifyStickyInfo("jreNames", jreNames)
 
         val sourceVirtualFile = LocalFileSystem.getInstance().findFileByIoFile(sourceFolder)
         val module = sourceVirtualFile?.let { ModuleUtilCore.findModuleForFile(it, project) }

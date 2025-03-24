@@ -8,6 +8,7 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.readText
 import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
@@ -140,6 +141,17 @@ fun parseXmlDependenciesReport(pathToXmlDependency: Path): DependencyUpdatesRepo
     val reportFile = pathToXmlDependency.toFile()
     val report = XML_MAPPER.readValue(reportFile, DependencyUpdatesReport::class.java)
     return report
+}
+
+fun validateYamlFile(fileContents: String): Boolean {
+    val requiredKeys = listOf("dependencyManagement:", "identifier:", "targetVersion:")
+    for (key in requiredKeys) {
+        if (!fileContents.contains(key)) {
+            getLogger<CodeTransformChatController>().error { "Missing yaml key: $key" }
+            return false
+        }
+    }
+    return true
 }
 
 fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {
