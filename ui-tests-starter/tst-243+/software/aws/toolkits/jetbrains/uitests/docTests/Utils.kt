@@ -13,6 +13,11 @@ fun prepTestData(isCreate: Boolean) {
         if (File(path).exists()) {
             File(path).delete()
         }
+        // check multi-root workspace readme as well
+        val path2 = Paths.get("tstData", "qdoc", "README.md").toUri()
+        if (File(path2).exists()) {
+            File(path2).delete()
+        }
     } else {
         val path = Paths.get("tstData", "qdoc", "updateFlow", "README.md").toUri()
         process = ProcessBuilder("git", "restore", path.path).start()
