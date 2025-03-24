@@ -3,6 +3,7 @@
 
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
@@ -103,7 +104,8 @@ dependencies {
     }
 }
 
-tasks.prepareTestSandbox {
+// https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1844
+tasks.withType<PrepareSandboxTask>() {
     disabledPlugins.addAll(
         "com.intellij.swagger",
         "org.jetbrains.plugins.kotlin.jupyter",
