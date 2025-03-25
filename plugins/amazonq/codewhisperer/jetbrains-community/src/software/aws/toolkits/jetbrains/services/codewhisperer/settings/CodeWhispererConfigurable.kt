@@ -61,7 +61,7 @@ class CodeWhispererConfigurable(private val project: Project) :
             }
         }
 
-        group(message("aws.settings.codewhisperer.group.inline_suggestions")) {
+        group(message("aws.settings.codewhisperer.group.general")) {
             row {
                 checkBox(message("aws.settings.codewhisperer.include_code_with_reference")).apply {
                     connect.subscribe(
@@ -81,7 +81,9 @@ class CodeWhispererConfigurable(private val project: Project) :
                     }.enabled(false)
                 }
             }
+        }
 
+        group(message("aws.settings.codewhisperer.group.inline_suggestions")) {
             row {
                 checkBox(message("aws.settings.codewhisperer.automatic_import_adder")).apply {
                     connect.subscribe(
