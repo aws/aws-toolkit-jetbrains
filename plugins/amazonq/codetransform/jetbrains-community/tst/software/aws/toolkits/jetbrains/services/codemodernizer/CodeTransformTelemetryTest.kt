@@ -4,8 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer
 
 import com.intellij.testFramework.LightVirtualFile
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.doReturn
@@ -25,14 +24,16 @@ class CodeTransformTelemetryTest : CodeWhispererCodeModernizerTestBase(HeavyJava
     fun `SessionId updated on prepareForNewJobSubmission invoked`() {
         val originalSessionId = CodeTransformTelemetryState.instance.getSessionId()
         telemetryManagerSpy.prepareForNewJobSubmission()
-        assertNotEquals(originalSessionId, CodeTransformTelemetryState.instance.getSessionId())
+
+        assertThat(originalSessionId).isEqualTo(CodeTransformTelemetryState.instance.getSessionId())
     }
 
     @Test
     fun `ProjectId is reproducible`() {
         val projectId1 = telemetryManagerSpy.getProjectHash(validJDK8CustomerSelection)
         val projectId2 = telemetryManagerSpy.getProjectHash(validJDK8CustomerSelection)
-        assertEquals(projectId1, projectId2)
+
+        assertThat(projectId1).isEqualTo(projectId2)
     }
 
     @Test
@@ -42,6 +43,7 @@ class CodeTransformTelemetryTest : CodeWhispererCodeModernizerTestBase(HeavyJava
         doReturn(Path("/anotherpath/pom.xml")).whenever(emptyPomFileSpy2).toNioPath()
         val newCustomerSelection = validJDK8CustomerSelection.copy(configurationFile = emptyPomFileSpy2)
         val projectId2 = telemetryManagerSpy.getProjectHash(newCustomerSelection)
-        assertNotEquals(projectId1, projectId2)
+
+        assertThat(projectId1).isNotEqualTo(projectId2)
     }
 }

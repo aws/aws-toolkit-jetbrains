@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.uitests.testTests
 
+import org.intellij.lang.annotations.Language
+
 val testHappyPathScript = """
         const puppeteer = require('puppeteer');
         async function testNavigation() {

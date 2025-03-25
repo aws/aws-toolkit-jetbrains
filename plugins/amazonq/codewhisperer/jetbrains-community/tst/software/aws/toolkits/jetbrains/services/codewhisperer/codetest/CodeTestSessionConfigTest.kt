@@ -7,7 +7,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.modules
 import com.intellij.openapi.vfs.VirtualFile
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -65,7 +64,7 @@ class CodeTestSessionConfigTest {
 
         assertThat(payload.context.srcPayloadSize).isEqualTo(totalSize)
         assertThat(payload.context.totalLines).isEqualTo(totalLines)
-        assertNotNull(payload.srcZip)
+        assertThat(payload.srcZip).isNotNull()
 
         val bufferedInputStream = BufferedInputStream(payload.srcZip.inputStream())
         val zis = ZipInputStream(bufferedInputStream)
@@ -80,7 +79,7 @@ class CodeTestSessionConfigTest {
     @Test
     fun `getProjectPayloadMetadata()`() {
         val payloadMetadata = codeTestSessionConfig.getProjectPayloadMetadata()
-        assertNotNull(payloadMetadata)
+        assertThat(payloadMetadata).isNotNull()
         val includedSourceFiles = payloadMetadata.sourceFiles
         val srcPayloadSize = payloadMetadata.payloadSize
         val totalLines = payloadMetadata.linesScanned
