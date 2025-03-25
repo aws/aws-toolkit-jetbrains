@@ -8,6 +8,7 @@ import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.application.invokeLater
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdkVersion
@@ -62,14 +63,16 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
     }
 
     private fun setUI(function: () -> Unit) {
-        lastShownProgressPanel = this.components.firstOrNull { it == fullSizeLoadingPanel || it == buildProgressSplitterPanelManager } ?: lastShownProgressPanel
-        removeAll()
-        add(BorderLayout.WEST, toolbar.component)
-        add(BorderLayout.NORTH, banner)
-        function.invoke()
-        updateRunTime()
-        revalidate()
-        repaint()
+        runInEdt {
+            lastShownProgressPanel = this.components.firstOrNull { it == fullSizeLoadingPanel || it == buildProgressSplitterPanelManager } ?: lastShownProgressPanel
+            removeAll()
+            add(BorderLayout.WEST, toolbar.component)
+            add(BorderLayout.NORTH, banner)
+            function.invoke()
+            updateRunTime()
+            revalidate()
+            repaint()
+        }
     }
 
     private fun updateRunTime(now: Instant? = null) {
