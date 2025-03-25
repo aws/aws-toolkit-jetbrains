@@ -16,8 +16,8 @@ import com.intellij.ide.starter.project.LocalProjectInfo
 import com.intellij.ide.starter.runner.CurrentTestMethod
 import com.intellij.ide.starter.runner.Starter
 import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -59,7 +59,7 @@ class CreateReadmeWorkspacesTest {
     }
 
     @Test
-    fun `Create readme with single-root workspace, root folder returns a readme` () {
+    fun `Create readme with single-root workspace, root folder returns a readme`() {
         val testCase = TestCase(
             IdeProductProvider.IC,
             LocalProjectInfo(
