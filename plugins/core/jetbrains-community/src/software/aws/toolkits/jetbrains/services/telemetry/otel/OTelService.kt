@@ -27,7 +27,6 @@ import io.opentelemetry.sdk.trace.SpanProcessor
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import org.apache.http.impl.conn.SystemDefaultRoutePlanner
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.http.ContentStreamProvider
 import software.amazon.awssdk.http.HttpExecuteRequest
@@ -63,19 +62,6 @@ private class BasicOtlpSpanProcessor(
                 thisLogger().error("Cannot export (url=$traceUrl)", e)
             }
         }
-//
-//        val client = ApacheHttpClient.builder()
-//            .proxyConfiguration(
-//                ProxyConfiguration.builder()
-//                    .useSystemPropertyValues(false)
-//                    .useEnvironmentVariableValues(false)
-//                    .build()
-//            )
-//            .httpRoutePlanner(SystemDefaultRoutePlanner(CommonProxy.getInstance()))
-//            .build()
-//
-//        IdeHttpClientHelpers.ApacheHttpClient4
-
     }
 }
 
