@@ -79,11 +79,6 @@ extensions.findByType<IntelliJPlatformTestingExtension>()?.let {
         task {
             integrationTestConfiguration(this)
         }
-
-        // https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1844
-        prepareSandboxTask {
-            disabledPlugins.add("com.intellij.swagger")
-        }
     }
 } ?: run {
     val integrationTest by tasks.registering(Test::class, integrationTestConfiguration)
