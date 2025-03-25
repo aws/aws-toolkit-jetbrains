@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer
 import io.mockk.every
 import io.mockk.just
+import io.mockk.mockk
+import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.runs
 import io.mockk.verify
@@ -32,7 +34,6 @@ import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.path.createTempFile
-import io.mockk.*
 
 class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase() {
     @Before
