@@ -105,7 +105,7 @@ dependencies {
 }
 
 // https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1844
-tasks.withType<PrepareSandboxTask>() {
+tasks.withType<PrepareSandboxTask>().configureEach {
     disabledPlugins.addAll(
         "com.intellij.swagger",
         "org.jetbrains.plugins.kotlin.jupyter",
