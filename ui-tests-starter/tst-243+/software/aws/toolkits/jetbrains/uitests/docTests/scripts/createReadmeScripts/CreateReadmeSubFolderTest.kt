@@ -1,12 +1,12 @@
- // Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- // SPDX-License-Identifier: Apache-2.0
+// Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 
- package software.aws.toolkits.jetbrains.uitests.docTests.scripts.createReadmeScripts
+package software.aws.toolkits.jetbrains.uitests.docTests.scripts.createReadmeScripts
 
- import software.aws.toolkits.jetbrains.uitests.findAndClickButtonScript
+import software.aws.toolkits.jetbrains.uitests.findAndClickButtonScript
 
- // language=JS
- val createReadmeSubFolderPreFolderChangeScript = """
+// language=JS
+val createReadmeSubFolderPreFolderChangeScript = """
     const puppeteer = require('puppeteer');
 
     async function testNavigation() {
@@ -45,10 +45,10 @@
       console.log('Error: Test Failed');
       console.error(error);
     });
- """.trimIndent()
+""".trimIndent()
 
- // language=JS
- val createReadmeSubFolderPostFolderChangeScript = """
+// language=JS
+val createReadmeSubFolderPostFolderChangeScript = """
         const puppeteer = require('puppeteer');
 
         async function testNavigation() {
@@ -85,7 +85,7 @@
           console.log('Error: Test Failed');
           console.error(error);
         });
- """.trimIndent()
+""".trimIndent()
 
- val createReadmeSubFolderPreFolderChangeTestScript = createReadmeSubFolderPreFolderChangeScript.plus(findAndClickButtonScript)
- val createReadmeSubFolderPostFolderChangeTestScript = createReadmeSubFolderPostFolderChangeScript.plus(findAndClickButtonScript)
+val createReadmeSubFolderPreFolderChangeTestScript = createReadmeSubFolderPreFolderChangeScript.plus(findAndClickButtonScript)
+val createReadmeSubFolderPostFolderChangeTestScript = createReadmeSubFolderPostFolderChangeScript.plus(findAndClickButtonScript)
