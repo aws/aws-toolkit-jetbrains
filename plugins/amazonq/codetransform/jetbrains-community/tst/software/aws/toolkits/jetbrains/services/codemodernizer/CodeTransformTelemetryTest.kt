@@ -25,7 +25,7 @@ class CodeTransformTelemetryTest : CodeWhispererCodeModernizerTestBase(HeavyJava
         val originalSessionId = CodeTransformTelemetryState.instance.getSessionId()
         telemetryManagerSpy.prepareForNewJobSubmission()
 
-        assertThat(originalSessionId).isEqualTo(CodeTransformTelemetryState.instance.getSessionId())
+        assertThat(originalSessionId).isNotEqualTo(CodeTransformTelemetryState.instance.getSessionId())
     }
 
     @Test

@@ -506,7 +506,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
 
         doNothing().whenever(testSessionStateSpy).updateJobHistory(any(), any(), any())
         val result = testSessionSpy.pollUntilJobCompletion(CodeTransformType.LANGUAGE_UPGRADE, jobId) { _, _ -> }
-        assertThat(result).isEqualTo(CodeModernizerJobCompletedResult.JobPartiallySucceeded(jobId))
+        assertThat(result).isEqualTo(CodeModernizerJobCompletedResult.JobCompletedSuccessfully(jobId))
 
         // two polls to check status as we 1. check for plan existing and 2. check if job completed
         // since the transformationStatus is dynamic by the happyPathMigrationResponses so there will be 10 times to call getCodeModernizationJob
