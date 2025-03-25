@@ -15,6 +15,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.utils.isQExpired
 
 @Service
@@ -34,6 +35,7 @@ class CodeWhispererFeatureConfigService {
         try {
             val response = connection.getConnectionSettings().awsClient<CodeWhispererRuntimeClient>().listFeatureEvaluations {
                 it.userContext(codeWhispererUserContext())
+                it.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
             } ?: return
 
             // Simply force overwrite feature configs from server response, no needed to check existing values.

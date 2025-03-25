@@ -41,6 +41,7 @@ import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
@@ -288,7 +289,9 @@ class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispe
 
     // DO NOT directly use this method to fetch customizations, use wrapper [CodeWhispererModelConfigurator.listCustomization()] instead
     override fun listAvailableCustomizations(): List<CodeWhispererCustomization> =
-        bearerClient().listAvailableCustomizationsPaginator(ListAvailableCustomizationsRequest.builder().build())
+        bearerClient().listAvailableCustomizationsPaginator(
+            ListAvailableCustomizationsRequest.builder().profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn).build()
+        )
             .stream()
             .toList()
             .flatMap { resp ->
@@ -311,6 +314,7 @@ class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispe
             builder.uploadId(uploadId)
             builder.targetCodeList(targetCode)
             builder.userInput(userInput)
+            builder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
             // TODO: client token
         }
 
@@ -318,6 +322,7 @@ class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispe
         bearerClient().getTestGeneration { builder ->
             builder.testGenerationJobId(jobId)
             builder.testGenerationJobGroupName(jobGroupName)
+            builder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
         }
 
     override fun sendUserTriggerDecisionTelemetry(
@@ -363,6 +368,7 @@ class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispe
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
             requestBuilder.userContext(codeWhispererUserContext())
+            requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
         }
     }
 
@@ -409,6 +415,7 @@ class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispe
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
             requestBuilder.userContext(codeWhispererUserContext())
+            requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
         }
     }
 
@@ -435,6 +442,7 @@ class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispe
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendUserModificationTelemetry(
@@ -462,6 +470,7 @@ class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispe
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendCodeScanTelemetry(
@@ -481,6 +490,7 @@ class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispe
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendCodeScanSucceededTelemetry(
@@ -503,6 +513,7 @@ class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispe
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendCodeScanFailedTelemetry(
@@ -522,6 +533,7 @@ class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispe
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendCodeFixGenerationTelemetry(
@@ -548,6 +560,7 @@ class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispe
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendCodeFixAcceptanceTelemetry(
@@ -574,6 +587,7 @@ class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispe
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendCodeScanRemediationTelemetry(
@@ -605,6 +619,7 @@ class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispe
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendTestGenerationEvent(
@@ -638,10 +653,12 @@ class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispe
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun listFeatureEvaluations(): ListFeatureEvaluationsResponse = bearerClient().listFeatureEvaluations {
         it.userContext(codeWhispererUserContext())
+        it.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendMetricDataTelemetry(eventName: String, metadata: Map<String, Any?>): SendTelemetryEventResponse =
@@ -656,6 +673,7 @@ class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispe
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
             requestBuilder.userContext(codeWhispererUserContext())
+            requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
         }
 
     override fun sendChatAddMessageTelemetry(
@@ -694,6 +712,7 @@ class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispe
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendChatInteractWithMessageTelemetry(
@@ -723,6 +742,7 @@ class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispe
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
             requestBuilder.userContext(codeWhispererUserContext())
+            requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
         }
 
     override fun sendChatUserModificationTelemetry(
@@ -747,6 +767,7 @@ class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispe
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendInlineChatTelemetry(
@@ -782,6 +803,7 @@ class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispe
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     companion object {
