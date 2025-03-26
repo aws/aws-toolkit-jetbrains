@@ -38,9 +38,6 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.APPLICATION_ZIP
 import software.aws.toolkits.jetbrains.services.amazonq.AWS_KMS
 import software.aws.toolkits.jetbrains.services.amazonq.CONTENT_SHA256
@@ -59,10 +56,7 @@ import java.time.Instant
 
 @Service(Service.Level.PROJECT)
 class GumbyClient(private val project: Project) {
-    private fun connection() = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
-        ?: error("Attempted to use connection while one does not exist")
-
-    private fun bearerClient() = connection().getConnectionSettings().awsClient<CodeWhispererRuntimeClient>()
+    private fun bearerClient() = QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project)
 
     private val amazonQStreamingClient
         get() = AmazonQStreamingClient.getInstance(project)

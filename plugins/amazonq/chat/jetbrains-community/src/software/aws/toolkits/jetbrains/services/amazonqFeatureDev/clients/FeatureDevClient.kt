@@ -28,9 +28,6 @@ import software.amazon.awssdk.services.codewhispererstreaming.model.ExportIntent
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_EVALUATION_PRODUCT_NAME
@@ -71,11 +68,7 @@ class FeatureDevClient(
                 .build()
         }
 
-    private fun connection() =
-        ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
-            ?: error("Attempted to use connection while one does not exist")
-
-    private fun bearerClient() = connection().getConnectionSettings().awsClient<CodeWhispererRuntimeClient>()
+    private fun bearerClient() = QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project)
 
     private val amazonQStreamingClient
         get() = AmazonQStreamingClient.getInstance(project)

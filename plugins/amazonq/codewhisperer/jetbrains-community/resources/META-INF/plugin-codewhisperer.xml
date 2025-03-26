@@ -32,7 +32,7 @@
         <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator"
                             serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.customization.DefaultCodeWhispererModelConfigurator"/>
 
-        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.profile.QRegionProfileManager"/>
+        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager"/>
         <projectService serviceInterface="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor"
                         serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptorImpl"/>
         <projectService serviceInterface="software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider"

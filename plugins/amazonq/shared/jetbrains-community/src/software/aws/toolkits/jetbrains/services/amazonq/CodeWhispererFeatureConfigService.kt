@@ -12,7 +12,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.FeatureValue
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
@@ -33,7 +32,7 @@ class CodeWhispererFeatureConfigService {
 
         LOG.debug { "Fetching feature configs" }
         try {
-            val response = connection.getConnectionSettings().awsClient<CodeWhispererRuntimeClient>().listFeatureEvaluations {
+            val response = QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project).listFeatureEvaluations {
                 it.userContext(codeWhispererUserContext())
                 it.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
             } ?: return
@@ -115,7 +114,8 @@ class CodeWhispererFeatureConfigService {
             val availableCustomizations =
                 calculateIfIamIdentityCenterConnection(project) {
                     try {
-                        connection.getConnectionSettings().awsClient<CodeWhispererRuntimeClient>().listAvailableCustomizationsPaginator {}
+                        QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project)
+                            .listAvailableCustomizationsPaginator {}
                             .flatMap { resp ->
                                 resp.customizations().map {
                                     it.arn()

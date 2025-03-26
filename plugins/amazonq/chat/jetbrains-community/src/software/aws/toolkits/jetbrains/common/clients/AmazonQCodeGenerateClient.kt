@@ -30,7 +30,6 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.common.session.Intent
-import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
@@ -72,7 +71,7 @@ class AmazonQCodeGenerateClient(private val project: Project) {
     fun connection() = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
         ?: error("Attempted to use connection while one does not exist")
 
-    fun bearerClient() = connection().getConnectionSettings().awsClient<CodeWhispererRuntimeClient>()
+    fun bearerClient() = QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project)
 
     private val amazonQStreamingClient
         get() = AmazonQStreamingClient.getInstance(project)
