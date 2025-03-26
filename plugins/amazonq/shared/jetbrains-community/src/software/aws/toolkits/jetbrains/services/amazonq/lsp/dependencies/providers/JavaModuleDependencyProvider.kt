@@ -26,7 +26,7 @@ internal class JavaModuleDependencyProvider : ModuleDependencyProvider {
 
         return DidChangeDependencyPathsParams(
             moduleName = getWorkspaceFolderPath(module),
-            programmingLanguage = "java",
+            runtimeLanguage = "java",
             paths = dependencies,
             includePatterns = emptyList(),
             excludePatterns = emptyList()

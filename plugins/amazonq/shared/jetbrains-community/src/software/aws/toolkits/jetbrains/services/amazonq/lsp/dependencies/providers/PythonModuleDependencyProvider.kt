@@ -30,7 +30,7 @@ internal class PythonModuleDependencyProvider : ModuleDependencyProvider {
 
         return DidChangeDependencyPathsParams(
             moduleName = getWorkspaceFolderPath(module),
-            programmingLanguage = "python",
+            runtimeLanguage = "python",
             paths = dependencies,
             includePatterns = emptyList(),
             excludePatterns = emptyList()
