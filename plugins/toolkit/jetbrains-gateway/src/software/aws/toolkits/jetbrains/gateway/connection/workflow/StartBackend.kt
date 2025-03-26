@@ -4,10 +4,9 @@
 package software.aws.toolkits.jetbrains.gateway.connection.workflow
 
 import com.jetbrains.gateway.api.GatewayConnectionHandle
-import com.jetbrains.gateway.thinClientLink.LinkedClientManager
 import com.jetbrains.rd.util.lifetime.LifetimeDefinition
-import com.jetbrains.rd.util.lifetime.onTermination
 import com.jetbrains.rd.util.reactive.adviseEternal
+import compat.com.jetbrains.gateway.thinClientLink.startNewClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.core.utils.getLogger
@@ -50,16 +49,15 @@ class StartBackend(
         val clientHandle = ThinClientTrackerService.getInstance().associate(envId) {
             val start = System.currentTimeMillis()
             val thinClientHandle = try {
-                LinkedClientManager.getInstance()
-                    .startNewClient(lifetime, localLink, URLEncoder.encode(message("caws.workspace.backend.title"), Charsets.UTF_8)) {
-                        CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
-                            project = null,
-                            userId = lazilyGetUserId(),
-                            result = TelemetryResult.Succeeded,
-                            duration = System.currentTimeMillis() - start.toDouble(),
-                            codecatalystDevEnvironmentWorkflowStep = "startThinClient",
-                        )
-                    }
+                startNewClient(lifetime, localLink, URLEncoder.encode(message("caws.workspace.backend.title"), Charsets.UTF_8)) {
+                    CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
+                        project = null,
+                        userId = lazilyGetUserId(),
+                        result = TelemetryResult.Succeeded,
+                        duration = System.currentTimeMillis() - start.toDouble(),
+                        codecatalystDevEnvironmentWorkflowStep = "startThinClient",
+                    )
+                }
             } catch (e: Throwable) {
                 CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
                     project = null,

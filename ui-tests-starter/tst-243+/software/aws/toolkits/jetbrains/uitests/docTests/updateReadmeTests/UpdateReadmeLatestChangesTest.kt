@@ -62,7 +62,7 @@ class UpdateReadmeLatestChangesTest {
             LocalProjectInfo(
                 Paths.get("tstData", "qdoc", "updateFlow")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
@@ -101,7 +101,7 @@ class UpdateReadmeLatestChangesTest {
             LocalProjectInfo(
                 Paths.get("tstData", "qdoc", "updateFlow")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
@@ -140,7 +140,7 @@ class UpdateReadmeLatestChangesTest {
             LocalProjectInfo(
                 Paths.get("tstData", "qdoc", "updateFlow")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()

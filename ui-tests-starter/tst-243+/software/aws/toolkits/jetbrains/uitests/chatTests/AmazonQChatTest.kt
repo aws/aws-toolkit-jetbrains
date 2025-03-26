@@ -58,7 +58,7 @@ class AmazonQChatTest {
             LocalProjectInfo(
                 Paths.get("tstData", "Hello")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()

@@ -68,7 +68,7 @@ class FeatureDevTest {
             LocalProjectInfo(
                 Paths.get("tstData", "FeatureDevE2ETestFolder")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
@@ -100,7 +100,7 @@ class FeatureDevTest {
             LocalProjectInfo(
                 Paths.get("tstData", "FeatureDevE2ETestFolder")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
@@ -132,7 +132,7 @@ class FeatureDevTest {
             LocalProjectInfo(
                 Paths.get("tstData", "FeatureDevE2ETestFolder")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
@@ -164,7 +164,7 @@ class FeatureDevTest {
             LocalProjectInfo(
                 Paths.get("tstData", "FeatureDevE2ETestFolder")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
@@ -196,7 +196,7 @@ class FeatureDevTest {
             LocalProjectInfo(
                 Paths.get("tstData", "FeatureDevE2ETestFolder")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
