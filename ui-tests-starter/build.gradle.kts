@@ -38,6 +38,7 @@ intellijPlatform {
 }
 
 val uiTestImplementation by configurations.getting
+val uiTestRuntimeOnly by configurations.getting
 
 configurations.getByName(uiTestSource.compileClasspathConfigurationName) {
     extendsFrom(uiTestImplementation)
@@ -52,6 +53,9 @@ dependencies {
     uiTestImplementation("org.kodein.di:kodein-di-jvm:7.20.2")
     uiTestImplementation(platform(libs.junit5.bom))
     uiTestImplementation(libs.junit5.jupiter)
+
+    // not sure why not coming in transitively for starter
+    uiTestRuntimeOnly(libs.kotlin.coroutines)
 
     intellijPlatform {
         val version = ideProfile.community.sdkVersion
