@@ -387,14 +387,3 @@ tasks.withType<Test>().configureEach {
 tasks.withType<DetektCreateBaselineTask>().configureEach {
     dependsOn(generateModels)
 }
-
-configurations.all {
-    if (name.contains("detekt")) {
-        return@all
-    }
-
-    // test runner not happy with coroutines, but not clear where it's coming from:
-    //   java.lang.Throwable: Thread context was already set: InstalledThreadContext(snapshot=null, context=EmptyCoroutineContext).
-    //   Most likely, you are using 'runBlocking' instead of 'runBlockingCancellable' somewhere in the asynchronous stack.
-    exclude("org.jetbrains.kotlinx")
-}
