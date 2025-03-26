@@ -37,7 +37,7 @@ class CodeTransformChatTest {
                 assertThat(buttons[0].id).isEqualTo(CodeTransformButtonId.ViewDiff.id)
                 assertThat(buttons[0].text).isEqualTo("View diff 1/5")
                 assertThat(buttons[1].id).isEqualTo(CodeTransformButtonId.ViewSummary.id)
-        }
+            }
     }
 
     @Test

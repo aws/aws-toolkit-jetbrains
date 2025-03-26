@@ -18,6 +18,7 @@ private fun expectRange(from: String, to: String, events: List<StackEvent>, expe
 private const val nonEmptyMessage = "Second call on the same page must not return anything"
 private const val wrongPageMessage = "Wrong list of available pages"
 
+@Suppress("UnnecessaryApply")
 class EventsFetcherTest {
     @JvmField
     @Rule

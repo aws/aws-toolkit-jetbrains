@@ -358,7 +358,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
                     Path("sources/pom.xml") -> assertThat(fileContent).isEqualTo("pom.xml")
                     Path("sources/src/tmp.java") -> assertThat(fileContent).isEqualTo("src/tmp.java")
                     Path("sources/someModule/pom.xml") -> assertThat(fileContent).isEqualTo("someModule/pom.xml")
-                    Path("build-logs.txt") ->assertThat(fileContent).isNotNull()
+                    Path("build-logs.txt") -> assertThat(fileContent).isNotNull()
                     else -> throw AssertionError("Unexpected entry in zip file: $entry")
                 }
             }
