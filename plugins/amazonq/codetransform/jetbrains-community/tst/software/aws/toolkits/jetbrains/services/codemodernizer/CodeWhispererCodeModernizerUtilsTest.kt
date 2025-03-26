@@ -32,6 +32,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.refreshToke
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
 import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
+import software.aws.toolkits.resources.message
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.path.createTempFile
 
@@ -120,17 +121,23 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
 
     @Test
     fun `show re-auth notification on invalid grant exception`() {
-        mockkStatic(::notifyStickyWarn)
-
-        val mockMessageListener = mockk<CodeTransformMessageListener>()
-        mockkObject(CodeTransformMessageListener)
-        every { CodeTransformMessageListener.instance } returns mockMessageListener
-        every { mockMessageListener.onCheckAuth() } just runs
-
         val mockInvalidGrantException = Mockito.mock(InvalidGrantException::class.java)
-        Mockito.doThrow(mockInvalidGrantException)
-            .whenever(clientAdaptorSpy).getCodeModernizationJob(any())
 
+        mockkStatic(::notifyStickyWarn)
+        every { notifyStickyWarn(any(), any(), any(), any(), any()) } just runs
+
+        Mockito.doThrow(
+            mockInvalidGrantException
+        ).doReturn(
+            exampleGetCodeMigrationResponse,
+            exampleGetCodeMigrationResponse.replace(TransformationStatus.STARTED),
+            exampleGetCodeMigrationResponse.replace(TransformationStatus.COMPLETED),
+        ).whenever(clientAdaptorSpy).getCodeModernizationJob(any())
+
+        Mockito.doReturn(exampleGetCodeMigrationPlanResponse)
+            .whenever(clientAdaptorSpy).getCodeModernizationPlan(any())
+
+        val mutableList = mutableListOf<TransformationStatus>()
         runBlocking {
             jobId.pollTransformationStatusAndPlan(
                 CodeTransformType.LANGUAGE_UPGRADE,
@@ -141,18 +148,17 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
                 0,
                 AtomicBoolean(false),
                 project
-            ) { _, _, _ -> }
+            ) { _, status, _ ->
+                mutableList.add(status)
+            }
         }
-
-        verify {
-            notifyStickyWarn(
-                "Your connection to Q has expired",
-                "Unable to check transformation status as your credentials expired.",
-                project,
-                any()
+        val expected =
+            listOf<TransformationStatus>(
+                exampleGetCodeMigrationResponse.transformationJob().status(),
+                TransformationStatus.STARTED,
             )
-        }
-        verify { mockMessageListener.onCheckAuth() }
+        assertThat(expected).isEqualTo(mutableList)
+        verify { notifyStickyWarn(message("codemodernizer.notification.warn.expired_credentials.title"), any(), any(), any(), any()) }
     }
 
     @Test
