@@ -61,6 +61,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     override fun telemetryEvent(`object`: Any) {
         when (`object`) {
             is Map<*, *> -> handleTelemetryMap(`object`)
+            else -> LOG.warn { "Unexpected telemetry event: $`object`" }
         }
     }
 
