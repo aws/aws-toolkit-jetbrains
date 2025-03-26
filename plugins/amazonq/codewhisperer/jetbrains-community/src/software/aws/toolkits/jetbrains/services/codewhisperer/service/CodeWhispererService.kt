@@ -29,6 +29,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.eclipse.lsp4j.Position
+import org.eclipse.lsp4j.TextDocumentIdentifier
 import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.core.util.DefaultSdkAutoConstructList
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
@@ -53,6 +55,11 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionContext
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionTriggerKind
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionWithReferencesParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil.toUriString
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
@@ -205,6 +212,8 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             return
         }
 
+        // PUT HERE!!!
+        // invoke LSP CodeWhisperer
         invokeCodeWhispererInBackground(requestContext)
     }
 
@@ -527,6 +536,15 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         return nextStates
     }
 
+    internal fun handleInlineCompletion(editor: Editor) {
+        editor.project?.let { project ->
+            AmazonQLspService.executeIfRunning(project) { server ->
+                val params = buildInlineCompletionParams(editor)
+                server.inlineCompletionWithReferences(params)
+            }
+        }
+    }
+
     private fun initStates(
         requestContext: RequestContext,
         responseContext: ResponseContext,
@@ -705,6 +723,19 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         CodeWhispererPopupManager.getInstance().initPopupListener(states)
         return states
     }
+
+    private fun buildInlineCompletionParams(editor: Editor): InlineCompletionWithReferencesParams =
+        InlineCompletionWithReferencesParams(
+            context = InlineCompletionContext(
+                triggerKind = InlineCompletionTriggerKind.Invoke
+            )
+        ).apply {
+            textDocument = TextDocumentIdentifier(toUriString(editor.virtualFile))
+            position = Position(
+                editor.caretModel.primaryCaret.visualPosition.line,
+                editor.caretModel.primaryCaret.offset
+            )
+        }
 
     private fun addPopupChildDisposables(popup: JBPopup) {
         codeInsightSettingsFacade.disableCodeInsightUntil(popup)

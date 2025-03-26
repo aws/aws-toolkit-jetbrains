@@ -3,17 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument
 
-import com.intellij.codeInsight.editorActions.TypedHandlerDelegate
-import com.intellij.codeInsight.lookup.Lookup
-import com.intellij.codeInsight.lookup.LookupEvent
-import com.intellij.codeInsight.lookup.LookupListener
-import com.intellij.codeInsight.lookup.LookupManagerListener
-import com.intellij.codeInsight.lookup.impl.LookupImpl
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.editor.Document
-import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.actionSystem.EditorActionManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileDocumentManagerListener
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -24,20 +15,15 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
-import com.intellij.psi.PsiFile
 import org.eclipse.lsp4j.DidChangeTextDocumentParams
 import org.eclipse.lsp4j.DidCloseTextDocumentParams
 import org.eclipse.lsp4j.DidOpenTextDocumentParams
 import org.eclipse.lsp4j.DidSaveTextDocumentParams
-import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.TextDocumentContentChangeEvent
 import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.TextDocumentItem
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionContext
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionTriggerKind
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionWithReferencesParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil.toUriString
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
@@ -46,9 +32,7 @@ class TextDocumentServiceHandler(
     serverInstance: Disposable,
 ) : FileDocumentManagerListener,
     FileEditorManagerListener,
-    BulkFileListener,
-    LookupManagerListener,
-    TypedHandlerDelegate() {
+    BulkFileListener {
 
     init {
         // didOpen & didClose events
@@ -67,19 +51,6 @@ class TextDocumentServiceHandler(
         project.messageBus.connect(serverInstance).subscribe(
             FileDocumentManagerListener.TOPIC,
             this
-        )
-
-        // aws/textDocument/inlineCompletionWithReferences events
-        project.messageBus.connect(serverInstance).subscribe(
-            LookupManagerListener.TOPIC,
-            this
-        )
-
-        val editorActionManager = EditorActionManager.getInstance()
-        val originalHandler = editorActionManager.getActionHandler(IdeActions.ACTION_EDITOR_ENTER)
-        editorActionManager.setActionHandler(
-            IdeActions.ACTION_EDITOR_ENTER,
-            AmazonQLspEnterHandler(originalHandler, this)
         )
 
         // open files on startup
@@ -103,56 +74,6 @@ class TextDocumentServiceHandler(
             }
         }
     }
-
-    override fun activeLookupChanged(oldLookup: Lookup?, newLookup: Lookup?) {
-        if (oldLookup != null || newLookup == null) return
-
-        newLookup.addLookupListener(object : LookupListener {
-            override fun itemSelected(event: LookupEvent) {
-                val editor = event.lookup.editor
-                if (!(event.lookup as LookupImpl).isShown) {
-                    cleanup()
-                    return
-                }
-
-                handleInlineCompletion(editor)
-                cleanup()
-            }
-
-            override fun lookupCanceled(event: LookupEvent) {
-                cleanup()
-            }
-
-            private fun cleanup() {
-                newLookup.removeLookupListener(this)
-            }
-        })
-    }
-
-    override fun charTyped(c: Char, project: Project, editor: Editor, psiFiles: PsiFile): Result {
-        handleInlineCompletion(editor)
-        return Result.CONTINUE
-    }
-
-    fun handleInlineCompletion(editor: Editor) {
-        AmazonQLspService.executeIfRunning(project) { server ->
-            val params = buildInlineCompletionParams(editor)
-            server.inlineCompletionWithReferences(params)
-        }
-    }
-
-    private fun buildInlineCompletionParams(editor: Editor): InlineCompletionWithReferencesParams =
-        InlineCompletionWithReferencesParams(
-            context = InlineCompletionContext(
-                triggerKind = InlineCompletionTriggerKind.Invoke
-            )
-        ).apply {
-            textDocument = TextDocumentIdentifier(toUriString(editor.virtualFile))
-            position = Position(
-                editor.caretModel.primaryCaret.visualPosition.line,
-                editor.caretModel.primaryCaret.offset
-            )
-        }
 
     override fun beforeDocumentSaving(document: Document) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
