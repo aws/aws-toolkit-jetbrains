@@ -39,7 +39,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             val name = telemetryMap["name"] as? String ?: return
 
             @Suppress("UNCHECKED_CAST")
-            val data = telemetryMap["data"] as? MutableMap<String, Any> ?: return
+            val data = telemetryMap["data"] as? Map<String, Any> ?: return
 
             TelemetryService.getInstance().record(project) {
                 datum(name) {
