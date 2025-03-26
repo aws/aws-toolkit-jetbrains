@@ -91,7 +91,7 @@ class DefaultModuleDependenciesServiceTest {
         val module = mockk<Module>()
         val params = DidChangeDependencyPathsParams(
             moduleName = "testModule",
-            programmingLanguage = "java",
+            runtimeLanguage = "java",
             paths = listOf("/path/to/dependency.jar"),
             includePatterns = emptyList(),
             excludePatterns = emptyList()
@@ -112,14 +112,14 @@ class DefaultModuleDependenciesServiceTest {
         val module2 = mockk<Module>()
         val params1 = DidChangeDependencyPathsParams(
             moduleName = "module1",
-            programmingLanguage = "java",
+            runtimeLanguage = "java",
             paths = listOf("/path/to/dependency1.jar"),
             includePatterns = emptyList(),
             excludePatterns = emptyList()
         )
         val params2 = DidChangeDependencyPathsParams(
             moduleName = "module2",
-            programmingLanguage = "python",
+            runtimeLanguage = "python",
             paths = listOf("/path/to/site-packages/package1"),
             includePatterns = emptyList(),
             excludePatterns = emptyList()
@@ -144,7 +144,7 @@ class DefaultModuleDependenciesServiceTest {
         val module = mockk<Module>()
         val params = DidChangeDependencyPathsParams(
             moduleName = "testModule",
-            programmingLanguage = "java",
+            runtimeLanguage = "java",
             paths = listOf("/path/to/dependency.jar"),
             includePatterns = emptyList(),
             excludePatterns = emptyList()
@@ -166,7 +166,7 @@ class DefaultModuleDependenciesServiceTest {
         val module = mockk<Module>()
         val params = DidChangeDependencyPathsParams(
             moduleName = "testModule",
-            programmingLanguage = "java",
+            runtimeLanguage = "java",
             paths = listOf("/path/to/dependency.jar"),
             includePatterns = emptyList(),
             excludePatterns = emptyList()
