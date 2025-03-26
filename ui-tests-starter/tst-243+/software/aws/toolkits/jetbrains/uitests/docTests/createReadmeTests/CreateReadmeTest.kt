@@ -87,11 +87,7 @@ class CreateReadmeTest {
                 val result = executePuppeteerScript(validateFeatureAvailabilityTestScript)
                 assertThat(result)
                     .contains("Test Successful")
-                    .contains("Error: Test Failed")
-
-                if (result.contains("Error: Test Failed")) {
-                    println("result: $result")
-                }
+                    .doesNotContain("Error: Test Failed")
             }
     }
 
@@ -125,11 +121,7 @@ class CreateReadmeTest {
                 val result = executePuppeteerScript(createReadmePromptedToConfirmFolderTestScript)
                 assertThat(result)
                     .contains("Test Successful")
-                    .contains("Error: Test Failed")
-
-                if (result.contains("Error: Test Failed")) {
-                    println("result: $result")
-                }
+                    .doesNotContain("Error: Test Failed")
             }
     }
 
@@ -163,11 +155,7 @@ class CreateReadmeTest {
                 val result = executePuppeteerScript(makeChangesFlowTestScript)
                 assertThat(result)
                     .contains("Test Successful")
-                    .contains("Error: Test Failed")
-
-                if (result.contains("Error: Test Failed")) {
-                    println("result: $result")
-                }
+                    .doesNotContain("Error: Test Failed")
             }
     }
 
@@ -204,9 +192,6 @@ class CreateReadmeTest {
 
                 val result = executePuppeteerScript(acceptReadmeTestScript)
                 assertThat(result).doesNotContain("Error: Test Failed")
-                if (result.contains("Error: Test Failed")) {
-                    println("result: $result")
-                }
 
                 val newReadmePath = Paths.get("tstData", "qdoc", "createFlow", "README.md")
                 val newReadme = File(newReadmePath.toUri())
@@ -253,11 +238,7 @@ class CreateReadmeTest {
                 val result = executePuppeteerScript(rejectReadmeTestScript)
                 assertThat(result)
                     .contains("Test Successful")
-                    .contains("Error: Test Failed")
-
-                if (result.contains("Error: Test Failed")) {
-                    println("result: $result")
-                }
+                    .doesNotContain("Error: Test Failed")
 
                 val newReadmePath = Paths.get("tstData", "qdoc", "createFlow", "README.md")
                 val newReadme = File(newReadmePath.toUri())
