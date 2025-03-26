@@ -117,7 +117,7 @@ class CodeWhispererZipUploadManager(private val project: Project) {
                     duration = (System.currentTimeMillis() - startTime).toDouble(),
                     credentialStartUrl = getStartUrl(project),
                     requestId = requestId,
-                    id2 = id2,
+                    requestId2 = id2,
                     requestServiceType = requestServiceType,
                     httpStatusCode = httpStatusCode
                 )
