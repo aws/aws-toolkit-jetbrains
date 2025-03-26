@@ -11,12 +11,17 @@ import org.eclipse.lsp4j.MessageParams
 import org.eclipse.lsp4j.MessageType
 import org.eclipse.lsp4j.PublishDiagnosticsParams
 import org.eclipse.lsp4j.ShowMessageRequestParams
+import software.amazon.awssdk.services.toolkittelemetry.model.MetricUnit
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
+import java.time.Instant
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -24,7 +29,37 @@ import java.util.concurrent.CompletableFuture
  */
 class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageClient {
     override fun telemetryEvent(`object`: Any) {
-        println(`object`)
+        when (`object`) {
+            is MutableMap<*, *> -> handleTelemetryMap(`object`)
+        }
+    }
+
+    private fun handleTelemetryMap(telemetryMap: MutableMap<*, *>) {
+        try {
+            val name = telemetryMap["name"] as? String ?: return
+
+            @Suppress("UNCHECKED_CAST")
+            val data = telemetryMap["data"] as? MutableMap<String, Any> ?: return
+
+            TelemetryService.getInstance().record(project) {
+                datum(name) {
+                    createTime(Instant.now())
+                    unit(telemetryMap["unit"] as? MetricUnit ?: MetricUnit.NONE)
+                    value(telemetryMap["value"] as? Double ?: 1.0)
+                    passive(telemetryMap["passive"] as? Boolean ?: false)
+
+                    telemetryMap["result"]?.let { result ->
+                        metadata("result", result.toString())
+                    }
+
+                    data.forEach { (key, value) ->
+                        metadata(key, value.toString())
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            LOG.warn(e) { "Failed to process telemetry event: $telemetryMap" }
+        }
     }
 
     override fun publishDiagnostics(diagnostics: PublishDiagnosticsParams) {
@@ -91,5 +126,9 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 }
             }
         )
+    }
+
+    companion object {
+        private val LOG = getLogger<AmazonQLanguageClientImpl>()
     }
 }
