@@ -63,6 +63,7 @@ class CodeWhispererZipUploadManager(private val project: Project) {
         var requestId: String? = null
         var requestServiceType: String? = null
         var httpStatusCode: String? = null
+        var id2: String? = null
         try {
             //  Throw error if zipFile is invalid.
             if (!zipFile.exists()) {
@@ -77,7 +78,7 @@ class CodeWhispererZipUploadManager(private val project: Project) {
             val url = createUploadUrlResponse.uploadUrl()
             LOG.debug { "$featureUseCase: Uploading $artifactType using the presigned URL." }
 
-            uploadArtifactToS3(
+            val connection = uploadArtifactToS3(
                 url,
                 createUploadUrlResponse.uploadId(),
                 zipFile,
@@ -86,6 +87,8 @@ class CodeWhispererZipUploadManager(private val project: Project) {
                 createUploadUrlResponse.requestHeaders(),
                 featureUseCase
             )
+            requestId = connection?.getHeaderField("x-amz-request-id")
+            id2 = connection?.getHeaderField("x-amz-id-2")
             return createUploadUrlResponse
         } catch (e: Exception) {
             result = MetricResult.Failed
@@ -95,10 +98,12 @@ class CodeWhispererZipUploadManager(private val project: Project) {
                 requestId = e.requestId
                 requestServiceType = e.requestServiceType
                 httpStatusCode = e.httpStatusCode
+                id2 = e.id2
             }
             throw e
         } finally {
             if (featureUseCase == CodeWhispererConstants.FeatureName.CODE_REVIEW) {
+                LOG.info("Upload to S3 details: x-amz-request-id: $requestId and x-amz-id-2: $id2")
                 AmazonqTelemetry.createUpload(
                     amazonqConversationId = "",
                     amazonqUploadIntent = if (taskType == CodeWhispererConstants.UploadTaskType.SCAN_PROJECT) {
@@ -112,6 +117,7 @@ class CodeWhispererZipUploadManager(private val project: Project) {
                     duration = (System.currentTimeMillis() - startTime).toDouble(),
                     credentialStartUrl = getStartUrl(project),
                     requestId = requestId,
+                    id2 = id2,
                     requestServiceType = requestServiceType,
                     httpStatusCode = httpStatusCode
                 )
@@ -128,7 +134,7 @@ class CodeWhispererZipUploadManager(private val project: Project) {
         kmsArn: String?,
         requestHeaders: Map<String, String>?,
         featureUseCase: CodeWhispererConstants.FeatureName,
-    ) {
+    ) : HttpURLConnection? {
         var connection: HttpURLConnection? = null
         RetryableOperation<Unit>().execute(
             operation = {
@@ -166,6 +172,7 @@ class CodeWhispererZipUploadManager(private val project: Project) {
                         codeScanServerException(
                             "CreateUploadUrlException: $errorMessage",
                             connection?.getHeaderField("x-amz-request-id"),
+                            connection?.getHeaderField("x-amz-id-2"),
                             "s3",
                             (e as? HttpRequests.HttpStatusException)?.statusCode.toString()
                         )
@@ -179,6 +186,7 @@ class CodeWhispererZipUploadManager(private val project: Project) {
                 }
             }
         )
+        return connection
     }
 
     fun createUploadUrl(
