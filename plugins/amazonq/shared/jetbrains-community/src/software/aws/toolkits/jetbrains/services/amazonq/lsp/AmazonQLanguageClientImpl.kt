@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture
 class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageClient {
     override fun telemetryEvent(`object`: Any) {
         when (`object`) {
-            is MutableMap<*, *> -> handleTelemetryMap(`object`)
+            is Map<*, *> -> handleTelemetryMap(`object`)
         }
     }
 
