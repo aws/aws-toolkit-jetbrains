@@ -19,6 +19,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.TelemetryParsingUtil
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import java.time.Instant
@@ -28,13 +29,8 @@ import java.util.concurrent.CompletableFuture
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
  */
 class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageClient {
-    override fun telemetryEvent(`object`: Any) {
-        when (`object`) {
-            is Map<*, *> -> handleTelemetryMap(`object`)
-        }
-    }
 
-    private fun handleTelemetryMap(telemetryMap: MutableMap<*, *>) {
+    private fun handleTelemetryMap(telemetryMap: Map<*, *>) {
         try {
             val name = telemetryMap["name"] as? String ?: return
 
@@ -44,7 +40,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             TelemetryService.getInstance().record(project) {
                 datum(name) {
                     createTime(Instant.now())
-                    unit(telemetryMap["unit"] as? MetricUnit ?: MetricUnit.NONE)
+                    unit(TelemetryParsingUtil.parseMetricUnit(telemetryMap["unit"]))
                     value(telemetryMap["value"] as? Double ?: 1.0)
                     passive(telemetryMap["passive"] as? Boolean ?: false)
 
@@ -59,6 +55,12 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             }
         } catch (e: Exception) {
             LOG.warn(e) { "Failed to process telemetry event: $telemetryMap" }
+        }
+    }
+
+    override fun telemetryEvent(`object`: Any) {
+        when (`object`) {
+            is Map<*, *> -> handleTelemetryMap(`object`)
         }
     }
 

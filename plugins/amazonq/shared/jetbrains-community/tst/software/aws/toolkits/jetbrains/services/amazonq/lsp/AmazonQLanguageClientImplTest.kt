@@ -5,6 +5,8 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.ToNumberPolicy
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ApplicationExtension
@@ -249,6 +251,47 @@ class AmazonQLanguageClientImplTest {
         assertThat(datum.unit).isEqualTo(MetricUnit.NONE)
         assertThat(datum.value).isEqualTo(1.0)
         assertThat(datum.passive).isFalse()
+        assertThat(datum.metadata).contains(entry("key1", "value1"))
+    }
+
+    @Test
+    fun `test GSON deserialization behavior for telemetryEvent`() {
+        val gson = GsonBuilder()
+            .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+            .create()
+
+        val jsonString = """
+        {
+            "name": "test_event",
+            "value": 3.0,
+            "passive": true,
+            "unit": "Milliseconds",
+            "data": {
+                "key1": "value1"
+            }
+        }
+        """.trimIndent()
+
+        val result = gson.fromJson(jsonString, Map::class.java)
+
+        val telemetryService = mockk<TelemetryService>(relaxed = true)
+        mockkObject(TelemetryService)
+        every { TelemetryService.getInstance() } returns telemetryService
+
+        val builderCaptor = slot<MetricEvent.Builder.() -> Unit>()
+        every { telemetryService.record(project, capture(builderCaptor)) } returns Unit
+
+        sut.telemetryEvent(result)
+
+        val builder = DefaultMetricEvent.builder()
+        builderCaptor.captured.invoke(builder)
+
+        val metricEvent = builder.build()
+        val datum = metricEvent.data.first()
+
+        assertThat(datum.passive).isTrue()
+        assertThat(datum.unit).isEqualTo(MetricUnit.MILLISECONDS)
+        assertThat(datum.value).isEqualTo(3.0)
         assertThat(datum.metadata).contains(entry("key1", "value1"))
     }
 
