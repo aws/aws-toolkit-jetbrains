@@ -55,6 +55,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
+import com.intellij.openapi.application.ReadAction
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionContext
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionTriggerKind
@@ -212,7 +213,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             return
         }
 
-        handleInlineCompletion(editor)
+        handleInlineCompletion(editor, triggerTypeInfo)
         invokeCodeWhispererInBackground(requestContext)
     }
 
@@ -535,10 +536,10 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         return nextStates
     }
 
-    internal fun handleInlineCompletion(editor: Editor) {
+    private fun handleInlineCompletion(editor: Editor, triggerType: TriggerTypeInfo) {
         editor.project?.let { project ->
             AmazonQLspService.executeIfRunning(project) { server ->
-                val params = buildInlineCompletionParams(editor)
+                val params = createInlineCompletionParams(editor, triggerType)
                 server.inlineCompletionWithReferences(params)
             }
         }
@@ -723,17 +724,24 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         return states
     }
 
-    private fun buildInlineCompletionParams(editor: Editor): InlineCompletionWithReferencesParams =
-        InlineCompletionWithReferencesParams(
-            context = InlineCompletionContext(
-                triggerKind = InlineCompletionTriggerKind.Invoke
-            )
-        ).apply {
-            textDocument = TextDocumentIdentifier(toUriString(editor.virtualFile))
-            position = Position(
-                editor.caretModel.primaryCaret.visualPosition.line,
-                editor.caretModel.primaryCaret.offset
-            )
+    private fun createInlineCompletionParams(editor: Editor, triggerTypeInfo: TriggerTypeInfo): InlineCompletionWithReferencesParams =
+        ReadAction.compute<InlineCompletionWithReferencesParams, RuntimeException> {
+            InlineCompletionWithReferencesParams(
+                context = InlineCompletionContext(
+                    // Map the triggerTypeInfo to appropriate InlineCompletionTriggerKind
+                    triggerKind = when (triggerTypeInfo.triggerType) {
+                        CodewhispererTriggerType.OnDemand -> InlineCompletionTriggerKind.Invoke
+                        CodewhispererTriggerType.AutoTrigger -> InlineCompletionTriggerKind.Automatic
+                        else -> InlineCompletionTriggerKind.Invoke
+                    }
+                )
+            ).apply {
+                textDocument = TextDocumentIdentifier(toUriString(editor.virtualFile))
+                position = Position(
+                    editor.caretModel.primaryCaret.visualPosition.line,
+                    editor.caretModel.primaryCaret.offset
+                )
+            }
         }
 
     private fun addPopupChildDisposables(popup: JBPopup) {
