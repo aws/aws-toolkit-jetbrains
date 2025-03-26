@@ -30,7 +30,7 @@ class GatewayDeprecationNotice : AppLifecycleListener {
     }
 
     companion object {
-        const val MIN_VERSION = 243
-        const val MIN_VERSION_HUMAN = "2024.3"
+        const val MIN_VERSION = 251
+        const val MIN_VERSION_HUMAN = "2025.1"
     }
 }

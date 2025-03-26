@@ -65,7 +65,7 @@ class CreateReadmeTest {
             LocalProjectInfo(
                 Paths.get("tstData", "qdoc", "createFlow")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
@@ -101,7 +101,7 @@ class CreateReadmeTest {
             LocalProjectInfo(
                 Paths.get("tstData", "qdoc", "createFlow")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
@@ -137,7 +137,7 @@ class CreateReadmeTest {
             LocalProjectInfo(
                 Paths.get("tstData", "qdoc", "createFlow")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
@@ -173,7 +173,7 @@ class CreateReadmeTest {
             LocalProjectInfo(
                 Paths.get("tstData", "qdoc", "createFlow")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
@@ -218,7 +218,7 @@ class CreateReadmeTest {
             LocalProjectInfo(
                 Paths.get("tstData", "qdoc", "createFlow")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
