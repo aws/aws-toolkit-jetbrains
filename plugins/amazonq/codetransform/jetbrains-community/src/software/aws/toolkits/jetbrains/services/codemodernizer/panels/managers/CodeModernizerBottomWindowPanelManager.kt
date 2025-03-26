@@ -39,7 +39,7 @@ import javax.swing.BorderFactory
 import javax.swing.JPanel
 
 class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPanel(BorderLayout()) {
-    private var lastShownProgressPanel: Component? = null
+    private var progressPanel: Component? = null
     val toolbar = createToolbar().apply {
         targetComponent = this@CodeModernizerBottomWindowPanelManager
         component.border = BorderFactory.createCompoundBorder(
@@ -64,7 +64,7 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
 
     private fun setUI(function: () -> Unit) {
         runInEdt {
-            lastShownProgressPanel = this.components.firstOrNull { it == fullSizeLoadingPanel || it == buildProgressSplitterPanelManager } ?: lastShownProgressPanel
+            progressPanel = this.components.firstOrNull { it == fullSizeLoadingPanel || it == buildProgressSplitterPanelManager } ?: progressPanel
             removeAll()
             add(BorderLayout.WEST, toolbar.component)
             add(BorderLayout.NORTH, banner)
@@ -176,8 +176,8 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
     }
 
     fun showUnalteredJobUI() = setUI {
-        if (lastShownProgressPanel != null) {
-            add(BorderLayout.CENTER, lastShownProgressPanel)
+        if (progressPanel != null) {
+            add(BorderLayout.CENTER, progressPanel)
         } else {
             add(BorderLayout.CENTER, fullSizeLoadingPanel)
             fullSizeLoadingPanel.progressIndicatorLabel.text = "No jobs active"
