@@ -112,7 +112,7 @@ class AmazonQLanguageClientImplTest {
 
         val event = mapOf(
             "name" to "test_event",
-            "unit" to MetricUnit.MILLISECONDS,
+            "unit" to "Bytes",
             "data" to mapOf(
                 "key1" to "value1"
             )
@@ -126,7 +126,7 @@ class AmazonQLanguageClientImplTest {
         val metricEvent = builder.build()
         val datum = metricEvent.data.first()
 
-        assertThat(datum.unit).isEqualTo(MetricUnit.MILLISECONDS)
+        assertThat(datum.unit).isEqualTo(MetricUnit.BYTES)
         assertThat(datum.metadata).contains(entry("key1", "value1"))
     }
 
