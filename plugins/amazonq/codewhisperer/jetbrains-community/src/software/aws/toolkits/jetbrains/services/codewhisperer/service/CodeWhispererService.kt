@@ -212,8 +212,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             return
         }
 
-        // PUT HERE!!!
-        // invoke LSP CodeWhisperer
+        handleInlineCompletion(editor)
         invokeCodeWhispererInBackground(requestContext)
     }
 
