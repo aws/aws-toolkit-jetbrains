@@ -57,7 +57,7 @@ class QTestGenerationChatTest {
             LocalProjectInfo(
                 Paths.get("tstData", "qTestGenerationTestProject")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
@@ -89,7 +89,7 @@ class QTestGenerationChatTest {
             LocalProjectInfo(
                 Paths.get("tstData", "qTestGenerationTestProject/")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
@@ -123,7 +123,7 @@ class QTestGenerationChatTest {
             LocalProjectInfo(
                 Paths.get("tstData", "qTestGenerationTestProject/")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
@@ -155,7 +155,7 @@ class QTestGenerationChatTest {
             LocalProjectInfo(
                 Paths.get("tstData", "qTestGenerationTestProject/")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
