@@ -7,11 +7,10 @@ import software.amazon.awssdk.services.toolkittelemetry.model.MetricUnit
 
 object TelemetryParsingUtil {
 
-    fun parseMetricUnit(value: Any?): MetricUnit {
-        return when (value) {
+    fun parseMetricUnit(value: Any?): MetricUnit =
+        when (value) {
             is String -> MetricUnit.fromValue(value) ?: MetricUnit.NONE
             is MetricUnit -> value
             else -> MetricUnit.NONE
         }
     }
-}
