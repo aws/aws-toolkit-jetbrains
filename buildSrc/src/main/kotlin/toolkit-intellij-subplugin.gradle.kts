@@ -3,6 +3,7 @@
 
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 import software.aws.toolkits.gradle.findFolders
 import software.aws.toolkits.gradle.intellij.IdeVersions
 import software.aws.toolkits.gradle.intellij.toolkitIntelliJ
@@ -103,12 +104,23 @@ dependencies {
     }
 }
 
+// https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1844
+tasks.withType<PrepareSandboxTask>().configureEach {
+    disabledPlugins.addAll(
+        "com.intellij.swagger",
+        "org.jetbrains.plugins.kotlin.jupyter",
+    )
+}
+
 tasks.jar {
     // :plugin-toolkit:jetbrains-community results in: --plugin-toolkit-jetbrains-community-IC-<version>.jar
     archiveBaseName.set(toolkitIntelliJ.ideFlavor.map { "${project.buildTreePath.replace(':', '-')}-$it" })
 }
 
 tasks.withType<Test>().configureEach {
+    // conflict with Docker logging impl; so bypass service loader
+    systemProperty("slf4j.provider", "org.slf4j.jul.JULServiceProvider")
+
     systemProperty("log.dir", intellijPlatform.sandboxContainer.map { "$it-test/logs" }.get())
     systemProperty("testDataPath", project.rootDir.resolve("testdata").absolutePath)
     val jetbrainsCoreTestResources = project(":plugin-toolkit:jetbrains-core").projectDir.resolve("tst-resources")

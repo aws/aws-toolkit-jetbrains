@@ -29,7 +29,10 @@ class DockerfileParser(private val project: Project) {
 
         val command = commandsAfterLastFrom.filterIsInstance<DockerFileCmdCommand>().lastOrNull()?.text?.substringAfter("CMD ")
         val portMappings = commandsAfterLastFrom.filterIsInstance<DockerFileExposeCommand>().mapNotNull {
-            it.listChildren().find { child -> (child as? LeafPsiElement)?.elementType?.toString() == "INTEGER_LITERAL" }?.text?.toIntOrNull()
+            it.listChildren().find { child ->
+                val elementType = (child as? LeafPsiElement)?.elementType?.toString()
+                elementType == "INTEGER_LITERAL" || elementType == "IDENTIFIER"
+            }?.text?.toIntOrNull()
         }
 
         val copyDirectives = groupByWorkDir(commandsAfterLastFrom).flatMap { (workDir, commands) ->
