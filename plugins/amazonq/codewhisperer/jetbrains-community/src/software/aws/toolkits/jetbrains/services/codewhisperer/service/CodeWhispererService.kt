@@ -213,7 +213,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             return
         }
 
-        handleInlineCompletion(editor, triggerTypeInfo)
+        handleLspInlineCompletion(editor, triggerTypeInfo)
         invokeCodeWhispererInBackground(requestContext)
     }
 
@@ -536,7 +536,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         return nextStates
     }
 
-    private fun handleInlineCompletion(editor: Editor, triggerType: TriggerTypeInfo) {
+    fun handleLspInlineCompletion(editor: Editor, triggerType: TriggerTypeInfo) {
         editor.project?.let { project ->
             AmazonQLspService.executeIfRunning(project) { server ->
                 val params = createInlineCompletionParams(editor, triggerType)

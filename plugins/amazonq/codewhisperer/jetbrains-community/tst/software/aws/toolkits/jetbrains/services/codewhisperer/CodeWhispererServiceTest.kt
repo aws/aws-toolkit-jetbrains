@@ -4,18 +4,22 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
@@ -31,6 +35,12 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ProgrammingLan
 import software.amazon.awssdk.services.codewhispererruntime.model.SupplementalContext
 import software.aws.toolkits.jetbrains.core.credentials.AwsConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionTriggerKind
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionWithReferencesParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil.toUriString
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
@@ -51,6 +61,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhis
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
+import java.util.concurrent.CompletableFuture
 
 class CodeWhispererServiceTest {
     @Rule
@@ -227,6 +238,46 @@ class CodeWhispererServiceTest {
             assertThat(firstValue.fileContext()).isEqualTo(mockFileContext.toSdkModel())
             assertThat(firstValue.supplementalContexts()).hasSameSizeAs(mockSupContext.contents)
             assertThat(firstValue.supplementalContexts()).isEqualTo(mockSupContext.toSdkModel())
+        }
+    }
+
+    @Test
+    fun `test handleInlineCompletion creates correct params and sends to server`() = runTest {
+        val mockLspServer = mock(AmazonQLanguageServer::class.java)
+        val mockLspService = mock(AmazonQLspService::class.java)
+        val project = projectRule.project
+
+        project.replaceService(
+            AmazonQLspService::class.java,
+            mockLspService,
+            disposableRule.disposable
+        )
+        whenever(mockLspService.executeSync<CompletableFuture<ResponseMessage>>(any())).thenAnswer { invocation ->
+            val func = invocation.getArgument<suspend AmazonQLspService.(AmazonQLanguageServer) -> CompletableFuture<ResponseMessage>>(0)
+            runBlocking {
+                func.invoke(mockLspService, mockLspServer)
+            }
+        }
+
+        val mockEditor = projectRule.fixture.editor
+        val mockCompletableFuture = CompletableFuture<InlineCompletionListWithReferences>()
+
+        whenever(mockLspServer.inlineCompletionWithReferences(any())).thenReturn(mockCompletableFuture)
+        val paramsCaptor = argumentCaptor<InlineCompletionWithReferencesParams>()
+
+        sut.handleLspInlineCompletion(
+            mockEditor,
+            TriggerTypeInfo(CodewhispererTriggerType.OnDemand, CodeWhispererAutomatedTriggerType.Unknown())
+        )
+
+        verify(mockLspServer).inlineCompletionWithReferences(paramsCaptor.capture())
+
+        runReadAction {
+            val capturedParams = paramsCaptor.firstValue
+            assertThat(capturedParams.textDocument.uri).isEqualTo(toUriString(file.virtualFile))
+            assertThat(capturedParams.position.line).isEqualTo(mockEditor.caretModel.primaryCaret.visualPosition.line)
+            assertThat(capturedParams.position.character).isEqualTo(mockEditor.caretModel.primaryCaret.offset)
+            assertThat(capturedParams.context.triggerKind).isEqualTo(InlineCompletionTriggerKind.Invoke)
         }
     }
 }
