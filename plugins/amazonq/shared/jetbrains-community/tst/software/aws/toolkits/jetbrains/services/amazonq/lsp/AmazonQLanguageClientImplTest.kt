@@ -15,6 +15,7 @@ import org.eclipse.lsp4j.ConfigurationItem
 import org.eclipse.lsp4j.ConfigurationParams
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
@@ -104,6 +105,44 @@ class AmazonQLanguageClientImplTest {
                     "includeSuggestionsWithCodeReferences": true
                 }
             """.trimIndent()
+        )
+    }
+
+    @Test
+    fun `configuration for Amazon Q respects telemetry enabled`() {
+        AwsSettings.getInstance().isTelemetryEnabled = true
+        assertThat(sut.configuration(configurationParams("aws.q")).get())
+            .singleElement()
+            .isEqualTo(
+                AmazonQLspConfiguration(
+                    optOutTelemetry = true
+                )
+            )
+    }
+
+    @Test
+    fun `configuration for Amazon Q respects telemetry disabled`() {
+        AwsSettings.getInstance().isTelemetryEnabled = false
+        assertThat(sut.configuration(configurationParams("aws.q")).get())
+            .singleElement()
+            .isEqualTo(
+                AmazonQLspConfiguration(
+                    optOutTelemetry = false
+                )
+            )
+    }
+
+    @Test
+    fun `Gson serializes AmazonQLspConfiguration correctly`() {
+        val sut = AmazonQLspConfiguration(
+            optOutTelemetry = true
+        )
+        assertThat(Gson().toJson(sut)).isEqualToIgnoringWhitespace(
+            """
+            {
+                "optOutTelemetry": true
+            }
+        """.trimIndent()
         )
     }
 
