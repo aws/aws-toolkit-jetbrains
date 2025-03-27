@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.python
 
-import org.junit.Assert.assertFalse
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.core.lambda.LambdaRuntime
@@ -19,24 +19,24 @@ class PythonHandlerCompletionProviderTest {
     @Test
     fun completionIsNotSupportedPython38() {
         val provider = HandlerCompletionProvider(projectRule.project, LambdaRuntime.PYTHON3_8)
-        assertFalse(provider.isCompletionSupported)
+        assertThat(provider.isCompletionSupported).isFalse()
     }
 
     @Test
     fun completionIsNotSupportedPython39() {
         val provider = HandlerCompletionProvider(projectRule.project, LambdaRuntime.PYTHON3_9)
-        assertFalse(provider.isCompletionSupported)
+        assertThat(provider.isCompletionSupported).isFalse()
     }
 
     @Test
     fun completionIsNotSupportedPython310() {
         val provider = HandlerCompletionProvider(projectRule.project, LambdaRuntime.PYTHON3_10)
-        assertFalse(provider.isCompletionSupported)
+        assertThat(provider.isCompletionSupported).isFalse()
     }
 
     @Test
     fun completionIsNotSupportedPython311() {
         val provider = HandlerCompletionProvider(projectRule.project, LambdaRuntime.PYTHON3_11)
-        assertFalse(provider.isCompletionSupported)
+        assertThat(provider.isCompletionSupported).isFalse()
     }
 }

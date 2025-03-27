@@ -3,14 +3,13 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.storage
 
-import org.junit.Assert.assertEquals
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevTestBase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Session
-import kotlin.test.assertNotNull
 
 class ChatSessionStorageTest : FeatureDevTestBase() {
 
@@ -27,9 +26,9 @@ class ChatSessionStorageTest : FeatureDevTestBase() {
     @Test
     fun `check getSession for NewSession`() {
         val testSession = chatSessionStorage.getSession("tabId", project)
-        assertNotNull(testSession)
-        assertEquals(testSession.tabID, "tabId")
-        assertEquals(testSession.project, project)
+        assertThat(testSession).isNotNull()
+        assertThat(testSession.tabID).isEqualTo("tabId")
+        assertThat(testSession.project).isEqualTo(project)
     }
 
     @Test
@@ -39,7 +38,7 @@ class ChatSessionStorageTest : FeatureDevTestBase() {
 
         val expectedSession = chatSessionStorage.getSession(mockSession.tabID, mockSession.project)
         val actualSession = chatSessionStorage.getSession("tab1", project)
-        assertNotNull(actualSession)
-        assertEquals(expectedSession, actualSession)
+        assertThat(actualSession).isNotNull()
+        assertThat(actualSession).isEqualTo(expectedSession)
     }
 }

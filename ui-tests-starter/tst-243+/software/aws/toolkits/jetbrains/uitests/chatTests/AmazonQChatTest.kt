@@ -14,8 +14,8 @@ import com.intellij.ide.starter.models.TestCase
 import com.intellij.ide.starter.project.LocalProjectInfo
 import com.intellij.ide.starter.runner.CurrentTestMethod
 import com.intellij.ide.starter.runner.Starter
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.kodein.di.DI
@@ -79,14 +79,16 @@ class AmazonQChatTest {
                 Thread.sleep(30000)
 
                 val result = executePuppeteerScript(testFeatureAvailabilityOnSlash)
-                assertTrue(result.contains("/doc"))
-                assertTrue(result.contains("/dev"))
-                assertTrue(result.contains("/transform"))
-                assertTrue(result.contains("/help"))
-                assertTrue(result.contains("/clear"))
-                assertTrue(result.contains("/review"))
-                assertTrue(result.contains("/test"))
-                println("Assertions done")
+                assertThat(result).contains(
+                    "/doc",
+                    "/dev",
+                    "/transform",
+                    "/help",
+                    "/clear",
+                    "/review",
+                    "/test",
+                    "/help"
+                )
             }
     }
 

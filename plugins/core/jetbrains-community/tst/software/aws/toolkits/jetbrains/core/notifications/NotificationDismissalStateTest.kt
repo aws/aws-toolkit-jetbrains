@@ -3,9 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.notifications
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -30,9 +28,12 @@ class NotificationDismissalStateTest {
 
         val persistedState = state.getState()
 
-        assertEquals(1, persistedState.dismissedNotifications.size)
-        assertTrue(persistedState.dismissedNotifications.any { it.id == "recent-notification" })
-        assertTrue(state.isDismissed("recent-notification"))
+        assertThat(persistedState.dismissedNotifications)
+            .singleElement()
+            .extracting(DismissedNotification::id)
+            .isEqualTo("recent-notification")
+
+        assertThat(state.isDismissed("recent-notification")).isTrue()
     }
 
     @Test
@@ -46,8 +47,8 @@ class NotificationDismissalStateTest {
 
         val persistedState = state.getState()
 
-        assertEquals(0, persistedState.dismissedNotifications.size)
-        assertFalse(state.isDismissed("old-notification"))
+        assertThat(persistedState.dismissedNotifications).isEmpty()
+        assertThat(state.isDismissed("old-notification")).isFalse()
     }
 
     @Test
@@ -69,15 +70,15 @@ class NotificationDismissalStateTest {
 
         val persistedState = state.getState()
 
-        assertEquals(1, persistedState.dismissedNotifications.size)
-        assertTrue(state.isDismissed("recent-notification"))
-        assertFalse(state.isDismissed("old-notification"))
+        assertThat(persistedState.dismissedNotifications).hasSize(1)
+        assertThat(state.isDismissed("recent-notification")).isTrue()
+        assertThat(state.isDismissed("old-notification")).isFalse()
     }
 
     @Test
     fun `dismissing new notification retains it`() {
         state.dismissNotification("new-notification")
 
-        assertTrue(state.isDismissed("new-notification"))
+        assertThat(state.isDismissed("new-notification")).isTrue()
     }
 }

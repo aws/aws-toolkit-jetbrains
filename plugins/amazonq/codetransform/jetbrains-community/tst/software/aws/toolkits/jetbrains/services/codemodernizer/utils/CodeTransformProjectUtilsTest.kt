@@ -9,7 +9,7 @@ import com.intellij.openapi.roots.LanguageLevelProjectExtension
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.pom.java.LanguageLevel
 import com.intellij.testFramework.IdeaTestUtil.getMockJdk21
-import org.junit.Assert.assertEquals
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.doReturn
@@ -42,7 +42,7 @@ class CodeTransformProjectUtilsTest : CodeWhispererCodeModernizerTestBase() {
         whenever(projectRootManagerMock.projectSdk).doReturn(sdkMock)
         whenever(LanguageLevelProjectExtension.getInstance(project)).doReturn(null)
         val result = project.tryGetJdk()
-        assertEquals(JavaSdkVersion.JDK_21, result)
+        assertThat(result).isEqualTo(JavaSdkVersion.JDK_21)
     }
 
     @Test
@@ -53,20 +53,20 @@ class CodeTransformProjectUtilsTest : CodeWhispererCodeModernizerTestBase() {
         whenever(projectRootManagerMock.projectSdk).doReturn(sdkMock)
         whenever(languageLevelProjectExtensionMock.languageLevel).doReturn(LanguageLevel.JDK_1_8)
         val result = project.tryGetJdk()
-        assertEquals(JavaSdkVersion.JDK_1_8, result)
+        assertThat(result).isEqualTo(JavaSdkVersion.JDK_1_8)
     }
 
     @Test
     fun `CodeTransformProjectUtils tryGetJdkLanguageLevelJdk() function returns null when language level is null`() {
         whenever(LanguageLevelProjectExtension.getInstance(project)).doReturn(null)
         val result = project.tryGetJdkLanguageLevelJdk()
-        assertEquals(null, result)
+        assertThat(result).isEqualTo(null)
     }
 
     @Test
     fun `CodeTransformProjectUtils tryGetJdkLanguageLevelJdk() function returns language level version`() {
         whenever(languageLevelProjectExtensionMock.languageLevel).doReturn(LanguageLevel.JDK_1_8)
         val result = project.tryGetJdkLanguageLevelJdk()
-        assertEquals(JavaSdkVersion.JDK_1_8, result)
+        assertThat(result).isEqualTo(JavaSdkVersion.JDK_1_8)
     }
 }

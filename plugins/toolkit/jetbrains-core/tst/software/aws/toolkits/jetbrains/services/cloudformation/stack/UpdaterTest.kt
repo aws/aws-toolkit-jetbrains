@@ -4,7 +4,6 @@ package software.aws.toolkits.jetbrains.services.cloudformation.stack
 
 import com.intellij.testFramework.ProjectRule
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -120,7 +119,7 @@ class UpdaterTest {
         verify(treeView, atLeast(1)).fillResources(resources)
         verify(outputTable, atLeast(1)).updatedOutputs(outputs)
         verify(eventsTable, atLeast(1)).insertEvents(mockEventsGenerator.currentPage, false)
-        Assert.assertEquals("Wrong button for first page", availablePages, setOf(Page.NEXT))
+        assertThat(availablePages).withFailMessage("Wrong button for first page").isEqualTo(setOf(Page.NEXT))
     }
 
     @Test

@@ -14,9 +14,8 @@ import com.intellij.ide.starter.models.TestCase
 import com.intellij.ide.starter.project.LocalProjectInfo
 import com.intellij.ide.starter.runner.CurrentTestMethod
 import com.intellij.ide.starter.runner.Starter
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -88,8 +87,9 @@ class UpdateReadmeSpecificChangesTest {
                     println("result: $result")
                 }
 
-                assertTrue(result.contains("Test Successful"))
-                assertFalse(result.contains("Error: Test Failed"))
+                assertThat(result)
+                    .contains("Test Successful")
+                    .doesNotContain("Error: Test Failed")
             }
     }
 
@@ -128,8 +128,10 @@ class UpdateReadmeSpecificChangesTest {
 
                 val readmePath = Paths.get("tstData", "qdoc", "updateFlow", "README.md")
                 val readme = File(readmePath.toUri())
-                assertTrue(readme.exists())
-                assertTrue(readme.readText().contains("Installation", ignoreCase = true))
+                assertThat(readme).exists()
+                assertThat(readme)
+                    .content()
+                    .containsIgnoringCase("Installation")
             }
     }
 

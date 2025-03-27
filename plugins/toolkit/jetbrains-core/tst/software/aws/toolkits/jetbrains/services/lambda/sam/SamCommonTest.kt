@@ -9,14 +9,13 @@ import com.intellij.psi.PsiFile
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.jetbrains.core.executables.ExecutableManager
 import software.aws.toolkits.jetbrains.services.lambda.sam.SamCommonTestUtils.makeATestSam
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.satisfiesKt
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
@@ -102,7 +101,7 @@ Resources:
             val templateFile = SamCommon.getTemplateFromDirectory(dir)
             assertNotNull(templateFile)
             val codeUris = SamCommon.getCodeUrisFromTemplate(projectRule.project, templateFile)
-            assertEquals(0, codeUris.size)
+            assertThat(codeUris).isEmpty()
         }
     }
 
@@ -129,8 +128,9 @@ Resources:
             val templateFile = SamCommon.getTemplateFromDirectory(dir)
             assertNotNull(templateFile)
             val codeUris = SamCommon.getCodeUrisFromTemplate(projectRule.project, templateFile)
-            assertEquals(1, codeUris.size)
-            assertEquals("hello_world", codeUris[0].name)
+            assertThat(codeUris).singleElement().satisfiesKt {
+                assertThat(it.name).isEqualTo("hello_world")
+            }
         }
     }
 
@@ -170,8 +170,9 @@ Resources:
             val templateFile = SamCommon.getTemplateFromDirectory(dir)
             assertNotNull(templateFile)
             val codeUris = SamCommon.getCodeUrisFromTemplate(projectRule.project, templateFile)
-            assertEquals(1, codeUris.size)
-            assertEquals("hello_world", codeUris[0].name)
+            assertThat(codeUris).singleElement().satisfiesKt {
+                assertThat(it.name).isEqualTo("hello_world")
+            }
         }
     }
 
@@ -209,9 +210,10 @@ Resources:
             val templateFile = SamCommon.getTemplateFromDirectory(dir)
             assertNotNull(templateFile)
             val codeUris = SamCommon.getCodeUrisFromTemplate(projectRule.project, templateFile)
-            assertEquals(2, codeUris.size)
-            assertTrue(codeUris.any { it.name == "hello_world" })
-            assertTrue(codeUris.any { it.name == "hello_world_42" })
+            assertThat(codeUris).hasSize(2).satisfiesExactlyInAnyOrder(
+                { assertThat(it.name).isEqualTo("hello_world") },
+                { assertThat(it.name).isEqualTo("hello_world_42") }
+            )
         }
     }
 

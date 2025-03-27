@@ -15,8 +15,8 @@ import com.intellij.ide.starter.models.TestCase
 import com.intellij.ide.starter.project.LocalProjectInfo
 import com.intellij.ide.starter.runner.CurrentTestMethod
 import com.intellij.ide.starter.runner.Starter
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.kodein.di.DI
@@ -77,8 +77,9 @@ class QTestGenerationChatTest {
                 // required wait time for the system to be fully ready
                 Thread.sleep(30000)
                 val result = executePuppeteerScript(testNoFilePathScript)
-                assertTrue(result.contains("new tab opened"))
-                assertTrue(result.contains("a source file open right now that I can generate a test for"))
+                assertThat(result)
+                    .contains("new tab opened")
+                    .contains("a source file open right now that I can generate a test for")
             }
     }
 
@@ -109,10 +110,14 @@ class QTestGenerationChatTest {
                 openFile(Paths.get("testModule1", "HappyPath.java").toString())
                 Thread.sleep(30000)
                 val result = executePuppeteerScript(testHappyPathScript)
-                assertTrue(result.contains("new tab opened"))
-                assertTrue(result.contains("View Diff opened"))
-                assertTrue(result.contains("Result Accepted"))
-                assertTrue(result.contains("Unit test generation completed."))
+
+                assertThat(result)
+                    .contains(
+                        "new tab opened",
+                        "View Diff opened",
+                        "Result Accepted",
+                        "Unit test generation completed."
+                    )
             }
     }
 
@@ -143,8 +148,12 @@ class QTestGenerationChatTest {
                 openFile(Paths.get("testModule1", "ErrorPath.java").toString())
                 Thread.sleep(30000)
                 val result = executePuppeteerScript(expectedErrorPath)
-                assertTrue(result.contains("new tab opened"))
-                assertTrue(result.contains("Test generation complete with expected error"))
+
+                assertThat(result)
+                    .contains(
+                        "new tab opened",
+                        "Test generation complete with expected error"
+                    )
             }
     }
 
@@ -175,8 +184,12 @@ class QTestGenerationChatTest {
                 openFile(Paths.get("testModule2", "UnSupportedLanguage.kt").toString())
                 Thread.sleep(30000)
                 val result = executePuppeteerScript(unsupportedLanguagePath)
-                assertTrue(result.contains("new tab opened"))
-                assertTrue(result.contains("Test generation complete with expected error"))
+
+                assertThat(result)
+                    .contains(
+                        "new tab opened",
+                        "Test generation complete with expected error"
+                    )
             }
     }
 

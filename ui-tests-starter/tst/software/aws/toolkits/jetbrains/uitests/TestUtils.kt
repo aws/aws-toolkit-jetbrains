@@ -3,14 +3,15 @@
 
 package software.aws.toolkits.jetbrains.uitests
 
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.assertj.core.api.Assertions.assertThat
+import org.intellij.lang.annotations.Language
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 
 private const val TEST_RESOURCES_PATH = "src/test/tstData"
-fun executePuppeteerScript(scriptContent: String): String {
+fun executePuppeteerScript(@Language("JS") scriptContent: String): String {
     val scriptFile = File("$TEST_RESOURCES_PATH/temp-script.js")
     scriptFile.parentFile.mkdirs()
     scriptFile.writeText(scriptContent)
@@ -25,7 +26,7 @@ fun executePuppeteerScript(scriptContent: String): String {
 
     scriptFile.delete()
 
-    assertEquals(0, exitCode, "Script execution failed with output: $output")
+    assertThat(exitCode).withFailMessage("Script execution failed with output: $output").isEqualTo(0)
     return output
 }
 
@@ -88,10 +89,10 @@ fun setupTestEnvironment() {
         .start()
         .waitFor()
 
-    assertEquals(0, npmInstall, "Failed to install Puppeteer")
+    assertThat(npmInstall).withFailMessage("Failed to install Puppeteer").isEqualTo(0)
 }
 
-fun writeToAwsXml(configContent: String) {
+fun writeToAwsXml(@Language("XML") configContent: String) {
     val path = Paths.get("tstData", "configAmazonQTests", "options", "aws.xml")
 
     Files.createDirectories(path.parent)
@@ -103,6 +104,7 @@ fun writeToAwsXml(configContent: String) {
     )
 }
 
+// language=JS
 val testScriptPrefix = """
 const puppeteer = require('puppeteer');
 

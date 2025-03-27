@@ -11,7 +11,7 @@ import com.intellij.openapi.roots.LanguageLevelModuleExtensionImpl
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.pom.java.LanguageLevel
-import org.junit.Assert.assertEquals
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.mockStatic
@@ -55,7 +55,7 @@ class CodeTransformModuleUtilsTest : CodeWhispererCodeModernizerTestBase(HeavyJa
         whenever(languageLevelModuleExtensionMock.languageLevel).doReturn(LanguageLevel.JDK_1_8)
         whenever(javaSdkMock.getVersion(any())).doReturn(JavaSdkVersion.JDK_1_8)
         val result = module.tryGetJdk(project)
-        assertEquals(JavaSdkVersion.JDK_1_8, result)
+        assertThat(result).isEqualTo(JavaSdkVersion.JDK_1_8)
     }
 
     @Test
@@ -63,7 +63,7 @@ class CodeTransformModuleUtilsTest : CodeWhispererCodeModernizerTestBase(HeavyJa
         whenever(languageLevelModuleExtensionMock.languageLevel).doReturn(null)
         whenever(javaSdkMock.getVersion(sdkMock)).doReturn(null)
         val result = module.tryGetJdk(project)
-        assertEquals(null, result)
+        assertThat(result).isNull()
     }
 
     @Test
@@ -71,7 +71,7 @@ class CodeTransformModuleUtilsTest : CodeWhispererCodeModernizerTestBase(HeavyJa
         whenever(languageLevelModuleExtensionMock.languageLevel).doReturn(null)
         whenever(javaSdkMock.getVersion(any())).doReturn(JavaSdkVersion.JDK_17)
         val result = module.tryGetJdkLanguageLevelJdk()
-        assertEquals(null, result)
+        assertThat(result).isNull()
     }
 
     @Test
@@ -79,6 +79,6 @@ class CodeTransformModuleUtilsTest : CodeWhispererCodeModernizerTestBase(HeavyJa
         whenever(languageLevelModuleExtensionMock.languageLevel).doReturn(LanguageLevel.JDK_1_8)
         whenever(javaSdkMock.getVersion(any())).doReturn(JavaSdkVersion.JDK_1_8)
         val result = module.tryGetJdkLanguageLevelJdk()
-        assertEquals(JavaSdkVersion.JDK_1_8, result)
+        assertThat(result).isEqualTo(JavaSdkVersion.JDK_1_8)
     }
 }
