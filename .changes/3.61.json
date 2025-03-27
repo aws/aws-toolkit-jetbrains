@@ -1,0 +1,17 @@
+{
+  "date" : "2025-03-27",
+  "version" : "3.61",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Amazon Q: Moved \"Include suggestions with code references\" setting to General"
+  }, {
+    "type" : "feature",
+    "description" : "Add support for 2025.1"
+  }, {
+    "type" : "bugfix",
+    "description" : "Amazon Q: Attempt to reduce thread pool contention locking IDE caused by `@workspace` making a large number of requests"
+  }, {
+    "type" : "deprecation",
+    "description" : "An upcoming release will remove support for JetBrains Gateway version 2024.3 and for IDEs based on the 2024.1 platform"
+  } ]
+}
