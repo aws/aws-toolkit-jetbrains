@@ -352,6 +352,23 @@ class FeatureDevServiceTest : FeatureDevTestBase() {
     }
 
     @Test
+    fun `test exportTaskAssistArchiveResult ignore extra fields in the response`() {
+        runTest {
+            val codeGenerationJson = "{" +
+                "\"code_generation_result\":{\"new_file_contents\":{\"test.ts\":\"contents\"},\"deleted_files\":[],\"references\":[],\"extra_filed\":[]}" +
+                "}"
+
+            whenever(featureDevClient.exportTaskAssistResultArchive(testConversationId)).thenReturn(mutableListOf(codeGenerationJson.toByteArray()))
+
+            val actual = featureDevService.exportTaskAssistArchiveResult(testConversationId)
+            assertThat(actual).isInstanceOf(CodeGenerationStreamResult::class.java)
+            assertThat(actual.new_file_contents).isEqualTo(mapOf(Pair("test.ts", "contents")))
+            assertThat(actual.deleted_files).isEqualTo(emptyList<String>())
+            assertThat(actual.references).isEqualTo(emptyList<CodeReferenceGenerated>())
+        }
+    }
+
+    @Test
     fun `test exportTaskAssistArchiveResult returns correct parsed result`() =
         runTest {
             val codeGenerationJson = "{\"code_generation_result\":{\"new_file_contents\":{\"test.ts\":\"contents\"},\"deleted_files\":[],\"references\":[]}}"
