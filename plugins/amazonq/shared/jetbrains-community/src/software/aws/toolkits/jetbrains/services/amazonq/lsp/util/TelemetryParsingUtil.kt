@@ -13,4 +13,4 @@ object TelemetryParsingUtil {
             is MetricUnit -> value
             else -> MetricUnit.NONE
         }
-    }
+}
