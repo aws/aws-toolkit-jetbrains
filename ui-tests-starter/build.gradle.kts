@@ -90,10 +90,10 @@ tasks.register<Test>("uiTest") {
     dependsOn(testPlugins)
     systemProperty("ui.test.plugins", testPlugins.get().asPath)
     systemProperty("org.gradle.project.ideProfileName", ideProfile.name)
-    val testSuite = System.getenv("TEST_SUITE")
-    if (testSuite.toString().isNotBlank()) {
+    val testSuite = System.getenv("TEST_DIR") ?: ""
+    if (testSuite.isNotBlank()) {
         filter {
-            includeTestsMatching(testSuite.toString())
+            includeTestsMatching(testSuite)
         }
     }
 }
