@@ -1,4 +1,4 @@
 {
   "type" : "feature",
-  "description" : "/review: passing referenceTrackerConfiguration to StartCodeFixJob"
+  "description" : "/review: Enable checkbox to accept or block code fix with references"
 }
