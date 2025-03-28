@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.project.Project
+import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
 import org.eclipse.lsp4j.ConfigurationParams
 import org.eclipse.lsp4j.MessageActionItem
 import org.eclipse.lsp4j.MessageParams
@@ -18,7 +19,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credential
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import java.util.concurrent.CompletableFuture
-import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
 
 /**
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server

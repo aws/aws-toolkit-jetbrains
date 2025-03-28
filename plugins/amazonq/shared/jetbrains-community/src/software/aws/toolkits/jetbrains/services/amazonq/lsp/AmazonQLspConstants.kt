@@ -11,7 +11,5 @@ object AmazonQLspConstants {
     const val LSP_Q_CONFIGURATION_KEY = "aws.q"
     const val LSP_OPT_OUT_TELEMETRY_CONFIGURATION_KEY = "optOutTelemetry"
     const val LSP_ENABLE_TELEMETRY_EVENTS_CONFIGURATION_KEY = "enableTelemetryEventsToDestination"
-    const val LSP_CUSTOMIZATION_CONFIGURATION_KEY = "customization";
-
-
+    const val LSP_CUSTOMIZATION_CONFIGURATION_KEY = "customization"
 }

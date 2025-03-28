@@ -13,5 +13,5 @@ data class AmazonQLspConfiguration(
     val enableTelemetryEvents: Boolean? = null,
 
     @SerializedName(AmazonQLspConstants.LSP_CUSTOMIZATION_CONFIGURATION_KEY)
-    val customization: String? = null
+    val customization: String? = null,
 )

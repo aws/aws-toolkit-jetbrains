@@ -10,12 +10,12 @@ import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ApplicationExtension
 import io.mockk.every
 import io.mockk.mockk
+import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
 import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.lsp4j.ConfigurationItem
 import org.eclipse.lsp4j.ConfigurationParams
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
@@ -142,7 +142,7 @@ class AmazonQLanguageClientImplTest {
             {
                 "optOutTelemetry": true
             }
-        """.trimIndent()
+            """.trimIndent()
         )
     }
 
