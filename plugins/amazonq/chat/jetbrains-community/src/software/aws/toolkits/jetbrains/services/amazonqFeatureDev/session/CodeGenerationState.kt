@@ -211,7 +211,18 @@ private suspend fun CodeGenerationState.generateCode(
                         conversationId = config.conversationId,
                     )
 
-                val newFileInfo = registerNewFiles(newFileContents = codeGenerationStreamResult.new_file_contents)
+                val mutableNewFileContents = codeGenerationStreamResult.new_file_contents.toMutableMap()
+                val keysToRemove = mutableListOf<String>()
+                for (file in mutableNewFileContents.keys) {
+                    if (file.endsWith(".amazonq/dev/run_command.log")) {
+                        val contents: String = mutableNewFileContents[file].orEmpty()
+                        logger.info(contents) { "Run command log: $contents" }
+                        keysToRemove.add(file)
+                    }
+                }
+                keysToRemove.forEach { key -> mutableNewFileContents.remove(key) }
+
+                val newFileInfo = registerNewFiles(newFileContents = mutableNewFileContents)
                 val deletedFileInfo = registerDeletedFiles(deletedFiles = codeGenerationStreamResult.deleted_files)
 
                 return CodeGenerationResult(
