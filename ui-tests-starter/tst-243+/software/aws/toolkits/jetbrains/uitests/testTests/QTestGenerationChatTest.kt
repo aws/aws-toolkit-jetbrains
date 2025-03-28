@@ -113,6 +113,8 @@ class QTestGenerationChatTest {
                 assertTrue(result.contains("View Diff opened"))
                 assertTrue(result.contains("Result Accepted"))
                 assertTrue(result.contains("Unit test generation completed."))
+                assertTrue(result.contains("Input field re-enabled after acceptance"))
+                assertTrue(result.contains("Feedback button found with correct text"))
             }
     }
 
@@ -211,6 +213,8 @@ class QTestGenerationChatTest {
                 assertTrue(result.contains("View Diff opened"))
                 assertTrue(result.contains("Result Reject"))
                 assertTrue(result.contains("Unit test generation completed."))
+                assertTrue(result.contains("Input field re-enabled after rejection"))
+                assertTrue(result.contains("Feedback button found with correct text"))
             }
     }
 
@@ -314,6 +318,114 @@ class QTestGenerationChatTest {
                 assertTrue(result.contains("Cancel button clicked"))
                 assertTrue(result.contains("Test generation cancelled successfully"))
                 assertTrue(result.contains("Input field re-enabled after cancellation"))
+                assertTrue(result.contains("Feedback button found with correct text"))
+            }
+    }
+
+    @Test
+    fun `test documentation generation error handling`() {
+        val testCase = TestCase(
+            IdeProductProvider.IC,
+            LocalProjectInfo(
+                Paths.get("tstData", "qTestGenerationTestProject/")
+            )
+        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+
+        // inject connection
+        useExistingConnectionForTest()
+
+        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
+            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
+                pluginConfigurator.installPluginFromPath(
+                    Path.of(path)
+                )
+            }
+
+            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
+            updateGeneralSettings()
+        }.runIdeWithDriver()
+            .useDriverAndCloseIde {
+                waitForProjectOpen()
+                openFile(Paths.get("testModule1", "HappyPath.java").toString())
+                Thread.sleep(30000)
+                val result = executePuppeteerScript(testDocumentationErrorScript)
+                assertTrue(result.contains("new tab opened"))
+                assertTrue(result.contains("Error message displayed correctly"))
+                assertTrue(result.contains("Input field re-enabled after error"))
+                assertTrue(result.contains("Feedback button found with correct text after error"))
+                assertTrue(result.contains("Feedback button is clickable"))
+            }
+    }
+
+    @Test
+    fun `test remove function error handling`() {
+        val testCase = TestCase(
+            IdeProductProvider.IC,
+            LocalProjectInfo(
+                Paths.get("tstData", "qTestGenerationTestProject/")
+            )
+        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+
+        // inject connection
+        useExistingConnectionForTest()
+
+        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
+            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
+                pluginConfigurator.installPluginFromPath(
+                    Path.of(path)
+                )
+            }
+
+            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
+            updateGeneralSettings()
+        }.runIdeWithDriver()
+            .useDriverAndCloseIde {
+                waitForProjectOpen()
+                openFile(Paths.get("testModule1", "HappyPath.java").toString())
+                Thread.sleep(30000)
+                val result = executePuppeteerScript(testRemoveFunctionErrorScript)
+                assertTrue(result.contains("new tab opened"))
+                assertTrue(result.contains("Error message displayed correctly"))
+                assertTrue(result.contains("Explanation message displayed correctly"))
+                assertTrue(result.contains("Input field re-enabled after error"))
+                assertTrue(result.contains("Feedback button found with correct text after error"))
+                assertTrue(result.contains("Feedback button is clickable"))
+            }
+    }
+
+    @Test
+    fun `test method not found error handling`() {
+        val testCase = TestCase(
+            IdeProductProvider.IC,
+            LocalProjectInfo(
+                Paths.get("tstData", "qTestGenerationTestProject/")
+            )
+        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+
+        // inject connection
+        useExistingConnectionForTest()
+
+        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
+            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
+                pluginConfigurator.installPluginFromPath(
+                    Path.of(path)
+                )
+            }
+
+            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
+            updateGeneralSettings()
+        }.runIdeWithDriver()
+            .useDriverAndCloseIde {
+                waitForProjectOpen()
+                openFile(Paths.get("testModule1", "HappyPath.java").toString())
+                Thread.sleep(30000)
+                val result = executePuppeteerScript(testMethodNotFoundErrorScript)
+                assertTrue(result.contains("new tab opened"))
+                assertTrue(result.contains("Method not found error message displayed correctly"))
+                assertTrue(result.contains("Method not found explanation displayed correctly"))
+                assertTrue(result.contains("Input field re-enabled after error"))
+                assertTrue(result.contains("Feedback button found with correct text after error"))
+                assertTrue(result.contains("Feedback button is clickable"))
             }
     }
 

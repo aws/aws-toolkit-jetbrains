@@ -61,6 +61,33 @@ val testHappyPathScript = """
                             console.log("Result Accepted")
                             await waitForElementWithText(page, "Unit test generation completed.")
                             console.log("Unit test generation completed.")
+                            await page.waitForFunction(
+                                () => {
+                                    const inputElement = document.querySelector('.mynah-chat-prompt-input');
+                                    return inputElement && !inputElement.disabled;
+                                },
+                                { timeout: 10000 }
+                            );
+                            
+                            console.log("Input field re-enabled after acceptance")
+                            
+                            const feedbackButton = await page.waitForFunction(
+                                (expectedText) => {
+                                    const buttons = document.querySelectorAll('button');
+                                    return Array.from(buttons).find(button =>
+                                        button.textContent.includes(expectedText)
+                                    );
+                                },
+                                {timeout:10000},
+                                "How can we make /test better"
+                            );
+                            
+                            if (feedbackButton){
+                                console.log("Feedback button found with correct text")
+                            }else{
+                                console.log("Feedback button not found")
+                                throw new Error('Feedback button not found');
+                            }
                         } catch (e) {
                             console.log("Element with text not found")
                             console.log(e)
@@ -74,32 +101,9 @@ val testHappyPathScript = """
             }
         }
 
-        async function waitForElementWithText(page, text) {
-            await page.waitForFunction(
-                (expectedText) => {
-                    const elements = document.querySelectorAll('*');
-                    return Array.from(elements).find(element =>
-                        element.textContent?.trim() === expectedText
-                    );
-                },
-                {},
-                text
-            );
-        }
-
-        async function waitAndGetElementByText(page, text) {
-            const element = await page.waitForFunction(
-                (expectedText) => {
-                    const elements = document.querySelectorAll('*');
-                    return Array.from(elements).find(element =>
-                        element.textContent?.trim() === expectedText
-                    );
-                },
-                {},
-                text
-            );
-            return element;
-        }
+        ${waitForElementWithTextFunction}
+            
+        ${waitAndGetElementByTextFunction}
         testNavigation().catch(console.error);
 """.trimIndent()
 
@@ -142,32 +146,9 @@ async function testNavigation() {
     }
 }
 
-async function waitForElementWithText(page, text) {
-    await page.waitForFunction(
-        (expectedText) => {
-            const elements = document.querySelectorAll('*');
-            return Array.from(elements).find(element =>
-                element.textContent?.trim() === expectedText
-            );
-        },
-        {},
-        text
-    );
-}
-
-async function waitAndGetElementByText(page, text) {
-    const element = await page.waitForFunction(
-        (expectedText) => {
-            const elements = document.querySelectorAll('*');
-            return Array.from(elements).find(element =>
-                element.textContent?.trim() === expectedText
-            );
-        },
-        {},
-        text
-    );
-    return element;
-}
+${waitForElementWithTextFunction}
+            
+${waitAndGetElementByTextFunction}
 testNavigation().catch(console.error);
 """.trimIndent()
 
@@ -223,32 +204,9 @@ val expectedErrorPath = """
         }
     }
 
-    async function waitForElementWithText(page, text) {
-        await page.waitForFunction(
-            (expectedText) => {
-                const elements = document.querySelectorAll('*');
-                return Array.from(elements).find(element =>
-                    element.textContent?.trim() === expectedText
-                );
-            },
-            {},
-            text
-        );
-    }
-
-    async function waitAndGetElementByText(page, text) {
-        const element = await page.waitForFunction(
-            (expectedText) => {
-                const elements = document.querySelectorAll('*');
-                return Array.from(elements).find(element =>
-                    element.textContent?.trim() === expectedText
-                );
-            },
-            {},
-            text
-        );
-        return element;
-    }
+    ${waitForElementWithTextFunction}
+            
+    ${waitAndGetElementByTextFunction}
     testNavigation().catch(console.error);
 """.trimIndent()
 
@@ -304,32 +262,9 @@ val unsupportedLanguagePath = """
         }
     }
 
-    async function waitForElementWithText(page, text) {
-        await page.waitForFunction(
-            (expectedText) => {
-                const elements = document.querySelectorAll('*');
-                return Array.from(elements).find(element =>
-                    element.textContent?.trim() === expectedText
-                );
-            },
-            {},
-            text
-        );
-    }
-
-    async function waitAndGetElementByText(page, text) {
-        const element = await page.waitForFunction(
-            (expectedText) => {
-                const elements = document.querySelectorAll('*');
-                return Array.from(elements).find(element =>
-                    element.textContent?.trim() === expectedText
-                );
-            },
-            {},
-            text
-        );
-        return element;
-    }
+    ${waitForElementWithTextFunction}
+            
+    ${waitAndGetElementByTextFunction}
     testNavigation().catch(console.error);
 """.trimIndent()
 
@@ -390,6 +325,33 @@ val testRejectPathScript = """
                             console.log("Result Reject")
                             await waitForElementWithText(page, "Unit test generation completed.")
                             console.log("Unit test generation completed.")
+                            await page.waitForFunction(
+                                () => {
+                                    const inputElement = document.querySelector('.mynah-chat-prompt-input');
+                                    return inputElement && !inputElement.disabled;
+                                },
+                                { timeout: 10000 }
+                            );
+                            
+                            console.log("Input field re-enabled after rejection")
+                            const feedbackButton = await page.waitForFunction(
+                                (expectedText) => {
+                                    const buttons = document.querySelectorAll('button');
+                                    return Array.from(buttons).find(button =>
+                                        button.textContent.includes(expectedText)
+                                    );
+                                },
+                                {timeout:10000},
+                                "How can we make /test better"
+                            );
+                            
+                            if (feedbackButton){
+                                console.log("Feedback button found with correct text")
+                            }else{
+                                console.log("Feedback button not found")
+                                throw new Error('Feedback button not found');
+                            }
+
                         } catch (e) {
                             console.log("Element with text not found")
                             console.log(e)
@@ -403,32 +365,10 @@ val testRejectPathScript = """
             }
         }
 
-        async function waitForElementWithText(page, text) {
-            await page.waitForFunction(
-                (expectedText) => {
-                    const elements = document.querySelectorAll('*');
-                    return Array.from(elements).find(element =>
-                        element.textContent?.trim() === expectedText
-                    );
-                },
-                {},
-                text
-            );
-        }
+        ${waitForElementWithTextFunction}
+        
+        ${waitAndGetElementByTextFunction}
 
-        async function waitAndGetElementByText(page, text) {
-            const element = await page.waitForFunction(
-                (expectedText) => {
-                    const elements = document.querySelectorAll('*');
-                    return Array.from(elements).find(element =>
-                        element.textContent?.trim() === expectedText
-                    );
-                },
-                {},
-                text
-            );
-            return element;
-        }
         testNavigation().catch(console.error); 
 """.trimIndent()
 
@@ -494,32 +434,9 @@ val testNLErrorPathScript = """
         }    
     }
     
-    async function waitForElementWithText(page, text) {
-        await page.waitForFunction(
-            (expectedText) => {
-                const elements = document.querySelectorAll('*');
-                return Array.from(elements).find(element =>
-                    element.textContent?.trim() === expectedText
-                        );
-                },
-                    {},
-                    text
-                );
-    }
-
-    async function waitAndGetElementByText(page, text) {
-        const element = await page.waitForFunction(
-            (expectedText) => {
-                const elements = document.querySelectorAll('*');
-                return Array.from(elements).find(element =>
-                       element.textContent?.trim() === expectedText
-                   );
-               },
-               {},
-               text
-           );
-        return element;
-    }
+    ${waitForElementWithTextFunction}
+        
+    ${waitAndGetElementByTextFunction}
     testNavigation().catch(console.error); 
 """.trimIndent()
 
@@ -582,32 +499,10 @@ val testProgressBarScript = """
         }
     }
     
-    async function waitForElementWithText(page, text) {
-        await page.waitForFunction(
-            (expectedText) => {
-                const elements = document.querySelectorAll('*');
-                return Array.from(elements).find(element =>
-                    element.textContent?.trim() === expectedText
-                );
-            },
-            {},
-            text
-        );
-    }
+    ${waitForElementWithTextFunction}
+            
+    ${waitAndGetElementByTextFunction}
 
-    async function waitAndGetElementByText(page, text) {
-        const element = await page.waitForFunction(
-            (expectedText) => {
-                const elements = document.querySelectorAll('*');
-                return Array.from(elements).find(element =>
-                    element.textContent?.trim() === expectedText
-                );
-            },
-            {},
-            text
-        );
-        return element;
-    }
     testNavigation().catch(console.error);
 """.trimIndent()
 
@@ -681,6 +576,26 @@ val testCancelButtonScript = """
                         
                         console.log("Input field re-enabled after cancellation")
                         
+                        const feedbackButton = await page.waitForFunction(
+                                (expectedText) => {
+                                    const buttons = document.querySelectorAll('button');
+                                    return Array.from(buttons).find(button =>
+                                        button.textContent.includes(expectedText)
+                                    );
+                                },
+                                {timeout:10000},
+                                "How can we make /test better"
+                            );
+                            
+                            if (feedbackButton){
+                                console.log("Feedback button found with correct text")
+                            }else{
+                                console.log("Feedback button not found")
+                                throw new Error('Feedback button not found');
+                            }
+                        
+
+                        
                     } catch (e) {
                         console.log("Test failed")
                         console.log(e)
@@ -693,31 +608,290 @@ val testCancelButtonScript = """
         }
     }
 
-    async function waitForElementWithText(page, text) {
-        await page.waitForFunction(
-            (expectedText) => {
-                const elements = document.querySelectorAll('*');
-                return Array.from(elements).find(element =>
-                    element.textContent?.trim() === expectedText
-                );
-            },
-            {},
-            text
-        );
+    ${waitForElementWithTextFunction}
+            
+    ${waitAndGetElementByTextFunction}
+    testNavigation().catch(console.error);
+""".trimIndent()
+
+@Language("JavaScript")
+val testDocumentationErrorScript = """
+    const puppeteer = require('puppeteer');
+    async function testNavigation() {
+        const browser = await puppeteer.connect({
+            browserURL: "http://localhost:9222"
+        })
+        try {
+            const pages = await browser.pages()
+            for(const page of pages) {
+                const contents = await page.evaluate(el => el.innerHTML, await page.${'$'}(':root'));
+                const element = await page.${'$'}('.mynah-chat-prompt-input')
+                if(element) {
+                    const elements = await page.${'$'}${'$'}('.mynah-chat-command-selector-command');
+                    const attr = await Promise.all(
+                        elements.map(elem => elem.evaluate(el => el.getAttribute('command')))
+                    );
+                    
+                    await page.type('.mynah-chat-prompt-input', '/test generate documentation for this file')
+                    await page.keyboard.press('Enter');
+                    
+                    try {
+                        await waitForElementWithText(page, "Q - Test")
+                        console.log("new tab opened")
+                        
+                        await page.waitForFunction(
+                            (expectedText) => {
+                                const pageContent = document.body.textContent || '';
+                                return pageContent.includes(expectedText);
+                            },
+                            {
+                                timeout: 10000
+                            },
+                            "I apologize, but I couldn't process your /test instruction"
+                        );
+                        
+                        console.log("Error message displayed correctly")
+                        
+                        await page.waitForFunction(
+                            () => {
+                                const inputElement = document.querySelector('.mynah-chat-prompt-input');
+                                return inputElement && !inputElement.disabled;
+                            },
+                            { timeout: 10000 }
+                        );
+                        
+                        console.log("Input field re-enabled after error")
+                      
+                        const feedbackButton = await page.waitForFunction(
+                            (expectedText) => {
+                                const buttons = document.querySelectorAll('button');
+                                return Array.from(buttons).find(button => 
+                                    button.textContent.includes(expectedText)
+                                );
+                            },
+                            { timeout: 10000 },
+                            "How can we make /test better"
+                        );
+                        
+                        if (feedbackButton){
+                                console.log("Feedback button found with correct text")
+                            }else{
+                                console.log("Feedback button not found")
+                                throw new Error('Feedback button not found');
+                            }
+                        
+                    } catch (e) {
+                        console.log("Test failed")
+                        console.log(e)
+                        throw e
+                    }
+                }
+            }
+        } finally {
+            await browser.close();
+        }
     }
 
-    async function waitAndGetElementByText(page, text) {
-        const element = await page.waitForFunction(
-            (expectedText) => {
-                const elements = document.querySelectorAll('*');
-                return Array.from(elements).find(element =>
-                    element.textContent?.trim() === expectedText
-                );
-            },
-            {},
-            text
-        );
-        return element;
+    ${waitForElementWithTextFunction}
+
+    ${waitAndGetElementByTextFunction}
+    
+    testNavigation().catch(console.error);
+""".trimIndent()
+
+@Language("JavaScript")
+val testRemoveFunctionErrorScript = """
+    const puppeteer = require('puppeteer');
+    async function testNavigation() {
+        const browser = await puppeteer.connect({
+            browserURL: "http://localhost:9222"
+        })
+        try {
+            const pages = await browser.pages()
+            for(const page of pages) {
+                const contents = await page.evaluate(el => el.innerHTML, await page.${'$'}(':root'));
+                const element = await page.${'$'}('.mynah-chat-prompt-input')
+                if(element) {
+                    const elements = await page.${'$'}${'$'}('.mynah-chat-command-selector-command');
+                    const attr = await Promise.all(
+                        elements.map(elem => elem.evaluate(el => el.getAttribute('command')))
+                    );
+                    
+                    await page.type('.mynah-chat-prompt-input', '/test remove multiply function')
+                    await page.keyboard.press('Enter');
+                    
+                    try {
+                        await waitForElementWithText(page, "Q - Test")
+                        console.log("new tab opened")
+                        
+                        await page.waitForFunction(
+                            (expectedText) => {
+                                const pageContent = document.body.textContent || '';
+                                return pageContent.includes(expectedText);
+                            },
+                            {
+                                timeout: 10000
+                            },
+                            "I apologize, but I couldn't process your /test instruction"
+                        );
+                        
+                        console.log("Error message displayed correctly")
+                        
+                        await page.waitForFunction(
+                            (expectedText) => {
+                                const pageContent = document.body.textContent || '';
+                                return pageContent.includes(expectedText);
+                            },
+                            {
+                                timeout: 10000
+                            },
+                            "The /test command is designed to generate unit tests"
+                        );
+                        
+                        console.log("Explanation message displayed correctly")
+                        
+                        await page.waitForFunction(
+                            () => {
+                                const inputElement = document.querySelector('.mynah-chat-prompt-input');
+                                return inputElement && !inputElement.disabled;
+                            },
+                            { timeout: 10000 }
+                        );
+                        
+                        console.log("Input field re-enabled after error")
+
+                        const feedbackButton = await page.waitForFunction(
+                                (expectedText) => {
+                                    const buttons = document.querySelectorAll('button');
+                                    return Array.from(buttons).find(button =>
+                                        button.textContent.includes(expectedText)
+                                    );
+                                },
+                                {timeout:10000},
+                                "How can we make /test better"
+                            );
+                            
+                            if (feedbackButton){
+                                console.log("Feedback button found with correct text")
+                            }else{
+                                console.log("Feedback button not found")
+                                throw new Error('Feedback button not found');
+                            }
+                        
+                    } catch (e) {
+                        console.log("Test failed")
+                        console.log(e)
+                        throw e
+                    }
+                }
+            }
+        } finally {
+            await browser.close();
+        }
     }
+
+    ${waitForElementWithTextFunction}
+
+    ${waitAndGetElementByTextFunction}
+    
+    testNavigation().catch(console.error);
+""".trimIndent()
+
+@Language("JavaScript")
+val testMethodNotFoundErrorScript = """
+    const puppeteer = require('puppeteer');
+    async function testNavigation() {
+        const browser = await puppeteer.connect({
+            browserURL: "http://localhost:9222"
+        })
+        try {
+            const pages = await browser.pages()
+            for(const page of pages) {
+                const contents = await page.evaluate(el => el.innerHTML, await page.${'$'}(':root'));
+                const element = await page.${'$'}('.mynah-chat-prompt-input')
+                if(element) {
+                    const elements = await page.${'$'}${'$'}('.mynah-chat-command-selector-command');
+                    const attr = await Promise.all(
+                        elements.map(elem => elem.evaluate(el => el.getAttribute('command')))
+                    );
+                    
+                    await page.type('.mynah-chat-prompt-input', '/test generate tests for zipping')
+                    await page.keyboard.press('Enter');
+                    
+                    try {
+                        await waitForElementWithText(page, "Q - Test")
+                        console.log("new tab opened")
+                        
+                        await page.waitForFunction(
+                            (expectedText) => {
+                                const pageContent = document.body.textContent || '';
+                                return pageContent.includes(expectedText);
+                            },
+                            {
+                                timeout: 10000
+                            },
+                            "I apologize, but I could not find the specified class, function, or method"
+                        );
+                        
+                        console.log("Method not found error message displayed correctly")
+                        
+                        await page.waitForFunction(
+                            (expectedText) => {
+                                const pageContent = document.body.textContent || '';
+                                return pageContent.includes(expectedText);
+                            },
+                            {
+                                timeout: 10000
+                            },
+                            "Please make sure the method exists in the current file"
+                        );
+                        
+                        console.log("Method not found explanation displayed correctly")
+                        
+                        await page.waitForFunction(
+                            () => {
+                                const inputElement = document.querySelector('.mynah-chat-prompt-input');
+                                return inputElement && !inputElement.disabled;
+                            },
+                            { timeout: 10000 }
+                        );
+                        
+                        console.log("Input field re-enabled after error")
+                        
+                        const feedbackButton = await page.waitForFunction(
+                                (expectedText) => {
+                                    const buttons = document.querySelectorAll('button');
+                                    return Array.from(buttons).find(button =>
+                                        button.textContent.includes(expectedText)
+                                    );
+                                },
+                                {timeout:10000},
+                                "How can we make /test better"
+                            );
+                            
+                            if (feedbackButton){
+                                console.log("Feedback button found with correct text")
+                            }else{
+                                console.log("Feedback button not found")
+                                throw new Error('Feedback button not found');
+                            }
+                            
+                        
+                    } catch (e) {
+                        console.log("Test failed")
+                        console.log(e)
+                        throw e
+                    }
+                }
+            }
+        } finally {
+            await browser.close();
+        }
+    }
+
+    ${waitForElementWithTextFunction}
+
+    ${waitAndGetElementByTextFunction}
+    
     testNavigation().catch(console.error);
 """.trimIndent()
