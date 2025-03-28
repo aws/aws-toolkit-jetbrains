@@ -17,7 +17,6 @@ import software.aws.toolkits.jetbrains.utils.satisfiesKt
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.PosixFilePermissions
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.isRegularFile
@@ -86,7 +85,10 @@ class LspUtilsTest {
                 paths
                     .filter { it.isRegularFile() }
                     .forEach { file ->
-                        Files.copy(file, zipfs.getPath("/").resolve(source.relativize(file).toString()), StandardCopyOption.COPY_ATTRIBUTES)
+                        val targetPath = zipfs.getPath("/").resolve(source.relativize(file).toString())
+                        Files.copy(file, targetPath)
+                        val sourcePerms = Files.getPosixFilePermissions(file)
+                        Files.setPosixFilePermissions(targetPath, sourcePerms)
                     }
             }
         }

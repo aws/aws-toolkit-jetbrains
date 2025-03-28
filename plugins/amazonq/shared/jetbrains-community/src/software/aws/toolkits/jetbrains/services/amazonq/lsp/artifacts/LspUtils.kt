@@ -91,7 +91,9 @@ fun extractZipFile(zipFilePath: Path, destDir: Path) {
                     .forEach { zipEntry ->
                         val destPath = Paths.get(destDir.toString(), zipEntry.toString())
                         destPath.createParentDirectories()
-                        Files.copy(zipEntry, destPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
+                        Files.copy(zipEntry, destPath, StandardCopyOption.REPLACE_EXISTING)
+                        val permissions = Files.getPosixFilePermissions(zipEntry)
+                        Files.setPosixFilePermissions(destPath, permissions)
                     }
             }
         }
