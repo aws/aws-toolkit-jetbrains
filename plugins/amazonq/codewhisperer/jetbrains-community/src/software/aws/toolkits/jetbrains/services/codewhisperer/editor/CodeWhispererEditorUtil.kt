@@ -25,46 +25,15 @@ import java.awt.Point
 import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
-import com.intellij.analysis.problemsView.ProblemsCollector
-import com.intellij.analysis.problemsView.toolWindow.ProblemsView
 import com.intellij.openapi.editor.impl.DocumentMarkupModel
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.editor.Document
-import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
+import com.intellij.lang.annotation.HighlightSeverity
 import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
 import software.amazon.awssdk.services.codewhispererruntime.model.Position
 import software.amazon.awssdk.services.codewhispererruntime.model.Range
 
-fun getHighlightedProblems(document: Document, project: Project): List<IdeDiagnostic> {
-    val markupModel = DocumentMarkupModel.forDocument(document, project, true)
-    val highlighters = markupModel.getAllHighlighters()
-    val highlightInfos = highlighters.map {i-> i.errorStripeTooltip as HighlightInfo}
-    return highlightInfos
-        .map { highlighterInfo ->
-            val msg = highlighterInfo.description
-            val text = highlighterInfo.text
-            val startLine = document.getLineNumber(highlighterInfo.startOffset)
-            val endLine = document.getLineNumber(highlighterInfo.endOffset)
-            val startChar = document.getLineStartOffset(startLine)
-            val endChar = document.getLineStartOffset(endLine)
-            IdeDiagnostic.builder()
-                .ideDiagnosticType("")
-                .severity("")
-                .source(highlighterInfo.inspectionToolId)
-                .range(Range.builder()
-                    .start(Position.builder()
-                        .line(startLine)
-                        .character(startChar)
-                        .build())
-                    .end(Position.builder()
-                        .line(endLine)
-                        .character(endChar)
-                        .build())
-                    .build())
-                .build()
-        }
-}
 
 object CodeWhispererEditorUtil {
     fun getFileContextInfo(editor: Editor, psiFile: PsiFile): FileContextInfo {
@@ -72,12 +41,6 @@ object CodeWhispererEditorUtil {
         val fileName = getFileName(psiFile)
         val programmingLanguage = psiFile.programmingLanguage()
         val fileRelativePath = getRelativePathToContentRoot(editor)
-
-        val pp = ProblemsCollector.getInstance(editor.project!!).getFileProblems(editor.virtualFile);
-
-        val problemsView = ProblemsView.getToolWindow(editor.project!!)
-
-        val problems = getHighlightedProblems(editor.document, editor.project!!)
         return FileContextInfo(caretContext, fileName, programmingLanguage, fileRelativePath)
     }
 

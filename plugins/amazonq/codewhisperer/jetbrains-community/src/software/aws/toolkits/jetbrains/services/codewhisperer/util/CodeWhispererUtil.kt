@@ -3,12 +3,16 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
+import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.ide.BrowserUtil
+import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.impl.DocumentMarkupModel
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
@@ -22,7 +26,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
+import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
 import software.amazon.awssdk.services.codewhispererruntime.model.OptOutPreference
+import software.amazon.awssdk.services.codewhispererruntime.model.Position
+import software.amazon.awssdk.services.codewhispererruntime.model.Range
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
@@ -360,4 +367,104 @@ object CodeWhispererUtil {
 
 enum class CaretMovement {
     NO_CHANGE, MOVE_FORWARD, MOVE_BACKWARD
+}
+
+fun getDiagnosticsType(message: String): String {
+    // Convert message to lowercase for case-insensitive matching
+    val lowercaseMessage = message.lowercase()
+
+    // Syntax Error keywords
+    if (listOf("expected", "indent", "syntax").any { lowercaseMessage.contains(it) }) {
+        return "SYNTAX_ERROR"
+    }
+
+    // Type Error keywords
+    if (listOf("type", "cast").any { lowercaseMessage.contains(it) }) {
+        return "TYPE_ERROR"
+    }
+
+    // Reference Error keywords
+    if (listOf("undefined", "not defined", "undeclared", "reference", "symbol").any { lowercaseMessage.contains(it) }) {
+        return "REFERENCE_ERROR"
+    }
+
+    // Best Practice keywords
+    if (listOf("deprecated", "unused", "uninitialized", "not initialized").any { lowercaseMessage.contains(it) }) {
+        return "BEST_PRACTICE"
+    }
+
+    // Security keywords
+    if (listOf("security", "vulnerability").any { lowercaseMessage.contains(it) }) {
+        return "SECURITY"
+    }
+
+    return "OTHER"
+}
+
+fun convertSeverity(severity: HighlightSeverity): String {
+    return when {
+        severity == HighlightSeverity.ERROR -> "ERROR"
+        severity == HighlightSeverity.WARNING ||
+            severity == HighlightSeverity.WEAK_WARNING -> "WARNING"
+        severity == HighlightSeverity.INFORMATION -> "INFORMATION"
+        severity.toString().contains("TEXT", ignoreCase = true) -> "HINT"
+        severity == HighlightSeverity.INFO -> "INFORMATION"
+        // For severities that might indicate performance issues
+        severity.toString().contains("PERFORMANCE", ignoreCase = true) -> "WARNING"
+        // For deprecation warnings
+        severity.toString().contains("DEPRECATED", ignoreCase = true) -> "WARNING"
+        // Default case
+        else -> "INFORMATION"
+    }
+}
+
+
+fun getDocumentDiagnostics(document: Document, project: Project): List<IdeDiagnostic> {
+    // this in general finishes within 3-4ms
+    try {
+        val markupModel = DocumentMarkupModel.forDocument(document, project, true)
+        val highlighters = markupModel.allHighlighters
+        val highlightInfos = highlighters.mapNotNull {i-> i.errorStripeTooltip as? HighlightInfo }.filter { i-> i.description != null && i.description != "" }
+        return highlightInfos
+            .map { highlighterInfo ->
+                val startLine = document.getLineNumber(highlighterInfo.startOffset)
+                val endLine = document.getLineNumber(highlighterInfo.endOffset)
+                val startChar = document.getLineStartOffset(startLine)
+                val endChar = document.getLineStartOffset(endLine)
+                IdeDiagnostic.builder()
+                    .ideDiagnosticType(getDiagnosticsType(highlighterInfo.description))
+                    .severity(convertSeverity( highlighterInfo.severity))
+                    .source(highlighterInfo.inspectionToolId)
+                    .range(
+                        Range.builder()
+                            .start(
+                                Position.builder()
+                                    .line(startLine)
+                                    .character(startChar)
+                                    .build())
+                            .end(
+                                Position.builder()
+                                    .line(endLine)
+                                    .character(endChar)
+                                    .build())
+                            .build())
+                    .build()
+            }
+    } catch (e: Exception) {
+        getLogger<CodeWhispererUtil>().warn("Failed to get document diagnostics", e)
+    }
+    return emptyList()
+}
+
+data class DiagnosticDifferences(
+    val added: List<IdeDiagnostic>,
+    val removed: List<IdeDiagnostic>
+)
+
+fun getDiagnosticDifferences(oldDiagnostic: List<IdeDiagnostic>, newDiagnostic: List<IdeDiagnostic>): DiagnosticDifferences {
+    val oldSet = oldDiagnostic.map { i -> i.toString() }.toSet()
+    val newSet = newDiagnostic.map { i -> i.toString() }.toSet()
+    val added = newDiagnostic.filter { i -> !oldSet.contains(i.toString()) }
+    val removed = oldDiagnostic.filter { i -> !newSet.contains(i.toString()) }
+    return DiagnosticDifferences(added, removed)
 }
