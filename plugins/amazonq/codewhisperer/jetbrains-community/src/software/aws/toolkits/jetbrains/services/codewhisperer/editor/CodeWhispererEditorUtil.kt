@@ -25,15 +25,6 @@ import java.awt.Point
 import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
-import com.intellij.openapi.editor.impl.DocumentMarkupModel
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.editor.Document
-import com.intellij.codeInsight.daemon.impl.HighlightInfo
-import com.intellij.lang.annotation.HighlightSeverity
-import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
-import software.amazon.awssdk.services.codewhispererruntime.model.Position
-import software.amazon.awssdk.services.codewhispererruntime.model.Range
-
 
 object CodeWhispererEditorUtil {
     fun getFileContextInfo(editor: Editor, psiFile: PsiFile): FileContextInfo {
