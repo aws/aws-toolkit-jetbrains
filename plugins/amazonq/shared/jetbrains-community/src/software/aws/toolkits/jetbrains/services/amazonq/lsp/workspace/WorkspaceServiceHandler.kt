@@ -20,6 +20,10 @@ import org.eclipse.lsp4j.CreateFilesParams
 import org.eclipse.lsp4j.DeleteFilesParams
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams
 import org.eclipse.lsp4j.DidChangeWorkspaceFoldersParams
+import org.eclipse.lsp4j.DidCloseTextDocumentParams
+import org.eclipse.lsp4j.DidOpenTextDocumentParams
+import org.eclipse.lsp4j.TextDocumentIdentifier
+import org.eclipse.lsp4j.TextDocumentItem
 import org.eclipse.lsp4j.FileChangeType
 import org.eclipse.lsp4j.FileCreate
 import org.eclipse.lsp4j.FileDelete
@@ -134,6 +138,31 @@ class WorkspaceServiceHandler(
 
                     val oldUri = toUriString(parentFile)?.let { parentUri -> "$parentUri/$oldFileName" }
                     val newUri = toUriString(renamedFile)
+
+                    // First close the old document
+                    oldUri?.let { uri ->
+                        languageServer.textDocumentService.didClose(
+                            DidCloseTextDocumentParams().apply {
+                                textDocument = TextDocumentIdentifier().apply {
+                                    this.uri = uri
+                                }
+                            }
+                        )
+                    }
+
+                    // Then open the new document
+                    newUri?.let { uri ->
+                        languageServer.textDocumentService.didOpen(
+                            DidOpenTextDocumentParams().apply {
+                                textDocument = TextDocumentItem().apply {
+                                    this.uri = uri
+                                    languageId = renamedFile.fileType.name.lowercase()
+                                    version = renamedFile.modificationStamp.toInt()
+                                    text = renamedFile.inputStream.readAllBytes().decodeToString()
+                                }
+                            }
+                        )
+                    }
 
                     FileRename().apply {
                         this.oldUri = oldUri
