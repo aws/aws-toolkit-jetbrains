@@ -22,6 +22,7 @@ import java.nio.file.attribute.PosixFilePermissions
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.setPosixFilePermissions
+import java.nio.file.attribute.PosixFilePermission
 
 class LspUtilsTest {
     @Test
@@ -86,7 +87,12 @@ class LspUtilsTest {
                 paths
                     .filter { it.isRegularFile() }
                     .forEach { file ->
-                        Files.copy(file, zipfs.getPath("/").resolve(source.relativize(file).toString()), StandardCopyOption.COPY_ATTRIBUTES)
+                        val targetPath = zipfs.getPath("/").resolve(source.relativize(file).toString())
+                        // First copy the file
+                        Files.copy(file, targetPath)
+                        // Then explicitly set the permissions from the source file
+                        val sourcePerms = Files.getPosixFilePermissions(file)
+                        Files.setPosixFilePermissions(targetPath, sourcePerms)
                     }
             }
         }

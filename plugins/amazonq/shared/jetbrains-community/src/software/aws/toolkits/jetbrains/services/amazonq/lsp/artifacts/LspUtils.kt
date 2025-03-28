@@ -7,6 +7,8 @@ import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.util.io.DigestUtil
 import com.intellij.util.system.CpuArch
+import java.nio.file.attribute.PosixFileAttributes
+import java.nio.file.attribute.PosixFileAttributeView
 import software.aws.toolkits.core.utils.ZIP_PROPERTY_POSIX
 import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.exists
@@ -18,6 +20,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
+import java.nio.file.attribute.PosixFilePermissions
 import java.security.MessageDigest
 import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
@@ -91,7 +94,12 @@ fun extractZipFile(zipFilePath: Path, destDir: Path) {
                     .forEach { zipEntry ->
                         val destPath = Paths.get(destDir.toString(), zipEntry.toString())
                         destPath.createParentDirectories()
-                        Files.copy(zipEntry, destPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
+
+                        Files.copy(zipEntry, destPath, StandardCopyOption.REPLACE_EXISTING)
+
+                        // Explicitly set permissions after copy
+                        val permissions = Files.getPosixFilePermissions(zipEntry)
+                        Files.setPosixFilePermissions(destPath, permissions)
                     }
             }
         }
