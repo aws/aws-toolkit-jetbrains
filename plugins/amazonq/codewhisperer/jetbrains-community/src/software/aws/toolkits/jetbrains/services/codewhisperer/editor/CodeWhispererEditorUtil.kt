@@ -25,77 +25,45 @@ import java.awt.Point
 import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
-import com.intellij.analysis.problemsView.Problem
-import com.intellij.analysis.problemsView.ProblemsListener
 import com.intellij.analysis.problemsView.ProblemsCollector
 import com.intellij.analysis.problemsView.toolWindow.ProblemsView
-import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
-
-import com.intellij.openapi.editor.markup.RangeHighlighter
 import com.intellij.openapi.editor.impl.DocumentMarkupModel
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.editor.Document
 import com.intellij.lang.annotation.HighlightSeverity
+import com.intellij.codeInsight.daemon.impl.HighlightInfo
+import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
+import software.amazon.awssdk.services.codewhispererruntime.model.Position
+import software.amazon.awssdk.services.codewhispererruntime.model.Range
 
-fun getHighlightedProblems(document: Document, project: Project): List<ProblemInfo> {
+fun getHighlightedProblems(document: Document, project: Project): List<IdeDiagnostic> {
     val markupModel = DocumentMarkupModel.forDocument(document, project, true)
     val highlighters = markupModel.getAllHighlighters()
-    return highlighters
-        .filter { highlighter ->
-            // Filter only error and warning highlighters
-//            val severity = highlighter.errorStripeTooltip
-//                ?.let { if (it is String) null else it }
-//                ?.let { (it as? com.intellij.lang.annotation.AnnotationHolder)?.severity }
-//                ?: HighlightSeverity.INFORMATION
-            val severity = HighlightSeverity.INFORMATION
-            severity == HighlightSeverity.ERROR || severity == HighlightSeverity.WARNING
+    val highlightInfos = highlighters.map {i-> i.errorStripeTooltip as HighlightInfo}
+    return highlightInfos
+        .map { highlighterInfo ->
+            val msg = highlighterInfo.description
+            val text = highlighterInfo.text
+            val startLine = document.getLineNumber(highlighterInfo.startOffset)
+            val endLine = document.getLineNumber(highlighterInfo.endOffset)
+            val startChar = document.getLineStartOffset(startLine)
+            val endChar = document.getLineStartOffset(endLine)
+            IdeDiagnostic.builder()
+                .ideDiagnosticType("")
+                .severity("")
+                .source(highlighterInfo.inspectionToolId)
+                .range(Range.builder()
+                    .start(Position.builder()
+                        .line(startLine)
+                        .character(startChar)
+                        .build())
+                    .end(Position.builder()
+                        .line(endLine)
+                        .character(endChar)
+                        .build())
+                    .build())
+                .build()
         }
-        .map { highlighter ->
-            ProblemInfo(
-                startOffset = highlighter.startOffset,
-                endOffset = highlighter.endOffset,
-                message = getHighlighterMessage(highlighter),
-                severity = getHighlighterSeverity(highlighter)
-            )
-        }
-}
-
-private fun getHighlighterMessage(highlighter: RangeHighlighter): String {
-    return when (val tooltip = highlighter.errorStripeTooltip) {
-        is String -> tooltip
-        is com.intellij.lang.annotation.AnnotationHolder -> tooltip.toString()
-        else -> tooltip?.toString() ?: ""
-    }
-}
-
-private fun getHighlighterSeverity(highlighter: RangeHighlighter): HighlightSeverity {
-    return HighlightSeverity.INFORMATION
-//    return highlighter.errorStripeTooltip
-//        ?.let { if (it is String) null else it }
-//        ?.let { (it as? com.intellij.lang.annotation.AnnotationHolder)?.severity }
-//        ?: HighlightSeverity.INFORMATION
-}
-
-// Data class to hold problem information
-data class ProblemInfo(
-    val startOffset: Int,
-    val endOffset: Int,
-    val message: String,
-    val severity: HighlightSeverity
-)
-
-// Example usage:
-fun example(document: Document, project: Project) {
-    val problems = getHighlightedProblems(document, project)
-
-    problems.forEach { problem ->
-        println("""
-            Problem found:
-            - Message: ${problem.message}
-            - Severity: ${problem.severity}
-            - Range: ${problem.startOffset}..${problem.endOffset}
-        """.trimIndent())
-    }
 }
 
 object CodeWhispererEditorUtil {
