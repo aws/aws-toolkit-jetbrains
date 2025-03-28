@@ -25,6 +25,78 @@ import java.awt.Point
 import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
+import com.intellij.analysis.problemsView.Problem
+import com.intellij.analysis.problemsView.ProblemsListener
+import com.intellij.analysis.problemsView.ProblemsCollector
+import com.intellij.analysis.problemsView.toolWindow.ProblemsView
+import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
+
+import com.intellij.openapi.editor.markup.RangeHighlighter
+import com.intellij.openapi.editor.impl.DocumentMarkupModel
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.editor.Document
+import com.intellij.lang.annotation.HighlightSeverity
+
+fun getHighlightedProblems(document: Document, project: Project): List<ProblemInfo> {
+    val markupModel = DocumentMarkupModel.forDocument(document, project, true)
+    val highlighters = markupModel.getAllHighlighters()
+    return highlighters
+        .filter { highlighter ->
+            // Filter only error and warning highlighters
+//            val severity = highlighter.errorStripeTooltip
+//                ?.let { if (it is String) null else it }
+//                ?.let { (it as? com.intellij.lang.annotation.AnnotationHolder)?.severity }
+//                ?: HighlightSeverity.INFORMATION
+            val severity = HighlightSeverity.INFORMATION
+            severity == HighlightSeverity.ERROR || severity == HighlightSeverity.WARNING
+        }
+        .map { highlighter ->
+            ProblemInfo(
+                startOffset = highlighter.startOffset,
+                endOffset = highlighter.endOffset,
+                message = getHighlighterMessage(highlighter),
+                severity = getHighlighterSeverity(highlighter)
+            )
+        }
+}
+
+private fun getHighlighterMessage(highlighter: RangeHighlighter): String {
+    return when (val tooltip = highlighter.errorStripeTooltip) {
+        is String -> tooltip
+        is com.intellij.lang.annotation.AnnotationHolder -> tooltip.toString()
+        else -> tooltip?.toString() ?: ""
+    }
+}
+
+private fun getHighlighterSeverity(highlighter: RangeHighlighter): HighlightSeverity {
+    return HighlightSeverity.INFORMATION
+//    return highlighter.errorStripeTooltip
+//        ?.let { if (it is String) null else it }
+//        ?.let { (it as? com.intellij.lang.annotation.AnnotationHolder)?.severity }
+//        ?: HighlightSeverity.INFORMATION
+}
+
+// Data class to hold problem information
+data class ProblemInfo(
+    val startOffset: Int,
+    val endOffset: Int,
+    val message: String,
+    val severity: HighlightSeverity
+)
+
+// Example usage:
+fun example(document: Document, project: Project) {
+    val problems = getHighlightedProblems(document, project)
+
+    problems.forEach { problem ->
+        println("""
+            Problem found:
+            - Message: ${problem.message}
+            - Severity: ${problem.severity}
+            - Range: ${problem.startOffset}..${problem.endOffset}
+        """.trimIndent())
+    }
+}
 
 object CodeWhispererEditorUtil {
     fun getFileContextInfo(editor: Editor, psiFile: PsiFile): FileContextInfo {
@@ -32,6 +104,12 @@ object CodeWhispererEditorUtil {
         val fileName = getFileName(psiFile)
         val programmingLanguage = psiFile.programmingLanguage()
         val fileRelativePath = getRelativePathToContentRoot(editor)
+
+        val pp = ProblemsCollector.getInstance(editor.project!!).getFileProblems(editor.virtualFile);
+
+        val problemsView = ProblemsView.getToolWindow(editor.project!!)
+
+        val problems = getHighlightedProblems(editor.document, editor.project!!)
         return FileContextInfo(caretContext, fileName, programmingLanguage, fileRelativePath)
     }
 
