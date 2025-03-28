@@ -12,6 +12,7 @@ open class CodeWhispererCodeFixException(override val message: String?) : Runtim
 open class CodeWhispererCodeScanServerException(
     override val message: String?,
     val requestId: String?,
+    val id2: String?,
     val requestServiceType: String?,
     val httpStatusCode: String?,
 ) : RuntimeException()
@@ -37,9 +38,10 @@ internal fun fileTooLarge(): Nothing =
 internal fun codeScanServerException(
     errorMessage: String,
     requestId: String? = null,
+    id2: String? = null,
     requestServiceType: String? = null,
     httpStatusCode: String? = null,
-): Nothing = throw CodeWhispererCodeScanServerException(errorMessage, requestId, requestServiceType, httpStatusCode)
+): Nothing = throw CodeWhispererCodeScanServerException(errorMessage, requestId, id2, requestServiceType, httpStatusCode)
 
 internal fun invalidSourceZipError(): Nothing =
     throw CodeWhispererCodeScanException(message("codewhisperer.codescan.invalid_source_zip_telemetry"))
