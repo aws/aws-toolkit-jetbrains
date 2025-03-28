@@ -446,7 +446,7 @@ data class DiagnosticDifferences(
 fun getDiagnosticDifferences(oldDiagnostic: List<IdeDiagnostic>, newDiagnostic: List<IdeDiagnostic>): DiagnosticDifferences {
     val oldSet = oldDiagnostic.map { i -> i.toString() }.toSet()
     val newSet = newDiagnostic.map { i -> i.toString() }.toSet()
-    val added = newDiagnostic.filter { i -> !oldSet.contains(i.toString()) }
-    val removed = oldDiagnostic.filter { i -> !newSet.contains(i.toString()) }
+    val added = newDiagnostic.filter { i -> !oldSet.contains(i.toString()) }.distinctBy { it.toString() }
+    val removed = oldDiagnostic.filter { i -> !newSet.contains(i.toString()) }.distinctBy { it.toString() }
     return DiagnosticDifferences(added, removed)
 }
