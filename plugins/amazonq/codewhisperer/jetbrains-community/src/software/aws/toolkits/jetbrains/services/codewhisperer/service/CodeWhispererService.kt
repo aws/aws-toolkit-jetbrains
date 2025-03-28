@@ -8,6 +8,7 @@ import com.intellij.notification.NotificationAction
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.Service
@@ -29,6 +30,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.eclipse.lsp4j.Position
+import org.eclipse.lsp4j.TextDocumentIdentifier
 import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.core.util.DefaultSdkAutoConstructList
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
@@ -53,6 +56,11 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionContext
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionTriggerKind
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionWithReferencesParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil.toUriString
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
@@ -205,6 +213,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             return
         }
 
+        handleLspInlineCompletion(editor, triggerTypeInfo)
         invokeCodeWhispererInBackground(requestContext)
     }
 
@@ -527,6 +536,15 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         return nextStates
     }
 
+    fun handleLspInlineCompletion(editor: Editor, triggerType: TriggerTypeInfo) {
+        editor.project?.let { project ->
+            AmazonQLspService.executeIfRunning(project) { server ->
+                val params = createInlineCompletionParams(editor, triggerType)
+                server.inlineCompletionWithReferences(params)
+            }
+        }
+    }
+
     private fun initStates(
         requestContext: RequestContext,
         responseContext: ResponseContext,
@@ -705,6 +723,26 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         CodeWhispererPopupManager.getInstance().initPopupListener(states)
         return states
     }
+
+    private fun createInlineCompletionParams(editor: Editor, triggerTypeInfo: TriggerTypeInfo): InlineCompletionWithReferencesParams =
+        ReadAction.compute<InlineCompletionWithReferencesParams, RuntimeException> {
+            InlineCompletionWithReferencesParams(
+                context = InlineCompletionContext(
+                    // Map the triggerTypeInfo to appropriate InlineCompletionTriggerKind
+                    triggerKind = when (triggerTypeInfo.triggerType) {
+                        CodewhispererTriggerType.OnDemand -> InlineCompletionTriggerKind.Invoke
+                        CodewhispererTriggerType.AutoTrigger -> InlineCompletionTriggerKind.Automatic
+                        else -> InlineCompletionTriggerKind.Invoke
+                    }
+                )
+            ).apply {
+                textDocument = TextDocumentIdentifier(toUriString(editor.virtualFile))
+                position = Position(
+                    editor.caretModel.primaryCaret.visualPosition.line,
+                    editor.caretModel.primaryCaret.offset
+                )
+            }
+        }
 
     private fun addPopupChildDisposables(popup: JBPopup) {
         codeInsightSettingsFacade.disableCodeInsightUntil(popup)
