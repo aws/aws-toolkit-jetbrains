@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.intellij.notification.NotificationAction
 import com.intellij.openapi.project.Project
 import com.intellij.serviceContainer.AlreadyDisposedException
 import kotlinx.coroutines.delay
@@ -23,12 +24,14 @@ import software.aws.toolkits.core.utils.WaiterUnrecoverableException
 import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
+import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.BILLING_RATE
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.JOB_STATISTICS_TABLE_KEY
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact.Companion.MAPPER
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.PlanTable
+import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.resources.message
 import java.time.Duration
 import java.util.Locale
@@ -64,8 +67,7 @@ suspend fun JobId.pollTransformationStatusAndPlan(
     val maxRefreshes = 10
     var numRefreshes = 0
 
-    // We refresh token at the start of polling, but for some long jobs that runs for 30 minutes plus, tokens may need to be
-    // refreshed again when AccessDeniedException or InvalidGrantException are caught.
+    // refresh token at start of polling since local build just prior can take a long time
     refreshToken(project)
 
     try {
@@ -113,8 +115,17 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                 refreshToken(project)
                 return@waitUntil state
             } catch (e: InvalidGrantException) {
-                if (numRefreshes++ > maxRefreshes) throw e
-                refreshToken(project)
+                CodeTransformMessageListener.instance.onCheckAuth()
+                notifyStickyWarn(
+                    message("codemodernizer.notification.warn.expired_credentials.title"),
+                    message("codemodernizer.notification.warn.expired_credentials.content"),
+                    project,
+                    listOf(
+                        NotificationAction.createSimpleExpiring(message("codemodernizer.notification.warn.action.reauthenticate")) {
+                            CodeTransformMessageListener.instance.onReauthStarted()
+                        }
+                    )
+                )
                 return@waitUntil state
             } finally {
                 delay(sleepDurationMillis)
