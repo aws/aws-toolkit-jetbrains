@@ -10,6 +10,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ApplicationExtension
 import io.mockk.every
 import io.mockk.mockk
+import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
 import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.lsp4j.ConfigurationItem
 import org.eclipse.lsp4j.ConfigurationParams
@@ -103,6 +104,44 @@ class AmazonQLanguageClientImplTest {
                     "shareCodeWhispererContentWithAWS": true,
                     "includeSuggestionsWithCodeReferences": true
                 }
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun `configuration for Amazon Q respects telemetry enabled`() {
+        AwsSettings.getInstance().isTelemetryEnabled = true
+        assertThat(sut.configuration(configurationParams("aws.q")).get())
+            .singleElement()
+            .isEqualTo(
+                AmazonQLspConfiguration(
+                    optOutTelemetry = true
+                )
+            )
+    }
+
+    @Test
+    fun `configuration for Amazon Q respects telemetry disabled`() {
+        AwsSettings.getInstance().isTelemetryEnabled = false
+        assertThat(sut.configuration(configurationParams("aws.q")).get())
+            .singleElement()
+            .isEqualTo(
+                AmazonQLspConfiguration(
+                    optOutTelemetry = false
+                )
+            )
+    }
+
+    @Test
+    fun `Gson serializes AmazonQLspConfiguration correctly`() {
+        val sut = AmazonQLspConfiguration(
+            optOutTelemetry = true
+        )
+        assertThat(Gson().toJson(sut)).isEqualToIgnoringWhitespace(
+            """
+            {
+                "optOutTelemetry": true
+            }
             """.trimIndent()
         )
     }
