@@ -105,8 +105,6 @@ class TextDocumentServiceHandler(
                     DidOpenTextDocumentParams().apply {
                         textDocument = TextDocumentItem().apply {
                             this.uri = uri
-                            languageId = file.fileType.name.lowercase()
-                            version = file.modificationStamp.toInt()
                             text = file.inputStream.readAllBytes().decodeToString()
                         }
                     }
