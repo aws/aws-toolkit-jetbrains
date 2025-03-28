@@ -49,6 +49,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererUserModificationTracker
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDocumentDiagnostics
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDiagnosticDifferences
 import software.aws.toolkits.jetbrains.services.cwc.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
@@ -84,6 +86,7 @@ import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.CwsprChatCommandType
 import java.time.Instant
 import java.util.UUID
+import kotlinx.coroutines.delay
 
 data class TestCommandMessage(
     val sender: String = "codetest",
@@ -214,6 +217,7 @@ class ChatController private constructor(
             val caret: Caret = editor.caretModel.primaryCaret
             val offset: Int = caret.offset
 
+            val oldDiagnostics = getDocumentDiagnostics(editor.document, context.project)
             ApplicationManager.getApplication().runWriteAction {
                 WriteCommandAction.runWriteCommandAction(context.project) {
                     if (caret.hasSelection()) {
@@ -236,6 +240,10 @@ class ChatController private constructor(
                     )
                 }
             }
+            // wait for the IDE itself to update its diagnostics for current file
+            delay(500)
+            val newDiagnostics = getDocumentDiagnostics(editor.document, context.project)
+            message.diagnosticsDifferences = getDiagnosticDifferences(oldDiagnostics, newDiagnostics)
         }
         telemetryHelper.recordInteractWithMessage(message)
 

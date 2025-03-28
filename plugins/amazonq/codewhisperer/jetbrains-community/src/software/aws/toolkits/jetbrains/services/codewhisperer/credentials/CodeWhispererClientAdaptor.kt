@@ -21,7 +21,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeFixJobR
 import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeFixJobResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTestGenerationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.IdeCategory
-import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
 import software.amazon.awssdk.services.codewhispererruntime.model.InlineChatUserDecision
 import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.ListCodeAnalysisFindingsRequest

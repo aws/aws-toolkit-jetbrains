@@ -13,11 +13,13 @@ import com.fasterxml.jackson.databind.JsonSerializer
 import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthFollowUpType
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
 import software.aws.toolkits.jetbrains.services.amazonq.util.HighlightCommand
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.DiagnosticDifferences
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.FollowUpType
 import java.time.Instant
 
@@ -95,6 +97,7 @@ sealed interface IncomingCwcMessage : CwcMessage {
         val codeBlockIndex: Int?,
         val totalCodeBlocks: Int?,
         val codeBlockLanguage: String?,
+        var diagnosticsDifferences: DiagnosticDifferences?
     ) : IncomingCwcMessage, TabId, MessageId
 
     data class TriggerTabIdReceived(
