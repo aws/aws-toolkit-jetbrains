@@ -370,36 +370,24 @@ enum class CaretMovement {
 }
 
 fun getDiagnosticsType(message: String): String {
-    // Convert message to lowercase for case-insensitive matching
     val lowercaseMessage = message.lowercase()
 
-    // Syntax Error keywords
-    if (listOf("expected", "indent", "syntax").any { lowercaseMessage.contains(it) }) {
-        return "SYNTAX_ERROR"
-    }
+    val diagnosticPatterns = mapOf(
+        "SYNTAX_ERROR" to listOf("expected", "indent", "syntax"),
+        "TYPE_ERROR" to listOf("type", "cast"),
+        "REFERENCE_ERROR" to listOf("undefined", "not defined", "undeclared", "reference", "symbol"),
+        "BEST_PRACTICE" to listOf("deprecated", "unused", "uninitialized", "not initialized"),
+        "SECURITY" to listOf("security", "vulnerability")
+    )
 
-    // Type Error keywords
-    if (listOf("type", "cast").any { lowercaseMessage.contains(it) }) {
-        return "TYPE_ERROR"
-    }
-
-    // Reference Error keywords
-    if (listOf("undefined", "not defined", "undeclared", "reference", "symbol").any { lowercaseMessage.contains(it) }) {
-        return "REFERENCE_ERROR"
-    }
-
-    // Best Practice keywords
-    if (listOf("deprecated", "unused", "uninitialized", "not initialized").any { lowercaseMessage.contains(it) }) {
-        return "BEST_PRACTICE"
-    }
-
-    // Security keywords
-    if (listOf("security", "vulnerability").any { lowercaseMessage.contains(it) }) {
-        return "SECURITY"
-    }
-
-    return "OTHER"
+    return diagnosticPatterns
+        .entries
+        .firstOrNull { (_, keywords) ->
+            keywords.any { lowercaseMessage.contains(it) }
+        }
+        ?.key ?: "OTHER"
 }
+
 
 fun convertSeverity(severity: HighlightSeverity): String {
     return when {
@@ -418,43 +406,37 @@ fun convertSeverity(severity: HighlightSeverity): String {
     }
 }
 
+fun getDocumentDiagnostics(document: Document, project: Project): List<IdeDiagnostic> = runCatching {
+    DocumentMarkupModel.forDocument(document, project, true)
+        .allHighlighters
+        .mapNotNull { it.errorStripeTooltip as? HighlightInfo }
+        .filter { !it.description.isNullOrEmpty() }
+        .map { info ->
+            val startLine = document.getLineNumber(info.startOffset)
+            val endLine = document.getLineNumber(info.endOffset)
 
-fun getDocumentDiagnostics(document: Document, project: Project): List<IdeDiagnostic> {
-    // this in general finishes within 3-4ms
-    try {
-        val markupModel = DocumentMarkupModel.forDocument(document, project, true)
-        val highlighters = markupModel.allHighlighters
-        val highlightInfos = highlighters.mapNotNull {i-> i.errorStripeTooltip as? HighlightInfo }.filter { i-> i.description != null && i.description != "" }
-        return highlightInfos
-            .map { highlighterInfo ->
-                val startLine = document.getLineNumber(highlighterInfo.startOffset)
-                val endLine = document.getLineNumber(highlighterInfo.endOffset)
-                val startChar = document.getLineStartOffset(startLine)
-                val endChar = document.getLineStartOffset(endLine)
-                IdeDiagnostic.builder()
-                    .ideDiagnosticType(getDiagnosticsType(highlighterInfo.description))
-                    .severity(convertSeverity( highlighterInfo.severity))
-                    .source(highlighterInfo.inspectionToolId)
-                    .range(
-                        Range.builder()
-                            .start(
-                                Position.builder()
-                                    .line(startLine)
-                                    .character(startChar)
-                                    .build())
-                            .end(
-                                Position.builder()
-                                    .line(endLine)
-                                    .character(endChar)
-                                    .build())
+            IdeDiagnostic.builder()
+                .ideDiagnosticType(getDiagnosticsType(info.description))
+                .severity(convertSeverity(info.severity))
+                .source(info.inspectionToolId)
+                .range(
+                    Range.builder()
+                        .start(Position.builder()
+                            .line(startLine)
+                            .character(document.getLineStartOffset(startLine))
                             .build())
-                    .build()
-            }
-    } catch (e: Exception) {
-        getLogger<CodeWhispererUtil>().warn("Failed to get document diagnostics", e)
-    }
-    return emptyList()
+                        .end(Position.builder()
+                            .line(endLine)
+                            .character(document.getLineStartOffset(endLine))
+                            .build())
+                        .build())
+                .build()
+        }
+}.getOrElse { e ->
+    getLogger<CodeWhispererUtil>().warn("Failed to get document diagnostics", e)
+    emptyList()
 }
+
 
 data class DiagnosticDifferences(
     val added: List<IdeDiagnostic>,
