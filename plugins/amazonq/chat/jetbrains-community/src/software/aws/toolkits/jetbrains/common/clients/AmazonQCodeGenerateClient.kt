@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ContentChecksu
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateTaskAssistConversationRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateTaskAssistConversationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.Dimension
 import software.amazon.awssdk.services.codewhispererruntime.model.DocV2AcceptanceEvent
 import software.amazon.awssdk.services.codewhispererruntime.model.DocV2GenerationEvent
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTaskAssistCodeGenerationResponse
@@ -84,6 +85,33 @@ class AmazonQCodeGenerateClient(private val project: Project) {
             requestBuilder.telemetryEvent { telemetryEventBuilder ->
                 generationEvent?.let { telemetryEventBuilder.docV2GenerationEvent(it) }
                 acceptanceEvent?.let { telemetryEventBuilder.docV2AcceptanceEvent(it) }
+            }
+            requestBuilder.optOutPreference(getTelemetryOptOutPreference())
+            requestBuilder.userContext(docUserContext)
+        }
+
+    fun sendDocMetricData(operationName: String, result: String): SendTelemetryEventResponse =
+        bearerClient().sendTelemetryEvent { requestBuilder ->
+            requestBuilder.telemetryEvent { telemetryEventBuilder ->
+                telemetryEventBuilder.metricData {
+                    it
+                        .metricName("Operation")
+                        .metricValue(1.0)
+                        .timestamp(Instant.now())
+                        .product("DocGeneration")
+                        .dimensions(
+                            listOf(
+                                Dimension.builder()
+                                    .name("operationName")
+                                    .value(operationName)
+                                    .build(),
+                                Dimension.builder()
+                                    .name("result")
+                                    .value(result)
+                                    .build()
+                            )
+                        )
+                }
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
             requestBuilder.userContext(docUserContext)

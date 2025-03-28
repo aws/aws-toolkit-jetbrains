@@ -24,8 +24,14 @@ import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublishe
 import software.aws.toolkits.jetbrains.services.amazonqDoc.CODE_GENERATION_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqDoc.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqDoc.MAX_PROJECT_SIZE_BYTES
-import software.aws.toolkits.jetbrains.services.amazonqDoc.conversationIdNotFound
+import software.aws.toolkits.jetbrains.services.amazonqDoc.MetricDataOperationName
+import software.aws.toolkits.jetbrains.services.amazonqDoc.MetricDataResult
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendAsyncEventProgress
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CLIENT_ERROR_MESSAGES
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ClientException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ConversationIdNotFoundException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.LlmException
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ServiceException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Interaction
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
@@ -239,7 +245,7 @@ class DocSession(val tabID: String, val project: Project) {
     val conversationId: String
         get() {
             if (localConversationId == null) {
-                conversationIdNotFound()
+                throw ConversationIdNotFoundException(operation = "Session", desc = "Conversation ID not found")
             } else {
                 return localConversationId as String
             }
@@ -267,6 +273,19 @@ class DocSession(val tabID: String, val project: Project) {
         codegenRetries -= 1
     }
 
+    fun sendDocMetricData(operationName: MetricDataOperationName, result: MetricDataResult) {
+        val sendFeatureDevTelemetryEventResponse: SendTelemetryEventResponse
+        try {
+            sendFeatureDevTelemetryEventResponse = proxyClient.sendDocMetricData(operationName.toString(), result.toString())
+            val requestId = sendFeatureDevTelemetryEventResponse.responseMetadata().requestId()
+            logger.debug {
+                "${FEATURE_NAME}: succesfully sent doc metric data: OperationName: $operationName Result: $result RequestId: $requestId"
+            }
+        } catch (e: Exception) {
+            logger.warn(e) { "${FEATURE_NAME}:failed to send doc metric data" }
+        }
+    }
+
     fun sendDocTelemetryEvent(
         generationEvent: DocV2GenerationEvent? = null,
         acceptanceEvent: DocV2AcceptanceEvent? = null,
@@ -288,6 +307,34 @@ class DocSession(val tabID: String, val project: Project) {
         } catch (e: Exception) {
             logger.warn(e) { "${FEATURE_NAME}: failed to send doc telemetry" }
         }
+    }
+
+    fun getMetricResult(err: Exception): MetricDataResult {
+        val metricDataResult: MetricDataResult
+        when (err) {
+            is ClientException,
+            -> {
+                metricDataResult = MetricDataResult.Error
+            }
+
+            is LlmException -> {
+                metricDataResult = MetricDataResult.LlmFailure
+            }
+
+            is ServiceException -> {
+                metricDataResult = MetricDataResult.Fault
+            }
+
+            else -> {
+                val errorMessage = err.message.orEmpty()
+                metricDataResult = if (CLIENT_ERROR_MESSAGES.any { errorMessage.contains(it) }) {
+                    MetricDataResult.Error
+                } else {
+                    MetricDataResult.Fault
+                }
+            }
+        }
+        return metricDataResult
     }
 
     fun getUserIdentity(): String = proxyClient.connection().id

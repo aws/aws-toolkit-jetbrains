@@ -34,10 +34,11 @@ import software.aws.toolkits.jetbrains.services.amazonq.project.RepoSizeError
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.amazonqDoc.DEFAULT_RETRY_LIMIT
 import software.aws.toolkits.jetbrains.services.amazonqDoc.DIAGRAM_SVG_EXT
-import software.aws.toolkits.jetbrains.services.amazonqDoc.DocException
+import software.aws.toolkits.jetbrains.services.amazonqDoc.DocClientException
 import software.aws.toolkits.jetbrains.services.amazonqDoc.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqDoc.InboundAppMessagesHandler
-import software.aws.toolkits.jetbrains.services.amazonqDoc.ZipFileError
+import software.aws.toolkits.jetbrains.services.amazonqDoc.MetricDataOperationName
+import software.aws.toolkits.jetbrains.services.amazonqDoc.MetricDataResult
 import software.aws.toolkits.jetbrains.services.amazonqDoc.cancellingProgressField
 import software.aws.toolkits.jetbrains.services.amazonqDoc.createUserFacingErrorMessage
 import software.aws.toolkits.jetbrains.services.amazonqDoc.denyListedErrors
@@ -70,6 +71,7 @@ import software.aws.toolkits.jetbrains.services.amazonqDoc.storage.ChatSessionSt
 import software.aws.toolkits.jetbrains.services.amazonqDoc.util.getFollowUpOptions
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileCorruptedException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
@@ -592,9 +594,12 @@ class DocController(
         messenger.sendUpdatePlaceholder(tabId, message("amazonqFeatureDev.placeholder.provide_code_feedback"))
     }
 
-    private suspend fun processErrorChatMessage(err: Exception, session: DocSession?, tabId: String, isEnableChatInput: Boolean) {
+    private suspend fun processErrorChatMessage(err: Exception, session: DocSession?, tabId: String) {
         logger.warn(err) { "Encountered ${err.message} for tabId: $tabId" }
         messenger.sendUpdatePromptProgress(tabId, null)
+        val docGenerationMode = docGenerationTasks.getTask(tabId).mode
+        val isEnableChatInput = docGenerationMode == Mode.EDIT &&
+            (err as? DocClientException)?.remainingIterations?.let { it > 0 } ?: false
 
         when (err) {
             is RepoSizeError -> {
@@ -616,7 +621,7 @@ class DocController(
                 )
             }
 
-            is ZipFileError -> {
+            is ZipFileCorruptedException -> {
                 messenger.sendError(
                     tabId = tabId,
                     errMessage = err.message,
@@ -626,12 +631,11 @@ class DocController(
             }
 
             is MonthlyConversationLimitError -> {
-                messenger.sendUpdatePlaceholder(tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_monthly_limit"))
-                messenger.sendChatInputEnabledMessage(tabId, enabled = true)
                 messenger.sendMonthlyLimitError(tabId = tabId)
+                messenger.sendChatInputEnabledMessage(tabId, enabled = false)
             }
 
-            is DocException -> {
+            is DocClientException -> {
                 messenger.sendErrorToUser(
                     tabId = tabId,
                     errMessage = err.message,
@@ -765,13 +769,7 @@ class DocController(
                 )
             }
         } catch (err: Exception) {
-            // For non edit mode lock the chat input until they explicitly click one of the follow-ups
-            var isEnableChatInput = false
-            if (err is DocException && docGenerationTask.mode == Mode.EDIT) {
-                isEnableChatInput = err.remainingIterations != null && err.remainingIterations > 0
-            }
-
-            processErrorChatMessage(err, session, tabId, isEnableChatInput)
+            processErrorChatMessage(err, session, tabId)
         }
     }
 
@@ -794,6 +792,10 @@ class DocController(
             }
 
             session.send(sessionMessage)
+            session.sendDocMetricData(
+                MetricDataOperationName.StartDocGeneration,
+                MetricDataResult.Success
+            )
 
             val filePaths: List<NewFileZipInfo> = when (val state = session.sessionState) {
                 is PrepareDocGenerationState -> state.filePaths ?: emptyList()
@@ -854,7 +856,11 @@ class DocController(
                 message = IncomingDocMessage.OpenDiff(tabId = followUpMessage.tabId, filePath = filePaths[0].zipFilePath, deleted = false)
             )
         } catch (err: Exception) {
-            processErrorChatMessage(err, session, tabId = followUpMessage.tabId, false)
+            session.sendDocMetricData(
+                MetricDataOperationName.EndDocGeneration,
+                session.getMetricResult(err)
+            )
+            processErrorChatMessage(err, session, tabId = followUpMessage.tabId)
         } finally {
             messenger.sendUpdatePlaceholder(
                 tabId = followUpMessage.tabId,
@@ -873,6 +879,10 @@ class DocController(
                 messenger.sendChatInputEnabledMessage(tabId = followUpMessage.tabId, enabled = false) // Lock chat input until a follow-up is clicked.
             }
         }
+        session.sendDocMetricData(
+            MetricDataOperationName.EndDocGeneration,
+            MetricDataResult.Success
+        )
     }
 
     private suspend fun handleEmptyFiles(

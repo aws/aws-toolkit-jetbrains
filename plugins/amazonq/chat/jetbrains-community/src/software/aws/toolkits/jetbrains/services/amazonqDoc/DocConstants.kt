@@ -21,3 +21,21 @@ const val DIAGRAM_SVG_EXT = "svg"
 const val DIAGRAM_DOT_EXT = "dot"
 val SUPPORTED_DIAGRAM_EXT_SET: Set<String> = setOf(DIAGRAM_SVG_EXT, DIAGRAM_DOT_EXT)
 val SUPPORTED_DIAGRAM_FILE_NAME_SET: Set<String> = SUPPORTED_DIAGRAM_EXT_SET.map { INFRA_DIAGRAM_PREFIX + it }.toSet()
+
+enum class MetricDataOperationName(private val operationName: String) {
+    StartDocGeneration("StartDocGeneration"),
+    EndDocGeneration("EndDocGeneration"),
+    ;
+
+    override fun toString(): String = operationName
+}
+
+enum class MetricDataResult(private val resultName: String) {
+    Success("Success"),
+    Fault("Fault"),
+    Error("Error"),
+    LlmFailure("LLMFailure"),
+    ;
+
+    override fun toString(): String = resultName
+}
