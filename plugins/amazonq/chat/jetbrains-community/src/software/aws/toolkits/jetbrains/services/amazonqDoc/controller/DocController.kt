@@ -13,7 +13,10 @@ import com.intellij.diff.util.DiffUserDataKeys
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.TextEditorWithPreview
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.openapi.vfs.originalFileOrSelf
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.testFramework.LightVirtualFile
 import kotlinx.coroutines.withContext
@@ -296,8 +299,11 @@ class DocController(
         messenger.sendChatInputEnabledMessage(message.tabId, false)
     }
 
+    private val diffVirtualFiles = mutableMapOf<String, ChainDiffVirtualFile>()
+
     private suspend fun acceptChanges(message: IncomingDocMessage.FollowupClicked) {
         insertCode(message.tabId)
+        previewReadmeFile(message.tabId)
     }
 
     private suspend fun promptForDocTarget(tabId: String) {
@@ -418,6 +424,8 @@ class DocController(
                 request.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true)
 
                 val newDiff = ChainDiffVirtualFile(SimpleDiffRequestChain(request), message.filePath)
+
+                diffVirtualFiles[message.filePath] = newDiff
                 DiffEditorTabFilesManager.getInstance(context.project).showDiffFile(newDiff, true)
             }
         }
@@ -1035,6 +1043,35 @@ class DocController(
 
         val docAcceptanceEvent = docGenerationTask.docAcceptanceEventBase()
         session.sendDocTelemetryEvent(null, docAcceptanceEvent)
+    }
+
+    private fun previewReadmeFile(tabId: String) {
+        val session = getSessionInfo(tabId)
+        var filePaths: List<NewFileZipInfo> = emptyList()
+
+        when (val state = session.sessionState) {
+            is PrepareDocGenerationState -> {
+                filePaths = state.filePaths
+            }
+        }
+
+        if (filePaths.isNotEmpty()) {
+            val filePath = filePaths[0].zipFilePath
+            val existingDiff = diffVirtualFiles[filePath]
+
+            val newFilePath = session.context.addressableRoot.toNioPath().resolve(filePath)
+            val readmeVirtualFile = LocalFileSystem.getInstance().refreshAndFindFileByPath(newFilePath.toString())
+
+            runInEdt {
+                if (existingDiff != null) {
+                    FileEditorManager.getInstance(getProject()).closeFile(existingDiff)
+                }
+                if (readmeVirtualFile != null) {
+                    TextEditorWithPreview.openPreviewForFile(getProject(), readmeVirtualFile.originalFileOrSelf())
+
+                }
+            }
+        }
     }
 
     fun getProject() = context.project
