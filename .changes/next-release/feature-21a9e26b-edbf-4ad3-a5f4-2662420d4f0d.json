@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "/review: Respect user option to allow code suggestions with references"
+}
