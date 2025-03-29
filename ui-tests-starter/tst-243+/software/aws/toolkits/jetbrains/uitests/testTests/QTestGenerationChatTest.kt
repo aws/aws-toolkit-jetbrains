@@ -219,7 +219,7 @@ class QTestGenerationChatTest {
     }
 
     @Test
-    fun `test NL error from the chat`(){
+    fun `test NL error from the chat`() {
         val testCase = TestCase(
             IdeProductProvider.IC,
             LocalProjectInfo(
@@ -249,7 +249,6 @@ class QTestGenerationChatTest {
                 assertTrue(result.contains("Command entered: /test /something/"))
                 assertTrue(result.contains("Error message displayed correctly"))
             }
-
     }
 
     @Test

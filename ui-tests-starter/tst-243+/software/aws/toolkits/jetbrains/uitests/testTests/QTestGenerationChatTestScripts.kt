@@ -101,9 +101,9 @@ val testHappyPathScript = """
             }
         }
 
-        ${waitForElementWithTextFunction}
+        $waitForElementWithTextFunction
             
-        ${waitAndGetElementByTextFunction}
+        $waitAndGetElementByTextFunction
         testNavigation().catch(console.error);
 """.trimIndent()
 
@@ -146,9 +146,9 @@ async function testNavigation() {
     }
 }
 
-${waitForElementWithTextFunction}
+$waitForElementWithTextFunction
             
-${waitAndGetElementByTextFunction}
+$waitAndGetElementByTextFunction
 testNavigation().catch(console.error);
 """.trimIndent()
 
@@ -204,9 +204,9 @@ val expectedErrorPath = """
         }
     }
 
-    ${waitForElementWithTextFunction}
+    $waitForElementWithTextFunction
             
-    ${waitAndGetElementByTextFunction}
+    $waitAndGetElementByTextFunction
     testNavigation().catch(console.error);
 """.trimIndent()
 
@@ -262,9 +262,9 @@ val unsupportedLanguagePath = """
         }
     }
 
-    ${waitForElementWithTextFunction}
+    $waitForElementWithTextFunction
             
-    ${waitAndGetElementByTextFunction}
+    $waitAndGetElementByTextFunction
     testNavigation().catch(console.error);
 """.trimIndent()
 
@@ -365,9 +365,9 @@ val testRejectPathScript = """
             }
         }
 
-        ${waitForElementWithTextFunction}
+        $waitForElementWithTextFunction
         
-        ${waitAndGetElementByTextFunction}
+        $waitAndGetElementByTextFunction
 
         testNavigation().catch(console.error); 
 """.trimIndent()
@@ -434,9 +434,9 @@ val testNLErrorPathScript = """
         }    
     }
     
-    ${waitForElementWithTextFunction}
+    $waitForElementWithTextFunction
         
-    ${waitAndGetElementByTextFunction}
+    $waitAndGetElementByTextFunction
     testNavigation().catch(console.error); 
 """.trimIndent()
 
@@ -499,9 +499,9 @@ val testProgressBarScript = """
         }
     }
     
-    ${waitForElementWithTextFunction}
+    $waitForElementWithTextFunction
             
-    ${waitAndGetElementByTextFunction}
+    $waitAndGetElementByTextFunction
 
     testNavigation().catch(console.error);
 """.trimIndent()
@@ -608,9 +608,9 @@ val testCancelButtonScript = """
         }
     }
 
-    ${waitForElementWithTextFunction}
+    $waitForElementWithTextFunction
             
-    ${waitAndGetElementByTextFunction}
+    $waitAndGetElementByTextFunction
     testNavigation().catch(console.error);
 """.trimIndent()
 
@@ -692,9 +692,9 @@ val testDocumentationErrorScript = """
         }
     }
 
-    ${waitForElementWithTextFunction}
+    $waitForElementWithTextFunction
 
-    ${waitAndGetElementByTextFunction}
+    $waitAndGetElementByTextFunction
     
     testNavigation().catch(console.error);
 """.trimIndent()
@@ -776,9 +776,9 @@ val testRemoveFunctionErrorScript = """
         }
     }
 
-    ${waitForElementWithTextFunction}
+    $waitForElementWithTextFunction
 
-    ${waitAndGetElementByTextFunction}
+    $waitAndGetElementByTextFunction
     
     testNavigation().catch(console.error);
 """.trimIndent()
@@ -860,9 +860,9 @@ val testMethodNotFoundErrorScript = """
         }
     }
 
-    ${waitForElementWithTextFunction}
+    $waitForElementWithTextFunction
 
-    ${waitAndGetElementByTextFunction}
+    $waitAndGetElementByTextFunction
     
     testNavigation().catch(console.error);
 """.trimIndent()
