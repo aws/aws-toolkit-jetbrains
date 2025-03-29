@@ -13,7 +13,6 @@ import com.fasterxml.jackson.databind.JsonSerializer
 import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
 import software.amazon.awssdk.services.codewhispererstreaming.model.UserIntent
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthFollowUpType
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage

@@ -42,7 +42,6 @@ import software.aws.toolkits.telemetry.Telemetry
 import java.time.Duration
 import java.time.Instant
 import software.amazon.awssdk.services.codewhispererruntime.model.UserIntent as CWClientUserIntent
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDocumentDiagnostics
 
 class TelemetryHelper(private val project: Project, private val sessionStorage: ChatSessionStorage) {
     private val responseStreamStartTime: MutableMap<String, Instant> = mutableMapOf()
