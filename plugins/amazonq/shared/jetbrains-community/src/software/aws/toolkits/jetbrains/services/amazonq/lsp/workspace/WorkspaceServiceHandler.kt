@@ -139,25 +139,27 @@ class WorkspaceServiceHandler(
                     val oldUri = toUriString(parentFile)?.let { parentUri -> "$parentUri/$oldFileName" }
                     val newUri = toUriString(renamedFile)
 
-                    oldUri?.let { uri ->
-                        languageServer.textDocumentService.didClose(
-                            DidCloseTextDocumentParams().apply {
-                                textDocument = TextDocumentIdentifier().apply {
-                                    this.uri = uri
+                    if (!renamedFile.isDirectory) {
+                        oldUri?.let { uri ->
+                            languageServer.textDocumentService.didClose(
+                                DidCloseTextDocumentParams().apply {
+                                    textDocument = TextDocumentIdentifier().apply {
+                                        this.uri = uri
+                                    }
                                 }
-                            }
-                        )
-                    }
+                            )
+                        }
 
-                    newUri?.let { uri ->
-                        languageServer.textDocumentService.didOpen(
-                            DidOpenTextDocumentParams().apply {
-                                textDocument = TextDocumentItem().apply {
-                                    this.uri = uri
-                                    text = renamedFile.inputStream.readAllBytes().decodeToString()
+                        newUri?.let { uri ->
+                            languageServer.textDocumentService.didOpen(
+                                DidOpenTextDocumentParams().apply {
+                                    textDocument = TextDocumentItem().apply {
+                                        this.uri = uri
+                                        text = renamedFile.inputStream.readAllBytes().decodeToString()
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
 
                     FileRename().apply {
