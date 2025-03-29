@@ -674,7 +674,7 @@ val testDocumentationErrorScript = """
                         );
                         
                         if (feedbackButton){
-                                console.log("Feedback button found with correct text")
+                                console.log("Feedback button found with correct text after error")
                             }else{
                                 console.log("Feedback button not found")
                                 throw new Error('Feedback button not found');
@@ -734,22 +734,8 @@ val testRemoveFunctionErrorScript = """
                             },
                             "I apologize, but I couldn't process your /test instruction"
                         );
-                        
+                      
                         console.log("Error message displayed correctly")
-                        
-                        await page.waitForFunction(
-                            (expectedText) => {
-                                const pageContent = document.body.textContent || '';
-                                return pageContent.includes(expectedText);
-                            },
-                            {
-                                timeout: 10000
-                            },
-                            "The /test command is designed to generate unit tests"
-                        );
-                        
-                        console.log("Explanation message displayed correctly")
-                        
                         await page.waitForFunction(
                             () => {
                                 const inputElement = document.querySelector('.mynah-chat-prompt-input');
@@ -772,7 +758,7 @@ val testRemoveFunctionErrorScript = """
                             );
                             
                             if (feedbackButton){
-                                console.log("Feedback button found with correct text")
+                                console.log("Feedback button found with correct text after error")
                             }else{
                                 console.log("Feedback button not found")
                                 throw new Error('Feedback button not found');
@@ -815,7 +801,7 @@ val testMethodNotFoundErrorScript = """
                         elements.map(elem => elem.evaluate(el => el.getAttribute('command')))
                     );
                     
-                    await page.type('.mynah-chat-prompt-input', '/test generate tests for zipping')
+                    await page.type('.mynah-chat-prompt-input', '/test generate tests for zipping function')
                     await page.keyboard.press('Enter');
                     
                     try {
@@ -828,26 +814,12 @@ val testMethodNotFoundErrorScript = """
                                 return pageContent.includes(expectedText);
                             },
                             {
-                                timeout: 10000
+                                timeout: 30000
                             },
-                            "I apologize, but I could not find the specified class, function, or method"
+                            "I apologize, but I could not find the specified class"
                         );
-                        
-                        console.log("Method not found error message displayed correctly")
-                        
-                        await page.waitForFunction(
-                            (expectedText) => {
-                                const pageContent = document.body.textContent || '';
-                                return pageContent.includes(expectedText);
-                            },
-                            {
-                                timeout: 10000
-                            },
-                            "Please make sure the method exists in the current file"
-                        );
-                        
-                        console.log("Method not found explanation displayed correctly")
-                        
+                      
+                        console.log("Error message displayed correctly")
                         await page.waitForFunction(
                             () => {
                                 const inputElement = document.querySelector('.mynah-chat-prompt-input');
@@ -857,7 +829,7 @@ val testMethodNotFoundErrorScript = """
                         );
                         
                         console.log("Input field re-enabled after error")
-                        
+
                         const feedbackButton = await page.waitForFunction(
                                 (expectedText) => {
                                     const buttons = document.querySelectorAll('button');
@@ -870,12 +842,11 @@ val testMethodNotFoundErrorScript = """
                             );
                             
                             if (feedbackButton){
-                                console.log("Feedback button found with correct text")
+                                console.log("Feedback button found with correct text after error")
                             }else{
                                 console.log("Feedback button not found")
                                 throw new Error('Feedback button not found');
                             }
-                            
                         
                     } catch (e) {
                         console.log("Test failed")

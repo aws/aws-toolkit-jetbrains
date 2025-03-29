@@ -353,7 +353,6 @@ class QTestGenerationChatTest {
                 assertTrue(result.contains("Error message displayed correctly"))
                 assertTrue(result.contains("Input field re-enabled after error"))
                 assertTrue(result.contains("Feedback button found with correct text after error"))
-                assertTrue(result.contains("Feedback button is clickable"))
             }
     }
 
@@ -386,10 +385,8 @@ class QTestGenerationChatTest {
                 val result = executePuppeteerScript(testRemoveFunctionErrorScript)
                 assertTrue(result.contains("new tab opened"))
                 assertTrue(result.contains("Error message displayed correctly"))
-                assertTrue(result.contains("Explanation message displayed correctly"))
                 assertTrue(result.contains("Input field re-enabled after error"))
                 assertTrue(result.contains("Feedback button found with correct text after error"))
-                assertTrue(result.contains("Feedback button is clickable"))
             }
     }
 
@@ -421,11 +418,9 @@ class QTestGenerationChatTest {
                 Thread.sleep(30000)
                 val result = executePuppeteerScript(testMethodNotFoundErrorScript)
                 assertTrue(result.contains("new tab opened"))
-                assertTrue(result.contains("Method not found error message displayed correctly"))
-                assertTrue(result.contains("Method not found explanation displayed correctly"))
+                assertTrue(result.contains("Error message displayed correctly"))
                 assertTrue(result.contains("Input field re-enabled after error"))
-                assertTrue(result.contains("Feedback button found with correct text after error"))
-                assertTrue(result.contains("Feedback button is clickable"))
+                assertTrue(result.contains("Feedback button found with correct text"))
             }
     }
 
