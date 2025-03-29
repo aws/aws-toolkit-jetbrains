@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.project.Project
@@ -37,6 +38,9 @@ import software.aws.toolkits.telemetry.Result
 private val logger = getLogger<FeatureDevClient>()
 
 class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project) {
+    private val objectMapper = jacksonObjectMapper()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+
     fun createConversation(): String {
         val startTime = System.currentTimeMillis()
         var failureReason: String? = null
@@ -238,7 +242,7 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
         val parsedResult: ExportTaskAssistResultArchiveStreamResult
         try {
             val result = exportResponse.reduce { acc, next -> acc + next } // To map the result it is needed to combine the  full byte array
-            parsedResult = jacksonObjectMapper().readValue(result)
+            parsedResult = objectMapper.readValue(result)
         } catch (e: Exception) {
             logger.error(e) { "Failed to parse downloaded code results" }
             throw ExportParseException(operation = FeatureDevOperation.ExportTaskAssistArchiveResult.toString(), desc = null, e.cause)

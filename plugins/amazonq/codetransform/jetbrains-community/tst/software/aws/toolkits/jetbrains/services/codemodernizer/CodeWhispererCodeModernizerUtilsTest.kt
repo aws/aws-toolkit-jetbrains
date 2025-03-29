@@ -6,6 +6,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockkStatic
 import io.mockk.runs
+import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -26,7 +27,9 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseBuildF
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.refreshToken
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
+import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
+import software.aws.toolkits.resources.message
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.path.createTempFile
 
@@ -114,18 +117,18 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
     }
 
     @Test
-    fun `refresh on invalid grant`() {
+    fun `show re-auth notification on invalid grant exception`() {
         val mockInvalidGrantException = Mockito.mock(InvalidGrantException::class.java)
 
-        mockkStatic(::refreshToken)
-        every { refreshToken(any()) } just runs
+        mockkStatic(::notifyStickyWarn)
+        every { notifyStickyWarn(any(), any(), any(), any(), any()) } just runs
 
         Mockito.doThrow(
             mockInvalidGrantException
         ).doReturn(
             exampleGetCodeMigrationResponse,
             exampleGetCodeMigrationResponse.replace(TransformationStatus.STARTED),
-            exampleGetCodeMigrationResponse.replace(TransformationStatus.COMPLETED), // Should stop before this point
+            exampleGetCodeMigrationResponse.replace(TransformationStatus.COMPLETED),
         ).whenever(clientAdaptorSpy).getCodeModernizationJob(any())
 
         Mockito.doReturn(exampleGetCodeMigrationPlanResponse)
@@ -152,7 +155,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
                 TransformationStatus.STARTED,
             )
         assertThat(expected).isEqualTo(mutableList)
-        io.mockk.verify { refreshToken(any()) }
+        verify { notifyStickyWarn(message("codemodernizer.notification.warn.expired_credentials.title"), any(), any(), any(), any()) }
     }
 
     @Test
