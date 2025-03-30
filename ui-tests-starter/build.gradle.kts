@@ -97,7 +97,7 @@ tasks.register<Test>("uiTest") {
     systemProperty("org.gradle.project.ideProfileName", ideProfile.name)
     val testSuite = System.getenv("TEST_DIR") ?: ""
     filter {
-        "includeTestsMatching(software.aws.toolkits.jetbrains.uitests.testTests.*)"
+        includeTestsMatching("software.aws.toolkits.jetbrains.uitests.testTests.*")
     }
 }
 
