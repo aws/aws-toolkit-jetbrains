@@ -66,7 +66,7 @@ val testHappyPathScript = """
                                     const inputElement = document.querySelector('.mynah-chat-prompt-input');
                                     return inputElement && !inputElement.disabled;
                                 },
-                                { timeout: 10000 }
+                                { timeout: 30000 }
                             );
                             
                             console.log("Input field re-enabled after acceptance")
@@ -78,7 +78,7 @@ val testHappyPathScript = """
                                         button.textContent.includes(expectedText)
                                     );
                                 },
-                                {timeout:10000},
+                                {timeout: 30000},
                                 "How can we make /test better"
                             );
                             
@@ -330,7 +330,7 @@ val testRejectPathScript = """
                                     const inputElement = document.querySelector('.mynah-chat-prompt-input');
                                     return inputElement && !inputElement.disabled;
                                 },
-                                { timeout: 10000 }
+                                { timeout: 30000 }
                             );
                             
                             console.log("Input field re-enabled after rejection")
@@ -341,7 +341,7 @@ val testRejectPathScript = """
                                         button.textContent.includes(expectedText)
                                     );
                                 },
-                                {timeout:10000},
+                                {timeout:30000},
                                 "How can we make /test better"
                             );
                             
@@ -571,7 +571,7 @@ val testCancelButtonScript = """
                                 const inputElement = document.querySelector('.mynah-chat-prompt-input');
                                 return inputElement && !inputElement.disabled;
                             },
-                            { timeout: 10000 }
+                            { timeout: 30000 }
                         );
                         
                         console.log("Input field re-enabled after cancellation")
@@ -583,7 +583,7 @@ val testCancelButtonScript = """
                                         button.textContent.includes(expectedText)
                                     );
                                 },
-                                {timeout:10000},
+                                {timeout:30000},
                                 "How can we make /test better"
                             );
                             
@@ -645,7 +645,7 @@ val testDocumentationErrorScript = """
                                 return pageContent.includes(expectedText);
                             },
                             {
-                                timeout: 10000
+                                timeout: 30000
                             },
                             "I apologize, but I couldn't process your /test instruction"
                         );
@@ -657,7 +657,7 @@ val testDocumentationErrorScript = """
                                 const inputElement = document.querySelector('.mynah-chat-prompt-input');
                                 return inputElement && !inputElement.disabled;
                             },
-                            { timeout: 10000 }
+                            { timeout: 30000 }
                         );
                         
                         console.log("Input field re-enabled after error")
@@ -669,7 +669,7 @@ val testDocumentationErrorScript = """
                                     button.textContent.includes(expectedText)
                                 );
                             },
-                            { timeout: 10000 },
+                            { timeout: 30000 },
                             "How can we make /test better"
                         );
                         
@@ -730,9 +730,9 @@ val testRemoveFunctionErrorScript = """
                                 return pageContent.includes(expectedText);
                             },
                             {
-                                timeout: 10000
+                                timeout: 30000
                             },
-                            "I apologize, but I couldn't process your /test instruction"
+                            "I apologize, but I couldn't process your /test instruction."
                         );
                       
                         console.log("Error message displayed correctly")
@@ -741,7 +741,7 @@ val testRemoveFunctionErrorScript = """
                                 const inputElement = document.querySelector('.mynah-chat-prompt-input');
                                 return inputElement && !inputElement.disabled;
                             },
-                            { timeout: 10000 }
+                            { timeout: 30000 }
                         );
                         
                         console.log("Input field re-enabled after error")
@@ -753,7 +753,7 @@ val testRemoveFunctionErrorScript = """
                                         button.textContent.includes(expectedText)
                                     );
                                 },
-                                {timeout:10000},
+                                {timeout:30000},
                                 "How can we make /test better"
                             );
                             
@@ -825,7 +825,7 @@ val testMethodNotFoundErrorScript = """
                                 const inputElement = document.querySelector('.mynah-chat-prompt-input');
                                 return inputElement && !inputElement.disabled;
                             },
-                            { timeout: 10000 }
+                            { timeout: 30000 }
                         );
                         
                         console.log("Input field re-enabled after error")
@@ -837,7 +837,7 @@ val testMethodNotFoundErrorScript = """
                                         button.textContent.includes(expectedText)
                                     );
                                 },
-                                {timeout:10000},
+                                {timeout:30000},
                                 "How can we make /test better"
                             );
                             

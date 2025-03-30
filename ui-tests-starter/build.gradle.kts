@@ -95,6 +95,10 @@ tasks.register<Test>("uiTest") {
 
     systemProperty("ui.test.plugins", testPlugins.get().asPath)
     systemProperty("org.gradle.project.ideProfileName", ideProfile.name)
+    val testSuite = System.getenv("TEST_DIR") ?: ""
+    filter {
+        "includeTestsMatching(software.aws.toolkits.jetbrains.uitests.testTests.*)"
+    }
 }
 
 // hack to disable ui tests in ./gradlew check
