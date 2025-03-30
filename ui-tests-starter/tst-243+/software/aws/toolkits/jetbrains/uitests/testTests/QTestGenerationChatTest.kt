@@ -419,7 +419,7 @@ class QTestGenerationChatTest {
                 assertTrue(result.contains("new tab opened"))
                 assertTrue(result.contains("Error message displayed correctly"))
                 assertTrue(result.contains("Input field re-enabled after error"))
-                assertTrue(result.contains("Feedback button found with correct text"))
+                assertTrue(result.contains("Feedback button found with correct text after error"))
             }
     }
 
