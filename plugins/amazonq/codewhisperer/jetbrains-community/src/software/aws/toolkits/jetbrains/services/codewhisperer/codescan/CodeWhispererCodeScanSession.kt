@@ -265,7 +265,11 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             return clientAdaptor.createCodeScan(
                 StartCodeAnalysisRequest.builder()
                     .clientToken(clientToken.toString())
-                    .programmingLanguage { it.languageName(language) }
+                    .programmingLanguage {
+                        it.languageName(
+                            if (language == CodewhispererLanguage.Unknown.toString()) CodewhispererLanguage.Plaintext.toString() else language
+                        )
+                    }
                     .artifacts(artifactsMap)
                     .scope(scope.value)
                     .codeScanName(codeScanName)
