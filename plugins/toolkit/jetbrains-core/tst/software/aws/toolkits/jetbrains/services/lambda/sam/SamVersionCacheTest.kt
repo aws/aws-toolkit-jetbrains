@@ -3,8 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.sam
 
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
-import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
@@ -40,7 +40,7 @@ class SamVersionCacheTest {
     fun samCliMinVersion() {
         val samPath = SamCommonTestUtils.makeATestSam(SamCommonTestUtils.getMinVersionAsJson()).toString()
         val samVersion = SamVersionCache.evaluateBlocking(samPath).result
-        assertEquals("Mismatch SAM executable version", samVersion, SamExecutable.minVersion)
+        assertThat(samVersion).withFailMessage("Mismatch SAM executable version").isEqualTo(SamExecutable.minVersion)
     }
 
     @Test
