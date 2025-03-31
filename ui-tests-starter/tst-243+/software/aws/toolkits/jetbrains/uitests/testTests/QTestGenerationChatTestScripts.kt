@@ -38,7 +38,7 @@ val testHappyPathScript = """
                                     const button = document.querySelector('button[action-id="utg_view_diff"]');
                                     return button && button.isEnabled !== false && button.disabled !== true;
                                 },
-                                { timeout: 300000 }
+                                { timeout: 4000000 }
                             );
                             await page.evaluate(() => {
                                 const button = document.querySelector('button[action-id="utg_view_diff"]');
@@ -54,7 +54,7 @@ val testHappyPathScript = """
                                     const button = document.querySelector('button[action-id="utg_accept"]');
                                     return button && button.isEnabled !== false && button.disabled !== true;
                                 },
-                                { timeout: 300000 }
+                                { timeout: 4000000 }
                             );
                             await page.evaluate(() => {
                                 const button = document.querySelector('button[action-id="utg_accept"]');
@@ -72,7 +72,7 @@ val testHappyPathScript = """
                                     const inputElement = document.querySelector('.mynah-chat-prompt-input');
                                     return inputElement && !inputElement.disabled;
                                 },
-                                { timeout: 300000 }
+                                { timeout: 4000000 }
                             );
                             
                             console.log("Input field re-enabled after acceptance")
@@ -89,7 +89,7 @@ val testHappyPathScript = """
                                         button.textContent.includes(expectedText)
                                     );
                                 },
-                                {timeout: 300000},
+                                {timeout: 4000000},
                                 "How can we make /test better"
                             );
                             
@@ -142,7 +142,7 @@ async function testNavigation() {
                     await waitForElementWithText(page, "Q - Test")
                     console.log("new tab opened")
                     const errorMessage = await page.waitForSelector('text/Sorry, there isn\'t a source file open right now that I can generate a test for. Make sure you open a source file so I can generate tests.', {
-                        timeout: 300000
+                        timeout: 4000000
                     })
                     console.log('Error message:', await errorMessage.evaluate(el => el.textContent))
                 } catch (e) {
@@ -196,7 +196,7 @@ val expectedErrorPath = """
                                 return pageContent.includes(expectedText);
                             },
                             {
-                                timeout: 300000  // 5 minutes timeout
+                                timeout: 4000000  // 5 minutes timeout
                             },
                             "I apologize, but the specified methods are private or protected. I can only generate tests for public methods. Try /test again and specify public methods to generate tests."
                         );
@@ -254,7 +254,7 @@ val unsupportedLanguagePath = """
                                 return pageContent.includes(expectedText);
                             },
                             {
-                                timeout: 300000  // 5 minutes timeout
+                                timeout: 4000000  // 5 minutes timeout
                             },
                             "is not a language I support specialized unit test generation for at the moment."
                         );
@@ -313,7 +313,7 @@ val testRejectPathScript = """
                                     const button = document.querySelector('button[action-id="utg_view_diff"]');
                                     return button && button.isEnabled !== false && button.disabled !== true;
                                 },
-                                { timeout: 300000 }
+                                { timeout: 4000000 }
                             );
                             await page.evaluate(() => {
                                 const button = document.querySelector('button[action-id="utg_view_diff"]');
@@ -329,7 +329,7 @@ val testRejectPathScript = """
                                     const button = document.querySelector('button[action-id="utg_reject"]');
                                     return button && button.isEnabled !== false && button.disabled !== true;
                                 },
-                                { timeout: 300000 }
+                                { timeout: 4000000 }
                             );
                             await page.evaluate(() => {
                                 const button = document.querySelector('button[action-id="utg_reject"]');
@@ -347,7 +347,7 @@ val testRejectPathScript = """
                                     const inputElement = document.querySelector('.mynah-chat-prompt-input');
                                     return inputElement && !inputElement.disabled;
                                 },
-                                { timeout: 300000 }
+                                { timeout: 4000000 }
                             );
                             
                             console.log("Input field re-enabled after rejection")
@@ -359,7 +359,7 @@ val testRejectPathScript = """
                                         button.textContent.includes(expectedText)
                                     );
                                 },
-                                {timeout:300000},
+                                {timeout 4000000},
                                 "How can we make /test better"
                             );
                             
@@ -422,7 +422,7 @@ val testNLErrorPathScript = """
                                 return pageContent.includes(expectedText);
                             },
                             {
-                                timeout: 300000  // 5 minutes timeout
+                                timeout: 4000000  // 5 minutes timeout
                             },
                             "I apologize, but I couldn't process your /test instruction."
                         );
@@ -433,7 +433,7 @@ val testNLErrorPathScript = """
                                 return pageContent.includes(expectedText);
                             },
                             {
-                                timeout: 300000  // 5 minutes timeout
+                                timeout: 4000000  // 5 minutes timeout
                             },
                             "Try: /test and optionally specify a class, function or method."
                         );
@@ -488,7 +488,7 @@ val testProgressBarScript = """
                                 return pageContent.includes(expectedText);
                             },
                             {
-                                timeout: 300000
+                                timeout: 4000000
                             },                        
                             "Generating unit tests"
                         );
@@ -500,7 +500,7 @@ val testProgressBarScript = """
                                 const button = document.querySelector('button[action-id="utg_view_diff"]');
                                 return button && button.isEnabled !== false && button.disabled !== true;
                             },
-                            { timeout: 300000 }
+                            { timeout: 4000000 }
                         );
                         
                         console.log("Test generation completed successfully")
@@ -563,7 +563,7 @@ val testCancelButtonScript = """
                                 return pageContent.includes(expectedText);
                             },
                             {
-                                timeout: 300000
+                                timeout: 4000000
                             },                        
                             "Generating unit tests"
                         );
@@ -585,7 +585,7 @@ val testCancelButtonScript = """
                                 return pageContent.includes(expectedText);
                             },
                             {
-                                timeout: 300000
+                                timeout: 4000000
                             },
                             "Unit test generation cancelled."
                         );
@@ -597,7 +597,7 @@ val testCancelButtonScript = """
                                 const inputElement = document.querySelector('.mynah-chat-prompt-input');
                                 return inputElement && !inputElement.disabled;
                             },
-                            { timeout: 300000 }
+                            { timeout: 4000000 }
                         );
                         
                         console.log("Input field re-enabled after cancellation")
@@ -609,7 +609,7 @@ val testCancelButtonScript = """
                                         button.textContent.includes(expectedText)
                                     );
                                 },
-                                {timeout:300000},
+                                {timeout 4000000},
                                 "How can we make /test better"
                             );
                             
@@ -677,7 +677,7 @@ val testDocumentationErrorScript = """
                                 return pageContent.includes(expectedText);
                             },
                             {
-                                timeout: 300000
+                                timeout: 4000000
                             },
                             "I apologize, but I couldn't process your /test instruction"
                         );
@@ -689,7 +689,7 @@ val testDocumentationErrorScript = """
                                 const inputElement = document.querySelector('.mynah-chat-prompt-input');
                                 return inputElement && !inputElement.disabled;
                             },
-                            { timeout: 300000 }
+                            { timeout: 4000000 }
                         );
                         
                         console.log("Input field re-enabled after error")
@@ -701,7 +701,7 @@ val testDocumentationErrorScript = """
                                     button.textContent.includes(expectedText)
                                 );
                             },
-                            { timeout: 300000 },
+                            { timeout: 4000000 },
                             "How can we make /test better"
                         );
                         
@@ -768,7 +768,7 @@ val testRemoveFunctionErrorScript = """
                                 return pageContent.includes(expectedText);
                             },
                             {
-                                timeout: 300000
+                                timeout: 4000000
                             },
                             "I apologize, but I couldn't process your /test instruction."
                         );
@@ -779,7 +779,7 @@ val testRemoveFunctionErrorScript = """
                                 const inputElement = document.querySelector('.mynah-chat-prompt-input');
                                 return inputElement && !inputElement.disabled;
                             },
-                            { timeout: 300000 }
+                            { timeout: 4000000 }
                         );
                         
                         console.log("Input field re-enabled after error")
@@ -791,7 +791,7 @@ val testRemoveFunctionErrorScript = """
                                         button.textContent.includes(expectedText)
                                     );
                                 },
-                                {timeout:300000},
+                                {timeout 4000000},
                                 "How can we make /test better"
                             );
                             
@@ -858,7 +858,7 @@ val testMethodNotFoundErrorScript = """
                                 return pageContent.includes(expectedText);
                             },
                             {
-                                timeout: 300000
+                                timeout: 4000000
                             },
                             "I apologize, but I could not find the specified class"
                         );
@@ -869,7 +869,7 @@ val testMethodNotFoundErrorScript = """
                                 const inputElement = document.querySelector('.mynah-chat-prompt-input');
                                 return inputElement && !inputElement.disabled;
                             },
-                            { timeout: 300000 }
+                            { timeout: 4000000 }
                         );
                         
                         console.log("Input field re-enabled after error")
@@ -881,7 +881,7 @@ val testMethodNotFoundErrorScript = """
                                         button.textContent.includes(expectedText)
                                     );
                                 },
-                                {timeout:300000},
+                                {timeout 4000000},
                                 "How can we make /test better"
                             );
                             

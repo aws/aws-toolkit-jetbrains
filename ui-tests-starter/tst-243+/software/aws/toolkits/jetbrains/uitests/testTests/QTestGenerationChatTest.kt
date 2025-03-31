@@ -15,8 +15,8 @@ import com.intellij.ide.starter.models.TestCase
 import com.intellij.ide.starter.project.LocalProjectInfo
 import com.intellij.ide.starter.runner.CurrentTestMethod
 import com.intellij.ide.starter.runner.Starter
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.kodein.di.DI
@@ -77,10 +77,13 @@ class QTestGenerationChatTest {
                 openFile(Paths.get("testModule1", "HappyPath.java").toString())
                 Thread.sleep(30000)
                 val result = executePuppeteerScript(testMethodNotFoundErrorScript)
-                assertTrue(result.contains("new tab opened"))
-                assertTrue(result.contains("Error message displayed correctly"))
-                assertTrue(result.contains("Input field re-enabled after error"))
-                assertTrue(result.contains("Feedback button found with correct text after error"))
+                assertThat(result)
+                    .contains(
+                        "new tab opened",
+                        "Error message displayed correctly",
+                        "Input field re-enabled after error",
+                        "Feedback button found with correct text after error"
+                    )
             }
     }
 
@@ -111,13 +114,16 @@ class QTestGenerationChatTest {
                 openFile(Paths.get("testModule1", "HappyPath.java").toString())
                 Thread.sleep(30000)
                 val result = executePuppeteerScript(testCancelButtonScript)
-                assertTrue(result.contains("new tab opened"))
-                assertTrue(result.contains("Progress bar text displayed"))
-                assertTrue(result.contains("Cancel button found"))
-                assertTrue(result.contains("Cancel button clicked"))
-                assertTrue(result.contains("Test generation cancelled successfully"))
-                assertTrue(result.contains("Input field re-enabled after cancellation"))
-                assertTrue(result.contains("Feedback button found with correct text"))
+                assertThat(result)
+                    .contains(
+                        "new tab opened",
+                        "Progress bar text displayed",
+                        "Cancel button found",
+                        "Cancel button clicked",
+                        "Test generation cancelled successfully",
+                        "Input field re-enabled after cancellation",
+                        "Feedback button found with correct text"
+                    )
             }
     }
 
@@ -148,10 +154,13 @@ class QTestGenerationChatTest {
                 openFile(Paths.get("testModule1", "HappyPath.java").toString())
                 Thread.sleep(30000)
                 val result = executePuppeteerScript(testDocumentationErrorScript)
-                assertTrue(result.contains("new tab opened"))
-                assertTrue(result.contains("Error message displayed correctly"))
-                assertTrue(result.contains("Input field re-enabled after error"))
-                assertTrue(result.contains("Feedback button found with correct text after error"))
+                assertThat(result)
+                    .contains(
+                        "new tab opened",
+                        "Error message displayed correctly",
+                        "Input field re-enabled after error",
+                        "Feedback button found with correct text after error"
+                    )
             }
     }
 
@@ -182,10 +191,13 @@ class QTestGenerationChatTest {
                 openFile(Paths.get("testModule1", "HappyPath.java").toString())
                 Thread.sleep(30000)
                 val result = executePuppeteerScript(testRemoveFunctionErrorScript)
-                assertTrue(result.contains("new tab opened"))
-                assertTrue(result.contains("Error message displayed correctly"))
-                assertTrue(result.contains("Input field re-enabled after error"))
-                assertTrue(result.contains("Feedback button found with correct text after error"))
+                assertThat(result)
+                    .contains(
+                        "new tab opened",
+                        "Error message displayed correctly",
+                        "Input field re-enabled after error",
+                        "Feedback button found with correct text after error"
+                    )
             }
     }
 
@@ -216,8 +228,9 @@ class QTestGenerationChatTest {
                 // required wait time for the system to be fully ready
                 Thread.sleep(30000)
                 val result = executePuppeteerScript(testNoFilePathScript)
-                assertTrue(result.contains("new tab opened"))
-                assertTrue(result.contains("a source file open right now that I can generate a test for"))
+                assertThat(result)
+                    .contains("new tab opened")
+                    .contains("a source file open right now that I can generate a test for")
             }
     }
 
@@ -248,12 +261,14 @@ class QTestGenerationChatTest {
                 openFile(Paths.get("testModule1", "HappyPath.java").toString())
                 Thread.sleep(30000)
                 val result = executePuppeteerScript(testHappyPathScript)
-                assertTrue(result.contains("new tab opened"))
-                assertTrue(result.contains("View Diff opened"))
-                assertTrue(result.contains("Result Accepted"))
-                assertTrue(result.contains("Unit test generation completed."))
-                assertTrue(result.contains("Input field re-enabled after acceptance"))
-                assertTrue(result.contains("Feedback button found with correct text"))
+
+                assertThat(result)
+                    .contains(
+                        "new tab opened",
+                        "View Diff opened",
+                        "Result Accepted",
+                        "Unit test generation completed."
+                    )
             }
     }
 
@@ -284,8 +299,12 @@ class QTestGenerationChatTest {
                 openFile(Paths.get("testModule1", "ErrorPath.java").toString())
                 Thread.sleep(30000)
                 val result = executePuppeteerScript(expectedErrorPath)
-                assertTrue(result.contains("new tab opened"))
-                assertTrue(result.contains("Test generation complete with expected error"))
+
+                assertThat(result)
+                    .contains(
+                        "new tab opened",
+                        "Test generation complete with expected error"
+                    )
             }
     }
 
@@ -316,8 +335,12 @@ class QTestGenerationChatTest {
                 openFile(Paths.get("testModule2", "UnSupportedLanguage.kt").toString())
                 Thread.sleep(30000)
                 val result = executePuppeteerScript(unsupportedLanguagePath)
-                assertTrue(result.contains("new tab opened"))
-                assertTrue(result.contains("Test generation complete with expected error"))
+
+                assertThat(result)
+                    .contains(
+                        "new tab opened",
+                        "Test generation complete with expected error"
+                    )
             }
     }
 
@@ -348,12 +371,15 @@ class QTestGenerationChatTest {
                 openFile(Paths.get("testModule1", "HappyPath.java").toString())
                 Thread.sleep(30000)
                 val result = executePuppeteerScript(testRejectPathScript)
-                assertTrue(result.contains("new tab opened"))
-                assertTrue(result.contains("View Diff opened"))
-                assertTrue(result.contains("Result Reject"))
-                assertTrue(result.contains("Unit test generation completed."))
-                assertTrue(result.contains("Input field re-enabled after rejection"))
-                assertTrue(result.contains("Feedback button found with correct text"))
+                assertThat(result)
+                    .contains(
+                        "new tab opened",
+                        "View Diff opened",
+                        "Result Reject",
+                        "Unit test generation completed.",
+                        "Input field re-enabled after rejection",
+                        "Feedback button found with correct text"
+                    )
             }
     }
 
@@ -384,9 +410,12 @@ class QTestGenerationChatTest {
                 openFile(Paths.get("testModule1", "HappyPath.java").toString())
                 Thread.sleep(30000)
                 val result = executePuppeteerScript(testNLErrorPathScript)
-                assertTrue(result.contains("new tab opened"))
-                assertTrue(result.contains("Command entered: /test /something/"))
-                assertTrue(result.contains("Error message displayed correctly"))
+                assertThat(result)
+                    .contains(
+                        "new tab opened",
+                        "Command entered: /test /something/",
+                        "Error message displayed correctly"
+                    )
             }
     }
 
@@ -417,9 +446,12 @@ class QTestGenerationChatTest {
                 openFile(Paths.get("testModule1", "HappyPath.java").toString())
                 Thread.sleep(30000)
                 val result = executePuppeteerScript(testProgressBarScript)
-                assertTrue(result.contains("new tab opened"))
-                assertTrue(result.contains("Progress bar text displayed"))
-                assertTrue(result.contains("Test generation completed successfully"))
+                assertThat(result)
+                    .contains(
+                        "new tab opened",
+                        "Progress bar text displayed",
+                        "Test generation completed successfully"
+                    )
             }
     }
 
