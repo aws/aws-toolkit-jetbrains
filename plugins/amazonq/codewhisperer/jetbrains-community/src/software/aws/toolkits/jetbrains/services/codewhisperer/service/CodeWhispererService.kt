@@ -673,7 +673,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         // 5. customization
         val customizationArn = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn
 
-        // TODO: use workspaceID from LSP
         var workspaceId: String? = null
         try {
             val workspacesInfos = getWorkspaceIds(project).get().workspaces
@@ -693,7 +692,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             fileContext, supplementalContext, connection, latencyContext, customizationArn, workspaceId)
     }
 
-    fun getWorkspaceIds(project: Project): CompletableFuture<LspServerConfigurations> {
+    private fun getWorkspaceIds(project: Project): CompletableFuture<LspServerConfigurations> {
         val payload = GetConfigurationFromServerParams(
             section = "aws.q.workspaceContext"
         )

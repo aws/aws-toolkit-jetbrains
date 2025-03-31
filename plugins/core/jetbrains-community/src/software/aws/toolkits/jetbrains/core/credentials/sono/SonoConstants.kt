@@ -13,16 +13,16 @@ const val IDENTITY_CENTER_ROLE_ACCESS_SCOPE = "sso:account:access"
 
 @Deprecated("pending removal, merge into Q_SCOPES")
 val CODEWHISPERER_SCOPES = listOf(
-    "codewhisperer_internal:completions",
-    "codewhisperer_internal:analysis",
+    "codewhisperer:completions",
+    "codewhisperer:analysis",
 )
 
 val Q_SCOPES = listOf(
-    "codewhisperer_internal:conversations",
-    "codewhisperer_internal:transformations",
-    "codewhisperer_internal:taskassist",
-    "codewhisperer_internal:completions",
-    "codewhisperer_internal:analysis",
+    "codewhisperer:conversations",
+    "codewhisperer:transformations",
+    "codewhisperer:taskassist",
+    "codewhisperer:completions",
+    "codewhisperer:analysis",
 )
 
 val CODECATALYST_SCOPES = listOf(
