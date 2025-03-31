@@ -685,7 +685,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
 
             }
         } catch (e: Exception) {
-            LOG.info("Cannot get workspaceId from LSP'$e'")
+            LOG.warn("Cannot get workspaceId from LSP'$e'")
         }
         LOG.info("Found workspaceId from LSP '$workspaceId'")
         return RequestContext(project, editor, triggerTypeInfo, caretPosition,
