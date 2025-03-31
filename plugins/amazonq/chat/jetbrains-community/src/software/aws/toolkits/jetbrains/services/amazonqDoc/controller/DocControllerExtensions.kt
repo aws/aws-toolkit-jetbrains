@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.services.amazonqDoc.controller
 
 import com.intellij.notification.NotificationAction
+import software.aws.toolkits.jetbrains.services.amazonqDoc.MetricDataOperationName
+import software.aws.toolkits.jetbrains.services.amazonqDoc.MetricDataResult
 import software.aws.toolkits.jetbrains.services.amazonqDoc.inProgress
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.DocMessageType
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.FollowUp
@@ -19,7 +21,6 @@ import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePr
 import software.aws.toolkits.jetbrains.services.amazonqDoc.session.DocSession
 import software.aws.toolkits.jetbrains.services.amazonqDoc.session.PrepareDocGenerationState
 import software.aws.toolkits.jetbrains.services.amazonqDoc.util.getFollowUpOptions
-import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendSystemPrompt
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.DeletedFileInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
@@ -52,6 +53,10 @@ suspend fun DocController.onCodeGeneration(session: DocSession, message: String,
         }
 
         val state = session.sessionState
+        session.sendDocMetricData(
+            MetricDataOperationName.StartDocGeneration,
+            MetricDataResult.Success
+        )
 
         var filePaths: List<NewFileZipInfo> = emptyList()
         var deletedFiles: List<DeletedFileInfo> = emptyList()
@@ -119,6 +124,12 @@ suspend fun DocController.onCodeGeneration(session: DocSession, message: String,
         messenger.sendSystemPrompt(tabId = tabId, followUp = getFollowUpOptions(session.sessionState.phase))
 
         messenger.sendUpdatePlaceholder(tabId = tabId, newPlaceholder = message("amazonqFeatureDev.placeholder.after_code_generation"))
+    } catch (err: Exception) {
+        session.sendDocMetricData(
+            MetricDataOperationName.EndDocGeneration,
+            session.getMetricResult(err)
+        )
+        throw err
     } finally {
         messenger.sendAsyncEventProgress(tabId = tabId, inProgress = false) // Finish processing the event
         messenger.sendChatInputEnabledMessage(tabId = tabId, enabled = false) // Lock chat input until a follow-up is clicked.
@@ -132,6 +143,10 @@ suspend fun DocController.onCodeGeneration(session: DocSession, message: String,
             )
         }
     }
+    session.sendDocMetricData(
+        MetricDataOperationName.EndDocGeneration,
+        MetricDataResult.Success
+    )
 }
 
 private fun DocController.openChatNotificationAction() = NotificationAction.createSimple(
