@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import com.intellij.testFramework.RuleChain
-import org.junit.Assert.assertEquals
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -85,7 +85,11 @@ class FeatureDevSessionContextTest : FeatureDevTestBase(HeavyJavaCodeInsightTest
         fun addressablePathOf(path: String) = path.removePrefix(base).removePrefix("/")
 
         fileCases.forEach {
-            assertEquals(it.shouldInclude, zippedFiles.contains(addressablePathOf(it.path)))
+            if (it.shouldInclude) {
+                assertThat(zippedFiles).contains(addressablePathOf(it.path))
+            } else {
+                assertThat(zippedFiles).doesNotContain(addressablePathOf(it.path))
+            }
         }
     }
 
