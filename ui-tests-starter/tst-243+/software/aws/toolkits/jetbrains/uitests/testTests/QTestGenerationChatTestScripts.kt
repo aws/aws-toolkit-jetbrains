@@ -70,6 +70,18 @@ val testHappyPathScript = """
                             );
                             
                             console.log("Input field re-enabled after acceptance")
+                                
+                            await page.evaluate(() => {
+                                const acknowledgeButton = Array.from(document.querySelectorAll('button')).find(
+                                    button => button.textContent.trim() === 'Acknowledge'
+                                );
+                                if (acknowledgeButton) {
+                                    acknowledgeButton.click();       
+                                } 
+                            });
+                            
+
+
                             
                             const feedbackButton = await page.waitForFunction(
                                 (expectedText) => {
@@ -334,6 +346,16 @@ val testRejectPathScript = """
                             );
                             
                             console.log("Input field re-enabled after rejection")
+
+                            await page.evaluate(() => {
+                                const acknowledgeButton = Array.from(document.querySelectorAll('button')).find(
+                                    button => button.textContent.trim() === 'Acknowledge'
+                                );
+                                if (acknowledgeButton) {
+                                    acknowledgeButton.click();       
+                                } 
+                            });
+
                             const feedbackButton = await page.waitForFunction(
                                 (expectedText) => {
                                     const buttons = document.querySelectorAll('button');
@@ -506,6 +528,7 @@ val testProgressBarScript = """
     testNavigation().catch(console.error);
 """.trimIndent()
 
+@Language("JavaScript")
 val testCancelButtonScript = """
     const puppeteer = require('puppeteer');
     async function testNavigation() {
@@ -575,6 +598,17 @@ val testCancelButtonScript = """
                         );
                         
                         console.log("Input field re-enabled after cancellation")
+
+                        await page.evaluate(() => {
+                            const acknowledgeButton = Array.from(document.querySelectorAll('button')).find(
+                                button => button.textContent.trim() === 'Acknowledge'
+                            );
+                            if (acknowledgeButton) {
+                                acknowledgeButton.click();       
+                            } 
+                        });
+                        
+                        
                         
                         const feedbackButton = await page.waitForFunction(
                                 (expectedText) => {
@@ -661,6 +695,15 @@ val testDocumentationErrorScript = """
                         );
                         
                         console.log("Input field re-enabled after error")
+
+                        await page.evaluate(() => {
+                            const acknowledgeButton = Array.from(document.querySelectorAll('button')).find(
+                                button => button.textContent.trim() === 'Acknowledge'
+                            );
+                            if (acknowledgeButton) {
+                                acknowledgeButton.click();       
+                            } 
+                        });
                       
                         const feedbackButton = await page.waitForFunction(
                             (expectedText) => {
@@ -746,6 +789,15 @@ val testRemoveFunctionErrorScript = """
                         
                         console.log("Input field re-enabled after error")
 
+                        await page.evaluate(() => {
+                            const acknowledgeButton = Array.from(document.querySelectorAll('button')).find(
+                                button => button.textContent.trim() === 'Acknowledge'
+                            );
+                            if (acknowledgeButton) {
+                                acknowledgeButton.click();       
+                            } 
+                        });
+
                         const feedbackButton = await page.waitForFunction(
                                 (expectedText) => {
                                     const buttons = document.querySelectorAll('button');
@@ -829,6 +881,15 @@ val testMethodNotFoundErrorScript = """
                         );
                         
                         console.log("Input field re-enabled after error")
+
+                        await page.evaluate(() => {
+                            const acknowledgeButton = Array.from(document.querySelectorAll('button')).find(
+                                button => button.textContent.trim() === 'Acknowledge'
+                            );
+                            if (acknowledgeButton) {
+                                acknowledgeButton.click();       
+                            } 
+                        });
 
                         const feedbackButton = await page.waitForFunction(
                                 (expectedText) => {
