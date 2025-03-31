@@ -11,7 +11,7 @@ val testHappyPathScript = """
             const browser = await puppeteer.connect({
                 browserURL: "http://localhost:9222"
             })
-            try {
+            try {       
                 const pages = await browser.pages()
                 for(const page of pages) {
                     const contents = await page.evaluate(el => el.innerHTML, await page.${'$'}(':root'));
@@ -24,7 +24,15 @@ val testHappyPathScript = """
                         await page.type('.mynah-chat-prompt-input', '/test')
                         await page.keyboard.press('Enter');
                         await page.keyboard.press('Enter');
-                        try {
+                        try {    
+                            await page.evaluate(() => {
+                                const acknowledgeButton = Array.from(document.querySelectorAll('button')).find(
+                                    button => button.textContent.includes('Acknowledge')
+                                );
+                                if (acknowledgeButton) {
+                                    acknowledgeButton.click();       
+                                } 
+                            });                        
                             await waitForElementWithText(page, "Q - Test")
                             console.log("new tab opened")
                             await page.waitForFunction(
@@ -71,14 +79,7 @@ val testHappyPathScript = """
                             
                             console.log("Input field re-enabled after acceptance")
                                 
-                            await page.evaluate(() => {
-                                const acknowledgeButton = Array.from(document.querySelectorAll('button')).find(
-                                    button => button.textContent.trim() === 'Acknowledge'
-                                );
-                                if (acknowledgeButton) {
-                                    acknowledgeButton.click();       
-                                } 
-                            });
+
                             
 
 
@@ -349,7 +350,7 @@ val testRejectPathScript = """
 
                             await page.evaluate(() => {
                                 const acknowledgeButton = Array.from(document.querySelectorAll('button')).find(
-                                    button => button.textContent.trim() === 'Acknowledge'
+                                    button => button.textContent.includes('Acknowledge')
                                 );
                                 if (acknowledgeButton) {
                                     acknowledgeButton.click();       
@@ -601,7 +602,7 @@ val testCancelButtonScript = """
 
                         await page.evaluate(() => {
                             const acknowledgeButton = Array.from(document.querySelectorAll('button')).find(
-                                button => button.textContent.trim() === 'Acknowledge'
+                                button => button.textContent.includes('Acknowledge')
                             );
                             if (acknowledgeButton) {
                                 acknowledgeButton.click();       
@@ -698,7 +699,7 @@ val testDocumentationErrorScript = """
 
                         await page.evaluate(() => {
                             const acknowledgeButton = Array.from(document.querySelectorAll('button')).find(
-                                button => button.textContent.trim() === 'Acknowledge'
+                                button => button.textContent.includes('Acknowledge')
                             );
                             if (acknowledgeButton) {
                                 acknowledgeButton.click();       
@@ -791,7 +792,7 @@ val testRemoveFunctionErrorScript = """
 
                         await page.evaluate(() => {
                             const acknowledgeButton = Array.from(document.querySelectorAll('button')).find(
-                                button => button.textContent.trim() === 'Acknowledge'
+                                button => button.textContent.includes('Acknowledge')
                             );
                             if (acknowledgeButton) {
                                 acknowledgeButton.click();       
@@ -884,7 +885,7 @@ val testMethodNotFoundErrorScript = """
 
                         await page.evaluate(() => {
                             const acknowledgeButton = Array.from(document.querySelectorAll('button')).find(
-                                button => button.textContent.trim() === 'Acknowledge'
+                                button => button.textContent.includes('Acknowledge')
                             );
                             if (acknowledgeButton) {
                                 acknowledgeButton.click();       
