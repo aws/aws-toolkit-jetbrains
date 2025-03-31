@@ -17,7 +17,7 @@ class BannedImportsRule : Rule() {
     override fun visitImportList(importList: KtImportList) {
         super.visitImportList(importList)
         importList.imports.forEach { element ->
-            val importedFqName = element.importedFqName?.asString()
+            val importedFqName = element.importedFqName?.asString() ?: return
             if (importedFqName == "org.assertj.core.api.Assertions") {
                 report(
                     CodeSmell(
@@ -28,7 +28,7 @@ class BannedImportsRule : Rule() {
                 )
             }
 
-            if (importedFqName?.startsWith("org.hamcrest") == true) {
+            if (importedFqName.startsWith("org.hamcrest")) {
                 report(
                     CodeSmell(
                         issue,
@@ -38,9 +38,7 @@ class BannedImportsRule : Rule() {
                 )
             }
 
-            if (importedFqName?.startsWith("kotlin.test.assert") == true &&
-                importedFqName.startsWith("kotlin.test.assertNotNull") == false
-            ) {
+            if (importedFqName.startsWith("kotlin.test.assert") && !importedFqName.startsWith("kotlin.test.assertNotNull")) {
                 report(
                     CodeSmell(
                         issue,
@@ -50,7 +48,17 @@ class BannedImportsRule : Rule() {
                 )
             }
 
-            if (importedFqName?.startsWith("org.gradle.internal.impldep") == true) {
+            if (importedFqName.startsWith("org.junit.jupiter.api.Assertions") || importedFqName.startsWith("org.junit.Assert")) {
+                report(
+                    CodeSmell(
+                        issue,
+                        Entity.from(element),
+                        message = "Use AssertJ instead of JUnit assertions"
+                    )
+                )
+            }
+
+            if (importedFqName.startsWith("org.gradle.internal.impldep")) {
                 report(
                     CodeSmell(
                         issue,
@@ -60,7 +68,7 @@ class BannedImportsRule : Rule() {
                 )
             }
 
-            if (importedFqName?.contains("kotlinx.coroutines.Dispatchers") == true) {
+            if (importedFqName.contains("kotlinx.coroutines.Dispatchers")) {
                 report(
                     CodeSmell(
                         issue,
