@@ -23,7 +23,8 @@ const store = createStore<State>({
         cancellable: false,
         existingConnections: [] as AwsBearerTokenConnection[],
         profiles: [] as Profile[],
-        selectedProfile: null as Profile|null
+        selectedProfile: undefined,
+        errorMessage: undefined
     },
     getters: {},
     mutations: {
@@ -56,6 +57,9 @@ const store = createStore<State>({
         setSelectedProfile(state, profile: Profile) {
             state.selectedProfile = profile
         },
+        setErrorMessage(state, errorMessage: string){
+            state.errorMessage = errorMessage
+        },
         reset(state: State) {
             state.stage = 'START'
             state.ssoRegions = []
@@ -65,7 +69,8 @@ const store = createStore<State>({
                 region: ''
             }
             state.profiles = []
-            state.selectedProfile = null
+            state.selectedProfile = undefined
+            state.errorMessage = ''
         }
     },
     actions: {},

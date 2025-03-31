@@ -8,7 +8,8 @@ export type BrowserSetupData = {
     cancellable: boolean,
     feature: string,
     existConnections: AwsBearerTokenConnection[],
-    profiles: Profile[]
+    profiles: Profile[],
+    errorMessage: string
 }
 
 // plugin interface [AwsBearerTokenConnection]
@@ -54,7 +55,8 @@ export interface State {
     cancellable: boolean,
     existingConnections: AwsBearerTokenConnection[],
     profiles: Profile[],
-    selectedProfile: Profile | null
+    selectedProfile: Profile | undefined,
+    errorMessage: string | undefined
 }
 
 export enum LoginIdentifier {
@@ -77,6 +79,8 @@ export interface Profile {
     region: string
     arn: String
 }
+
+export const GENERIC_PROFILE_LOAD_ERROR = "We couldn't load your Q Developer profiles. Please try again.";
 
 export class LongLivedIAM implements LoginOption {
     id: LoginIdentifier = LoginIdentifier.IAM_CREDENTIAL

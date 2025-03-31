@@ -14,12 +14,12 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.xmlb.annotations.MapAnnotation
 import com.intellij.util.xmlb.annotations.Property
-import org.jetbrains.annotations.VisibleForTesting
 import software.amazon.awssdk.core.SdkClient
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
@@ -38,45 +38,39 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
 
     // Map to store connectionId to its active profile
     private val connectionIdToActiveProfile = Collections.synchronizedMap<String, QRegionProfile>(mutableMapOf())
-    private val connectionIdToProfileList = mutableMapOf<String, MutableList<QRegionProfile>>()
+    private val connectionIdToProfileList = mutableMapOf<String, Int>()
 
     fun listRegionProfiles(project: Project): List<QRegionProfile>? {
-        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
-        if (connection !is AwsBearerTokenConnection || connection.isSono()) {
-            return null
-        }
-        val mappedProfiles = QEndpoints.listRegionEndpoints()
-            .flatMap { (regionKey, _) ->
-                val awsRegion = AwsRegionProvider.getInstance()[regionKey] ?: return@flatMap emptyList()
-                connection.getConnectionSettings()
-                    .withRegion(awsRegion)
-                    .awsClient<CodeWhispererRuntimeClient>()
-                    .listAvailableProfilesPaginator {}
-                    .profiles()
-                    .map { p -> QRegionProfile(arn = p.arn(), profileName = p.profileName()) }
-            }
-
-        return mappedProfiles.takeIf { it.isNotEmpty() }?.also {
-            connectionIdToProfileList[connection.id] = it.toMutableList()
-        } ?: error("no available profiles")
-    }
-
-    fun activeProfile(project: Project): QRegionProfile? {
-        val conn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
-        return if (conn !is AwsBearerTokenConnection || conn.isSono()) {
-            null
-        } else {
-            connectionIdToActiveProfile[conn.id]
+        val connection = getIdConnection(project) ?: return null
+        return try {
+            val mappedProfiles = QEndpoints.listRegionEndpoints()
+                .flatMap { (regionKey, _) ->
+                    val awsRegion = AwsRegionProvider.getInstance()[regionKey] ?: return@flatMap emptyList()
+                    connection.getConnectionSettings()
+                        .withRegion(awsRegion)
+                        .awsClient<CodeWhispererRuntimeClient>()
+                        .listAvailableProfilesPaginator {}
+                        .profiles()
+                        .map { p -> QRegionProfile(arn = p.arn(), profileName = p.profileName()) }
+                }
+            if (mappedProfiles.size == 1) { switchProfile(project, mappedProfiles.first(), passive = true) }
+            mappedProfiles.takeIf { it.isNotEmpty() }?.also {
+                connectionIdToProfileList[connection.id] = it.size
+            } ?: error("You don't have access to the resource")
+        } catch (e: Exception) {
+            LOG.warn(e) { "Failed to list region profiles: ${e.message}" }
+            throw e
         }
     }
 
-    @VisibleForTesting
-    fun switchProfile(project: Project, newProfile: QRegionProfile?) {
-        val conn = ToolkitConnectionManager.getInstance(project)
-            .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
-            ?: return
+    fun activeProfile(project: Project): QRegionProfile? = getIdConnection(project)?.let { connectionIdToActiveProfile[it.id] }
 
-        if (conn.isSono() || newProfile == null || newProfile.arn.isEmpty()) return
+    fun hasValidConnectionButNoActiveProfile(project: Project): Boolean = getIdConnection(project) != null && activeProfile(project) == null
+
+    fun switchProfile(project: Project, newProfile: QRegionProfile, passive: Boolean = false) {
+        val conn = getIdConnection(project) ?: return
+
+        if (newProfile.arn.isEmpty()) return
 
         val oldProfile = connectionIdToActiveProfile[conn.id]
         if (oldProfile == newProfile) return
@@ -84,25 +78,29 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
         connectionIdToActiveProfile[conn.id] = newProfile
         LOG.debug { "Switch from profile $oldProfile to $newProfile for project ${project.name}" }
 
-        ApplicationManager.getApplication().messageBus
-            .syncPublisher(QRegionProfileSelectedListener.TOPIC)
-            .onProfileSelected(project, newProfile)
+        if (!passive) {
+            ApplicationManager.getApplication().messageBus
+                .syncPublisher(QRegionProfileSelectedListener.TOPIC)
+                .onProfileSelected(project, newProfile)
 
-        notifyInfo(
-            title = message("action.q.switchProfiles.dialog.panel.text"),
-            content = message("action.q.profile.usage", newProfile.profileName),
-            project = project
-        )
+            notifyInfo(
+                title = message("action.q.profile.usage.text"),
+                content = message("action.q.profile.usage", newProfile.profileName),
+                project = project
+            )
+        }
     }
 
-    fun shouldProfileSelection(project: Project): Boolean = shouldDisplayCustomNode(project) && activeProfile(project)?.arn.isNullOrEmpty()
+    // for each idc connection, user should have a profile, otherwise should show the profile selection error page
+    fun isPendingProfileSelection(project: Project): Boolean = getIdConnection(project)?.let { conn ->
+        val profileCounts = connectionIdToProfileList[conn.id] ?: 0
+        val activeProfile = connectionIdToActiveProfile[conn.id]
+        profileCounts == 0 || (profileCounts > 1 && activeProfile?.arn.isNullOrEmpty())
+    } ?: false
 
-    fun shouldDisplayCustomNode(project: Project): Boolean =
-        (
-            ToolkitConnectionManager.getInstance(project)
-                .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
-            )?.takeIf { !it.isSono() }
-            ?.let { (connectionIdToProfileList[it.id]?.size ?: 0) > 1 } ?: false
+    fun shouldDisplayProfileInfo(project: Project): Boolean = getIdConnection(project)?.let { conn ->
+        (connectionIdToProfileList[conn.id] ?: 0) > 1
+    } ?: false
 
     fun getQClientSettings(project: Project): TokenConnectionSettings {
         val conn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
@@ -127,6 +125,14 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
         val settings = getQClientSettings(project)
         val client = AwsClientManager.getInstance().getClient(sdkClass, settings)
         return client
+    }
+
+    private fun getIdConnection(project: Project): AwsBearerTokenConnection? {
+        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
+        if (connection is AwsBearerTokenConnection && !connection.isSono()) {
+            return connection
+        }
+        return null
     }
 
     companion object {
@@ -159,5 +165,5 @@ class QProfileState : BaseState() {
 
     @get:Property
     @get:MapAnnotation
-    val connectionIdToProfileList by map<String, MutableList<QRegionProfile>>()
+    val connectionIdToProfileList by map<String, Int>()
 }

@@ -24,7 +24,8 @@ const store = createStore<State>({
         cancellable: false,
         existingConnections: [] as AwsBearerTokenConnection[],
         profiles : [],
-        selectedProfile: null
+        selectedProfile: undefined,
+        errorMessage: undefined
     },
     getters: {},
     mutations: {

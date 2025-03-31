@@ -24,8 +24,7 @@ class QSwitchProfilesAction : AnAction(message("action.q.switchProfiles.text")),
         ApplicationManager.getApplication().executeOnPooledThread {
             val profiles = QRegionProfileManager.getInstance().listRegionProfiles(project)
                 ?: error("Attempted to fetch profiles while there does not exist")
-            val selectedProfile = QRegionProfileManager.getInstance().activeProfile(project)
-                ?: error("Attempted to fetch active profile while one does not exist")
+            val selectedProfile = QRegionProfileManager.getInstance().activeProfile(project) ?: profiles[0]
             ApplicationManager.getApplication().invokeLater {
                 QRegionProfileDialog(
                     project,

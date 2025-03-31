@@ -129,7 +129,7 @@ class AmazonQToolWindow private constructor(
             isCodeTestAvailable = isCodeTestAvailable(project),
             isDocAvailable = isDocAvailable(project),
             highlightCommand = highlightCommand(),
-            activeProfile = QRegionProfileManager.getInstance().takeIf { it.shouldDisplayCustomNode(project) }?.activeProfile(project)
+            activeProfile = QRegionProfileManager.getInstance().takeIf { it.shouldDisplayProfileInfo(project) }?.activeProfile(project)
         )
 
         scope.launch {

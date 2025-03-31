@@ -8,10 +8,13 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Separator
+import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.actions.SsoLogoutAction
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.services.amazonq.actions.QSwitchProfilesAction
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererConnectOnGithubAction
@@ -50,18 +53,11 @@ class QStatusBarLoggedInActionGroup : DefaultActionGroup() {
     }
 
     override fun getChildren(e: AnActionEvent?) = e?.project?.let {
+        val isPendingActiveProfile = QRegionProfileManager.getInstance().hasValidConnectionButNoActiveProfile(it)
         buildList {
-            add(Separator.create())
-            add(Separator.create(message("codewhisperer.statusbar.sub_menu.inline.title")))
-            addAll(buildActionListForInlineSuggestions(it, actionProvider))
-
-            add(Separator.create())
-            add(Separator.create(message("codewhisperer.statusbar.sub_menu.security_scans.title")))
-            addAll(buildActionListForCodeScan(it, actionProvider))
-
-            add(Separator.create())
-            add(Separator.create(message("codewhisperer.statusbar.sub_menu.other_features.title")))
-            addAll(buildActionListForOtherFeatures(it, actionProvider))
+            if (!isPendingActiveProfile) {
+                addAll(buildActionListForActiveProfileSelected(it, actionProvider))
+            }
 
             add(Separator.create())
             add(Separator.create(message("codewhisperer.statusbar.sub_menu.connect_help.title")))
@@ -69,7 +65,10 @@ class QStatusBarLoggedInActionGroup : DefaultActionGroup() {
 
             add(Separator.create())
             add(CodeWhispererShowSettingsAction())
-            QRegionProfileManager.getInstance().shouldDisplayCustomNode(it).takeIf { it }?.let { add(QSwitchProfilesAction()) }
+            (
+                ToolkitConnectionManager.getInstance(it).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
+                )?.takeIf { !it.isSono() }
+                ?.let { add(QSwitchProfilesAction()) }
             ToolkitConnectionManager.getInstance(it).activeConnectionForFeature(CodeWhispererConnection.getInstance())?.let { c ->
                 (c as? AwsBearerTokenConnection)?.let { connection ->
                     add(SsoLogoutAction(connection))
@@ -77,4 +76,21 @@ class QStatusBarLoggedInActionGroup : DefaultActionGroup() {
             }
         }.toTypedArray()
     }.orEmpty()
+
+    private fun buildActionListForActiveProfileSelected(
+        project: Project,
+        actionProvider: ActionProvider<AnAction>,
+    ): List<AnAction> = buildList {
+        add(Separator.create())
+        add(Separator.create(message("codewhisperer.statusbar.sub_menu.inline.title")))
+        addAll(buildActionListForInlineSuggestions(project, actionProvider))
+
+        add(Separator.create())
+        add(Separator.create(message("codewhisperer.statusbar.sub_menu.security_scans.title")))
+        addAll(buildActionListForCodeScan(project, actionProvider))
+
+        add(Separator.create())
+        add(Separator.create(message("codewhisperer.statusbar.sub_menu.other_features.title")))
+        addAll(buildActionListForOtherFeatures(project, actionProvider))
+    }
 }

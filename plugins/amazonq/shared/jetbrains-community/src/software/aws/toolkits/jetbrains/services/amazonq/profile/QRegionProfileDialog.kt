@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.profile
 
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.DialogWrapper
@@ -21,9 +22,13 @@ class QRegionProfileDialog(
 
     private val panel: DialogPanel by lazy {
         panel {
-            row { label(message("action.q.switchProfiles.dialog.panel.text")).bold() }
             row { text(message("action.q.switchProfiles.dialog.panel.description")) }
                 .bottomGap(BottomGap.MEDIUM)
+            row {
+                icon(AllIcons.General.Warning)
+                text(message("action.q.switchProfiles.dialog.panel.warning"))
+            }
+            separator().bottomGap(BottomGap.MEDIUM)
 
             buttonsGroup {
                 profiles.forEach { profile ->
@@ -31,7 +36,12 @@ class QRegionProfileDialog(
                         radioButton("", profile)
 
                         panel {
-                            row { label("${profile.profileName} - ${profile.region}") }
+                            val regionDisplay = if (profile == selectedProfile) {
+                                "${profile.profileName} - ${profile.region} (connected)"
+                            } else {
+                                "${profile.profileName} - ${profile.region}"
+                            }
+                            row { label(regionDisplay) }
                             row {
                                 label(message("action.q.switchProfiles.dialog.account.label", profile.accountId)).applyToComponent {
                                     font = font.deriveFont(font.size2D - 2.0f)
@@ -59,7 +69,7 @@ class QRegionProfileDialog(
     override fun doOKAction() {
         panel.apply()
         if (selectedOption != selectedProfile) {
-            QRegionProfileManager.getInstance().switchProfile(project, selectedOption)
+            QRegionProfileManager.getInstance().switchProfile(project, selectedOption, passive = false)
         }
         close(OK_EXIT_CODE)
     }

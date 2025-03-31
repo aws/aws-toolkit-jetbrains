@@ -18,6 +18,7 @@ export class IdeClient {
         this.store.commit("setCancellable", state.cancellable)
         this.store.commit("setFeature", state.feature)
         this.store.commit('setProfiles', state.profiles);
+        this.store.commit("setErrorMessage", state.errorMessage)
         const existConnections = state.existConnections.map(it => {
             return {
                 sessionName: it.sessionName,

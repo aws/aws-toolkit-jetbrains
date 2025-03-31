@@ -81,16 +81,16 @@ class QRegionProfileManagerTest {
 
     @Test
     fun `switchProfile should switch the current connection(project) to the selected profile`() {
-        sut.switchProfile(project, QRegionProfile(arn = "arn", profileName = "foo_profile"))
+        sut.switchProfile(project, QRegionProfile(arn = "arn", profileName = "foo_profile"), true)
         assertThat(sut.activeProfile(project)).isEqualTo(QRegionProfile(arn = "arn", profileName = "foo_profile"))
 
-        sut.switchProfile(project, QRegionProfile(arn = "another_arn", profileName = "bar_profile"))
+        sut.switchProfile(project, QRegionProfile(arn = "another_arn", profileName = "bar_profile"), true)
         assertThat(sut.activeProfile(project)).isEqualTo(QRegionProfile(arn = "another_arn", profileName = "bar_profile"))
     }
 
     @Test
     fun `switchProfile should return null if user is not connected`() {
-        sut.switchProfile(project, QRegionProfile(arn = "arn", profileName = "foo_profile"))
+        sut.switchProfile(project, QRegionProfile(arn = "arn", profileName = "foo_profile"), true)
         assertThat(sut.activeProfile(project)).isEqualTo(QRegionProfile(arn = "arn", profileName = "foo_profile"))
 
         ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let {
@@ -104,7 +104,7 @@ class QRegionProfileManagerTest {
     }
 
     @Test
-    fun `switch should send message onProfileChanged`() {
+    fun `switch should send message onProfileChanged for active switch`() {
         var cnt = 0
         project.messageBus.connect(disposableRule.disposable).subscribe(
             QRegionProfileSelectedListener.TOPIC,
@@ -116,9 +116,9 @@ class QRegionProfileManagerTest {
         )
 
         assertThat(cnt).isEqualTo(0)
-        sut.switchProfile(project, QRegionProfile(arn = "arn", profileName = "foo_profile"))
+        sut.switchProfile(project, QRegionProfile(arn = "arn", profileName = "foo_profile"), false)
         assertThat(cnt).isEqualTo(1)
-        sut.switchProfile(project, QRegionProfile(arn = "another_arn", profileName = "BAR_PROFILE"))
+        sut.switchProfile(project, QRegionProfile(arn = "another_arn", profileName = "BAR_PROFILE"), false)
         assertThat(cnt).isEqualTo(2)
     }
 
@@ -156,7 +156,11 @@ class QRegionProfileManagerTest {
     @Test
     fun `clientSettings should return the region Q profile specify`() {
         MockClientManager.useRealImplementations(disposableRule.disposable)
-        sut.switchProfile(project, QRegionProfile(arn = "arn:aws:codewhisperer:eu-central-1:123456789012:profile/FOO_PROFILE", profileName = "FOO_PROFILE"))
+        sut.switchProfile(
+            project,
+            QRegionProfile(arn = "arn:aws:codewhisperer:eu-central-1:123456789012:profile/FOO_PROFILE", profileName = "FOO_PROFILE"),
+            true
+        )
         assertThat(
             sut.activeProfile(project)
         ).isEqualTo(QRegionProfile(arn = "arn:aws:codewhisperer:eu-central-1:123456789012:profile/FOO_PROFILE", profileName = "FOO_PROFILE"))
@@ -164,7 +168,7 @@ class QRegionProfileManagerTest {
         val settings = sut.getQClientSettings(project)
         assertThat(settings.region.id).isEqualTo(Region.EU_CENTRAL_1.id())
 
-        sut.switchProfile(project, QRegionProfile(arn = "arn:aws:codewhisperer:us-east-1:123456789012:profile/BAR_PROFILE", profileName = "BAR_PROFILE"))
+        sut.switchProfile(project, QRegionProfile(arn = "arn:aws:codewhisperer:us-east-1:123456789012:profile/BAR_PROFILE", profileName = "BAR_PROFILE"), true)
         assertThat(
             sut.activeProfile(project)
         ).isEqualTo(QRegionProfile(arn = "arn:aws:codewhisperer:us-east-1:123456789012:profile/BAR_PROFILE", profileName = "BAR_PROFILE"))
@@ -177,7 +181,11 @@ class QRegionProfileManagerTest {
     fun `getClient should return correct client with region and endpoint`() {
         MockClientManager.useRealImplementations(disposableRule.disposable)
 
-        sut.switchProfile(project, QRegionProfile(arn = "arn:aws:codewhisperer:eu-central-1:123456789012:profile/FOO_PROFILE", profileName = "FOO_PROFILE"))
+        sut.switchProfile(
+            project,
+            QRegionProfile(arn = "arn:aws:codewhisperer:eu-central-1:123456789012:profile/FOO_PROFILE", profileName = "FOO_PROFILE"),
+            true
+        )
         assertThat(
             sut.activeProfile(project)
         ).isEqualTo(QRegionProfile(arn = "arn:aws:codewhisperer:eu-central-1:123456789012:profile/FOO_PROFILE", profileName = "FOO_PROFILE"))
@@ -190,7 +198,7 @@ class QRegionProfileManagerTest {
             client.serviceClientConfiguration().endpointOverride().get()
         ).isEqualTo(URI.create(QEndpoints.getQEndpointWithRegion(Region.EU_CENTRAL_1.id())))
 
-        sut.switchProfile(project, QRegionProfile(arn = "arn:aws:codewhisperer:us-east-1:123456789012:profile/BAR_PROFILE", profileName = "BAR_PROFILE"))
+        sut.switchProfile(project, QRegionProfile(arn = "arn:aws:codewhisperer:us-east-1:123456789012:profile/BAR_PROFILE", profileName = "BAR_PROFILE"), true)
         assertThat(
             sut.activeProfile(project)
         ).isEqualTo(QRegionProfile(arn = "arn:aws:codewhisperer:us-east-1:123456789012:profile/BAR_PROFILE", profileName = "BAR_PROFILE"))
@@ -236,16 +244,7 @@ class QRegionProfileManagerTest {
             )
 
             connectionIdToProfileList.putAll(
-                mapOf(
-                    "conn-123" to mutableListOf(
-                        QRegionProfile(
-                            profileName = "myProfile1", arn = "arn:aws:codewhisperer:us-west-2:123456789012:profile/myProfile1"
-                        ),
-                        QRegionProfile(
-                            profileName = "myProfile2", arn = "arn:aws:codewhisperer:us-west-2:123456789012:profile/myProfile2"
-                        )
-                    )
-                )
+                mapOf("conn-123" to 2)
             )
         }
 
@@ -267,20 +266,7 @@ class QRegionProfileManagerTest {
                 "</option>" +
                 "<option name=\"connectionIdToProfileList\">" +
                 "<map>" +
-                "<entry key=\"conn-123\">" +
-                "<value>" +
-                "<list>" +
-                "<QRegionProfile>" +
-                "<option name=\"arn\" value=\"arn:aws:codewhisperer:us-west-2:123456789012:profile/myProfile1\" />" +
-                "<option name=\"profileName\" value=\"myProfile1\" />" +
-                "</QRegionProfile>" +
-                "<QRegionProfile>" +
-                "<option name=\"arn\" value=\"arn:aws:codewhisperer:us-west-2:123456789012:profile/myProfile2\" />" +
-                "<option name=\"profileName\" value=\"myProfile2\" />" +
-                "</QRegionProfile>" +
-                "</list>" +
-                "</value>" +
-                "</entry>" +
+                "<entry key=\"conn-123\" value=\"2\" />" +
                 "</map>" +
                 "</option>" +
                 "</component>"
@@ -307,20 +293,7 @@ class QRegionProfileManagerTest {
               </option>
               <option name="connectionIdToProfileList">
                 <map>
-                  <entry key="conn-123">
-                    <value>
-                      <list>
-                        <QRegionProfile>
-                          <option name="profileName" value="myProfile1" />
-                          <option name="arn" value="arn:aws:codewhisperer:us-west-2:123456789012:profile/myProfile1" />
-                        </QRegionProfile>
-                        <QRegionProfile>
-                          <option name="profileName" value="myProfile2" />
-                          <option name="arn" value="arn:aws:codewhisperer:us-west-2:123456789012:profile/myProfile2" />
-                        </QRegionProfile>
-                      </list>
-                    </value>
-                  </entry>
+                  <entry key="conn-123" value = "2" />
                 </map>
               </option>
             </component>
@@ -340,18 +313,6 @@ class QRegionProfileManagerTest {
 
         assertThat(actualState.connectionIdToProfileList).hasSize(1)
         val profileList = actualState.connectionIdToProfileList["conn-123"]
-        assertThat(profileList).hasSize(2)
-        assertThat(profileList?.get(0)).isEqualTo(
-            QRegionProfile(
-                profileName = "myProfile1",
-                arn = "arn:aws:codewhisperer:us-west-2:123456789012:profile/myProfile1"
-            )
-        )
-        assertThat(profileList?.get(1)).isEqualTo(
-            QRegionProfile(
-                profileName = "myProfile2",
-                arn = "arn:aws:codewhisperer:us-west-2:123456789012:profile/myProfile2"
-            )
-        )
+        assertThat(profileList).isEqualTo(2)
     }
 }

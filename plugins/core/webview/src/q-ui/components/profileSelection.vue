@@ -2,7 +2,7 @@
 
 <template>
     <div @keydown.enter="handleContinueClick">
-        <div class="font-amazon" v-if="availableProfiles.length > 0">
+        <div class="font-amazon">
             <!-- Title & Subtitle -->
             <div class="profile-header">
                 <h2 class="title bottom-small-gap">Select profile</h2>
@@ -27,22 +27,43 @@
                     </div>
                 </div>
             </div>
+
+            <div v-if="errorMessage" style="color: white; margin-bottom: 10px;">
+                {{ errorMessage }}
+            </div>
+            <div v-if="errorMessage" class="button-row">
+                <button
+                    class="login-flow-button continue-button font-amazon"
+                    :disabled="isRefreshing"
+                    @click="handleRetryClick"
+                >
+                    {{ isRefreshing ? 'Refreshing...' : 'Try Again' }}
+                </button>
+                <button
+                    class="login-flow-button continue-button font-amazon"
+                    @click="handleSignoutClick()"
+                >
+                    Sign Out
+                </button>
+            </div>
             <!-- Continue Button -->
-            <button
-                class="login-flow-button continue-button font-amazon"
-                :disabled="selectedProfile === null"
-                v-on:click="handleContinueClick()"
-                tabindex="-1"
-            >
-                Continue
-            </button>
+            <div v-else>
+                <button
+                    class="login-flow-button continue-button font-amazon"
+                    :disabled="selectedProfile === null"
+                    v-on:click="handleContinueClick()"
+                    tabindex="-1"
+                >
+                    Continue
+                </button>
+            </div>
         </div>
     </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
-import { Profile } from '../../model'
+import { defineComponent, watch } from 'vue'
+import { Profile, GENERIC_PROFILE_LOAD_ERROR } from '../../model'
 
 export default defineComponent({
     name: 'ProfileSelection',
@@ -51,13 +72,24 @@ export default defineComponent({
     },
     data() {
         return {
-            selectedProfile: null as (Profile | null),
-            availableProfiles: [] as Profile[]
+            selectedProfile: undefined as Profile | undefined,
+            availableProfiles: [] as Profile[],
+            errorMessage: undefined as string | undefined,
+            isRefreshing: false as boolean
         }
     },
     mounted() {
       console.debug("Vuex raw profiles:", this.$store.state.profiles);
       this.availableProfiles = this.$store.state.profiles;
+      this.errorMessage = this.$store.state.errorMessage ? GENERIC_PROFILE_LOAD_ERROR : undefined;
+      this.isRefreshing = false;
+      watch(() => this.$store.state.profiles, (newVal, oldVal) => {
+          this.availableProfiles = newVal
+          this.isRefreshing = false
+      });
+      watch(() => this.$store.state.errorMessage, (newVal) => {
+          this.errorMessage = newVal ? GENERIC_PROFILE_LOAD_ERROR : undefined;
+      })
     },
   methods: {
         toggleItemSelection(profile: Profile) {
@@ -75,6 +107,13 @@ export default defineComponent({
                 };
                 window.ideApi.postMessage(switchProfileMessage);
             }
+        },
+        handleRetryClick() {
+            this.isRefreshing = true
+            window.ideApi.postMessage({command: 'prepareUi'})
+        },
+        handleSignoutClick() {
+            window.ideApi.postMessage({command: 'signout'})
         }
     }
 })
@@ -105,7 +144,16 @@ export default defineComponent({
     cursor: pointer;
     transition: background 0.2s ease-in-out;
 }
-
+.button-row :deep(.login-flow-button) {
+    margin-bottom: 10px;
+}
+.button-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+}
 .selected {
     user-select: none;
 }
