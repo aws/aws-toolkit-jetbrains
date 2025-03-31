@@ -26,9 +26,7 @@ val testHappyPathScript = """
                         await page.keyboard.press('Enter');
                         try {    
                             await page.evaluate(() => {
-                                const acknowledgeButton = Array.from(document.querySelectorAll('button')).find(
-                                    button => button.textContent.includes('Acknowledge')
-                                );
+                                const acknowledgeButton = document.querySelector('button[action-id=amazonq-disclaimer-acknowledge-button-id]');
                                 if (acknowledgeButton) {
                                     acknowledgeButton.click();       
                                 } 
@@ -304,6 +302,12 @@ val testRejectPathScript = """
                         try {
                             await waitForElementWithText(page, "Q - Test")
                             console.log("new tab opened")
+                            await page.evaluate(() => {
+                                const acknowledgeButton = document.querySelector('button[action-id=amazonq-disclaimer-acknowledge-button-id]');
+                                if (acknowledgeButton) {
+                                    acknowledgeButton.click();       
+                                } 
+                            });                           
                             await page.waitForFunction(
                                 () => {
                                     const button = document.querySelector('button[action-id="utg_view_diff"]');
@@ -347,15 +351,6 @@ val testRejectPathScript = """
                             );
                             
                             console.log("Input field re-enabled after rejection")
-
-                            await page.evaluate(() => {
-                                const acknowledgeButton = Array.from(document.querySelectorAll('button')).find(
-                                    button => button.textContent.includes('Acknowledge')
-                                );
-                                if (acknowledgeButton) {
-                                    acknowledgeButton.click();       
-                                } 
-                            });
 
                             const feedbackButton = await page.waitForFunction(
                                 (expectedText) => {
@@ -553,6 +548,13 @@ val testCancelButtonScript = """
                     try {
                         await waitForElementWithText(page, "Q - Test")
                         console.log("new tab opened")
+                        await page.evaluate(() => {
+                            const acknowledgeButton = document.querySelector('button[action-id=amazonq-disclaimer-acknowledge-button-id]');
+                            if (acknowledgeButton) {
+                                    acknowledgeButton.click();       
+                            } 
+                        });  
+
                         
                        
                         await page.waitForFunction(
@@ -599,18 +601,7 @@ val testCancelButtonScript = """
                         );
                         
                         console.log("Input field re-enabled after cancellation")
-
-                        await page.evaluate(() => {
-                            const acknowledgeButton = Array.from(document.querySelectorAll('button')).find(
-                                button => button.textContent.includes('Acknowledge')
-                            );
-                            if (acknowledgeButton) {
-                                acknowledgeButton.click();       
-                            } 
-                        });
-                        
-                        
-                        
+              
                         const feedbackButton = await page.waitForFunction(
                                 (expectedText) => {
                                     const buttons = document.querySelectorAll('button');
@@ -674,6 +665,12 @@ val testDocumentationErrorScript = """
                         await waitForElementWithText(page, "Q - Test")
                         console.log("new tab opened")
                         
+                        await page.evaluate(() => {
+                            const acknowledgeButton = document.querySelector('button[action-id=amazonq-disclaimer-acknowledge-button-id]');
+                            if (acknowledgeButton) {
+                                    acknowledgeButton.click();       
+                            } 
+                        }); 
                         await page.waitForFunction(
                             (expectedText) => {
                                 const pageContent = document.body.textContent || '';
@@ -696,15 +693,6 @@ val testDocumentationErrorScript = """
                         );
                         
                         console.log("Input field re-enabled after error")
-
-                        await page.evaluate(() => {
-                            const acknowledgeButton = Array.from(document.querySelectorAll('button')).find(
-                                button => button.textContent.includes('Acknowledge')
-                            );
-                            if (acknowledgeButton) {
-                                acknowledgeButton.click();       
-                            } 
-                        });
                       
                         const feedbackButton = await page.waitForFunction(
                             (expectedText) => {
@@ -767,6 +755,12 @@ val testRemoveFunctionErrorScript = """
                     try {
                         await waitForElementWithText(page, "Q - Test")
                         console.log("new tab opened")
+                        await page.evaluate(() => {
+                            const acknowledgeButton = document.querySelector('button[action-id=amazonq-disclaimer-acknowledge-button-id]');
+                            if (acknowledgeButton) {
+                                    acknowledgeButton.click();       
+                            } 
+                        }); 
                         
                         await page.waitForFunction(
                             (expectedText) => {
@@ -789,15 +783,6 @@ val testRemoveFunctionErrorScript = """
                         );
                         
                         console.log("Input field re-enabled after error")
-
-                        await page.evaluate(() => {
-                            const acknowledgeButton = Array.from(document.querySelectorAll('button')).find(
-                                button => button.textContent.includes('Acknowledge')
-                            );
-                            if (acknowledgeButton) {
-                                acknowledgeButton.click();       
-                            } 
-                        });
 
                         const feedbackButton = await page.waitForFunction(
                                 (expectedText) => {
@@ -860,6 +845,12 @@ val testMethodNotFoundErrorScript = """
                     try {
                         await waitForElementWithText(page, "Q - Test")
                         console.log("new tab opened")
+                        await page.evaluate(() => {
+                            const acknowledgeButton = document.querySelector('button[action-id=amazonq-disclaimer-acknowledge-button-id]');
+                            if (acknowledgeButton) {
+                                    acknowledgeButton.click();       
+                            } 
+                        }); 
                         
                         await page.waitForFunction(
                             (expectedText) => {
@@ -882,15 +873,6 @@ val testMethodNotFoundErrorScript = """
                         );
                         
                         console.log("Input field re-enabled after error")
-
-                        await page.evaluate(() => {
-                            const acknowledgeButton = Array.from(document.querySelectorAll('button')).find(
-                                button => button.textContent.includes('Acknowledge')
-                            );
-                            if (acknowledgeButton) {
-                                acknowledgeButton.click();       
-                            } 
-                        });
 
                         const feedbackButton = await page.waitForFunction(
                                 (expectedText) => {
