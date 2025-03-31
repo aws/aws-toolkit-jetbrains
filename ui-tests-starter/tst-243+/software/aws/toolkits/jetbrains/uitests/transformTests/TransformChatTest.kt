@@ -14,8 +14,8 @@ import com.intellij.ide.starter.models.TestCase
 import com.intellij.ide.starter.project.LocalProjectInfo
 import com.intellij.ide.starter.runner.CurrentTestMethod
 import com.intellij.ide.starter.runner.Starter
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.kodein.di.DI
@@ -143,11 +143,13 @@ class TransformChatTest {
                 // required wait time for the system to be fully ready
                 Thread.sleep(30000)
                 val result = executePuppeteerScript(transformHappyPathScript)
-                assertTrue(result.contains("Choose a module to transform"))
-                assertTrue(result.contains("Choose the target code version"))
-                assertTrue(result.contains("Skip tests form appeared: true"))
-                assertTrue(result.contains("One or multiple diffs form appeared: true"))
-                assertTrue(result.contains("couldn't run the Maven clean install command"))
+                assertThat(result).contains(
+                    "Choose a module to transform",
+                    "Choose the target code version",
+                    "Skip tests form appeared: true",
+                    "One or multiple diffs form appeared: true",
+                    "couldn't run the Maven clean install command"
+                )
             }
     }
 
