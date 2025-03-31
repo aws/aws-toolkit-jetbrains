@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.util
 import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.editor.markup.EffectType
 import com.intellij.openapi.editor.markup.TextAttributes
-import com.intellij.openapi.util.registry.Registry
 import com.intellij.ui.JBColor
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
