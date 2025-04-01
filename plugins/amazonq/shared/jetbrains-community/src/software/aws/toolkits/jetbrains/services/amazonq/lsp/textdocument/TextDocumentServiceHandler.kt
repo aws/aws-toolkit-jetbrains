@@ -52,6 +52,27 @@ class TextDocumentServiceHandler(
             FileDocumentManagerListener.TOPIC,
             this
         )
+
+        // open files on startup
+        val fileEditorManager = FileEditorManager.getInstance(project)
+        fileEditorManager.openFiles.forEach { file ->
+            handleFileOpened(file)
+        }
+    }
+
+    private fun handleFileOpened(file: VirtualFile) {
+        AmazonQLspService.executeIfRunning(project) { languageServer ->
+            toUriString(file)?.let { uri ->
+                languageServer.textDocumentService.didOpen(
+                    DidOpenTextDocumentParams().apply {
+                        textDocument = TextDocumentItem().apply {
+                            this.uri = uri
+                            text = file.inputStream.readAllBytes().decodeToString()
+                        }
+                    }
+                )
+            }
+        }
     }
 
     override fun beforeDocumentSaving(document: Document) {
@@ -99,18 +120,7 @@ class TextDocumentServiceHandler(
         source: FileEditorManager,
         file: VirtualFile,
     ) {
-        AmazonQLspService.executeIfRunning(project) { languageServer ->
-            toUriString(file)?.let { uri ->
-                languageServer.textDocumentService.didOpen(
-                    DidOpenTextDocumentParams().apply {
-                        textDocument = TextDocumentItem().apply {
-                            this.uri = uri
-                            text = file.inputStream.readAllBytes().decodeToString()
-                        }
-                    }
-                )
-            }
-        }
+        handleFileOpened(file)
     }
 
     override fun fileClosed(

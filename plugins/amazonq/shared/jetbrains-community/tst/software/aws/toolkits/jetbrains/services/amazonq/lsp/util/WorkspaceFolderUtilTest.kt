@@ -8,7 +8,7 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VirtualFile
 import io.mockk.every
 import io.mockk.mockk
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.net.URI
 import java.nio.file.Path
@@ -22,7 +22,7 @@ class WorkspaceFolderUtilTest {
 
         val result = WorkspaceFolderUtil.createWorkspaceFolders(mockProject)
 
-        assertEquals(emptyList<VirtualFile>(), result)
+        assertThat(result).isEqualTo(emptyList<VirtualFile>())
     }
 
     @Test
@@ -44,11 +44,11 @@ class WorkspaceFolderUtilTest {
 
         val result = WorkspaceFolderUtil.createWorkspaceFolders(mockProject)
 
-        assertEquals(2, result.size)
-        assertEquals(normalizeFileUri("file:///path/to/root1"), result[0].uri)
-        assertEquals(normalizeFileUri("file:///path/to/root2"), result[1].uri)
-        assertEquals("root1", result[0].name)
-        assertEquals("root2", result[1].name)
+        assertThat(result).hasSize(2)
+        assertThat(result[0].uri).isEqualTo(normalizeFileUri("file:///path/to/root1"))
+        assertThat(result[1].uri).isEqualTo(normalizeFileUri("file:///path/to/root2"))
+        assertThat(result[0].name).isEqualTo("root1")
+        assertThat(result[1].name).isEqualTo("root2")
     }
 
     @Test
@@ -62,7 +62,7 @@ class WorkspaceFolderUtilTest {
 
         val result = WorkspaceFolderUtil.createWorkspaceFolders(mockProject)
 
-        assertEquals(emptyList<VirtualFile>(), result)
+        assertThat(result).isEqualTo(emptyList<VirtualFile>())
     }
 
     private fun createMockVirtualFile(uri: URI, name: String): VirtualFile {
