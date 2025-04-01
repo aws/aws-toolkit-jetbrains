@@ -207,6 +207,14 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                     UiTelemetry.click(project, signInOption)
                 }
             }
+
+            is BrowserMessage.SwitchProfile -> {
+                QRegionProfileManager.getInstance().switchProfile(
+                    project,
+                    QRegionProfile(profileName = message.profileName, arn = message.arn),
+                    passive = false
+                )
+            }
         }
     }
 
