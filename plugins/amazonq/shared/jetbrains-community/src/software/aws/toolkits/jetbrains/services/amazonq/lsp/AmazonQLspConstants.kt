@@ -8,4 +8,5 @@ object AmazonQLspConstants {
     const val LSP_CW_CONFIGURATION_KEY = "aws.codeWhisperer"
     const val LSP_CW_OPT_OUT_KEY = "shareCodeWhispererContentWithAWS"
     const val LSP_CODE_REFERENCES_OPT_OUT_KEY = "includeSuggestionsWithCodeReferences"
+    const val LSP_WORKSPACE_CONTEXT_ENABLED_KEY = "workspaceContext"
 }

@@ -91,6 +91,17 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         }
     }
 
+    fun toggleWorkspaceContextEnabled(value: Boolean) {
+        state.value[CodeWhispererConfigurationType.IsWorkspaceContextEnabled] = value
+        ProjectManager.getInstance().openProjects.forEach {
+            if (it.isDisposed) {
+                return@forEach
+            }
+            AmazonQLspService.didChangeConfiguration(it)
+        }
+    }
+
+    fun isWorkspaceContextEnabled() = state.value.getOrDefault(CodeWhispererConfigurationType.IsWorkspaceContextEnabled, true)
     fun isProjectContextEnabled() = state.value.getOrDefault(CodeWhispererConfigurationType.IsProjectContextEnabled, false)
 
     private fun hasEnabledProjectContextOnce() = state.value.getOrDefault(CodeWhispererConfigurationType.HasEnabledProjectContextOnce, false)
@@ -199,6 +210,7 @@ enum class CodeWhispererConfigurationType {
     HasEnabledProjectContextOnce,
     IsQPrioritizedForTabAccept,
     IsTabAcceptPriorityNotificationShownOnce,
+    IsWorkspaceContextEnabled,
 }
 
 enum class CodeWhispererStringConfigurationType {
