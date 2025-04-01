@@ -136,7 +136,7 @@ class CreateReadmeWorkspacesTest {
 
                 val result = executePuppeteerScript(createReadmeSubFolderPreFolderChangeTestScript)
                 this.ui.robot.pressAndReleaseKey(KeyEvent.VK_RIGHT)
-                this.ui.robot.pressAndReleaseKey(KeyEvent.VK_DOWN)
+                this.ui.robot.enterText("\\/src")
                 this.ui.robot.pressAndReleaseKey(KeyEvent.VK_ENTER)
                 val result2 = executePuppeteerScript(createReadmeSubFolderPostFolderChangeTestScript)
 
