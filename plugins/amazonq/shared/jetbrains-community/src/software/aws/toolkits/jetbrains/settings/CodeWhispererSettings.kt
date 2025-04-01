@@ -91,7 +91,7 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
         }
     }
 
-    fun toggleWorkspaceContextEnabled(value: Boolean, passive: Boolean = false) {
+    fun toggleWorkspaceContextEnabled(value: Boolean) {
         state.value[CodeWhispererConfigurationType.IsWorkspaceContextEnabled] = value
         ProjectManager.getInstance().openProjects.forEach {
             if (it.isDisposed) {
