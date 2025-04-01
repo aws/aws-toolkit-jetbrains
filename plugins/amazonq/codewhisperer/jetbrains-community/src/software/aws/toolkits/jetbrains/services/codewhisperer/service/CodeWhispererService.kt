@@ -680,12 +680,12 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 val workspaceRootPath = Paths.get(URI(workspaceInfo.workspaceRoot)).toString()
                 if (psiFile.virtualFile.path.startsWith(workspaceRootPath)) {
                     workspaceId = workspaceInfo.workspaceId
-                    LOG.info("Found workspaceId from LSP '$workspaceId'")
+                    LOG.info { "Found workspaceId from LSP '$workspaceId'" }
                     break
                 }
             }
         } catch (e: Exception) {
-            LOG.warn("Cannot get workspaceId from LSP'$e'")
+            LOG.warn { "Cannot get workspaceId from LSP'$e'" }
         }
         return RequestContext(
             project, editor, triggerTypeInfo, caretPosition,
