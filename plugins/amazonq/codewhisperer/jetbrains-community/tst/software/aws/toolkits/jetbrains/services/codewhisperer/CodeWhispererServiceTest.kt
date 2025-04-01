@@ -212,7 +212,8 @@ class CodeWhispererServiceTest {
                 supplementalContextDeferred = async { mockSupContext },
                 connection = ToolkitConnectionManager.getInstance(projectRule.project).activeConnection(),
                 latencyContext = LatencyContext(),
-                customizationArn = "fake-arn"
+                customizationArn = "fake-arn",
+                workspaceId = null
             )
         )
 
