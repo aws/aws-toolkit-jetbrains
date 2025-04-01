@@ -359,7 +359,7 @@ val testRejectPathScript = """
                                         button.textContent.includes(expectedText)
                                     );
                                 },
-                                {timeout 4000000},
+                                {timeout: 4000000},
                                 "How can we make /test better"
                             );
                             
@@ -609,7 +609,7 @@ val testCancelButtonScript = """
                                         button.textContent.includes(expectedText)
                                     );
                                 },
-                                {timeout 4000000},
+                                {timeout: 4000000},
                                 "How can we make /test better"
                             );
                             
@@ -791,7 +791,7 @@ val testRemoveFunctionErrorScript = """
                                         button.textContent.includes(expectedText)
                                     );
                                 },
-                                {timeout 4000000},
+                                {timeout: 4000000},
                                 "How can we make /test better"
                             );
                             
@@ -881,7 +881,7 @@ val testMethodNotFoundErrorScript = """
                                         button.textContent.includes(expectedText)
                                     );
                                 },
-                                {timeout 4000000},
+                                {timeout: 4000000},
                                 "How can we make /test better"
                             );
                             
