@@ -82,7 +82,6 @@ class QTestGenerationChatTest {
                         "new tab opened",
                         "Error message displayed correctly",
                         "Input field re-enabled after error",
-//                        "Feedback button found with correct text after error"
                     )
             }
     }
@@ -122,7 +121,6 @@ class QTestGenerationChatTest {
                         "Cancel button clicked",
                         "Test generation cancelled successfully",
                         "Input field re-enabled after cancellation",
-//                        "Feedback button found with correct text"
                     )
             }
     }
@@ -159,7 +157,6 @@ class QTestGenerationChatTest {
                         "new tab opened",
                         "Error message displayed correctly",
                         "Input field re-enabled after error",
-//                        "Feedback button found with correct text after error"
                     )
             }
     }
@@ -196,7 +193,6 @@ class QTestGenerationChatTest {
                         "new tab opened",
                         "Error message displayed correctly",
                         "Input field re-enabled after error",
-//                        "Feedback button found with correct text after error"
                     )
             }
     }
@@ -378,7 +374,6 @@ class QTestGenerationChatTest {
                         "Result Reject",
                         "Unit test generation completed.",
                         "Input field re-enabled after rejection",
-//                        "Feedback button found with correct text"
                     )
             }
     }

@@ -77,28 +77,6 @@ val testHappyPathScript = """
                             
                             console.log("Input field re-enabled after acceptance")
                                 
-
-                            
-
-
-                            
-//                            const feedbackButton = await page.waitForFunction(
-//                                (expectedText) => {
-//                                    const buttons = document.querySelectorAll('button');
-//                                    return Array.from(buttons).find(button =>
-//                                        button.textContent.includes(expectedText)
-//                                    );
-//                                },
-//                                {timeout: 4000000},
-//                                "How can we make /test better"
-//                            );
-//                            
-//                            if (feedbackButton){
-//                                console.log("Feedback button found with correct text")
-//                            }else{
-//                                console.log("Feedback button not found")
-//                                throw new Error('Feedback button not found');
-//                            }
                         } catch (e) {
                             console.log("Element with text not found")
                             console.log(e)
@@ -352,24 +330,6 @@ val testRejectPathScript = """
                             
                             console.log("Input field re-enabled after rejection")
 
-//                            const feedbackButton = await page.waitForFunction(
-//                                (expectedText) => {
-//                                    const buttons = document.querySelectorAll('button');
-//                                    return Array.from(buttons).find(button =>
-//                                        button.textContent.includes(expectedText)
-//                                    );
-//                                },
-//                                {timeout: 4000000},
-//                                "How can we make /test better"
-//                            );
-//                            
-//                            if (feedbackButton){
-//                                console.log("Feedback button found with correct text")
-//                            }else{
-//                                console.log("Feedback button not found")
-//                                throw new Error('Feedback button not found');
-//                            }
-
                         } catch (e) {
                             console.log("Element with text not found")
                             console.log(e)
@@ -601,27 +561,7 @@ val testCancelButtonScript = """
                         );
                         
                         console.log("Input field re-enabled after cancellation")
-              
-//                        const feedbackButton = await page.waitForFunction(
-//                                (expectedText) => {
-//                                    const buttons = document.querySelectorAll('button');
-//                                    return Array.from(buttons).find(button =>
-//                                        button.textContent.includes(expectedText)
-//                                    );
-//                                },
-//                                {timeout: 4000000},
-//                                "How can we make /test better"
-//                            );
-//                            
-//                            if (feedbackButton){
-//                                console.log("Feedback button found with correct text")
-//                            }else{
-//                                console.log("Feedback button not found")
-//                                throw new Error('Feedback button not found');
-//                            }
-                        
-
-                        
+                 
                     } catch (e) {
                         console.log("Test failed")
                         console.log(e)
@@ -692,25 +632,7 @@ val testDocumentationErrorScript = """
                             { timeout: 4000000 }
                         );
                         
-                        console.log("Input field re-enabled after error")
-                      
-//                        const feedbackButton = await page.waitForFunction(
-//                            (expectedText) => {
-//                                const buttons = document.querySelectorAll('button');
-//                                return Array.from(buttons).find(button => 
-//                                    button.textContent.includes(expectedText)
-//                                );
-//                            },
-//                            { timeout: 4000000 },
-//                            "How can we make /test better"
-//                        );
-//                        
-//                        if (feedbackButton){
-//                                console.log("Feedback button found with correct text after error")
-//                            }else{
-//                                console.log("Feedback button not found")
-//                                throw new Error('Feedback button not found');
-//                        }
+                        console.log("Input field re-enabled after error")                   
                         
                     } catch (e) {
                         console.log("Test failed")
@@ -783,24 +705,6 @@ val testRemoveFunctionErrorScript = """
                         );
                         
                         console.log("Input field re-enabled after error")
-
-//                        const feedbackButton = await page.waitForFunction(
-//                                (expectedText) => {
-//                                    const buttons = document.querySelectorAll('button');
-//                                    return Array.from(buttons).find(button =>
-//                                        button.textContent.includes(expectedText)
-//                                    );
-//                                },
-//                                {timeout: 4000000},
-//                                "How can we make /test better"
-//                            );
-//                            
-//                            if (feedbackButton){
-//                                console.log("Feedback button found with correct text after error")
-//                            }else{
-//                                console.log("Feedback button not found")
-//                                throw new Error('Feedback button not found');
-//                            }
                         
                     } catch (e) {
                         console.log("Test failed")
@@ -874,23 +778,6 @@ val testMethodNotFoundErrorScript = """
                         
                         console.log("Input field re-enabled after error")
 
-//                        const feedbackButton = await page.waitForFunction(
-//                                (expectedText) => {
-//                                    const buttons = document.querySelectorAll('button');
-//                                    return Array.from(buttons).find(button =>
-//                                        button.textContent.includes(expectedText)
-//                                    );
-//                                },
-//                                {timeout: 4000000},
-//                                "How can we make /test better"
-//                            );
-//                            
-//                            if (feedbackButton){
-//                                console.log("Feedback button found with correct text after error")
-//                            }else{
-//                                console.log("Feedback button not found")
-//                                throw new Error('Feedback button not found');
-//                            }
                         
                     } catch (e) {
                         console.log("Test failed")
