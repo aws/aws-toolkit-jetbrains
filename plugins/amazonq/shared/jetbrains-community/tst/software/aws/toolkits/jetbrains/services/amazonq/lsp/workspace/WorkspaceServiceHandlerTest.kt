@@ -26,16 +26,19 @@ import io.mockk.runs
 import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
+import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.lsp4j.CreateFilesParams
 import org.eclipse.lsp4j.DeleteFilesParams
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams
 import org.eclipse.lsp4j.DidChangeWorkspaceFoldersParams
+import org.eclipse.lsp4j.DidCloseTextDocumentParams
+import org.eclipse.lsp4j.DidOpenTextDocumentParams
 import org.eclipse.lsp4j.FileChangeType
 import org.eclipse.lsp4j.RenameFilesParams
 import org.eclipse.lsp4j.WorkspaceFolder
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
+import org.eclipse.lsp4j.services.TextDocumentService
 import org.eclipse.lsp4j.services.WorkspaceService
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
@@ -50,6 +53,7 @@ class WorkspaceServiceHandlerTest {
     private lateinit var project: Project
     private lateinit var mockLanguageServer: AmazonQLanguageServer
     private lateinit var mockWorkspaceService: WorkspaceService
+    private lateinit var mockTextDocumentService: TextDocumentService
     private lateinit var sut: WorkspaceServiceHandler
     private lateinit var mockApplication: Application
 
@@ -57,6 +61,7 @@ class WorkspaceServiceHandlerTest {
     fun setup() {
         project = mockk<Project>()
         mockWorkspaceService = mockk<WorkspaceService>()
+        mockTextDocumentService = mockk<TextDocumentService>()
         mockLanguageServer = mockk<AmazonQLanguageServer>()
 
         mockApplication = mockk<Application>()
@@ -89,6 +94,11 @@ class WorkspaceServiceHandlerTest {
         every { mockWorkspaceService.didChangeWatchedFiles(any()) } returns Unit
         every { mockWorkspaceService.didChangeWorkspaceFolders(any()) } returns Unit
 
+        // Mock textDocument service (for didRename calls)
+        every { mockLanguageServer.textDocumentService } returns mockTextDocumentService
+        every { mockTextDocumentService.didOpen(any()) } returns Unit
+        every { mockTextDocumentService.didClose(any()) } returns Unit
+
         // Mock message bus
         val messageBus = mockk<MessageBus>()
         every { project.messageBus } returns messageBus
@@ -108,7 +118,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
-        assertEquals(normalizeFileUri(pyUri.toString()), paramsSlot.captured.files[0].uri)
+        assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(pyUri.toString()))
     }
 
     @Test
@@ -120,7 +130,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
-        assertEquals(normalizeFileUri(tsUri.toString()), paramsSlot.captured.files[0].uri)
+        assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(tsUri.toString()))
     }
 
     @Test
@@ -132,7 +142,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
-        assertEquals(normalizeFileUri(jsUri.toString()), paramsSlot.captured.files[0].uri)
+        assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(jsUri.toString()))
     }
 
     @Test
@@ -144,7 +154,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
-        assertEquals(normalizeFileUri(javaUri.toString()), paramsSlot.captured.files[0].uri)
+        assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(javaUri.toString()))
     }
 
     @Test
@@ -156,7 +166,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
-        assertEquals(normalizeFileUri(dirUri.toString()), paramsSlot.captured.files[0].uri)
+        assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(dirUri.toString()))
     }
 
     @Test
@@ -179,7 +189,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
-        assertEquals(normalizeFileUri(newUri.toString()), paramsSlot.captured.files[0].uri)
+        assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(newUri.toString()))
     }
 
     @Test
@@ -192,7 +202,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<CreateFilesParams>()
         verify { mockWorkspaceService.didCreateFiles(capture(paramsSlot)) }
-        assertEquals(normalizeFileUri(newUri.toString()), paramsSlot.captured.files[0].uri)
+        assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(newUri.toString()))
     }
 
     @Test
@@ -204,7 +214,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
-        assertEquals(normalizeFileUri(pyUri.toString()), paramsSlot.captured.files[0].uri)
+        assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(pyUri.toString()))
     }
 
     @Test
@@ -216,7 +226,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
-        assertEquals(normalizeFileUri(tsUri.toString()), paramsSlot.captured.files[0].uri)
+        assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(tsUri.toString()))
     }
 
     @Test
@@ -228,7 +238,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
-        assertEquals(normalizeFileUri(jsUri.toString()), paramsSlot.captured.files[0].uri)
+        assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(jsUri.toString()))
     }
 
     @Test
@@ -240,7 +250,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
-        assertEquals(normalizeFileUri(javaUri.toString()), paramsSlot.captured.files[0].uri)
+        assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(javaUri.toString()))
     }
 
     @Test
@@ -262,7 +272,7 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(paramsSlot)) }
-        assertEquals(normalizeFileUri(dirUri.toString()), paramsSlot.captured.files[0].uri)
+        assertThat(paramsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(dirUri.toString()))
     }
 
     @Test
@@ -278,9 +288,9 @@ class WorkspaceServiceHandlerTest {
 
         val deleteParamsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(deleteParamsSlot)) }
-        assertEquals(2, deleteParamsSlot.captured.files.size)
-        assertEquals(normalizeFileUri(deleteUri.toString()), deleteParamsSlot.captured.files[0].uri)
-        assertEquals(normalizeFileUri(oldMoveUri.toString()), deleteParamsSlot.captured.files[1].uri)
+        assertThat(deleteParamsSlot.captured.files).hasSize(2)
+        assertThat(deleteParamsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(deleteUri.toString()))
+        assertThat(deleteParamsSlot.captured.files[1].uri).isEqualTo(normalizeFileUri(oldMoveUri.toString()))
     }
 
     @Test
@@ -304,7 +314,7 @@ class WorkspaceServiceHandlerTest {
 
         val deleteParamsSlot = slot<DeleteFilesParams>()
         verify { mockWorkspaceService.didDeleteFiles(capture(deleteParamsSlot)) }
-        assertEquals(normalizeFileUri(oldUri.toString()), deleteParamsSlot.captured.files[0].uri)
+        assertThat(deleteParamsSlot.captured.files[0].uri).isEqualTo(normalizeFileUri(oldUri.toString()))
     }
 
     @Test
@@ -324,12 +334,12 @@ class WorkspaceServiceHandlerTest {
         // Assert
         val paramsSlot = slot<DidChangeWatchedFilesParams>()
         verify { mockWorkspaceService.didChangeWatchedFiles(capture(paramsSlot)) }
-        assertEquals(normalizeFileUri(createURI.toString()), paramsSlot.captured.changes[0].uri)
-        assertEquals(FileChangeType.Created, paramsSlot.captured.changes[0].type)
-        assertEquals(normalizeFileUri(deleteURI.toString()), paramsSlot.captured.changes[1].uri)
-        assertEquals(FileChangeType.Deleted, paramsSlot.captured.changes[1].type)
-        assertEquals(normalizeFileUri(changeURI.toString()), paramsSlot.captured.changes[2].uri)
-        assertEquals(FileChangeType.Changed, paramsSlot.captured.changes[2].type)
+        assertThat(paramsSlot.captured.changes[0].uri).isEqualTo(normalizeFileUri(createURI.toString()))
+        assertThat(paramsSlot.captured.changes[0].type).isEqualTo(FileChangeType.Created)
+        assertThat(paramsSlot.captured.changes[1].uri).isEqualTo(normalizeFileUri(deleteURI.toString()))
+        assertThat(paramsSlot.captured.changes[1].type).isEqualTo(FileChangeType.Deleted)
+        assertThat(paramsSlot.captured.changes[2].uri).isEqualTo(normalizeFileUri(changeURI.toString()))
+        assertThat(paramsSlot.captured.changes[2].type).isEqualTo(FileChangeType.Changed)
     }
 
     @Test
@@ -343,11 +353,11 @@ class WorkspaceServiceHandlerTest {
         val paramsSlot = slot<DidChangeWatchedFilesParams>()
         verify { mockWorkspaceService.didChangeWatchedFiles(capture(paramsSlot)) }
 
-        assertEquals(2, paramsSlot.captured.changes.size)
-        assertEquals(normalizeFileUri(oldUri.toString()), paramsSlot.captured.changes[0].uri)
-        assertEquals(FileChangeType.Deleted, paramsSlot.captured.changes[0].type)
-        assertEquals(normalizeFileUri(newUri.toString()), paramsSlot.captured.changes[1].uri)
-        assertEquals(FileChangeType.Created, paramsSlot.captured.changes[1].type)
+        assertThat(paramsSlot.captured.changes).hasSize(2)
+        assertThat(paramsSlot.captured.changes[0].uri).isEqualTo(normalizeFileUri(oldUri.toString()))
+        assertThat(paramsSlot.captured.changes[0].type).isEqualTo(FileChangeType.Deleted)
+        assertThat(paramsSlot.captured.changes[1].uri).isEqualTo(normalizeFileUri(newUri.toString()))
+        assertThat(paramsSlot.captured.changes[1].type).isEqualTo(FileChangeType.Created)
     }
 
     @Test
@@ -360,8 +370,8 @@ class WorkspaceServiceHandlerTest {
 
         val paramsSlot = slot<DidChangeWatchedFilesParams>()
         verify { mockWorkspaceService.didChangeWatchedFiles(capture(paramsSlot)) }
-        assertEquals(normalizeFileUri(newUri.toString()), paramsSlot.captured.changes[0].uri)
-        assertEquals(FileChangeType.Created, paramsSlot.captured.changes[0].type)
+        assertThat(paramsSlot.captured.changes[0].uri).isEqualTo(normalizeFileUri(newUri.toString()))
+        assertThat(paramsSlot.captured.changes[0].type).isEqualTo(FileChangeType.Created)
     }
 
     @Test
@@ -389,12 +399,21 @@ class WorkspaceServiceHandlerTest {
         // Act
         sut.after(listOf(propertyEvent))
 
+        val closeParams = slot<DidCloseTextDocumentParams>()
+        verify { mockTextDocumentService.didClose(capture(closeParams)) }
+        assertThat(closeParams.captured.textDocument.uri).isEqualTo(normalizeFileUri("file:///testDir/$oldName"))
+
+        val openParams = slot<DidOpenTextDocumentParams>()
+        verify { mockTextDocumentService.didOpen(capture(openParams)) }
+        assertThat(openParams.captured.textDocument.uri).isEqualTo(normalizeFileUri("file:///testDir/$newName"))
+        assertThat(openParams.captured.textDocument.text).isEqualTo(normalizeFileUri("content"))
+
         // Assert
         val paramsSlot = slot<RenameFilesParams>()
         verify { mockWorkspaceService.didRenameFiles(capture(paramsSlot)) }
         with(paramsSlot.captured.files[0]) {
-            assertEquals(normalizeFileUri("file:///testDir/$oldName"), oldUri)
-            assertEquals(normalizeFileUri("file:///testDir/$newName"), newUri)
+            assertThat(oldUri).isEqualTo(normalizeFileUri("file:///testDir/$oldName"))
+            assertThat(newUri).isEqualTo(normalizeFileUri("file:///testDir/$newName"))
         }
     }
 
@@ -411,6 +430,8 @@ class WorkspaceServiceHandlerTest {
         sut.after(listOf(propertyEvent))
 
         // Assert
+        verify(exactly = 0) { mockTextDocumentService.didClose(any()) }
+        verify(exactly = 0) { mockTextDocumentService.didOpen(any()) }
         verify(exactly = 0) { mockWorkspaceService.didRenameFiles(any()) }
     }
 
@@ -427,11 +448,13 @@ class WorkspaceServiceHandlerTest {
         sut.after(listOf(propertyEvent))
 
         // Assert
+        verify(exactly = 0) { mockTextDocumentService.didClose(any()) }
+        verify(exactly = 0) { mockTextDocumentService.didOpen(any()) }
         val paramsSlot = slot<RenameFilesParams>()
         verify { mockWorkspaceService.didRenameFiles(capture(paramsSlot)) }
         with(paramsSlot.captured.files[0]) {
-            assertEquals(normalizeFileUri("file:///testDir/oldDir"), oldUri)
-            assertEquals(normalizeFileUri("file:///testDir/newDir"), newUri)
+            assertThat(oldUri).isEqualTo(normalizeFileUri("file:///testDir/oldDir"))
+            assertThat(newUri).isEqualTo(normalizeFileUri("file:///testDir/newDir"))
         }
     }
 
@@ -453,7 +476,7 @@ class WorkspaceServiceHandlerTest {
         // Assert
         val paramsSlot = slot<RenameFilesParams>()
         verify { mockWorkspaceService.didRenameFiles(capture(paramsSlot)) }
-        assertEquals(2, paramsSlot.captured.files.size)
+        assertThat(paramsSlot.captured.files).hasSize(2)
     }
 
     @Test
@@ -498,8 +521,8 @@ class WorkspaceServiceHandlerTest {
         // Assert
         val paramsSlot = slot<DidChangeWorkspaceFoldersParams>()
         verify(exactly = 1) { mockWorkspaceService.didChangeWorkspaceFolders(capture(paramsSlot)) }
-        assertEquals(1, paramsSlot.captured.event.added.size)
-        assertEquals("folder1", paramsSlot.captured.event.added[0].name)
+        assertThat(paramsSlot.captured.event.added).hasSize(1)
+        assertThat(paramsSlot.captured.event.added[0].name).isEqualTo("folder1")
     }
 
     // rootsChanged handles additional files added to root
@@ -533,8 +556,8 @@ class WorkspaceServiceHandlerTest {
         // Assert
         val paramsSlot = slot<DidChangeWorkspaceFoldersParams>()
         verify(exactly = 1) { mockWorkspaceService.didChangeWorkspaceFolders(capture(paramsSlot)) }
-        assertEquals(1, paramsSlot.captured.event.added.size)
-        assertEquals("folder2", paramsSlot.captured.event.added[0].name)
+        assertThat(paramsSlot.captured.event.added).hasSize(1)
+        assertThat(paramsSlot.captured.event.added[0].name).isEqualTo("folder2")
     }
 
     // rootsChanged handles removal of files from root
@@ -568,8 +591,8 @@ class WorkspaceServiceHandlerTest {
         // Assert
         val paramsSlot = slot<DidChangeWorkspaceFoldersParams>()
         verify(exactly = 1) { mockWorkspaceService.didChangeWorkspaceFolders(capture(paramsSlot)) }
-        assertEquals(1, paramsSlot.captured.event.removed.size)
-        assertEquals("folder2", paramsSlot.captured.event.removed[0].name)
+        assertThat(paramsSlot.captured.event.removed).hasSize(1)
+        assertThat(paramsSlot.captured.event.removed[0].name).isEqualTo("folder2")
     }
 
     @Test
@@ -606,10 +629,10 @@ class WorkspaceServiceHandlerTest {
         // Assert
         val paramsSlot = slot<DidChangeWorkspaceFoldersParams>()
         verify(exactly = 1) { mockWorkspaceService.didChangeWorkspaceFolders(capture(paramsSlot)) }
-        assertEquals(1, paramsSlot.captured.event.added.size)
-        assertEquals(1, paramsSlot.captured.event.removed.size)
-        assertEquals("folder3", paramsSlot.captured.event.added[0].name)
-        assertEquals("folder2", paramsSlot.captured.event.removed[0].name)
+        assertThat(paramsSlot.captured.event.added).hasSize(1)
+        assertThat(paramsSlot.captured.event.removed).hasSize(1)
+        assertThat(paramsSlot.captured.event.added[0].name).isEqualTo("folder3")
+        assertThat(paramsSlot.captured.event.removed[0].name).isEqualTo("folder2")
     }
 
     private fun createMockVirtualFile(uri: URI, fileName: String, isDirectory: Boolean = false): VirtualFile {
@@ -624,6 +647,7 @@ class WorkspaceServiceHandlerTest {
             every { fileSystem } returns mockk {
                 every { protocol } returns "file"
             }
+            every { this@mockk.inputStream } returns "content".byteInputStream()
         }
     }
 
