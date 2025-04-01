@@ -15,9 +15,8 @@ import com.intellij.ide.starter.models.TestCase
 import com.intellij.ide.starter.project.LocalProjectInfo
 import com.intellij.ide.starter.runner.CurrentTestMethod
 import com.intellij.ide.starter.runner.Starter
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -87,19 +86,17 @@ class CreateReadmeWorkspacesTest {
 
                 val readmePath = Paths.get("tstData", "qdoc", "createFlow", "README.md")
                 val readme = File(readmePath.toUri())
-                assertFalse(readme.exists())
+                assertThat(readme).doesNotExist()
 
                 val result = executePuppeteerScript(acceptReadmeTestScript)
-                assertFalse(result.contains("Error: Test Failed"))
+                assertThat(result).doesNotContain("Error: Test Failed")
                 if (result.contains("Error: Test Failed")) {
                     println("result: $result")
                 }
 
                 val newReadmePath = Paths.get("tstData", "qdoc", "createFlow", "README.md")
                 val newReadme = File(newReadmePath.toUri())
-                assertTrue(newReadme.exists())
-                assertTrue(newReadme.readText().contains("REST"))
-                assertTrue(newReadme.readText().contains("API"))
+                assertThat(newReadme).exists().content().contains("REST", "API")
             }
     }
 
@@ -132,7 +129,7 @@ class CreateReadmeWorkspacesTest {
 
                 val readmePath = Paths.get("tstData", "qdoc", "createFlow", "src", "README.md")
                 val readme = File(readmePath.toUri())
-                assertFalse(readme.exists())
+                assertThat(readme).exists()
 
                 val result = executePuppeteerScript(createReadmeSubFolderPreFolderChangeTestScript)
                 this.ui.robot.pressAndReleaseKey(KeyEvent.VK_RIGHT)
@@ -140,8 +137,8 @@ class CreateReadmeWorkspacesTest {
                 this.ui.robot.pressAndReleaseKey(KeyEvent.VK_ENTER)
                 val result2 = executePuppeteerScript(createReadmeSubFolderPostFolderChangeTestScript)
 
-                assertFalse(result.contains("Error: Test Failed"))
-                assertFalse(result2.contains("Error: Test Failed"))
+                assertThat(result).doesNotContain("Error: Test Failed")
+                assertThat(result2).doesNotContain("Error: Test Failed")
 
                 if (result.contains("Error: Test Failed") || result2.contains("Error: Test Failed")) {
                     println("result: $result")
@@ -150,7 +147,7 @@ class CreateReadmeWorkspacesTest {
 
                 val newReadmePath = Paths.get("tstData", "qdoc", "createFlow", "src", "README.md")
                 val newReadme = File(newReadmePath.toUri())
-                assertTrue(newReadme.exists())
+                assertThat(newReadme).exists()
             }
     }
 
@@ -183,20 +180,22 @@ class CreateReadmeWorkspacesTest {
 
                 val readmePath = Paths.get("tstData", "qdoc", "README.md")
                 val readme = File(readmePath.toUri())
-                assertFalse(readme.exists())
+                assertThat(readme).exists()
 
                 val result = executePuppeteerScript(acceptReadmeTestScript)
-                assertFalse(result.contains("Error: Test Failed"))
+                assertThat(result).doesNotContain("Error: Test Failed")
                 if (result.contains("Error: Test Failed")) {
                     println("result: $result")
                 }
 
                 val newReadmePath = Paths.get("tstData", "qdoc", "README.md")
                 val newReadme = File(newReadmePath.toUri())
-                assertTrue(newReadme.exists())
-                val readmeContents = newReadme.readText()
-                assertTrue(readmeContents.contains("REST"))
-                assertTrue(readmeContents.contains("API"))
+                assertThat(newReadme).exists()
+                    .content()
+                    .contains(
+                        "REST",
+                        "API"
+                    )
             }
     }
 

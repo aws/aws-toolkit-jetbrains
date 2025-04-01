@@ -277,17 +277,17 @@ class CreateReadmeTest {
 
                 val readmePath = Paths.get("tstData", "qdoc", "createFlow", "README.md")
                 val readme = File(readmePath.toUri())
-                assertFalse(readme.exists())
+                assertThat(readme).doesNotExist()
 
                 val result = executePuppeteerScript(newReadmeDiffViewerTestScript)
-                assertFalse(result.contains("Error: Test Failed"))
+                assertThat(result).doesNotContain("Error: Test Failed")
 
                 if (result.contains("Error: Test Failed")) {
                     println("result: $result")
                 }
 
                 val panel = this.ui.x("//div[contains(@class, 'SimpleDiffPanel')]")
-                assertTrue(panel.present())
+                assertThat(panel.present()).isTrue()
             }
     }
 
