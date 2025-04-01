@@ -129,7 +129,7 @@ class CreateReadmeWorkspacesTest {
 
                 val readmePath = Paths.get("tstData", "qdoc", "createFlow", "src", "README.md")
                 val readme = File(readmePath.toUri())
-                assertThat(readme).exists()
+                assertThat(readme).doesNotExist()
 
                 val result = executePuppeteerScript(createReadmeSubFolderPreFolderChangeTestScript)
                 this.ui.robot.pressAndReleaseKey(KeyEvent.VK_RIGHT)
@@ -180,7 +180,7 @@ class CreateReadmeWorkspacesTest {
 
                 val readmePath = Paths.get("tstData", "qdoc", "README.md")
                 val readme = File(readmePath.toUri())
-                assertThat(readme).exists()
+                assertThat(readme).doesNotExist()
 
                 val result = executePuppeteerScript(acceptReadmeTestScript)
                 assertThat(result).doesNotContain("Error: Test Failed")
