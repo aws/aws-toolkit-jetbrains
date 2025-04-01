@@ -36,12 +36,14 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QEndpoints
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileState
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileSwitchIntent
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import software.aws.toolkits.jetbrains.utils.xmlElement
 import java.net.URI
 import java.util.function.Consumer
+import kotlin.test.fail
 
 // TODO: should use junit5
 class QRegionProfileManagerTest {
@@ -81,16 +83,16 @@ class QRegionProfileManagerTest {
 
     @Test
     fun `switchProfile should switch the current connection(project) to the selected profile`() {
-        sut.switchProfile(project, QRegionProfile(arn = "arn", profileName = "foo_profile"), true)
+        sut.switchProfile(project, QRegionProfile(arn = "arn", profileName = "foo_profile"), QProfileSwitchIntent.User)
         assertThat(sut.activeProfile(project)).isEqualTo(QRegionProfile(arn = "arn", profileName = "foo_profile"))
 
-        sut.switchProfile(project, QRegionProfile(arn = "another_arn", profileName = "bar_profile"), true)
+        sut.switchProfile(project, QRegionProfile(arn = "another_arn", profileName = "bar_profile"), QProfileSwitchIntent.User)
         assertThat(sut.activeProfile(project)).isEqualTo(QRegionProfile(arn = "another_arn", profileName = "bar_profile"))
     }
 
     @Test
     fun `switchProfile should return null if user is not connected`() {
-        sut.switchProfile(project, QRegionProfile(arn = "arn", profileName = "foo_profile"), true)
+        sut.switchProfile(project, QRegionProfile(arn = "arn", profileName = "foo_profile"), QProfileSwitchIntent.User)
         assertThat(sut.activeProfile(project)).isEqualTo(QRegionProfile(arn = "arn", profileName = "foo_profile"))
 
         ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let {
@@ -109,16 +111,16 @@ class QRegionProfileManagerTest {
         project.messageBus.connect(disposableRule.disposable).subscribe(
             QRegionProfileSelectedListener.TOPIC,
             object : QRegionProfileSelectedListener {
-                override fun onProfileSelected(project: Project, profile: QRegionProfile) {
+                override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
                     cnt += 1
                 }
             }
         )
 
         assertThat(cnt).isEqualTo(0)
-        sut.switchProfile(project, QRegionProfile(arn = "arn", profileName = "foo_profile"), false)
+        sut.switchProfile(project, QRegionProfile(arn = "arn", profileName = "foo_profile"), QProfileSwitchIntent.Reload)
         assertThat(cnt).isEqualTo(1)
-        sut.switchProfile(project, QRegionProfile(arn = "another_arn", profileName = "BAR_PROFILE"), false)
+        sut.switchProfile(project, QRegionProfile(arn = "another_arn", profileName = "BAR_PROFILE"), QProfileSwitchIntent.Reload)
         assertThat(cnt).isEqualTo(2)
     }
 
@@ -154,12 +156,45 @@ class QRegionProfileManagerTest {
     }
 
     @Test
+    fun `validateProfile should cross validate selected profile with latest API response for current project and remove it if its not longer accessible`() {
+        val client = clientRule.create<CodeWhispererRuntimeClient>()
+        val mockResponse: SdkIterable<Profile> = SdkIterable<Profile> {
+            listOf(
+                Profile.builder().profileName("foo").arn("foo-arn-v2").build(),
+                Profile.builder().profileName("bar").arn("bar-arn").build(),
+            ).toMutableList().iterator()
+        }
+        val iterable: ListAvailableProfilesIterable = mock {
+            on { it.profiles() } doReturn mockResponse
+        }
+        client.stub {
+            onGeneric { listAvailableProfilesPaginator(any<Consumer<ListAvailableProfilesRequest.Builder>>()) } doReturn iterable
+        }
+
+        val activeConn =
+            ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) ?: fail("connection shouldn't be null")
+        val anotherConn = authRule.createConnection(ManagedSsoProfile(ssoRegion = "us-east-1", startUrl = "anotherUrl", scopes = Q_SCOPES))
+        val fooProfile = QRegionProfile("foo", "foo-arn")
+        val barProfile = QRegionProfile("bar", "bar-arn")
+        val state = QProfileState().apply {
+            this.connectionIdToActiveProfile[activeConn.id] = fooProfile
+            this.connectionIdToActiveProfile[anotherConn.id] = barProfile
+        }
+        sut.loadState(state)
+        assertThat(sut.activeProfile(project)).isEqualTo(fooProfile)
+
+        sut.validateProfile(project)
+        assertThat(sut.activeProfile(project)).isNull()
+        assertThat(sut.state.connectionIdToActiveProfile).isEqualTo(mapOf(anotherConn.id to barProfile))
+    }
+
+    @Test
     fun `clientSettings should return the region Q profile specify`() {
         MockClientManager.useRealImplementations(disposableRule.disposable)
         sut.switchProfile(
             project,
             QRegionProfile(arn = "arn:aws:codewhisperer:eu-central-1:123456789012:profile/FOO_PROFILE", profileName = "FOO_PROFILE"),
-            true
+            QProfileSwitchIntent.User
         )
         assertThat(
             sut.activeProfile(project)
@@ -168,7 +203,11 @@ class QRegionProfileManagerTest {
         val settings = sut.getQClientSettings(project)
         assertThat(settings.region.id).isEqualTo(Region.EU_CENTRAL_1.id())
 
-        sut.switchProfile(project, QRegionProfile(arn = "arn:aws:codewhisperer:us-east-1:123456789012:profile/BAR_PROFILE", profileName = "BAR_PROFILE"), true)
+        sut.switchProfile(
+            project,
+            QRegionProfile(arn = "arn:aws:codewhisperer:us-east-1:123456789012:profile/BAR_PROFILE", profileName = "BAR_PROFILE"),
+            QProfileSwitchIntent.User
+        )
         assertThat(
             sut.activeProfile(project)
         ).isEqualTo(QRegionProfile(arn = "arn:aws:codewhisperer:us-east-1:123456789012:profile/BAR_PROFILE", profileName = "BAR_PROFILE"))
@@ -184,7 +223,7 @@ class QRegionProfileManagerTest {
         sut.switchProfile(
             project,
             QRegionProfile(arn = "arn:aws:codewhisperer:eu-central-1:123456789012:profile/FOO_PROFILE", profileName = "FOO_PROFILE"),
-            true
+            QProfileSwitchIntent.User
         )
         assertThat(
             sut.activeProfile(project)
@@ -198,7 +237,11 @@ class QRegionProfileManagerTest {
             client.serviceClientConfiguration().endpointOverride().get()
         ).isEqualTo(URI.create(QEndpoints.getQEndpointWithRegion(Region.EU_CENTRAL_1.id())))
 
-        sut.switchProfile(project, QRegionProfile(arn = "arn:aws:codewhisperer:us-east-1:123456789012:profile/BAR_PROFILE", profileName = "BAR_PROFILE"), true)
+        sut.switchProfile(
+            project,
+            QRegionProfile(arn = "arn:aws:codewhisperer:us-east-1:123456789012:profile/BAR_PROFILE", profileName = "BAR_PROFILE"),
+            QProfileSwitchIntent.User
+        )
         assertThat(
             sut.activeProfile(project)
         ).isEqualTo(QRegionProfile(arn = "arn:aws:codewhisperer:us-east-1:123456789012:profile/BAR_PROFILE", profileName = "BAR_PROFILE"))

@@ -10,8 +10,13 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.dsl.builder.BottomGap
 import com.intellij.ui.dsl.builder.bind
 import com.intellij.ui.dsl.builder.panel
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.help.HelpIds
 import software.aws.toolkits.resources.AmazonQBundle.message
+import software.aws.toolkits.telemetry.MetricResult
+import software.aws.toolkits.telemetry.Telemetry
 import javax.swing.JComponent
 
 class QRegionProfileDialog(
@@ -69,8 +74,24 @@ class QRegionProfileDialog(
     override fun doOKAction() {
         panel.apply()
         if (selectedOption != selectedProfile) {
-            QRegionProfileManager.getInstance().switchProfile(project, selectedOption, passive = false)
+            QRegionProfileManager.getInstance().switchProfile(project, selectedOption, intent = QProfileSwitchIntent.User)
         }
         close(OK_EXIT_CODE)
+    }
+
+    override fun doCancelAction() {
+        super.doCancelAction()
+        val profileManager = QRegionProfileManager.getInstance()
+        val conn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
+        Telemetry.amazonq.didSelectProfile.use { span ->
+            span.source(QProfileSwitchIntent.User.value)
+                .amazonQProfileRegion(profileManager.activeProfile(project)?.region ?: "not-set")
+                .profileCount(profiles.size)
+                .ssoRegion(conn?.region)
+                .credentialStartUrl(conn?.startUrl)
+                .result(MetricResult.Cancelled)
+        }
+
+        close(CANCEL_EXIT_CODE)
     }
 }

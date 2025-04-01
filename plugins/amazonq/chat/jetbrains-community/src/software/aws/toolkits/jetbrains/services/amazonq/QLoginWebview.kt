@@ -34,6 +34,7 @@ import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.core.webview.WebviewResourceHandlerFactory
 import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileSwitchIntent
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
@@ -212,7 +213,7 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                 QRegionProfileManager.getInstance().switchProfile(
                     project,
                     QRegionProfile(profileName = message.profileName, arn = message.arn),
-                    passive = false
+                    intent = QProfileSwitchIntent.Auth
                 )
             }
         }

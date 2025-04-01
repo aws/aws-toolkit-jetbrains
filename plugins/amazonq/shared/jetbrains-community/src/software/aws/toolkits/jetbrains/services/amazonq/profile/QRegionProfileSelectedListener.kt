@@ -8,9 +8,9 @@ import com.intellij.util.messages.Topic
 
 interface QRegionProfileSelectedListener {
     companion object {
-        @Topic.AppLevel
+        @Topic.ProjectLevel
         val TOPIC = Topic.create("QRegionProfileSelected", QRegionProfileSelectedListener::class.java)
     }
 
-    fun onProfileSelected(project: Project, profile: QRegionProfile)
+    fun onProfileSelected(project: Project, profile: QRegionProfile?)
 }
