@@ -9,6 +9,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.serviceIfCreated
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
@@ -24,13 +25,13 @@ import io.mockk.runs
 import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
+import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.lsp4j.DidChangeTextDocumentParams
 import org.eclipse.lsp4j.DidCloseTextDocumentParams
 import org.eclipse.lsp4j.DidOpenTextDocumentParams
 import org.eclipse.lsp4j.DidSaveTextDocumentParams
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.services.TextDocumentService
-import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
@@ -43,6 +44,7 @@ import java.util.concurrent.CompletableFuture
 
 class TextDocumentServiceHandlerTest {
     private lateinit var project: Project
+    private lateinit var mockFileEditorManager: FileEditorManager
     private lateinit var mockLanguageServer: AmazonQLanguageServer
     private lateinit var mockTextDocumentService: TextDocumentService
     private lateinit var sut: TextDocumentServiceHandler
@@ -90,6 +92,11 @@ class TextDocumentServiceHandlerTest {
         every { messageBus.connect(any<Disposable>()) } returns mockConnection
         every { mockConnection.subscribe(any(), any()) } just runs
 
+        // Mock FileEditorManager
+        mockFileEditorManager = mockk<FileEditorManager>()
+        every { mockFileEditorManager.openFiles } returns emptyArray()
+        every { project.getService(FileEditorManager::class.java) } returns mockFileEditorManager
+
         sut = TextDocumentServiceHandler(project, mockk())
     }
 
@@ -120,9 +127,28 @@ class TextDocumentServiceHandlerTest {
             verify { mockTextDocumentService.didSave(capture(paramsSlot)) }
 
             with(paramsSlot.captured) {
-                assertEquals(normalizeFileUri(uri.toString()), textDocument.uri)
-                assertEquals("test content", text)
+                assertThat(textDocument.uri).isEqualTo(normalizeFileUri(uri.toString()))
+                assertThat(text).isEqualTo("test content")
             }
+        }
+    }
+
+    @Test
+    fun `didOpen runs on service init`() = runTest {
+        val uri = URI.create("file:///test/path/file.txt")
+        val content = "test content"
+        val file = createMockVirtualFile(uri, content)
+
+        every { mockFileEditorManager.openFiles } returns arrayOf(file)
+
+        sut = TextDocumentServiceHandler(project, mockk())
+
+        val paramsSlot = slot<DidOpenTextDocumentParams>()
+        verify { mockTextDocumentService.didOpen(capture(paramsSlot)) }
+
+        with(paramsSlot.captured.textDocument) {
+            assertThat(this.uri).isEqualTo(normalizeFileUri(uri.toString()))
+            assertThat(text).isEqualTo(content)
         }
     }
 
@@ -142,8 +168,8 @@ class TextDocumentServiceHandlerTest {
         verify { mockTextDocumentService.didOpen(capture(paramsSlot)) }
 
         with(paramsSlot.captured.textDocument) {
-            assertEquals(normalizeFileUri(uri.toString()), this.uri)
-            assertEquals(content, text)
+            assertThat(this.uri).isEqualTo(normalizeFileUri(uri.toString()))
+            assertThat(text).isEqualTo(content)
         }
     }
 
@@ -157,7 +183,7 @@ class TextDocumentServiceHandlerTest {
         val paramsSlot = slot<DidCloseTextDocumentParams>()
         verify { mockTextDocumentService.didClose(capture(paramsSlot)) }
 
-        assertEquals(normalizeFileUri(uri.toString()), paramsSlot.captured.textDocument.uri)
+        assertThat(paramsSlot.captured.textDocument.uri).isEqualTo(normalizeFileUri(uri.toString()))
     }
 
     @Test
@@ -191,9 +217,9 @@ class TextDocumentServiceHandlerTest {
         verify { mockTextDocumentService.didChange(capture(paramsSlot)) }
 
         with(paramsSlot.captured) {
-            assertEquals(normalizeFileUri(uri.toString()), textDocument.uri)
-            assertEquals(123, textDocument.version)
-            assertEquals("changed content", contentChanges[0].text)
+            assertThat(textDocument.uri).isEqualTo(normalizeFileUri(uri.toString()))
+            assertThat(textDocument.version).isEqualTo(123)
+            assertThat(contentChanges[0].text).isEqualTo("changed content")
         }
     }
 
