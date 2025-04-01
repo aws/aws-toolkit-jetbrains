@@ -20,7 +20,6 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.common.clients.AmazonQCodeGenerateClient
 import software.aws.toolkits.jetbrains.common.session.Intent
-import software.aws.toolkits.jetbrains.services.amazonqDoc.docServiceError
 import software.aws.toolkits.jetbrains.services.amazonqDoc.session.DocGenerationStreamResult
 import software.aws.toolkits.jetbrains.services.amazonqDoc.session.ExportDocTaskAssistResultArchiveStreamResult
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ApiException
@@ -34,9 +33,9 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConvers
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ServiceException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileCorruptedException
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
-import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.MetricResult
+import software.aws.toolkits.jetbrains.services.amazonqDoc.ContentLengthException as DocContentLengthException
 
 class AmazonQCodeGenService(val proxyClient: AmazonQCodeGenerateClient, val project: Project) {
     fun createConversation(): String {
@@ -115,7 +114,7 @@ class AmazonQCodeGenService(val proxyClient: AmazonQCodeGenerateClient, val proj
 
                 if (e is ValidationException && e.message?.contains("Invalid contentLength") == true) {
                     if (featureName?.equals("docGeneration") == true) {
-                        throw docServiceError(message("amazonqDoc.exception.content_length_error"))
+                        throw DocContentLengthException(operation = FeatureDevOperation.CreateUploadUrl.toString(), desc = null, cause = e.cause)
                     }
                     throw ContentLengthException(operation = FeatureDevOperation.CreateUploadUrl.toString(), desc = null, cause = e.cause)
                 }
@@ -162,6 +161,9 @@ class AmazonQCodeGenService(val proxyClient: AmazonQCodeGenerateClient, val proj
                 ) {
                     throw CodeIterationLimitException(operation = FeatureDevOperation.StartTaskAssistCodeGeneration.toString(), desc = null, e.cause)
                 } else if (e is ValidationException && e.message?.contains("repo size is exceeding the limits") == true) {
+                    if (intent == Intent.DOC) {
+                        throw DocContentLengthException(operation = FeatureDevOperation.CreateUploadUrl.toString(), desc = null, cause = e.cause)
+                    }
                     throw ContentLengthException(operation = FeatureDevOperation.StartTaskAssistCodeGeneration.toString(), desc = null, cause = e.cause)
                 } else if (e is ValidationException && e.message?.contains("zipped file is corrupted") == true) {
                     throw ZipFileCorruptedException(operation = FeatureDevOperation.StartTaskAssistCodeGeneration.toString(), desc = null, e.cause)
