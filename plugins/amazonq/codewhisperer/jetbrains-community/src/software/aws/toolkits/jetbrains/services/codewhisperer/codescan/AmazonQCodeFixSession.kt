@@ -14,6 +14,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeFixJobR
 import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeFixJobResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.Position
 import software.amazon.awssdk.services.codewhispererruntime.model.Range
+import software.amazon.awssdk.services.codewhispererruntime.model.RecommendationsWithReferencesPreference
 import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeFixJobRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeFixJobResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadContext
@@ -29,6 +30,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWh
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererZipUploadManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.getTelemetryErrorMessage
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.nio.file.Path
@@ -163,12 +165,19 @@ class AmazonQCodeFixSession(val project: Project) {
         codeFixName: String? = null,
         ruleId: String? = null,
     ): StartCodeFixJobResponse {
+        val includeCodeWithReference = if (CodeWhispererSettings.getInstance().isIncludeCodeWithReference()) {
+            RecommendationsWithReferencesPreference.ALLOW
+        } else {
+            RecommendationsWithReferencesPreference.BLOCK
+        }
+
         val request = StartCodeFixJobRequest.builder()
             .uploadId(uploadId)
             .snippetRange(snippetRange)
             .codeFixName(codeFixName)
             .ruleId(ruleId)
             .description(description)
+            .referenceTrackerConfiguration { it.recommendationsWithReferences(includeCodeWithReference) }
             .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
             .build()
 
