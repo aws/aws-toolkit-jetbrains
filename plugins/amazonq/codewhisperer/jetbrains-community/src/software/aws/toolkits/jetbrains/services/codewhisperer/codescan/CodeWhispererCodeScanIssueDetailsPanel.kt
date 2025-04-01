@@ -333,5 +333,10 @@ internal class CodeWhispererCodeScanIssueDetailsPanel(
         add(BorderLayout.SOUTH, buttonPane)
         isVisible = true
         revalidate()
+        if (issue.suggestedFixes.isEmpty()) {
+            defaultScope.launch {
+                handleGenerateFix(issue)
+            }
+        }
     }
 }
