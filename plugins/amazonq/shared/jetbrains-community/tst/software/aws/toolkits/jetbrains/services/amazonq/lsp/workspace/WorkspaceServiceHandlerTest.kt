@@ -31,10 +31,13 @@ import org.eclipse.lsp4j.CreateFilesParams
 import org.eclipse.lsp4j.DeleteFilesParams
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams
 import org.eclipse.lsp4j.DidChangeWorkspaceFoldersParams
+import org.eclipse.lsp4j.DidCloseTextDocumentParams
+import org.eclipse.lsp4j.DidOpenTextDocumentParams
 import org.eclipse.lsp4j.FileChangeType
 import org.eclipse.lsp4j.RenameFilesParams
 import org.eclipse.lsp4j.WorkspaceFolder
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
+import org.eclipse.lsp4j.services.TextDocumentService
 import org.eclipse.lsp4j.services.WorkspaceService
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -50,6 +53,7 @@ class WorkspaceServiceHandlerTest {
     private lateinit var project: Project
     private lateinit var mockLanguageServer: AmazonQLanguageServer
     private lateinit var mockWorkspaceService: WorkspaceService
+    private lateinit var mockTextDocumentService: TextDocumentService
     private lateinit var sut: WorkspaceServiceHandler
     private lateinit var mockApplication: Application
 
@@ -57,6 +61,7 @@ class WorkspaceServiceHandlerTest {
     fun setup() {
         project = mockk<Project>()
         mockWorkspaceService = mockk<WorkspaceService>()
+        mockTextDocumentService = mockk<TextDocumentService>()
         mockLanguageServer = mockk<AmazonQLanguageServer>()
 
         mockApplication = mockk<Application>()
@@ -88,6 +93,11 @@ class WorkspaceServiceHandlerTest {
         every { mockWorkspaceService.didRenameFiles(any()) } returns Unit
         every { mockWorkspaceService.didChangeWatchedFiles(any()) } returns Unit
         every { mockWorkspaceService.didChangeWorkspaceFolders(any()) } returns Unit
+
+        // Mock textDocument service (for didRename calls)
+        every { mockLanguageServer.textDocumentService } returns mockTextDocumentService
+        every { mockTextDocumentService.didOpen(any()) } returns Unit
+        every { mockTextDocumentService.didClose(any()) } returns Unit
 
         // Mock message bus
         val messageBus = mockk<MessageBus>()
@@ -389,6 +399,15 @@ class WorkspaceServiceHandlerTest {
         // Act
         sut.after(listOf(propertyEvent))
 
+        val closeParams = slot<DidCloseTextDocumentParams>()
+        verify { mockTextDocumentService.didClose(capture(closeParams)) }
+        assertThat(closeParams.captured.textDocument.uri).isEqualTo(normalizeFileUri("file:///testDir/$oldName"))
+
+        val openParams = slot<DidOpenTextDocumentParams>()
+        verify { mockTextDocumentService.didOpen(capture(openParams)) }
+        assertThat(openParams.captured.textDocument.uri).isEqualTo(normalizeFileUri("file:///testDir/$newName"))
+        assertThat(openParams.captured.textDocument.text).isEqualTo(normalizeFileUri("content"))
+
         // Assert
         val paramsSlot = slot<RenameFilesParams>()
         verify { mockWorkspaceService.didRenameFiles(capture(paramsSlot)) }
@@ -411,6 +430,8 @@ class WorkspaceServiceHandlerTest {
         sut.after(listOf(propertyEvent))
 
         // Assert
+        verify(exactly = 0) { mockTextDocumentService.didClose(any()) }
+        verify(exactly = 0) { mockTextDocumentService.didOpen(any()) }
         verify(exactly = 0) { mockWorkspaceService.didRenameFiles(any()) }
     }
 
@@ -427,6 +448,8 @@ class WorkspaceServiceHandlerTest {
         sut.after(listOf(propertyEvent))
 
         // Assert
+        verify(exactly = 0) { mockTextDocumentService.didClose(any()) }
+        verify(exactly = 0) { mockTextDocumentService.didOpen(any()) }
         val paramsSlot = slot<RenameFilesParams>()
         verify { mockWorkspaceService.didRenameFiles(capture(paramsSlot)) }
         with(paramsSlot.captured.files[0]) {
@@ -624,6 +647,7 @@ class WorkspaceServiceHandlerTest {
             every { fileSystem } returns mockk {
                 every { protocol } returns "file"
             }
+            every { this@mockk.inputStream } returns "content".byteInputStream()
         }
     }
 
