@@ -29,7 +29,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.nio.file.Paths
 import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.core.util.DefaultSdkAutoConstructList
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
@@ -96,6 +95,7 @@ import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import java.net.URI
+import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
@@ -683,13 +683,14 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     LOG.info("Found workspaceId from LSP '$workspaceId'")
                     break
                 }
-
             }
         } catch (e: Exception) {
             LOG.warn("Cannot get workspaceId from LSP'$e'")
         }
-        return RequestContext(project, editor, triggerTypeInfo, caretPosition,
-            fileContext, supplementalContext, connection, latencyContext, customizationArn, workspaceId)
+        return RequestContext(
+            project, editor, triggerTypeInfo, caretPosition,
+            fileContext, supplementalContext, connection, latencyContext, customizationArn, workspaceId
+        )
     }
 
     private fun getWorkspaceIds(project: Project): CompletableFuture<LspServerConfigurations> {
@@ -832,7 +833,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             fileContextInfo: FileContextInfo,
             supplementalContext: SupplementalContextInfo?,
             customizationArn: String?,
-            workspaceId: String?
+            workspaceId: String?,
         ): GenerateCompletionsRequest {
             val programmingLanguage = ProgrammingLanguage.builder()
                 .languageName(fileContextInfo.programmingLanguage.toCodeWhispererRuntimeLanguage().languageId)
@@ -877,7 +878,7 @@ data class RequestContext(
     val connection: ToolkitConnection?,
     val latencyContext: LatencyContext,
     val customizationArn: String?,
-    val workspaceId: String?
+    val workspaceId: String?,
 ) {
     // TODO: should make the entire getRequestContext() suspend function instead of making supplemental context only
     var supplementalContext: SupplementalContextInfo? = null

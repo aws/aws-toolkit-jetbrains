@@ -210,7 +210,7 @@ enum class CodeWhispererConfigurationType {
     HasEnabledProjectContextOnce,
     IsQPrioritizedForTabAccept,
     IsTabAcceptPriorityNotificationShownOnce,
-    IsWorkspaceContextEnabled
+    IsWorkspaceContextEnabled,
 }
 
 enum class CodeWhispererStringConfigurationType {

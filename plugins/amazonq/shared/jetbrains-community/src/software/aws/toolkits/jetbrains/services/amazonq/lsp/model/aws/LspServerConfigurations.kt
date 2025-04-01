@@ -7,6 +7,4 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws
 data class WorkspaceInfo(val workspaceRoot: String, val workspaceId: String)
 
 // This represents the entire array
-data class LspServerConfigurations ( val workspaces: List<WorkspaceInfo>  )
-
-
+data class LspServerConfigurations(val workspaces: List<WorkspaceInfo>)
