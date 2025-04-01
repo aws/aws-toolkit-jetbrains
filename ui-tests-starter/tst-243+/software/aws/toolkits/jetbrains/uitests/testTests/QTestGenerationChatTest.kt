@@ -51,6 +51,153 @@ class QTestGenerationChatTest {
     }
 
     @Test
+    fun `test method not found error handling`() {
+        val testCase = TestCase(
+            IdeProductProvider.IC,
+            LocalProjectInfo(
+                Paths.get("tstData", "qTestGenerationTestProject/")
+            )
+        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+
+        // inject connection
+        useExistingConnectionForTest()
+
+        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
+            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
+                pluginConfigurator.installPluginFromPath(
+                    Path.of(path)
+                )
+            }
+
+            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
+            updateGeneralSettings()
+        }.runIdeWithDriver()
+            .useDriverAndCloseIde {
+                waitForProjectOpen()
+                openFile(Paths.get("testModule1", "HappyPath.java").toString())
+                Thread.sleep(30000)
+                val result = executePuppeteerScript(testMethodNotFoundErrorScript)
+                assertThat(result)
+                    .contains(
+                        "new tab opened",
+                        "Error message displayed correctly",
+                        "Input field re-enabled after error",
+                    )
+            }
+    }
+
+    @Test
+    fun `test cancel button during test generation`() {
+        val testCase = TestCase(
+            IdeProductProvider.IC,
+            LocalProjectInfo(
+                Paths.get("tstData", "qTestGenerationTestProject/")
+            )
+        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+
+        // inject connection
+        useExistingConnectionForTest()
+
+        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
+            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
+                pluginConfigurator.installPluginFromPath(
+                    Path.of(path)
+                )
+            }
+
+            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
+            updateGeneralSettings()
+        }.runIdeWithDriver()
+            .useDriverAndCloseIde {
+                waitForProjectOpen()
+                openFile(Paths.get("testModule1", "HappyPath.java").toString())
+                Thread.sleep(30000)
+                val result = executePuppeteerScript(testCancelButtonScript)
+                assertThat(result)
+                    .contains(
+                        "new tab opened",
+                        "Progress bar text displayed",
+                        "Cancel button found",
+                        "Cancel button clicked",
+                        "Test generation cancelled successfully",
+                        "Input field re-enabled after cancellation",
+                    )
+            }
+    }
+
+    @Test
+    fun `test documentation generation error handling`() {
+        val testCase = TestCase(
+            IdeProductProvider.IC,
+            LocalProjectInfo(
+                Paths.get("tstData", "qTestGenerationTestProject/")
+            )
+        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+
+        // inject connection
+        useExistingConnectionForTest()
+
+        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
+            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
+                pluginConfigurator.installPluginFromPath(
+                    Path.of(path)
+                )
+            }
+
+            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
+            updateGeneralSettings()
+        }.runIdeWithDriver()
+            .useDriverAndCloseIde {
+                waitForProjectOpen()
+                openFile(Paths.get("testModule1", "HappyPath.java").toString())
+                Thread.sleep(30000)
+                val result = executePuppeteerScript(testDocumentationErrorScript)
+                assertThat(result)
+                    .contains(
+                        "new tab opened",
+                        "Error message displayed correctly",
+                        "Input field re-enabled after error",
+                    )
+            }
+    }
+
+    @Test
+    fun `test remove function error handling`() {
+        val testCase = TestCase(
+            IdeProductProvider.IC,
+            LocalProjectInfo(
+                Paths.get("tstData", "qTestGenerationTestProject/")
+            )
+        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+
+        // inject connection
+        useExistingConnectionForTest()
+
+        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
+            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
+                pluginConfigurator.installPluginFromPath(
+                    Path.of(path)
+                )
+            }
+
+            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
+            updateGeneralSettings()
+        }.runIdeWithDriver()
+            .useDriverAndCloseIde {
+                waitForProjectOpen()
+                openFile(Paths.get("testModule1", "HappyPath.java").toString())
+                Thread.sleep(30000)
+                val result = executePuppeteerScript(testRemoveFunctionErrorScript)
+                assertThat(result)
+                    .contains(
+                        "new tab opened",
+                        "Error message displayed correctly",
+                        "Input field re-enabled after error",
+                    )
+            }
+    }
+
+    @Test
     fun `can run a test from the chat`() {
         val testCase = TestCase(
             IdeProductProvider.IC,
@@ -189,6 +336,116 @@ class QTestGenerationChatTest {
                     .contains(
                         "new tab opened",
                         "Test generation complete with expected error"
+                    )
+            }
+    }
+
+    @Test
+    fun `test reject path from the chat`() {
+        val testCase = TestCase(
+            IdeProductProvider.IC,
+            LocalProjectInfo(
+                Paths.get("tstData", "qTestGenerationTestProject/")
+            )
+        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+
+        // inject connection
+        useExistingConnectionForTest()
+
+        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
+            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
+                pluginConfigurator.installPluginFromPath(
+                    Path.of(path)
+                )
+            }
+
+            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
+            updateGeneralSettings()
+        }.runIdeWithDriver()
+            .useDriverAndCloseIde {
+                waitForProjectOpen()
+                openFile(Paths.get("testModule1", "HappyPath.java").toString())
+                Thread.sleep(30000)
+                val result = executePuppeteerScript(testRejectPathScript)
+                assertThat(result)
+                    .contains(
+                        "new tab opened",
+                        "View Diff opened",
+                        "Result Reject",
+                        "Unit test generation completed.",
+                        "Input field re-enabled after rejection",
+                    )
+            }
+    }
+
+    @Test
+    fun `test NL error from the chat`() {
+        val testCase = TestCase(
+            IdeProductProvider.IC,
+            LocalProjectInfo(
+                Paths.get("tstData", "qTestGenerationTestProject/")
+            )
+        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+
+        // inject connection
+        useExistingConnectionForTest()
+
+        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
+            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
+                pluginConfigurator.installPluginFromPath(
+                    Path.of(path)
+                )
+            }
+
+            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
+            updateGeneralSettings()
+        }.runIdeWithDriver()
+            .useDriverAndCloseIde {
+                waitForProjectOpen()
+                openFile(Paths.get("testModule1", "HappyPath.java").toString())
+                Thread.sleep(30000)
+                val result = executePuppeteerScript(testNLErrorPathScript)
+                assertThat(result)
+                    .contains(
+                        "new tab opened",
+                        "Command entered: /test /something/",
+                        "Error message displayed correctly"
+                    )
+            }
+    }
+
+    @Test
+    fun `test progress bar during test generation`() {
+        val testCase = TestCase(
+            IdeProductProvider.IC,
+            LocalProjectInfo(
+                Paths.get("tstData", "qTestGenerationTestProject/")
+            )
+        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+
+        // inject connection
+        useExistingConnectionForTest()
+
+        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
+            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
+                pluginConfigurator.installPluginFromPath(
+                    Path.of(path)
+                )
+            }
+
+            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
+            updateGeneralSettings()
+        }.runIdeWithDriver()
+            .useDriverAndCloseIde {
+                waitForProjectOpen()
+                openFile(Paths.get("testModule1", "HappyPath.java").toString())
+                Thread.sleep(30000)
+                val result = executePuppeteerScript(testProgressBarScript)
+                assertThat(result)
+                    .contains(
+                        "new tab opened",
+                        "Progress bar text displayed",
+                        "Test generation completed successfully"
                     )
             }
     }
