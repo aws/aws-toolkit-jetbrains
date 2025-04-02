@@ -21,6 +21,7 @@ val codeArtifactMavenRepo = fun RepositoryHandler.(): MavenArtifactRepository? {
     pluginManagement {
         repositories {
             it()
+            maven("https://oss.sonatype.org/content/repositories/snapshots/")
             gradlePluginPortal()
         }
     }
@@ -29,7 +30,7 @@ val codeArtifactMavenRepo = fun RepositoryHandler.(): MavenArtifactRepository? {
 plugins {
     id("com.github.burrunan.s3-build-cache") version "1.5"
     id("com.gradle.develocity") version "3.17.6"
-    id("org.jetbrains.intellij.platform.settings") version "2.1.0"
+    id("org.jetbrains.intellij.platform.settings") version "2.3.0"
 }
 
 dependencyResolutionManagement {
@@ -162,7 +163,7 @@ file("plugins").listFiles()?.forEach root@ {
             if (it.name == "jetbrains-gateway") {
                 when (providers.gradleProperty("ideProfileName").get()) {
                     // buildSrc is evaluated after settings so we can't key off of IdeVersions.kt
-                    "2023.3", "2024.1" -> {
+                    "2023.3", "2024.1", "2024.2" -> {
                         return@forEach
                     }
                 }

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package software.aws.toolkits.jetbrains.services.cloudformation.stack
 
-import org.junit.Assert
+import org.assertj.core.api.Assertions.assertThat
 import org.mockito.Mockito
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
@@ -40,7 +40,7 @@ internal class MockEventsGenerator {
     val currentPage: List<StackEvent> get() = getEvents(DescribeStackEventsRequest.builder().stackName("foo").build()).stackEvents()
 
     fun getEvents(request: DescribeStackEventsRequest): DescribeStackEventsResponse {
-        Assert.assertNotNull("No stack name provided", request.stackName())
+        assertThat(request.stackName()).withFailMessage("No stack name provided").isNotNull()
         val page = request.nextToken()
         assert(!SwingUtilities.isEventDispatchThread())
         Thread.sleep(600)

@@ -14,9 +14,9 @@ import com.intellij.ide.starter.models.TestCase
 import com.intellij.ide.starter.project.LocalProjectInfo
 import com.intellij.ide.starter.runner.CurrentTestMethod
 import com.intellij.ide.starter.runner.Starter
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.kodein.di.DI
@@ -68,7 +68,7 @@ class FeatureDevTest {
             LocalProjectInfo(
                 Paths.get("tstData", "FeatureDevE2ETestFolder")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
@@ -89,7 +89,7 @@ class FeatureDevTest {
                 Thread.sleep(30000)
 
                 val result = executePuppeteerScript(testAcceptInitalCode)
-                assertTrue(result.contains("Success: /dev ends the conversation successfully."))
+                assertThat(result).contains("Success: /dev ends the conversation successfully.")
             }
     }
 
@@ -100,7 +100,7 @@ class FeatureDevTest {
             LocalProjectInfo(
                 Paths.get("tstData", "FeatureDevE2ETestFolder")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
@@ -121,7 +121,7 @@ class FeatureDevTest {
                 Thread.sleep(30000)
 
                 val result = executePuppeteerScript(testIterateCodeGen)
-                assertTrue(result.contains("Success: /dev ends the conversation successfully."))
+                assertThat(result).contains("Success: /dev ends the conversation successfully.")
             }
     }
 
@@ -132,7 +132,7 @@ class FeatureDevTest {
             LocalProjectInfo(
                 Paths.get("tstData", "FeatureDevE2ETestFolder")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
@@ -153,7 +153,7 @@ class FeatureDevTest {
                 Thread.sleep(30000)
 
                 val result = executePuppeteerScript(testNewCodeGen)
-                assertTrue(result.contains("Success: /dev ends the conversation successfully."))
+                assertThat(result).contains("Success: /dev ends the conversation successfully.")
             }
     }
 
@@ -164,7 +164,7 @@ class FeatureDevTest {
             LocalProjectInfo(
                 Paths.get("tstData", "FeatureDevE2ETestFolder")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
@@ -185,7 +185,7 @@ class FeatureDevTest {
                 Thread.sleep(30000)
 
                 val result = executePuppeteerScript(testPartialCodeGen)
-                assertTrue(result.contains("Success: /dev ends the conversation successfully."))
+                assertThat(result).contains("Success: /dev ends the conversation successfully.")
             }
     }
 
@@ -196,7 +196,7 @@ class FeatureDevTest {
             LocalProjectInfo(
                 Paths.get("tstData", "FeatureDevE2ETestFolder")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
 
         // inject connection
         useExistingConnectionForTest()
@@ -217,7 +217,7 @@ class FeatureDevTest {
                 Thread.sleep(30000)
 
                 val result = executePuppeteerScript(testStopAndRestartCodeGen)
-                assertTrue(result.contains("Success: /dev ends the conversation successfully."))
+                assertThat(result).contains("Success: /dev ends the conversation successfully.")
             }
     }
 

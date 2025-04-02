@@ -1,3 +1,14 @@
+# _3.61_ (2025-03-27)
+- **(Feature)** Amazon Q: Moved "Include suggestions with code references" setting to General
+- **(Feature)** Add support for 2025.1
+- **(Bug Fix)** Amazon Q: Attempt to reduce thread pool contention locking IDE caused by `@workspace` making a large number of requests
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2024.3 and for IDEs based on the 2024.1 platform
+
+# _3.60_ (2025-03-20)
+- **(Feature)** AmazonQ /test now displays a concise test plan summary to users.
+- **(Bug Fix)** Fix inline completion failure due to context length exceeding the threshold
+- **(Bug Fix)** Amazon Q: Fix cases where content may be incorrectly excluded from workspace.
+
 # _3.59_ (2025-03-13)
 - **(Feature)** AmazonQ /dev and /doc: Add support for complex workspaces.
 - **(Bug Fix)** /review: normalize relative file path before unzipping
