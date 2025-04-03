@@ -54,6 +54,7 @@
             class="font-amazon bottom-small-gap"
         ></SelectableItem>
         <button
+            id="login-page"
             class="login-flow-button continue-button font-amazon"
             :disabled="selectedLoginOption === LoginIdentifier.NONE"
             v-on:click="handleContinueClick()"

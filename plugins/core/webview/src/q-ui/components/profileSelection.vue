@@ -4,7 +4,7 @@
     <div @keydown.enter="handleContinueClick">
         <div class="font-amazon">
             <!-- Title & Subtitle -->
-            <div class="profile-header">
+            <div id="profile-page" class="profile-header">
                 <h2 class="title bottom-small-gap">Select profile</h2>
                 <p class="profile-subtitle">
                     Profiles have different configs defined by your administrators.

@@ -216,6 +216,10 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                     intent = QProfileSwitchIntent.Auth
                 )
             }
+
+            is BrowserMessage.PublishWebviewTelemetry -> {
+                publishTelemetry(message)
+            }
         }
     }
 

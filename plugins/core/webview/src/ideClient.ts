@@ -1,9 +1,9 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { profile } from "console";
 import {Store} from "vuex";
 import {IdcInfo, Region, Stage, State, BrowserSetupData, AwsBearerTokenConnection, Profile} from "./model";
+import {WebviewTelemetry} from './webviewTelemetry'
 
 export class IdeClient {
     constructor(private readonly store: Store<State>) {}
@@ -11,8 +11,12 @@ export class IdeClient {
     // TODO: design and improve the API here
 
     prepareUi(state: BrowserSetupData) {
+        WebviewTelemetry.instance.reset()
         console.log('browser is preparing UI with state ', state)
         this.store.commit('setStage', state.stage)
+        // hack as window.onerror don't have access to vuex store
+        void ((window as any).uiState = state.stage)
+        WebviewTelemetry.instance.willShowPage(state.stage)
         this.store.commit('setSsoRegions', state.regions)
         this.updateLastLoginIdcInfo(state.idcInfo)
         this.store.commit("setCancellable", state.cancellable)
