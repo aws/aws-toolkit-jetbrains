@@ -32,6 +32,8 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_MVN_FAILURE
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_PROJECT_SIZE
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_POM_FILE_NAME
@@ -130,6 +132,22 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     init {
         CodeModernizerSessionState.getInstance(project).setDefaults()
+        initQRegionProfileSelectedListener()
+    }
+
+    private fun initQRegionProfileSelectedListener() {
+        project.messageBus.connect(this).subscribe(
+            QRegionProfileSelectedListener.TOPIC,
+            object : QRegionProfileSelectedListener {
+                override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
+                    stopModernize()
+                    codeTransformationSession?.let {
+                        Disposer.dispose(it)
+                    }
+                    codeTransformationSession = null
+                }
+            }
+        )
     }
 
     fun validate(project: Project, transformationType: CodeTransformType): ValidationResult {
@@ -259,7 +277,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
 
     fun runModernize(copyResult: MavenCopyCommandsResult? = null) {
         initStopParameters()
-        val session = codeTransformationSession as CodeModernizerSession
+        val session = codeTransformationSession ?: return
         initModernizationJobUI(true, project.getModuleOrProjectNameForFile(session.sessionContext.configurationFile))
         launchModernizationJob(session, copyResult)
     }
