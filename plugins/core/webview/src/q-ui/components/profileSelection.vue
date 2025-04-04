@@ -5,10 +5,10 @@
         <div class="font-amazon">
             <!-- Title & Subtitle -->
             <div id="profile-page" class="profile-header">
-                <h2 class="title bottom-small-gap">Select profile</h2>
+                <h2 class="title bottom-small-gap">Choose a Q Developer profile</h2>
                 <p class="profile-subtitle">
-                    Profiles have different configs defined by your administrators.
-                    Select the profile that best meets your current working need and switch at any time.
+                    Your administrator has given you access to Q from multiple profiles.
+                    Choose the profile that meets your current working needs. You can change your profile at any time.
                 </p>
             </div>
             <!-- Profile List -->

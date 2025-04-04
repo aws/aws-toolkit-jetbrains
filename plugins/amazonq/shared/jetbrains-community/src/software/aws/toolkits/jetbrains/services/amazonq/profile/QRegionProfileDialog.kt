@@ -27,8 +27,9 @@ class QRegionProfileDialog(
 
     private val panel: DialogPanel by lazy {
         panel {
-            row { text(message("action.q.switchProfiles.dialog.panel.description")) }
+            row { label(message("action.q.switchProfiles.dialog.panel.text")).bold() }
                 .bottomGap(BottomGap.MEDIUM)
+            row { text(message("action.q.switchProfiles.dialog.panel.description")) }
             row {
                 icon(AllIcons.General.Warning)
                 text(message("action.q.switchProfiles.dialog.panel.warning"))

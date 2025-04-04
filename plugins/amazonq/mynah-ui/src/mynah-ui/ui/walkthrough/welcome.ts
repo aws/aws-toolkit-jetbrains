@@ -19,7 +19,7 @@ export const welcomeScreenTabData = (tabs: TabDataGenerator): MynahUITabStoreTab
                     type: ChatItemType.ANSWER,
                     icon: MynahIcons.INFO,
                     messageId: 'profile-info',
-                    body: `You're using the <b>${tabs.profileName}</b> profile for this chat.`,
+                    body: `You're using the <b>${tabs.profileName}</b> profile for this chat period.`,
                 }]
                 : []),
             {

@@ -103,7 +103,7 @@ What would you like to work on?`,
         }
         return {
             type: ChatItemType.ANSWER,
-            body: `You are using the <b>${this.profileName}</b> profile for this chat`,
+            body: `You are using the <b>${this.profileName}</b> profile for this chat period`,
             status: 'info',
             messageId: 'regionProfile',
         }
