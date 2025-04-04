@@ -778,4 +778,5 @@ fun getDownloadedArtifactTextFromType(artifactType: TransformationDownloadArtifa
         TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS -> "upgraded code"
         TransformationDownloadArtifactType.LOGS -> "build log"
         TransformationDownloadArtifactType.UNKNOWN_TO_SDK_VERSION -> "code"
+        TransformationDownloadArtifactType.GENERATED_CODE -> "code"
     }
