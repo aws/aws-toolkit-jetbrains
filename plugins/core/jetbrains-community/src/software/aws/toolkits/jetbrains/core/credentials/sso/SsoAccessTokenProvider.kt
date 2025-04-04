@@ -434,6 +434,10 @@ class SsoAccessTokenProvider(
                 is DeviceAuthorizationGrantToken -> loadDagClientRegistration(SourceOfLoadRegistration.REFRESH_TOKEN.toString())
                 is PKCEAuthorizationGrantToken -> loadPkceClientRegistration(SourceOfLoadRegistration.REFRESH_TOKEN.toString())
             }
+        } catch (e: ClientRegistrationNotFoundException) {
+            // invalidate tokens to force a reauth
+            invalidate()
+            null
         } catch (e: Exception) {
             val message = e.message ?: "$stageName: ${e::class.java.name}"
             sendRefreshCredentialsMetric(
