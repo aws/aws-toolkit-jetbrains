@@ -144,6 +144,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                     codeTransformationSession?.let {
                         Disposer.dispose(it)
                     }
+                    managerState = CodeModernizerState()
                     codeTransformationSession = null
                 }
             }
