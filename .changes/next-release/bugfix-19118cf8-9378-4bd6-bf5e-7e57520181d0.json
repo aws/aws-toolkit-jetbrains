@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Amazon Q /doc: close diff tab and open README file in preview mode after user accept changes"
+}
