@@ -31,8 +31,21 @@ import java.nio.file.StandardOpenOption
 import com.intellij.driver.sdk.ui.components.common.editor
 import com.intellij.driver.sdk.ui.components.common.ideFrame
 import java.awt.event.KeyEvent
+import    com.intellij.driver.client.Driver
+import com.intellij.driver.sdk.Editor
+import com.intellij.driver.sdk.step
 
 class AmazonQInlineCompletionE2ETest {
+    private val originalContent = """public class MathClass {
+    public static void main(String[] args) {
+        int a = 10;
+        int b = 20;
+        int c = add(a, b);
+        System.out.println("The sum of a and b is: " + c);
+    }
+    
+}"""
+
     init {
         di = DI {
             extend(di)
@@ -45,20 +58,13 @@ class AmazonQInlineCompletionE2ETest {
                 ConfigurationStorage(this, defaults)
             }
         }
+        resetTestFile()
     }
+
+
 
     @BeforeEach
     fun resetTestFile() {
-        val originalContent = """public class MathClass {
-    public static void main(String[] args) {
-        int a = 10;
-        int b = 20;
-        int c = add(a, b);
-        System.out.println("The sum of a and b is: " + c);
-    }
-    
-}"""
-
         val path = Paths.get("tstData", "inlineCompletionProject", "MathClass.java")
 
         Files.createDirectories(path.parent)
@@ -70,9 +76,8 @@ class AmazonQInlineCompletionE2ETest {
         )
     }
 
-    // Test Case 1: Manual invoke inline completion
     @Test
-    fun `test manual invoke inline completion`() {
+    fun `test inline completion functionality`() {
         val testCase = TestCase(
             IdeProductProvider.IC,
             LocalProjectInfo(
@@ -94,469 +99,249 @@ class AmazonQInlineCompletionE2ETest {
             .useDriverAndCloseIde {
                 waitForProjectOpen()
                 Thread.sleep(2000)
-                var originalText: String? = null
-                var afterSuggestion: String? = null
 
-                ideFrame {
-                    // Open file
-                    openFile("MathClass.java")
-                    // Editor operations
-                    editor {
-                        originalText = text
-                        // Move to position for recommendation
-                        moveCaretToOffset(text.length - 2)
+                step("Test manual invoke and accept") {
+                    var originalText: String? = null
+                    var afterSuggestion: String? = null
 
-                        // Trigger completion and wait for result
-                        ui.keyboard {
-                            pressing(KeyEvent.VK_ALT) {
-                                key(KeyEvent.VK_C)
+                    ideFrame {
+                        openFile("MathClass.java")
+                        editor {
+                            originalText = text
+                            moveCaretToOffset(text.length - 2)
+
+                            ui.keyboard {
+                                pressing(KeyEvent.VK_ALT) {
+                                    key(KeyEvent.VK_C)
+                                }
                             }
-                        }
-                        Thread.sleep(1000)
+                            Thread.sleep(1000)
 
-                        // Ensure inlineElement exists
-                        val hintExists = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
-                        assertThat(hintExists).isTrue()
-                        // Accept completion
-                        ui.keyboard {
-                            key(KeyEvent.VK_TAB)
-                        }
-                        afterSuggestion = text
-                    }
-                }
-                assertThat(afterSuggestion).isNotEqualTo(originalText)
-            }
-    }
+                            val hintExists = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
+                            assertThat(hintExists).isTrue()
 
-    // Test Case 2: Manual trigger + reject
-    @Test
-    fun `test manual trigger with rejection`() {
-        val testCase = TestCase(
-            IdeProductProvider.IC,
-            LocalProjectInfo(
-                Paths.get("tstData", "InlineCompletionProject")
-            )
-        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
-
-        useExistingConnectionForTest()
-
-        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
-            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
-                pluginConfigurator.installPluginFromPath(
-                    Path.of(path)
-                )
-            }
-            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
-            updateGeneralSettings()
-        }.runIdeWithDriver()
-            .useDriverAndCloseIde {
-                waitForProjectOpen()
-                Thread.sleep(2000)
-
-                ideFrame {
-                    openFile("MathClass.java")
-                    editor {
-                        moveCaretToOffset(text.length - 2)
-
-                        // Trigger completion
-                        ui.keyboard {
-                            pressing(KeyEvent.VK_ALT) {
-                                key(KeyEvent.VK_C)
+                            ui.keyboard {
+                                key(KeyEvent.VK_TAB)
                             }
+                            afterSuggestion = text
+                            text = originalContent
                         }
-                        Thread.sleep(1000)
-
-                        // Verify suggestion appeared
-                        val hintExists = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
-                        assertThat(hintExists).isTrue()
-
-                        // Reject with Esc
-                        ui.keyboard {
-                            key(KeyEvent.VK_ESCAPE)
-                        }
-
-                        val hintGone = editor.getInlayModel().getInlineElementsInRange(0, text.length).isEmpty()
-                        assertThat(hintGone).isTrue()
                     }
+                    assertThat(afterSuggestion).isNotEqualTo(originalText)
                 }
-            }
-    }
 
-    // Test Case 3: Manual trigger + discard
-    @Test
-    fun `test manual trigger with discard`() {
-        val testCase = TestCase(
-            IdeProductProvider.IC,
-            LocalProjectInfo(
-                Paths.get("tstData", "InlineCompletionProject")
-            )
-        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
+                step("Test manual trigger with rejection") {
+                    ideFrame {
+                        openFile("MathClass.java")
+                        editor {
+                            moveCaretToOffset(text.length - 2)
 
-        useExistingConnectionForTest()
-
-        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
-            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
-                pluginConfigurator.installPluginFromPath(
-                    Path.of(path)
-                )
-            }
-            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
-            updateGeneralSettings()
-        }.runIdeWithDriver()
-            .useDriverAndCloseIde {
-                waitForProjectOpen()
-                Thread.sleep(2000)
-                var originalText: String? = null
-
-                ideFrame {
-                    openFile("MathClass.java")
-                    editor {
-                        originalText = text
-                        moveCaretToOffset(text.length - 2)
-
-                        // Trigger completion
-                        ui.keyboard {
-                            pressing(KeyEvent.VK_ALT) {
-                                key(KeyEvent.VK_C)
+                            ui.keyboard {
+                                pressing(KeyEvent.VK_ALT) {
+                                    key(KeyEvent.VK_C)
+                                }
                             }
-                        }
+                            Thread.sleep(1000)
 
-                        // Verify suggestion shown
-                        Thread.sleep(1000)
-                        val hintExists = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
-                        assertThat(hintExists).isTrue()
+                            val hintExists = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
+                            assertThat(hintExists).isTrue()
 
-                        // Move cursor up to discard
-                        goToLine(getCaretLine() - 1)
-
-                        // Verify no suggestion shown
-                        val hintGone = editor.getInlayModel().getInlineElementsInRange(0, text.length).isEmpty()
-                        assertThat(hintGone).isTrue()
-                    }
-                }
-            }
-    }
-
-    // Test Case 4: Auto trigger + accept
-    @Test
-    fun `test auto trigger with acceptance`() {
-        val testCase = TestCase(
-            IdeProductProvider.IC,
-            LocalProjectInfo(
-                Paths.get("tstData", "InlineCompletionProject")
-            )
-        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
-
-        useExistingConnectionForTest()
-
-        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
-            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
-                pluginConfigurator.installPluginFromPath(
-                    Path.of(path)
-                )
-            }
-            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
-            updateGeneralSettings()
-        }.runIdeWithDriver()
-            .useDriverAndCloseIde {
-                waitForProjectOpen()
-                Thread.sleep(2000)
-                var originalText: String? = null
-                var afterSuggestion: String? = null
-
-                ideFrame {
-                    openFile("MathClass.java")
-                    editor {
-                        originalText = text
-                        moveCaretToOffset(text.length - 2)
-
-                        // Auto-trigger with Enter
-                        ui.keyboard {
-                            key(KeyEvent.VK_ENTER)
-                        }
-                        Thread.sleep(1000)
-
-                        val hintExists = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
-                        assertThat(hintExists).isTrue()
-
-                        ui.keyboard {
-                            key(KeyEvent.VK_TAB)
-                        }
-                        afterSuggestion = text
-                    }
-                }
-                assertThat(afterSuggestion).isNotEqualTo(originalText)
-            }
-    }
-
-    // Test Case 5: Auto trigger + reject
-    @Test
-    fun `test auto trigger with rejections`() {
-        val testCase = TestCase(
-            IdeProductProvider.IC,
-            LocalProjectInfo(
-                Paths.get("tstData", "InlineCompletionProject")
-            )
-        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
-
-        useExistingConnectionForTest()
-
-        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
-            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
-                pluginConfigurator.installPluginFromPath(
-                    Path.of(path)
-                )
-            }
-            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
-            updateGeneralSettings()
-        }.runIdeWithDriver()
-            .useDriverAndCloseIde {
-                waitForProjectOpen()
-                Thread.sleep(2000)
-                var originalText: String? = null
-
-                ideFrame {
-                    openFile("MathClass.java")
-                    editor {
-                        originalText = text
-                        moveCaretToOffset(text.length - 2)
-
-                        // Auto-trigger with Enter
-                        ui.keyboard {
-                            key(KeyEvent.VK_ENTER)
-                        }
-                        Thread.sleep(1000)
-
-                        val hintExists = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
-                        assertThat(hintExists).isTrue()
-
-                        // Reject with Esc
-                        ui.keyboard {
-                            key(KeyEvent.VK_ESCAPE)
-                        }
-
-                        val hintGone = editor.getInlayModel().getInlineElementsInRange(0, text.length).isEmpty()
-                        assertThat(hintGone).isTrue()
-                    }
-                }
-            }
-    }
-
-    // Test Case 6: Auto trigger + reject
-    @Test
-    fun `test auto trigger with discards`() {
-        val testCase = TestCase(
-            IdeProductProvider.IC,
-            LocalProjectInfo(
-                Paths.get("tstData", "InlineCompletionProject")
-            )
-        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
-
-        useExistingConnectionForTest()
-
-        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
-            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
-                pluginConfigurator.installPluginFromPath(
-                    Path.of(path)
-                )
-            }
-            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
-            updateGeneralSettings()
-        }.runIdeWithDriver()
-            .useDriverAndCloseIde {
-                waitForProjectOpen()
-                Thread.sleep(2000)
-                var originalText: String? = null
-
-                ideFrame {
-                    openFile("MathClass.java")
-                    editor {
-                        originalText = text
-                        moveCaretToOffset(text.length - 2)
-
-                        // Auto-trigger with Enter
-                        ui.keyboard {
-                            key(KeyEvent.VK_ENTER)
-                        }
-                        Thread.sleep(1000)
-
-                        val hintExists = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
-                        assertThat(hintExists).isTrue()
-
-                        // Move cursor up to discard
-                        goToLine(getCaretLine() - 1)
-
-                        // Verify suggestion disappeared
-                        val hintGone = editor.getInlayModel().getInlineElementsInRange(0, text.length).isEmpty()
-                        assertThat(hintGone).isTrue()
-                    }
-                }
-            }
-    }
-    // Test Case 7: Suggestion Navigation
-    @Test
-    fun `test suggestion navigation`() {
-        val testCase = TestCase(
-            IdeProductProvider.IC,
-            LocalProjectInfo(
-                Paths.get("tstData", "InlineCompletionProject")
-            )
-        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
-
-        useExistingConnectionForTest()
-
-        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
-            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
-                pluginConfigurator.installPluginFromPath(
-                    Path.of(path)
-                )
-            }
-            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
-            updateGeneralSettings()
-        }.runIdeWithDriver()
-            .useDriverAndCloseIde {
-                waitForProjectOpen()
-                Thread.sleep(2000)
-
-                ideFrame {
-                    openFile("MathClass.java")
-                    editor {
-                        moveCaretToOffset(text.length - 2)
-
-                        // Trigger completion
-                        ui.keyboard {
-                            pressing(KeyEvent.VK_ALT) {
-                                key(KeyEvent.VK_C)
+                            ui.keyboard {
+                                key(KeyEvent.VK_ESCAPE)
                             }
+
+                            val hintGone = editor.getInlayModel().getInlineElementsInRange(0, text.length).isEmpty()
+                            assertThat(hintGone).isTrue()
+                            text = originalContent
                         }
-                        Thread.sleep(1000)
-
-                        // Get initial suggestion
-                        val initialHints = editor.getInlayModel().getInlineElementsInRange(0, text.length)
-                        assertThat(initialHints).isNotEmpty()
-
-                        // Navigate right
-                        ui.keyboard {
-                            pressing(KeyEvent.VK_ALT) {
-                                key(KeyEvent.VK_CLOSE_BRACKET)
-                            }
-                        }
-
-                        // Verify suggestion changed
-                        val newHints = editor.getInlayModel().getInlineElementsInRange(0, text.length)
-                        assertThat(newHints).isNotEqualTo(initialHints)
                     }
                 }
-            }
-    }
 
-    // Test Case 8: Unsupported language
-    @Test
-    fun `test completion in unsupported file type`() {
-        val testCase = TestCase(
-            IdeProductProvider.IC,
-            LocalProjectInfo(
-                Paths.get("tstData", "InlineCompletionProject")
-            )
-        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
+                step("Test manual trigger with discard") {
+                    ideFrame {
+                        openFile("MathClass.java")
+                        editor {
+                            moveCaretToOffset(text.length - 2)
 
-        useExistingConnectionForTest()
-
-        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
-            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
-                pluginConfigurator.installPluginFromPath(
-                    Path.of(path)
-                )
-            }
-            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
-            updateGeneralSettings()
-        }.runIdeWithDriver()
-            .useDriverAndCloseIde {
-                waitForProjectOpen()
-                Thread.sleep(2000)
-
-                ideFrame {
-                    openFile("nonsense.xyz")
-                    editor {
-                        // Try manual trigger
-                        moveCaretToOffset(text.length - 2)
-                        ui.keyboard {
-                            pressing(KeyEvent.VK_ALT) {
-                                key(KeyEvent.VK_C)
+                            ui.keyboard {
+                                pressing(KeyEvent.VK_ALT) {
+                                    key(KeyEvent.VK_C)
+                                }
                             }
+                            Thread.sleep(1000)
+
+                            val hintExists = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
+                            assertThat(hintExists).isTrue()
+
+                            goToLine(getCaretLine() - 1)
+
+                            val hintGone = editor.getInlayModel().getInlineElementsInRange(0, text.length).isEmpty()
+                            assertThat(hintGone).isTrue()
+                            text = originalContent
                         }
-                        Thread.sleep(1000)
+                    }
 
-                        // Verify no suggestion appeared
-                        val hintExists = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
-                        assertThat(hintExists).isFalse()
+                }
 
-                        // Try auto trigger
-                        ui.keyboard {
-                            key(KeyEvent.VK_ENTER)
+                step("Test auto trigger with acceptance") {
+                    var originalText: String? = null
+                    var afterSuggestion: String? = null
+
+                    ideFrame {
+                        openFile("MathClass.java")
+                        editor {
+                            originalText = text
+                            moveCaretToOffset(text.length - 2)
+
+                            ui.keyboard {
+                                key(KeyEvent.VK_ENTER)
+                            }
+                            Thread.sleep(1000)
+
+                            val hintExists = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
+                            assertThat(hintExists).isTrue()
+
+                            ui.keyboard {
+                                key(KeyEvent.VK_TAB)
+                            }
+                            afterSuggestion = text
+                            text = originalContent
                         }
-                        Thread.sleep(1000)
+                    }
+                    assertThat(afterSuggestion).isNotEqualTo(originalText)
 
-                        // Verify still no suggestion
-                        val hintExistsAfterAuto = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
-                        assertThat(hintExistsAfterAuto).isFalse()
+                }
+
+                step("Test auto trigger with rejection") {
+                    ideFrame {
+                        openFile("MathClass.java")
+                        editor {
+                            moveCaretToOffset(text.length - 2)
+
+                            ui.keyboard {
+                                key(KeyEvent.VK_ENTER)
+                            }
+                            Thread.sleep(1000)
+
+                            val hintExists = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
+                            assertThat(hintExists).isTrue()
+
+                            ui.keyboard {
+                                key(KeyEvent.VK_ESCAPE)
+                            }
+
+                            val hintGone = editor.getInlayModel().getInlineElementsInRange(0, text.length).isEmpty()
+                            assertThat(hintGone).isTrue()
+                            text = originalContent
+                        }
                     }
                 }
-            }
-    }
 
-    // Test Case 9: Typeahead
-    @Test
-    fun `test typeahead behavior`() {
-        val testCase = TestCase(
-            IdeProductProvider.IC,
-            LocalProjectInfo(
-                Paths.get("tstData", "InlineCompletionProject")
-            )
-        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
+                step("Test auto trigger with discard") {
+                    ideFrame {
+                        openFile("MathClass.java")
+                        editor {
+                            moveCaretToOffset(text.length - 2)
 
-        useExistingConnectionForTest()
-
-        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
-            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
-                pluginConfigurator.installPluginFromPath(
-                    Path.of(path)
-                )
-            }
-            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
-            updateGeneralSettings()
-        }.runIdeWithDriver()
-            .useDriverAndCloseIde {
-                waitForProjectOpen()
-                Thread.sleep(2000)
-
-                ideFrame {
-                    openFile("MathClass.java")
-                    editor {
-                        moveCaretToOffset(text.length - 2)
-
-                        // Trigger completion
-                        ui.keyboard {
-                            pressing(KeyEvent.VK_ALT) {
-                                key(KeyEvent.VK_C)
+                            ui.keyboard {
+                                key(KeyEvent.VK_ENTER)
                             }
+                            Thread.sleep(1000)
+
+                            val hintExists = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
+                            assertThat(hintExists).isTrue()
+
+                            goToLine(getCaretLine() - 1)
+
+                            val hintGone = editor.getInlayModel().getInlineElementsInRange(0, text.length).isEmpty()
+                            assertThat(hintGone).isTrue()
+                            text = originalContent
                         }
-                        Thread.sleep(1000)
+                    }
+                }
 
-                        // Verify suggestion appeared
-                        val initialHintExists = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
-                        assertThat(initialHintExists).isTrue()
+                step("Test suggestion navigation") {
+                    ideFrame {
+                        openFile("MathClass.java")
+                        editor {
+                            moveCaretToOffset(text.length - 2)
 
-                        // Type matching prefix
-                        ui.keyboard {
-                            key(KeyEvent.VK_P)
-                            key(KeyEvent.VK_U)
-                            key(KeyEvent.VK_B)
+                            ui.keyboard {
+                                pressing(KeyEvent.VK_ALT) {
+                                    key(KeyEvent.VK_C)
+                                }
+                            }
+                            Thread.sleep(1000)
+
+                            val initialHints = editor.getInlayModel().getInlineElementsInRange(0, text.length)
+                            assertThat(initialHints).isNotEmpty()
+
+                            ui.keyboard {
+                                pressing(KeyEvent.VK_ALT) {
+                                    key(KeyEvent.VK_CLOSE_BRACKET)
+                                }
+                            }
+
+                            val newHints = editor.getInlayModel().getInlineElementsInRange(0, text.length)
+                            assertThat(newHints).isNotEqualTo(initialHints)
+                            text = originalContent
                         }
+                    }
+                }
 
-                        // Verify suggestion still exists
-                        val hintExistsAfterTyping = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
-                        assertThat(hintExistsAfterTyping).isTrue()
+                step("Test completion in unsupported file type") {
+                    ideFrame {
+                        openFile("nonsense.xyz")
+                        editor {
+                            moveCaretToOffset(text.length - 2)
+                            ui.keyboard {
+                                pressing(KeyEvent.VK_ALT) {
+                                    key(KeyEvent.VK_C)
+                                }
+                            }
+                            Thread.sleep(1000)
+
+                            val hintExists = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
+                            assertThat(hintExists).isFalse()
+
+                            ui.keyboard {
+                                key(KeyEvent.VK_ENTER)
+                            }
+                            Thread.sleep(1000)
+
+                            val hintExistsAfterAuto = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
+                            assertThat(hintExistsAfterAuto).isFalse()
+                            text = originalContent
+                        }
+                    }
+                }
+
+                step("Test typeahead behavior") {
+                    ideFrame {
+                        openFile("MathClass.java")
+                        editor {
+                            moveCaretToOffset(text.length - 2)
+
+                            ui.keyboard {
+                                pressing(KeyEvent.VK_ALT) {
+                                    key(KeyEvent.VK_C)
+                                }
+                            }
+                            Thread.sleep(1000)
+
+                            val initialHintExists = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
+                            assertThat(initialHintExists).isTrue()
+
+                            ui.keyboard {
+                                key(KeyEvent.VK_P)
+                                key(KeyEvent.VK_U)
+                                key(KeyEvent.VK_B)
+                            }
+
+                            val hintExistsAfterTyping = editor.getInlayModel().getInlineElementsInRange(0, text.length).isNotEmpty()
+                            assertThat(hintExistsAfterTyping).isTrue()
+                            text = originalContent
+                        }
                     }
                 }
             }
