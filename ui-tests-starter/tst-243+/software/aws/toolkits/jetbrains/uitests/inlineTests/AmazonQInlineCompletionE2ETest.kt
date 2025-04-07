@@ -4,8 +4,10 @@
 package software.aws.toolkits.jetbrains.uitests.inlineTests
 
 import com.intellij.driver.sdk.openFile
+import com.intellij.driver.sdk.step
+import com.intellij.driver.sdk.ui.components.common.editor
+import com.intellij.driver.sdk.ui.components.common.ideFrame
 import com.intellij.driver.sdk.ui.ui
-import org.assertj.core.api.Assertions.assertThat
 import com.intellij.driver.sdk.waitForProjectOpen
 import com.intellij.ide.starter.ci.CIServer
 import com.intellij.ide.starter.config.ConfigurationStorage
@@ -17,23 +19,19 @@ import com.intellij.ide.starter.models.TestCase
 import com.intellij.ide.starter.project.LocalProjectInfo
 import com.intellij.ide.starter.runner.CurrentTestMethod
 import com.intellij.ide.starter.runner.Starter
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.kodein.di.DI
 import org.kodein.di.bindSingleton
 import software.aws.toolkits.jetbrains.uitests.TestCIServer
 import software.aws.toolkits.jetbrains.uitests.useExistingConnectionForTest
+import java.awt.event.KeyEvent
 import java.io.File
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import org.junit.jupiter.api.BeforeEach
-import java.nio.file.Files
 import java.nio.file.StandardOpenOption
-import com.intellij.driver.sdk.ui.components.common.editor
-import com.intellij.driver.sdk.ui.components.common.ideFrame
-import java.awt.event.KeyEvent
-import    com.intellij.driver.client.Driver
-import com.intellij.driver.sdk.Editor
-import com.intellij.driver.sdk.step
 
 class AmazonQInlineCompletionE2ETest {
     private val originalContent = """public class MathClass {
@@ -60,8 +58,6 @@ class AmazonQInlineCompletionE2ETest {
         }
         resetTestFile()
     }
-
-
 
     @BeforeEach
     fun resetTestFile() {
@@ -180,7 +176,6 @@ class AmazonQInlineCompletionE2ETest {
                             text = originalContent
                         }
                     }
-
                 }
 
                 step("Test auto trigger with acceptance") {
@@ -209,7 +204,6 @@ class AmazonQInlineCompletionE2ETest {
                         }
                     }
                     assertThat(afterSuggestion).isNotEqualTo(originalText)
-
                 }
 
                 step("Test auto trigger with rejection") {
