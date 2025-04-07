@@ -7,6 +7,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.Application
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.serviceIfCreated
+import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.newvfs.events.VFileCopyEvent
@@ -394,6 +395,8 @@ class WorkspaceServiceHandlerTest {
             oldName = oldName,
             newName = newName,
             isDirectory = false,
+            fileTypeName = "JAVA",
+            modificationStamp = 123L
         )
 
         // Act
@@ -405,8 +408,12 @@ class WorkspaceServiceHandlerTest {
 
         val openParams = slot<DidOpenTextDocumentParams>()
         verify { mockTextDocumentService.didOpen(capture(openParams)) }
-        assertThat(openParams.captured.textDocument.uri).isEqualTo(normalizeFileUri("file:///testDir/$newName"))
-        assertThat(openParams.captured.textDocument.text).isEqualTo(normalizeFileUri("content"))
+        with(openParams.captured.textDocument) {
+            assertThat(uri).isEqualTo(normalizeFileUri("file:///testDir/$newName"))
+            assertThat(text).isEqualTo("content")
+            assertThat(languageId).isEqualTo("java")
+            assertThat(version).isEqualTo(123)
+        }
 
         // Assert
         val paramsSlot = slot<RenameFilesParams>()
@@ -464,10 +471,14 @@ class WorkspaceServiceHandlerTest {
         val event1 = createMockPropertyChangeEvent(
             oldName = "old1.java",
             newName = "new1.java",
+            fileTypeName = "JAVA",
+            modificationStamp = 123L
         )
         val event2 = createMockPropertyChangeEvent(
             oldName = "old2.py",
             newName = "new2.py",
+            fileTypeName = "Python",
+            modificationStamp = 456L
         )
 
         // Act
@@ -477,6 +488,17 @@ class WorkspaceServiceHandlerTest {
         val paramsSlot = slot<RenameFilesParams>()
         verify { mockWorkspaceService.didRenameFiles(capture(paramsSlot)) }
         assertThat(paramsSlot.captured.files).hasSize(2)
+
+        // Verify didClose and didOpen for both files
+        verify(exactly = 2) { mockTextDocumentService.didClose(any()) }
+
+        val openParamsSlot = mutableListOf<DidOpenTextDocumentParams>()
+        verify(exactly = 2) { mockTextDocumentService.didOpen(capture(openParamsSlot)) }
+
+        assertThat(openParamsSlot[0].textDocument.languageId).isEqualTo("java")
+        assertThat(openParamsSlot[0].textDocument.version).isEqualTo(123)
+        assertThat(openParamsSlot[1].textDocument.languageId).isEqualTo("python")
+        assertThat(openParamsSlot[1].textDocument.version).isEqualTo(456)
     }
 
     @Test
@@ -635,9 +657,18 @@ class WorkspaceServiceHandlerTest {
         assertThat(paramsSlot.captured.event.removed[0].name).isEqualTo("folder2")
     }
 
-    private fun createMockVirtualFile(uri: URI, fileName: String, isDirectory: Boolean = false): VirtualFile {
+    private fun createMockVirtualFile(
+        uri: URI,
+        fileName: String,
+        isDirectory: Boolean = false,
+        fileTypeName: String = "PLAIN_TEXT",
+        modificationStamp: Long = 1L,
+    ): VirtualFile {
         val nioPath = mockk<Path> {
             every { toUri() } returns uri
+        }
+        val mockFileType = mockk<FileType> {
+            every { name } returns fileTypeName
         }
         return mockk<VirtualFile> {
             every { this@mockk.isDirectory } returns isDirectory
@@ -648,6 +679,8 @@ class WorkspaceServiceHandlerTest {
                 every { protocol } returns "file"
             }
             every { this@mockk.inputStream } returns "content".byteInputStream()
+            every { fileType } returns mockFileType
+            every { this@mockk.modificationStamp } returns modificationStamp
         }
     }
 
@@ -671,10 +704,12 @@ class WorkspaceServiceHandlerTest {
         oldName: String,
         newName: String,
         isDirectory: Boolean = false,
+        fileTypeName: String = "PLAIN_TEXT",
+        modificationStamp: Long = 1L,
     ): VFilePropertyChangeEvent {
         val parent = createMockVirtualFile(URI("file:///testDir/"), "testDir", true)
         val newUri = URI("file:///testDir/$newName")
-        val file = createMockVirtualFile(newUri, newName, isDirectory)
+        val file = createMockVirtualFile(newUri, newName, isDirectory, fileTypeName, modificationStamp)
         every { file.parent } returns parent
 
         return mockk<VFilePropertyChangeEvent>().apply {
