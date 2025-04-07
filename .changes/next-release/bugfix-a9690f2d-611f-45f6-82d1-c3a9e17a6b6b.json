@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "/review: set programmingLanguage to Plaintext if language is unknown"
-}
