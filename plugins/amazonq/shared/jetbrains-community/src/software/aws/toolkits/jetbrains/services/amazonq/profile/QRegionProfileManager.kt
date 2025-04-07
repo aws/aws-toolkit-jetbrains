@@ -52,6 +52,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
 
         if (profiles == null || profiles.none { it.arn == selected.arn }) {
             invalidateProfile(selected.arn)
+            switchProfile(project, null, intent = QProfileSwitchIntent.Reload)
             Telemetry.amazonq.profileState.use { span ->
                 span.source(QProfileSwitchIntent.Reload.value)
                     .amazonQProfileRegion(selected.region)
@@ -59,9 +60,6 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
                     .credentialStartUrl(conn?.startUrl)
                     .result(MetricResult.Failed)
             }
-            project.messageBus
-                .syncPublisher(QRegionProfileSelectedListener.TOPIC)
-                .onProfileSelected(project, null)
         }
     }
 
@@ -94,10 +92,8 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
 
     fun hasValidConnectionButNoActiveProfile(project: Project): Boolean = getIdcConnectionOrNull(project) != null && activeProfile(project) == null
 
-    fun switchProfile(project: Project, newProfile: QRegionProfile, intent: QProfileSwitchIntent) {
+    fun switchProfile(project: Project, newProfile: QRegionProfile?, intent: QProfileSwitchIntent) {
         val conn = getIdcConnectionOrNull(project) ?: return
-
-        if (newProfile.arn.isEmpty()) return
 
         val oldProfile = connectionIdToActiveProfile[conn.id]
         if (oldProfile == newProfile) return
@@ -105,28 +101,30 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
         connectionIdToActiveProfile[conn.id] = newProfile
         LOG.debug { "Switch from profile $oldProfile to $newProfile for project ${project.name}" }
 
-        if (intent == QProfileSwitchIntent.User || intent == QProfileSwitchIntent.Auth) {
-            notifyInfo(
-                title = message("action.q.profile.usage.text"),
-                content = message("action.q.profile.usage", newProfile.profileName),
-                project = project
-            )
+        if (newProfile != null) {
+            if (intent == QProfileSwitchIntent.User || intent == QProfileSwitchIntent.Auth) {
+                notifyInfo(
+                    title = message("action.q.profile.usage.text"),
+                    content = message("action.q.profile.usage", newProfile.profileName),
+                    project = project
+                )
 
-            Telemetry.amazonq.didSelectProfile.use { span ->
-                span.source(intent.value)
-                    .amazonQProfileRegion(newProfile.region)
-                    .profileCount(connectionIdToProfileList[conn.id])
-                    .ssoRegion(conn.region)
-                    .credentialStartUrl(conn.startUrl)
-                    .result(MetricResult.Succeeded)
-            }
-        } else {
-            Telemetry.amazonq.profileState.use { span ->
-                span.source(intent.value)
-                    .amazonQProfileRegion(newProfile.region)
-                    .ssoRegion(conn.region)
-                    .credentialStartUrl(conn.startUrl)
-                    .result(MetricResult.Succeeded)
+                Telemetry.amazonq.didSelectProfile.use { span ->
+                    span.source(intent.value)
+                        .amazonQProfileRegion(newProfile.region)
+                        .profileCount(connectionIdToProfileList[conn.id])
+                        .ssoRegion(conn.region)
+                        .credentialStartUrl(conn.startUrl)
+                        .result(MetricResult.Succeeded)
+                }
+            } else {
+                Telemetry.amazonq.profileState.use { span ->
+                    span.source(intent.value)
+                        .amazonQProfileRegion(newProfile.region)
+                        .ssoRegion(conn.region)
+                        .credentialStartUrl(conn.startUrl)
+                        .result(MetricResult.Succeeded)
+                }
             }
         }
 

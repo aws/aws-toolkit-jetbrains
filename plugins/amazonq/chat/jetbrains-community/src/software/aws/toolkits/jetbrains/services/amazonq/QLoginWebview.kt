@@ -42,6 +42,8 @@ import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.telemetry.FeatureId
+import software.aws.toolkits.telemetry.MetricResult
+import software.aws.toolkits.telemetry.Telemetry
 import software.aws.toolkits.telemetry.UiTelemetry
 import software.aws.toolkits.telemetry.WebviewTelemetry
 import java.awt.event.ActionListener
@@ -267,6 +269,16 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                 QRegionProfileManager.getInstance().listRegionProfiles(project).orEmpty()
             } catch (e: Exception) {
                 errorMessage = e.message
+                LOG.warn { "Failed to call listRegionProfiles API" }
+                val qConn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
+                Telemetry.amazonq.didSelectProfile.use { span ->
+                    span.source(QProfileSwitchIntent.Auth.value)
+                        .amazonQProfileRegion(QRegionProfileManager.getInstance().activeProfile(project)?.region ?: "not-set")
+                        .ssoRegion((qConn as? AwsBearerTokenConnection)?.region)
+                        .credentialStartUrl((qConn as? AwsBearerTokenConnection)?.startUrl)
+                        .result(MetricResult.Failed)
+                        .reason(e.message)
+                }
                 emptyList()
             }
 

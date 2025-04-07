@@ -14,8 +14,6 @@ import com.intellij.ui.components.panels.Wrapper
 import com.intellij.util.ui.components.BorderLayoutPanel
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
@@ -28,7 +26,6 @@ import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.RefreshQChatPanelButtonPressedListener
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.openMeetQPage
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileSwitchIntent
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
@@ -37,8 +34,6 @@ import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.FeatureId
-import software.aws.toolkits.telemetry.MetricResult
-import software.aws.toolkits.telemetry.Telemetry
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
 
@@ -70,19 +65,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
                     ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let { qConn ->
                         openMeetQPage(project)
-                        try {
-                            QRegionProfileManager.getInstance().listRegionProfiles(project)
-                        } catch (e: Exception) {
-                            LOG.warn { "Failed to call listRegionProfiles API" }
-                            Telemetry.amazonq.didSelectProfile.use { span ->
-                                span.source(QProfileSwitchIntent.Auth.value)
-                                    .amazonQProfileRegion(QRegionProfileManager.getInstance().activeProfile(project)?.region ?: "not-set")
-                                    .ssoRegion((qConn as? AwsBearerTokenConnection)?.region)
-                                    .credentialStartUrl((qConn as? AwsBearerTokenConnection)?.startUrl)
-                                    .result(MetricResult.Failed)
-                                    .reason(e.message)
-                            }
-                        }
+                        QRegionProfileManager.getInstance().validateProfile(project)
                     }
                     prepareChatContent(project, qPanel)
                 }
