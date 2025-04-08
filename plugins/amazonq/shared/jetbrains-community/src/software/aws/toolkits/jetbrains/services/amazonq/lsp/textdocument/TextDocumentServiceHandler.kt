@@ -68,6 +68,8 @@ class TextDocumentServiceHandler(
                         textDocument = TextDocumentItem().apply {
                             this.uri = uri
                             text = file.inputStream.readAllBytes().decodeToString()
+                            languageId = file.fileType.name.lowercase()
+                            version = file.modificationStamp.toInt()
                         }
                     }
                 )
