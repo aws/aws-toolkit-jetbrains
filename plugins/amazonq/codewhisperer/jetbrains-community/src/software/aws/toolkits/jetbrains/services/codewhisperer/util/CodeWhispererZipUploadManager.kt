@@ -22,6 +22,7 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.amazonq.RetryableOperation
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanServerException
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanSession.Companion.APPLICATION_ZIP
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanSession.Companion.AWS_KMS
@@ -202,6 +203,7 @@ class CodeWhispererZipUploadManager(private val project: Project) {
                             UploadContext.fromCodeAnalysisUploadContext(CodeAnalysisUploadContext.builder().codeScanName(taskName).build())
                         }
                     )
+                    .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
                     .build()
             )
         },
