@@ -14,14 +14,13 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.xmlb.annotations.MapAnnotation
 import com.intellij.util.xmlb.annotations.Property
 import software.amazon.awssdk.core.SdkClient
-import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.core.AwsResourceCache
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
@@ -31,6 +30,7 @@ import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.AmazonQBundle.message
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Telemetry
+import java.time.Duration
 import java.util.Collections
 import kotlin.reflect.KClass
 
@@ -66,16 +66,14 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
     fun listRegionProfiles(project: Project): List<QRegionProfile>? {
         val connection = getIdcConnectionOrNull(project) ?: return null
         return try {
-            val mappedProfiles = QEndpoints.listRegionEndpoints()
-                .flatMap { (regionKey, _) ->
-                    val awsRegion = AwsRegionProvider.getInstance()[regionKey] ?: return@flatMap emptyList()
-                    connection.getConnectionSettings()
-                        .withRegion(awsRegion)
-                        .awsClient<CodeWhispererRuntimeClient>()
-                        .listAvailableProfilesPaginator {}
-                        .profiles()
-                        .map { p -> QRegionProfile(arn = p.arn(), profileName = p.profileName()?: "<no name>") }
-                }
+            val connectionSettings = connection.getConnectionSettings()
+            val mappedProfiles = AwsResourceCache.getInstance().getResourceNow(
+                resource = QProfileResources.LIST_REGION_PROFILES,
+                connectionSettings = connectionSettings,
+                timeout = Duration.ofSeconds(30),
+                useStale = true,
+                forceFetch = false
+            )
             if (mappedProfiles.size == 1) {
                 switchProfile(project, mappedProfiles.first(), intent = QProfileSwitchIntent.Update)
             }
