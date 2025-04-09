@@ -280,7 +280,7 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                 try {
                     profiles = QRegionProfileManager.getInstance().listRegionProfiles(project).orEmpty()
                     if (profiles.size == 1) {
-                        LOG.debug { "User only have access to 1 Q profile, auto-selecting profile ${profiles.first().profileName}" }
+                        LOG.debug { "User only have access to 1 Q profile, auto-selecting profile ${profiles.first().profileName} for ${project.name}" }
                         QRegionProfileManager.getInstance().switchProfile(project, profiles.first(), QProfileSwitchIntent.Update)
                     }
                 } catch (e: Exception) {
