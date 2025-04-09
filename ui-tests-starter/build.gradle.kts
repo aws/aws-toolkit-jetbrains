@@ -93,9 +93,14 @@ tasks.register<Test>("uiTest") {
 
     dependsOn(prepareAmazonQTest)
     dependsOn(testPlugins)
-
     systemProperty("ui.test.plugins", testPlugins.get().asPath)
     systemProperty("org.gradle.project.ideProfileName", ideProfile.name)
+    val testSuite = System.getenv("TEST_DIR") ?: ""
+    if (testSuite.isNotBlank()) {
+        filter {
+            includeTestsMatching(testSuite)
+        }
+    }
 }
 
 // hack to disable ui tests in ./gradlew check
