@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonq.profile
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
@@ -11,6 +12,7 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.xmlb.annotations.MapAnnotation
 import com.intellij.util.xmlb.annotations.Property
 import software.amazon.awssdk.core.SdkClient
@@ -25,6 +27,7 @@ import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.AmazonQBundle.message
@@ -40,9 +43,23 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
 
     // Map to store connectionId to its active profile
     private val connectionIdToActiveProfile = Collections.synchronizedMap<String, QRegionProfile>(mutableMapOf())
-    private val connectionIdToProfileList = mutableMapOf<String, Int>()
+    private val connectionIdToProfileCount = mutableMapOf<String, Int>()
+
+    init {
+        ApplicationManager.getApplication().messageBus.connect(this)
+            .subscribe(
+                BearerTokenProviderListener.TOPIC,
+                object : BearerTokenProviderListener {
+                    override fun invalidate(providerId: String) {
+                        connectionIdToActiveProfile.remove(providerId)
+                        connectionIdToProfileCount.remove(providerId)
+                    }
+                }
+            )
+    }
 
     // should be call on project startup to validate if profile is still active
+    @RequiresBackgroundThread
     fun validateProfile(project: Project) {
         val conn = getIdcConnectionOrNull(project)
         val selected = activeProfile(project) ?: return
@@ -78,7 +95,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
                 switchProfile(project, mappedProfiles.first(), intent = QProfileSwitchIntent.Update)
             }
             mappedProfiles.takeIf { it.isNotEmpty() }?.also {
-                connectionIdToProfileList[connection.id] = it.size
+                connectionIdToProfileCount[connection.id] = it.size
             } ?: error("You don't have access to the resource")
         } catch (e: Exception) {
             LOG.warn(e) { "Failed to list region profiles: ${e.message}" }
@@ -110,7 +127,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
                 Telemetry.amazonq.didSelectProfile.use { span ->
                     span.source(intent.value)
                         .amazonQProfileRegion(newProfile.region)
-                        .profileCount(connectionIdToProfileList[conn.id])
+                        .profileCount(connectionIdToProfileCount[conn.id])
                         .ssoRegion(conn.region)
                         .credentialStartUrl(conn.startUrl)
                         .result(MetricResult.Succeeded)
@@ -139,13 +156,13 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
 
     // for each idc connection, user should have a profile, otherwise should show the profile selection error page
     fun isPendingProfileSelection(project: Project): Boolean = getIdcConnectionOrNull(project)?.let { conn ->
-        val profileCounts = connectionIdToProfileList[conn.id] ?: 0
+        val profileCounts = connectionIdToProfileCount[conn.id] ?: 0
         val activeProfile = connectionIdToActiveProfile[conn.id]
         profileCounts == 0 || (profileCounts > 1 && activeProfile?.arn.isNullOrEmpty())
     } ?: false
 
     fun shouldDisplayProfileInfo(project: Project): Boolean = getIdcConnectionOrNull(project)?.let { conn ->
-        (connectionIdToProfileList[conn.id] ?: 0) > 1
+        (connectionIdToProfileCount[conn.id] ?: 0) > 1
     } ?: false
 
     fun getQClientSettings(project: Project): TokenConnectionSettings {
@@ -191,7 +208,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
     override fun getState(): QProfileState {
         val state = QProfileState()
         state.connectionIdToActiveProfile.putAll(this.connectionIdToActiveProfile)
-        state.connectionIdToProfileList.putAll(this.connectionIdToProfileList)
+        state.connectionIdToProfileList.putAll(this.connectionIdToProfileCount)
         return state
     }
 
@@ -199,8 +216,8 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
         connectionIdToActiveProfile.clear()
         connectionIdToActiveProfile.putAll(state.connectionIdToActiveProfile)
 
-        connectionIdToProfileList.clear()
-        connectionIdToProfileList.putAll(state.connectionIdToProfileList)
+        connectionIdToProfileCount.clear()
+        connectionIdToProfileCount.putAll(state.connectionIdToProfileList)
     }
 }
 

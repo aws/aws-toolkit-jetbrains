@@ -1,4 +1,4 @@
-# _3.63_ (2025-04-08)
+# _3.63_ (2025-04-09)
 - **(Feature)** Enterprise users can choose their preferred Amazon Q profile to improve personalization and workflow across different business regions
 - **(Bug Fix)** Amazon Q /doc: close diff tab and open README file in preview mode after user accept changes
 
