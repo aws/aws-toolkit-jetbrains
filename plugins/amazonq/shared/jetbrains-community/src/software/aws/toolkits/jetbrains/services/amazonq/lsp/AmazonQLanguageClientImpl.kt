@@ -102,9 +102,8 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         val chatCommunicationManager = ChatCommunicationManager.getInstance(project)
         try {
             chatCommunicationManager.handlePartialResultProgressNotification(project, params)
-            notifyInfo("hello")
         } catch (e: Exception) {
-            error("cannot handle partial chat")
+            error("Cannot handle partial chat")
         }
     }
 }

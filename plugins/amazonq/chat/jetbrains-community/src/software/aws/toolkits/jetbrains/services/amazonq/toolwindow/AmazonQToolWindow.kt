@@ -61,7 +61,9 @@ class AmazonQToolWindow private constructor(
             AsyncChatUiListener.TOPIC,
             object : AsyncChatUiListener {
                 override fun onChange(message: String) {
-                    chatPanel.browser?.postChat(message)
+                    runInEdt {
+                        chatPanel.browser?.postChat(message)
+                    }
                 }
             }
         )
