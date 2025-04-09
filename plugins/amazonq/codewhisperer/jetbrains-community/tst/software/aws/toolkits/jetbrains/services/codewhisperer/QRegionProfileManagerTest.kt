@@ -156,11 +156,12 @@ class QRegionProfileManagerTest {
         val connectionSettings = sut.getQClientSettings(project)
         resourceCache.addEntry(connectionSettings, QProfileResources.LIST_REGION_PROFILES, QProfileResources.LIST_REGION_PROFILES.fetch(connectionSettings))
 
-        val r = sut.listRegionProfiles(project)
-        assertThat(r).hasSize(2)
-
-        assertThat(r).contains(QRegionProfile("FOO", "foo"))
-        assertThat(r).contains(QRegionProfile("BAR", "bar"))
+        assertThat(sut.listRegionProfiles(project))
+            .hasSize(2)
+            .containsExactlyInAnyOrder(
+                QRegionProfile("FOO", "foo"),
+                QRegionProfile("BAR", "bar")
+            )
     }
 
     @Test
