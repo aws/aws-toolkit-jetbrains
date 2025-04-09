@@ -65,7 +65,6 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
                     ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let { qConn ->
                         openMeetQPage(project)
-                        QRegionProfileManager.getInstance().validateProfile(project)
                     }
                     prepareChatContent(project, qPanel)
                 }
