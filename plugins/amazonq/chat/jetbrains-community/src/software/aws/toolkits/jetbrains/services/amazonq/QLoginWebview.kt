@@ -264,7 +264,6 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
         // TODO: pass "REAUTH" if connection expires
         // Perform the potentially blocking AWS call outside the EDT to fetch available region profiles.
         ApplicationManager.getApplication().executeOnPooledThread {
-
             val stage = if (isQExpired(project)) {
                 "REAUTH"
             } else if (isQConnected(project) && QRegionProfileManager.getInstance().isPendingProfileSelection(project)) {

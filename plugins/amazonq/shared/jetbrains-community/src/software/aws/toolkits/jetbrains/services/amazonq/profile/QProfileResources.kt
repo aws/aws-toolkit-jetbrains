@@ -6,8 +6,8 @@ package software.aws.toolkits.jetbrains.services.amazonq.profile
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.core.Resource
+import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import java.time.Duration
 
 /**
