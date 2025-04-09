@@ -264,30 +264,33 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
         // TODO: pass "REAUTH" if connection expires
         // Perform the potentially blocking AWS call outside the EDT to fetch available region profiles.
         ApplicationManager.getApplication().executeOnPooledThread {
-            var errorMessage: String? = null
-            val profiles: List<QRegionProfile> = try {
-                QRegionProfileManager.getInstance().listRegionProfiles(project).orEmpty()
-            } catch (e: Exception) {
-                errorMessage = e.message
-                LOG.warn { "Failed to call listRegionProfiles API" }
-                val qConn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
-                Telemetry.amazonq.didSelectProfile.use { span ->
-                    span.source(QProfileSwitchIntent.Auth.value)
-                        .amazonQProfileRegion(QRegionProfileManager.getInstance().activeProfile(project)?.region ?: "not-set")
-                        .ssoRegion((qConn as? AwsBearerTokenConnection)?.region)
-                        .credentialStartUrl((qConn as? AwsBearerTokenConnection)?.startUrl)
-                        .result(MetricResult.Failed)
-                        .reason(e.message)
-                }
-                emptyList()
-            }
-
             val stage = if (isQExpired(project)) {
                 "REAUTH"
             } else if (isQConnected(project) && QRegionProfileManager.getInstance().isPendingProfileSelection(project)) {
                 "PROFILE_SELECT"
             } else {
                 "START"
+            }
+
+            var errorMessage: String? = null
+            var profiles: List<QRegionProfile> = emptyList()
+
+            if (stage == "PROFILE_SELECT") {
+                try {
+                    profiles = QRegionProfileManager.getInstance().listRegionProfiles(project).orEmpty()
+                } catch (e: Exception) {
+                    errorMessage = e.message
+                    LOG.warn { "Failed to call listRegionProfiles API" }
+                    val qConn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
+                    Telemetry.amazonq.didSelectProfile.use { span ->
+                        span.source(QProfileSwitchIntent.Auth.value)
+                            .amazonQProfileRegion(QRegionProfileManager.getInstance().activeProfile(project)?.region ?: "not-set")
+                            .ssoRegion((qConn as? AwsBearerTokenConnection)?.region)
+                            .credentialStartUrl((qConn as? AwsBearerTokenConnection)?.startUrl)
+                            .result(MetricResult.Failed)
+                            .reason(e.message)
+                    }
+                }
             }
 
             val jsonData = """
