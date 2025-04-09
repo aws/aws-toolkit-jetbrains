@@ -53,6 +53,7 @@ dependencies {
     uiTestImplementation("org.kodein.di:kodein-di-jvm:7.20.2")
     uiTestImplementation(platform(libs.junit5.bom))
     uiTestImplementation(libs.junit5.jupiter)
+    uiTestImplementation(libs.assertj)
 
     // not sure why not coming in transitively for starter
     uiTestRuntimeOnly(libs.kotlin.coroutines)

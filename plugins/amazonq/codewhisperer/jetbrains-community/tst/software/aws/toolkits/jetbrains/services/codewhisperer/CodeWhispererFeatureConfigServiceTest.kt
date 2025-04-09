@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
+import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
@@ -34,6 +35,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import kotlin.reflect.full.memberFunctions
 import kotlin.test.Test
 
@@ -62,7 +64,7 @@ class CodeWhispererFeatureConfigServiceTest {
 
     @Test
     fun `test highlightCommand returns non-empty`() {
-        mockClientManagerRule.create<CodeWhispererRuntimeClient>().stub {
+        val mockClient = mockClientManagerRule.create<CodeWhispererRuntimeClient>().stub {
             on { listFeatureEvaluations(any<ListFeatureEvaluationsRequest>()) } doReturn ListFeatureEvaluationsResponse.builder().featureEvaluations(
                 listOf(
                     FeatureEvaluation.builder()
@@ -74,9 +76,16 @@ class CodeWhispererFeatureConfigServiceTest {
             ).build()
         }
 
+        projectRule.project.replaceService(
+            QRegionProfileManager::class.java,
+            mock<QRegionProfileManager> { on { getQClient(any<Project>(), eq(CodeWhispererRuntimeClient::class)) } doReturn mockClient },
+            disposableRule.disposable
+        )
+
         val mockTokenSettings = mock<TokenConnectionSettings> {
             on { providerId } doReturn "mock"
             on { region } doReturn AwsRegion.GLOBAL
+            on { withRegion(any()) } doReturn this.mock
         }
 
         val mockSsoConnection = mock<LegacyManagedBearerSsoConnection> {

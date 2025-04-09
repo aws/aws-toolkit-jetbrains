@@ -12,8 +12,8 @@ import com.intellij.util.concurrency.AppExecutorUtil
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit4.MockKRule
+import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.toolkittelemetry.model.AWSProduct
@@ -89,7 +89,7 @@ class ThreadingUtilsKtTest {
         PluginResolver.setThreadLocal(pluginResolver)
 
         pluginAwareExecuteOnPooledThread {
-            assertEquals(PluginResolver.fromCurrentThread().product, AWSProduct.AMAZON_Q_FOR_JET_BRAINS)
+            assertThat(PluginResolver.fromCurrentThread().product).isEqualTo(AWSProduct.AMAZON_Q_FOR_JET_BRAINS)
         }.get()
 
         PluginResolver.setThreadLocal(PluginResolver.fromStackTrace(Thread.currentThread().stackTrace))

@@ -1,3 +1,14 @@
+# _3.63_ (2025-04-08)
+- **(Feature)** Enterprise users can choose their preferred Amazon Q profile to improve personalization and workflow across different business regions
+- **(Bug Fix)** Amazon Q /doc: close diff tab and open README file in preview mode after user accept changes
+
+# _3.62_ (2025-04-03)
+- **(Feature)** /review: automatically generate fix without clicking Generate Fix button
+- **(Bug Fix)** /transform: prompt user to re-authenticate if credentials expire during transformation
+- **(Bug Fix)** Gracefully handle additional fields in Amazon Q /dev code generation result without throwing errors
+- **(Bug Fix)** /review: set programmingLanguage to Plaintext if language is unknown
+- **(Bug Fix)** /review: Respect user option to allow code suggestions with references
+
 # _3.61_ (2025-03-27)
 - **(Feature)** Amazon Q: Moved "Include suggestions with code references" setting to General
 - **(Feature)** Add support for 2025.1

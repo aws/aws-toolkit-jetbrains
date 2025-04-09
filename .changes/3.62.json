@@ -1,0 +1,20 @@
+{
+  "date" : "2025-04-03",
+  "version" : "3.62",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "/review: automatically generate fix without clicking Generate Fix button"
+  }, {
+    "type" : "bugfix",
+    "description" : "/transform: prompt user to re-authenticate if credentials expire during transformation"
+  }, {
+    "type" : "bugfix",
+    "description" : "Gracefully handle additional fields in Amazon Q /dev code generation result without throwing errors"
+  }, {
+    "type" : "bugfix",
+    "description" : "/review: set programmingLanguage to Plaintext if language is unknown"
+  }, {
+    "type" : "bugfix",
+    "description" : "/review: Respect user option to allow code suggestions with references"
+  } ]
+}
