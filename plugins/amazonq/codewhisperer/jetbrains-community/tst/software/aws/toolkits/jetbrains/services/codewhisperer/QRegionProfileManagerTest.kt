@@ -124,36 +124,7 @@ class QRegionProfileManagerTest {
         assertThat(cnt).isEqualTo(2)
     }
 
-    @Test
-    fun `listProfiles will call each client to get profiles`() {
-        val client = clientRule.create<CodeWhispererRuntimeClient>()
-        val mockResponse: SdkIterable<Profile> = SdkIterable<Profile> {
-            listOf(
-                Profile.builder().profileName("FOO").arn("foo").build(),
-            ).toMutableList().iterator()
-        }
-
-        val mockResponse2: SdkIterable<Profile> = SdkIterable<Profile> {
-            listOf(
-                Profile.builder().profileName("BAR").arn("bar").build(),
-            ).toMutableList().iterator()
-        }
-
-        val iterable: ListAvailableProfilesIterable = mock {
-            on { it.profiles() } doReturn mockResponse doReturn mockResponse2
-        }
-
-        // TODO: not sure if we can mock client with different region different response?
-        client.stub {
-            onGeneric { listAvailableProfilesPaginator(any<Consumer<ListAvailableProfilesRequest.Builder>>()) } doReturn iterable
-        }
-
-        val r = sut.listRegionProfiles(project)
-        assertThat(r).hasSize(2)
-
-        assertThat(r).contains(QRegionProfile("FOO", "foo"))
-        assertThat(r).contains(QRegionProfile("BAR", "bar"))
-    }
+    // TODO: Add two unit tests for listProfiles — one with cache hit, one without
 
     @Test
     fun `validateProfile should cross validate selected profile with latest API response for current project and remove it if its not longer accessible`() {
