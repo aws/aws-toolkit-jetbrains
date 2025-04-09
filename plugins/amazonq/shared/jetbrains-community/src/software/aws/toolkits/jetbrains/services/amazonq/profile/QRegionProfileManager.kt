@@ -11,6 +11,7 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.xmlb.annotations.MapAnnotation
 import com.intellij.util.xmlb.annotations.Property
 import software.amazon.awssdk.core.SdkClient
@@ -43,6 +44,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
     private val connectionIdToProfileList = mutableMapOf<String, Int>()
 
     // should be call on project startup to validate if profile is still active
+    @RequiresBackgroundThread
     fun validateProfile(project: Project) {
         val conn = getIdcConnectionOrNull(project)
         val selected = activeProfile(project) ?: return
