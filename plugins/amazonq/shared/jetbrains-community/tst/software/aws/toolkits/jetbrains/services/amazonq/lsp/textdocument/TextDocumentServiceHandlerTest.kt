@@ -10,6 +10,7 @@ import com.intellij.openapi.components.serviceIfCreated
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
@@ -149,27 +150,27 @@ class TextDocumentServiceHandlerTest {
         with(paramsSlot.captured.textDocument) {
             assertThat(this.uri).isEqualTo(normalizeFileUri(uri.toString()))
             assertThat(text).isEqualTo(content)
+            assertThat(languageId).isEqualTo("java")
+            assertThat(version).isEqualTo(1)
         }
     }
 
     @Test
     fun `didOpen runs on fileOpened`() = runTest {
-        // Create test file
         val uri = URI.create("file:///test/path/file.txt")
         val content = "test content"
-
         val file = createMockVirtualFile(uri, content)
 
-        // Call the handler method
         sut.fileOpened(mockk(), file)
 
-        // Verify the correct LSP method was called with matching parameters
         val paramsSlot = slot<DidOpenTextDocumentParams>()
         verify { mockTextDocumentService.didOpen(capture(paramsSlot)) }
 
         with(paramsSlot.captured.textDocument) {
             assertThat(this.uri).isEqualTo(normalizeFileUri(uri.toString()))
             assertThat(text).isEqualTo(content)
+            assertThat(languageId).isEqualTo("java")
+            assertThat(version).isEqualTo(1)
         }
     }
 
@@ -297,11 +298,21 @@ class TextDocumentServiceHandlerTest {
         }
     }
 
-    private fun createMockVirtualFile(uri: URI, content: String = ""): VirtualFile {
+    private fun createMockVirtualFile(
+        uri: URI,
+        content: String = "",
+        fileTypeName: String = "JAVA",
+        modificationStamp: Long = 1L,
+    ): VirtualFile {
         val path = mockk<Path> {
             every { toUri() } returns uri
         }
         val inputStream = content.byteInputStream()
+
+        val mockFileType = mockk<FileType> {
+            every { name } returns fileTypeName
+        }
+
         return mockk<VirtualFile> {
             every { url } returns uri.path
             every { toNioPath() } returns path
@@ -310,6 +321,8 @@ class TextDocumentServiceHandlerTest {
                 every { protocol } returns "file"
             }
             every { this@mockk.inputStream } returns inputStream
+            every { fileType } returns mockFileType
+            every { this@mockk.modificationStamp } returns modificationStamp
         }
     }
 

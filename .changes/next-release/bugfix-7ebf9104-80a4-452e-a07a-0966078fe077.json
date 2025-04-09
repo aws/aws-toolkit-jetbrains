@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Gracefully handle additional fields in Amazon Q /dev code generation result without throwing errors"
-}
