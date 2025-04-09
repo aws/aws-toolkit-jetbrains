@@ -74,7 +74,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
                         .awsClient<CodeWhispererRuntimeClient>()
                         .listAvailableProfilesPaginator {}
                         .profiles()
-                        .map { p -> QRegionProfile(arn = p.arn(), profileName = p.profileName()) }
+                        .map { p -> QRegionProfile(arn = p.arn(), profileName = p.profileName()?: "<no name>") }
                 }
             if (mappedProfiles.size == 1) {
                 switchProfile(project, mappedProfiles.first(), intent = QProfileSwitchIntent.Update)
