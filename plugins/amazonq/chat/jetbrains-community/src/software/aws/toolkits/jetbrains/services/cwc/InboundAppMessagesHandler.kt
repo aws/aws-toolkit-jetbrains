@@ -34,6 +34,4 @@ interface InboundAppMessagesHandler {
     suspend fun processCodeScanIssueAction(message: CodeScanIssueActionMessage)
 
     suspend fun processLinkClick(message: IncomingCwcMessage.ClickedLink)
-
-    fun processSessionClear()
 }

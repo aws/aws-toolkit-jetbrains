@@ -12,9 +12,9 @@ import software.amazon.awssdk.services.codewhispererruntime.model.FeatureValue
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.utils.isQExpired
 
 @Service
@@ -32,9 +32,8 @@ class CodeWhispererFeatureConfigService {
 
         LOG.debug { "Fetching feature configs" }
         try {
-            val response = QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project).listFeatureEvaluations {
+            val response = connection.getConnectionSettings().awsClient<CodeWhispererRuntimeClient>().listFeatureEvaluations {
                 it.userContext(codeWhispererUserContext())
-                it.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
             } ?: return
 
             // Simply force overwrite feature configs from server response, no needed to check existing values.
@@ -114,8 +113,7 @@ class CodeWhispererFeatureConfigService {
             val availableCustomizations =
                 calculateIfIamIdentityCenterConnection(project) {
                     try {
-                        QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project)
-                            .listAvailableCustomizationsPaginator {}
+                        connection.getConnectionSettings().awsClient<CodeWhispererRuntimeClient>().listAvailableCustomizationsPaginator {}
                             .flatMap { resp ->
                                 resp.customizations().map {
                                     it.arn()

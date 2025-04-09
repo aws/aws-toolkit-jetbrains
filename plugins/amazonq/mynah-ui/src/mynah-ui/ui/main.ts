@@ -42,7 +42,6 @@ export const createMynahUI = (
     codeScanEnabled: boolean,
     codeTestEnabled: boolean,
     highlightCommand?: QuickActionCommand,
-    profileName?: string
 ) => {
     let disclaimerCardActive = !disclaimerAcknowledged
 
@@ -89,8 +88,7 @@ export const createMynahUI = (
         isDocEnabled,
         isCodeScanEnabled,
         isCodeTestEnabled,
-        highlightCommand,
-        profileName
+        highlightCommand
     })
 
     // eslint-disable-next-line prefer-const

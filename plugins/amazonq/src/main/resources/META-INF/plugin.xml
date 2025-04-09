@@ -85,11 +85,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <registryKey key="amazon.q.endpoint" description="Endpoint to use for Amazon Q"
-                     defaultValue="" restartRequired="true"/>
-        <registryKey key="amazon.q.endpoints.json" description="List of region-endpoint pairs in JSON array form"
-                     defaultValue="[{&quot;region&quot;:&quot;us-east-1&quot;,&quot;endpoint&quot;:&quot;https://q.us-east-1.amazonaws.com/&quot;},
-                   {&quot;region&quot;:&quot;eu-central-1&quot;,&quot;endpoint&quot;:&quot;https://q.eu-central-1.amazonaws.com/&quot;}]"
-                     restartRequired="true"/>
+                     defaultValue="https://codewhisperer.us-east-1.amazonaws.com/" restartRequired="true"/>
         <registryKey key="inline.completion.rem.dev.use.rhizome" description="Defined by IntelliJ. Used for Amazon Q to display suggestions on remote."
                      defaultValue="false" restartRequired="true"/>
     </extensions>

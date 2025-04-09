@@ -19,15 +19,9 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import Login from './login.vue'
-import Reauth from "@/q-ui/components/reauth.vue"
-import {Stage} from '../..//model'
-import {WebviewTelemetry} from '../../webviewTelemetry'
-import Logo from '@/q-ui/components/logo.vue'
-
-window.onerror = function (message) {
-    WebviewTelemetry.instance.didShowPage((window as any).uiState, message.toString())
-}
-
+import Reauth from "@/q-ui/components/reauth.vue";
+import {Stage} from "../..//model";
+import Logo from "@/q-ui/components/logo.vue";
 export default defineComponent({
     name: 'auth',
     components: {
@@ -49,12 +43,6 @@ export default defineComponent({
     mounted() {
         window.changeTheme = this.changeTheme.bind(this)
         window.ideApi.postMessage({command: 'prepareUi'})
-        // update() alone can't cover the very first rendering of the page as webview default page is 'start'
-        WebviewTelemetry.instance.willShowPage(this.stage)
-        handleUpdated(this.stage)
-    },
-    updated() {
-        handleUpdated(this.stage)
     },
     methods: {
         changeTheme(darkMode: boolean) {
@@ -65,32 +53,6 @@ export default defineComponent({
         },
     },
 })
-
-function handleUpdated(page: Stage) {
-    let elementIdToFound: string | undefined = undefined
-    switch (page) {
-        case 'START':
-            elementIdToFound = 'login-page'
-            break
-        case 'PROFILE_SELECT':
-            elementIdToFound = 'profile-page'
-            break
-
-        case 'REAUTH':
-            elementIdToFound = 'reauth-page'
-            break
-        default:
-            return
-    }
-
-    if (!elementIdToFound) return
-    const domElement = document.getElementById(elementIdToFound)
-    if (!domElement) {
-        WebviewTelemetry.instance.didShowPage(page, `NOT found domElement ${elementIdToFound}`)
-    } else {
-        WebviewTelemetry.instance.didShowPage(page)
-    }
-}
 </script>
 <style>
 .body {

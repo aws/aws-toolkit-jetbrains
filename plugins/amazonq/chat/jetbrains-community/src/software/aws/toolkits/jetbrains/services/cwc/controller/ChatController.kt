@@ -541,10 +541,6 @@ class ChatController private constructor(
         .map { it.tabId }
         .first()
 
-    override fun processSessionClear() {
-        chatSessionStorage.deleteAllSessions()
-    }
-
     companion object {
         private val logger = getLogger<ChatController>()
 

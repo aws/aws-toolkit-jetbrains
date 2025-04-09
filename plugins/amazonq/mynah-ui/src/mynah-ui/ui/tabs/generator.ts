@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {ChatItemType, MynahUIDataModel, QuickActionCommandGroup, QuickActionCommand, ChatItem} from '@aws/mynah-ui-chat'
+import { ChatItemType, MynahUIDataModel, QuickActionCommandGroup, QuickActionCommand } from '@aws/mynah-ui-chat'
 import { TabType } from '../storages/tabsStorage'
 import { FollowUpGenerator } from '../followUps/generator'
 import { QuickActionGenerator } from '../quickActions/generator'
@@ -16,14 +16,12 @@ export interface TabDataGeneratorProps {
     isCodeScanEnabled: boolean
     isCodeTestEnabled: boolean
     highlightCommand?: QuickActionCommand
-    profileName?: string
 }
 
 export class TabDataGenerator {
     private followUpsGenerator: FollowUpGenerator
     public quickActionsGenerator: QuickActionGenerator
     public highlightCommand?: QuickActionCommand
-    profileName?: string
 
     private tabTitle: Map<TabType, string> = new Map([
         ['unknown', 'Chat'],
@@ -93,20 +91,6 @@ What would you like to work on?`,
             isCodeTestEnabled: props.isCodeTestEnabled,
         })
         this.highlightCommand = props.highlightCommand
-        this.profileName = props.profileName
-    }
-
-    private get regionProfileCard(): ChatItem | undefined {
-        console.log('[DEBUG] Received profileName:', this.profileName)
-        if (!this.profileName) {
-            return undefined
-        }
-        return {
-            type: ChatItemType.ANSWER,
-            body: `You are using the <b>${this.profileName}</b> profile for this chat period`,
-            status: 'info',
-            messageId: 'regionProfile',
-        }
     }
 
     public getTabData(tabType: TabType, needWelcomeMessages: boolean, taskName?: string): MynahUIDataModel {
@@ -119,8 +103,7 @@ What would you like to work on?`,
             contextCommands: this.getContextCommands(tabType),
             chatItems: needWelcomeMessages
                 ? [
-                    ...(this.regionProfileCard ? [this.regionProfileCard] : []),
-                    {
+                      {
                           type: ChatItemType.ANSWER,
                           body: this.tabWelcomeMessage.get(tabType),
                       },
@@ -129,7 +112,7 @@ What would you like to work on?`,
                           followUp: this.followUpsGenerator.generateWelcomeBlockForTab(tabType),
                       },
                   ]
-                : [...(this.regionProfileCard ? [this.regionProfileCard] : [])],
+                : [],
         }
     }
 

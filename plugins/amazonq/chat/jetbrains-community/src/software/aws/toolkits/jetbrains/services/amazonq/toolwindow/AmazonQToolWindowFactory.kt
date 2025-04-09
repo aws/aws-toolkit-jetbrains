@@ -14,10 +14,12 @@ import com.intellij.ui.components.panels.Wrapper
 import com.intellij.util.ui.components.BorderLayoutPanel
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.notifications.NotificationPanel
@@ -26,9 +28,6 @@ import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.RefreshQChatPanelButtonPressedListener
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.openMeetQPage
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
@@ -63,11 +62,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             ToolkitConnectionManagerListener.TOPIC,
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                    ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let { qConn ->
-                        openMeetQPage(project)
-                        QRegionProfileManager.getInstance().validateProfile(project)
-                    }
-                    prepareChatContent(project, qPanel)
+                    onConnectionChanged(project, newConnection, qPanel)
                 }
             }
         )
@@ -76,7 +71,9 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             RefreshQChatPanelButtonPressedListener.TOPIC,
             object : RefreshQChatPanelButtonPressedListener {
                 override fun onRefresh() {
-                    prepareChatContent(project, qPanel)
+                    runInEdt {
+                        prepareChatContent(project, qPanel)
+                    }
                 }
             }
         )
@@ -86,19 +83,12 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             object : BearerTokenProviderListener {
                 override fun onChange(providerId: String, newScopes: List<String>?) {
                     if (ToolkitConnectionManager.getInstance(project).connectionStateForFeature(QConnection.getInstance()) == BearerTokenAuthState.AUTHORIZED) {
-                        prepareChatContent(project, qPanel)
-                    }
-                }
-            }
-        )
+                        val qComponent = AmazonQToolWindow.getInstance(project).component
 
-        project.messageBus.connect(toolWindow.disposable).subscribe(
-            QRegionProfileSelectedListener.TOPIC,
-            object : QRegionProfileSelectedListener {
-                override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
-                    if (project.isDisposed) return
-                    AmazonQToolWindow.getInstance(project).disposeAndRecreate()
-                    prepareChatContent(project, qPanel)
+                        runInEdt {
+                            qPanel.setContent(qComponent)
+                        }
+                    }
                 }
             }
         )
@@ -117,21 +107,13 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         project: Project,
         qPanel: Wrapper,
     ) {
-        /**
-         * only render Q Chat when
-         * 1. There is a Q connection
-         * 2. Q connection is not expired
-         * 3. User is not pending region profile selection
-         */
-        val component = if (isQConnected(project) && !isQExpired(project) && !QRegionProfileManager.getInstance().isPendingProfileSelection(project)) {
+        val component = if (isQConnected(project) && !isQExpired(project)) {
             AmazonQToolWindow.getInstance(project).component
         } else {
             QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AmazonQ))
             QWebviewPanel.getInstance(project).component
         }
-        runInEdt {
-            qPanel.setContent(component)
-        }
+        qPanel.setContent(component)
     }
 
     override fun init(toolWindow: ToolWindow) {
@@ -151,6 +133,36 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
     }
 
     override fun shouldBeAvailable(project: Project): Boolean = isQWebviewsAvailable()
+
+    private fun onConnectionChanged(project: Project, newConnection: ToolkitConnection?, qPanel: Wrapper) {
+        val isNewConnectionForQ = newConnection?.let {
+            (it as? AwsBearerTokenConnection)?.let { conn ->
+                val scopeShouldHave = Q_SCOPES
+
+                LOG.debug { "newConnection: ${conn.id}; scope: ${conn.scopes}; scope must-have: $scopeShouldHave" }
+
+                scopeShouldHave.all { s -> s in conn.scopes }
+            } ?: false
+        } ?: false
+
+        if (isNewConnectionForQ) {
+            openMeetQPage(project)
+        }
+
+        QWebviewPanel.getInstance(project).browser?.prepareBrowser(BrowserState(FeatureId.AmazonQ))
+
+        // isQConnected alone is not robust and there is race condition (read/update connection states)
+        val component = if (isNewConnectionForQ || (isQConnected(project) && !isQExpired(project))) {
+            LOG.debug { "returning Q-chat window; isQConnection=$isNewConnectionForQ; hasPinnedConnection=$isNewConnectionForQ" }
+            AmazonQToolWindow.getInstance(project).component
+        } else {
+            LOG.debug { "returning login window; no Q connection found" }
+            QWebviewPanel.getInstance(project).component
+        }
+        runInEdt {
+            qPanel.setContent(component)
+        }
+    }
 
     companion object {
         private val LOG = getLogger<AmazonQToolWindowFactory>()

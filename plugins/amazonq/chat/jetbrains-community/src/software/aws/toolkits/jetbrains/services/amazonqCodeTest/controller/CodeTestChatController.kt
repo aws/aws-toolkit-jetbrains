@@ -50,11 +50,13 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.CodeWhispererUTGChatManager
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.ConversationState
@@ -275,6 +277,9 @@ class CodeTestChatController(
                 promptInputDisabledState = true,
             )
             // Send Request to Sync UTG API
+            val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
+                // this should never happen because it should have been handled upstream by [AuthController]
+                ?: error("connection was found to be null")
             val contextExtractor = ActiveFileContextExtractor.create(fqnWebviewAdapter = null, project = project)
             val activeFileContext = ActiveFileContext(
                 fileContext = FileContext(
@@ -296,7 +301,7 @@ class CodeTestChatController(
                 useRelevantDocuments = false,
             )
 
-            val client = QRegionProfileManager.getInstance().getQClient<CodeWhispererStreamingAsyncClient>(project)
+            val client = AwsClientManager.getInstance().getClient<CodeWhispererStreamingAsyncClient>(connection.getConnectionSettings())
             val request = requestData.toChatRequest()
             client.generateAssistantResponse(request, responseHandler).await()
             // TODO: Need to send isCodeBlockSelected field

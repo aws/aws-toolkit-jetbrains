@@ -38,6 +38,9 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.AwsClientManager
+import software.aws.toolkits.jetbrains.core.awsClient
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.APPLICATION_ZIP
 import software.aws.toolkits.jetbrains.services.amazonq.AWS_KMS
 import software.aws.toolkits.jetbrains.services.amazonq.CONTENT_SHA256
@@ -45,7 +48,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION
 import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID
 import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
 import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerMetrics
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
@@ -56,7 +58,10 @@ import java.time.Instant
 
 @Service(Service.Level.PROJECT)
 class GumbyClient(private val project: Project) {
-    private fun bearerClient() = QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project)
+    private fun connection() = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
+        ?: error("Attempted to use connection while one does not exist")
+
+    private fun bearerClient() = connection().getConnectionSettings().awsClient<CodeWhispererRuntimeClient>()
 
     private val amazonQStreamingClient
         get() = AmazonQStreamingClient.getInstance(project)
@@ -66,7 +71,6 @@ class GumbyClient(private val project: Project) {
             .contentChecksumType(ContentChecksumType.SHA_256)
             .contentChecksum(sha256Checksum)
             .uploadIntent(UploadIntent.TRANSFORMATION)
-            .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
             .build()
         return callApi({ bearerClient().createUploadUrl(request) }, apiName = "CreateUploadUrl")
     }
@@ -88,16 +92,12 @@ class GumbyClient(private val project: Project) {
                     )
                     .build()
             )
-            .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
             .build()
         return callApi({ bearerClient().createUploadUrl(request) }, apiName = "CreateUploadUrl")
     }
 
     fun getCodeModernizationJob(jobId: String): GetTransformationResponse {
-        val request = GetTransformationRequest.builder()
-            .transformationJobId(jobId)
-            .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
-            .build()
+        val request = GetTransformationRequest.builder().transformationJobId(jobId).build()
         return callApi({ bearerClient().getTransformation(request) }, apiName = "GetTransformation")
     }
 
@@ -116,7 +116,6 @@ class GumbyClient(private val project: Project) {
                     .source { it.language(sourceLanguage) }
                     .target { it.language(targetLanguage) }
             }
-            .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
             .build()
         return callApi({ bearerClient().startTransformation(request) }, apiName = "StartTransformation")
     }
@@ -128,22 +127,17 @@ class GumbyClient(private val project: Project) {
         val request = ResumeTransformationRequest.builder()
             .transformationJobId(jobId.id)
             .userActionStatus(userActionStatus)
-            .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
             .build()
         return callApi({ bearerClient().resumeTransformation(request) }, apiName = "ResumeTransformation")
     }
 
     fun getCodeModernizationPlan(jobId: JobId): GetTransformationPlanResponse {
-        val request = GetTransformationPlanRequest.builder()
-            .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
-            .transformationJobId(jobId.id).build()
+        val request = GetTransformationPlanRequest.builder().transformationJobId(jobId.id).build()
         return callApi({ bearerClient().getTransformationPlan(request) }, apiName = "GetTransformationPlan")
     }
 
     fun stopTransformation(transformationJobId: String): StopTransformationResponse {
-        val request = StopTransformationRequest.builder().transformationJobId(transformationJobId)
-            .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
-            .build()
+        val request = StopTransformationRequest.builder().transformationJobId(transformationJobId).build()
         return callApi({ bearerClient().stopTransformation(request) }, apiName = "StopTransformation")
     }
 
@@ -238,7 +232,6 @@ class GumbyClient(private val project: Project) {
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
             requestBuilder.userContext(codeWhispererUserContext())
-            requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
         }
     }
 

@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.codemodernizer
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.util.Disposer
 import com.intellij.serviceContainer.AlreadyDisposedException
 import com.intellij.util.io.HttpRequests
 import kotlinx.coroutines.delay
@@ -150,9 +149,6 @@ class CodeModernizerSession(
      *  Based on [CodeWhispererCodeScanSession]
      */
     suspend fun createModernizationJob(copyResult: MavenCopyCommandsResult?): CodeModernizerStartJobResult {
-        if (this.isDisposed.get()) {
-            return CodeModernizerStartJobResult.Cancelled
-        }
         LOG.info { "Compressing local project" }
         val payload: File?
         var payloadSize = 0
@@ -186,9 +182,6 @@ class CodeModernizerSession(
             payloadSize = payload.length().toInt()
 
             LOG.info { "Uploading zip file with size: $payloadSize bytes" }
-            if (this.isDisposed.get()) {
-                return CodeModernizerStartJobResult.Cancelled
-            }
 
             if (payloadSize > MAX_ZIP_SIZE) {
                 telemetryErrorMessage = "Project exceeds max upload size"
@@ -217,7 +210,7 @@ class CodeModernizerSession(
                 telemetryErrorMessage = "Credential expired before uploading project"
                 return CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CREDENTIALS_EXPIRED)
             }
-            if (shouldStop.get() || this.isDisposed.get()) {
+            if (shouldStop.get()) {
                 LOG.warn { "Job was cancelled by user before upload was called" }
                 telemetryErrorMessage = "Cancelled when about to upload project"
                 return CodeModernizerStartJobResult.Cancelled
@@ -292,7 +285,7 @@ class CodeModernizerSession(
         CodeTransformMessageListener.instance.onUploadResult()
 
         return try {
-            if (shouldStop.get() || this.isDisposed.get()) {
+            if (shouldStop.get()) {
                 LOG.warn { "Job was cancelled by user before start job was called" }
                 return CodeModernizerStartJobResult.Cancelled
             }
@@ -632,8 +625,6 @@ class CodeModernizerSession(
 
     override fun dispose() {
         isDisposed.set(true)
-        shouldStop.set(true)
-        Disposer.dispose(sessionContext)
     }
 
     fun getActiveJobId() = state.currentJobId

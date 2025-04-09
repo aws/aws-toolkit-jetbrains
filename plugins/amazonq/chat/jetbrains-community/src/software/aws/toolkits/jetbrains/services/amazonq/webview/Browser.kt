@@ -8,7 +8,6 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.util.HighlightCommand
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
@@ -29,7 +28,6 @@ class Browser(parent: Disposable) : Disposable {
         isCodeScanAvailable: Boolean,
         isCodeTestAvailable: Boolean,
         highlightCommand: HighlightCommand?,
-        activeProfile: QRegionProfile?,
     ) {
         // register the scheme handler to route http://mynah/ URIs to the resources/assets directory on classpath
         CefApp.getInstance()
@@ -39,7 +37,7 @@ class Browser(parent: Disposable) : Disposable {
                 AssetResourceHandler.AssetResourceHandlerFactory(),
             )
 
-        loadWebView(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable, highlightCommand, activeProfile)
+        loadWebView(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable, highlightCommand)
     }
 
     override fun dispose() {
@@ -61,22 +59,13 @@ class Browser(parent: Disposable) : Disposable {
         isCodeScanAvailable: Boolean,
         isCodeTestAvailable: Boolean,
         highlightCommand: HighlightCommand?,
-        activeProfile: QRegionProfile?,
     ) {
         // setup empty state. The message request handlers use this for storing state
         // that's persistent between page loads.
         jcefBrowser.setProperty("state", "")
         // load the web app
         jcefBrowser.loadHTML(
-            getWebviewHTML(
-                isCodeTransformAvailable,
-                isFeatureDevAvailable,
-                isDocAvailable,
-                isCodeScanAvailable,
-                isCodeTestAvailable,
-                highlightCommand,
-                activeProfile
-            )
+            getWebviewHTML(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable, highlightCommand)
         )
     }
 
@@ -91,7 +80,6 @@ class Browser(parent: Disposable) : Disposable {
         isCodeScanAvailable: Boolean,
         isCodeTestAvailable: Boolean,
         highlightCommand: HighlightCommand?,
-        activeProfile: QRegionProfile?,
     ): String {
         val postMessageToJavaJsCode = receiveMessageQuery.inject("JSON.stringify(message)")
 
@@ -112,8 +100,7 @@ class Browser(parent: Disposable) : Disposable {
                         $isDocAvailable, // whether /doc is available
                         $isCodeScanAvailable, // whether /scan is available
                         $isCodeTestAvailable, // whether /test is available
-                        ${OBJECT_MAPPER.writeValueAsString(highlightCommand)},
-                        "${activeProfile?.profileName.orEmpty()}"
+                        ${OBJECT_MAPPER.writeValueAsString(highlightCommand)}
                     );
                 }
             </script>        

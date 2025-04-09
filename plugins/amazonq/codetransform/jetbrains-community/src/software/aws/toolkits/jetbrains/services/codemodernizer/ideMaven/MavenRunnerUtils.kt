@@ -16,7 +16,6 @@ import org.slf4j.Logger
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
 import software.aws.toolkits.telemetry.CodeTransformBuildCommand
@@ -26,7 +25,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 fun runHilMavenCopyDependency(
-    context: CodeModernizerSessionContext,
     sourceFolder: File,
     destinationDir: File,
     logBuilder: StringBuilder,
@@ -37,7 +35,6 @@ fun runHilMavenCopyDependency(
     try {
         // Create shared parameters
         val transformMvnRunner = TransformMavenRunner(project)
-        context.mavenRunnerQueue.add(transformMvnRunner)
         val mvnSettings = MavenRunner.getInstance(project).settings.clone() // clone required to avoid editing user settings
 
         // run copy dependencies
@@ -60,14 +57,7 @@ fun runHilMavenCopyDependency(
     return MavenCopyCommandsResult.Success(destinationDir)
 }
 
-fun runMavenCopyCommands(
-    context: CodeModernizerSessionContext,
-    sourceFolder: File,
-    logBuilder: StringBuilder,
-    logger: Logger,
-    project: Project,
-    shouldSkipTests: Boolean,
-): MavenCopyCommandsResult {
+fun runMavenCopyCommands(sourceFolder: File, logBuilder: StringBuilder, logger: Logger, project: Project, shouldSkipTests: Boolean): MavenCopyCommandsResult {
     val currentTimestamp = System.currentTimeMillis()
     val destinationDir = Files.createTempDirectory("transformation_dependencies_temp_$currentTimestamp")
     val telemetry = CodeTransformTelemetryManager.getInstance(project)
@@ -78,7 +68,6 @@ fun runMavenCopyCommands(
     try {
         // Create shared parameters
         val transformMvnRunner = TransformMavenRunner(project)
-        context.mavenRunnerQueue.add(transformMvnRunner)
         val mvnSettings = MavenRunner.getInstance(project).settings.clone() // clone required to avoid editing user settings
 
         val sourceVirtualFile = LocalFileSystem.getInstance().findFileByIoFile(sourceFolder)
@@ -293,17 +282,10 @@ private fun runMavenDependencyUpdatesReport(
     return dependencyUpdatesReportRunnable
 }
 
-fun runDependencyReportCommands(
-    context: CodeModernizerSessionContext,
-    sourceFolder: File,
-    logBuilder: StringBuilder,
-    logger: Logger,
-    project: Project,
-): MavenDependencyReportCommandsResult {
+fun runDependencyReportCommands(sourceFolder: File, logBuilder: StringBuilder, logger: Logger, project: Project): MavenDependencyReportCommandsResult {
     logger.info { "Executing IntelliJ bundled Maven" }
 
     val transformMvnRunner = TransformMavenRunner(project)
-    context.mavenRunnerQueue.add(transformMvnRunner)
     val mvnSettings = MavenRunner.getInstance(project).settings.clone() // clone required to avoid editing user settings
 
     val runnable = runMavenDependencyUpdatesReport(sourceFolder, logBuilder, mvnSettings, transformMvnRunner, logger)

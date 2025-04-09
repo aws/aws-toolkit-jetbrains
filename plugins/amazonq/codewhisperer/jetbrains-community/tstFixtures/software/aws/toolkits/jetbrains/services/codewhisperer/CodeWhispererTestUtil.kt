@@ -257,8 +257,7 @@ fun aRequestContext(
             Random.nextLong(),
             aString()
         ),
-        customizationArn = null,
-        profileArn = null
+        customizationArn = null
     )
 }
 

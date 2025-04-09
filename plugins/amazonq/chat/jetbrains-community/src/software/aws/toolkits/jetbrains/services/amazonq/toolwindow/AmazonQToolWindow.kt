@@ -24,7 +24,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessageConnector
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.util.highlightCommand
 import software.aws.toolkits.jetbrains.services.amazonq.webview.BrowserConnector
 import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapter
@@ -128,8 +127,7 @@ class AmazonQToolWindow private constructor(
             isCodeScanAvailable = isCodeScanAvailable(project),
             isCodeTestAvailable = isCodeTestAvailable(project),
             isDocAvailable = isDocAvailable(project),
-            highlightCommand = highlightCommand(),
-            activeProfile = QRegionProfileManager.getInstance().takeIf { it.shouldDisplayProfileInfo(project) }?.activeProfile(project)
+            highlightCommand = highlightCommand()
         )
 
         scope.launch {

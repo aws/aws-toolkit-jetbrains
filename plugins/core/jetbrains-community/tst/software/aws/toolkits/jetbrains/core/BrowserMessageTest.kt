@@ -161,19 +161,6 @@ class BrowserMessageTest {
                 signInOptionClicked = null
             )
         )
-
-        assertDeserializedInstanceOf<BrowserMessage.PublishWebviewTelemetry>(
-            """
-            {
-                "command": "webviewTelemetry",
-                "event": "{ \"metricName\": \"foo\" }"
-            }
-            """.trimIndent()
-        ).isEqualTo(
-            BrowserMessage.PublishWebviewTelemetry(
-                event = "{ \"metricName\": \"foo\" }"
-            )
-        )
     }
 
     @Test

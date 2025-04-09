@@ -31,10 +31,10 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.common.session.Intent
+import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonqDoc.FEATURE_EVALUATION_PRODUCT_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
@@ -72,7 +72,7 @@ class AmazonQCodeGenerateClient(private val project: Project) {
     fun connection() = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
         ?: error("Attempted to use connection while one does not exist")
 
-    fun bearerClient() = QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project)
+    fun bearerClient() = connection().getConnectionSettings().awsClient<CodeWhispererRuntimeClient>()
 
     private val amazonQStreamingClient
         get() = AmazonQStreamingClient.getInstance(project)
@@ -88,7 +88,6 @@ class AmazonQCodeGenerateClient(private val project: Project) {
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
             requestBuilder.userContext(docUserContext)
-            requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
         }
 
     fun sendDocMetricData(operationName: String, result: String): SendTelemetryEventResponse =
@@ -119,9 +118,7 @@ class AmazonQCodeGenerateClient(private val project: Project) {
         }
 
     fun createTaskAssistConversation(): CreateTaskAssistConversationResponse = bearerClient().createTaskAssistConversation(
-        CreateTaskAssistConversationRequest.builder()
-            .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
-            .build()
+        CreateTaskAssistConversationRequest.builder().build()
     )
 
     fun createTaskAssistUploadUrl(conversationId: String, contentChecksumSha256: String, contentLength: Long): CreateUploadUrlResponse =
@@ -140,7 +137,6 @@ class AmazonQCodeGenerateClient(private val project: Project) {
                         )
                         .build()
                 )
-                .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
         }
 
     fun startTaskAssistCodeGeneration(conversationId: String, uploadId: String, userMessage: String, intent: Intent): StartTaskAssistCodeGenerationResponse =
@@ -159,7 +155,6 @@ class AmazonQCodeGenerateClient(private val project: Project) {
                             .uploadId(uploadId)
                     }
                     .intent(intent.name)
-                    .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
             }
 
     fun getTaskAssistCodeGeneration(conversationId: String, codeGenerationId: String): GetTaskAssistCodeGenerationResponse = bearerClient()

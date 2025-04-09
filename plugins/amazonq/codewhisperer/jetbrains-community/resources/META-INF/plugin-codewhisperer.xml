@@ -32,7 +32,6 @@
         <applicationService serviceInterface="migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator"
                             serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.customization.DefaultCodeWhispererModelConfigurator"/>
 
-        <applicationService serviceImplementation="software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager"/>
         <projectService serviceInterface="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor"
                         serviceImplementation="software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptorImpl"/>
         <projectService serviceInterface="software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider"
@@ -80,8 +79,6 @@
         <group id="aws.toolkit.explorer.codewhisperer" popup="true" compact="true">
             <action id="codewhisperer.settings"
                     class="software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererShowSettingsAction"/>
-            <action id="codewhisperer.switchProfiles"
-                    class="software.aws.toolkits.jetbrains.services.amazonq.actions.QSwitchProfilesAction"/>
             <separator/>
             <action id="codewhisperer.whatIs"
                     class="software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererWhatIsAction"/>
