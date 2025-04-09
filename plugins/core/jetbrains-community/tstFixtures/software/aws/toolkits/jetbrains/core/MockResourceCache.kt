@@ -182,8 +182,12 @@ interface MockResourceCacheInterface {
         addEntry(project, resourceId, CompletableFuture.failedFuture<Any>(throws))
     }
 
-    fun <T> addEntry(connectionSettings: ConnectionSettings, resource: Resource.Cached<T>, value: CompletableFuture<T>) {
-        addEntry(resource, connectionSettings.region.id, connectionSettings.credentials.id, value)
+    fun <T> addEntry(connectionSettings: ClientConnectionSettings<*>, resource: Resource.Cached<T>, value: T) {
+        addEntry(resource, connectionSettings.region.id, connectionSettings.providerId, value)
+    }
+
+    fun <T> addEntry(connectionSettings: ClientConnectionSettings<*>, resource: Resource.Cached<T>, value: CompletableFuture<T>) {
+        addEntry(resource, connectionSettings.region.id, connectionSettings.providerId, value)
     }
 
     fun <T> addEntry(resource: Resource.Cached<T>, regionId: String, credentialsId: String, value: T) {
