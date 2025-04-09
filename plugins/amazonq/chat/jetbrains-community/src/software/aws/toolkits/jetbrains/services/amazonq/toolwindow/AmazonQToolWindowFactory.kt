@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.amazonq.toolwindow
 
 import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
@@ -66,9 +65,6 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
                     ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let { qConn ->
                         openMeetQPage(project)
-                        ApplicationManager.getApplication().executeOnPooledThread {
-                            QRegionProfileManager.getInstance().validateProfile(project)
-                        }
                     }
                     prepareChatContent(project, qPanel)
                 }

@@ -40,6 +40,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileSwitchIn
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
+import software.aws.toolkits.jetbrains.utils.satisfiesKt
 import software.aws.toolkits.jetbrains.utils.xmlElement
 import java.net.URI
 import java.util.function.Consumer
@@ -103,6 +104,23 @@ class QRegionProfileManagerTest {
 
         assertThat(ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())).isNull()
         assertThat(sut.activeProfile(project)).isNull()
+    }
+
+    @Test
+    fun `data is cleared when user logs out`() {
+        sut.switchProfile(project, QRegionProfile(arn = "arn", profileName = "foo_profile"), QProfileSwitchIntent.User)
+        assertThat(sut.activeProfile(project)).isEqualTo(QRegionProfile(arn = "arn", profileName = "foo_profile"))
+
+        ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let {
+            if (it is AwsBearerTokenConnection) {
+                logoutFromSsoConnection(project, it)
+            }
+        }
+
+        assertThat(sut.state).satisfiesKt {
+            assertThat(it.connectionIdToActiveProfile).isEmpty()
+            assertThat(it.connectionIdToProfileList).isEmpty()
+        }
     }
 
     @Test
