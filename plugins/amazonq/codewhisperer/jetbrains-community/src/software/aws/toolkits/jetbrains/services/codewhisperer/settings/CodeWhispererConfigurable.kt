@@ -151,7 +151,7 @@ class CodeWhispererConfigurable(private val project: Project) :
                     enabled(invoke)
                     bindSelected(codeWhispererSettings::isWorkspaceContextEnabled, codeWhispererSettings::toggleWorkspaceContextEnabled)
                 }.comment(message("aws.settings.codewhisperer.workspace_context.tooltip"))
-            }
+            }.visible(false)
             row {
                 checkBox(message("aws.settings.codewhisperer.project_context")).apply {
                     connect.subscribe(
