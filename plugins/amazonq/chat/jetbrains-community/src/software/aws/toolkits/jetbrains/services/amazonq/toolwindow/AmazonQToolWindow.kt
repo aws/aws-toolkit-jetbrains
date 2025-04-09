@@ -20,6 +20,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageTypeRegistry
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessageConnector
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
@@ -42,7 +43,7 @@ class AmazonQToolWindow private constructor(
     private val scope: CoroutineScope,
 ) : Disposable {
     private val appSource = AppSource()
-    private val browserConnector = BrowserConnector()
+    private val browserConnector = BrowserConnector(project = project)
     private val editorThemeAdapter = EditorThemeAdapter()
 
     private val chatPanel = AmazonQPanel(parent = this)
@@ -55,6 +56,15 @@ class AmazonQToolWindow private constructor(
         initConnections()
         connectUi()
         connectApps()
+
+        project.messageBus.connect().subscribe(
+            AsyncChatUiListener.TOPIC,
+            object : AsyncChatUiListener {
+                override fun onChange(message: String) {
+                    chatPanel.browser?.postChat(message)
+                }
+            }
+        )
     }
 
     fun disposeAndRecreate() {

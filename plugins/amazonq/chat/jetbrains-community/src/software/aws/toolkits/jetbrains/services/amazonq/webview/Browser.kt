@@ -8,6 +8,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactHelper
 import software.aws.toolkits.jetbrains.services.amazonq.util.HighlightCommand
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
@@ -46,6 +47,13 @@ class Browser(parent: Disposable) : Disposable {
 
     fun component() = jcefBrowser.component
 
+    fun postChat(message: String) {
+        jcefBrowser
+            .cefBrowser
+            .executeJavaScript("window.postMessage($message)", jcefBrowser.cefBrowser.url, 0)
+    }
+
+    // TODO: Remove this once chat has been integrated with agents
     fun post(message: String) =
         jcefBrowser
             .cefBrowser
@@ -82,32 +90,86 @@ class Browser(parent: Disposable) : Disposable {
         highlightCommand: HighlightCommand?,
     ): String {
         val postMessageToJavaJsCode = receiveMessageQuery.inject("JSON.stringify(message)")
-
         val jsScripts = """
             <script type="text/javascript" src="$WEB_SCRIPT_URI" defer onload="init()"></script>
             <script type="text/javascript">
                 const init = () => {
-                    mynahUI.createMynahUI(
+                    amazonQChat.createChat(
                         {
                             postMessage: message => {
                                 $postMessageToJavaJsCode
                             }
-                        },
-                        ${MeetQSettings.getInstance().reinvent2024OnboardingCount < MAX_ONBOARDING_PAGE_COUNT},
-                        ${MeetQSettings.getInstance().disclaimerAcknowledged},
-                        $isFeatureDevAvailable, // whether /dev is available
-                        $isCodeTransformAvailable, // whether /transform is available
-                        $isDocAvailable, // whether /doc is available
-                        $isCodeScanAvailable, // whether /scan is available
-                        $isCodeTestAvailable, // whether /test is available
-                        ${OBJECT_MAPPER.writeValueAsString(highlightCommand)}
+                        }, 
+                        {
+                        quickActionCommands: [],
+                        disclaimerAcknowledged: ${MeetQSettings.getInstance().disclaimerAcknowledged}
+                        }
+                       
+                       
                     );
                 }
             </script>        
         """.trimIndent()
 
+        addQuickActionCommands(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeTestAvailable, isCodeScanAvailable, highlightCommand)
         return """
             <!DOCTYPE html>
+            <style>
+                    body,
+                    html {
+                        background-color: var(--mynah-color-bg);
+                        color: var(--mynah-color-text-default);
+                        height: 100vh;
+                        width: 100%%;
+                        overflow: hidden;
+                        margin: 0;
+                        padding: 0;
+                    }
+                    .mynah-ui-icon-plus,
+                    .mynah-ui-icon-cancel {
+                        -webkit-mask-size: 155% !important;
+                        mask-size: 155% !important;
+                        mask-position: center;
+                        scale: 60%;
+                    }
+                    .code-snippet-close-button i.mynah-ui-icon-cancel,
+                    .mynah-chat-item-card-related-content-show-more i.mynah-ui-icon-down-open {
+                        -webkit-mask-size: 195.5% !important;
+                        mask-size: 195.5% !important;
+                        mask-position: center;
+                        aspect-ratio: 1/1;
+                        width: 15px;
+                        height: 15px;
+                        scale: 50%
+                    }
+                    .mynah-ui-icon-tabs {
+                        -webkit-mask-size: 102% !important;
+                        mask-size: 102% !important;
+                        mask-position: center;
+                    }
+                    textarea:placeholder-shown {
+                        line-height: 1.5rem;
+                    }
+                    .mynah-ui-spinner-container {
+                        contain: layout !important;
+                    }
+                    .mynah-ui-spinner-container > span.mynah-ui-spinner-logo-part {
+                        position: static !important;
+                        will-change: transform !important;
+                    }
+                    .mynah-ui-spinner-container,
+                    .mynah-ui-spinner-container > span.mynah-ui-spinner-logo-part,
+                    .mynah-ui-spinner-container > span.mynah-ui-spinner-logo-part > .mynah-ui-spinner-logo-mask.text {
+                        border: 0 !important;
+                        outline: none !important;
+                        box-shadow: none !important;
+                        border-radius: 0 !important;
+                    }
+                    .mynah-ui-spinner-container > span.mynah-ui-spinner-logo-part > .mynah-ui-spinner-logo-mask.text {
+                        will-change: transform !important;
+                        transform: translateZ(0) !important;
+                    }
+                </style>
             <html>
                 <head>
                     <title>AWS Q</title>
@@ -119,8 +181,28 @@ class Browser(parent: Disposable) : Disposable {
         """.trimIndent()
     }
 
+    fun addQuickActionCommands(
+        isCodeTransformAvailable: Boolean,
+        isFeatureDevAvailable: Boolean,
+        isDocAvailable: Boolean,
+        isCodeTestAvailable: Boolean,
+        isCodeScanAvailable: Boolean,
+        highlightCommand: HighlightCommand?,
+    ) {
+        // TODO:  Remove this once chat has been integrated with agents. This is added temporarily to keep detekt happy.
+        isCodeScanAvailable
+        isCodeTestAvailable
+        isDocAvailable
+        isFeatureDevAvailable
+        isCodeTransformAvailable
+        MAX_ONBOARDING_PAGE_COUNT
+        OBJECT_MAPPER
+        highlightCommand
+    }
+
     companion object {
-        private const val WEB_SCRIPT_URI = "http://mynah/js/mynah-ui.js"
+        // TODO: Switch this to respect the overriden paths too
+        private val WEB_SCRIPT_URI = ArtifactHelper().getLatestLocalLspArtifact().resolve("amazonq-ui.js").toUri()
         private const val MAX_ONBOARDING_PAGE_COUNT = 3
         private val OBJECT_MAPPER = jacksonObjectMapper()
     }
