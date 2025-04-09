@@ -4,15 +4,18 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.testFramework.ApplicationExtension
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.RegisterExtension
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QDefaultServiceConfig
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QEndpoints
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionEndpoint
 import software.aws.toolkits.jetbrains.utils.rules.RegistryExtension
+import software.aws.toolkits.jetbrains.utils.satisfiesKt
 
 @ExtendWith(ApplicationExtension::class)
-class QEndpointsTest : BasePlatformTestCase() {
+class QEndpointsTest {
 
     @JvmField
     @RegisterExtension
@@ -30,12 +33,29 @@ class QEndpointsTest : BasePlatformTestCase() {
         registryExtension.setValue("amazon.q.endpoints.json", testJson)
 
         val parsed = QEndpoints.listRegionEndpoints()
-        assertEquals(2, parsed.size)
-
-        val iad = parsed.first { it.region == "us-east-1" }
-        assertEquals("https://codewhisperer.us-east-1.amazonaws.com/", iad.endpoint)
-
-        val fra = parsed.first { it.region == "eu-central-1" }
-        assertEquals("https://rts.prod-eu-central-1.codewhisperer.ai.aws.dev/", fra.endpoint)
+        assertThat(parsed).hasSize(2)
+            .satisfiesKt { endpoints ->
+                assertThat(endpoints).satisfiesExactlyInAnyOrder(
+                    { assertThat(it).isEqualTo(QRegionEndpoint("us-east-1", "https://codewhisperer.us-east-1.amazonaws.com/")) },
+                    { assertThat(it).isEqualTo(QRegionEndpoint("eu-central-1", "https://rts.prod-eu-central-1.codewhisperer.ai.aws.dev/")) },
+                )
+            }
     }
+
+    @Test
+    fun `uses default entries if blank`() {
+        registryExtension.setValue("amazon.q.endpoints.json", "")
+
+        assertThat(QEndpoints.listRegionEndpoints()).isEqualTo(QDefaultServiceConfig.ENDPOINT_MAP.toEndpointList())
+    }
+
+
+    @Test
+    fun `uses default entries if invalid`() {
+        registryExtension.setValue("amazon.q.endpoints.json", "asdfadfkajdklf32.4;'2l4;234l23.424';1l1!!@#!")
+
+        assertThat(QEndpoints.listRegionEndpoints()).isEqualTo(QDefaultServiceConfig.ENDPOINT_MAP.toEndpointList())
+    }
+
+    private fun Map<String, String>.toEndpointList() = map { (region, endpoint) -> QRegionEndpoint(region, endpoint) }
 }
