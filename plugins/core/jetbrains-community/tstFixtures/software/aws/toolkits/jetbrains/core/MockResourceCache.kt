@@ -13,7 +13,6 @@ import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.runner.Description
 import software.aws.toolkits.core.ClientConnectionSettings
-import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.credentials.ToolkitAuthenticationProvider
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider

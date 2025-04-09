@@ -72,7 +72,6 @@ class QRegionProfileManagerTest {
     @get:Rule
     val resourceCache = MockResourceCacheRule()
 
-
     private lateinit var sut: QRegionProfileManager
     private val project: Project
         get() = projectRule.project
