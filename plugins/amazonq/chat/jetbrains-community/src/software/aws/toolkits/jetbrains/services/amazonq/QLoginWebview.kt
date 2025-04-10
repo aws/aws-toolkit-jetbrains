@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.amazonq
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -16,6 +17,7 @@ import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.jcef.JBCefJSQuery
+import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -32,11 +34,16 @@ import software.aws.toolkits.jetbrains.core.webview.BrowserState
 import software.aws.toolkits.jetbrains.core.webview.LocalAssetJBCefRequestHandler
 import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.isDeveloperMode
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileSwitchIntent
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
 import software.aws.toolkits.telemetry.FeatureId
+import software.aws.toolkits.telemetry.MetricResult
+import software.aws.toolkits.telemetry.Telemetry
 import software.aws.toolkits.telemetry.UiTelemetry
 import software.aws.toolkits.telemetry.WebviewTelemetry
 import java.awt.event.ActionListener
@@ -192,6 +199,18 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                     UiTelemetry.click(project, signInOption)
                 }
             }
+
+            is BrowserMessage.SwitchProfile -> {
+                QRegionProfileManager.getInstance().switchProfile(
+                    project,
+                    QRegionProfile(profileName = message.profileName, arn = message.arn),
+                    intent = QProfileSwitchIntent.Auth
+                )
+            }
+
+            is BrowserMessage.PublishWebviewTelemetry -> {
+                publishTelemetry(message)
+            }
         }
     }
 
@@ -232,13 +251,42 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
         }
 
         // TODO: pass "REAUTH" if connection expires
-        val stage = if (isQExpired(project)) {
-            "REAUTH"
-        } else {
-            "START"
-        }
+        // Perform the potentially blocking AWS call outside the EDT to fetch available region profiles.
+        ApplicationManager.getApplication().executeOnPooledThread {
+            val stage = if (isQExpired(project)) {
+                "REAUTH"
+            } else if (isQConnected(project) && QRegionProfileManager.getInstance().isPendingProfileSelection(project)) {
+                "PROFILE_SELECT"
+            } else {
+                "START"
+            }
 
-        val jsonData = """
+            var errorMessage: String? = null
+            var profiles: List<QRegionProfile> = emptyList()
+
+            if (stage == "PROFILE_SELECT") {
+                try {
+                    profiles = QRegionProfileManager.getInstance().listRegionProfiles(project).orEmpty()
+                    if (profiles.size == 1) {
+                        LOG.debug { "User only have access to 1 Q profile, auto-selecting profile ${profiles.first().profileName} for ${project.name}" }
+                        QRegionProfileManager.getInstance().switchProfile(project, profiles.first(), QProfileSwitchIntent.Update)
+                    }
+                } catch (e: Exception) {
+                    errorMessage = e.message
+                    LOG.warn { "Failed to call listRegionProfiles API" }
+                    val qConn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
+                    Telemetry.amazonq.didSelectProfile.use { span ->
+                        span.source(QProfileSwitchIntent.Auth.value)
+                            .amazonQProfileRegion(QRegionProfileManager.getInstance().activeProfile(project)?.region ?: "not-set")
+                            .ssoRegion((qConn as? AwsBearerTokenConnection)?.region)
+                            .credentialStartUrl((qConn as? AwsBearerTokenConnection)?.startUrl)
+                            .result(MetricResult.Failed)
+                            .reason(e.message)
+                    }
+                }
+            }
+
+            val jsonData = """
             {
                 stage: '$stage',
                 regions: $regions,
@@ -249,10 +297,16 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                 },
                 cancellable: ${state.browserCancellable},
                 feature: '${state.feature}',
-                existConnections: ${writeValueAsString(selectionSettings.values.map { it.currentSelection }.toList())}
+                existConnections: ${writeValueAsString(selectionSettings.values.map { it.currentSelection }.toList())},
+                profiles: ${writeValueAsString(profiles)},
+                errorMessage: ${errorMessage?.let { "\"$it\"" } ?: "null"}
             }
-        """.trimIndent()
-        executeJS("window.ideClient.prepareUi($jsonData)")
+            """.trimIndent()
+
+            runInEdt {
+                executeJS("window.ideClient.prepareUi($jsonData)")
+            }
+        }
     }
 
     override fun loginIAM(profileName: String, accessKey: String, secretKey: String) {

@@ -11,6 +11,7 @@ import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.util.Key
 import kotlinx.coroutines.Job
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
@@ -28,6 +29,10 @@ class CodeWhispererRecommendationAction : AnAction(message("codewhisperer.trigge
     }
 
     override fun actionPerformed(e: AnActionEvent) {
+        val project = e.project ?: return
+        if (QRegionProfileManager.getInstance().hasValidConnectionButNoActiveProfile(project)) {
+            return
+        }
         val latencyContext = LatencyContext()
         latencyContext.codewhispererPreprocessingStart = System.nanoTime()
         latencyContext.codewhispererEndToEndStart = System.nanoTime()

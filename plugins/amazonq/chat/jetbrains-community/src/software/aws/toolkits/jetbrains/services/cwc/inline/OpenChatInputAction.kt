@@ -3,10 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.inline
 
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.util.Key
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 
 class OpenChatInputAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
@@ -24,4 +26,9 @@ class OpenChatInputAction : AnAction() {
         val inlineChatController = InlineChatController.getInstance(project)
         inlineChatController.initPopup(editor)
     }
+    override fun update(e: AnActionEvent) {
+        val project = e.project ?: return
+        e.presentation.isEnabledAndVisible = !QRegionProfileManager.getInstance().hasValidConnectionButNoActiveProfile(project)
+    }
+    override fun getActionUpdateThread() = ActionUpdateThread.BGT
 }

@@ -4,8 +4,7 @@
 <!-- This Vue File is the login webview of AWS Toolkit and Amazon Q.-->
 <template>
     <div v-bind:class="[disabled ? 'disabled-form' : '']" class="auth-container centered-with-max-width">
-        <button v-if="(stage !== 'START' || cancellable) && stage !== 'AUTHENTICATING'" class="back-button" @click="handleBackButtonClick" tabindex="-1">
-            <svg width="24" height="24" viewBox="0 -3 13 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <button v-if="!['START', 'AUTHENTICATING', 'PROFILE_SELECT'].includes(stage) || cancellable" class="back-button" @click="handleBackButtonClick" tabindex="-1">            <svg width="24" height="24" viewBox="0 -3 13 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
                     d="M4.98667 0.0933332L5.73333 0.786666L1.57333 4.94667H12.0267V5.96H1.57333L5.73333 10.0667L4.98667 10.8133L0.0266666 5.8V5.10667L4.98667 0.0933332Z"
                     fill="#21A2FF"
@@ -17,6 +16,7 @@
         <SsoLoginForm :app="app" v-if="stage === 'SSO_FORM'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage" @login="login"  @emitUiClickTelemetry="sendUiClickTelemetry"/>
         <AwsProfileForm v-if="stage === 'AWS_PROFILE'" @backToMenu="handleBackButtonClick" @stageChanged="mutateStage" @login="login" @emitUiClickTelemetry="sendUiClickTelemetry"/>
         <Authenticating v-if="stage === 'AUTHENTICATING'" :selected-login-option="this.selectedLoginOption" @cancel="handleCancelButton"/>
+        <ProfileSelection v-if="stage === 'PROFILE_SELECT' && app === 'AMAZONQ'" @stageChanged="mutateStage"/>
 
         <template v-if="stage === 'CONNECTED'"></template>
     </div>
@@ -28,6 +28,7 @@ import LoginOptions from "./loginOptions.vue";
 import AwsProfileForm from "./awsProfileForm.vue";
 import Authenticating from "./authenticating.vue";
 import {BuilderId, ExistConnection, Feature, IdC, LoginIdentifier, LoginOption, LongLivedIAM, Stage} from "../../model";
+import ProfileSelection from "@/q-ui/components/profileSelection.vue";
 
 const authUiClickOptionMap = {
     [LoginIdentifier.BUILDER_ID]: 'auth_builderIdOption',
@@ -50,7 +51,8 @@ export default defineComponent({
         SsoLoginForm,
         LoginOptions,
         AwsProfileForm,
-        Authenticating
+        Authenticating,
+        ProfileSelection
     },
     props: {
         disabled: {

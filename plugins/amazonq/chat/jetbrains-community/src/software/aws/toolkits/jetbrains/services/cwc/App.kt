@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.cwc
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.Project
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
@@ -12,6 +13,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQApp
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import software.aws.toolkits.jetbrains.services.amazonq.util.highlightCommand
 import software.aws.toolkits.jetbrains.services.cwc.commands.ActionRegistrar
 import software.aws.toolkits.jetbrains.services.cwc.commands.CodeScanIssueActionMessage
@@ -72,6 +75,15 @@ class App : AmazonQApp {
                             )
                         )
                     }
+                }
+            }
+        )
+
+        ApplicationManager.getApplication().messageBus.connect(this).subscribe(
+            QRegionProfileSelectedListener.TOPIC,
+            object : QRegionProfileSelectedListener {
+                override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
+                    inboundAppMessagesHandler.processSessionClear()
                 }
             }
         )

@@ -404,6 +404,26 @@ abstract class LoginBrowser(
         return false
     }
 
+    // TODO: should test via handleMessage, however because we can't initiate Q/ToolkitLoginBrowser in test due to jcef not supported in test env
+    //  plus handleMessage is abstract so as a interim, exposing it for testing purpose
+    @VisibleForTesting
+    fun publishTelemetry(message: BrowserMessage.PublishWebviewTelemetry) {
+        val jsonNode = this.objectMapper.readTree(message.event) ?: return
+        if (jsonNode["metricName"].asText() == "toolkit_didLoadModule") {
+            val moduleNode = jsonNode["module"] ?: return
+            val resultNode = jsonNode["result"] ?: return
+            val result = MetricResult.from(resultNode.asText())
+            val reasonNode = jsonNode["reason"]
+            val durationNode = jsonNode["duration"]
+            Telemetry.toolkit.didLoadModule.use { span ->
+                span.module(moduleNode.asText())
+                span.result(result)
+                span.reason(reasonNode?.asText())
+                span.duration(durationNode?.asDouble())
+            }
+        }
+    }
+
     companion object {
         private val LOG = getLogger<LoginBrowser>()
         fun getWebviewHTML(webScriptUri: String, query: JBCefJSQuery): String {
