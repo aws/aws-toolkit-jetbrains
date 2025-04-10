@@ -191,7 +191,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
         return client
     }
 
-    private fun getIdcConnectionOrNull(project: Project): AwsBearerTokenConnection? {
+    fun getIdcConnectionOrNull(project: Project): AwsBearerTokenConnection? {
         val manager = ToolkitConnectionManager.getInstance(project)
         val connection = manager.activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
         val state = manager.connectionStateForFeature(QConnection.getInstance())
