@@ -85,7 +85,7 @@ export default defineComponent({
         }
     },
     computed: {
-        isWaitingResponse(): boolean {
+        isWaitingResponse() {
             const profileResult = this.$store.state.listProfilesResult
             if (profileResult instanceof ListProfilePendingResult) {
                 return true
@@ -97,12 +97,14 @@ export default defineComponent({
                 this.errorMessage = GENERIC_PROFILE_LOAD_ERROR
             } else {
                 // should not be this path
-                this.errorMessage = 'Unexpected error happened while loading Q webview page'
+                this.errorMessage = "Unexpected error happenede while loading Q Webview page"
             }
-
-            return false
         }
     },
+    mounted() {
+        window.ideApi.postMessage({command: 'listProfiles'})
+    },
+
     methods: {
         toggleItemSelection(profile: Profile) {
             this.selectedProfile = profile;
