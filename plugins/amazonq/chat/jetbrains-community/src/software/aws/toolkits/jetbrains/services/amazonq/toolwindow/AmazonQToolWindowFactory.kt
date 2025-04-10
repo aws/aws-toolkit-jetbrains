@@ -85,7 +85,8 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             object : BearerTokenProviderListener {
                 override fun onChange(providerId: String, newScopes: List<String>?) {
                     if (ToolkitConnectionManager.getInstance(project).connectionStateForFeature(QConnection.getInstance()) == BearerTokenAuthState.AUTHORIZED) {
-                        prepareChatContent(project, qPanel)
+                        AmazonQToolWindow.getInstance(project).disposeAndRecreate()
+                        qPanel.setContent(AmazonQToolWindow.getInstance(project).component)
                     }
                 }
             }
