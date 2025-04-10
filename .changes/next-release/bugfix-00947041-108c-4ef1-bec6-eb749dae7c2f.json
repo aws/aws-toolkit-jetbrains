@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix issue where Amazon Q cannot process chunks from local `@workspace` context"
+}

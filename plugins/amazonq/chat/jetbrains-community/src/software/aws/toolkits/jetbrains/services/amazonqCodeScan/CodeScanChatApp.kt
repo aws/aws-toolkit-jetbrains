@@ -21,6 +21,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQApp
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.auth.isCodeScanAvailable
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.commands.CodeScanActionMessage
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.commands.CodeScanMessageListener
@@ -138,6 +140,15 @@ class CodeScanChatApp(private val scope: CoroutineScope) : AmazonQApp {
             object : ToolkitConnectionManagerListener {
                 override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
                     authChanged()
+                }
+            }
+        )
+
+        context.project.messageBus.connect(this).subscribe(
+            QRegionProfileSelectedListener.TOPIC,
+            object : QRegionProfileSelectedListener {
+                override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
+                    chatSessionStorage.deleteAllSessions()
                 }
             }
         )

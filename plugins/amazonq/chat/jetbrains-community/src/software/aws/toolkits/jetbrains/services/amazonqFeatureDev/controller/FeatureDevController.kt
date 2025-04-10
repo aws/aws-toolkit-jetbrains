@@ -32,6 +32,8 @@ import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import software.aws.toolkits.jetbrains.services.amazonq.project.RepoSizeError
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
@@ -93,6 +95,17 @@ class FeatureDevController(
     private val chatSessionStorage: ChatSessionStorage,
     private val authController: AuthController = AuthController(),
 ) : InboundAppMessagesHandler {
+
+    init {
+        context.project.messageBus.connect().subscribe(
+            QRegionProfileSelectedListener.TOPIC,
+            object : QRegionProfileSelectedListener {
+                override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
+                    chatSessionStorage.deleteAllSessions()
+                }
+            }
+        )
+    }
 
     val messenger = context.messagesFromAppToUi
     val toolWindow = ToolWindowManager.getInstance(context.project).getToolWindow(AmazonQToolWindowFactory.WINDOW_ID)
