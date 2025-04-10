@@ -66,7 +66,6 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
                     ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let { qConn ->
                         openMeetQPage(project)
                     }
-                    println("activeProfile connect:${QRegionProfileManager.getInstance().activeProfile(project)}")
                     prepareChatContent(project, qPanel)
                 }
             }
