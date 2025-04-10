@@ -8,23 +8,29 @@ import com.intellij.openapi.util.registry.Registry
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 
-object QEndpoints {
-    private val LOG = getLogger<QRegionEndpoint>()
-    data class QRegionEndpoint(val region: String, val endpoint: String)
+data class QRegionEndpoint(val region: String, val endpoint: String)
 
-    object Q_DEFAULT_SERVICE_CONFIG {
-        const val REGION = "us-east-1"
-        const val ENDPOINT = "https://codewhisperer.us-east-1.amazonaws.com/"
-    }
+object QDefaultServiceConfig {
+    const val REGION = "us-east-1"
+    const val ENDPOINT = "https://codewhisperer.us-east-1.amazonaws.com/"
+
+    val ENDPOINT_MAP = mapOf(
+        "us-east-1" to "https://q.us-east-1.amazonaws.com/",
+        "eu-central-1" to "https://q.eu-central-1.amazonaws.com/"
+    )
+}
+
+object QEndpoints {
+    private val LOG = getLogger<QEndpoints>()
 
     private fun parseEndpoints(): Map<String, String> {
-        val rawJson = Registry.get("amazon.q.endpoints.json").asString().takeIf { it.isNotBlank() } ?: return emptyMap()
+        val rawJson = Registry.get("amazon.q.endpoints.json").asString().takeIf { it.isNotBlank() } ?: return QDefaultServiceConfig.ENDPOINT_MAP
         return try {
             val regionList: List<QRegionEndpoint> = jacksonObjectMapper().readValue(rawJson)
             regionList.associate { it.region to it.endpoint }
         } catch (e: Exception) {
             LOG.warn(e) { "Failed to parse amazon.q.endpoints.json: $rawJson" }
-            emptyMap()
+            QDefaultServiceConfig.ENDPOINT_MAP
         }
     }
 
