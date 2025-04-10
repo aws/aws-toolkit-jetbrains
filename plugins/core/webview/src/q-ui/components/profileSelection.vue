@@ -11,10 +11,11 @@
                 <!-- Title & Subtitle -->
                 <div id="profile-page" class="profile-header">
                     <h2 class="title bottom-small-gap">Choose a Q Developer profile</h2>
-                    <p class="profile-subtitle">
+                    <div class="profile-subtitle">
                         Your administrator has given you access to Q from multiple profiles.
                         Choose the profile that meets your current working needs. You can change your profile at any time.
-                    </p>
+                        <a @click.prevent="openUrl">More info.</a>
+                    </div>
                 </div>
                 <!-- Profile List -->
                 <div class="profile-list">
@@ -86,6 +87,7 @@ export default defineComponent({
     },
     computed: {
         isWaitingResponse() {
+            this.errorMessage = ''
             const profileResult = this.$store.state.listProfilesResult
             if (profileResult instanceof ListProfilePendingResult) {
                 return true
@@ -95,6 +97,7 @@ export default defineComponent({
                 this.availableProfiles = profileResult.profiles
             } else if (profileResult instanceof ListProfileFailureResult) {
                 this.errorMessage = GENERIC_PROFILE_LOAD_ERROR
+                this.isRefreshing = false
             } else {
                 // should not be this path
                 this.errorMessage = "Unexpected error happenede while loading Q Webview page"
@@ -124,10 +127,16 @@ export default defineComponent({
         },
         handleRetryClick() {
             this.isRefreshing = true
-            window.ideApi.postMessage({command: 'prepareUi'})
+            window.ideApi.postMessage({command: 'listProfiles'})
         },
         handleSignoutClick() {
             window.ideApi.postMessage({command: 'signout'})
+        },
+        openUrl() {
+            window.ideApi.postMessage({
+                command: 'openUrl',
+                externalLink: 'https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/subscribe-understanding-profile.html'
+            })
         }
     }
 })
@@ -184,7 +193,6 @@ export default defineComponent({
 .profile-name {
     font-weight: bold;
     margin-bottom: 2px;
-    color: white;
 }
 
 .profile-region {
