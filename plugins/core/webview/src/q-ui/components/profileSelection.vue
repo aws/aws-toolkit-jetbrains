@@ -86,6 +86,7 @@ export default defineComponent({
     },
     computed: {
         isWaitingResponse() {
+            this.errorMessage = ''
             const profileResult = this.$store.state.listProfilesResult
             if (profileResult instanceof ListProfilePendingResult) {
                 return true
@@ -95,6 +96,7 @@ export default defineComponent({
                 this.availableProfiles = profileResult.profiles
             } else if (profileResult instanceof ListProfileFailureResult) {
                 this.errorMessage = GENERIC_PROFILE_LOAD_ERROR
+                this.isRefreshing = false
             } else {
                 // should not be this path
                 this.errorMessage = "Unexpected error happenede while loading Q Webview page"
@@ -124,7 +126,7 @@ export default defineComponent({
         },
         handleRetryClick() {
             this.isRefreshing = true
-            window.ideApi.postMessage({command: 'prepareUi'})
+            window.ideApi.postMessage({command: 'listProfiles'})
         },
         handleSignoutClick() {
             window.ideApi.postMessage({command: 'signout'})
