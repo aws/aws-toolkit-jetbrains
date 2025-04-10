@@ -1,4 +1,7 @@
-# _3.63_ (2025-04-09)
+# _3.64_ (2025-04-10)
+- **(Bug Fix)** Fix issue where IDE freezes when logging into Amazon Q
+
+# _3.63_ (2025-04-08)
 - **(Feature)** Enterprise users can choose their preferred Amazon Q profile to improve personalization and workflow across different business regions
 - **(Bug Fix)** Amazon Q /doc: close diff tab and open README file in preview mode after user accept changes
 
