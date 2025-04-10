@@ -317,7 +317,7 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
 
     private fun handleListProfilesMessage() {
         ApplicationManager.getApplication().executeOnPooledThread {
-            var errorMessage: String = ""
+            var errorMessage = ""
             val profiles = try {
                 QRegionProfileManager.getInstance().listRegionProfiles(project)
             } catch (e: Exception) {

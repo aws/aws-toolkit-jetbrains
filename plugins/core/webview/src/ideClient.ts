@@ -17,7 +17,7 @@ export class IdeClient {
 
     // TODO: design and improve the API here
 
-    prepareUi(state: any) {
+    prepareUi(state: AuthSetupMessageFromIde | ListProfilesMessageFromIde) {
         WebviewTelemetry.instance.reset()
         console.log('browser is preparing UI with state ', state)
         // hack as window.onerror don't have access to vuex store
@@ -28,11 +28,11 @@ export class IdeClient {
 
         switch (state.stage) {
             case "PROFILE_SELECT":
-                this.handleProfileSelectMessage(state)
+                this.handleProfileSelectMessage(state as ListProfilesMessageFromIde)
                 break
 
             default:
-                this.handleAuthSetupMessage(state)
+                this.handleAuthSetupMessage(state as AuthSetupMessageFromIde)
         }
     }
 
