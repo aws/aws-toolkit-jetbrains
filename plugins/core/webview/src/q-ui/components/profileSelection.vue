@@ -6,10 +6,11 @@
             <!-- Title & Subtitle -->
             <div id="profile-page" class="profile-header">
                 <h2 class="title bottom-small-gap">Choose a Q Developer profile</h2>
-                <p class="profile-subtitle">
+                <div class="profile-subtitle">
                     Your administrator has given you access to Q from multiple profiles.
                     Choose the profile that meets your current working needs. You can change your profile at any time.
-                </p>
+                    <a @click.prevent="openUrl">More info.</a>
+                </div>
             </div>
             <!-- Profile List -->
             <div class="profile-list">
@@ -114,6 +115,12 @@ export default defineComponent({
         },
         handleSignoutClick() {
             window.ideApi.postMessage({command: 'signout'})
+        },
+        openUrl() {
+            window.ideApi.postMessage({
+                command: 'openUrl',
+                externalLink: 'https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/subscribe-understanding-profile.html'
+            })
         }
     }
 })
@@ -144,9 +151,11 @@ export default defineComponent({
     cursor: pointer;
     transition: background 0.2s ease-in-out;
 }
+
 .button-row :deep(.login-flow-button) {
     margin-bottom: 10px;
 }
+
 .button-row {
     display: flex;
     flex-direction: column;
@@ -154,6 +163,7 @@ export default defineComponent({
     gap: 10px;
     margin-top: 20px;
 }
+
 .selected {
     user-select: none;
 }
@@ -163,23 +173,28 @@ export default defineComponent({
     flex-direction: column;
     font-size: 15px;
 }
+
 .profile-name {
     font-weight: bold;
     margin-bottom: 2px;
     color: white;
 }
+
 .profile-region {
     font-style: italic;
     color: #bbbbbb;
 }
+
 .profile-description {
     font-size: 12px;
     color: #bbbbbb;
 }
+
 body.jb-dark {
     .profile-item {
         border: 1px solid white;
     }
+
     .selected {
         border: 1px solid #29a7ff;
     }
@@ -189,6 +204,7 @@ body.jb-light {
     .profile-item {
         border: 1px solid black;
     }
+
     .selected {
         border: 1px solid #3574f0;
     }
