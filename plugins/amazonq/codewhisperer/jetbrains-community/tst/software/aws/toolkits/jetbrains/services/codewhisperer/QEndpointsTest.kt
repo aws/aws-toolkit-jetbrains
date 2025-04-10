@@ -49,7 +49,6 @@ class QEndpointsTest {
         assertThat(QEndpoints.listRegionEndpoints()).isEqualTo(QDefaultServiceConfig.ENDPOINT_MAP.toEndpointList())
     }
 
-
     @Test
     fun `uses default entries if invalid`() {
         registryExtension.setValue("amazon.q.endpoints.json", "asdfadfkajdklf32.4;'2l4;234l23.424';1l1!!@#!")
