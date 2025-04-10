@@ -22,7 +22,10 @@ const store = createStore<State>({
         },
         feature: 'awsExplorer',
         cancellable: false,
-        existingConnections: [] as AwsBearerTokenConnection[]
+        existingConnections: [] as AwsBearerTokenConnection[],
+        profiles : [],
+        selectedProfile: undefined,
+        errorMessage: undefined
     },
     getters: {},
     mutations: {

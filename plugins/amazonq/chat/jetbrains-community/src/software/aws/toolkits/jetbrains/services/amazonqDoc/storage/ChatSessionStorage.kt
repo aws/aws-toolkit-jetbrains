@@ -23,4 +23,11 @@ class ChatSessionStorage {
 
     // Find all sessions that are currently waiting to be authenticated
     fun getAuthenticatingSessions(): List<DocSession> = this.sessions.values.filter { it.isAuthenticating }
+
+    fun deleteAllSessions() {
+        sessions.values.forEach { session ->
+            session.sessionState.token?.cancel()
+        }
+        sessions.clear()
+    }
 }

@@ -37,6 +37,7 @@ import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRul
 import software.aws.toolkits.jetbrains.core.credentials.MockToolkitAuthManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.codeWhispererRecommendationActionId
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonFileName
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponse
@@ -88,6 +89,7 @@ open class CodeWhispererTestBase {
     protected lateinit var settingsManager: CodeWhispererSettings
     private lateinit var originalExplorerActionState: CodeWhispererExploreActionState
     private lateinit var originalSettings: CodeWhispererConfiguration
+    private lateinit var qRegionProfileManagerSpy: QRegionProfileManager
 
     @Before
     open fun setUp() {
@@ -169,6 +171,16 @@ open class CodeWhispererTestBase {
 
         val conn = authManagerRule.createConnection(ManagedSsoProfile("us-east-1", "url", Q_SCOPES))
         ToolkitConnectionManager.getInstance(projectRule.project).switchConnection(conn)
+
+        qRegionProfileManagerSpy = spy(QRegionProfileManager.getInstance())
+        qRegionProfileManagerSpy.stub {
+            onGeneric {
+                hasValidConnectionButNoActiveProfile(any())
+            } doAnswer {
+                false
+            }
+        }
+        ApplicationManager.getApplication().replaceService(QRegionProfileManager::class.java, qRegionProfileManagerSpy, disposableRule.disposable)
     }
 
     @After

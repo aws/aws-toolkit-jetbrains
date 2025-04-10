@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven
 
 import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
+import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.process.ProcessOutputTypes
 import com.intellij.execution.runners.ProgramRunner
 import com.intellij.execution.ui.RunContentDescriptor
@@ -16,11 +17,13 @@ import org.jetbrains.idea.maven.execution.MavenRunnerParameters
 import org.jetbrains.idea.maven.execution.MavenRunnerSettings
 
 class TransformMavenRunner(val project: Project) {
+    private var handler: ProcessHandler? = null
 
     fun run(parameters: MavenRunnerParameters, settings: MavenRunnerSettings, onComplete: TransformRunnable) {
         FileDocumentManager.getInstance().saveAllDocuments()
         val callback = ProgramRunner.Callback { descriptor: RunContentDescriptor ->
             val handler = descriptor.processHandler
+            this.handler = handler
             if (handler == null) {
                 // add log error here
                 onComplete.setExitCode(-1)
@@ -49,5 +52,9 @@ class TransformMavenRunner(val project: Project) {
         // Change runner from IntelliJ controlled to Maven controlled
         // Setting isDelegateBuild = true  allows us to set the JRE used by Maven during runtime
         MavenRunConfigurationType.runConfiguration(project, parameters, null, settings, callback, false)
+    }
+
+    fun cancel() {
+        this.handler?.destroyProcess()
     }
 }
