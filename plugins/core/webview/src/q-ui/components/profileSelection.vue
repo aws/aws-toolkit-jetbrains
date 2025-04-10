@@ -191,7 +191,6 @@ export default defineComponent({
 .profile-name {
     font-weight: bold;
     margin-bottom: 2px;
-    color: white;
 }
 
 .profile-region {
