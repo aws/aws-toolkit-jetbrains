@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "/transform: prompt user to re-authenticate if credentials expire during transformation"
-}

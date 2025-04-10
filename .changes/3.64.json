@@ -1,0 +1,8 @@
+{
+  "date" : "2025-04-10",
+  "version" : "3.64",
+  "entries" : [ {
+    "type" : "bugfix",
+    "description" : "Fix issue where IDE freezes when logging into Amazon Q"
+  } ]
+}

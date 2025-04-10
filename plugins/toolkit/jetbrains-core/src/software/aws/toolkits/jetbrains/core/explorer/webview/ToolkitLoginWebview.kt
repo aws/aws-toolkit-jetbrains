@@ -243,6 +243,12 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
                     UiTelemetry.click(project, signInOption)
                 }
             }
+
+            is BrowserMessage.SwitchProfile -> {}
+
+            is BrowserMessage.PublishWebviewTelemetry -> {
+                publishTelemetry(message)
+            }
         }
     }
 

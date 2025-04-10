@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
@@ -19,6 +20,7 @@ import software.aws.toolkits.core.utils.putNextEntry
 import software.aws.toolkits.jetbrains.services.codemodernizer.EXPLAINABILITY_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_DEPENDENCIES_ROOT_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_MANIFEST_FILE_NAME
+import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.TransformMavenRunner
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runDependencyReportCommands
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runHilMavenCopyDependency
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runMavenCopyCommands
@@ -59,6 +61,7 @@ const val INVALID_SUFFIX_REPOSITORIES = "repositories"
 const val ORACLE_DB = "ORACLE"
 const val AURORA_DB = "AURORA_POSTGRESQL"
 const val RDS_DB = "POSTGRESQL"
+
 data class CodeModernizerSessionContext(
     val project: Project,
     var configurationFile: VirtualFile? = null, // used to ZIP module
@@ -71,9 +74,11 @@ data class CodeModernizerSessionContext(
     val sourceServerName: String? = null,
     var schema: String? = null,
     val sqlMetadataZip: File? = null,
-) {
+) : Disposable {
     private val mapper = jacksonObjectMapper()
     private val ignoredDependencyFileExtensions = setOf(INVALID_SUFFIX_SHA, INVALID_SUFFIX_REPOSITORIES)
+    private var isDisposed = false
+    val mavenRunnerQueue: MutableList<TransformMavenRunner> = mutableListOf()
 
     private fun File.isMavenTargetFolder(): Boolean {
         val hasPomSibling = this.resolveSibling(MAVEN_CONFIGURATION_FILE_NAME).exists()
@@ -100,19 +105,22 @@ data class CodeModernizerSessionContext(
     }
 
     fun executeMavenCopyCommands(sourceFolder: File, buildLogBuilder: StringBuilder): MavenCopyCommandsResult {
+        if (isDisposed) return MavenCopyCommandsResult.Cancelled
         val shouldSkipTests = customBuildCommand == MAVEN_BUILD_SKIP_UNIT_TESTS
-        return runMavenCopyCommands(sourceFolder, buildLogBuilder, LOG, project, shouldSkipTests)
+        return runMavenCopyCommands(this, sourceFolder, buildLogBuilder, LOG, project, shouldSkipTests)
     }
 
     private fun executeHilMavenCopyDependency(sourceFolder: File, destinationFolder: File, buildLogBuilder: StringBuilder) = runHilMavenCopyDependency(
+        this,
         sourceFolder,
         destinationFolder,
         buildLogBuilder,
         LOG,
-        project
+        project,
     )
 
     fun copyHilDependencyUsingMaven(hilTepDirPath: Path): MavenCopyCommandsResult {
+        if (isDisposed) return MavenCopyCommandsResult.Cancelled
         val sourceFolder = File(getPathToHilArtifactPomFolder(hilTepDirPath).pathString)
         val destinationFolder = Files.createDirectories(getPathToHilDependenciesRootDir(hilTepDirPath)).toFile()
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
@@ -121,6 +129,7 @@ data class CodeModernizerSessionContext(
     }
 
     fun getDependenciesUsingMaven(): MavenCopyCommandsResult {
+        if (isDisposed) return MavenCopyCommandsResult.Cancelled
         val root = configurationFile?.parent
         val sourceFolder = File(root?.path)
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
@@ -128,14 +137,16 @@ data class CodeModernizerSessionContext(
     }
 
     fun createDependencyReportUsingMaven(hilTempPomPath: Path): MavenDependencyReportCommandsResult {
+        if (isDisposed) return MavenDependencyReportCommandsResult.Cancelled
         val sourceFolder = File(hilTempPomPath.pathString)
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
         return executeDependencyVersionReportUsingMaven(sourceFolder, buildLogBuilder)
     }
+
     private fun executeDependencyVersionReportUsingMaven(
         sourceFolder: File,
         buildLogBuilder: StringBuilder,
-    ) = runDependencyReportCommands(sourceFolder, buildLogBuilder, LOG, project)
+    ) = runDependencyReportCommands(this, sourceFolder, buildLogBuilder, LOG, project)
 
     fun createZipForHilUpload(hilTempPath: Path, manifest: CodeTransformHilDownloadManifest?, targetVersion: String): ZipCreationResult =
         runReadAction {
@@ -324,6 +335,13 @@ data class CodeModernizerSessionContext(
             ?: error(message("codemodernizer.toolwindow.problems_window_not_found"))
         appModernizerBottomWindow.show()
         CodeModernizerBottomWindowPanelManager.getInstance(project).setJobStartingUI()
+    }
+
+    override fun dispose() {
+        isDisposed = true
+        this.mavenRunnerQueue.forEach {
+            it.cancel()
+        }
     }
 
     companion object {

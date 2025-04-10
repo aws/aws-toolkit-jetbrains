@@ -26,4 +26,8 @@ class ChatSessionStorage(
     fun deleteSession(tabId: String) {
         sessions.remove(tabId)?.scope?.cancel()
     }
+
+    fun deleteAllSessions() {
+        sessions.clear()
+    }
 }

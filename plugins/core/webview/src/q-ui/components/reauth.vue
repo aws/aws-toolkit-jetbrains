@@ -18,6 +18,7 @@
             <div class="font-amazon bottom-small-gap title centered">Please re-authenticate to continue</div>
 
             <button
+                id="reauth-page"
                 class="login-flow-button continue-button font-amazon"
                 v-on:click="reauth()"
             >
