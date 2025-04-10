@@ -220,6 +220,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
     override fun loadState(state: QProfileState) {
         connectionIdToActiveProfile.clear()
         connectionIdToActiveProfile.putAll(state.connectionIdToActiveProfile)
+
         connectionIdToProfileCount.clear()
         connectionIdToProfileCount.putAll(state.connectionIdToProfileList)
     }
