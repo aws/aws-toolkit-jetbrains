@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import org.eclipse.lsp4j.ProgressParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ProgressNotificationUtils.getObject
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -42,11 +43,9 @@ class ChatCommunicationManager {
         val encryptedPartialChatResult = getObject(params, String::class.java)
         if (encryptedPartialChatResult != null) {
             val partialChatResult = AmazonQLspService.getInstance(project).encryptionManager.decrypt(encryptedPartialChatResult)
-//            if (partialChatResult.body.isEmpty()) {
-//                return
-//            }
+
             val uiMessage = convertToJsonToSendToChat(
-                command = "aws/chat/sendChatPrompt",
+                command = SEND_CHAT_COMMAND_PROMPT,
                 tabId = tabId,
                 params = partialChatResult,
                 isPartialResult = true

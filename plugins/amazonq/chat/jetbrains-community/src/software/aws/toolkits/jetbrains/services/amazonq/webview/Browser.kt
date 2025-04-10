@@ -8,15 +8,15 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactHelper
 import software.aws.toolkits.jetbrains.services.amazonq.util.HighlightCommand
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
+import java.net.URI
 
 /*
 Displays the web view for the Amazon Q tool window
  */
-class Browser(parent: Disposable) : Disposable {
+class Browser(parent: Disposable, private val webUri: URI) : Disposable {
 
     val jcefBrowser = createBrowser(parent)
 
@@ -91,7 +91,7 @@ class Browser(parent: Disposable) : Disposable {
     ): String {
         val postMessageToJavaJsCode = receiveMessageQuery.inject("JSON.stringify(message)")
         val jsScripts = """
-            <script type="text/javascript" src="$WEB_SCRIPT_URI" defer onload="init()"></script>
+            <script type="text/javascript" src="$webUri" defer onload="init()"></script>
             <script type="text/javascript">
                 const init = () => {
                     amazonQChat.createChat(
@@ -201,8 +201,6 @@ class Browser(parent: Disposable) : Disposable {
     }
 
     companion object {
-        // TODO: Switch this to respect the overriden paths too
-        private val WEB_SCRIPT_URI = ArtifactHelper().getLatestLocalLspArtifact().resolve("amazonq-ui.js").toUri()
         private const val MAX_ONBOARDING_PAGE_COUNT = 3
         private val OBJECT_MAPPER = jacksonObjectMapper()
     }

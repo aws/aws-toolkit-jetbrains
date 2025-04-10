@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.amazonq.webview
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.project.Project
@@ -32,6 +31,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatP
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorState
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
 import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
@@ -144,10 +144,10 @@ class BrowserConnector(
         }
     }
 
-    private suspend fun handleFlareChatMessages(browser: Browser, node: JsonNode) {
+    private fun handleFlareChatMessages(browser: Browser, node: JsonNode) {
         when (node.command) {
-            "aws/chat/sendChatPrompt" -> {
-                val requestFromUi = jacksonObjectMapper().readValue(node.toString(), SendChatPromptRequest::class.java)
+            SEND_CHAT_COMMAND_PROMPT -> {
+                val requestFromUi = serializer.deserializeChatMessages(node, SendChatPromptRequest::class.java)
                 val chatPrompt = ChatPrompt(
                     requestFromUi.params.prompt.prompt,
                     requestFromUi.params.prompt.escapedPrompt,
@@ -173,7 +173,7 @@ class BrowserConnector(
                     chatPrompt,
                     textDocumentIdentifier,
                     cursorState
-                    )
+                )
 
                 var encryptionManager: JwtEncryptionManager? = null
                 val result = AmazonQLspService.executeIfRunning(project) { server ->
