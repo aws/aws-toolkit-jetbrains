@@ -216,7 +216,7 @@ class Browser(parent: Disposable, private val webUri: URI) : Disposable {
         isCodeTransformAvailable
         MAX_ONBOARDING_PAGE_COUNT
         OBJECT_MAPPER
-        highlightCommand,
+        highlightCommand
         activeProfile
     }
 
