@@ -71,23 +71,17 @@ export interface ListProfileResult {
 
 export class ListProfileSuccessResult implements ListProfileResult {
     status: 'succeeded' = 'succeeded'
-
-    constructor(readonly profiles: Profile[]) {
-    }
+    constructor(readonly profiles: Profile[]) {}
 }
 
 export class ListProfileFailureResult implements ListProfileResult {
     status: 'failed' = 'failed'
-
-    constructor(readonly errorMessage: string) {
-    }
+    constructor(readonly errorMessage: string) {}
 }
 
 export class ListProfilePendingResult implements ListProfileResult {
     status: 'pending' = 'pending'
-
-    constructor() {
-    }
+    constructor() {}
 }
 
 export enum LoginIdentifier {
@@ -146,8 +140,7 @@ export class BuilderId implements LoginOption {
 export class ExistConnection implements LoginOption {
     id: LoginIdentifier = LoginIdentifier.EXISTING_LOGINS
 
-    constructor(readonly pluginConnectionId: string) {
-    }
+    constructor(readonly pluginConnectionId: string) {}
 
     // this case only happens for bearer connection for now
     requiresBrowser(): boolean {

@@ -49,7 +49,6 @@ export class IdeClient {
                 result = new ListProfilePendingResult()
                 break
         }
-        console.log(result)
         this.store.commit('setProfilesResult', result)
     }
 
@@ -88,6 +87,6 @@ export class IdeClient {
     cancelLogin(): void {
         // this.reset()
         this.store.commit('setStage', 'START')
-        window.ideApi.postMessage({command: 'cancelLogin'})
+        window.ideApi.postMessage({ command: 'cancelLogin' })
     }
 }

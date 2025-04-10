@@ -4,7 +4,7 @@
     <div @keydown.enter="handleContinueClick">
         <div class="font-amazon">
             <template v-if="isWaitingResponse">
-                <div class="header bottomMargin">Fetching Q Developer profiles...this may take a minute.</div>
+                <div class="title bottom-small-gap">Fetching Q Developer profiles...this may take a minute.</div>
             </template>
 
             <template v-else>
@@ -94,24 +94,11 @@ export default defineComponent({
             if (profileResult instanceof ListProfileSuccessResult) {
                 this.availableProfiles = profileResult.profiles
             } else {
-                this.errorMessage = (profileResult as ListProfileFailureResult).errorMessage
+                this.errorMessage = GENERIC_PROFILE_LOAD_ERROR
             }
 
             return false
         }
-    },
-    mounted() {
-        // console.debug("Vuex raw profiles:", this.$store.state.profiles);
-        // this.availableProfiles = this.$store.state.profiles;
-        // this.errorMessage = this.$store.state.errorMessage ? GENERIC_PROFILE_LOAD_ERROR : undefined;
-        // this.isRefreshing = false;
-        // watch(() => this.$store.state.profiles, (newVal, oldVal) => {
-        //     this.availableProfiles = newVal
-        //     this.isRefreshing = false
-        // });
-        // watch(() => this.$store.state.errorMessage, (newVal) => {
-        //     this.errorMessage = newVal ? GENERIC_PROFILE_LOAD_ERROR : undefined;
-        // })
     },
     methods: {
         toggleItemSelection(profile: Profile) {
