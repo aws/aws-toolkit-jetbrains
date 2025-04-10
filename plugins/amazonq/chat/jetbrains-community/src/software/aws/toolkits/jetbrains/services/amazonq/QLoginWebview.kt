@@ -18,6 +18,7 @@ import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
+import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -291,6 +292,11 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                         }
 
                         null
+                    }
+
+                    if (profiles?.size == 1) {
+                        LOG.debug { "User only have access to 1 Q profile, auto-selecting profile ${profiles.first().profileName} for ${project.name}" }
+                        QRegionProfileManager.getInstance().switchProfile(project, profiles.first(), QProfileSwitchIntent.Update)
                     }
 
                     // required EDT as this entire block is executed on thread pool
