@@ -248,6 +248,8 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
 
             is BrowserMessage.SwitchProfile -> {}
 
+            is BrowserMessage.ListProfiles -> {}
+
             is BrowserMessage.PublishWebviewTelemetry -> {
                 publishTelemetry(message)
             }

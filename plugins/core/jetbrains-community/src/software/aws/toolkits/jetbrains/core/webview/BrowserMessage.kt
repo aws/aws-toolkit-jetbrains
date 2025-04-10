@@ -28,7 +28,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
     JsonSubTypes.Type(value = BrowserMessage.SendUiClickTelemetry::class, name = "sendUiClickTelemetry"),
     JsonSubTypes.Type(value = BrowserMessage.SwitchProfile::class, name = "switchProfile"),
     JsonSubTypes.Type(value = BrowserMessage.PublishWebviewTelemetry::class, name = "webviewTelemetry"),
-    JsonSubTypes.Type(value = BrowserMessage.OpenUrl::class, name = "openUrl")
+    JsonSubTypes.Type(value = BrowserMessage.OpenUrl::class, name = "openUrl"),
+    JsonSubTypes.Type(value = BrowserMessage.ListProfiles::class, name = "listProfiles")
 )
 sealed interface BrowserMessage {
 
@@ -68,6 +69,8 @@ sealed interface BrowserMessage {
         val region: String,
         val arn: String,
     ) : BrowserMessage
+
+    object ListProfiles : BrowserMessage
 
     data class SendUiClickTelemetry(val signInOptionClicked: String?) : BrowserMessage
 
