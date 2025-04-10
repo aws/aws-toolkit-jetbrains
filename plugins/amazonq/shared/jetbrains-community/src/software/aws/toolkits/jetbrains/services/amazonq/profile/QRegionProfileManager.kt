@@ -27,6 +27,7 @@ import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.utils.notifyInfo
@@ -190,12 +191,16 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
         return client
     }
 
-    private fun getIdcConnectionOrNull(project: Project): AwsBearerTokenConnection? {
-        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
-        if (connection is AwsBearerTokenConnection && !connection.isSono()) {
-            return connection
+    fun getIdcConnectionOrNull(project: Project): AwsBearerTokenConnection? {
+        val manager = ToolkitConnectionManager.getInstance(project)
+        val connection = manager.activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
+        val state = manager.connectionStateForFeature(QConnection.getInstance())
+
+        return if (connection != null && !connection.isSono() && state == BearerTokenAuthState.AUTHORIZED) {
+            connection
+        } else {
+            null
         }
-        return null
     }
 
     companion object {
