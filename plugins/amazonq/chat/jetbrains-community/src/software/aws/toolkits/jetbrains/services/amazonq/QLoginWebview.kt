@@ -338,6 +338,7 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                 null
             }
 
+            // auto-select the profile if users only have 1 and don't show the UI
             if (profiles?.size == 1) {
                 LOG.debug { "User only have access to 1 Q profile, auto-selecting profile ${profiles.first().profileName} for ${project.name}" }
                 QRegionProfileManager.getInstance().switchProfile(project, profiles.first(), QProfileSwitchIntent.Update)
