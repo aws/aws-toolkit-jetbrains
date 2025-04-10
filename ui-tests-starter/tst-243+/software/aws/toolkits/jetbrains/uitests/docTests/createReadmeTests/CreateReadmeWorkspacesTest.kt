@@ -134,6 +134,10 @@ class CreateReadmeWorkspacesTest {
                     .doesNotExist()
 
                 val result = executePuppeteerScript(createReadmeSubFolderPreFolderChangeTestScript)
+                // Using keyboard press to select a subfolder based on a windows/linux folder selector
+                // right to move active cursor to the end
+                // enter src as the subfolder name (subfolder name tstData/qdoc/createFlow/src)
+                // enter to confirm selected subfolder
                 this.ui.robot.pressAndReleaseKey(KeyEvent.VK_RIGHT)
                 this.ui.robot.enterText("\\/src")
                 this.ui.robot.pressAndReleaseKey(KeyEvent.VK_ENTER)
