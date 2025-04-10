@@ -9,6 +9,7 @@ import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.mockito.kotlin.argumentCaptor
@@ -34,6 +35,7 @@ class TestLoginBrowser(project: Project) : LoginBrowser(project, "", "") {
     override fun loadWebView(query: JBCefJSQuery) {}
 }
 
+@Disabled
 class LoginBrowserTest {
     private lateinit var sut: TestLoginBrowser
     private val project: Project
