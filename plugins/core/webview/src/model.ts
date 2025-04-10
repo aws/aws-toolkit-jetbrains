@@ -1,16 +1,22 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-export type BrowserSetupData = {
+export type AuthSetupMessageFromIde = {
     stage: Stage,
     regions: Region[],
     idcInfo: IdcInfo,
     cancellable: boolean,
     feature: string,
     existConnections: AwsBearerTokenConnection[],
+}
+
+export type ListProfilesMessageFromIde = {
+    stage: Stage,
+    status: 'succeeded' | 'failed' | 'pending',
     profiles: Profile[],
     errorMessage: string
 }
+
 
 // plugin interface [AwsBearerTokenConnection]
 export interface AwsBearerTokenConnection {
@@ -20,6 +26,7 @@ export interface AwsBearerTokenConnection {
     scopes: string[],
     id: string
 }
+
 export const SONO_URL = "https://view.awsapps.com/start"
 
 export type Stage =
@@ -54,9 +61,33 @@ export interface State {
     feature: Feature,
     cancellable: boolean,
     existingConnections: AwsBearerTokenConnection[],
-    profiles: Profile[],
-    selectedProfile: Profile | undefined,
-    errorMessage: string | undefined
+    listProfilesResult: ListProfileResult | undefined,
+    selectedProfile: Profile | undefined
+}
+
+export interface ListProfileResult {
+    status: 'succeeded' | 'failed' | 'pending'
+}
+
+export class ListProfileSuccessResult implements ListProfileResult {
+    status: 'succeeded' = 'succeeded'
+
+    constructor(readonly profiles: Profile[]) {
+    }
+}
+
+export class ListProfileFailureResult implements ListProfileResult {
+    status: 'failed' = 'failed'
+
+    constructor(readonly errorMessage: string) {
+    }
+}
+
+export class ListProfilePendingResult implements ListProfileResult {
+    status: 'pending' = 'pending'
+
+    constructor() {
+    }
 }
 
 export enum LoginIdentifier {
@@ -115,7 +146,8 @@ export class BuilderId implements LoginOption {
 export class ExistConnection implements LoginOption {
     id: LoginIdentifier = LoginIdentifier.EXISTING_LOGINS
 
-    constructor(readonly pluginConnectionId: string) {}
+    constructor(readonly pluginConnectionId: string) {
+    }
 
     // this case only happens for bearer connection for now
     requiresBrowser(): boolean {

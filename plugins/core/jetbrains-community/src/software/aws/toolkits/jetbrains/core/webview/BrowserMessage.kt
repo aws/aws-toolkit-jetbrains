@@ -29,8 +29,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
     JsonSubTypes.Type(value = BrowserMessage.SwitchProfile::class, name = "switchProfile"),
     JsonSubTypes.Type(value = BrowserMessage.PublishWebviewTelemetry::class, name = "webviewTelemetry")
 )
+// Webview to IDE
 sealed interface BrowserMessage {
-
     // FIX_WHEN_MIN_IS_233: data objects are not stable until Kotlin 1.9
     // https://kotlinlang.org/docs/whatsnew19.html#stable-data-objects-for-symmetry-with-data-classes
     object PrepareUi : BrowserMessage

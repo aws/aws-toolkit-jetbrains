@@ -182,16 +182,16 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
                     ToolkitConnectionManager.getInstance(project)
                         .activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
                     )?.let { connection ->
-                    runInEdt {
-                        SsoLogoutAction(connection).actionPerformed(
-                            AnActionEvent.createFromDataContext(
-                                "qBrowser",
-                                null,
-                                DataContext.EMPTY_CONTEXT
+                        runInEdt {
+                            SsoLogoutAction(connection).actionPerformed(
+                                AnActionEvent.createFromDataContext(
+                                    "qBrowser",
+                                    null,
+                                    DataContext.EMPTY_CONTEXT
+                                )
                             )
-                        )
+                        }
                     }
-                }
             }
 
             is BrowserMessage.Reauth -> {
@@ -261,56 +261,79 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
             writeValueAsString(it)
         }
 
-        // TODO: pass "REAUTH" if connection expires
-        // Perform the potentially blocking AWS call outside the EDT to fetch available region profiles.
-        ApplicationManager.getApplication().executeOnPooledThread {
-            val stage = if (isQExpired(project)) {
-                "REAUTH"
-            } else if (isQConnected(project) && QRegionProfileManager.getInstance().isPendingProfileSelection(project)) {
-                "PROFILE_SELECT"
-            } else {
-                "START"
-            }
+        val stage = if (isQExpired(project)) {
+            "REAUTH"
+        } else if (isQConnected(project) && QRegionProfileManager.getInstance().isPendingProfileSelection(project)) {
+            "PROFILE_SELECT"
+        } else {
+            "START"
+        }
 
-            var errorMessage: String? = null
-            var profiles: List<QRegionProfile> = emptyList()
+        when (stage) {
+            "PROFILE_SELECT" -> {
+                ApplicationManager.getApplication().executeOnPooledThread {
+                    var errorMessage: String = ""
+                    val profiles = try {
+                        QRegionProfileManager.getInstance().listRegionProfiles(project)
+                    } catch (e: Exception) {
+                        e.message?.let {
+                            errorMessage = it
+                        }
+                        LOG.warn { "Failed to call listRegionProfiles API: $errorMessage" }
+                        val qConn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
+                        Telemetry.amazonq.didSelectProfile.use { span ->
+                            span.source(QProfileSwitchIntent.Auth.value)
+                                .amazonQProfileRegion(QRegionProfileManager.getInstance().activeProfile(project)?.region ?: "not-set")
+                                .ssoRegion((qConn as? AwsBearerTokenConnection)?.region)
+                                .credentialStartUrl((qConn as? AwsBearerTokenConnection)?.startUrl)
+                                .result(MetricResult.Failed)
+                                .reason(e.message)
+                        }
 
-            if (stage == "PROFILE_SELECT") {
-                try {
-                    profiles = QRegionProfileManager.getInstance().listRegionProfiles(project).orEmpty()
-                } catch (e: Exception) {
-                    errorMessage = e.message
-                    LOG.warn { "Failed to call listRegionProfiles API" }
-                    val qConn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
-                    Telemetry.amazonq.didSelectProfile.use { span ->
-                        span.source(QProfileSwitchIntent.Auth.value)
-                            .amazonQProfileRegion(QRegionProfileManager.getInstance().activeProfile(project)?.region ?: "not-set")
-                            .ssoRegion((qConn as? AwsBearerTokenConnection)?.region)
-                            .credentialStartUrl((qConn as? AwsBearerTokenConnection)?.startUrl)
-                            .result(MetricResult.Failed)
-                            .reason(e.message)
+                        null
+                    }
+
+                    // required EDT as this entire block is executed on thread pool
+                    runInEdt {
+                        val jsonData = """
+                        {
+                            stage: '$stage',
+                            status: '${if (profiles != null) "succeeded" else "failed"}',
+                            profiles: ${writeValueAsString(profiles ?: "")},
+                            errorMessage: '$errorMessage'
+                        }
+                    """.trimIndent()
+
+                        println(jsonData)
+                        executeJS("window.ideClient.prepareUi($jsonData)")
                     }
                 }
+
+                val jsonData = """
+                    {
+                        stage: '$stage',
+                        status: 'pending'
+                    }
+                """.trimIndent()
+                executeJS("window.ideClient.prepareUi($jsonData)")
             }
 
-            val jsonData = """
-            {
-                stage: '$stage',
-                regions: $regions,
-                idcInfo: {
-                    profileName: '${lastLoginIdcInfo.profileName}',
-                    startUrl: '${lastLoginIdcInfo.startUrl}',
-                    region: '${lastLoginIdcInfo.region}'
-                },
-                cancellable: ${state.browserCancellable},
-                feature: '${state.feature}',
-                existConnections: ${writeValueAsString(selectionSettings.values.map { it.currentSelection }.toList())},
-                profiles: ${writeValueAsString(profiles)},
-                errorMessage: ${errorMessage?.let { "\"$it\"" } ?: "null"}
-            }
-            """.trimIndent()
+            else -> {
+                val jsonData = """
+                    {
+                        stage: '$stage',
+                        regions: $regions,
+                        idcInfo: {
+                            profileName: '${lastLoginIdcInfo.profileName}',
+                            startUrl: '${lastLoginIdcInfo.startUrl}',
+                            region: '${lastLoginIdcInfo.region}'
+                        },
+                        cancellable: ${state.browserCancellable},
+                        feature: '${state.feature}',
+                        existConnections: ${writeValueAsString(selectionSettings.values.map { it.currentSelection }.toList())},
+                    }
+                """.trimIndent()
 
-            runInEdt {
                 executeJS("window.ideClient.prepareUi($jsonData)")
             }
         }
