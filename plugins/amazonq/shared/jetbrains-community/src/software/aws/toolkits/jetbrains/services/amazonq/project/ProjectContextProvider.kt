@@ -74,8 +74,8 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     )
 
     // TODO: move to LspMessage.kt
+    @JsonIgnoreProperties(ignoreUnknown = true)
     data class Usage(
-        @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("memoryUsage")
         val memoryUsage: Int? = null,
         @JsonProperty("cpuUsage")
@@ -83,8 +83,8 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     )
 
     // TODO: move to LspMessage.kt
+    @JsonIgnoreProperties(ignoreUnknown = true)
     data class Chunk(
-        @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("filePath")
         val filePath: String? = null,
         @JsonProperty("content")

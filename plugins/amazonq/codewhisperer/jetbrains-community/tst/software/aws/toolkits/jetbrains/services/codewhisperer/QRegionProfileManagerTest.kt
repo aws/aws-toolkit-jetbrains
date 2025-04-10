@@ -29,6 +29,7 @@ import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.aws.toolkits.core.region.AwsRegion
 import software.aws.toolkits.jetbrains.core.MockClientManager
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
+import software.aws.toolkits.jetbrains.core.MockResourceCacheRule
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ManagedSsoProfile
 import software.aws.toolkits.jetbrains.core.credentials.MockToolkitAuthManagerRule
@@ -39,6 +40,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QEndpoints
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileResources
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileState
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileSwitchIntent
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
@@ -71,6 +73,9 @@ class QRegionProfileManagerTest {
     @JvmField
     @Rule
     val disposableRule = DisposableRule()
+
+    @get:Rule
+    val resourceCache = MockResourceCacheRule()
 
     private lateinit var sut: QRegionProfileManager
     private val project: Project
@@ -150,7 +155,39 @@ class QRegionProfileManagerTest {
         assertThat(cnt).isEqualTo(2)
     }
 
-    // TODO: Add two unit tests for listProfiles — one with cache hit, one without
+    @Test
+    fun `listProfiles will call each client to get profiles`() {
+        val client = clientRule.create<CodeWhispererRuntimeClient>()
+        val mockResponse: SdkIterable<Profile> = SdkIterable<Profile> {
+            listOf(
+                Profile.builder().profileName("FOO").arn("foo").build(),
+            ).toMutableList().iterator()
+        }
+
+        val mockResponse2: SdkIterable<Profile> = SdkIterable<Profile> {
+            listOf(
+                Profile.builder().profileName("BAR").arn("bar").build(),
+            ).toMutableList().iterator()
+        }
+
+        val iterable: ListAvailableProfilesIterable = mock {
+            on { it.profiles() } doReturn mockResponse doReturn mockResponse2
+        }
+
+        // TODO: not sure if we can mock client with different region different response?
+        client.stub {
+            onGeneric { listAvailableProfilesPaginator(any<Consumer<ListAvailableProfilesRequest.Builder>>()) } doReturn iterable
+        }
+        val connectionSettings = sut.getQClientSettings(project)
+        resourceCache.addEntry(connectionSettings, QProfileResources.LIST_REGION_PROFILES, QProfileResources.LIST_REGION_PROFILES.fetch(connectionSettings))
+
+        assertThat(sut.listRegionProfiles(project))
+            .hasSize(2)
+            .containsExactlyInAnyOrder(
+                QRegionProfile("FOO", "foo"),
+                QRegionProfile("BAR", "bar")
+            )
+    }
 
     @Test
     fun `validateProfile should cross validate selected profile with latest API response for current project and remove it if its not longer accessible`() {
