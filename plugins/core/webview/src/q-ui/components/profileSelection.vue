@@ -11,10 +11,11 @@
                 <!-- Title & Subtitle -->
                 <div id="profile-page" class="profile-header">
                     <h2 class="title bottom-small-gap">Choose a Q Developer profile</h2>
-                    <p class="profile-subtitle">
+                    <div class="profile-subtitle">
                         Your administrator has given you access to Q from multiple profiles.
                         Choose the profile that meets your current working needs. You can change your profile at any time.
-                    </p>
+                        <a @click.prevent="openUrl">More info.</a>
+                    </div>
                 </div>
                 <!-- Profile List -->
                 <div class="profile-list">
@@ -128,6 +129,12 @@ export default defineComponent({
         },
         handleSignoutClick() {
             window.ideApi.postMessage({command: 'signout'})
+        },
+        openUrl() {
+            window.ideApi.postMessage({
+                command: 'openUrl',
+                externalLink: 'https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/subscribe-understanding-profile.html'
+            })
         }
     }
 })

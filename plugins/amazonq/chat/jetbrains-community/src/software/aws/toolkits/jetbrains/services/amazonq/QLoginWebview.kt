@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq
 
+import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
@@ -48,6 +49,7 @@ import software.aws.toolkits.telemetry.Telemetry
 import software.aws.toolkits.telemetry.UiTelemetry
 import software.aws.toolkits.telemetry.WebviewTelemetry
 import java.awt.event.ActionListener
+import java.net.URI
 import javax.swing.JButton
 import javax.swing.JComponent
 
@@ -226,6 +228,10 @@ class QWebviewBrowser(val project: Project, private val parentDisposable: Dispos
 
             is BrowserMessage.PublishWebviewTelemetry -> {
                 publishTelemetry(message)
+            }
+
+            is BrowserMessage.OpenUrl -> {
+                BrowserUtil.browse(URI(message.externalLink))
             }
         }
     }
