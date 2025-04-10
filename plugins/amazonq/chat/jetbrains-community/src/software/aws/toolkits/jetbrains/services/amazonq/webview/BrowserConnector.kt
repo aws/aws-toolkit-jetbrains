@@ -32,6 +32,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatP
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorState
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EndChatParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LspCommands
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
 import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
@@ -192,6 +194,17 @@ class BrowserConnector(
                     )
                     browser.postChat(messageToChat)
                 }
+            }
+
+            LspCommands.END_CHAT -> {
+                val requestFromUi = jacksonObjectMapper().readValue(node.toString(), EndChatParams::class.java)
+
+                val endChatParams = EndChatParams(requestFromUi.tabId)
+                val result = AmazonQLspService.executeIfRunning(project) { server ->
+                    server.endChat(endChatParams)
+                } ?: CompletableFuture.failedFuture(IllegalStateException("LSP Server not running"))
+
+                println(result)
             }
         }
     }
