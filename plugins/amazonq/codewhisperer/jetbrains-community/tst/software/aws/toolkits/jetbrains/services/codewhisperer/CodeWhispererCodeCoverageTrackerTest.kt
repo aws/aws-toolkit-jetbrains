@@ -178,6 +178,7 @@ internal class CodeWhispererCodeCoverageTrackerTestPython : CodeWhispererCodeCov
             mock(),
             aString(),
             aString(),
+            aString(),
         )
         val responseContext = ResponseContext("sessionId")
         val recommendationContext = RecommendationContext(
