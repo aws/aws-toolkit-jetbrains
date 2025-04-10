@@ -121,7 +121,15 @@ class Browser(parent: Disposable, private val webUri: URI) : Disposable {
             </script>        
         """.trimIndent()
 
-        addQuickActionCommands(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeTestAvailable, isCodeScanAvailable, highlightCommand)
+        addQuickActionCommands(
+            isCodeTransformAvailable,
+            isFeatureDevAvailable,
+            isDocAvailable,
+            isCodeTestAvailable,
+            isCodeScanAvailable,
+            highlightCommand,
+            activeProfile
+        )
         return """
             <!DOCTYPE html>
             <style>
@@ -198,6 +206,7 @@ class Browser(parent: Disposable, private val webUri: URI) : Disposable {
         isCodeTestAvailable: Boolean,
         isCodeScanAvailable: Boolean,
         highlightCommand: HighlightCommand?,
+        activeProfile: QRegionProfile?,
     ) {
         // TODO:  Remove this once chat has been integrated with agents. This is added temporarily to keep detekt happy.
         isCodeScanAvailable
@@ -207,7 +216,8 @@ class Browser(parent: Disposable, private val webUri: URI) : Disposable {
         isCodeTransformAvailable
         MAX_ONBOARDING_PAGE_COUNT
         OBJECT_MAPPER
-        highlightCommand
+        highlightCommand,
+        activeProfile
     }
 
     companion object {
