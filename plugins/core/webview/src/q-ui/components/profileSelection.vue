@@ -68,13 +68,13 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, watch} from 'vue'
-import {Profile, GENERIC_PROFILE_LOAD_ERROR, ListProfilePendingResult, ListProfileSuccessResult, ListProfileFailureResult} from '../../model'
+import { defineComponent } from 'vue'
+import { Profile, GENERIC_PROFILE_LOAD_ERROR, ListProfilePendingResult, ListProfileSuccessResult, ListProfileFailureResult } from '../../model'
 
 export default defineComponent({
     name: 'ProfileSelection',
     props: {
-        app: {type: String, default: ''}
+        app: { type: String, default: '' }
     },
     data() {
         return {
@@ -93,8 +93,11 @@ export default defineComponent({
 
             if (profileResult instanceof ListProfileSuccessResult) {
                 this.availableProfiles = profileResult.profiles
-            } else {
+            } else if (profileResult instanceof ListProfileFailureResult) {
                 this.errorMessage = GENERIC_PROFILE_LOAD_ERROR
+            } else {
+                // should not be this path
+                this.errorMessage = 'Unexpected error happened while loading Q webview page'
             }
 
             return false
