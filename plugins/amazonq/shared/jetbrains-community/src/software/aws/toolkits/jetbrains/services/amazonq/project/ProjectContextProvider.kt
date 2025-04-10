@@ -70,7 +70,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
 
     data class FileCollectionResult(
         val files: List<String>,
-        val fileSize: Int,
+        val fileSize: Int, // in MB
     )
 
     // TODO: move to LspMessage.kt
@@ -241,59 +241,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
-    private fun willExceedPayloadLimit(currentTotalFileSize: Long, currentFileSize: Long): Boolean {
-        val maxSize = CodeWhispererSettings.getInstance().getProjectContextIndexMaxSize()
-        return currentTotalFileSize.let { totalSize -> totalSize > (maxSize * 1024 * 1024 - currentFileSize) }
-    }
-
-    private fun isBuildOrBin(fileName: String): Boolean {
-        val regex = Regex("""bin|build|node_modules|venv|\.venv|env|\.idea|\.conda""", RegexOption.IGNORE_CASE)
-        return regex.find(fileName) != null
-    }
-
-    fun collectFiles(): FileCollectionResult {
-        val collectedFiles = mutableListOf<String>()
-        var currentTotalFileSize = 0L
-        val allFiles = mutableListOf<VirtualFile>()
-
-        val projectBaseDirectories = project.getBaseDirectories()
-        val changeListManager = ChangeListManager.getInstance(project)
-
-        projectBaseDirectories.forEach {
-            VfsUtilCore.visitChildrenRecursively(
-                it,
-                object : VirtualFileVisitor<Unit>(NO_FOLLOW_SYMLINKS) {
-                    // TODO: refactor this along with /dev & codescan file traversing logic
-                    override fun visitFile(file: VirtualFile): Boolean {
-                        if ((file.isDirectory && isBuildOrBin(file.name)) ||
-                            !isWorkspaceSourceContent(file, projectBaseDirectories, changeListManager, additionalGlobalIgnoreRulesForStrictSources) ||
-                            (file.isFile && file.length > 10 * 1024 * 1024)
-                        ) {
-                            return false
-                        }
-                        if (file.isFile) {
-                            allFiles.add(file)
-                            return false
-                        }
-                        return true
-                    }
-                }
-            )
-        }
-
-        for (file in allFiles) {
-            if (willExceedPayloadLimit(currentTotalFileSize, file.length)) {
-                break
-            }
-            collectedFiles.add(file.path)
-            currentTotalFileSize += file.length
-        }
-
-        return FileCollectionResult(
-            files = collectedFiles.toList(),
-            fileSize = (currentTotalFileSize / 1024 / 1024).toInt()
-        )
-    }
+    fun collectFiles(): FileCollectionResult  = collectFiles(project.getBaseDirectories(), ChangeListManager.getInstance(project))
 
     private fun queryResultToRelevantDocuments(queryResult: List<Chunk>): List<RelevantDocument> {
         val documents: MutableList<RelevantDocument> = mutableListOf()
@@ -353,5 +301,58 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
 
     companion object {
         private val logger = getLogger<ProjectContextProvider>()
+
+        private fun willExceedPayloadLimit(maxSize: ULong, currentTotalFileSize: ULong, currentFileSize: Long) =
+            currentTotalFileSize.let { totalSize -> totalSize > (maxSize - currentFileSize.toUInt()) }
+
+        private fun isBuildOrBin(fileName: String): Boolean {
+            val regex = Regex("""bin|build|node_modules|venv|\.venv|env|\.idea|\.conda""", RegexOption.IGNORE_CASE)
+            return regex.find(fileName) != null
+        }
+
+        fun collectFiles(projectBaseDirectories: Set<VirtualFile>, changeListManager: ChangeListManager): FileCollectionResult {
+            val mega = 1024u * 1024u
+            val maxSize = CodeWhispererSettings.getInstance()
+                .getProjectContextIndexMaxSize().toULong() * mega
+            val tenMb = 10 * mega.toInt()
+            val collectedFiles = mutableListOf<String>()
+            var currentTotalFileSize = 0UL
+            val allFiles = mutableListOf<VirtualFile>()
+
+            projectBaseDirectories.forEach {
+                VfsUtilCore.visitChildrenRecursively(
+                    it,
+                    object : VirtualFileVisitor<Unit>(NO_FOLLOW_SYMLINKS) {
+                        // TODO: refactor this along with /dev & codescan file traversing logic
+                        override fun visitFile(file: VirtualFile): Boolean {
+                            if ((file.isDirectory && isBuildOrBin(file.name)) ||
+                                !isWorkspaceSourceContent(file, projectBaseDirectories, changeListManager, additionalGlobalIgnoreRulesForStrictSources) ||
+                                (file.isFile && file.length > tenMb)
+                            ) {
+                                return false
+                            }
+                            if (file.isFile) {
+                                allFiles.add(file)
+                                return false
+                            }
+                            return true
+                        }
+                    }
+                )
+            }
+
+            for (file in allFiles) {
+                if (willExceedPayloadLimit(maxSize, currentTotalFileSize, file.length)) {
+                    break
+                }
+                collectedFiles.add(file.path)
+                currentTotalFileSize += file.length.toUInt()
+            }
+
+            return FileCollectionResult(
+                files = collectedFiles.toList(),
+                fileSize = (currentTotalFileSize / 1024u / 1024u).toInt()
+            )
+        }
     }
 }
