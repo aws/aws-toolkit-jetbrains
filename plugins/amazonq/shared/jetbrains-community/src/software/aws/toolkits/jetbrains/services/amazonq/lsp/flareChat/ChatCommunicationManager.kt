@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 @Service(Service.Level.PROJECT)
 class ChatCommunicationManager {
-    val chatPartialResultMap = ConcurrentHashMap<String, String>()
+    private val chatPartialResultMap = ConcurrentHashMap<String, String>()
     private fun getPartialChatMessage(partialResultToken: String): String =
         chatPartialResultMap.getValue(partialResultToken)
 

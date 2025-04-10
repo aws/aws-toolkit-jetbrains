@@ -49,7 +49,7 @@ class BrowserConnector(
     private val project: Project,
 ) {
     var uiReady = CompletableDeferred<Boolean>()
-    val chatCommunicationManager = ChatCommunicationManager.getInstance(project)
+    private val chatCommunicationManager = ChatCommunicationManager.getInstance(project)
 
     suspend fun connect(
         browser: Browser,

@@ -16,20 +16,15 @@ import software.amazon.awssdk.services.codewhispererstreaming.model.ThrottlingEx
 import software.amazon.awssdk.services.codewhispererstreaming.model.ValidationException
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.RetryableOperation
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import java.time.Instant
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicReference
 
 @Service(Service.Level.PROJECT)
 class AmazonQStreamingClient(private val project: Project) {
-    private fun connection() = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
-        ?: error("Attempted to use connection while one does not exist")
-
-    private fun streamingBearerClient() = connection().getConnectionSettings().awsClient<CodeWhispererStreamingAsyncClient>()
+    private fun streamingBearerClient() = QRegionProfileManager.getInstance().getQClient<CodeWhispererStreamingAsyncClient>(project)
 
     suspend fun exportResultArchive(
         exportId: String,
