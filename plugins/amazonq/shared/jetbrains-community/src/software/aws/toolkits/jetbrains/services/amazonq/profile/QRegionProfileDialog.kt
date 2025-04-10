@@ -28,13 +28,13 @@ import javax.swing.JComponent
 import javax.swing.JList
 
 data class QRegionProfileDialogState(
-    var selectedProfile: QRegionProfile? = null
+    var selectedProfile: QRegionProfile? = null,
 )
 
 class QRegionProfileDialog(
     private var project: Project,
     val state: QRegionProfileDialogState = QRegionProfileDialogState(),
-    private var selectedProfile: QRegionProfile?
+    private var selectedProfile: QRegionProfile?,
 ) : DialogWrapper(project) {
 
     private val renderer = object : ColoredListCellRenderer<QRegionProfile>() {
@@ -92,7 +92,6 @@ class QRegionProfileDialog(
                     }
                     throw e
                 }
-
             }
 
             row {
