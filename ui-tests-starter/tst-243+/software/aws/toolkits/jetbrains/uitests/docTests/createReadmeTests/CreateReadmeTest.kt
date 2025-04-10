@@ -280,11 +280,8 @@ class CreateReadmeTest {
                 assertThat(readme).doesNotExist()
 
                 val result = executePuppeteerScript(newReadmeDiffViewerTestScript)
-                assertThat(result).doesNotContain("Error: Test Failed")
-
-                if (result.contains("Error: Test Failed")) {
-                    println("result: $result")
-                }
+                assertThat(result)
+                    .doesNotContain("Error: Test Failed")
 
                 val panel = this.ui.x("//div[contains(@class, 'SimpleDiffPanel')]")
                 assertThat(panel.present()).isTrue()

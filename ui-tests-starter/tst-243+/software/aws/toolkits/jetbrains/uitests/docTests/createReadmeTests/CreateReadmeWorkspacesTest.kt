@@ -89,14 +89,15 @@ class CreateReadmeWorkspacesTest {
                 assertThat(readme).doesNotExist()
 
                 val result = executePuppeteerScript(acceptReadmeTestScript)
-                assertThat(result).doesNotContain("Error: Test Failed")
-                if (result.contains("Error: Test Failed")) {
-                    println("result: $result")
-                }
+                assertThat(result)
+                    .doesNotContain("Error: Test Failed")
 
                 val newReadmePath = Paths.get("tstData", "qdoc", "createFlow", "README.md")
                 val newReadme = File(newReadmePath.toUri())
-                assertThat(newReadme).exists().content().contains("REST", "API")
+                assertThat(newReadme)
+                    .exists()
+                    .content()
+                    .contains("REST", "API")
             }
     }
 
@@ -129,7 +130,8 @@ class CreateReadmeWorkspacesTest {
 
                 val readmePath = Paths.get("tstData", "qdoc", "createFlow", "src", "README.md")
                 val readme = File(readmePath.toUri())
-                assertThat(readme).doesNotExist()
+                assertThat(readme)
+                    .doesNotExist()
 
                 val result = executePuppeteerScript(createReadmeSubFolderPreFolderChangeTestScript)
                 this.ui.robot.pressAndReleaseKey(KeyEvent.VK_RIGHT)
@@ -137,17 +139,15 @@ class CreateReadmeWorkspacesTest {
                 this.ui.robot.pressAndReleaseKey(KeyEvent.VK_ENTER)
                 val result2 = executePuppeteerScript(createReadmeSubFolderPostFolderChangeTestScript)
 
-                assertThat(result).doesNotContain("Error: Test Failed")
-                assertThat(result2).doesNotContain("Error: Test Failed")
-
-                if (result.contains("Error: Test Failed") || result2.contains("Error: Test Failed")) {
-                    println("result: $result")
-                    println("result2: $result2")
-                }
+                assertThat(result)
+                    .doesNotContain("Error: Test Failed")
+                assertThat(result2)
+                    .doesNotContain("Error: Test Failed")
 
                 val newReadmePath = Paths.get("tstData", "qdoc", "createFlow", "src", "README.md")
                 val newReadme = File(newReadmePath.toUri())
-                assertThat(newReadme).exists()
+                assertThat(newReadme)
+                    .exists()
             }
     }
 
@@ -183,14 +183,13 @@ class CreateReadmeWorkspacesTest {
                 assertThat(readme).doesNotExist()
 
                 val result = executePuppeteerScript(acceptReadmeTestScript)
-                assertThat(result).doesNotContain("Error: Test Failed")
-                if (result.contains("Error: Test Failed")) {
-                    println("result: $result")
-                }
+                assertThat(result)
+                    .doesNotContain("Error: Test Failed")
 
                 val newReadmePath = Paths.get("tstData", "qdoc", "README.md")
                 val newReadme = File(newReadmePath.toUri())
-                assertThat(newReadme).exists()
+                assertThat(newReadme)
+                    .exists()
                     .content()
                     .contains(
                         "REST",
