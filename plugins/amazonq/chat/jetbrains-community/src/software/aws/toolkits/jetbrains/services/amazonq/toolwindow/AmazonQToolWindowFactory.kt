@@ -66,6 +66,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
                     ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.let { qConn ->
                         openMeetQPage(project)
                     }
+                    println("activeProfile connect:${QRegionProfileManager.getInstance().activeProfile(project)}")
                     prepareChatContent(project, qPanel)
                 }
             }
@@ -85,7 +86,10 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             object : BearerTokenProviderListener {
                 override fun onChange(providerId: String, newScopes: List<String>?) {
                     if (ToolkitConnectionManager.getInstance(project).connectionStateForFeature(QConnection.getInstance()) == BearerTokenAuthState.AUTHORIZED) {
-                        prepareChatContent(project, qPanel)
+                        val qComponent = AmazonQToolWindow.getInstance(project).component
+                        runInEdt {
+                            qPanel.setContent(qComponent)
+                        }
                     }
                 }
             }
