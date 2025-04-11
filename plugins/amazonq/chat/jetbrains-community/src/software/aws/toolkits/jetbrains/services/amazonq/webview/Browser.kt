@@ -8,15 +8,16 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactHelper
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.util.HighlightCommand
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
+import java.net.URI
 
 /*
 Displays the web view for the Amazon Q tool window
  */
-class Browser(parent: Disposable) : Disposable {
+class Browser(parent: Disposable, private val webUri: URI) : Disposable {
 
     val jcefBrowser = createBrowser(parent)
 
@@ -29,6 +30,7 @@ class Browser(parent: Disposable) : Disposable {
         isCodeScanAvailable: Boolean,
         isCodeTestAvailable: Boolean,
         highlightCommand: HighlightCommand?,
+        activeProfile: QRegionProfile?,
     ) {
         // register the scheme handler to route http://mynah/ URIs to the resources/assets directory on classpath
         CefApp.getInstance()
@@ -38,7 +40,7 @@ class Browser(parent: Disposable) : Disposable {
                 AssetResourceHandler.AssetResourceHandlerFactory(),
             )
 
-        loadWebView(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable, highlightCommand)
+        loadWebView(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable, highlightCommand, activeProfile)
     }
 
     override fun dispose() {
@@ -67,13 +69,22 @@ class Browser(parent: Disposable) : Disposable {
         isCodeScanAvailable: Boolean,
         isCodeTestAvailable: Boolean,
         highlightCommand: HighlightCommand?,
+        activeProfile: QRegionProfile?,
     ) {
         // setup empty state. The message request handlers use this for storing state
         // that's persistent between page loads.
         jcefBrowser.setProperty("state", "")
         // load the web app
         jcefBrowser.loadHTML(
-            getWebviewHTML(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable, highlightCommand)
+            getWebviewHTML(
+                isCodeTransformAvailable,
+                isFeatureDevAvailable,
+                isDocAvailable,
+                isCodeScanAvailable,
+                isCodeTestAvailable,
+                highlightCommand,
+                activeProfile
+            )
         )
     }
 
@@ -88,10 +99,11 @@ class Browser(parent: Disposable) : Disposable {
         isCodeScanAvailable: Boolean,
         isCodeTestAvailable: Boolean,
         highlightCommand: HighlightCommand?,
+        activeProfile: QRegionProfile?,
     ): String {
         val postMessageToJavaJsCode = receiveMessageQuery.inject("JSON.stringify(message)")
         val jsScripts = """
-            <script type="text/javascript" src="$WEB_SCRIPT_URI" defer onload="init()"></script>
+            <script type="text/javascript" src="$webUri" defer onload="init()"></script>
             <script type="text/javascript">
                 const init = () => {
                     amazonQChat.createChat(
@@ -104,14 +116,20 @@ class Browser(parent: Disposable) : Disposable {
                         quickActionCommands: [],
                         disclaimerAcknowledged: ${MeetQSettings.getInstance().disclaimerAcknowledged}
                         }
-                       
-                       
                     );
                 }
             </script>        
         """.trimIndent()
 
-        addQuickActionCommands(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeTestAvailable, isCodeScanAvailable, highlightCommand)
+        addQuickActionCommands(
+            isCodeTransformAvailable,
+            isFeatureDevAvailable,
+            isDocAvailable,
+            isCodeTestAvailable,
+            isCodeScanAvailable,
+            highlightCommand,
+            activeProfile
+        )
         return """
             <!DOCTYPE html>
             <style>
@@ -181,13 +199,14 @@ class Browser(parent: Disposable) : Disposable {
         """.trimIndent()
     }
 
-    fun addQuickActionCommands(
+    private fun addQuickActionCommands(
         isCodeTransformAvailable: Boolean,
         isFeatureDevAvailable: Boolean,
         isDocAvailable: Boolean,
         isCodeTestAvailable: Boolean,
         isCodeScanAvailable: Boolean,
         highlightCommand: HighlightCommand?,
+        activeProfile: QRegionProfile?,
     ) {
         // TODO:  Remove this once chat has been integrated with agents. This is added temporarily to keep detekt happy.
         isCodeScanAvailable
@@ -198,11 +217,10 @@ class Browser(parent: Disposable) : Disposable {
         MAX_ONBOARDING_PAGE_COUNT
         OBJECT_MAPPER
         highlightCommand
+        activeProfile
     }
 
     companion object {
-        // TODO: Switch this to respect the overriden paths too
-        private val WEB_SCRIPT_URI = ArtifactHelper().getLatestLocalLspArtifact().resolve("amazonq-ui.js").toUri()
         private const val MAX_ONBOARDING_PAGE_COUNT = 3
         private val OBJECT_MAPPER = jacksonObjectMapper()
     }

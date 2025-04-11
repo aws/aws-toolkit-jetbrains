@@ -11,16 +11,16 @@ data class ChatPrompt(
 
 data class SendChatPromptRequest(
     val command: String,
-    val params: MidChatPrompt
+    val params: MidChatPrompt,
 )
 
 data class MidChatPrompt(
     val prompt: InnerChatPrompt,
-    val tabId: String
+    val tabId: String,
 )
 
 data class InnerChatPrompt(
     val prompt: String,
     val escapedPrompt: String,
-    val context: List<String>
+    val context: List<String>,
 )

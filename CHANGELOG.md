@@ -1,3 +1,13 @@
+# _3.64_ (2025-04-10)
+- **(Bug Fix)** Fix issue where IDE freezes when logging into Amazon Q
+
+# _3.65_ (2025-04-10)
+- **(Bug Fix)** Fix issue where Amazon Q cannot process chunks from local `@workspace` context
+
+# _3.63_ (2025-04-08)
+- **(Feature)** Enterprise users can choose their preferred Amazon Q profile to improve personalization and workflow across different business regions
+- **(Bug Fix)** Amazon Q /doc: close diff tab and open README file in preview mode after user accept changes
+
 # _3.62_ (2025-04-03)
 - **(Feature)** /review: automatically generate fix without clicking Generate Fix button
 - **(Bug Fix)** /transform: prompt user to re-authenticate if credentials expire during transformation

@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.amazonq.webview
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.project.Project
@@ -34,6 +33,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Curso
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EndChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LspCommands
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
 import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
@@ -51,7 +51,7 @@ class BrowserConnector(
     private val project: Project,
 ) {
     var uiReady = CompletableDeferred<Boolean>()
-    val chatCommunicationManager = ChatCommunicationManager.getInstance(project)
+    private val chatCommunicationManager = ChatCommunicationManager.getInstance(project)
 
     suspend fun connect(
         browser: Browser,
@@ -146,10 +146,10 @@ class BrowserConnector(
         }
     }
 
-    private suspend fun handleFlareChatMessages(browser: Browser, node: JsonNode) {
+    private fun handleFlareChatMessages(browser: Browser, node: JsonNode) {
         when (node.command) {
-            "aws/chat/sendChatPrompt" -> {
-                val requestFromUi = jacksonObjectMapper().readValue(node.toString(), SendChatPromptRequest::class.java)
+            SEND_CHAT_COMMAND_PROMPT -> {
+                val requestFromUi = serializer.deserializeChatMessages(node, SendChatPromptRequest::class.java)
                 val chatPrompt = ChatPrompt(
                     requestFromUi.params.prompt.prompt,
                     requestFromUi.params.prompt.escapedPrompt,
@@ -175,12 +175,12 @@ class BrowserConnector(
                     chatPrompt,
                     textDocumentIdentifier,
                     cursorState
-                    )
+                )
 
                 var encryptionManager: JwtEncryptionManager? = null
                 val result = AmazonQLspService.executeIfRunning(project) { server ->
                     encryptionManager = this.encryptionManager
-                    server.sendChatPrompt(EncryptedChatParams(encryptionManager!!.encrypt(chatParams), partialResultToken))
+                    encryptionManager?.encrypt(chatParams)?.let { EncryptedChatParams(it, partialResultToken) }?.let { server.sendChatPrompt(it) }
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
 
                 result.whenComplete {
@@ -189,7 +189,7 @@ class BrowserConnector(
                     val messageToChat = ChatCommunicationManager.convertToJsonToSendToChat(
                         node.command,
                         requestFromUi.params.tabId,
-                        encryptionManager?.decrypt(value) ?: "",
+                        encryptionManager?.decrypt(value).orEmpty(),
                         isPartialResult = false
                     )
                     browser.postChat(messageToChat)

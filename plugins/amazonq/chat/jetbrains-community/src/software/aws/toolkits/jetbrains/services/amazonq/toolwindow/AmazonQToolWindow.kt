@@ -15,6 +15,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.ToolWindowManager
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.services.amazonq.QWebviewPanel
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
@@ -25,7 +26,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessageConnector
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.util.highlightCommand
+import software.aws.toolkits.jetbrains.services.amazonq.webview.Browser
 import software.aws.toolkits.jetbrains.services.amazonq.webview.BrowserConnector
 import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapter
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.EditorThemeAdapter
@@ -53,30 +56,43 @@ class AmazonQToolWindow private constructor(
     private val appConnections = mutableListOf<AppConnection>()
 
     init {
-        initConnections()
-        connectUi()
-        connectApps()
+        prepareBrowser()
+
+        scope.launch {
+            chatPanel.browser.await()
+        }
 
         project.messageBus.connect().subscribe(
             AsyncChatUiListener.TOPIC,
             object : AsyncChatUiListener {
                 override fun onChange(message: String) {
                     runInEdt {
-                        chatPanel.browser?.postChat(message)
+                        chatPanel.browser.get()?.postChat(message)
                     }
                 }
             }
         )
     }
 
+    private fun prepareBrowser() {
+        chatPanel.browser.whenComplete { browser, ex ->
+            if (ex != null) {
+                return@whenComplete
+            }
+
+            initConnections()
+            connectUi(browser)
+            connectApps(browser)
+        }
+    }
+
     fun disposeAndRecreate() {
         browserConnector.uiReady = CompletableDeferred()
+
         chatPanel.disposeAndRecreate()
 
         appConnections.clear()
-        initConnections()
-        connectUi()
-        connectApps()
+        prepareBrowser()
 
         ApplicationManager.getApplication().messageBus.syncPublisher(LafManagerListener.TOPIC).lookAndFeelChanged(LafManager.getInstance())
     }
@@ -109,9 +125,7 @@ class AmazonQToolWindow private constructor(
         }
     }
 
-    private fun connectApps() {
-        val browser = chatPanel.browser ?: return
-
+    private fun connectApps(browser: Browser) {
         val fqnWebviewAdapter = FqnWebviewAdapter(browser.jcefBrowser, browserConnector)
 
         appConnections.forEach { connection ->
@@ -129,23 +143,23 @@ class AmazonQToolWindow private constructor(
         }
     }
 
-    private fun connectUi() {
-        val chatBrowser = chatPanel.browser ?: return
+    private fun connectUi(browser: Browser) {
         val loginBrowser = QWebviewPanel.getInstance(project).browser ?: return
 
-        chatBrowser.init(
+        browser.init(
             isCodeTransformAvailable = isCodeTransformAvailable(project),
             isFeatureDevAvailable = isFeatureDevAvailable(project),
             isCodeScanAvailable = isCodeScanAvailable(project),
             isCodeTestAvailable = isCodeTestAvailable(project),
             isDocAvailable = isDocAvailable(project),
-            highlightCommand = highlightCommand()
+            highlightCommand = highlightCommand(),
+            activeProfile = QRegionProfileManager.getInstance().takeIf { it.shouldDisplayProfileInfo(project) }?.activeProfile(project)
         )
 
         scope.launch {
             // Pipe messages from the UI to the relevant apps and vice versa
             browserConnector.connect(
-                browser = chatBrowser,
+                browser = browser,
                 connections = appConnections,
             )
         }
@@ -153,7 +167,7 @@ class AmazonQToolWindow private constructor(
         scope.launch {
             // Update the theme in the UI when the IDE theme changes
             browserConnector.connectTheme(
-                chatBrowser = chatBrowser.jcefBrowser.cefBrowser,
+                chatBrowser = browser.jcefBrowser.cefBrowser,
                 loginBrowser = loginBrowser.jcefBrowser.cefBrowser,
                 themeSource = editorThemeAdapter.onThemeChange(),
             )
