@@ -10,6 +10,6 @@ import kotlin.io.path.Path
 
 fun getTextDocumentIdentifier(project: Project): TextDocumentIdentifier {
     val selectedEditor = FileEditorManager.getInstance(project).selectedEditor
-    val filePath = Path(selectedEditor?.file?.path ?: "").toUri()
+    val filePath = Path(selectedEditor?.file?.path.orEmpty()).toUri()
     return TextDocumentIdentifier(filePath.toString())
 }
