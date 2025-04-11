@@ -3,8 +3,10 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.webview
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.util.RunOnceUtil
+import com.intellij.openapi.project.Project
 import com.intellij.ui.jcef.JBCefJSQuery.Response
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.awaitClose
@@ -17,8 +19,20 @@ import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
+import org.eclipse.lsp4j.Position
+import org.eclipse.lsp4j.Range
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorState
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
 import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.AmazonQTheme
@@ -26,13 +40,16 @@ import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.ThemeBrows
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Telemetry
+import java.util.concurrent.CompletableFuture
 import java.util.function.Function
 
 class BrowserConnector(
     private val serializer: MessageSerializer = MessageSerializer.getInstance(),
     private val themeBrowserAdapter: ThemeBrowserAdapter = ThemeBrowserAdapter(),
+    private val project: Project,
 ) {
     var uiReady = CompletableDeferred<Boolean>()
+    private val chatCommunicationManager = ChatCommunicationManager.getInstance(project)
 
     suspend fun connect(
         browser: Browser,
@@ -77,7 +94,10 @@ class BrowserConnector(
                     }
                 }
 
-                val tabType = node.tabType ?: return@onEach
+                val tabType = node.tabType
+                if (tabType == null) {
+                    handleFlareChatMessages(browser, node)
+                }
                 connections.filter { connection -> connection.app.tabTypes.contains(tabType) }.forEach { connection ->
                     launch {
                         val message = serializer.deserialize(node, connection.messageTypeRegistry)
@@ -121,6 +141,58 @@ class BrowserConnector(
 
         awaitClose {
             browser.receiveMessageQuery.removeHandler(handler)
+        }
+    }
+
+    private fun handleFlareChatMessages(browser: Browser, node: JsonNode) {
+        when (node.command) {
+            SEND_CHAT_COMMAND_PROMPT -> {
+                val requestFromUi = serializer.deserializeChatMessages(node, SendChatPromptRequest::class.java)
+                val chatPrompt = ChatPrompt(
+                    requestFromUi.params.prompt.prompt,
+                    requestFromUi.params.prompt.escapedPrompt,
+                    node.command
+                )
+                val textDocumentIdentifier = getTextDocumentIdentifier(project)
+                val cursorState = CursorState(
+                    Range(
+                        Position(
+                            0,
+                            0
+                        ),
+                        Position(
+                            1,
+                            1
+                        )
+                    )
+                )
+
+                val partialResultToken = chatCommunicationManager.addPartialChatMessage(requestFromUi.params.tabId)
+                val chatParams = ChatParams(
+                    requestFromUi.params.tabId,
+                    chatPrompt,
+                    textDocumentIdentifier,
+                    cursorState
+                )
+
+                var encryptionManager: JwtEncryptionManager? = null
+                val result = AmazonQLspService.executeIfRunning(project) { server ->
+                    encryptionManager = this.encryptionManager
+                    encryptionManager?.encrypt(chatParams)?.let { EncryptedChatParams(it, partialResultToken) }?.let { server.sendChatPrompt(it) }
+                } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
+
+                result.whenComplete {
+                        value, error ->
+                    chatCommunicationManager.removePartialChatMessage(partialResultToken)
+                    val messageToChat = ChatCommunicationManager.convertToJsonToSendToChat(
+                        node.command,
+                        requestFromUi.params.tabId,
+                        encryptionManager?.decrypt(value).orEmpty(),
+                        isPartialResult = false
+                    )
+                    browser.postChat(messageToChat)
+                }
+            }
         }
     }
 }

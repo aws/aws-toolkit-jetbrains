@@ -104,6 +104,8 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
     private var instance: Deferred<AmazonQServerInstance>
     val capabilities
         get() = instance.getCompleted().initializeResult.getCompleted().capabilities
+    val encryptionManager
+        get() = instance.getCompleted().encryptionManager
 
     // dont allow lsp commands if server is restarting
     private val mutex = Mutex(false)
@@ -194,7 +196,7 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
 }
 
 private class AmazonQServerInstance(private val project: Project, private val cs: CoroutineScope) : Disposable {
-    private val encryptionManager = JwtEncryptionManager()
+    val encryptionManager = JwtEncryptionManager()
 
     private val launcher: Launcher<AmazonQLanguageServer>
 
