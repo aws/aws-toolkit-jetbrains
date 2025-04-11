@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Unit test generation now completes successfully when using the `/test` command "
+}
