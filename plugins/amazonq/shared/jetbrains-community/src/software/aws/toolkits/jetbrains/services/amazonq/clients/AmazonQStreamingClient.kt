@@ -61,7 +61,7 @@ class AmazonQStreamingClient(private val project: Project) {
                             it.exportId(exportId)
                             it.exportIntent(exportIntent)
                             it.exportContext(exportContext)
-                            it.profileArn(QRegionProfileManager.getInstance().getProfileArn(project))
+                            it.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
                         },
                         ExportResultArchiveResponseHandler.builder().subscriber(
                             ExportResultArchiveResponseHandler.Visitor.builder()
