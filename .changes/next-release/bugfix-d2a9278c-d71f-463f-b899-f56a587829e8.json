@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix integer overflow when local context index input is larger than 2GB"
+}
