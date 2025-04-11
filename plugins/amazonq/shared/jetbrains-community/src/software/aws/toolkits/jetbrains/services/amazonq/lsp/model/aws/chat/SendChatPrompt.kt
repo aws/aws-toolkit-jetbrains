@@ -8,8 +8,8 @@ import org.eclipse.lsp4j.TextDocumentIdentifier
 data class ChatParams(
     val tabId: String,
     val prompt: ChatPrompt,
-    val textDocument: TextDocumentIdentifier,
-    val cursorState: CursorState,
+    val textDocument: TextDocumentIdentifier?,
+    val cursorState: CursorState?,
 )
 
 data class EncryptedChatParams(
