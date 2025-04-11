@@ -9,8 +9,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ContextCom
 data class ChatParams(
     val tabId: String,
     val prompt: ChatPrompt,
-    val textDocument: TextDocumentIdentifier,
-    val cursorState: CursorState,
+    val textDocument: TextDocumentIdentifier?,
+    val cursorState: CursorState?,
     val context: List<ContextCommand>?,
 )
 

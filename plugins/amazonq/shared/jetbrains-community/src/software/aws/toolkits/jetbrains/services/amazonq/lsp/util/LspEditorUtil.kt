@@ -3,15 +3,22 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.util
 
+import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
+import org.eclipse.lsp4j.Position
+import org.eclipse.lsp4j.Range
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorState
 import java.io.File
 import java.net.URI
 import java.net.URISyntaxException
 
-object FileUriUtil {
+object LspEditorUtil {
 
     fun toUriString(virtualFile: VirtualFile): String? {
         val protocol = virtualFile.fileSystem.protocol
@@ -38,5 +45,28 @@ object FileUriUtil {
         }
     }
 
-    private val LOG = getLogger<FileUriUtil>()
+    fun getCursorState(editor: Editor): CursorState =
+        runReadAction {
+            val selectionModel = editor.selectionModel
+            val document = editor.document
+
+            // Get start position
+            val startOffset = selectionModel.selectionStart
+            val startLine = document.getLineNumber(startOffset)
+            val startColumn = startOffset - document.getLineStartOffset(startLine)
+
+            // Get end position
+            val endOffset = selectionModel.selectionEnd
+            val endLine = document.getLineNumber(endOffset)
+            val endColumn = endOffset - document.getLineStartOffset(endLine)
+
+            return@runReadAction CursorState(
+                Range(
+                    Position(startLine, startColumn),
+                    Position(endLine, endColumn)
+                )
+            )
+        }
+
+    private val LOG = getLogger<LspEditorUtil>()
 }

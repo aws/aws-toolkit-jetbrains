@@ -33,7 +33,7 @@ import org.eclipse.lsp4j.TextDocumentItem
 import org.eclipse.lsp4j.WorkspaceFolder
 import org.eclipse.lsp4j.WorkspaceFoldersChangeEvent
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil.toUriString
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import java.nio.file.FileSystems
