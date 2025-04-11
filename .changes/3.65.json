@@ -1,0 +1,8 @@
+{
+  "date" : "2025-04-10",
+  "version" : "3.65",
+  "entries" : [ {
+    "type" : "bugfix",
+    "description" : "Fix issue where Amazon Q cannot process chunks from local `@workspace` context"
+  } ]
+}
