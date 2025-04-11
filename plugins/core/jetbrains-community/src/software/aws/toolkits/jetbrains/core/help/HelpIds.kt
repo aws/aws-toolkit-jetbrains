@@ -126,10 +126,9 @@ enum class HelpIds(shortId: String, val url: String) {
         "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/setup-credentials.html"
     ),
 
-    // TODO: update this
     Q_SWITCH_PROFILES_DIALOG(
         "QSwitchProfilesDialog",
-        "https://aws.amazon.com/q/developer/"
+        "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/subscribe-understanding-profile.html"
     ),
     ;
 
