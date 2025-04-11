@@ -2,9 +2,14 @@
     "version":"2.0",
     "metadata":{
         "apiVersion":"2023-11-27",
+        "auth":["smithy.api#httpBearerAuth"],
         "endpointPrefix":"amazoncodewhispererstreamingservice",
         "jsonVersion":"1.0",
         "protocol":"json",
+        "protocols":[
+            "json",
+            "rest-json"
+        ],
         "serviceFullName":"Amazon CodeWhisperer Streaming",
         "serviceId":"CodeWhispererStreaming",
         "signatureVersion":"bearer",
@@ -55,8 +60,27 @@
             "output":{"shape":"GenerateTaskAssistPlanResponse"},
             "errors":[
                 {"shape":"ThrottlingException"},
-                {"shape":"ServiceQuotaExceededException"},
                 {"shape":"ConflictException"},
+                {"shape":"ServiceQuotaExceededException"},
+                {"shape":"ResourceNotFoundException"},
+                {"shape":"InternalServerException"},
+                {"shape":"ValidationException"},
+                {"shape":"AccessDeniedException"}
+            ]
+        },
+        "SendMessage":{
+            "name":"SendMessage",
+            "http":{
+                "method":"POST",
+                "requestUri":"/"
+            },
+            "input":{"shape":"SendMessageRequest"},
+            "output":{"shape":"SendMessageResponse"},
+            "errors":[
+                {"shape":"DryRunOperationException"},
+                {"shape":"ThrottlingException"},
+                {"shape":"ConflictException"},
+                {"shape":"ServiceQuotaExceededException"},
                 {"shape":"ResourceNotFoundException"},
                 {"shape":"InternalServerException"},
                 {"shape":"ValidationException"},
@@ -69,9 +93,125 @@
             "type":"structure",
             "required":["message"],
             "members":{
-                "message":{"shape":"String"}
+                "message":{"shape":"String"},
+                "reason":{"shape":"AccessDeniedExceptionReason"}
             },
             "exception":true
+        },
+        "AccessDeniedExceptionReason":{
+            "type":"string",
+            "enum":["UNAUTHORIZED_CUSTOMIZATION_RESOURCE_ACCESS"]
+        },
+        "Action":{
+            "type":"structure",
+            "members":{
+                "webLink":{"shape":"WebLink"},
+                "moduleLink":{"shape":"ModuleLink"}
+            }
+        },
+        "AdditionalContentEntry":{
+            "type":"structure",
+            "required":[
+                "name",
+                "description"
+            ],
+            "members":{
+                "name":{"shape":"AdditionalContentEntryNameString"},
+                "description":{"shape":"AdditionalContentEntryDescriptionString"},
+                "innerContext":{"shape":"AdditionalContentEntryInnerContextString"}
+            }
+        },
+        "AdditionalContentEntryDescriptionString":{
+            "type":"string",
+            "max":1024,
+            "min":1,
+            "sensitive":true
+        },
+        "AdditionalContentEntryInnerContextString":{
+            "type":"string",
+            "max":8192,
+            "min":1,
+            "sensitive":true
+        },
+        "AdditionalContentEntryNameString":{
+            "type":"string",
+            "max":1024,
+            "min":1,
+            "pattern":"[a-z]+(?:-[a-z0-9]+)*",
+            "sensitive":true
+        },
+        "AdditionalContentList":{
+            "type":"list",
+            "member":{"shape":"AdditionalContentEntry"},
+            "max":20,
+            "min":0
+        },
+        "Alert":{
+            "type":"structure",
+            "required":[
+                "type",
+                "content"
+            ],
+            "members":{
+                "type":{"shape":"AlertType"},
+                "content":{"shape":"AlertComponentList"}
+            }
+        },
+        "AlertComponent":{
+            "type":"structure",
+            "members":{
+                "text":{"shape":"Text"}
+            }
+        },
+        "AlertComponentList":{
+            "type":"list",
+            "member":{"shape":"AlertComponent"}
+        },
+        "AlertType":{
+            "type":"string",
+            "enum":[
+                "INFO",
+                "ERROR",
+                "WARNING"
+            ]
+        },
+        "AppStudioState":{
+            "type":"structure",
+            "required":[
+                "namespace",
+                "propertyName",
+                "propertyContext"
+            ],
+            "members":{
+                "namespace":{"shape":"AppStudioStateNamespaceString"},
+                "propertyName":{"shape":"AppStudioStatePropertyNameString"},
+                "propertyValue":{"shape":"AppStudioStatePropertyValueString"},
+                "propertyContext":{"shape":"AppStudioStatePropertyContextString"}
+            }
+        },
+        "AppStudioStateNamespaceString":{
+            "type":"string",
+            "max":1024,
+            "min":1,
+            "sensitive":true
+        },
+        "AppStudioStatePropertyContextString":{
+            "type":"string",
+            "max":1024,
+            "min":1,
+            "sensitive":true
+        },
+        "AppStudioStatePropertyNameString":{
+            "type":"string",
+            "max":1024,
+            "min":1,
+            "sensitive":true
+        },
+        "AppStudioStatePropertyValueString":{
+            "type":"string",
+            "max":10240,
+            "min":0,
+            "sensitive":true
         },
         "ArtifactId":{
             "type":"string",
@@ -97,23 +237,19 @@
             "type":"structure",
             "required":["content"],
             "members":{
-                "messageId":{"shape":"AssistantResponseMessageMessageIdString"},
+                "messageId":{"shape":"MessageId"},
                 "content":{"shape":"AssistantResponseMessageContentString"},
                 "supplementaryWebLinks":{"shape":"SupplementaryWebLinks"},
                 "references":{"shape":"References"},
-                "followupPrompt":{"shape":"FollowupPrompt"}
+                "followupPrompt":{"shape":"FollowupPrompt"},
+                "toolUses":{"shape":"ToolUses"}
             }
         },
         "AssistantResponseMessageContentString":{
             "type":"string",
-            "max":4096,
+            "max":100000,
             "min":0,
             "sensitive":true
-        },
-        "AssistantResponseMessageMessageIdString":{
-            "type":"string",
-            "max":128,
-            "min":0
         },
         "BinaryMetadataEvent":{
             "type":"structure",
@@ -141,7 +277,7 @@
         "ChatHistory":{
             "type":"list",
             "member":{"shape":"ChatMessage"},
-            "max":10,
+            "max":100,
             "min":0
         },
         "ChatMessage":{
@@ -157,10 +293,16 @@
             "members":{
                 "messageMetadataEvent":{"shape":"MessageMetadataEvent"},
                 "assistantResponseEvent":{"shape":"AssistantResponseEvent"},
+                "dryRunSucceedEvent":{"shape":"DryRunSucceedEvent"},
                 "codeReferenceEvent":{"shape":"CodeReferenceEvent"},
                 "supplementaryWebLinksEvent":{"shape":"SupplementaryWebLinksEvent"},
                 "followupPromptEvent":{"shape":"FollowupPromptEvent"},
-                "invalidStateEvent": {"shape":  "InvalidStateEvent"},
+                "codeEvent":{"shape":"CodeEvent"},
+                "intentsEvent":{"shape":"IntentsEvent"},
+                "interactionComponentsEvent":{"shape":"InteractionComponentsEvent"},
+                "toolUseEvent":{"shape":"ToolUseEvent"},
+                "citationEvent":{"shape":"CitationEvent"},
+                "invalidStateEvent":{"shape":"InvalidStateEvent"},
                 "error":{"shape":"InternalServerException"}
             },
             "eventstream":true
@@ -173,6 +315,71 @@
                 "INLINE_CHAT"
             ]
         },
+        "CitationEvent":{
+            "type":"structure",
+            "required":[
+                "target",
+                "citationLink"
+            ],
+            "members":{
+                "target":{"shape":"CitationTarget"},
+                "citationText":{"shape":"SensitiveString"},
+                "citationLink":{"shape":"SensitiveString"}
+            },
+            "event":true
+        },
+        "CitationTarget":{
+            "type":"structure",
+            "members":{
+                "location":{"shape":"Offset"},
+                "range":{"shape":"Span"}
+            },
+            "union":true
+        },
+        "CloudWatchTroubleshootingLink":{
+            "type":"structure",
+            "required":[
+                "label",
+                "investigationPayload"
+            ],
+            "members":{
+                "label":{"shape":"CloudWatchTroubleshootingLinkLabelString"},
+                "investigationPayload":{"shape":"CloudWatchTroubleshootingLinkInvestigationPayloadString"},
+                "defaultText":{"shape":"CloudWatchTroubleshootingLinkDefaultTextString"}
+            }
+        },
+        "CloudWatchTroubleshootingLinkDefaultTextString":{
+            "type":"string",
+            "max":1024,
+            "min":0,
+            "sensitive":true
+        },
+        "CloudWatchTroubleshootingLinkInvestigationPayloadString":{
+            "type":"string",
+            "max":16384,
+            "min":0,
+            "sensitive":true
+        },
+        "CloudWatchTroubleshootingLinkLabelString":{
+            "type":"string",
+            "max":1024,
+            "min":0,
+            "sensitive":true
+        },
+        "CodeEvent":{
+            "type":"structure",
+            "required":["content"],
+            "members":{
+                "content":{"shape":"CodeEventContentString"}
+            },
+            "event":true
+        },
+        "CodeEventContentString":{
+            "type":"string",
+            "max":10240,
+            "min":0,
+            "sensitive":true
+        },
         "CodeReferenceEvent":{
             "type":"structure",
             "members":{
@@ -184,9 +391,29 @@
             "type":"structure",
             "required":["message"],
             "members":{
-                "message":{"shape":"String"}
+                "message":{"shape":"String"},
+                "reason":{"shape":"ConflictExceptionReason"}
             },
             "exception":true
+        },
+        "ConflictExceptionReason":{
+            "type":"string",
+            "enum":[
+                "CUSTOMER_KMS_KEY_INVALID_KEY_POLICY",
+                "CUSTOMER_KMS_KEY_DISABLED",
+                "MISMATCHED_KMS_KEY"
+            ]
+        },
+        "ConsoleState":{
+            "type":"structure",
+            "members":{
+                "region":{"shape":"String"},
+                "consoleUrl":{"shape":"SensitiveString"},
+                "serviceId":{"shape":"String"},
+                "serviceConsolePage":{"shape":"String"},
+                "serviceSubconsolePage":{"shape":"String"},
+                "taskName":{"shape":"SensitiveString"}
+            }
         },
         "ContentChecksum":{
             "type":"string",
@@ -220,7 +447,7 @@
                 "history":{"shape":"ChatHistory"},
                 "currentMessage":{"shape":"ChatMessage"},
                 "chatTriggerType":{"shape":"ChatTriggerType"},
-                "customizationArn":{"shape": "ResourceArn"}
+                "customizationArn":{"shape":"ResourceArn"}
             }
         },
         "CursorState":{
@@ -276,14 +503,80 @@
             "max":1000,
             "min":0
         },
+        "DryRunOperationException":{
+            "type":"structure",
+            "members":{
+                "message":{"shape":"String"},
+                "responseCode":{"shape":"Integer"}
+            },
+            "exception":true
+        },
+        "DryRunSucceedEvent":{
+            "type":"structure",
+            "members":{
+            },
+            "event":true
+        },
         "EditorState":{
             "type":"structure",
             "members":{
                 "document":{"shape":"TextDocument"},
                 "cursorState":{"shape":"CursorState"},
-                "relevantDocuments": {"shape": "RelevantDocumentList"},
-                "useRelevantDocuments": {"shape": "Boolean"}
+                "relevantDocuments":{"shape":"RelevantDocumentList"},
+                "useRelevantDocuments":{"shape":"Boolean"}
             }
+        },
+        "EnvState":{
+            "type":"structure",
+            "members":{
+                "operatingSystem":{"shape":"EnvStateOperatingSystemString"},
+                "currentWorkingDirectory":{"shape":"EnvStateCurrentWorkingDirectoryString"},
+                "environmentVariables":{"shape":"EnvironmentVariables"},
+                "timezoneOffset":{"shape":"EnvStateTimezoneOffsetInteger"}
+            }
+        },
+        "EnvStateCurrentWorkingDirectoryString":{
+            "type":"string",
+            "max":256,
+            "min":1,
+            "sensitive":true
+        },
+        "EnvStateOperatingSystemString":{
+            "type":"string",
+            "max":32,
+            "min":1,
+            "pattern":"(macos|linux|windows)"
+        },
+        "EnvStateTimezoneOffsetInteger":{
+            "type":"integer",
+            "box":true,
+            "max":1440,
+            "min":-1440
+        },
+        "EnvironmentVariable":{
+            "type":"structure",
+            "members":{
+                "key":{"shape":"EnvironmentVariableKeyString"},
+                "value":{"shape":"EnvironmentVariableValueString"}
+            }
+        },
+        "EnvironmentVariableKeyString":{
+            "type":"string",
+            "max":256,
+            "min":1,
+            "sensitive":true
+        },
+        "EnvironmentVariableValueString":{
+            "type":"string",
+            "max":1024,
+            "min":1,
+            "sensitive":true
+        },
+        "EnvironmentVariables":{
+            "type":"list",
+            "member":{"shape":"EnvironmentVariable"},
+            "max":100,
+            "min":0
         },
         "ExportContext":{
             "type":"structure",
@@ -308,10 +601,16 @@
                 "exportIntent"
             ],
             "members":{
-                "exportId":{"shape":"String"},
+                "exportId":{"shape":"ExportResultArchiveRequestExportIdString"},
                 "exportIntent":{"shape":"ExportIntent"},
-                "exportContext":{"shape":"ExportContext"}
+                "exportContext":{"shape":"ExportContext"},
+                "profileArn":{"shape":"ProfileArn"}
             }
+        },
+        "ExportResultArchiveRequestExportIdString":{
+            "type":"string",
+            "max":1024,
+            "min":0
         },
         "ExportResultArchiveResponse":{
             "type":"structure",
@@ -345,7 +644,8 @@
             "type":"structure",
             "required":["conversationState"],
             "members":{
-                "conversationState":{"shape":"ConversationState"}
+                "conversationState":{"shape":"ConversationState"},
+                "profileArn":{"shape":"ProfileArn"}
             }
         },
         "GenerateAssistantResponseResponse":{
@@ -367,7 +667,8 @@
             ],
             "members":{
                 "conversationState":{"shape":"ConversationState"},
-                "workspaceState":{"shape":"WorkspaceState"}
+                "workspaceState":{"shape":"WorkspaceState"},
+                "profileArn":{"shape":"ProfileArn"}
             }
         },
         "GenerateTaskAssistPlanResponse":{
@@ -376,9 +677,168 @@
                 "planningResponseStream":{"shape":"ChatResponseStream"}
             }
         },
+        "GitState":{
+            "type":"structure",
+            "members":{
+                "status":{"shape":"GitStateStatusString"}
+            }
+        },
+        "GitStateStatusString":{
+            "type":"string",
+            "max":4096,
+            "min":0,
+            "sensitive":true
+        },
+        "ImageBlock":{
+            "type":"structure",
+            "required":[
+                "format",
+                "source"
+            ],
+            "members":{
+                "format":{"shape":"ImageFormat"},
+                "source":{"shape":"ImageSource"}
+            }
+        },
+        "ImageBlocks":{
+            "type":"list",
+            "member":{"shape":"ImageBlock"},
+            "max":10,
+            "min":0
+        },
+        "ImageFormat":{
+            "type":"string",
+            "enum":[
+                "png",
+                "jpeg",
+                "gif",
+                "webp"
+            ]
+        },
+        "ImageSource":{
+            "type":"structure",
+            "members":{
+                "bytes":{"shape":"ImageSourceBytesBlob"}
+            },
+            "sensitive":true,
+            "union":true
+        },
+        "ImageSourceBytesBlob":{
+            "type":"blob",
+            "max":1500000,
+            "min":1
+        },
+        "InfrastructureUpdate":{
+            "type":"structure",
+            "members":{
+                "transition":{"shape":"InfrastructureUpdateTransition"}
+            }
+        },
+        "InfrastructureUpdateTransition":{
+            "type":"structure",
+            "required":[
+                "currentState",
+                "nextState"
+            ],
+            "members":{
+                "currentState":{"shape":"InfrastructureUpdateTransitionCurrentStateString"},
+                "nextState":{"shape":"InfrastructureUpdateTransitionNextStateString"}
+            }
+        },
+        "InfrastructureUpdateTransitionCurrentStateString":{
+            "type":"string",
+            "max":10240,
+            "min":0,
+            "sensitive":true
+        },
+        "InfrastructureUpdateTransitionNextStateString":{
+            "type":"string",
+            "max":10240,
+            "min":0,
+            "sensitive":true
+        },
         "Integer":{
             "type":"integer",
             "box":true
+        },
+        "IntentData":{
+            "type":"map",
+            "key":{"shape":"String"},
+            "value":{"shape":"IntentDataType"},
+            "max":100,
+            "min":0,
+            "sensitive":true
+        },
+        "IntentDataType":{
+            "type":"structure",
+            "members":{
+                "string":{"shape":"String"}
+            },
+            "union":true
+        },
+        "IntentMap":{
+            "type":"map",
+            "key":{"shape":"IntentType"},
+            "value":{"shape":"IntentData"},
+            "max":5,
+            "min":0
+        },
+        "IntentType":{
+            "type":"string",
+            "enum":[
+                "SUPPORT",
+                "GLUE_SENSEI",
+                "RESOURCE_DATA"
+            ]
+        },
+        "IntentsEvent":{
+            "type":"structure",
+            "members":{
+                "intents":{"shape":"IntentMap"}
+            },
+            "event":true
+        },
+        "InteractionComponent":{
+            "type":"structure",
+            "members":{
+                "text":{"shape":"Text"},
+                "alert":{"shape":"Alert"},
+                "infrastructureUpdate":{"shape":"InfrastructureUpdate"},
+                "progress":{"shape":"Progress"},
+                "step":{"shape":"Step"},
+                "taskDetails":{"shape":"TaskDetails"},
+                "taskReference":{"shape":"TaskReference"},
+                "suggestions":{"shape":"Suggestions"},
+                "section":{"shape":"Section"},
+                "resource":{"shape":"Resource"},
+                "resourceList":{"shape":"ResourceList"},
+                "action":{"shape":"Action"}
+            }
+        },
+        "InteractionComponentEntry":{
+            "type":"structure",
+            "required":["interactionComponent"],
+            "members":{
+                "interactionComponentId":{"shape":"InteractionComponentId"},
+                "interactionComponent":{"shape":"InteractionComponent"}
+            }
+        },
+        "InteractionComponentEntryList":{
+            "type":"list",
+            "member":{"shape":"InteractionComponentEntry"}
+        },
+        "InteractionComponentId":{
+            "type":"string",
+            "max":128,
+            "min":0
+        },
+        "InteractionComponentsEvent":{
+            "type":"structure",
+            "required":["interactionComponentEntries"],
+            "members":{
+                "interactionComponentEntries":{"shape":"InteractionComponentEntryList"}
+            },
+            "event":true
         },
         "InternalServerException":{
             "type":"structure",
@@ -392,11 +852,20 @@
         },
         "InvalidStateEvent":{
             "type":"structure",
+            "required":[
+                "reason",
+                "message"
+            ],
             "members":{
                 "reason":{"shape":"InvalidStateReason"},
-                "message":{"shape": "String"}
+                "message":{"shape":"InvalidStateEventMessageString"}
             },
             "event":true
+        },
+        "InvalidStateEventMessageString":{
+            "type":"string",
+            "max":10240,
+            "min":0
         },
         "InvalidStateReason":{
             "type":"string",
@@ -406,10 +875,16 @@
             "type":"long",
             "box":true
         },
+        "MessageId":{
+            "type":"string",
+            "max":128,
+            "min":0
+        },
         "MessageMetadataEvent":{
             "type":"structure",
             "members":{
-                "conversationId":{"shape":"MessageMetadataEventConversationIdString"}
+                "conversationId":{"shape":"MessageMetadataEventConversationIdString"},
+                "utteranceId":{"shape":"MessageMetadataEventUtteranceIdString"}
             },
             "event":true
         },
@@ -417,6 +892,42 @@
             "type":"string",
             "max":128,
             "min":0
+        },
+        "MessageMetadataEventUtteranceIdString":{
+            "type":"string",
+            "max":128,
+            "min":0
+        },
+        "ModuleLink":{
+            "type":"structure",
+            "members":{
+                "cloudWatchTroubleshootingLink":{"shape":"CloudWatchTroubleshootingLink"}
+            }
+        },
+        "Offset":{
+            "type":"integer",
+            "box":true,
+            "min":0
+        },
+        "Origin":{
+            "type":"string",
+            "enum":[
+                "CHATBOT",
+                "CONSOLE",
+                "DOCUMENTATION",
+                "MARKETING",
+                "MOBILE",
+                "SERVICE_INTERNAL",
+                "UNIFIED_SEARCH",
+                "UNKNOWN",
+                "MD",
+                "IDE",
+                "SAGE_MAKER",
+                "CLI",
+                "AI_EDITOR",
+                "OPENSEARCH_DASHBOARD",
+                "GITLAB"
+            ]
         },
         "PartBody":{
             "type":"blob",
@@ -435,6 +946,12 @@
                 "character":{"shape":"Integer"}
             }
         },
+        "ProfileArn":{
+            "type":"string",
+            "max":950,
+            "min":0,
+            "pattern":"arn:aws:codewhisperer:[-.a-z0-9]{1,63}:\\d{12}:profile/([a-zA-Z0-9]){12}"
+        },
         "ProgrammingLanguage":{
             "type":"structure",
             "required":["languageName"],
@@ -446,7 +963,24 @@
             "type":"string",
             "max":128,
             "min":1,
-            "pattern":"(python|javascript|java|csharp|typescript|c|cpp|go|kotlin|php|ruby|rust|scala|shell|sql|json|yaml|vue|tf)"
+            "pattern":"(python|javascript|java|csharp|typescript|c|cpp|go|kotlin|php|ruby|rust|scala|shell|sql|json|yaml|vue|tf|tsx|jsx|plaintext|systemverilog|dart|lua|swift|powershell|r)"
+        },
+        "Progress":{
+            "type":"structure",
+            "required":["content"],
+            "members":{
+                "content":{"shape":"ProgressComponentList"}
+            }
+        },
+        "ProgressComponent":{
+            "type":"structure",
+            "members":{
+                "step":{"shape":"Step"}
+            }
+        },
+        "ProgressComponentList":{
+            "type":"list",
+            "member":{"shape":"ProgressComponent"}
         },
         "Range":{
             "type":"structure",
@@ -489,29 +1023,90 @@
             "max":10,
             "min":0
         },
-        "RelevantTextDocument": {
-            "type": "structure",
-            "required": [
-                "relativeFilePath"
-            ],
-            "members": {
-                "relativeFilePath": {"shape": "SensitiveString"},
-                "programmingLanguage": {"shape": "ProgrammingLanguage"},
-                "text": {"shape": "SensitiveString"},
-                "documentSymbols": {"shape": "DocumentSymbols"}
+        "RelevantDocumentList":{
+            "type":"list",
+            "member":{"shape":"RelevantTextDocument"},
+            "max":30,
+            "min":0
+        },
+        "RelevantTextDocument":{
+            "type":"structure",
+            "required":["relativeFilePath"],
+            "members":{
+                "relativeFilePath":{"shape":"RelevantTextDocumentRelativeFilePathString"},
+                "programmingLanguage":{"shape":"ProgrammingLanguage"},
+                "text":{"shape":"RelevantTextDocumentTextString"},
+                "documentSymbols":{"shape":"DocumentSymbols"}
             }
         },
-        "RelevantDocumentList": {
-            "type": "list",
-            "member": {"shape": "RelevantTextDocument"},
-            "max": 5,
-            "min": 0
+        "RelevantTextDocumentRelativeFilePathString":{
+            "type":"string",
+            "max":4096,
+            "min":1,
+            "sensitive":true
+        },
+        "RelevantTextDocumentTextString":{
+            "type":"string",
+            "max":40960,
+            "min":0,
+            "sensitive":true
+        },
+        "Resource":{
+            "type":"structure",
+            "required":[
+                "title",
+                "link",
+                "description",
+                "type",
+                "ARN",
+                "resourceJsonString"
+            ],
+            "members":{
+                "title":{"shape":"ResourceTitleString"},
+                "link":{"shape":"ResourceLinkString"},
+                "description":{"shape":"ResourceDescriptionString"},
+                "type":{"shape":"ResourceTypeString"},
+                "ARN":{"shape":"ResourceARNString"},
+                "resourceJsonString":{"shape":"ResourceResourceJsonStringString"}
+            }
+        },
+        "ResourceARNString":{
+            "type":"string",
+            "max":1024,
+            "min":0,
+            "sensitive":true
         },
         "ResourceArn":{
             "type":"string",
             "max":1224,
             "min":0,
             "pattern":"arn:([-.a-z0-9]{1,63}:){2}([-.a-z0-9]{0,63}:){2}([a-zA-Z0-9-_:/]){1,1023}"
+        },
+        "ResourceDescriptionString":{
+            "type":"string",
+            "max":1024,
+            "min":0,
+            "sensitive":true
+        },
+        "ResourceLinkString":{
+            "type":"string",
+            "max":1024,
+            "min":0,
+            "sensitive":true
+        },
+        "ResourceList":{
+            "type":"structure",
+            "required":["items"],
+            "members":{
+                "action":{"shape":"Action"},
+                "items":{"shape":"ResourceListItemsList"}
+            }
+        },
+        "ResourceListItemsList":{
+            "type":"list",
+            "member":{"shape":"Resource"},
+            "max":10,
+            "min":0
         },
         "ResourceNotFoundException":{
             "type":"structure",
@@ -520,6 +1115,24 @@
                 "message":{"shape":"String"}
             },
             "exception":true
+        },
+        "ResourceResourceJsonStringString":{
+            "type":"string",
+            "max":8192,
+            "min":0,
+            "sensitive":true
+        },
+        "ResourceTitleString":{
+            "type":"string",
+            "max":1024,
+            "min":0,
+            "sensitive":true
+        },
+        "ResourceTypeString":{
+            "type":"string",
+            "max":1024,
+            "min":0,
+            "sensitive":true
         },
         "ResultArchiveStream":{
             "type":"structure",
@@ -555,9 +1168,129 @@
             "min":0,
             "sensitive":true
         },
+        "Section":{
+            "type":"structure",
+            "required":[
+                "title",
+                "content"
+            ],
+            "members":{
+                "title":{"shape":"SectionTitleString"},
+                "content":{"shape":"SectionContentList"},
+                "action":{"shape":"Action"}
+            }
+        },
+        "SectionComponent":{
+            "type":"structure",
+            "members":{
+                "text":{"shape":"Text"},
+                "alert":{"shape":"Alert"},
+                "resource":{"shape":"Resource"},
+                "resourceList":{"shape":"ResourceList"}
+            }
+        },
+        "SectionContentList":{
+            "type":"list",
+            "member":{"shape":"SectionComponent"},
+            "max":5,
+            "min":0
+        },
+        "SectionTitleString":{
+            "type":"string",
+            "max":1024,
+            "min":0,
+            "sensitive":true
+        },
+        "SendMessageRequest":{
+            "type":"structure",
+            "required":["conversationState"],
+            "members":{
+                "conversationState":{"shape":"ConversationState"},
+                "profileArn":{"shape":"ProfileArn"},
+                "source":{"shape":"Origin"},
+                "dryRun":{"shape":"Boolean"}
+            }
+        },
+        "SendMessageResponse":{
+            "type":"structure",
+            "required":["sendMessageResponse"],
+            "members":{
+                "sendMessageResponse":{"shape":"ChatResponseStream"}
+            }
+        },
+        "SensitiveDocument":{
+            "type":"structure",
+            "members":{
+            },
+            "document":true,
+            "sensitive":true
+        },
         "SensitiveString":{
             "type":"string",
             "sensitive":true
+        },
+        "ServiceQuotaExceededException":{
+            "type":"structure",
+            "required":["message"],
+            "members":{
+                "message":{"shape":"String"}
+            },
+            "exception":true
+        },
+        "ShellHistory":{
+            "type":"list",
+            "member":{"shape":"ShellHistoryEntry"},
+            "max":20,
+            "min":0
+        },
+        "ShellHistoryEntry":{
+            "type":"structure",
+            "required":["command"],
+            "members":{
+                "command":{"shape":"ShellHistoryEntryCommandString"},
+                "directory":{"shape":"ShellHistoryEntryDirectoryString"},
+                "exitCode":{"shape":"Integer"},
+                "stdout":{"shape":"ShellHistoryEntryStdoutString"},
+                "stderr":{"shape":"ShellHistoryEntryStderrString"}
+            }
+        },
+        "ShellHistoryEntryCommandString":{
+            "type":"string",
+            "max":1024,
+            "min":1,
+            "sensitive":true
+        },
+        "ShellHistoryEntryDirectoryString":{
+            "type":"string",
+            "max":256,
+            "min":1,
+            "sensitive":true
+        },
+        "ShellHistoryEntryStderrString":{
+            "type":"string",
+            "max":4096,
+            "min":0,
+            "sensitive":true
+        },
+        "ShellHistoryEntryStdoutString":{
+            "type":"string",
+            "max":4096,
+            "min":0,
+            "sensitive":true
+        },
+        "ShellState":{
+            "type":"structure",
+            "required":["shellName"],
+            "members":{
+                "shellName":{"shape":"ShellStateShellNameString"},
+                "shellHistory":{"shape":"ShellHistory"}
+            }
+        },
+        "ShellStateShellNameString":{
+            "type":"string",
+            "max":32,
+            "min":1,
+            "pattern":"(zsh|bash|fish|pwsh|nu)"
         },
         "Span":{
             "type":"structure",
@@ -576,7 +1309,79 @@
             "box":true,
             "min":0
         },
+        "Step":{
+            "type":"structure",
+            "required":[
+                "id",
+                "state",
+                "label"
+            ],
+            "members":{
+                "id":{"shape":"StepIdInteger"},
+                "state":{"shape":"StepState"},
+                "label":{"shape":"StepLabelString"},
+                "content":{"shape":"StepComponentList"}
+            }
+        },
+        "StepComponent":{
+            "type":"structure",
+            "members":{
+                "text":{"shape":"Text"}
+            }
+        },
+        "StepComponentList":{
+            "type":"list",
+            "member":{"shape":"StepComponent"}
+        },
+        "StepIdInteger":{
+            "type":"integer",
+            "box":true,
+            "max":128,
+            "min":0
+        },
+        "StepLabelString":{
+            "type":"string",
+            "max":1024,
+            "min":0,
+            "sensitive":true
+        },
+        "StepState":{
+            "type":"string",
+            "enum":[
+                "FAILED",
+                "SUCCEEDED",
+                "STOPPED",
+                "PENDING",
+                "IN_PROGRESS",
+                "LOADING",
+                "PAUSED"
+            ]
+        },
         "String":{"type":"string"},
+        "Suggestion":{
+            "type":"structure",
+            "required":["value"],
+            "members":{
+                "value":{"shape":"SuggestionValueString"}
+            }
+        },
+        "SuggestionList":{
+            "type":"list",
+            "member":{"shape":"Suggestion"}
+        },
+        "SuggestionValueString":{
+            "type":"string",
+            "max":1000,
+            "min":1,
+            "sensitive":true
+        },
+        "Suggestions":{
+            "type":"structure",
+            "required":["items"],
+            "members":{
+                "items":{"shape":"SuggestionList"}
+            }
+        },
         "SupplementaryWebLink":{
             "type":"structure",
             "required":[
@@ -627,11 +1432,160 @@
                 "USAGE"
             ]
         },
+        "TaskAction":{
+            "type":"structure",
+            "required":[
+                "label",
+                "payload"
+            ],
+            "members":{
+                "label":{"shape":"TaskActionLabelString"},
+                "note":{"shape":"TaskActionNote"},
+                "primary":{"shape":"Boolean"},
+                "disabled":{"shape":"Boolean"},
+                "payload":{"shape":"TaskActionPayload"},
+                "confirmation":{"shape":"TaskActionConfirmation"}
+            }
+        },
+        "TaskActionConfirmation":{
+            "type":"structure",
+            "members":{
+                "content":{"shape":"TaskActionConfirmationContentString"}
+            }
+        },
+        "TaskActionConfirmationContentString":{
+            "type":"string",
+            "max":10240,
+            "min":0,
+            "sensitive":true
+        },
+        "TaskActionLabelString":{
+            "type":"string",
+            "max":1024,
+            "min":0,
+            "sensitive":true
+        },
+        "TaskActionList":{
+            "type":"list",
+            "member":{"shape":"TaskAction"}
+        },
+        "TaskActionNote":{
+            "type":"structure",
+            "required":["content"],
+            "members":{
+                "content":{"shape":"TaskActionNoteContentString"},
+                "type":{"shape":"TaskActionNoteType"}
+            }
+        },
+        "TaskActionNoteContentString":{
+            "type":"string",
+            "max":10240,
+            "min":0,
+            "sensitive":true
+        },
+        "TaskActionNoteType":{
+            "type":"string",
+            "enum":[
+                "INFO",
+                "WARNING"
+            ]
+        },
+        "TaskActionPayload":{
+            "type":"map",
+            "key":{"shape":"TaskActionPayloadKeyString"},
+            "value":{"shape":"TaskActionPayloadValueString"},
+            "max":32,
+            "min":0
+        },
+        "TaskActionPayloadKeyString":{
+            "type":"string",
+            "max":1024,
+            "min":1
+        },
+        "TaskActionPayloadValueString":{
+            "type":"string",
+            "max":1024,
+            "min":1,
+            "sensitive":true
+        },
+        "TaskComponent":{
+            "type":"structure",
+            "members":{
+                "text":{"shape":"Text"},
+                "infrastructureUpdate":{"shape":"InfrastructureUpdate"},
+                "alert":{"shape":"Alert"},
+                "progress":{"shape":"Progress"}
+            }
+        },
+        "TaskComponentList":{
+            "type":"list",
+            "member":{"shape":"TaskComponent"}
+        },
+        "TaskDetails":{
+            "type":"structure",
+            "required":[
+                "overview",
+                "content"
+            ],
+            "members":{
+                "overview":{"shape":"TaskOverview"},
+                "content":{"shape":"TaskComponentList"},
+                "actions":{"shape":"TaskActionList"}
+            }
+        },
+        "TaskOverview":{
+            "type":"structure",
+            "required":[
+                "label",
+                "description"
+            ],
+            "members":{
+                "label":{"shape":"TaskOverviewLabelString"},
+                "description":{"shape":"TaskOverviewDescriptionString"}
+            }
+        },
+        "TaskOverviewDescriptionString":{
+            "type":"string",
+            "max":10240,
+            "min":0,
+            "sensitive":true
+        },
+        "TaskOverviewLabelString":{
+            "type":"string",
+            "max":1024,
+            "min":0,
+            "sensitive":true
+        },
+        "TaskReference":{
+            "type":"structure",
+            "required":["taskId"],
+            "members":{
+                "taskId":{"shape":"TaskReferenceTaskIdString"}
+            }
+        },
+        "TaskReferenceTaskIdString":{
+            "type":"string",
+            "max":128,
+            "min":1
+        },
         "TestGenerationJobGroupName":{
             "type":"string",
             "max":128,
             "min":1,
             "pattern":"[a-zA-Z0-9-_]+"
+        },
+        "Text":{
+            "type":"structure",
+            "required":["content"],
+            "members":{
+                "content":{"shape":"TextContentString"}
+            }
+        },
+        "TextContentString":{
+            "type":"string",
+            "max":10240,
+            "min":0,
+            "sensitive":true
         },
         "TextDocument":{
             "type":"structure",
@@ -674,7 +1628,7 @@
         },
         "TextDocumentTextString":{
             "type":"string",
-            "max":10240,
+            "max":40000,
             "min":0,
             "sensitive":true
         },
@@ -682,25 +1636,152 @@
             "type":"structure",
             "required":["message"],
             "members":{
-                "message":{"shape":"String"}
+                "message":{"shape":"String"},
+                "reason":{"shape":"ThrottlingExceptionReason"}
             },
             "exception":true,
             "retryable":{"throttling":true}
         },
-        "ServiceQuotaExceededException":{
+        "ThrottlingExceptionReason":{
+            "type":"string",
+            "enum":["MONTHLY_REQUEST_COUNT"]
+        },
+        "Tool":{
             "type":"structure",
-            "required":["message"],
             "members":{
-                "message":{"shape":"String"}
+                "toolSpecification":{"shape":"ToolSpecification"}
             },
-            "exception":true,
-            "retryable":{"throttling":true}
+            "union":true
+        },
+        "ToolDescription":{
+            "type":"string",
+            "max":10240,
+            "min":1,
+            "sensitive":true
+        },
+        "ToolInputSchema":{
+            "type":"structure",
+            "members":{
+                "json":{"shape":"SensitiveDocument"}
+            }
+        },
+        "ToolName":{
+            "type":"string",
+            "max":64,
+            "min":0,
+            "pattern":"[a-zA-Z][a-zA-Z0-9_]*",
+            "sensitive":true
+        },
+        "ToolResult":{
+            "type":"structure",
+            "required":[
+                "toolUseId",
+                "content"
+            ],
+            "members":{
+                "toolUseId":{"shape":"ToolUseId"},
+                "content":{"shape":"ToolResultContent"},
+                "status":{"shape":"ToolResultStatus"}
+            }
+        },
+        "ToolResultContent":{
+            "type":"list",
+            "member":{"shape":"ToolResultContentBlock"}
+        },
+        "ToolResultContentBlock":{
+            "type":"structure",
+            "members":{
+                "text":{"shape":"ToolResultContentBlockTextString"},
+                "json":{"shape":"SensitiveDocument"}
+            },
+            "union":true
+        },
+        "ToolResultContentBlockTextString":{
+            "type":"string",
+            "max":30720,
+            "min":0,
+            "sensitive":true
+        },
+        "ToolResultStatus":{
+            "type":"string",
+            "enum":[
+                "success",
+                "error"
+            ]
+        },
+        "ToolResults":{
+            "type":"list",
+            "member":{"shape":"ToolResult"},
+            "max":10,
+            "min":0
+        },
+        "ToolSpecification":{
+            "type":"structure",
+            "required":[
+                "inputSchema",
+                "name"
+            ],
+            "members":{
+                "inputSchema":{"shape":"ToolInputSchema"},
+                "name":{"shape":"ToolName"},
+                "description":{"shape":"ToolDescription"}
+            }
+        },
+        "ToolUse":{
+            "type":"structure",
+            "required":[
+                "toolUseId",
+                "name",
+                "input"
+            ],
+            "members":{
+                "toolUseId":{"shape":"ToolUseId"},
+                "name":{"shape":"ToolName"},
+                "input":{"shape":"SensitiveDocument"}
+            }
+        },
+        "ToolUseEvent":{
+            "type":"structure",
+            "required":[
+                "toolUseId",
+                "name"
+            ],
+            "members":{
+                "toolUseId":{"shape":"ToolUseId"},
+                "name":{"shape":"ToolName"},
+                "input":{"shape":"ToolUseEventInputString"},
+                "stop":{"shape":"Boolean"}
+            },
+            "event":true
+        },
+        "ToolUseEventInputString":{
+            "type":"string",
+            "max":10240,
+            "min":0,
+            "sensitive":true
+        },
+        "ToolUseId":{
+            "type":"string",
+            "max":64,
+            "min":0,
+            "pattern":"[a-zA-Z0-9_-]+"
+        },
+        "ToolUses":{
+            "type":"list",
+            "member":{"shape":"ToolUse"},
+            "max":10,
+            "min":0
+        },
+        "Tools":{
+            "type":"list",
+            "member":{"shape":"Tool"}
         },
         "TransformationDownloadArtifactType":{
             "type":"string",
             "enum":[
                 "ClientInstructions",
-                "Logs"
+                "Logs",
+                "GeneratedCode"
             ]
         },
         "TransformationExportContext":{
@@ -738,12 +1819,14 @@
             "members":{
                 "content":{"shape":"UserInputMessageContentString"},
                 "userInputMessageContext":{"shape":"UserInputMessageContext"},
-                "userIntent":{"shape":"UserIntent"}
+                "userIntent":{"shape":"UserIntent"},
+                "origin":{"shape":"Origin"},
+                "images":{"shape":"ImageBlocks"}
             }
         },
         "UserInputMessageContentString":{
             "type":"string",
-            "max":4096,
+            "max":600000,
             "min":0,
             "sensitive":true
         },
@@ -751,7 +1834,16 @@
             "type":"structure",
             "members":{
                 "editorState":{"shape":"EditorState"},
-                "diagnostic":{"shape":"Diagnostic"}
+                "shellState":{"shape":"ShellState"},
+                "gitState":{"shape":"GitState"},
+                "envState":{"shape":"EnvState"},
+                "appStudioContext":{"shape":"AppStudioState"},
+                "diagnostic":{"shape":"Diagnostic"},
+                "consoleState":{"shape":"ConsoleState"},
+                "userSettings":{"shape":"UserSettings"},
+                "additionalContext":{"shape":"AdditionalContentList"},
+                "toolResults":{"shape":"ToolResults"},
+                "tools":{"shape":"Tools"}
             }
         },
         "UserIntent":{
@@ -764,8 +1856,16 @@
                 "CITE_SOURCES",
                 "EXPLAIN_LINE_BY_LINE",
                 "EXPLAIN_CODE_SELECTION",
-                "GENERATE_UNIT_TESTS"
+                "GENERATE_CLOUDFORMATION_TEMPLATE",
+                "GENERATE_UNIT_TESTS",
+                "CODE_GENERATION"
             ]
+        },
+        "UserSettings":{
+            "type":"structure",
+            "members":{
+                "hasConsentedToCrossRegionCalls":{"shape":"Boolean"}
+            }
         },
         "ValidationException":{
             "type":"structure",
@@ -778,7 +1878,34 @@
         },
         "ValidationExceptionReason":{
             "type":"string",
-            "enum":["INVALID_CONVERSATION_ID"]
+            "enum":[
+                "INVALID_CONVERSATION_ID",
+                "CONTENT_LENGTH_EXCEEDS_THRESHOLD",
+                "INVALID_KMS_GRANT"
+            ]
+        },
+        "WebLink":{
+            "type":"structure",
+            "required":[
+                "label",
+                "url"
+            ],
+            "members":{
+                "label":{"shape":"WebLinkLabelString"},
+                "url":{"shape":"WebLinkUrlString"}
+            }
+        },
+        "WebLinkLabelString":{
+            "type":"string",
+            "max":1024,
+            "min":0,
+            "sensitive":true
+        },
+        "WebLinkUrlString":{
+            "type":"string",
+            "max":1024,
+            "min":1,
+            "sensitive":true
         },
         "WorkspaceState":{
             "type":"structure",
