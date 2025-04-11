@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonq.webview
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.project.Project
@@ -32,7 +33,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatP
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorState
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EndChatParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LspCommands
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_END_CHAT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
@@ -196,15 +197,13 @@ class BrowserConnector(
                 }
             }
 
-            LspCommands.END_CHAT -> {
-                val requestFromUi = jacksonObjectMapper().readValue(node.toString(), EndChatParams::class.java)
+            SEND_END_CHAT -> {
+                val requestFromUi = serializer.deserializeChatMessages(node, EndChatParams::class.java)
 
                 val endChatParams = EndChatParams(requestFromUi.tabId)
                 val result = AmazonQLspService.executeIfRunning(project) { server ->
                     server.endChat(endChatParams)
                 } ?: CompletableFuture.failedFuture(IllegalStateException("LSP Server not running"))
-
-                println(result)
             }
         }
     }
