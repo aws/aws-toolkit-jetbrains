@@ -50,6 +50,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactMa
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.auth.DefaultAuthCredentialsService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.DefaultModuleDependenciesService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.adapter.GetConfigurationFromServerResponseTypeAdapterFactory
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.createExtendedClientMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument.TextDocumentServiceHandler
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
@@ -272,6 +273,9 @@ private class AmazonQServerInstance(private val project: Project, private val cs
 
                 // otherwise Gson treats all numbers as double which causes deser issues
                 it.setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+
+                // type adapter factory for polymorphic deserialization
+                it.registerTypeAdapterFactory(GetConfigurationFromServerResponseTypeAdapterFactory())
             }.traceMessages(
                 PrintWriter(
                     object : StringWriter() {

@@ -3,8 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws
 
-// This represents each item in the array
-data class WorkspaceInfo(val workspaceRoot: String, val workspaceId: String)
+interface GetConfigurationFromServerResponse
 
 // This represents the entire array
-data class LspServerConfigurations(val workspaces: List<WorkspaceInfo>)
+data class Workspaces(val workspaces: List<WorkspaceInfo>): GetConfigurationFromServerResponse
+data class Customizations(val customizations: List<Customization>): GetConfigurationFromServerResponse
+
+data class WorkspaceInfo(val workspaceRoot: String, val workspaceId: String)
+data class Customization(val arn: String, val name: String, val description: String)

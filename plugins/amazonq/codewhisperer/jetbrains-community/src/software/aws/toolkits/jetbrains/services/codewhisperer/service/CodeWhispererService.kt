@@ -55,7 +55,7 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererCon
 import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.GetConfigurationFromServerParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.Workspaces
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
@@ -706,12 +706,12 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         )
     }
 
-    private fun getWorkspaceIds(project: Project): CompletableFuture<LspServerConfigurations> {
+    private fun getWorkspaceIds(project: Project): CompletableFuture<Workspaces> {
         val payload = GetConfigurationFromServerParams(
             section = "aws.q.workspaceContext"
         )
         return AmazonQLspService.executeIfRunning(project) { server ->
-            server.getConfigurationFromServer(payload)
+            server.getConfigurationFromServer(payload) as CompletableFuture<Workspaces>
         } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
     }
 
