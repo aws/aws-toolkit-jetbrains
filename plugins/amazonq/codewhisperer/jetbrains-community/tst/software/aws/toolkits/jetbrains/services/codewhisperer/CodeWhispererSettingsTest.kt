@@ -227,7 +227,6 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
             sut.setProjectContextIndexThreadCount(s)
             assertThat(sut.getProjectContextIndexThreadCount()).isEqualTo(expected)
         }
-
     }
 
     @Test

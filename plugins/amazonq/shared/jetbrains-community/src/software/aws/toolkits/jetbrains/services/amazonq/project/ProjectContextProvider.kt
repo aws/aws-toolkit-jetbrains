@@ -241,7 +241,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
-    fun collectFiles(): FileCollectionResult  = collectFiles(project.getBaseDirectories(), ChangeListManager.getInstance(project))
+    fun collectFiles(): FileCollectionResult = collectFiles(project.getBaseDirectories(), ChangeListManager.getInstance(project))
 
     private fun queryResultToRelevantDocuments(queryResult: List<Chunk>): List<RelevantDocument> {
         val documents: MutableList<RelevantDocument> = mutableListOf()
