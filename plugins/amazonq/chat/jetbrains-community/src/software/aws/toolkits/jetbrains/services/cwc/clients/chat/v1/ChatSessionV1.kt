@@ -210,6 +210,7 @@ class ChatSessionV1(
             .build()
         return GenerateAssistantResponseRequest.builder()
             .conversationState(conversationState)
+            .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
             .build()
     }
 
