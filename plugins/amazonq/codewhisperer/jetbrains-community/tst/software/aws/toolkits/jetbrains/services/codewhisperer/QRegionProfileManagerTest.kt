@@ -142,7 +142,7 @@ class QRegionProfileManagerTest {
         project.messageBus.connect(disposableRule.disposable).subscribe(
             QRegionProfileSelectedListener.TOPIC,
             object : QRegionProfileSelectedListener {
-                override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
+                override fun onProfileSelected(profile: QRegionProfile?) {
                     cnt += 1
                 }
             }

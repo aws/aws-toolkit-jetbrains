@@ -139,7 +139,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
         project.messageBus.connect(this).subscribe(
             QRegionProfileSelectedListener.TOPIC,
             object : QRegionProfileSelectedListener {
-                override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
+                override fun onProfileSelected(profile: QRegionProfile?) {
                     stopModernize()
                     codeTransformationSession?.let {
                         Disposer.dispose(it)

@@ -147,7 +147,7 @@ class CodeScanChatApp(private val scope: CoroutineScope) : AmazonQApp {
         context.project.messageBus.connect(this).subscribe(
             QRegionProfileSelectedListener.TOPIC,
             object : QRegionProfileSelectedListener {
-                override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
+                override fun onProfileSelected(profile: QRegionProfile?) {
                     chatSessionStorage.deleteAllSessions()
                 }
             }
