@@ -528,6 +528,7 @@ class ArtifactHandler(
             TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS -> CodeTransformArtifactType.ClientInstructions
             TransformationDownloadArtifactType.LOGS -> CodeTransformArtifactType.Logs
             TransformationDownloadArtifactType.UNKNOWN_TO_SDK_VERSION -> CodeTransformArtifactType.Unknown
+            TransformationDownloadArtifactType.GENERATED_CODE -> CodeTransformArtifactType.Unknown
         }
 
     companion object {
