@@ -3,6 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
+data class TabEventRequest(
+    val command: String,
+    val params: TabEventParams,
+)
+
 data class TabEventParams(
-    val tabId: String
+    val tabId: String,
 )

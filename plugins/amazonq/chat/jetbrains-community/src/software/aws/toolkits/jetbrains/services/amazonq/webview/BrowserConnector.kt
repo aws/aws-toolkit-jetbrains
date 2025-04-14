@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
 import org.eclipse.lsp4j.Position
@@ -29,9 +28,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryp
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_REMOVE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_ADD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_CHANGE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_REMOVE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorState
@@ -40,7 +39,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Encry
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.QuickChatActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventRequest
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
 import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.AmazonQTheme
@@ -210,23 +209,22 @@ class BrowserConnector(
                 showResult(result, partialResultToken, tabId, encryptionManager, browser)
             }
             CHAT_TAB_ADD -> {
-                val requestFromUi = serializer.deserializeChatMessages(node, TabEventParams::class.java)
+                val requestFromUi = serializer.deserializeChatMessages(node, TabEventRequest::class.java)
                 AmazonQLspService.executeIfRunning(project) { server ->
-                    server.tabAdd(requestFromUi)
+                    server.tabAdd(requestFromUi.params)
                 } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
             }
             CHAT_TAB_REMOVE -> {
-                val requestFromUi = serializer.deserializeChatMessages(node, TabEventParams::class.java)
+                val requestFromUi = serializer.deserializeChatMessages(node, TabEventRequest::class.java)
                 AmazonQLspService.executeIfRunning(project) { server ->
-                    server.tabRemove(requestFromUi).thenRun {
-                        chatCommunicationManager.removePartialChatMessage(requestFromUi.tabId)
-                    }
+                    server.tabRemove(requestFromUi.params)
+                    chatCommunicationManager.removePartialChatMessage(requestFromUi.params.tabId)
                 } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
             }
             CHAT_TAB_CHANGE -> {
-                val requestFromUi = serializer.deserializeChatMessages(node, TabEventParams::class.java)
+                val requestFromUi = serializer.deserializeChatMessages(node, TabEventRequest::class.java)
                 AmazonQLspService.executeIfRunning(project) { server ->
-                    server.tabChange(requestFromUi)
+                    server.tabChange(requestFromUi.params)
                 } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
             }
         }
