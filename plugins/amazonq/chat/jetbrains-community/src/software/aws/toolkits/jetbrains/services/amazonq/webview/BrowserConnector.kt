@@ -177,8 +177,10 @@ class BrowserConnector(
                     textDocumentIdentifier,
                     cursorState
                 )
+
                 val tabId = requestFromUi.params.tabId
                 val partialResultToken = chatCommunicationManager.addPartialChatMessage(tabId)
+
                 var encryptionManager: JwtEncryptionManager? = null
                 val result = AmazonQLspService.executeIfRunning(project) { server ->
                     encryptionManager = this.encryptionManager

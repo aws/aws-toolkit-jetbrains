@@ -409,6 +409,7 @@ class CodeTestChatController(
             .build()
         return GenerateAssistantResponseRequest.builder()
             .conversationState(conversationState)
+            .profileArn(QRegionProfileManager.getInstance().activeProfile(context.project)?.arn)
             .build()
     }
 

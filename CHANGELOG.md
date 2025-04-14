@@ -1,5 +1,12 @@
+# _3.66_ (2025-04-11)
+- **(Feature)** The logs emitted by the Agent during user command execution will be accepted and written to `.amazonq/dev/run_command.log` file in the user's local repository.
+- **(Bug Fix)** Unit test generation now completes successfully when using the `/test` command
+
 # _3.64_ (2025-04-10)
 - **(Bug Fix)** Fix issue where IDE freezes when logging into Amazon Q
+
+# _3.65_ (2025-04-10)
+- **(Bug Fix)** Fix issue where Amazon Q cannot process chunks from local `@workspace` context
 
 # _3.63_ (2025-04-08)
 - **(Feature)** Enterprise users can choose their preferred Amazon Q profile to improve personalization and workflow across different business regions

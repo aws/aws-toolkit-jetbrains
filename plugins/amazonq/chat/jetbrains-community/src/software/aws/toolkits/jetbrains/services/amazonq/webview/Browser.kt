@@ -19,6 +19,7 @@ import java.net.URI
 /*
 Displays the web view for the Amazon Q tool window
  */
+
 class Browser(parent: Disposable, private val webUri: URI, val project: Project) : Disposable {
 
     val jcefBrowser = createBrowser(parent)
