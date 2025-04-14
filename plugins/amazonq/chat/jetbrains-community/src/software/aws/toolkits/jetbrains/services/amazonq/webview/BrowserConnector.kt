@@ -210,11 +210,13 @@ class BrowserConnector(
             }
             SEND_END_CHAT -> {
                 val requestFromUi = serializer.deserializeChatMessages(node, EndChatParams::class.java)
-
                 val endChatParams = EndChatParams(requestFromUi.tabId)
                 val result = AmazonQLspService.executeIfRunning(project) { server ->
                     server.endChat(endChatParams)
                 } ?: CompletableFuture.failedFuture(IllegalStateException("LSP Server not running"))
+                result.whenComplete { value, error ->
+                    chatCommunicationManager.removePartialChatMessage(requestFromUi.tabId)
+                }
             }
         }
     }
