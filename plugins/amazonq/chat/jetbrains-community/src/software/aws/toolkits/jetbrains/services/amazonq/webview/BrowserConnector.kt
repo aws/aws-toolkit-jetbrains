@@ -178,7 +178,9 @@ class BrowserConnector(
                 var encryptionManager: JwtEncryptionManager? = null
                 val result = AmazonQLspService.executeIfRunning(project) { server ->
                     encryptionManager = this.encryptionManager
-                    server.sendChatPrompt(EncryptedChatParams(encryptionManager!!.encrypt(chatParams), partialResultToken))
+
+                    encryptionManager?.encrypt(chatParams)?.let { EncryptedChatParams(it, partialResultToken) }?.let { server.sendChatPrompt(it) }
+
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
 
                 result.whenComplete {
@@ -187,7 +189,7 @@ class BrowserConnector(
                     val messageToChat = ChatCommunicationManager.convertToJsonToSendToChat(
                         node.command,
                         requestFromUi.params.tabId,
-                        encryptionManager?.decrypt(value) ?: "",
+                        encryptionManager?.decrypt(value).orEmpty(),
                         isPartialResult = false
                     )
                     browser.postChat(messageToChat)

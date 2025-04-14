@@ -210,6 +210,7 @@ class ChatSessionV1(
             .build()
         return GenerateAssistantResponseRequest.builder()
             .conversationState(conversationState)
+            .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
             .build()
     }
 
@@ -294,6 +295,8 @@ class ChatSessionV1(
         UserIntent.EXPLAIN_CODE_SELECTION -> FollowUpType.ExplainInDetail
         UserIntent.UNKNOWN_TO_SDK_VERSION -> FollowUpType.Generated
         UserIntent.GENERATE_UNIT_TESTS -> FollowUpType.Generated
+        UserIntent.GENERATE_CLOUDFORMATION_TEMPLATE -> FollowUpType.Generated
+        UserIntent.CODE_GENERATION -> FollowUpType.Generated
         null -> FollowUpType.Generated
     }
 
