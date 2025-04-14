@@ -2,14 +2,9 @@
     "version":"2.0",
     "metadata":{
         "apiVersion":"2023-11-27",
-        "auth":["smithy.api#httpBearerAuth"],
         "endpointPrefix":"amazoncodewhispererstreamingservice",
         "jsonVersion":"1.0",
         "protocol":"json",
-        "protocols":[
-            "json",
-            "rest-json"
-        ],
         "serviceFullName":"Amazon CodeWhisperer Streaming",
         "serviceId":"CodeWhispererStreaming",
         "signatureVersion":"bearer",
@@ -33,7 +28,8 @@
                 {"shape":"InternalServerException"},
                 {"shape":"ValidationException"},
                 {"shape":"AccessDeniedException"}
-            ]
+            ],
+            "documentation":"<p>API to export operation result as an archive</p>"
         },
         "GenerateAssistantResponse":{
             "name":"GenerateAssistantResponse",
@@ -48,7 +44,8 @@
                 {"shape":"InternalServerException"},
                 {"shape":"ValidationException"},
                 {"shape":"AccessDeniedException"}
-            ]
+            ],
+            "documentation":"<p>API to generate assistant response.</p>"
         },
         "GenerateTaskAssistPlan":{
             "name":"GenerateTaskAssistPlan",
@@ -66,7 +63,8 @@
                 {"shape":"InternalServerException"},
                 {"shape":"ValidationException"},
                 {"shape":"AccessDeniedException"}
-            ]
+            ],
+            "documentation":"<p>API to generate task assist plan.</p>"
         },
         "SendMessage":{
             "name":"SendMessage",
@@ -96,10 +94,12 @@
                 "message":{"shape":"String"},
                 "reason":{"shape":"AccessDeniedExceptionReason"}
             },
+            "documentation":"<p>This exception is thrown when the user does not have sufficient access to perform this action.</p>",
             "exception":true
         },
         "AccessDeniedExceptionReason":{
             "type":"string",
+            "documentation":"<p>Reason for AccessDeniedException</p>",
             "enum":["UNAUTHORIZED_CUSTOMIZATION_RESOURCE_ACCESS"]
         },
         "Action":{
@@ -116,10 +116,20 @@
                 "description"
             ],
             "members":{
-                "name":{"shape":"AdditionalContentEntryNameString"},
-                "description":{"shape":"AdditionalContentEntryDescriptionString"},
-                "innerContext":{"shape":"AdditionalContentEntryInnerContextString"}
-            }
+                "name":{
+                    "shape":"AdditionalContentEntryNameString",
+                    "documentation":"<p>The name/identifier for this context entry</p>"
+                },
+                "description":{
+                    "shape":"AdditionalContentEntryDescriptionString",
+                    "documentation":"<p>A description of what this context entry represents</p>"
+                },
+                "innerContext":{
+                    "shape":"AdditionalContentEntryInnerContextString",
+                    "documentation":"<p>The actual contextual content</p>"
+                }
+            },
+            "documentation":"<p>Structure representing a single entry of additional contextual content</p>"
         },
         "AdditionalContentEntryDescriptionString":{
             "type":"string",
@@ -143,6 +153,7 @@
         "AdditionalContentList":{
             "type":"list",
             "member":{"shape":"AdditionalContentEntry"},
+            "documentation":"<p>A list of additional content entries, limited to 20 items</p>",
             "max":20,
             "min":0
         },
@@ -154,8 +165,12 @@
             ],
             "members":{
                 "type":{"shape":"AlertType"},
-                "content":{"shape":"AlertComponentList"}
-            }
+                "content":{
+                    "shape":"AlertComponentList",
+                    "documentation":"<p>Contains the content of the alert, which may include sensitive information.</p>"
+                }
+            },
+            "documentation":"<p>Structure representing an alert with a type and content.</p>"
         },
         "AlertComponent":{
             "type":"structure",
@@ -169,6 +184,7 @@
         },
         "AlertType":{
             "type":"string",
+            "documentation":"<p>Enum defining types of alerts that can be issued.</p>",
             "enum":[
                 "INFO",
                 "ERROR",
@@ -183,11 +199,24 @@
                 "propertyContext"
             ],
             "members":{
-                "namespace":{"shape":"AppStudioStateNamespaceString"},
-                "propertyName":{"shape":"AppStudioStatePropertyNameString"},
-                "propertyValue":{"shape":"AppStudioStatePropertyValueString"},
-                "propertyContext":{"shape":"AppStudioStatePropertyContextString"}
-            }
+                "namespace":{
+                    "shape":"AppStudioStateNamespaceString",
+                    "documentation":"<p>The namespace of the context. Examples: 'ui.Button', 'ui.Table.DataSource', 'ui.Table.RowActions.Button', 'logic.invokeAWS', 'logic.JavaScript'</p>"
+                },
+                "propertyName":{
+                    "shape":"AppStudioStatePropertyNameString",
+                    "documentation":"<p>The name of the property. Examples: 'visibility', 'disability', 'value', 'code'</p>"
+                },
+                "propertyValue":{
+                    "shape":"AppStudioStatePropertyValueString",
+                    "documentation":"<p>The value of the property.</p>"
+                },
+                "propertyContext":{
+                    "shape":"AppStudioStatePropertyContextString",
+                    "documentation":"<p>Context about how the property is used</p>"
+                }
+            },
+            "documentation":"<p>Description of a user's context when they are calling Q Chat from AppStudio</p>"
         },
         "AppStudioStateNamespaceString":{
             "type":"string",
@@ -223,8 +252,12 @@
             "type":"structure",
             "required":["content"],
             "members":{
-                "content":{"shape":"AssistantResponseEventContentString"}
+                "content":{
+                    "shape":"AssistantResponseEventContentString",
+                    "documentation":"<p>The content of the text message in markdown format.</p>"
+                }
             },
+            "documentation":"<p>Streaming Response Event for Assistant Markdown text message.</p>",
             "event":true
         },
         "AssistantResponseEventContentString":{
@@ -238,12 +271,28 @@
             "required":["content"],
             "members":{
                 "messageId":{"shape":"MessageId"},
-                "content":{"shape":"AssistantResponseMessageContentString"},
-                "supplementaryWebLinks":{"shape":"SupplementaryWebLinks"},
-                "references":{"shape":"References"},
-                "followupPrompt":{"shape":"FollowupPrompt"},
-                "toolUses":{"shape":"ToolUses"}
-            }
+                "content":{
+                    "shape":"AssistantResponseMessageContentString",
+                    "documentation":"<p>The content of the text message in markdown format.</p>"
+                },
+                "supplementaryWebLinks":{
+                    "shape":"SupplementaryWebLinks",
+                    "documentation":"<p>Web References</p>"
+                },
+                "references":{
+                    "shape":"References",
+                    "documentation":"<p>Code References</p>"
+                },
+                "followupPrompt":{
+                    "shape":"FollowupPrompt",
+                    "documentation":"<p>Followup Prompt</p>"
+                },
+                "toolUses":{
+                    "shape":"ToolUses",
+                    "documentation":"<p>ToolUse Request</p>"
+                }
+            },
+            "documentation":"<p>Markdown text message.</p>"
         },
         "AssistantResponseMessageContentString":{
             "type":"string",
@@ -254,11 +303,24 @@
         "BinaryMetadataEvent":{
             "type":"structure",
             "members":{
-                "size":{"shape":"Long"},
-                "mimeType":{"shape":"String"},
-                "contentChecksum":{"shape":"ContentChecksum"},
-                "contentChecksumType":{"shape":"ContentChecksumType"}
+                "size":{
+                    "shape":"Long",
+                    "documentation":"<p>Content length of the binary payload</p>"
+                },
+                "mimeType":{
+                    "shape":"String",
+                    "documentation":"<p>Content type of the response</p>"
+                },
+                "contentChecksum":{
+                    "shape":"ContentChecksum",
+                    "documentation":"<p>Content checksum of the binary payload</p>"
+                },
+                "contentChecksumType":{
+                    "shape":"ContentChecksumType",
+                    "documentation":"<p>Content checksum type of the binary payload</p>"
+                }
             },
+            "documentation":"<p>Payload Part</p>",
             "event":true,
             "sensitive":true
         },
@@ -267,6 +329,7 @@
             "members":{
                 "bytes":{"shape":"PartBody"}
             },
+            "documentation":"<p>Payload Part</p>",
             "event":true,
             "sensitive":true
         },
@@ -277,7 +340,8 @@
         "ChatHistory":{
             "type":"list",
             "member":{"shape":"ChatMessage"},
-            "max":100,
+            "documentation":"<p>Indicates Participant in Chat conversation</p>",
+            "max":250,
             "min":0
         },
         "ChatMessage":{
@@ -291,24 +355,69 @@
         "ChatResponseStream":{
             "type":"structure",
             "members":{
-                "messageMetadataEvent":{"shape":"MessageMetadataEvent"},
-                "assistantResponseEvent":{"shape":"AssistantResponseEvent"},
-                "dryRunSucceedEvent":{"shape":"DryRunSucceedEvent"},
-                "codeReferenceEvent":{"shape":"CodeReferenceEvent"},
-                "supplementaryWebLinksEvent":{"shape":"SupplementaryWebLinksEvent"},
-                "followupPromptEvent":{"shape":"FollowupPromptEvent"},
-                "codeEvent":{"shape":"CodeEvent"},
-                "intentsEvent":{"shape":"IntentsEvent"},
-                "interactionComponentsEvent":{"shape":"InteractionComponentsEvent"},
-                "toolUseEvent":{"shape":"ToolUseEvent"},
-                "citationEvent":{"shape":"CitationEvent"},
-                "invalidStateEvent":{"shape":"InvalidStateEvent"},
-                "error":{"shape":"InternalServerException"}
+                "messageMetadataEvent":{
+                    "shape":"MessageMetadataEvent",
+                    "documentation":"<p>Message Metadata event</p>"
+                },
+                "assistantResponseEvent":{
+                    "shape":"AssistantResponseEvent",
+                    "documentation":"<p>Assistant response event - Text / Code snippet</p>"
+                },
+                "dryRunSucceedEvent":{
+                    "shape":"DryRunSucceedEvent",
+                    "documentation":"<p>DryRun Succeed Event</p>"
+                },
+                "codeReferenceEvent":{
+                    "shape":"CodeReferenceEvent",
+                    "documentation":"<p>Code References event</p>"
+                },
+                "supplementaryWebLinksEvent":{
+                    "shape":"SupplementaryWebLinksEvent",
+                    "documentation":"<p>Web Reference links event</p>"
+                },
+                "followupPromptEvent":{
+                    "shape":"FollowupPromptEvent",
+                    "documentation":"<p>Followup prompt event</p>"
+                },
+                "codeEvent":{
+                    "shape":"CodeEvent",
+                    "documentation":"<p>Code Generated event</p>"
+                },
+                "intentsEvent":{
+                    "shape":"IntentsEvent",
+                    "documentation":"<p>Intents event</p>"
+                },
+                "interactionComponentsEvent":{
+                    "shape":"InteractionComponentsEvent",
+                    "documentation":"<p>Interactions components event</p>"
+                },
+                "toolUseEvent":{
+                    "shape":"ToolUseEvent",
+                    "documentation":"<p>ToolUse event</p>"
+                },
+                "toolResultEvent":{
+                    "shape":"ToolResultEvent",
+                    "documentation":"<p>Tool use result</p>"
+                },
+                "citationEvent":{
+                    "shape":"CitationEvent",
+                    "documentation":"<p>Citation event</p>"
+                },
+                "invalidStateEvent":{
+                    "shape":"InvalidStateEvent",
+                    "documentation":"<p>Invalid State event</p>"
+                },
+                "error":{
+                    "shape":"InternalServerException",
+                    "documentation":"<p>Internal Server Exception</p>"
+                }
             },
+            "documentation":"<p>Streaming events from UniDirectional Streaming Conversational APIs.</p>",
             "eventstream":true
         },
         "ChatTriggerType":{
             "type":"string",
+            "documentation":"<p>Trigger Reason for Chat</p>",
             "enum":[
                 "MANUAL",
                 "DIAGNOSTIC",
@@ -322,18 +431,35 @@
                 "citationLink"
             ],
             "members":{
-                "target":{"shape":"CitationTarget"},
-                "citationText":{"shape":"SensitiveString"},
-                "citationLink":{"shape":"SensitiveString"}
+                "target":{
+                    "shape":"CitationTarget",
+                    "documentation":"<p>The position or the range of the response text to be cited</p>"
+                },
+                "citationText":{
+                    "shape":"SensitiveString",
+                    "documentation":"<p>The text inside the citation '1' in [1]</p>"
+                },
+                "citationLink":{
+                    "shape":"SensitiveString",
+                    "documentation":"<p>The link to the document being cited</p>"
+                }
             },
+            "documentation":"<p>Streaming response event for citations</p>",
             "event":true
         },
         "CitationTarget":{
             "type":"structure",
             "members":{
-                "location":{"shape":"Offset"},
-                "range":{"shape":"Span"}
+                "location":{
+                    "shape":"Offset",
+                    "documentation":"<p>Represents a position in the response text where a citation should be added</p>"
+                },
+                "range":{
+                    "shape":"Span",
+                    "documentation":"<p>Represents the range in the response text to be targetted by a citation</p>"
+                }
             },
+            "documentation":"<p>Represents the target of a citation event</p>",
             "union":true
         },
         "CloudWatchTroubleshootingLink":{
@@ -343,10 +469,20 @@
                 "investigationPayload"
             ],
             "members":{
-                "label":{"shape":"CloudWatchTroubleshootingLinkLabelString"},
-                "investigationPayload":{"shape":"CloudWatchTroubleshootingLinkInvestigationPayloadString"},
-                "defaultText":{"shape":"CloudWatchTroubleshootingLinkDefaultTextString"}
-            }
+                "label":{
+                    "shape":"CloudWatchTroubleshootingLinkLabelString",
+                    "documentation":"<p>A label for the link.</p>"
+                },
+                "investigationPayload":{
+                    "shape":"CloudWatchTroubleshootingLinkInvestigationPayloadString",
+                    "documentation":"<p>Stringified JSON payload. See spec here https://code.amazon.com/packages/CloudWatchOdysseyModel/blobs/50c0832f0e393e4ab68827eb4f04d832366821c1/--/model/events.smithy#L28 .</p>"
+                },
+                "defaultText":{
+                    "shape":"CloudWatchTroubleshootingLinkDefaultTextString",
+                    "documentation":"<p>Fallback string, if target channel does not support the CloudWatchTroubleshootingLink.</p>"
+                }
+            },
+            "documentation":"<p>For CloudWatch Troubleshooting Link Module</p>"
         },
         "CloudWatchTroubleshootingLinkDefaultTextString":{
             "type":"string",
@@ -366,12 +502,33 @@
             "min":0,
             "sensitive":true
         },
+        "CodeDescription":{
+            "type":"structure",
+            "required":["href"],
+            "members":{
+                "href":{
+                    "shape":"CodeDescriptionHrefString",
+                    "documentation":"<p>An URI to open with more information about the diagnostic error.</p>"
+                }
+            },
+            "documentation":"<p>Structure to capture a description for an error code.</p>"
+        },
+        "CodeDescriptionHrefString":{
+            "type":"string",
+            "max":1024,
+            "min":1,
+            "sensitive":true
+        },
         "CodeEvent":{
             "type":"structure",
             "required":["content"],
             "members":{
-                "content":{"shape":"CodeEventContentString"}
+                "content":{
+                    "shape":"CodeEventContentString",
+                    "documentation":"<p>Generated code snippet.</p>"
+                }
             },
+            "documentation":"<p>Streaming response event for generated code text.</p>",
             "event":true
         },
         "CodeEventContentString":{
@@ -383,8 +540,12 @@
         "CodeReferenceEvent":{
             "type":"structure",
             "members":{
-                "references":{"shape":"References"}
+                "references":{
+                    "shape":"References",
+                    "documentation":"<p>Code References for Assistant Response Message</p>"
+                }
             },
+            "documentation":"<p>Streaming Response Event for CodeReferences</p>",
             "event":true
         },
         "ConflictException":{
@@ -394,10 +555,12 @@
                 "message":{"shape":"String"},
                 "reason":{"shape":"ConflictExceptionReason"}
             },
+            "documentation":"<p>This exception is thrown when the action to perform could not be completed because the resource is in a conflicting state.</p>",
             "exception":true
         },
         "ConflictExceptionReason":{
             "type":"string",
+            "documentation":"<p>Reason for ConflictException</p>",
             "enum":[
                 "CUSTOMER_KMS_KEY_INVALID_KEY_POLICY",
                 "CUSTOMER_KMS_KEY_DISABLED",
@@ -413,7 +576,8 @@
                 "serviceConsolePage":{"shape":"String"},
                 "serviceSubconsolePage":{"shape":"String"},
                 "taskName":{"shape":"SensitiveString"}
-            }
+            },
+            "documentation":"<p>Information about the state of the AWS management console page from which the user is calling</p>"
         },
         "ContentChecksum":{
             "type":"string",
@@ -426,6 +590,7 @@
         },
         "ContextTruncationScheme":{
             "type":"string",
+            "documentation":"<p>Workspace context truncation schemes based on usecase</p>",
             "enum":[
                 "ANALYSIS",
                 "GUMBY"
@@ -433,6 +598,7 @@
         },
         "ConversationId":{
             "type":"string",
+            "documentation":"<p>ID which represents a multi-turn conversation</p>",
             "max":128,
             "min":1
         },
@@ -443,37 +609,129 @@
                 "chatTriggerType"
             ],
             "members":{
-                "conversationId":{"shape":"ConversationId"},
-                "history":{"shape":"ChatHistory"},
-                "currentMessage":{"shape":"ChatMessage"},
-                "chatTriggerType":{"shape":"ChatTriggerType"},
+                "conversationId":{
+                    "shape":"ConversationId",
+                    "documentation":"<p>Unique identifier for the chat conversation stream</p>"
+                },
+                "history":{
+                    "shape":"ChatHistory",
+                    "documentation":"<p>Holds the history of chat messages.</p>"
+                },
+                "currentMessage":{
+                    "shape":"ChatMessage",
+                    "documentation":"<p>Holds the current message being processed or displayed.</p>"
+                },
+                "chatTriggerType":{
+                    "shape":"ChatTriggerType",
+                    "documentation":"<p>Trigger Reason for Chat</p>"
+                },
                 "customizationArn":{"shape":"ResourceArn"}
-            }
+            },
+            "documentation":"<p>Structure to represent the current state of a chat conversation.</p>"
         },
         "CursorState":{
             "type":"structure",
             "members":{
-                "position":{"shape":"Position"},
-                "range":{"shape":"Range"}
+                "position":{
+                    "shape":"Position",
+                    "documentation":"<p>Represents a cursor position in a Text Document</p>"
+                },
+                "range":{
+                    "shape":"Range",
+                    "documentation":"<p>Represents a text selection in a Text Document</p>"
+                }
             },
+            "documentation":"<p>Represents the state of the Cursor in an Editor</p>",
             "union":true
         },
         "Diagnostic":{
             "type":"structure",
             "members":{
-                "textDocumentDiagnostic":{"shape":"TextDocumentDiagnostic"},
-                "runtimeDiagnostic":{"shape":"RuntimeDiagnostic"}
+                "textDocumentDiagnostic":{
+                    "shape":"TextDocumentDiagnostic",
+                    "documentation":"<p>Diagnostics originating from a TextDocument</p>"
+                },
+                "runtimeDiagnostic":{
+                    "shape":"RuntimeDiagnostic",
+                    "documentation":"<p>Diagnostics originating from a Runtime</p>"
+                }
             },
+            "documentation":"<p>Represents a Diagnostic message</p>",
             "union":true
+        },
+        "DiagnosticLocation":{
+            "type":"structure",
+            "required":[
+                "uri",
+                "range"
+            ],
+            "members":{
+                "uri":{"shape":"DiagnosticLocationUriString"},
+                "range":{"shape":"Range"}
+            },
+            "documentation":"<p>Represents a location inside a resource, such as a line inside a text file.</p>"
+        },
+        "DiagnosticLocationUriString":{
+            "type":"string",
+            "max":1024,
+            "min":1,
+            "sensitive":true
+        },
+        "DiagnosticRelatedInformation":{
+            "type":"structure",
+            "required":[
+                "location",
+                "message"
+            ],
+            "members":{
+                "location":{
+                    "shape":"DiagnosticLocation",
+                    "documentation":"<p>The location of this related diagnostic information.</p>"
+                },
+                "message":{
+                    "shape":"DiagnosticRelatedInformationMessageString",
+                    "documentation":"<p>The message of this related diagnostic information.</p>"
+                }
+            },
+            "documentation":"<p>Represents a related message and source code location for a diagnostic.</p>"
+        },
+        "DiagnosticRelatedInformationList":{
+            "type":"list",
+            "member":{"shape":"DiagnosticRelatedInformation"},
+            "documentation":"<p>List of DiagnosticRelatedInformation</p>",
+            "max":1024,
+            "min":0
+        },
+        "DiagnosticRelatedInformationMessageString":{
+            "type":"string",
+            "max":1024,
+            "min":0,
+            "sensitive":true
         },
         "DiagnosticSeverity":{
             "type":"string",
+            "documentation":"<p>Diagnostic Error types</p>",
             "enum":[
                 "ERROR",
                 "WARNING",
                 "INFORMATION",
                 "HINT"
             ]
+        },
+        "DiagnosticTag":{
+            "type":"string",
+            "documentation":"<p>The diagnostic tags.</p>",
+            "enum":[
+                "UNNECESSARY",
+                "DEPRECATED"
+            ]
+        },
+        "DiagnosticTagList":{
+            "type":"list",
+            "member":{"shape":"DiagnosticTag"},
+            "documentation":"<p>List of DiagnosticTag</p>",
+            "max":1024,
+            "min":0
         },
         "DocumentSymbol":{
             "type":"structure",
@@ -482,9 +740,18 @@
                 "type"
             ],
             "members":{
-                "name":{"shape":"DocumentSymbolNameString"},
-                "type":{"shape":"SymbolType"},
-                "source":{"shape":"DocumentSymbolSourceString"}
+                "name":{
+                    "shape":"DocumentSymbolNameString",
+                    "documentation":"<p>Name of the Document Symbol</p>"
+                },
+                "type":{
+                    "shape":"SymbolType",
+                    "documentation":"<p>Symbol type - DECLARATION / USAGE</p>"
+                },
+                "source":{
+                    "shape":"DocumentSymbolSourceString",
+                    "documentation":"<p>Symbol package / source for FullyQualified names</p>"
+                }
             }
         },
         "DocumentSymbolNameString":{
@@ -509,31 +776,63 @@
                 "message":{"shape":"String"},
                 "responseCode":{"shape":"Integer"}
             },
+            "documentation":"<p>This exception is translated to a 204 as it succeeded the IAM Auth.</p>",
             "exception":true
         },
         "DryRunSucceedEvent":{
             "type":"structure",
             "members":{
             },
+            "documentation":"<p>Streaming Response Event when DryRun is succeessful</p>",
             "event":true
         },
         "EditorState":{
             "type":"structure",
             "members":{
-                "document":{"shape":"TextDocument"},
-                "cursorState":{"shape":"CursorState"},
-                "relevantDocuments":{"shape":"RelevantDocumentList"},
-                "useRelevantDocuments":{"shape":"Boolean"}
-            }
+                "document":{
+                    "shape":"TextDocument",
+                    "documentation":"<p>Represents currently edited file</p>"
+                },
+                "cursorState":{
+                    "shape":"CursorState",
+                    "documentation":"<p>Position of the cursor</p>"
+                },
+                "relevantDocuments":{
+                    "shape":"RelevantDocumentList",
+                    "documentation":"<p>Represents IDE provided relevant files</p>"
+                },
+                "useRelevantDocuments":{
+                    "shape":"Boolean",
+                    "documentation":"<p>Whether service should use relevant document in prompt</p>"
+                },
+                "workspaceFolders":{
+                    "shape":"WorkspaceFolderList",
+                    "documentation":"<p>Represents IDE provided list of workspace folders</p>"
+                }
+            },
+            "documentation":"<p>Represents the state of an Editor</p>"
         },
         "EnvState":{
             "type":"structure",
             "members":{
-                "operatingSystem":{"shape":"EnvStateOperatingSystemString"},
-                "currentWorkingDirectory":{"shape":"EnvStateCurrentWorkingDirectoryString"},
-                "environmentVariables":{"shape":"EnvironmentVariables"},
-                "timezoneOffset":{"shape":"EnvStateTimezoneOffsetInteger"}
-            }
+                "operatingSystem":{
+                    "shape":"EnvStateOperatingSystemString",
+                    "documentation":"<p>The name of the operating system in use</p>"
+                },
+                "currentWorkingDirectory":{
+                    "shape":"EnvStateCurrentWorkingDirectoryString",
+                    "documentation":"<p>The current working directory of the environment</p>"
+                },
+                "environmentVariables":{
+                    "shape":"EnvironmentVariables",
+                    "documentation":"<p>The environment variables set in the current environment</p>"
+                },
+                "timezoneOffset":{
+                    "shape":"EnvStateTimezoneOffsetInteger",
+                    "documentation":"<p>Local timezone offset of the client. For more information, see documentation https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/getTimezoneOffset</p>"
+                }
+            },
+            "documentation":"<p>State related to the user's environment</p>"
         },
         "EnvStateCurrentWorkingDirectoryString":{
             "type":"string",
@@ -556,9 +855,16 @@
         "EnvironmentVariable":{
             "type":"structure",
             "members":{
-                "key":{"shape":"EnvironmentVariableKeyString"},
-                "value":{"shape":"EnvironmentVariableValueString"}
-            }
+                "key":{
+                    "shape":"EnvironmentVariableKeyString",
+                    "documentation":"<p>The key of an environment variable</p>"
+                },
+                "value":{
+                    "shape":"EnvironmentVariableValueString",
+                    "documentation":"<p>The value of an environment variable</p>"
+                }
+            },
+            "documentation":"<p>An environment variable</p>"
         },
         "EnvironmentVariableKeyString":{
             "type":"string",
@@ -575,6 +881,7 @@
         "EnvironmentVariables":{
             "type":"list",
             "member":{"shape":"EnvironmentVariable"},
+            "documentation":"<p>A list of environment variables</p>",
             "max":100,
             "min":0
         },
@@ -584,10 +891,12 @@
                 "transformationExportContext":{"shape":"TransformationExportContext"},
                 "unitTestGenerationExportContext":{"shape":"UnitTestGenerationExportContext"}
             },
+            "documentation":"<p>Export Context</p>",
             "union":true
         },
         "ExportIntent":{
             "type":"string",
+            "documentation":"<p>Export Intent</p>",
             "enum":[
                 "TRANSFORMATION",
                 "TASK_ASSIST",
@@ -605,7 +914,8 @@
                 "exportIntent":{"shape":"ExportIntent"},
                 "exportContext":{"shape":"ExportContext"},
                 "profileArn":{"shape":"ProfileArn"}
-            }
+            },
+            "documentation":"<p>Structure to represent a new ExportResultArchive request.</p>"
         },
         "ExportResultArchiveRequestExportIdString":{
             "type":"string",
@@ -617,15 +927,23 @@
             "required":["body"],
             "members":{
                 "body":{"shape":"ResultArchiveStream"}
-            }
+            },
+            "documentation":"<p>Structure to represent ExportResultArchive response.</p>"
         },
         "FollowupPrompt":{
             "type":"structure",
             "required":["content"],
             "members":{
-                "content":{"shape":"FollowupPromptContentString"},
-                "userIntent":{"shape":"UserIntent"}
-            }
+                "content":{
+                    "shape":"FollowupPromptContentString",
+                    "documentation":"<p>The content of the text message in markdown format.</p>"
+                },
+                "userIntent":{
+                    "shape":"UserIntent",
+                    "documentation":"<p>User Intent</p>"
+                }
+            },
+            "documentation":"<p>Followup Prompt for the Assistant Response</p>"
         },
         "FollowupPromptContentString":{
             "type":"string",
@@ -638,6 +956,7 @@
             "members":{
                 "followupPrompt":{"shape":"FollowupPrompt"}
             },
+            "documentation":"<p>Streaming Response Event for Followup Prompt.</p>",
             "event":true
         },
         "GenerateAssistantResponseRequest":{
@@ -646,7 +965,8 @@
             "members":{
                 "conversationState":{"shape":"ConversationState"},
                 "profileArn":{"shape":"ProfileArn"}
-            }
+            },
+            "documentation":"<p>Structure to represent a new generate assistant response request.</p>"
         },
         "GenerateAssistantResponseResponse":{
             "type":"structure",
@@ -657,7 +977,8 @@
             "members":{
                 "conversationId":{"shape":"ConversationId"},
                 "generateAssistantResponseResponse":{"shape":"ChatResponseStream"}
-            }
+            },
+            "documentation":"<p>Structure to represent generate assistant response response.</p>"
         },
         "GenerateTaskAssistPlanRequest":{
             "type":"structure",
@@ -669,19 +990,25 @@
                 "conversationState":{"shape":"ConversationState"},
                 "workspaceState":{"shape":"WorkspaceState"},
                 "profileArn":{"shape":"ProfileArn"}
-            }
+            },
+            "documentation":"<p>Structure to represent execute planning interaction request.</p>"
         },
         "GenerateTaskAssistPlanResponse":{
             "type":"structure",
             "members":{
                 "planningResponseStream":{"shape":"ChatResponseStream"}
-            }
+            },
+            "documentation":"<p>Structure to represent execute planning interaction response.</p>"
         },
         "GitState":{
             "type":"structure",
             "members":{
-                "status":{"shape":"GitStateStatusString"}
-            }
+                "status":{
+                    "shape":"GitStateStatusString",
+                    "documentation":"<p>The output of the command <code>git status --porcelain=v1 -b</code></p>"
+                }
+            },
+            "documentation":"<p>State related to the Git VSC</p>"
         },
         "GitStateStatusString":{
             "type":"string",
@@ -698,7 +1025,8 @@
             "members":{
                 "format":{"shape":"ImageFormat"},
                 "source":{"shape":"ImageSource"}
-            }
+            },
+            "documentation":"<p>Represents the image source itself and the format of the image.</p>"
         },
         "ImageBlocks":{
             "type":"list",
@@ -720,6 +1048,7 @@
             "members":{
                 "bytes":{"shape":"ImageSourceBytesBlob"}
             },
+            "documentation":"<p>Image bytes limited to ~10MB considering overhead of base64 encoding</p>",
             "sensitive":true,
             "union":true
         },
@@ -732,7 +1061,8 @@
             "type":"structure",
             "members":{
                 "transition":{"shape":"InfrastructureUpdateTransition"}
-            }
+            },
+            "documentation":"<p>Structure representing different types of infrastructure updates.</p>"
         },
         "InfrastructureUpdateTransition":{
             "type":"structure",
@@ -741,9 +1071,16 @@
                 "nextState"
             ],
             "members":{
-                "currentState":{"shape":"InfrastructureUpdateTransitionCurrentStateString"},
-                "nextState":{"shape":"InfrastructureUpdateTransitionNextStateString"}
-            }
+                "currentState":{
+                    "shape":"InfrastructureUpdateTransitionCurrentStateString",
+                    "documentation":"<p>The current state of the infrastructure before the update.</p>"
+                },
+                "nextState":{
+                    "shape":"InfrastructureUpdateTransitionNextStateString",
+                    "documentation":"<p>The next state of the infrastructure following the update.</p>"
+                }
+            },
+            "documentation":"<p>Structure describing a transition between two states in an infrastructure update.</p>"
         },
         "InfrastructureUpdateTransitionCurrentStateString":{
             "type":"string",
@@ -794,8 +1131,12 @@
         "IntentsEvent":{
             "type":"structure",
             "members":{
-                "intents":{"shape":"IntentMap"}
+                "intents":{
+                    "shape":"IntentMap",
+                    "documentation":"<p>A map of Intent objects</p>"
+                }
             },
+            "documentation":"<p>Streaming Response Event for Intents</p>",
             "event":true
         },
         "InteractionComponent":{
@@ -813,22 +1154,32 @@
                 "resource":{"shape":"Resource"},
                 "resourceList":{"shape":"ResourceList"},
                 "action":{"shape":"Action"}
-            }
+            },
+            "documentation":"<p>Structure representing different types of interaction components.</p>"
         },
         "InteractionComponentEntry":{
             "type":"structure",
             "required":["interactionComponent"],
             "members":{
-                "interactionComponentId":{"shape":"InteractionComponentId"},
-                "interactionComponent":{"shape":"InteractionComponent"}
-            }
+                "interactionComponentId":{
+                    "shape":"InteractionComponentId",
+                    "documentation":"<p>Identifier that can uniquely identify the interaction component within stream response. This field is optional.</p>"
+                },
+                "interactionComponent":{
+                    "shape":"InteractionComponent",
+                    "documentation":"<p>Interaction component</p>"
+                }
+            },
+            "documentation":"<p>Interaction component with an identifier</p>"
         },
         "InteractionComponentEntryList":{
             "type":"list",
-            "member":{"shape":"InteractionComponentEntry"}
+            "member":{"shape":"InteractionComponentEntry"},
+            "documentation":"<p>List of identifiable interaction components</p>"
         },
         "InteractionComponentId":{
             "type":"string",
+            "documentation":"<p>Unique identifier for interaction component</p>",
             "max":128,
             "min":0
         },
@@ -836,8 +1187,12 @@
             "type":"structure",
             "required":["interactionComponentEntries"],
             "members":{
-                "interactionComponentEntries":{"shape":"InteractionComponentEntryList"}
+                "interactionComponentEntries":{
+                    "shape":"InteractionComponentEntryList",
+                    "documentation":"<p>List of identifiable interaction components</p>"
+                }
             },
+            "documentation":"<p>Streaming Event for interaction components list</p>",
             "event":true
         },
         "InternalServerException":{
@@ -846,6 +1201,7 @@
             "members":{
                 "message":{"shape":"String"}
             },
+            "documentation":"<p>This exception is thrown when an unexpected error occurred during the processing of a request.</p>",
             "exception":true,
             "fault":true,
             "retryable":{"throttling":false}
@@ -860,6 +1216,7 @@
                 "reason":{"shape":"InvalidStateReason"},
                 "message":{"shape":"InvalidStateEventMessageString"}
             },
+            "documentation":"<p>Streaming Response Event when an Invalid State is reached</p>",
             "event":true
         },
         "InvalidStateEventMessageString":{
@@ -869,6 +1226,7 @@
         },
         "InvalidStateReason":{
             "type":"string",
+            "documentation":"<p>Reasons for Invalid State Event</p>",
             "enum":["INVALID_TASK_ASSIST_PLAN"]
         },
         "Long":{
@@ -877,15 +1235,23 @@
         },
         "MessageId":{
             "type":"string",
+            "documentation":"<p>Unique identifier for the chat message</p>",
             "max":128,
             "min":0
         },
         "MessageMetadataEvent":{
             "type":"structure",
             "members":{
-                "conversationId":{"shape":"MessageMetadataEventConversationIdString"},
-                "utteranceId":{"shape":"MessageMetadataEventUtteranceIdString"}
+                "conversationId":{
+                    "shape":"MessageMetadataEventConversationIdString",
+                    "documentation":"<p>Unique identifier for the conversation</p>"
+                },
+                "utteranceId":{
+                    "shape":"MessageMetadataEventUtteranceIdString",
+                    "documentation":"<p>Unique identifier for the utterance</p>"
+                }
             },
+            "documentation":"<p>Streaming Response Event for AssistantResponse Metadata</p>",
             "event":true
         },
         "MessageMetadataEventConversationIdString":{
@@ -906,11 +1272,13 @@
         },
         "Offset":{
             "type":"integer",
+            "documentation":"<p>Offset in the response text</p>",
             "box":true,
             "min":0
         },
         "Origin":{
             "type":"string",
+            "documentation":"<p>Enum to represent the origin application conversing with Sidekick.</p>",
             "enum":[
                 "CHATBOT",
                 "CONSOLE",
@@ -931,6 +1299,7 @@
         },
         "PartBody":{
             "type":"blob",
+            "documentation":"<p>Payload Part's body</p>",
             "max":1000000,
             "min":0,
             "sensitive":true
@@ -942,9 +1311,16 @@
                 "character"
             ],
             "members":{
-                "line":{"shape":"Integer"},
-                "character":{"shape":"Integer"}
-            }
+                "line":{
+                    "shape":"Integer",
+                    "documentation":"<p>Line position in a document.</p>"
+                },
+                "character":{
+                    "shape":"Integer",
+                    "documentation":"<p>Character offset on a line in a document (zero-based)</p>"
+                }
+            },
+            "documentation":"<p>Indicates Cursor postion in a Text Document</p>"
         },
         "ProfileArn":{
             "type":"string",
@@ -957,7 +1333,8 @@
             "required":["languageName"],
             "members":{
                 "languageName":{"shape":"ProgrammingLanguageLanguageNameString"}
-            }
+            },
+            "documentation":"<p>Programming Languages supported by CodeWhisperer</p>"
         },
         "ProgrammingLanguageLanguageNameString":{
             "type":"string",
@@ -969,8 +1346,12 @@
             "type":"structure",
             "required":["content"],
             "members":{
-                "content":{"shape":"ProgressComponentList"}
-            }
+                "content":{
+                    "shape":"ProgressComponentList",
+                    "documentation":"<p>A collection of steps that make up a process. Each step is detailed using the Step structure.</p>"
+                }
+            },
+            "documentation":"<p>Structure representing a collection of steps in a process.</p>"
         },
         "ProgressComponent":{
             "type":"structure",
@@ -989,18 +1370,38 @@
                 "end"
             ],
             "members":{
-                "start":{"shape":"Position"},
-                "end":{"shape":"Position"}
-            }
+                "start":{
+                    "shape":"Position",
+                    "documentation":"<p>The range's start position.</p>"
+                },
+                "end":{
+                    "shape":"Position",
+                    "documentation":"<p>The range's end position.</p>"
+                }
+            },
+            "documentation":"<p>Indicates Range / Span in a Text Document</p>"
         },
         "Reference":{
             "type":"structure",
             "members":{
-                "licenseName":{"shape":"ReferenceLicenseNameString"},
-                "repository":{"shape":"ReferenceRepositoryString"},
-                "url":{"shape":"ReferenceUrlString"},
-                "recommendationContentSpan":{"shape":"Span"}
-            }
+                "licenseName":{
+                    "shape":"ReferenceLicenseNameString",
+                    "documentation":"<p>License name</p>"
+                },
+                "repository":{
+                    "shape":"ReferenceRepositoryString",
+                    "documentation":"<p>Code Repsitory for the associated reference</p>"
+                },
+                "url":{
+                    "shape":"ReferenceUrlString",
+                    "documentation":"<p>Respository URL</p>"
+                },
+                "recommendationContentSpan":{
+                    "shape":"Span",
+                    "documentation":"<p>Span / Range for the Reference</p>"
+                }
+            },
+            "documentation":"<p>Code Reference / Repository details</p>"
         },
         "ReferenceLicenseNameString":{
             "type":"string",
@@ -1033,11 +1434,24 @@
             "type":"structure",
             "required":["relativeFilePath"],
             "members":{
-                "relativeFilePath":{"shape":"RelevantTextDocumentRelativeFilePathString"},
-                "programmingLanguage":{"shape":"ProgrammingLanguage"},
-                "text":{"shape":"RelevantTextDocumentTextString"},
-                "documentSymbols":{"shape":"DocumentSymbols"}
-            }
+                "relativeFilePath":{
+                    "shape":"RelevantTextDocumentRelativeFilePathString",
+                    "documentation":"<p>Filepath relative to the root of the workspace</p>"
+                },
+                "programmingLanguage":{
+                    "shape":"ProgrammingLanguage",
+                    "documentation":"<p>The text document's language identifier.</p>"
+                },
+                "text":{
+                    "shape":"RelevantTextDocumentTextString",
+                    "documentation":"<p>Content of the text document</p>"
+                },
+                "documentSymbols":{
+                    "shape":"DocumentSymbols",
+                    "documentation":"<p>DocumentSymbols parsed from a text document</p>"
+                }
+            },
+            "documentation":"<p>Represents an IDE retrieved relevant Text Document / File</p>"
         },
         "RelevantTextDocumentRelativeFilePathString":{
             "type":"string",
@@ -1062,13 +1476,32 @@
                 "resourceJsonString"
             ],
             "members":{
-                "title":{"shape":"ResourceTitleString"},
-                "link":{"shape":"ResourceLinkString"},
-                "description":{"shape":"ResourceDescriptionString"},
-                "type":{"shape":"ResourceTypeString"},
-                "ARN":{"shape":"ResourceARNString"},
-                "resourceJsonString":{"shape":"ResourceResourceJsonStringString"}
-            }
+                "title":{
+                    "shape":"ResourceTitleString",
+                    "documentation":"<p>Card title.</p>"
+                },
+                "link":{
+                    "shape":"ResourceLinkString",
+                    "documentation":"<p>Link for the resource item</p>"
+                },
+                "description":{
+                    "shape":"ResourceDescriptionString",
+                    "documentation":"<p>Short text about that resource for example Region: us-east-1</p>"
+                },
+                "type":{
+                    "shape":"ResourceTypeString",
+                    "documentation":"<p>Resource type e.g AWS EC2</p>"
+                },
+                "ARN":{
+                    "shape":"ResourceARNString",
+                    "documentation":"<p>Amazon resource number e.g arn:aws:aec:.....</p>"
+                },
+                "resourceJsonString":{
+                    "shape":"ResourceResourceJsonStringString",
+                    "documentation":"<p>A stringified object</p>"
+                }
+            },
+            "documentation":"<p>Structure representing a resource item</p>"
         },
         "ResourceARNString":{
             "type":"string",
@@ -1098,13 +1531,21 @@
             "type":"structure",
             "required":["items"],
             "members":{
-                "action":{"shape":"Action"},
-                "items":{"shape":"ResourceListItemsList"}
-            }
+                "action":{
+                    "shape":"Action",
+                    "documentation":"<p>Action associated with the list</p>"
+                },
+                "items":{
+                    "shape":"ResourceListItemsList",
+                    "documentation":"<p>List of resources</p>"
+                }
+            },
+            "documentation":"<p>Structure representing a list of Items</p>"
         },
         "ResourceListItemsList":{
             "type":"list",
             "member":{"shape":"Resource"},
+            "documentation":"<p>List for resources</p>",
             "max":10,
             "min":0
         },
@@ -1114,6 +1555,7 @@
             "members":{
                 "message":{"shape":"String"}
             },
+            "documentation":"<p>This exception is thrown when describing a resource that does not exist.</p>",
             "exception":true
         },
         "ResourceResourceJsonStringString":{
@@ -1141,6 +1583,7 @@
                 "binaryPayloadEvent":{"shape":"BinaryPayloadEvent"},
                 "internalServerException":{"shape":"InternalServerException"}
             },
+            "documentation":"<p>Response Stream</p>",
             "eventstream":true
         },
         "RuntimeDiagnostic":{
@@ -1151,10 +1594,20 @@
                 "message"
             ],
             "members":{
-                "source":{"shape":"RuntimeDiagnosticSourceString"},
-                "severity":{"shape":"DiagnosticSeverity"},
-                "message":{"shape":"RuntimeDiagnosticMessageString"}
-            }
+                "source":{
+                    "shape":"RuntimeDiagnosticSourceString",
+                    "documentation":"<p>A human-readable string describing the source of the diagnostic</p>"
+                },
+                "severity":{
+                    "shape":"DiagnosticSeverity",
+                    "documentation":"<p>Diagnostic Error type</p>"
+                },
+                "message":{
+                    "shape":"RuntimeDiagnosticMessageString",
+                    "documentation":"<p>The diagnostic's message.</p>"
+                }
+            },
+            "documentation":"<p>Structure to represent metadata about a Runtime Diagnostics</p>"
         },
         "RuntimeDiagnosticMessageString":{
             "type":"string",
@@ -1175,10 +1628,20 @@
                 "content"
             ],
             "members":{
-                "title":{"shape":"SectionTitleString"},
-                "content":{"shape":"SectionContentList"},
-                "action":{"shape":"Action"}
-            }
+                "title":{
+                    "shape":"SectionTitleString",
+                    "documentation":"<p>Contains text content that may include sensitive information and can support Markdown formatting.</p>"
+                },
+                "content":{
+                    "shape":"SectionContentList",
+                    "documentation":"<p>Contains a list of interaction components e.g Text, Alert, List, etc.</p>"
+                },
+                "action":{
+                    "shape":"Action",
+                    "documentation":"<p>Action associated with the Section</p>"
+                }
+            },
+            "documentation":"<p>Structure representing a collapsable section</p>"
         },
         "SectionComponent":{
             "type":"structure",
@@ -1207,16 +1670,21 @@
             "members":{
                 "conversationState":{"shape":"ConversationState"},
                 "profileArn":{"shape":"ProfileArn"},
-                "source":{"shape":"Origin"},
+                "source":{
+                    "shape":"Origin",
+                    "documentation":"<p>The origin of the caller</p>"
+                },
                 "dryRun":{"shape":"Boolean"}
-            }
+            },
+            "documentation":"<p>Structure to represent a SendMessage request.</p>"
         },
         "SendMessageResponse":{
             "type":"structure",
             "required":["sendMessageResponse"],
             "members":{
                 "sendMessageResponse":{"shape":"ChatResponseStream"}
-            }
+            },
+            "documentation":"<p>Structure to represent a SendMessage response.</p>"
         },
         "SensitiveDocument":{
             "type":"structure",
@@ -1235,11 +1703,13 @@
             "members":{
                 "message":{"shape":"String"}
             },
+            "documentation":"<p>This exception is thrown when request was denied due to caller exceeding their usage limits</p>",
             "exception":true
         },
         "ShellHistory":{
             "type":"list",
             "member":{"shape":"ShellHistoryEntry"},
+            "documentation":"<p>A list of shell history entries</p>",
             "max":20,
             "min":0
         },
@@ -1247,12 +1717,28 @@
             "type":"structure",
             "required":["command"],
             "members":{
-                "command":{"shape":"ShellHistoryEntryCommandString"},
-                "directory":{"shape":"ShellHistoryEntryDirectoryString"},
-                "exitCode":{"shape":"Integer"},
-                "stdout":{"shape":"ShellHistoryEntryStdoutString"},
-                "stderr":{"shape":"ShellHistoryEntryStderrString"}
-            }
+                "command":{
+                    "shape":"ShellHistoryEntryCommandString",
+                    "documentation":"<p>The shell command that was run</p>"
+                },
+                "directory":{
+                    "shape":"ShellHistoryEntryDirectoryString",
+                    "documentation":"<p>The directory the command was ran in</p>"
+                },
+                "exitCode":{
+                    "shape":"Integer",
+                    "documentation":"<p>The exit code of the command after it finished</p>"
+                },
+                "stdout":{
+                    "shape":"ShellHistoryEntryStdoutString",
+                    "documentation":"<p>The stdout from the command</p>"
+                },
+                "stderr":{
+                    "shape":"ShellHistoryEntryStderrString",
+                    "documentation":"<p>The stderr from the command</p>"
+                }
+            },
+            "documentation":"<p>An single entry in the shell history</p>"
         },
         "ShellHistoryEntryCommandString":{
             "type":"string",
@@ -1282,9 +1768,16 @@
             "type":"structure",
             "required":["shellName"],
             "members":{
-                "shellName":{"shape":"ShellStateShellNameString"},
-                "shellHistory":{"shape":"ShellHistory"}
-            }
+                "shellName":{
+                    "shape":"ShellStateShellNameString",
+                    "documentation":"<p>The name of the current shell</p>"
+                },
+                "shellHistory":{
+                    "shape":"ShellHistory",
+                    "documentation":"<p>The history previous shell commands for the current shell</p>"
+                }
+            },
+            "documentation":"<p>Represents the state of a shell</p>"
         },
         "ShellStateShellNameString":{
             "type":"string",
@@ -1297,7 +1790,8 @@
             "members":{
                 "start":{"shape":"SpanStartInteger"},
                 "end":{"shape":"SpanEndInteger"}
-            }
+            },
+            "documentation":"<p>Represents span in a text.</p>"
         },
         "SpanEndInteger":{
             "type":"integer",
@@ -1317,11 +1811,21 @@
                 "label"
             ],
             "members":{
-                "id":{"shape":"StepIdInteger"},
+                "id":{
+                    "shape":"StepIdInteger",
+                    "documentation":"<p>A unique identifier for the step. It must be a non-negative integer to ensure each step is distinct.</p>"
+                },
                 "state":{"shape":"StepState"},
-                "label":{"shape":"StepLabelString"},
-                "content":{"shape":"StepComponentList"}
-            }
+                "label":{
+                    "shape":"StepLabelString",
+                    "documentation":"<p>A label for the step, providing a concise description.</p>"
+                },
+                "content":{
+                    "shape":"StepComponentList",
+                    "documentation":"<p>Optional content providing additional details about the step.</p>"
+                }
+            },
+            "documentation":"<p>Structure representing an individual step in a process.</p>"
         },
         "StepComponent":{
             "type":"structure",
@@ -1347,6 +1851,7 @@
         },
         "StepState":{
             "type":"string",
+            "documentation":"<p>Enum representing all possible step states, combining terminal and non-terminal states.</p>",
             "enum":[
                 "FAILED",
                 "SUCCEEDED",
@@ -1363,7 +1868,8 @@
             "required":["value"],
             "members":{
                 "value":{"shape":"SuggestionValueString"}
-            }
+            },
+            "documentation":"<p>Structure representing a suggestion for follow-ups.</p>"
         },
         "SuggestionList":{
             "type":"list",
@@ -1380,7 +1886,8 @@
             "required":["items"],
             "members":{
                 "items":{"shape":"SuggestionList"}
-            }
+            },
+            "documentation":"<p>Structure containing a list of suggestions.</p>"
         },
         "SupplementaryWebLink":{
             "type":"structure",
@@ -1389,10 +1896,20 @@
                 "title"
             ],
             "members":{
-                "url":{"shape":"SupplementaryWebLinkUrlString"},
-                "title":{"shape":"SupplementaryWebLinkTitleString"},
-                "snippet":{"shape":"SupplementaryWebLinkSnippetString"}
-            }
+                "url":{
+                    "shape":"SupplementaryWebLinkUrlString",
+                    "documentation":"<p>URL of the web reference link.</p>"
+                },
+                "title":{
+                    "shape":"SupplementaryWebLinkTitleString",
+                    "documentation":"<p>Title of the web reference link.</p>"
+                },
+                "snippet":{
+                    "shape":"SupplementaryWebLinkSnippetString",
+                    "documentation":"<p>Relevant text snippet from the link.</p>"
+                }
+            },
+            "documentation":"<p>Represents an additional reference link retured with the Chat message</p>"
         },
         "SupplementaryWebLinkSnippetString":{
             "type":"string",
@@ -1421,8 +1938,12 @@
         "SupplementaryWebLinksEvent":{
             "type":"structure",
             "members":{
-                "supplementaryWebLinks":{"shape":"SupplementaryWebLinks"}
+                "supplementaryWebLinks":{
+                    "shape":"SupplementaryWebLinks",
+                    "documentation":"<p>Web References for Assistant Response Message</p>"
+                }
             },
+            "documentation":"<p>Streaming Response Event for SupplementaryWebLinks</p>",
             "event":true
         },
         "SymbolType":{
@@ -1439,19 +1960,33 @@
                 "payload"
             ],
             "members":{
-                "label":{"shape":"TaskActionLabelString"},
+                "label":{
+                    "shape":"TaskActionLabelString",
+                    "documentation":"<p>A label for the action.</p>"
+                },
                 "note":{"shape":"TaskActionNote"},
-                "primary":{"shape":"Boolean"},
-                "disabled":{"shape":"Boolean"},
+                "primary":{
+                    "shape":"Boolean",
+                    "documentation":"<p>Indicates whether the action is primary or not.</p>"
+                },
+                "disabled":{
+                    "shape":"Boolean",
+                    "documentation":"<p>Indicates whether the action is disabled or not.</p>"
+                },
                 "payload":{"shape":"TaskActionPayload"},
                 "confirmation":{"shape":"TaskActionConfirmation"}
-            }
+            },
+            "documentation":"<p>Structure representing an action associated with a task.</p>"
         },
         "TaskActionConfirmation":{
             "type":"structure",
             "members":{
-                "content":{"shape":"TaskActionConfirmationContentString"}
-            }
+                "content":{
+                    "shape":"TaskActionConfirmationContentString",
+                    "documentation":"<p>Confirmation message related to the action note, which may include sensitive information.</p>"
+                }
+            },
+            "documentation":"<p>Structure representing a confirmation message related to a task action.</p>"
         },
         "TaskActionConfirmationContentString":{
             "type":"string",
@@ -1473,9 +2008,13 @@
             "type":"structure",
             "required":["content"],
             "members":{
-                "content":{"shape":"TaskActionNoteContentString"},
+                "content":{
+                    "shape":"TaskActionNoteContentString",
+                    "documentation":"<p>Content of the note, which may include sensitive information.</p>"
+                },
                 "type":{"shape":"TaskActionNoteType"}
-            }
+            },
+            "documentation":"<p>Structure representing a note associated with a task action.</p>"
         },
         "TaskActionNoteContentString":{
             "type":"string",
@@ -1485,6 +2024,7 @@
         },
         "TaskActionNoteType":{
             "type":"string",
+            "documentation":"<p>Enum defining the types of notes that can be associated with a task action.</p>",
             "enum":[
                 "INFO",
                 "WARNING"
@@ -1492,8 +2032,15 @@
         },
         "TaskActionPayload":{
             "type":"map",
-            "key":{"shape":"TaskActionPayloadKeyString"},
-            "value":{"shape":"TaskActionPayloadValueString"},
+            "key":{
+                "shape":"TaskActionPayloadKeyString",
+                "documentation":"<p>The key for the payload entry.</p>"
+            },
+            "value":{
+                "shape":"TaskActionPayloadValueString",
+                "documentation":"<p>The sensitive value associated with the key.</p>"
+            },
+            "documentation":"<p>Map representing key-value pairs for the payload of a task action.</p>",
             "max":32,
             "min":0
         },
@@ -1515,7 +2062,8 @@
                 "infrastructureUpdate":{"shape":"InfrastructureUpdate"},
                 "alert":{"shape":"Alert"},
                 "progress":{"shape":"Progress"}
-            }
+            },
+            "documentation":"<p>Structure representing different types of components that can be part of a task.</p>"
         },
         "TaskComponentList":{
             "type":"list",
@@ -1529,9 +2077,16 @@
             ],
             "members":{
                 "overview":{"shape":"TaskOverview"},
-                "content":{"shape":"TaskComponentList"},
-                "actions":{"shape":"TaskActionList"}
-            }
+                "content":{
+                    "shape":"TaskComponentList",
+                    "documentation":"<p>Lists the components that can be used to form the task's content.</p>"
+                },
+                "actions":{
+                    "shape":"TaskActionList",
+                    "documentation":"<p>Optional list of actions associated with the task.</p>"
+                }
+            },
+            "documentation":"<p>Structure containing details about a task.</p>"
         },
         "TaskOverview":{
             "type":"structure",
@@ -1540,9 +2095,16 @@
                 "description"
             ],
             "members":{
-                "label":{"shape":"TaskOverviewLabelString"},
-                "description":{"shape":"TaskOverviewDescriptionString"}
-            }
+                "label":{
+                    "shape":"TaskOverviewLabelString",
+                    "documentation":"<p>A label for the task overview.</p>"
+                },
+                "description":{
+                    "shape":"TaskOverviewDescriptionString",
+                    "documentation":"<p>Text description providing details about the task. This field may include sensitive information and supports Markdown formatting.</p>"
+                }
+            },
+            "documentation":"<p>Structure representing an overview of a task, including a label and description.</p>"
         },
         "TaskOverviewDescriptionString":{
             "type":"string",
@@ -1560,8 +2122,12 @@
             "type":"structure",
             "required":["taskId"],
             "members":{
-                "taskId":{"shape":"TaskReferenceTaskIdString"}
-            }
+                "taskId":{
+                    "shape":"TaskReferenceTaskIdString",
+                    "documentation":"<p>Unique identifier for the task.</p>"
+                }
+            },
+            "documentation":"<p>Structure representing a reference to a task.</p>"
         },
         "TaskReferenceTaskIdString":{
             "type":"string",
@@ -1570,6 +2136,7 @@
         },
         "TestGenerationJobGroupName":{
             "type":"string",
+            "documentation":"<p>Test generation job group name</p>",
             "max":128,
             "min":1,
             "pattern":"[a-zA-Z0-9-_]+"
@@ -1578,8 +2145,12 @@
             "type":"structure",
             "required":["content"],
             "members":{
-                "content":{"shape":"TextContentString"}
-            }
+                "content":{
+                    "shape":"TextContentString",
+                    "documentation":"<p>Contains text content that may include sensitive information and can support Markdown formatting.</p>"
+                }
+            },
+            "documentation":"<p>Structure representing a simple text component with sensitive content, which can include Markdown formatting.</p>"
         },
         "TextContentString":{
             "type":"string",
@@ -1591,11 +2162,24 @@
             "type":"structure",
             "required":["relativeFilePath"],
             "members":{
-                "relativeFilePath":{"shape":"TextDocumentRelativeFilePathString"},
-                "programmingLanguage":{"shape":"ProgrammingLanguage"},
-                "text":{"shape":"TextDocumentTextString"},
-                "documentSymbols":{"shape":"DocumentSymbols"}
-            }
+                "relativeFilePath":{
+                    "shape":"TextDocumentRelativeFilePathString",
+                    "documentation":"<p>Filepath relative to the root of the workspace</p>"
+                },
+                "programmingLanguage":{
+                    "shape":"ProgrammingLanguage",
+                    "documentation":"<p>The text document's language identifier.</p>"
+                },
+                "text":{
+                    "shape":"TextDocumentTextString",
+                    "documentation":"<p>Content of the text document</p>"
+                },
+                "documentSymbols":{
+                    "shape":"DocumentSymbols",
+                    "documentation":"<p>DocumentSymbols parsed from a text document</p>"
+                }
+            },
+            "documentation":"<p>Represents a Text Document / File</p>"
         },
         "TextDocumentDiagnostic":{
             "type":"structure",
@@ -1607,12 +2191,54 @@
                 "message"
             ],
             "members":{
-                "document":{"shape":"TextDocument"},
-                "range":{"shape":"Range"},
-                "source":{"shape":"SensitiveString"},
-                "severity":{"shape":"DiagnosticSeverity"},
-                "message":{"shape":"TextDocumentDiagnosticMessageString"}
-            }
+                "document":{
+                    "shape":"TextDocument",
+                    "documentation":"<p>Represents a Text Document associated with Diagnostic</p>"
+                },
+                "range":{
+                    "shape":"Range",
+                    "documentation":"<p>The range at which the message applies.</p>"
+                },
+                "source":{
+                    "shape":"SensitiveString",
+                    "documentation":"<p>A human-readable string describing the source of the diagnostic</p>"
+                },
+                "severity":{
+                    "shape":"DiagnosticSeverity",
+                    "documentation":"<p>Diagnostic Error type</p>"
+                },
+                "message":{
+                    "shape":"TextDocumentDiagnosticMessageString",
+                    "documentation":"<p>The diagnostic's message.</p>"
+                },
+                "code":{
+                    "shape":"Integer",
+                    "documentation":"<p>The diagnostic's code, which might appear in the user interface.</p>"
+                },
+                "codeDescription":{
+                    "shape":"CodeDescription",
+                    "documentation":"<p>An optional property to describe the error code.</p>"
+                },
+                "tags":{
+                    "shape":"DiagnosticTagList",
+                    "documentation":"<p>Additional metadata about the diagnostic.</p>"
+                },
+                "relatedInformation":{
+                    "shape":"DiagnosticRelatedInformationList",
+                    "documentation":"<p>an array of related diagnostic information, e.g. when symbol-names within a scope collide all definitions can be marked via this property.</p>"
+                },
+                "data":{
+                    "shape":"TextDocumentDiagnosticDataString",
+                    "documentation":"<p>A data entry field that is preserved between a <code>textDocument/publishDiagnostics</code> notification and <code>textDocument/codeAction</code> request.</p>"
+                }
+            },
+            "documentation":"<p>Structure to represent metadata about a TextDocument Diagnostic</p>"
+        },
+        "TextDocumentDiagnosticDataString":{
+            "type":"string",
+            "max":4096,
+            "min":0,
+            "sensitive":true
         },
         "TextDocumentDiagnosticMessageString":{
             "type":"string",
@@ -1639,11 +2265,13 @@
                 "message":{"shape":"String"},
                 "reason":{"shape":"ThrottlingExceptionReason"}
             },
+            "documentation":"<p>This exception is thrown when request was denied due to request throttling.</p>",
             "exception":true,
             "retryable":{"throttling":true}
         },
         "ThrottlingExceptionReason":{
             "type":"string",
+            "documentation":"<p>Reason for ThrottlingException</p>",
             "enum":["MONTHLY_REQUEST_COUNT"]
         },
         "Tool":{
@@ -1651,10 +2279,12 @@
             "members":{
                 "toolSpecification":{"shape":"ToolSpecification"}
             },
+            "documentation":"<p>Information about a tool that can be used.</p>",
             "union":true
         },
         "ToolDescription":{
             "type":"string",
+            "documentation":"<p>The description for the tool.</p>",
             "max":10240,
             "min":1,
             "sensitive":true
@@ -1663,10 +2293,12 @@
             "type":"structure",
             "members":{
                 "json":{"shape":"SensitiveDocument"}
-            }
+            },
+            "documentation":"<p>The input schema for the tool in JSON format.</p>"
         },
         "ToolName":{
             "type":"string",
+            "documentation":"<p>The name for the tool.</p>",
             "max":64,
             "min":0,
             "pattern":"[a-zA-Z][a-zA-Z0-9_]*",
@@ -1680,9 +2312,13 @@
             ],
             "members":{
                 "toolUseId":{"shape":"ToolUseId"},
-                "content":{"shape":"ToolResultContent"},
+                "content":{
+                    "shape":"ToolResultContent",
+                    "documentation":"<p>Content of the tool result.</p>"
+                },
                 "status":{"shape":"ToolResultStatus"}
-            }
+            },
+            "documentation":"<p>A tool result that contains the results for a tool request that was previously made.</p>"
         },
         "ToolResultContent":{
             "type":"list",
@@ -1691,19 +2327,33 @@
         "ToolResultContentBlock":{
             "type":"structure",
             "members":{
-                "text":{"shape":"ToolResultContentBlockTextString"},
-                "json":{"shape":"SensitiveDocument"}
+                "text":{
+                    "shape":"ToolResultContentBlockTextString",
+                    "documentation":"<p>A tool result that is text.</p>"
+                },
+                "json":{
+                    "shape":"SensitiveDocument",
+                    "documentation":"<p>A tool result that is JSON format data.</p>"
+                }
             },
             "union":true
         },
         "ToolResultContentBlockTextString":{
             "type":"string",
-            "max":30720,
+            "max":800000,
             "min":0,
             "sensitive":true
         },
+        "ToolResultEvent":{
+            "type":"structure",
+            "members":{
+                "toolResult":{"shape":"ToolResult"}
+            },
+            "event":true
+        },
         "ToolResultStatus":{
             "type":"string",
+            "documentation":"<p>Status of the tools result.</p>",
             "enum":[
                 "success",
                 "error"
@@ -1725,7 +2375,8 @@
                 "inputSchema":{"shape":"ToolInputSchema"},
                 "name":{"shape":"ToolName"},
                 "description":{"shape":"ToolDescription"}
-            }
+            },
+            "documentation":"<p>The specification for the tool.</p>"
         },
         "ToolUse":{
             "type":"structure",
@@ -1737,8 +2388,12 @@
             "members":{
                 "toolUseId":{"shape":"ToolUseId"},
                 "name":{"shape":"ToolName"},
-                "input":{"shape":"SensitiveDocument"}
-            }
+                "input":{
+                    "shape":"SensitiveDocument",
+                    "documentation":"<p>The input to pass to the tool.</p>"
+                }
+            },
+            "documentation":"<p>Contains information about a tool that the model is requesting be run. The model uses the result from the tool to generate a response.</p>"
         },
         "ToolUseEvent":{
             "type":"structure",
@@ -1749,19 +2404,27 @@
             "members":{
                 "toolUseId":{"shape":"ToolUseId"},
                 "name":{"shape":"ToolName"},
-                "input":{"shape":"ToolUseEventInputString"},
-                "stop":{"shape":"Boolean"}
+                "input":{
+                    "shape":"ToolUseEventInputString",
+                    "documentation":"<p>Represents the serialized json input for the ToolUse request. This field should be concatenated until 'stop' is true.</p>"
+                },
+                "stop":{
+                    "shape":"Boolean",
+                    "documentation":"<p>This field is true when all of the serialized input for this ToolUse request has been sent.</p>"
+                }
             },
+            "documentation":"<p>Event for a ToolUse request. Multiple ToolUse requests can be returned from a single request, so each ToolUse has a unique 'toolUseId'.</p>",
             "event":true
         },
         "ToolUseEventInputString":{
             "type":"string",
-            "max":10240,
+            "max":30720,
             "min":0,
             "sensitive":true
         },
         "ToolUseId":{
             "type":"string",
+            "documentation":"<p>The ID for the tool request.</p>",
             "max":64,
             "min":0,
             "pattern":"[a-zA-Z0-9_-]+"
@@ -1793,7 +2456,8 @@
             "members":{
                 "downloadArtifactId":{"shape":"ArtifactId"},
                 "downloadArtifactType":{"shape":"TransformationDownloadArtifactType"}
-            }
+            },
+            "documentation":"<p>Transformation export context</p>"
         },
         "UUID":{
             "type":"string",
@@ -1806,10 +2470,12 @@
             "members":{
                 "testGenerationJobGroupName":{"shape":"TestGenerationJobGroupName"},
                 "testGenerationJobId":{"shape":"UUID"}
-            }
+            },
+            "documentation":"<p>Unit test generation export context</p>"
         },
         "UploadId":{
             "type":"string",
+            "documentation":"<p>Upload ID returned by CreateUploadUrl API</p>",
             "max":128,
             "min":1
         },
@@ -1817,12 +2483,28 @@
             "type":"structure",
             "required":["content"],
             "members":{
-                "content":{"shape":"UserInputMessageContentString"},
-                "userInputMessageContext":{"shape":"UserInputMessageContext"},
-                "userIntent":{"shape":"UserIntent"},
-                "origin":{"shape":"Origin"},
-                "images":{"shape":"ImageBlocks"}
-            }
+                "content":{
+                    "shape":"UserInputMessageContentString",
+                    "documentation":"<p>The content of the chat message.</p>"
+                },
+                "userInputMessageContext":{
+                    "shape":"UserInputMessageContext",
+                    "documentation":"<p>Chat message context associated with the Chat Message.</p>"
+                },
+                "userIntent":{
+                    "shape":"UserIntent",
+                    "documentation":"<p>User Intent.</p>"
+                },
+                "origin":{
+                    "shape":"Origin",
+                    "documentation":"<p>User Input Origin.</p>"
+                },
+                "images":{
+                    "shape":"ImageBlocks",
+                    "documentation":"<p>Images associated with the Chat Message.</p>"
+                }
+            },
+            "documentation":"<p>Structure to represent a chat input message from User.</p>"
         },
         "UserInputMessageContentString":{
             "type":"string",
@@ -1833,21 +2515,56 @@
         "UserInputMessageContext":{
             "type":"structure",
             "members":{
-                "editorState":{"shape":"EditorState"},
-                "shellState":{"shape":"ShellState"},
-                "gitState":{"shape":"GitState"},
-                "envState":{"shape":"EnvState"},
-                "appStudioContext":{"shape":"AppStudioState"},
-                "diagnostic":{"shape":"Diagnostic"},
-                "consoleState":{"shape":"ConsoleState"},
-                "userSettings":{"shape":"UserSettings"},
-                "additionalContext":{"shape":"AdditionalContentList"},
-                "toolResults":{"shape":"ToolResults"},
-                "tools":{"shape":"Tools"}
-            }
+                "editorState":{
+                    "shape":"EditorState",
+                    "documentation":"<p>Editor state chat message context.</p>"
+                },
+                "shellState":{
+                    "shape":"ShellState",
+                    "documentation":"<p>Shell state chat message context.</p>"
+                },
+                "gitState":{
+                    "shape":"GitState",
+                    "documentation":"<p>Git state chat message context.</p>"
+                },
+                "envState":{
+                    "shape":"EnvState",
+                    "documentation":"<p>Environment state chat message context.</p>"
+                },
+                "appStudioContext":{
+                    "shape":"AppStudioState",
+                    "documentation":"<p>The state of a user's AppStudio UI when sending a message.</p>"
+                },
+                "diagnostic":{
+                    "shape":"Diagnostic",
+                    "documentation":"<p>Diagnostic chat message context.</p>"
+                },
+                "consoleState":{
+                    "shape":"ConsoleState",
+                    "documentation":"<p>Contextual information about the environment from which the user is calling.</p>"
+                },
+                "userSettings":{
+                    "shape":"UserSettings",
+                    "documentation":"<p>Settings information, e.g., whether the user has enabled cross-region API calls.</p>"
+                },
+                "additionalContext":{
+                    "shape":"AdditionalContentList",
+                    "documentation":"<p>List of additional contextual content entries that can be included with the message.</p>"
+                },
+                "toolResults":{
+                    "shape":"ToolResults",
+                    "documentation":"<p>ToolResults for the requested ToolUses.</p>"
+                },
+                "tools":{
+                    "shape":"Tools",
+                    "documentation":"<p>Tools that can be used.</p>"
+                }
+            },
+            "documentation":"<p>Additional Chat message context associated with the Chat Message</p>"
         },
         "UserIntent":{
             "type":"string",
+            "documentation":"<p>User Intent</p>",
             "enum":[
                 "SUGGEST_ALTERNATE_IMPLEMENTATION",
                 "APPLY_COMMON_BEST_PRACTICES",
@@ -1865,7 +2582,8 @@
             "type":"structure",
             "members":{
                 "hasConsentedToCrossRegionCalls":{"shape":"Boolean"}
-            }
+            },
+            "documentation":"<p>Settings information passed by the Q widget</p>"
         },
         "ValidationException":{
             "type":"structure",
@@ -1874,10 +2592,12 @@
                 "message":{"shape":"String"},
                 "reason":{"shape":"ValidationExceptionReason"}
             },
+            "documentation":"<p>This exception is thrown when the input fails to satisfy the constraints specified by the service.</p>",
             "exception":true
         },
         "ValidationExceptionReason":{
             "type":"string",
+            "documentation":"<p>Reason for ValidationException</p>",
             "enum":[
                 "INVALID_CONVERSATION_ID",
                 "CONTENT_LENGTH_EXCEEDS_THRESHOLD",
@@ -1891,8 +2611,14 @@
                 "url"
             ],
             "members":{
-                "label":{"shape":"WebLinkLabelString"},
-                "url":{"shape":"WebLinkUrlString"}
+                "label":{
+                    "shape":"WebLinkLabelString",
+                    "documentation":"<p>A label for the link</p>"
+                },
+                "url":{
+                    "shape":"WebLinkUrlString",
+                    "documentation":"<p>URL of the Weblink</p>"
+                }
             }
         },
         "WebLinkLabelString":{
@@ -1907,6 +2633,18 @@
             "min":1,
             "sensitive":true
         },
+        "WorkspaceFolderList":{
+            "type":"list",
+            "member":{"shape":"WorkspaceFolderListMemberString"},
+            "max":100,
+            "min":0
+        },
+        "WorkspaceFolderListMemberString":{
+            "type":"string",
+            "max":4096,
+            "min":1,
+            "sensitive":true
+        },
         "WorkspaceState":{
             "type":"structure",
             "required":[
@@ -1914,10 +2652,20 @@
                 "programmingLanguage"
             ],
             "members":{
-                "uploadId":{"shape":"UploadId"},
-                "programmingLanguage":{"shape":"ProgrammingLanguage"},
-                "contextTruncationScheme":{"shape":"ContextTruncationScheme"}
-            }
+                "uploadId":{
+                    "shape":"UploadId",
+                    "documentation":"<p>Upload ID representing an Upload using a PreSigned URL</p>"
+                },
+                "programmingLanguage":{
+                    "shape":"ProgrammingLanguage",
+                    "documentation":"<p>Primary programming language of the Workspace</p>"
+                },
+                "contextTruncationScheme":{
+                    "shape":"ContextTruncationScheme",
+                    "documentation":"<p>Workspace context truncation schemes based on usecase</p>"
+                }
+            },
+            "documentation":"<p>Represents a Workspace state uploaded to S3 for Async Code Actions</p>"
         }
     }
 }
