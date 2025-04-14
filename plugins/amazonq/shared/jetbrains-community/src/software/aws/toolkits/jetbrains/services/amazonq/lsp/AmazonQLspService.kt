@@ -42,6 +42,7 @@ import org.eclipse.lsp4j.WorkspaceClientCapabilities
 import org.eclipse.lsp4j.jsonrpc.Launcher
 import org.eclipse.lsp4j.jsonrpc.Launcher.Builder
 import org.eclipse.lsp4j.jsonrpc.MessageConsumer
+import org.eclipse.lsp4j.jsonrpc.messages.Message
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.slf4j.event.Level
 import software.aws.toolkits.core.utils.getLogger
@@ -275,15 +276,18 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         launcherHandler.startNotify()
 
         class AmazonQServerBuilder : Builder<AmazonQLanguageServer>() {
+            private val customMessageTracer = MessageTracer()
 
             override fun wrapMessageConsumer(consumer: MessageConsumer?): MessageConsumer =
                 super.wrapMessageConsumer { message ->
+                    customMessageTracer.trace("INCOMING", message)
                     if (message is ResponseMessage && message.result is AwsExtendedInitializeResult) {
                         val result = message.result as AwsExtendedInitializeResult
                         AwsServerCapabilitiesProvider.getInstance(project).setAwsServerCapabilities(result.getAwsServerCapabilities())
                         AmazonQLspService.getInstance(project).notifyServerStarted()
                     }
                     consumer?.consume(message)
+                    customMessageTracer.trace("PROCESSED", message)
                 }
         }
 
@@ -371,6 +375,18 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         }
     }
 
+    class MessageTracer {
+        private val traceLogger = LOG.atLevel(if (isDeveloperMode()) Level.INFO else Level.DEBUG)
+
+        fun trace(direction: String, message: Message) {
+            traceLogger.log {
+                buildString {
+                    append("$direction: ")
+                    append(message.toString())
+                }
+            }
+        }
+    }
     companion object {
         private val LOG = getLogger<AmazonQServerInstance>()
     }
