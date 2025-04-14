@@ -5,4 +5,3 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
 const val SEND_CHAT_COMMAND_PROMPT = "aws/chat/sendChatPrompt"
 const val CHAT_QUICK_ACTION = "aws/chat/sendChatQuickAction"
-

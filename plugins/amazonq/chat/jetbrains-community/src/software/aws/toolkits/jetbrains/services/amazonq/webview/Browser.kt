@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.util.HighlightCommand
@@ -42,8 +43,17 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                 "mynah",
                 AssetResourceHandler.AssetResourceHandlerFactory(),
             )
-
-        loadWebView(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable, highlightCommand, activeProfile)
+        AmazonQLspService.getInstance(project).addServerStartedListener {
+            loadWebView(
+                isCodeTransformAvailable,
+                isFeatureDevAvailable,
+                isDocAvailable,
+                isCodeScanAvailable,
+                isCodeTestAvailable,
+                highlightCommand,
+                activeProfile
+            )
+        }
     }
 
     override fun dispose() {
@@ -224,7 +234,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
         activeProfile
     }
 
-    private fun generateQuickActionConfig() = AwsServerCapabilitiesProvider.getInstance(project).getChatOptions().quickActions.quickActionCommandGroups
+    private fun generateQuickActionConfig() = AwsServerCapabilitiesProvider.getInstance(project).getChatOptions().quickActions.quickActionsCommandGroups
         .let { OBJECT_MAPPER.writeValueAsString(it) }
         ?: "[]"
 

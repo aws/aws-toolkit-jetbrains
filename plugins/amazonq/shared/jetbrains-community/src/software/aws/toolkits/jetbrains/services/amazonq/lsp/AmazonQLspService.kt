@@ -40,7 +40,9 @@ import org.eclipse.lsp4j.SynchronizationCapabilities
 import org.eclipse.lsp4j.TextDocumentClientCapabilities
 import org.eclipse.lsp4j.WorkspaceClientCapabilities
 import org.eclipse.lsp4j.jsonrpc.Launcher
-import org.eclipse.lsp4j.launch.LSPLauncher
+import org.eclipse.lsp4j.jsonrpc.Launcher.Builder
+import org.eclipse.lsp4j.jsonrpc.MessageConsumer
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.slf4j.event.Level
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -50,6 +52,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactMa
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.auth.DefaultAuthCredentialsService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.DefaultModuleDependenciesService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AmazonQLspTypeAdapterFactory
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsExtendedInitializeResult
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.createExtendedClientMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument.TextDocumentServiceHandler
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
@@ -101,6 +106,10 @@ internal class LSPProcessListener : ProcessListener {
 
 @Service(Service.Level.PROJECT)
 class AmazonQLspService(private val project: Project, private val cs: CoroutineScope) : Disposable {
+    private val serverStartedListener = mutableListOf<AmazonQServerStartedListener>()
+    fun addServerStartedListener(listener: AmazonQServerStartedListener) = serverStartedListener.add(listener)
+    fun notifyServerStarted() = serverStartedListener.forEach { it() }
+
     private var instance: Deferred<AmazonQServerInstance>
     val capabilities
         get() = instance.getCompleted().initializeResult.getCompleted().capabilities
@@ -265,7 +274,20 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         launcherHandler.addProcessListener(inputWrapper)
         launcherHandler.startNotify()
 
-        launcher = LSPLauncher.Builder<AmazonQLanguageServer>()
+        class AmazonQServerBuilder : Builder<AmazonQLanguageServer>() {
+
+            override fun wrapMessageConsumer(consumer: MessageConsumer?): MessageConsumer =
+                super.wrapMessageConsumer { message ->
+                    if (message is ResponseMessage && message.result is AwsExtendedInitializeResult) {
+                        val result = message.result as AwsExtendedInitializeResult
+                        AwsServerCapabilitiesProvider.getInstance(project).setAwsServerCapabilities(result.getAwsServerCapabilities())
+                        AmazonQLspService.getInstance(project).notifyServerStarted()
+                    }
+                    consumer?.consume(message)
+                }
+        }
+
+        launcher = AmazonQServerBuilder()
             .setLocalService(AmazonQLanguageClientImpl(project))
             .setRemoteInterface(AmazonQLanguageServer::class.java)
             .configureGson {
@@ -274,6 +296,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
 
                 // otherwise Gson treats all numbers as double which causes deser issues
                 it.setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+                it.registerTypeAdapterFactory(AmazonQLspTypeAdapterFactory())
             }.traceMessages(
                 PrintWriter(
                     object : StringWriter() {
@@ -352,3 +375,5 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         private val LOG = getLogger<AmazonQServerInstance>()
     }
 }
+
+typealias AmazonQServerStartedListener = () -> Unit

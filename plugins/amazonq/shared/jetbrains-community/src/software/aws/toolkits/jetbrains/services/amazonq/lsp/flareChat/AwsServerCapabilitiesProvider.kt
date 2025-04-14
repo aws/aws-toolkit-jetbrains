@@ -23,9 +23,9 @@ class AwsServerCapabilitiesProvider {
         private val DEFAULT_CHAT_OPTIONS: ChatOptions = ChatOptions(
             QuickActions(
                 listOf(
-                    QuickActionsCommandGroup(
+                    QuickActionsCommandGroups(
                         listOf(
-                            Command("/help", "Learn more about Amazon Q"),
+                            Command("/help", "Learn more about Amazon Q then"),
                             Command("/clear", "Clear this session")
                         )
                     )
@@ -44,10 +44,10 @@ data class ChatOptions(
 )
 
 data class QuickActions(
-    val quickActionCommandGroups: List<QuickActionsCommandGroup>,
+    val quickActionsCommandGroups: List<QuickActionsCommandGroups>,
 )
 
-data class QuickActionsCommandGroup(
+data class QuickActionsCommandGroups(
     val commands: List<Command>,
 )
 
