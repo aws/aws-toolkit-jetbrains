@@ -185,14 +185,24 @@ class BrowserConnector(
 
                 result.whenComplete {
                         value, error ->
-                    chatCommunicationManager.removePartialChatMessage(partialResultToken)
-                    val messageToChat = ChatCommunicationManager.convertToJsonToSendToChat(
-                        node.command,
-                        requestFromUi.params.tabId,
-                        encryptionManager?.decrypt(value).orEmpty(),
-                        isPartialResult = false
-                    )
-                    browser.postChat(messageToChat)
+                    if(error != null) {
+                        throw error
+                    }
+                    try {
+                        chatCommunicationManager.removePartialChatMessage(partialResultToken)
+                        val messageToChat = ChatCommunicationManager.convertToJsonToSendToChat(
+                            node.command,
+                            requestFromUi.params.tabId,
+                            encryptionManager?.decrypt(value) ?: "",
+                            isPartialResult = false
+                        )
+                        throw Exception("Trying an error message")
+                        browser.postChat(messageToChat)
+                    } catch (e: Exception) {
+                        chatCommunicationManager.sendErrorToUi(requestFromUi.params.tabId, e, partialResultToken)
+                    }
+
+
                 }
             }
         }
