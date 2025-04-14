@@ -4,9 +4,9 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
 data class EndChatParams(
-    val tabId: String
+    val tabId: String,
 )
 
 data class EndChatResult(
-    val status: Boolean
+    val status: Boolean,
 )
