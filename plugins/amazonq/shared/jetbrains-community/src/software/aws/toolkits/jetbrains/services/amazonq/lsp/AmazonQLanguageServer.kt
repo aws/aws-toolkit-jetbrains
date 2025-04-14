@@ -11,6 +11,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.GetConfigu
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EndChatParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
 import java.util.concurrent.CompletableFuture
@@ -34,6 +35,9 @@ interface AmazonQLanguageServer : LanguageServer {
 
     @JsonRequest("aws/chat/sendChatPrompt")
     fun sendChatPrompt(params: EncryptedChatParams): CompletableFuture<String>
+
+    @JsonRequest("aws/chat/sendChatQuickAction")
+    fun sendQuickAction(params: EncryptedQuickActionChatParams): CompletableFuture<String>
 
     @JsonRequest("aws/chat/endChat")
     fun endChat(params: EndChatParams) : CompletableFuture<Boolean>

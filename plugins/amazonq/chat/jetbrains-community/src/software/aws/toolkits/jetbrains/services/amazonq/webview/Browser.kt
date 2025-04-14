@@ -5,9 +5,12 @@ package software.aws.toolkits.jetbrains.services.amazonq.webview
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.util.HighlightCommand
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
@@ -17,7 +20,8 @@ import java.net.URI
 /*
 Displays the web view for the Amazon Q tool window
  */
-class Browser(parent: Disposable, private val webUri: URI) : Disposable {
+
+class Browser(parent: Disposable, private val webUri: URI, val project: Project) : Disposable {
 
     val jcefBrowser = createBrowser(parent)
 
@@ -39,8 +43,17 @@ class Browser(parent: Disposable, private val webUri: URI) : Disposable {
                 "mynah",
                 AssetResourceHandler.AssetResourceHandlerFactory(),
             )
-
-        loadWebView(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable, highlightCommand, activeProfile)
+        AmazonQLspService.getInstance(project).addServerStartedListener {
+            loadWebView(
+                isCodeTransformAvailable,
+                isFeatureDevAvailable,
+                isDocAvailable,
+                isCodeScanAvailable,
+                isCodeTestAvailable,
+                highlightCommand,
+                activeProfile
+            )
+        }
     }
 
     override fun dispose() {
@@ -101,6 +114,7 @@ class Browser(parent: Disposable, private val webUri: URI) : Disposable {
         highlightCommand: HighlightCommand?,
         activeProfile: QRegionProfile?,
     ): String {
+        val quickActionConfig = generateQuickActionConfig()
         val postMessageToJavaJsCode = receiveMessageQuery.inject("JSON.stringify(message)")
         val jsScripts = """
             <script type="text/javascript" src="$webUri" defer onload="init()"></script>
@@ -113,7 +127,7 @@ class Browser(parent: Disposable, private val webUri: URI) : Disposable {
                             }
                         }, 
                         {
-                        quickActionCommands: [],
+                        quickActionCommands: $quickActionConfig,
                         disclaimerAcknowledged: ${MeetQSettings.getInstance().disclaimerAcknowledged}
                         }
                     );
@@ -219,6 +233,10 @@ class Browser(parent: Disposable, private val webUri: URI) : Disposable {
         highlightCommand
         activeProfile
     }
+
+    private fun generateQuickActionConfig() = AwsServerCapabilitiesProvider.getInstance(project).getChatOptions().quickActions.quickActionsCommandGroups
+        .let { OBJECT_MAPPER.writeValueAsString(it) }
+        ?: "[]"
 
     companion object {
         private const val MAX_ONBOARDING_PAGE_COUNT = 3
