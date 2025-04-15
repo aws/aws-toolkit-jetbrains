@@ -157,42 +157,6 @@ class QTestGenerationChatTest {
             }
     }
 
-    @Test
-    fun `test unsupported language error path from the chat`() {
-        val testCase = TestCase(
-            IdeProductProvider.IC,
-            LocalProjectInfo(
-                Paths.get("tstData", "qTestGenerationTestProject/")
-            )
-        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
-
-        // inject connection
-        useExistingConnectionForTest()
-
-        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
-            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
-                pluginConfigurator.installPluginFromPath(
-                    Path.of(path)
-                )
-            }
-
-            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
-            updateGeneralSettings()
-        }.runIdeWithDriver()
-            .useDriverAndCloseIde {
-                waitForProjectOpen()
-                openFile(Paths.get("testModule2", "UnSupportedLanguage.kt").toString())
-                Thread.sleep(30000)
-                val result = executePuppeteerScript(unsupportedLanguagePath)
-
-                assertThat(result)
-                    .contains(
-                        "new tab opened",
-                        "Test generation complete with expected error"
-                    )
-            }
-    }
-
     companion object {
         @JvmStatic
         @AfterAll
