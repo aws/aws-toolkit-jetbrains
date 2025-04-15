@@ -137,7 +137,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     private suspend fun initEncryption(): Boolean {
         val request = encoderServer.getEncryptionRequest()
         val response = sendMsgToLsp(LspMessage.Initialize, request)
-        logger.info { "received response to init encryption: $response"}
+        logger.info { "received response to init encryption: $response" }
         return response?.responseCode == 200
     }
 
