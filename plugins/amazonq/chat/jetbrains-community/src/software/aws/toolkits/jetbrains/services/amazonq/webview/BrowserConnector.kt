@@ -28,12 +28,14 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FOLLOW_UP_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorState
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FollowUpClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.QuickChatActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
@@ -204,6 +206,13 @@ class BrowserConnector(
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
 
                 showResult(result, partialResultToken, tabId, encryptionManager, browser)
+            }
+            CHAT_FOLLOW_UP_CLICK -> {
+                val requestFromUi = serializer.deserializeChatMessages(node, FollowUpClickNotification::class.java)
+                AmazonQLspService.executeIfRunning(project) { server ->
+                    server.followUpClick(requestFromUi.params)
+                    chatCommunicationManager.removePartialChatMessage(requestFromUi.params.tabId)
+                } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
             }
         }
     }
