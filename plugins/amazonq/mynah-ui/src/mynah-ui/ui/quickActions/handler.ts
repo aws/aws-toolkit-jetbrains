@@ -57,7 +57,6 @@ export class QuickActionHandler {
                 this.handleFeatureDevCommand(chatPrompt, tabID, 'Q - Dev')
                 break
             case '/help':
-                console.log('123')
                 this.handleHelpCommand(tabID)
                 break
             case '/transform':
