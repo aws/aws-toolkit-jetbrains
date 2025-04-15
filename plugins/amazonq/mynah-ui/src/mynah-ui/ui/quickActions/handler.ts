@@ -57,6 +57,7 @@ export class QuickActionHandler {
                 this.handleFeatureDevCommand(chatPrompt, tabID, 'Q - Dev')
                 break
             case '/help':
+                console.log('123')
                 this.handleHelpCommand(tabID)
                 break
             case '/transform':
@@ -134,7 +135,7 @@ export class QuickActionHandler {
 
     private handleHelpCommand(tabID: string) {
         // User entered help action, so change the tab type to 'cwc' if it's an unknown tab
-        if (this.tabsStorage.getTab(tabID)?.type === 'unknown') {
+        if (this.tabsStorage.getTab(tabID)?.type === 'unknown' || this.tabsStorage.getTab(tabID)?.type === 'welcome') {
             this.tabsStorage.updateTabTypeFromUnknown(tabID, 'cwc')
         }
 
