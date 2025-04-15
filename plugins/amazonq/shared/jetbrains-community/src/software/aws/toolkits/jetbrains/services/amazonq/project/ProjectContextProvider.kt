@@ -180,6 +180,9 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     suspend fun queryInline(query: String, filePath: String, target: InlineContextTarget): List<InlineBm25Chunk> = withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
         val encrypted = encryptRequest(QueryInlineCompletionRequest(query, filePath, target.toString()))
         val r = sendMsgToLsp(LspMessage.QueryInlineCompletion, encrypted) ?: return@withTimeout emptyList()
+        if (r.responseCode != 200 || r.responseBody.isBlank()) {
+            return@withTimeout emptyList()
+        }
         return@withTimeout mapper.readValue<List<InlineBm25Chunk>>(r.responseBody)
     }
 
