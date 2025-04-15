@@ -109,6 +109,7 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
     override fun listCustomizations(project: Project, passive: Boolean): List<CustomizationUiItem>? =
         calculateIfIamIdentityCenterConnection(project) {
             // 1. invoke API and get result
+            println("invalidate ${activeCustomization(project)}")
             val listAvailableCustomizationsResult = try {
                 CodeWhispererClientAdaptor.getInstance(project).listAvailableCustomizations()
             } catch (e: Exception) {

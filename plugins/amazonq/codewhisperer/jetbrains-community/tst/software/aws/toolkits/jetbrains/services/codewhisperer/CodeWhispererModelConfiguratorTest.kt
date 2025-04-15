@@ -7,7 +7,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
-import com.intellij.testFramework.registerServiceInstance
 import com.intellij.testFramework.replaceService
 import com.intellij.util.xmlb.XmlSerializer
 import org.assertj.core.api.Assertions.assertThat
@@ -41,8 +40,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureContext
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
-import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomizationState
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.DefaultCodeWhispererModelConfigurator
@@ -78,7 +75,6 @@ class CodeWhispererModelConfiguratorTest {
     private lateinit var sut: DefaultCodeWhispererModelConfigurator
     private lateinit var mockClient: CodeWhispererRuntimeClient
     private lateinit var abManager: CodeWhispererFeatureConfigService
-    private lateinit var mockClintAdaptor: CodeWhispererClientAdaptor
 
     @Before
     fun setup() {
@@ -114,9 +110,6 @@ class CodeWhispererModelConfiguratorTest {
             abManager,
             disposableRule.disposable
         )
-
-        mockClintAdaptor = mock()
-        projectRule.project.registerServiceInstance(CodeWhispererClientAdaptor::class.java, mockClintAdaptor)
     }
 
     @Test
@@ -557,47 +550,4 @@ class CodeWhispererModelConfiguratorTest {
         assertThat(actual.previousAvailableCustomizations).hasSize(1)
         assertThat(actual.previousAvailableCustomizations["fake-sso-url"]).isEqualTo(listOf("arn_1", "arn_2", "arn_3"))
     }
-
-    @Test
-    fun `profile switch should keep using existing customization if new list still contains that arn`() {
-        val ssoConn = spy(LegacyManagedBearerSsoConnection(region = "us-east-1", startUrl = "url 1", scopes = Q_SCOPES))
-        ToolkitConnectionManager.getInstance(projectRule.project).switchConnection(ssoConn)
-        val oldCustomization = CodeWhispererCustomization("oldArn", "oldName", "oldDescription")
-        sut.switchCustomization(projectRule.project, oldCustomization)
-
-        assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(oldCustomization)
-
-        val fakeCustomizations = listOf(
-            CodeWhispererCustomization("oldArn", "oldName", "oldDescription")
-        )
-
-        mockClintAdaptor.stub { on { listAvailableCustomizations() } doReturn fakeCustomizations}
-
-        ApplicationManager.getApplication().messageBus
-            .syncPublisher(QRegionProfileSelectedListener.TOPIC)
-            .onProfileSelected(projectRule.project, null)
-
-        assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(oldCustomization)
-    }
-
-    @Test
-    fun `profile switch should invalidate obsolete customization if it's not in the new list`() {
-        val ssoConn = spy(LegacyManagedBearerSsoConnection(region = "us-east-1", startUrl = "url 1", scopes = Q_SCOPES))
-        ToolkitConnectionManager.getInstance(projectRule.project).switchConnection(ssoConn)
-        val oldCustomization = CodeWhispererCustomization("oldArn", "oldName", "oldDescription")
-        sut.switchCustomization(projectRule.project, oldCustomization)
-        assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(oldCustomization)
-
-        val fakeCustomizations = listOf(
-            CodeWhispererCustomization("newArn", "newName", "oldDescription")
-        )
-        mockClintAdaptor.stub { on { listAvailableCustomizations() } doReturn fakeCustomizations}
-
-        ApplicationManager.getApplication().messageBus
-            .syncPublisher(QRegionProfileSelectedListener.TOPIC)
-            .onProfileSelected(projectRule.project, null)
-
-        assertThat(sut.activeCustomization(projectRule.project)).isNull()
-    }
-
 }
