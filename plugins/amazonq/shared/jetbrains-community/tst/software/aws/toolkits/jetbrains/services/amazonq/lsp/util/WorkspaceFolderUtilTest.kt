@@ -86,8 +86,8 @@ class WorkspaceFolderUtilTest {
         assertThat(result).isEmpty()
     }
 
-    private fun createMockVirtualFile(uri: URI, name: String): VirtualFile {
-        return mockk<VirtualFile> {
+    private fun createMockVirtualFile(uri: URI, name: String): VirtualFile =
+        mockk<VirtualFile> {
             every { url } returns uri.toString()
             every { getName() } returns name
             every { isDirectory } returns false
@@ -95,7 +95,6 @@ class WorkspaceFolderUtilTest {
                 every { protocol } returns "file"
             }
         }
-    }
 
     // for windows unit tests
     private fun normalizeFileUri(uri: String): String {
