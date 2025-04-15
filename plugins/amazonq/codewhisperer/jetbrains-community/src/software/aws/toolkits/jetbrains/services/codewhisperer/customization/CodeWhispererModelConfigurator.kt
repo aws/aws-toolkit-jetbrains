@@ -50,6 +50,7 @@ private fun notifyInvalidSelectedCustomization(project: Project) {
 }
 
 private fun notifyNewCustomization(project: Project) {
+    if (ApplicationManager.getApplication().isUnitTestMode) return
     notifyInfo(
         title = message("codewhisperer.custom.dialog.title"),
         content = message("codewhisperer.notification.custom.new_customization"),
