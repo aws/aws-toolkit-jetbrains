@@ -116,14 +116,10 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
                     logger.info { "project context index starting" }
                     delay(300)
                     val isIndexSuccess = index()
-                    if (isIndexSuccess) {
-                        isIndexComplete.set(true)
-                    }
+                    if (isIndexSuccess) isIndexComplete.set(true)
                     return
                 }
-                retryCount.incrementAndGet()
             } catch (e: Exception) {
-                logger.warn(e) { "failed to init project context" }
                 if (e.stackTraceToString().contains("Connection refused")) {
                     retryCount.incrementAndGet()
                     delay(10000)
@@ -137,7 +133,6 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     private suspend fun initEncryption(): Boolean {
         val request = encoderServer.getEncryptionRequest()
         val response = sendMsgToLsp(LspMessage.Initialize, request)
-        logger.info { "received response to init encryption: $response"}
         return response?.responseCode == 200
     }
 
