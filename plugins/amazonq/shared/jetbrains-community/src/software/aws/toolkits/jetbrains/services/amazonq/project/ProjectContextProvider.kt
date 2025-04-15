@@ -315,12 +315,12 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     private suspend fun sendMsgToLsp(msgType: LspMessage, request: String?): LspResponse? {
-        logger.info { "sending message: ${msgType.endpoint} to lsp on port ${encoderServer.port}" }
-        val url = URI("http://127.0.0.1:${encoderServer.port}/${msgType.endpoint}").toURL()
         if (!encoderServer.isNodeProcessRunning()) {
             logger.warn { "language server for ${project.name} is not running" }
             return null
         }
+        logger.info { "sending message: ${msgType.endpoint} to lsp on port ${encoderServer.port}" }
+        val url = URI("http://127.0.0.1:${encoderServer.port}/${msgType.endpoint}").toURL()
         // use 1h as timeout for index, 5 seconds for other APIs
         val timeoutMs = if (msgType is LspMessage.Index) 60.minutes.inWholeMilliseconds.toInt() else 5000
         // dedicate single thread to index operation because it can be long running
