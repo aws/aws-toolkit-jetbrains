@@ -3,8 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.util
 
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.module.ModuleManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootManager
 import org.eclipse.lsp4j.WorkspaceFolder
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil.toUriString
