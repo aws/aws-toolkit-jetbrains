@@ -58,7 +58,7 @@ class AmazonQToolWindow private constructor(
         connectApps()
     }
 
-    fun disposeAndRecreate(broadcast: Boolean = false) {
+    fun disposeAndRecreate() {
         browserConnector.uiReady = CompletableDeferred()
         chatPanel.disposeAndRecreate()
 
@@ -67,9 +67,7 @@ class AmazonQToolWindow private constructor(
         connectUi()
         connectApps()
 
-        if (broadcast) {
-            ApplicationManager.getApplication().messageBus.syncPublisher(LafManagerListener.TOPIC).lookAndFeelChanged(LafManager.getInstance())
-        }
+        ApplicationManager.getApplication().messageBus.syncPublisher(LafManagerListener.TOPIC).lookAndFeelChanged(LafManager.getInstance())
     }
 
     private fun sendMessage(message: AmazonQMessage, tabType: String) {
