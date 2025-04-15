@@ -90,13 +90,11 @@ class CodeWhispererModelConfiguratorTest {
         regionProvider.addRegion(Region.US_EAST_1)
         regionProvider.addRegion(Region.US_EAST_2)
 
-        val original = CodeWhispererModelConfigurator.getInstance()
-        sut = spy(original) as DefaultCodeWhispererModelConfigurator
-        ApplicationManager.getApplication().replaceService(
-            DefaultCodeWhispererModelConfigurator::class.java,
-            sut,
-            disposableRule.disposable
-        )
+        sut = spy(CodeWhispererModelConfigurator.getInstance() as DefaultCodeWhispererModelConfigurator).also { spyInstance ->
+            ApplicationManager.getApplication().replaceService(
+                DefaultCodeWhispererModelConfigurator::class.java, spyInstance, disposableRule.disposable
+            )
+        }
 
         (ToolkitConnectionManager.getInstance(projectRule.project) as DefaultToolkitConnectionManager).loadState(ToolkitConnectionManagerState())
         mockClient.stub {
