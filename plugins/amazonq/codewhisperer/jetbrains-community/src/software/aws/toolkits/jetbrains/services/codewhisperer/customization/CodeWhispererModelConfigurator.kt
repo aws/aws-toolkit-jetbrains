@@ -21,10 +21,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererR
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
-import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.calculateIfIamIdentityCenterConnection
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
@@ -114,7 +110,7 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
 
     @RequiresBackgroundThread
     override fun listCustomizations(project: Project, passive: Boolean): List<CustomizationUiItem>? =
-        calculateIfIamIdentityCenterConnection(project) { it ->
+        calculateIfIamIdentityCenterConnection(project) {
             // 1. invoke API and get result
             val listAvailableProfilesResult = tryOrNull { QRegionProfileManager.getInstance().listRegionProfiles(project) } ?: emptyList()
 
@@ -122,24 +118,8 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
 
             for (profile in listAvailableProfilesResult) {
                 try {
-                    val setting = AwsRegionProvider.getInstance()[profile.region]?.let { it1 ->
-                        ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())?.getConnectionSettings()
-                            ?.withRegion(it1)
-                    }
-                    val client = setting?.let { it1 -> AwsClientManager.getInstance().getClient(CodeWhispererRuntimeClient::class, it1) }
-                    val perProfileCustomizations =
-                        client?.listAvailableCustomizationsPaginator(ListAvailableCustomizationsRequest.builder().profileArn(profile.arn).build())
-                            ?.customizations()?.stream()?.toList()?.map {
-                                CodeWhispererCustomization(
-                                    arn = it.arn(),
-                                    name = it.name(),
-                                    description = it.description(),
-                                    profile = profile
-                                )
-                            }
-                    if (perProfileCustomizations != null) {
-                        aggregatedCustomizations.addAll(perProfileCustomizations)
-                    }
+                    val perProfileCustomizations = CodeWhispererClientAdaptor.getInstance(project).listAvailableCustomizations(profile)
+                    aggregatedCustomizations.addAll(perProfileCustomizations)
                 } catch (e: Exception) {
                     val requestId = (e as? CodeWhispererRuntimeException)?.requestId()
                     val logMessage = if (CodeWhispererConstants.Customization.noAccessToCustomizationExceptionPredicate(e)) {
@@ -148,7 +128,6 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
                     } else {
                         "ListAvailableCustomizations: failed due to unknown error ${e.message}, requestId: ${requestId.orEmpty()}"
                     }
-
                     LOG.debug { logMessage }
                 }
             }
@@ -156,7 +135,11 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
             // 2. get diff
             val previousCustomizationsShapshot = connectionToCustomizationsShownLastTime.getOrElse(it.id) { emptyList() }
             // calculate new profile+customization list using profile.arn :: customization.arn as the key
-            val diff = aggregatedCustomizations.filterNot { customization -> previousCustomizationsShapshot.contains("${customization.profile?.arn}::${customization.arn}") }.toSet()
+            val diff = aggregatedCustomizations.filterNot { customization ->
+                previousCustomizationsShapshot.contains(
+                    "${customization.profile?.arn}::${customization.arn}"
+                )
+            }.toSet()
             // 3 if passive,
             //   (1) update allowlisting
             //   (2) prompt "You have New Customizations" toast notification (only show once)
@@ -170,7 +153,10 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
                 }
             } else {
                 aggregatedCustomizations.let { customizations ->
-                    connectionToCustomizationsShownLastTime[it.id] = customizations.map { customization -> "${customization.profile?.arn}::${customization.arn}"}.toMutableList()
+                    connectionToCustomizationsShownLastTime[it.id] = customizations.map { customization,
+                        ->
+                        "${customization.profile?.arn}::${customization.arn}"
+                    }.toMutableList()
                 }
             }
 
@@ -180,8 +166,10 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
             activeCustomization(project)?.let { activeCustom ->
                 if (aggregatedCustomizations.isEmpty()) {
                     invalidateSelectedAndNotify(project)
-                } else if (!aggregatedCustomizations.any { latestCustom -> "${latestCustom.profile?.arn}::${latestCustom.arn}" == "${activeCustom.profile?.arn}::${activeCustom.arn}"}
-                    || activeCustom.profile!= QRegionProfileManager.getInstance().activeProfile(project)){
+                } else if (!aggregatedCustomizations.any { latestCustom ->
+                        "${latestCustom.profile?.arn}::${latestCustom.arn}" == "${activeCustom.profile?.arn}::${activeCustom.arn}"
+                    } || activeCustom.profile != QRegionProfileManager.getInstance().activeProfile(project)
+                ) {
                     invalidateSelectedAndNotify(project)
                 }
             }

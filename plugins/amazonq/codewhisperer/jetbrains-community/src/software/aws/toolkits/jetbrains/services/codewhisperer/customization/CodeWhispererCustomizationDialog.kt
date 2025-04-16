@@ -1,4 +1,4 @@
-// Copyright 2023 Amazon.com, Inc. or it s affiliates. All Rights Reserved.
+// Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.customization
@@ -36,7 +36,7 @@ import javax.swing.JComponent
 import javax.swing.JList
 
 private val NoDataToDisplay = CustomizationUiItem(
-    CodeWhispererCustomization("", message("codewhisperer.custom.dialog.option.no_data"), "", QRegionProfile("","")),
+    CodeWhispererCustomization("", message("codewhisperer.custom.dialog.option.no_data"), "", QRegionProfile("", "")),
     false,
     false
 )

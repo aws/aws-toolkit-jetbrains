@@ -15,5 +15,5 @@ data class CodeWhispererCustomization(
     var description: String? = null,
 
     @JvmField
-    var profile: QRegionProfile? = null
+    var profile: QRegionProfile? = null,
 )
