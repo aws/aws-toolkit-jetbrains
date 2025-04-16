@@ -1,4 +1,4 @@
-// Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2023 Amazon.com, Inc. or it s affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.customization
@@ -26,6 +26,8 @@ import software.amazon.awssdk.arns.Arn
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.Q_CUSTOM_LEARN_MORE_URI
 import software.aws.toolkits.jetbrains.ui.AsyncComboBox
 import software.aws.toolkits.jetbrains.utils.notifyInfo
@@ -34,7 +36,7 @@ import javax.swing.JComponent
 import javax.swing.JList
 
 private val NoDataToDisplay = CustomizationUiItem(
-    CodeWhispererCustomization("", message("codewhisperer.custom.dialog.option.no_data"), ""),
+    CodeWhispererCustomization("", message("codewhisperer.custom.dialog.option.no_data"), "", QRegionProfile("","")),
     false,
     false
 )
@@ -179,11 +181,19 @@ class CodeWhispererCustomizationDialog(
                         proposeModelUpdate { model ->
                             val activeCustomization = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)
                             val unsorted = myCustomizations ?: CodeWhispererModelConfigurator.getInstance().listCustomizations(project).orEmpty()
+                            val activeProfile = QRegionProfileManager.getInstance().activeProfile(project)
+                            // sort customization based on profile name first
+                            val baseSorted = unsorted.sortedWith(
+                                compareBy<CustomizationUiItem> {
+                                    it.customization.profile?.profileName != activeProfile?.profileName
+                                }.thenBy { it.customization.profile?.profileName ?: "" }
+                                    .thenBy { it.customization.name }
+                            )
 
-                            val sorted = activeCustomization?.let {
-                                unsorted.putPickedUpFront(setOf(it))
-                            } ?: run {
-                                unsorted.sortedBy { it.customization.name }
+                            val sorted = if (activeCustomization != null) {
+                                baseSorted.putPickedUpFront(setOf(activeCustomization))
+                            } else {
+                                baseSorted
                             }
 
                             if (
@@ -257,6 +267,10 @@ private object CustomizationRenderer : ColoredListCellRenderer<CustomizationUiIt
                 tryOrNull { Arn.fromString(it.customization.arn).accountId().get() }?.let { accountId ->
                     append(" ($accountId)", SimpleTextAttributes.REGULAR_ATTRIBUTES)
                 }
+            }
+
+            if (it.customization.profile?.profileName?.isNotEmpty() == true) {
+                append("  [${it.customization.profile?.profileName}]", SimpleTextAttributes.REGULAR_ATTRIBUTES)
             }
 
             if (it.isNew) {
