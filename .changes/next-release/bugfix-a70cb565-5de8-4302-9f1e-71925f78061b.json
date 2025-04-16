@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Amazon Q: Customization now resets with a warning if unavailable in the selected profile."
+}
