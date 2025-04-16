@@ -236,12 +236,15 @@ suspend fun processClientInstructions(clientInstructionsPath: Path, jobId: JobId
     getLogger<CodeModernizerManager>().info("Created client-side build result upload zip for job ${jobId.id} and artifact $artifactId: ${uploadZip.path}")
     val uploadContext = UploadContext.fromTransformationUploadContext(TransformationUploadContext.builder().jobId(jobId.id).uploadArtifactType("ClientBuildResult").build())
     getLogger<CodeModernizerManager>().info("About to call uploadPayload for job ${jobId.id} and artifact $artifactId")
-    CodeModernizerManager.getInstance(project).codeTransformationSession?.uploadPayload(uploadZip, uploadContext)
-    getLogger<CodeModernizerManager>().info("Upload succeeded; about to call ResumeTransformation for job ${jobId.id} and artifact $artifactId now")
-    CodeModernizerManager.getInstance(project).codeTransformationSession?.resumeTransformation()
-    uploadZip.deleteRecursively()
-    copyOfProjectSources.toFile().deleteRecursively()
-    getLogger<CodeModernizerManager>().info("Deleted copy of project sources and client-side build upload ZIP")
+    try {
+        CodeModernizerManager.getInstance(project).codeTransformationSession?.uploadPayload(uploadZip, uploadContext)
+        getLogger<CodeModernizerManager>().info("Upload succeeded; about to call ResumeTransformation for job ${jobId.id} and artifact $artifactId now")
+        CodeModernizerManager.getInstance(project).codeTransformationSession?.resumeTransformation()
+    } finally {
+        uploadZip.deleteRecursively()
+        copyOfProjectSources.toFile().deleteRecursively()
+        getLogger<CodeModernizerManager>().info("Deleted copy of project sources and client-side build upload ZIP")
+    }
     // switch back to Transformation Hub view
     runInEdt {
         CodeModernizerManager.getInstance(project).getBottomToolWindow().show()
