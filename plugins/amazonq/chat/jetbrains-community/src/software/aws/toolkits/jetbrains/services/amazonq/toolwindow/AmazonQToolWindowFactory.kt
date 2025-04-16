@@ -95,7 +95,8 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
         project.messageBus.connect(toolWindow.disposable).subscribe(
             QRegionProfileSelectedListener.TOPIC,
             object : QRegionProfileSelectedListener {
-                override fun onProfileSelected(profile: QRegionProfile?) {
+                // note we name myProject intentionally ow it will shadow the "project" provided by the IDE
+                override fun onProfileSelected(myProject: Project, profile: QRegionProfile?) {
                     if (project.isDisposed) return
                     AmazonQToolWindow.getInstance(project).disposeAndRecreate()
                     qPanel.setContent(AmazonQToolWindow.getInstance(project).component)

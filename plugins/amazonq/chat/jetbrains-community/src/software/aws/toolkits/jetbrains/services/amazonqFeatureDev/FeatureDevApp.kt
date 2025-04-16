@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.Project
 import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
@@ -81,7 +82,7 @@ class FeatureDevApp : AmazonQApp {
         context.project.messageBus.connect(this).subscribe(
             QRegionProfileSelectedListener.TOPIC,
             object : QRegionProfileSelectedListener {
-                override fun onProfileSelected(profile: QRegionProfile?) {
+                override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
                     chatSessionStorage.deleteAllSessions()
                 }
             }

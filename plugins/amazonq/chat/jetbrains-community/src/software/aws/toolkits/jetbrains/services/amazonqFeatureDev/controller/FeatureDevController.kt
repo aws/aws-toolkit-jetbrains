@@ -100,7 +100,7 @@ class FeatureDevController(
         context.project.messageBus.connect().subscribe(
             QRegionProfileSelectedListener.TOPIC,
             object : QRegionProfileSelectedListener {
-                override fun onProfileSelected(profile: QRegionProfile?) {
+                override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
                     chatSessionStorage.deleteAllSessions()
                 }
             }

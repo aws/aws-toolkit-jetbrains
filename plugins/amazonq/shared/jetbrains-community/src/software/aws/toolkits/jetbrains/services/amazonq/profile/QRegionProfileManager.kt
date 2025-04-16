@@ -146,7 +146,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
 
         ApplicationManager.getApplication().messageBus
             .syncPublisher(QRegionProfileSelectedListener.TOPIC)
-            .onProfileSelected(newProfile)
+            .onProfileSelected(project, newProfile)
     }
 
     private fun invalidateProfile(arn: String) {

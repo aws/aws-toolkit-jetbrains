@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.profile
 
+import com.intellij.openapi.project.Project
 import com.intellij.util.messages.Topic
 
 interface QRegionProfileSelectedListener {
@@ -11,5 +12,5 @@ interface QRegionProfileSelectedListener {
         val TOPIC = Topic.create("QRegionProfileSelected", QRegionProfileSelectedListener::class.java)
     }
 
-    fun onProfileSelected(profile: QRegionProfile?)
+    fun onProfileSelected(project: Project, profile: QRegionProfile?)
 }
