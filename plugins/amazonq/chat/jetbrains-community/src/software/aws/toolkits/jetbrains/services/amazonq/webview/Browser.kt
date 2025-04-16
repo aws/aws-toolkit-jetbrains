@@ -105,7 +105,7 @@ class Browser(parent: Disposable) : Disposable {
                                 $postMessageToJavaJsCode
                             }
                         },
-                        ${MeetQSettings.getInstance().reinvent2024OnboardingCount < MAX_ONBOARDING_PAGE_COUNT},
+                        ${true},
                         ${MeetQSettings.getInstance().disclaimerAcknowledged},
                         $isFeatureDevAvailable, // whether /dev is available
                         $isCodeTransformAvailable, // whether /transform is available

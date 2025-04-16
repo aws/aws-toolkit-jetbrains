@@ -63,6 +63,9 @@ export const createMynahUI = (
                 promptInputPlaceholder: 'Session ended.',
             })
         },
+        tabMutator: (tabId, data) => {
+            mynahUI.updateStore(tabId, data)
+        }
     })
     // Adding the first tab as CWC tab
     tabsStorage.addTab({

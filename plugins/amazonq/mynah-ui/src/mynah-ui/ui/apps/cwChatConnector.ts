@@ -216,6 +216,7 @@ export class Connector {
     }
 
     help = (tabID: string): void => {
+        console.log(`cwChatConnector.help ${tabID}`)
         this.sendMessageToExtension({
             tabID: tabID,
             command: 'help',
@@ -256,6 +257,7 @@ export class Connector {
     }
 
     private processChatMessage = async (messageData: any): Promise<void> => {
+        console.log(`processChatMessage`)
         if (this.onChatAnswerReceived === undefined) {
             return
         }

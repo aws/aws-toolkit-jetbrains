@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import {MynahUIDataModel} from "@aws/mynah-ui-chat";
+
 export type TabStatus = 'free' | 'busy' | 'dead'
 const TabTypes = [
     'cwc',
@@ -53,9 +55,11 @@ export class TabsStorage {
     private lastSelectedTab: Tab | undefined = undefined
     private tabActivityTimers: Record<string, ReturnType<typeof setTimeout>> = {}
     private onTabTimeout?: (tabId: string) => void
+    private tabMutator?: (tabId: string, data: MynahUIDataModel) => void
 
-    constructor(props?: { onTabTimeout: (tabId: string) => void }) {
+    constructor(props?: { onTabTimeout: (tabId: string) => void, tabMutator: (tabId: string, data: MynahUIDataModel) => void }) {
         this.onTabTimeout = props?.onTabTimeout
+        this.tabMutator = props?.tabMutator
     }
 
     public addTab(tab: Tab) {
@@ -100,6 +104,17 @@ export class TabsStorage {
         }
         currentTabValue.status = tabStatus
         this.tabs.set(tabID, currentTabValue)
+    }
+
+    public updateTabContent(tabId: string, dataModel:  MynahUIDataModel) {
+        const currentTabValue = this.tabs.get(tabId)
+        if (currentTabValue === undefined || currentTabValue.status === 'dead') {
+            return
+        }
+
+        if (this.tabMutator) {
+            this.tabMutator(tabId, dataModel)
+        }
     }
 
     public updateTabTypeFromUnknown(tabID: string, tabType: TabType) {

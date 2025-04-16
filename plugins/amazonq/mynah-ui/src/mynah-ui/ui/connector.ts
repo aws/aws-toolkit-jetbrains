@@ -12,19 +12,19 @@ import {
     ProgressField,
     ChatPrompt, QuickActionCommand,
 } from '@aws/mynah-ui-chat'
-import { Connector as CWChatConnector } from './apps/cwChatConnector'
-import { Connector as FeatureDevChatConnector } from './apps/featureDevChatConnector'
-import { Connector as DocChatConnector } from './apps/docChatConnector'
-import { Connector as AmazonQCommonsConnector } from './apps/amazonqCommonsConnector'
-import { ExtensionMessage } from './commands'
-import { TabType, TabsStorage } from './storages/tabsStorage'
-import { WelcomeFollowupType } from './apps/amazonqCommonsConnector'
-import { AuthFollowUpType } from './followUps/generator'
-import { CodeTransformChatConnector } from './apps/codeTransformChatConnector'
-import { isFormButtonCodeTest, isFormButtonCodeScan, isFormButtonCodeTransform } from './forms/constants'
-import { DiffTreeFileInfo } from './diffTree/types'
-import { CodeScanChatConnector } from "./apps/codeScanChatConnector";
-import { CodeTestChatConnector } from './apps/codeTestChatConnector'
+import {Connector as CWChatConnector} from './apps/cwChatConnector'
+import {Connector as FeatureDevChatConnector} from './apps/featureDevChatConnector'
+import {Connector as DocChatConnector} from './apps/docChatConnector'
+import {Connector as AmazonQCommonsConnector} from './apps/amazonqCommonsConnector'
+import {ExtensionMessage} from './commands'
+import {TabType, TabsStorage} from './storages/tabsStorage'
+import {WelcomeFollowupType} from './apps/amazonqCommonsConnector'
+import {AuthFollowUpType} from './followUps/generator'
+import {CodeTransformChatConnector} from './apps/codeTransformChatConnector'
+import {isFormButtonCodeTest, isFormButtonCodeScan, isFormButtonCodeTransform} from './forms/constants'
+import {DiffTreeFileInfo} from './diffTree/types'
+import {CodeScanChatConnector} from "./apps/codeScanChatConnector";
+import {CodeTestChatConnector} from './apps/codeTestChatConnector'
 
 export interface CodeReference {
     licenseName?: string
@@ -50,7 +50,7 @@ export interface ConnectorProps {
     sendMessageToExtension: (message: ExtensionMessage) => void
     onMessageReceived?: (tabID: string, messageData: any, needToShowAPIDocsTab: boolean) => void
     onChatAnswerReceived?: (tabID: string, message: ChatItem) => void
-    onChatAnswerUpdated?: (tabID: string, message:ChatItem) => void
+    onChatAnswerUpdated?: (tabID: string, message: ChatItem) => void
     onCodeTransformChatDisabled: (tabID: string) => void
     onCodeTransformMessageReceived: (
         tabID: string,
@@ -225,6 +225,16 @@ export class Connector {
                 this.codeScanChatConnector.help(tabID)
                 break
             case 'welcome':
+                this.tabsStorage.updateTabTypeFromUnknown(tabID, 'cwc')
+                this.tabsStorage.updateTabContent(tabID, {
+                    tabHeaderDetails: void 0,
+                    compactMode: false,
+                    tabBackground: false,
+                    promptInputText: '',
+                    promptInputLabel: void 0,
+                    chatItems: [],
+                    tabTitle: 'Chat',
+                })
                 this.cwChatConnector.help(tabID)
                 break
         }
@@ -597,7 +607,7 @@ export class Connector {
                 this.cwChatConnector.onSendFeedback(tabId, feedbackPayload)
                 break
             case 'codetest':
-                this.codeTestChatConnector.sendFeedback(tabId,feedbackPayload)
+                this.codeTestChatConnector.sendFeedback(tabId, feedbackPayload)
                 break
         }
     }
@@ -611,7 +621,7 @@ export class Connector {
                 this.featureDevChatConnector.onChatItemVoted(tabId, messageId, vote)
                 break
             case 'codetest' :
-                this.codeTestChatConnector.onChatItemVoted(tabId,messageId,vote)
+                this.codeTestChatConnector.onChatItemVoted(tabId, messageId, vote)
                 break
         }
     }
