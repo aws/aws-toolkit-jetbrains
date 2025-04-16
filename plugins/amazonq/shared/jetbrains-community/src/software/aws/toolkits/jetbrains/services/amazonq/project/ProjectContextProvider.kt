@@ -302,15 +302,14 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     companion object {
         private val logger = getLogger<ProjectContextProvider>()
         private val regex = Regex("""bin|build|node_modules|venv|\.venv|env|\.idea|\.conda""", RegexOption.IGNORE_CASE)
-        private val mega = 1024u * 1024u
+        private val mega = (1024 * 1024).toULong()
         private val tenMb = 10 * mega.toInt()
 
         private fun willExceedPayloadLimit(maxSize: ULong, currentTotalFileSize: ULong, currentFileSize: Long) =
             currentTotalFileSize.let { totalSize -> totalSize > (maxSize - currentFileSize.toUInt()) }
 
-        private fun isBuildOrBin(fileName: String): Boolean {
-            return regex.find(fileName) != null
-        }
+        private fun isBuildOrBin(fileName: String): Boolean =
+            regex.find(fileName) != null
 
         fun collectFiles(projectBaseDirectories: Set<VirtualFile>, changeListManager: ChangeListManager): FileCollectionResult {
             val maxSize = CodeWhispererSettings.getInstance()
