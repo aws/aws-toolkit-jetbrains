@@ -125,12 +125,9 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
             } catch (e: Exception) {
                 if (e.stackTraceToString().contains("Connection refused")) {
                     if (encoderServer.isNodeProcessRunning()) {
-                        // there is a chance that client throws java.net.ConnectException: Connection refused
-                        // in this case, the server is busy doing tree sitter parsing
-                        // and will be responsive later once it goes past the tree sitter parsing phrase.
-                        // Long term solution is to move encode server to LSP protocol
                         return
                     } else {
+                        logger.warn(e) { "project context process quit unexpectedly" }
                         retryCount.incrementAndGet()
                         delay(10000)
                     }
