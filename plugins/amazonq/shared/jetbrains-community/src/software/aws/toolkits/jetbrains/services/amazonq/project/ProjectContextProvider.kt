@@ -123,11 +123,19 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
                 }
                 retryCount.incrementAndGet()
             } catch (e: Exception) {
-                logger.warn(e) { "failed to init project context" }
                 if (e.stackTraceToString().contains("Connection refused")) {
-                    retryCount.incrementAndGet()
-                    delay(10000)
+                    if (encoderServer.isNodeProcessRunning()) {
+                        // there is a chance that client throws java.net.ConnectException: Connection refused
+                        // in this case, the server is busy doing tree sitter parsing
+                        // and will be responsive later once it goes past the tree sitter parsing phrase.
+                        // Long term solution is to move encode server to LSP protocol
+                        return
+                    } else {
+                        retryCount.incrementAndGet()
+                        delay(10000)
+                    }
                 } else {
+                    logger.warn(e) { "failed to init project context" }
                     return
                 }
             }
