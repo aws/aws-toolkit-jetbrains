@@ -26,6 +26,7 @@ import software.amazon.awssdk.arns.Arn
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileSwitchIntent
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.Q_CUSTOM_LEARN_MORE_URI
@@ -108,6 +109,9 @@ class CodeWhispererCustomizationDialog(
             RadioButtonOption.Customization -> run {
                 CodeWhispererModelConfigurator.getInstance().switchCustomization(project, modal.selectedCustomization?.customization)
                 notifyCustomizationIsSelected(project, modal.selectedCustomization)
+                if (modal.selectedCustomization?.customization?.profile?.arn != QRegionProfileManager.getInstance().activeProfile(project)?.arn){
+                    QRegionProfileManager.getInstance().switchProfile(project, modal.selectedCustomization?.customization?.profile, QProfileSwitchIntent.Customization)
+                }
             }
         }
 
