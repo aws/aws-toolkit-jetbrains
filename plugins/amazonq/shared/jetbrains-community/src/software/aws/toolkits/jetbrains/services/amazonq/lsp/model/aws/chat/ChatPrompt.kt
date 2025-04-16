@@ -22,5 +22,5 @@ data class MidChatPrompt(
 data class InnerChatPrompt(
     val prompt: String,
     val escapedPrompt: String,
-    val context: List<String>,
+    val context: List<String>? = null,
 )
