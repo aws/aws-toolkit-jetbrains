@@ -9,6 +9,7 @@ import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.LanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.GetConfigurationFromServerParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyCodeToClipboardParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
@@ -37,4 +38,7 @@ interface AmazonQLanguageServer : LanguageServer {
 
     @JsonRequest("aws/chat/sendChatQuickAction")
     fun sendQuickAction(params: EncryptedQuickActionChatParams): CompletableFuture<String>
+
+    @JsonNotification("aws/chat/copyCodeToClipboard")
+    fun copyCodeToClipboard(params: CopyCodeToClipboardParams): CompletableFuture<Unit>
 }
