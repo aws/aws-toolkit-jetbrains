@@ -25,7 +25,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.createJavaHomePrompt
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.createClientSideBuildUploadZip
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getBillingText
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getClientInstructionArtifactId
@@ -301,22 +300,6 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
             assertThat(logContent).isEqualTo("Build completed successfully")
         }
         zipFile.delete()
-    }
-
-    @Test
-    fun `createJavaHomePrompt returns Windows instructions when on Windows`() {
-        System.setProperty("os.name", "Windows 10")
-        val prompt = createJavaHomePrompt("JDK_11")
-        assertThat(prompt).contains("Enter the path to JDK_11")
-        assertThat(prompt).contains("cd \"C:/Program Files/Java\"")
-    }
-
-    @Test
-    fun `createJavaHomePrompt returns Mac instructions with correct version`() {
-        System.setProperty("os.name", "Mac OS X")
-        val prompt = createJavaHomePrompt("JDK_11")
-        assertThat(prompt).contains("Enter the path to JDK_11")
-        assertThat(prompt).contains("/usr/libexec/java_home -v 11")
     }
 
     @Test

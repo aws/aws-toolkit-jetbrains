@@ -77,7 +77,7 @@ data class CodeModernizerSessionContext(
     var schema: String? = null,
     val sqlMetadataZip: File? = null,
     var customDependencyVersionsFile: VirtualFile? = null,
-    var targetJdkPath: String? = null,
+    var targetJdkName: String? = null,
     var originalUploadZipPath: Path? = null
 ) : Disposable {
     private val mapper = jacksonObjectMapper()

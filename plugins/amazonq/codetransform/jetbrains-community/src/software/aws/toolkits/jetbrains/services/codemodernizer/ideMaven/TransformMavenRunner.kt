@@ -15,19 +15,13 @@ import org.jetbrains.idea.maven.execution.MavenRunConfigurationType
 import org.jetbrains.idea.maven.execution.MavenRunnerParameters
 import org.jetbrains.idea.maven.execution.MavenRunnerSettings
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
-import com.intellij.openapi.projectRoots.ProjectJdkTable
 
 class TransformMavenRunner(val project: Project) {
     private var handler: ProcessHandler? = null
     fun run(parameters: MavenRunnerParameters, settings: MavenRunnerSettings, onComplete: TransformRunnable, isClientSideBuild: Boolean = false) {
         if (isClientSideBuild) {
-            // TODO: if we go with this implementation 1) consult UX and
-            // 2) run this check much sooner in chat with an appropriate error message if JDK is not found
-            val targetJdkPath = CodeModernizerManager.getInstance(project).codeTransformationSession?.sessionContext?.targetJdkPath
-                ?: throw RuntimeException("No target JDK path provided by user; cannot run client-side build")
-            val jdkTable = ProjectJdkTable.getInstance()
-            val targetJdkName = jdkTable.allJdks.find { it.homePath == targetJdkPath }?.name
-                ?: throw RuntimeException("Could not find user's target JDK; cannot run client-side build")
+            val targetJdkName = CodeModernizerManager.getInstance(project).codeTransformationSession?.sessionContext?.targetJdkName
+                ?: throw RuntimeException("Could not find user's target JDK; cannot run client-side build") // should not happen; already validated earlier
             settings.setJreName(targetJdkName)
         }
 

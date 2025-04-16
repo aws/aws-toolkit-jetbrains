@@ -5,6 +5,6 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
 enum class CodeTransformConversationState {
     PROMPT_OBJECTIVE,
-    PROMPT_TARGET_JDK_PATH,
+    PROMPT_TARGET_JDK_NAME,
     IDLE,
 }

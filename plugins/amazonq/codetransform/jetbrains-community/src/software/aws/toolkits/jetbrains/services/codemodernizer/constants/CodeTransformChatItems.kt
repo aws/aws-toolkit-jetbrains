@@ -399,9 +399,17 @@ fun buildUserInputCustomDependencyVersionsChatContent() = CodeTransformChatMessa
     type = CodeTransformChatMessageType.FinalizedAnswer,
 )
 
-fun buildPromptTargetJDKPathChatContent(prompt: String) = CodeTransformChatMessageContent(
-    message = prompt,
+fun buildPromptTargetJDKNameChatContent(version: String) = CodeTransformChatMessageContent(
+    // TODO: get this text reviewed by Allie
+    message = "Enter the name of your $version from Settings -> Project Structure -> SDKs.",
     type = CodeTransformChatMessageType.FinalizedAnswer,
+)
+
+fun buildInvalidTargetJdkNameChatContent(jdkName: String) = CodeTransformChatMessageContent(
+    // TODO: get this text reviewed by Allie
+    message = "I could not find '$jdkName' under Settings -> Project Structure -> SDKs. Please add the target JDK there and try again.",
+    type = CodeTransformChatMessageType.FinalizedAnswer,
+    followUps = listOf(startNewTransformFollowUp)
 )
 
 fun buildCustomDependencyVersionsFileValidChatContent() = CodeTransformChatMessageContent(
