@@ -12,19 +12,19 @@ import {
     ProgressField,
     ChatPrompt, QuickActionCommand,
 } from '@aws/mynah-ui-chat'
-import {Connector as CWChatConnector} from './apps/cwChatConnector'
-import {Connector as FeatureDevChatConnector} from './apps/featureDevChatConnector'
-import {Connector as DocChatConnector} from './apps/docChatConnector'
-import {Connector as AmazonQCommonsConnector} from './apps/amazonqCommonsConnector'
-import {ExtensionMessage} from './commands'
-import {TabType, TabsStorage} from './storages/tabsStorage'
-import {WelcomeFollowupType} from './apps/amazonqCommonsConnector'
-import {AuthFollowUpType} from './followUps/generator'
-import {CodeTransformChatConnector} from './apps/codeTransformChatConnector'
+import { Connector as CWChatConnector } from './apps/cwChatConnector'
+import { Connector as FeatureDevChatConnector } from './apps/featureDevChatConnector'
+import { Connector as DocChatConnector } from './apps/docChatConnector'
+import { Connector as AmazonQCommonsConnector } from './apps/amazonqCommonsConnector'
+import { ExtensionMessage } from './commands'
+import { TabType, TabsStorage } from './storages/tabsStorage'
+import { WelcomeFollowupType } from './apps/amazonqCommonsConnector'
+import { AuthFollowUpType } from './followUps/generator'
+import { CodeTransformChatConnector } from './apps/codeTransformChatConnector'
 import {isFormButtonCodeTest, isFormButtonCodeScan, isFormButtonCodeTransform} from './forms/constants'
-import {DiffTreeFileInfo} from './diffTree/types'
-import {CodeScanChatConnector} from "./apps/codeScanChatConnector";
-import {CodeTestChatConnector} from './apps/codeTestChatConnector'
+import { DiffTreeFileInfo } from './diffTree/types'
+import { CodeScanChatConnector } from "./apps/codeScanChatConnector";
+import { CodeTestChatConnector } from './apps/codeTestChatConnector'
 
 export interface CodeReference {
     licenseName?: string

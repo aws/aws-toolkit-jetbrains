@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {MynahUIDataModel} from "@aws/mynah-ui-chat";
+import { MynahUIDataModel } from "@aws/mynah-ui-chat";
 
 export type TabStatus = 'free' | 'busy' | 'dead'
 const TabTypes = [
