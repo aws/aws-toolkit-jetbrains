@@ -21,7 +21,6 @@ enum class CodeTransformButtonId(val id: String) {
     SelectSQLModuleSchema("codetransform-input-select-sql-module-schema"),
     CancelTransformation("codetransform-input-cancel"),
     ContinueTransformation("codetransform-input-continue"),
-    AgreeToLocalBuild("codetransform-input-agree"),
     ConfirmSkipTests("codetransform-input-confirm-skip-tests"),
     ConfirmOneOrMultipleDiffs("codetransform-input-confirm-one-or-multiple-diffs"),
     ConfirmCustomDependencyVersions("codetransform-input-confirm-custom-dependency-versions"),
@@ -107,10 +106,6 @@ sealed interface IncomingCodeTransformMessage : CodeTransformBaseMessage {
     ) : IncomingCodeTransformMessage
 
     data class CodeTransformContinue(
-        @JsonProperty("tabID") val tabId: String,
-    ) : IncomingCodeTransformMessage
-
-    data class CodeTransformAgreeToLocalBuild(
         @JsonProperty("tabID") val tabId: String,
     ) : IncomingCodeTransformMessage
 

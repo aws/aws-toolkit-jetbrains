@@ -46,7 +46,6 @@ private enum class CodeTransformMessageTypes(val type: String) {
     CodeTransformStop("codetransform-stop"),
     CodeTransformCancel("codetransform-cancel"),
     CodeTransformContinue("codetransform-continue"),
-    CodeTransformAgree("codetransform-agree"),
     CodeTransformConfirmSkipTests("codetransform-confirm-skip-tests"),
     CodeTransformConfirmOneOrMultipleDiffs("codetransform-confirm-one-or-multiple-diffs"),
     CodeTransformNew("codetransform-new"),
@@ -82,7 +81,6 @@ class CodeTransformChatApp : AmazonQApp {
             CodeTransformMessageTypes.CodeTransformStop.type to IncomingCodeTransformMessage.CodeTransformStop::class,
             CodeTransformMessageTypes.CodeTransformCancel.type to IncomingCodeTransformMessage.CodeTransformCancel::class,
             CodeTransformMessageTypes.CodeTransformContinue.type to IncomingCodeTransformMessage.CodeTransformContinue::class,
-            CodeTransformMessageTypes.CodeTransformAgree.type to IncomingCodeTransformMessage.CodeTransformAgreeToLocalBuild::class,
             CodeTransformMessageTypes.ChatPrompt.type to IncomingCodeTransformMessage.ChatPrompt::class,
             CodeTransformMessageTypes.CodeTransformConfirmSkipTests.type to IncomingCodeTransformMessage.CodeTransformConfirmSkipTests::class,
             CodeTransformMessageTypes.CodeTransformConfirmOneOrMultipleDiffs.type to IncomingCodeTransformMessage.CodeTransformConfirmOneOrMultipleDiffs::class,
@@ -196,7 +194,6 @@ class CodeTransformChatApp : AmazonQApp {
             is IncomingCodeTransformMessage.CodeTransformConfirmSkipTests -> inboundAppMessagesHandler.processCodeTransformConfirmSkipTests(message)
             is IncomingCodeTransformMessage.CodeTransformConfirmOneOrMultipleDiffs -> inboundAppMessagesHandler.processCodeTransformOneOrMultipleDiffs(message)
             is IncomingCodeTransformMessage.CodeTransformContinue -> inboundAppMessagesHandler.processCodeTransformContinueAction(message)
-            is IncomingCodeTransformMessage.CodeTransformAgreeToLocalBuild -> inboundAppMessagesHandler.processCodeTransformAgreeToLocalBuild(message)
             is IncomingCodeTransformMessage.CodeTransformNew -> inboundAppMessagesHandler.processCodeTransformNewAction(message)
             is IncomingCodeTransformMessage.CodeTransformOpenTransformHub -> inboundAppMessagesHandler.processCodeTransformOpenTransformHub(message)
             is IncomingCodeTransformMessage.CodeTransformOpenMvnBuild -> inboundAppMessagesHandler.processCodeTransformOpenMvnBuild(message)

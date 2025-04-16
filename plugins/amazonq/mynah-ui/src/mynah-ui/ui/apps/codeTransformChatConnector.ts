@@ -284,12 +284,6 @@ export class CodeTransformChatConnector {
                 tabID,
                 tabType: 'codetransform',
             })
-        } else if (action.id === FormButtonIds.CodeTransformInputAgree) {
-            this.sendMessageToExtension({
-                command: 'codetransform-agree',
-                tabID,
-                tabType: 'codetransform',
-            })
         } else if (action.id === FormButtonIds.CodeTransformInputSkipTests) {
             this.sendMessageToExtension({
                 command: 'codetransform-confirm-skip-tests',

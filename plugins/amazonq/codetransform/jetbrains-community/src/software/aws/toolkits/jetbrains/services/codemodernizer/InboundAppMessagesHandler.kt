@@ -13,8 +13,6 @@ interface InboundAppMessagesHandler {
 
     suspend fun processCodeTransformContinueAction(message: IncomingCodeTransformMessage.CodeTransformContinue)
 
-    suspend fun processCodeTransformAgreeToLocalBuild(message: IncomingCodeTransformMessage.CodeTransformAgreeToLocalBuild)
-
     suspend fun processCodeTransformStartAction(message: IncomingCodeTransformMessage.CodeTransformStart)
 
     suspend fun processCodeTransformSelectSQLMetadataAction(message: IncomingCodeTransformMessage.CodeTransformSelectSQLMetadata)

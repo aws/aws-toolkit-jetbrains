@@ -52,14 +52,6 @@ private val continueTransformationButton = Button(
     id = CodeTransformButtonId.ContinueTransformation.id,
 )
 
-// used to agree to local build
-private val agreeToLocalBuildButton = Button(
-    keepCardAfterClick = false,
-    waitMandatoryFormItems = false,
-    text = "Agree",
-    id = CodeTransformButtonId.AgreeToLocalBuild.id,
-)
-
 private val confirmUserSelectionLanguageUpgradeButton = Button(
     keepCardAfterClick = false,
     waitMandatoryFormItems = true,
@@ -293,15 +285,6 @@ fun buildChooseTransformationObjectiveChatContent() = CodeTransformChatMessageCo
 fun buildUserReplyChatContent(reply: String) = CodeTransformChatMessageContent(
     message = reply,
     type = CodeTransformChatMessageType.Prompt,
-)
-
-fun buildPermissionToBuildChatContent() = CodeTransformChatMessageContent(
-    message = message("codemodernizer.chat.message.permission_to_build"),
-    type = CodeTransformChatMessageType.FinalizedAnswer,
-    buttons = listOf(
-        cancelUserSelectionButton,
-        agreeToLocalBuildButton
-    )
 )
 
 fun buildCheckingValidProjectChatContent() = CodeTransformChatMessageContent(

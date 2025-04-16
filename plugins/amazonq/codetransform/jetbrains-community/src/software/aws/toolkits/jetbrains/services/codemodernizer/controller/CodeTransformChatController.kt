@@ -121,17 +121,10 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateYam
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.testFramework.LightVirtualFile
-import org.jetbrains.yaml.YAMLFileType
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildPermissionToBuildChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildPromptTargetJDKPathChatContent
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserReplyChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CLIENT_SIDE_BUILD
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformConversationState
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.createJavaHomePrompt
-import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 
@@ -480,7 +473,11 @@ class CodeTransformChatController(
     private suspend fun processJDKPathChatPromptMessage(message: IncomingCodeTransformMessage.ChatPrompt) {
         codeModernizerManager.codeTransformationSession?.sessionContext?.targetJdkPath = message.message.trim()
         codeTransformChatHelper.addNewMessage(buildUserReplyChatContent(message.message.trim()))
-        codeTransformChatHelper.addNewMessage(buildPermissionToBuildChatContent())
+        // start local build once we get target JDK path
+        codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
+        codeModernizerManager.codeTransformationSession?.let {
+            codeModernizerManager.runLocalMavenBuild(context.project, it)
+        }
     }
 
     /*
@@ -516,13 +513,6 @@ dependencyManagement:
     override suspend fun processCodeTransformContinueAction(message: IncomingCodeTransformMessage.CodeTransformContinue) {
         codeTransformChatHelper.addNewMessage(buildContinueTransformationChatContent())
         promptForTargetJdkPath(message.tabId)
-    }
-
-    override suspend fun processCodeTransformAgreeToLocalBuild(message: IncomingCodeTransformMessage.CodeTransformAgreeToLocalBuild) {
-        codeTransformChatHelper.addNewMessage(buildCompileLocalInProgressChatContent())
-        codeModernizerManager.codeTransformationSession?.let {
-            codeModernizerManager.runLocalMavenBuild(context.project, it)
-        }
     }
 
     private suspend fun promptForTargetJdkPath(tabId: String) {
