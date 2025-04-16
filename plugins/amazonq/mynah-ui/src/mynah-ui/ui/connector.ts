@@ -21,7 +21,7 @@ import { TabType, TabsStorage } from './storages/tabsStorage'
 import { WelcomeFollowupType } from './apps/amazonqCommonsConnector'
 import { AuthFollowUpType } from './followUps/generator'
 import { CodeTransformChatConnector } from './apps/codeTransformChatConnector'
-import {isFormButtonCodeTest, isFormButtonCodeScan, isFormButtonCodeTransform} from './forms/constants'
+import { isFormButtonCodeTest, isFormButtonCodeScan, isFormButtonCodeTransform } from './forms/constants'
 import { DiffTreeFileInfo } from './diffTree/types'
 import { CodeScanChatConnector } from "./apps/codeScanChatConnector";
 import { CodeTestChatConnector } from './apps/codeTestChatConnector'
