@@ -13,7 +13,6 @@ import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.runner.Description
 import software.aws.toolkits.core.ClientConnectionSettings
-import software.aws.toolkits.core.ConnectionSettings
 import software.aws.toolkits.core.credentials.ToolkitAuthenticationProvider
 import software.aws.toolkits.core.credentials.ToolkitBearerTokenProvider
 import software.aws.toolkits.core.credentials.ToolkitCredentialsProvider
@@ -182,8 +181,12 @@ interface MockResourceCacheInterface {
         addEntry(project, resourceId, CompletableFuture.failedFuture<Any>(throws))
     }
 
-    fun <T> addEntry(connectionSettings: ConnectionSettings, resource: Resource.Cached<T>, value: CompletableFuture<T>) {
-        addEntry(resource, connectionSettings.region.id, connectionSettings.credentials.id, value)
+    fun <T> addEntry(connectionSettings: ClientConnectionSettings<*>, resource: Resource.Cached<T>, value: T) {
+        addEntry(resource, connectionSettings.region.id, connectionSettings.providerId, value)
+    }
+
+    fun <T> addEntry(connectionSettings: ClientConnectionSettings<*>, resource: Resource.Cached<T>, value: CompletableFuture<T>) {
+        addEntry(resource, connectionSettings.region.id, connectionSettings.providerId, value)
     }
 
     fun <T> addEntry(resource: Resource.Cached<T>, regionId: String, credentialsId: String, value: T) {

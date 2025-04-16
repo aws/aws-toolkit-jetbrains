@@ -5,7 +5,7 @@
 import { createApp } from 'vue'
 import {createStore, Store} from 'vuex'
 import HelloWorld from './components/root.vue'
-import {AwsBearerTokenConnection, Feature, IdcInfo, Region, Stage, State} from "../model";
+import {AwsBearerTokenConnection, Feature, IdcInfo, ListProfileResult, Profile, Region, Stage, State} from "../model";
 import {IdeClient} from "../ideClient";
 import './assets/common.scss'
 
@@ -21,7 +21,9 @@ const store = createStore<State>({
         },
         feature: 'Q',
         cancellable: false,
-        existingConnections: [] as AwsBearerTokenConnection[]
+        existingConnections: [] as AwsBearerTokenConnection[],
+        listProfilesResult: undefined as ListProfileResult | undefined,
+        selectedProfile: undefined
     },
     getters: {},
     mutations: {
@@ -48,6 +50,12 @@ const store = createStore<State>({
         setExistingConnections(state: State, connections: AwsBearerTokenConnection[]) {
             state.existingConnections = connections
         },
+        setProfilesResult(state: State, profileResult: ListProfileResult) {
+            state.listProfilesResult = profileResult
+        },
+        setSelectedProfile(state, profile: Profile) {
+            state.selectedProfile = profile
+        },
         reset(state: State) {
             state.stage = 'START'
             state.ssoRegions = []
@@ -56,6 +64,8 @@ const store = createStore<State>({
                 startUrl: '',
                 region: ''
             }
+            state.selectedProfile = undefined
+            state.listProfilesResult = undefined
         }
     },
     actions: {},

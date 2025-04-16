@@ -33,6 +33,7 @@ import software.aws.toolkits.core.utils.Waiters.waitUntil
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.CodeScanSessionConfig
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
@@ -264,10 +265,15 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             return clientAdaptor.createCodeScan(
                 StartCodeAnalysisRequest.builder()
                     .clientToken(clientToken.toString())
-                    .programmingLanguage { it.languageName(language) }
+                    .programmingLanguage {
+                        it.languageName(
+                            if (language == CodewhispererLanguage.Unknown.toString()) CodewhispererLanguage.Plaintext.toString() else language
+                        )
+                    }
                     .artifacts(artifactsMap)
                     .scope(scope.value)
                     .codeScanName(codeScanName)
+                    .profileArn(QRegionProfileManager.getInstance().activeProfile(sessionContext.project)?.arn)
                     .build()
             )
         } catch (e: Exception) {
@@ -281,6 +287,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
         clientAdaptor.getCodeScan(
             GetCodeAnalysisRequest.builder()
                 .jobId(jobId)
+                .profileArn(QRegionProfileManager.getInstance().activeProfile(sessionContext.project)?.arn)
                 .build()
         )
     } catch (e: Exception) {
@@ -295,6 +302,7 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
                 .jobId(jobId)
                 .codeAnalysisFindingsSchema(CodeAnalysisFindingsSchema.CODEANALYSIS_FINDINGS_1_0)
                 .nextToken(nextToken)
+                .profileArn(QRegionProfileManager.getInstance().activeProfile(sessionContext.project)?.arn)
                 .build()
         )
     } catch (e: Exception) {

@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix infinite loop when workspace indexing server fails to initialize"
+}
