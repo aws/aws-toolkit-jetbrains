@@ -4,28 +4,51 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven
 
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.idea.maven.execution.MavenRunner
 import org.jetbrains.idea.maven.execution.MavenRunnerParameters
 import org.jetbrains.idea.maven.execution.MavenRunnerSettings
 import org.slf4j.Logger
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_RUN_UNIT_TESTS
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
-import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.telemetry.CodeTransformBuildCommand
 import software.aws.toolkits.telemetry.Result
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
+
+fun runClientSideBuild(targetDir: VirtualFile, logger: Logger, project: Project): Pair<Int?, String> {
+    // run mvn test-compile or mvn test
+    val transformMvnRunner = TransformMavenRunner(project)
+    val mvnSettings = MavenRunner.getInstance(project).settings.clone()
+    val buildRunnable = runClientSideBuild(targetDir, mvnSettings, transformMvnRunner, logger, project)
+    buildRunnable.await()
+    // write build output to a new text file and open it
+    val buildLogOutput = buildRunnable.getOutput().toString()
+    // first line is a long Maven String showing the build command; not useful or needed
+    val outputWithoutFirstLine = buildLogOutput.lines().drop(1).joinToString("\n")
+    val buildLogOutputFile = Files.createTempFile("build-logs-", ".txt")
+    Files.write(buildLogOutputFile, outputWithoutFirstLine.toByteArray())
+    val buildLogOutputVirtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(buildLogOutputFile.toFile())
+    runInEdt {
+        if (buildLogOutputVirtualFile != null) {
+            FileEditorManager.getInstance(project).openFile(buildLogOutputVirtualFile, true)
+        }
+    }
+    return buildRunnable.exitCode to buildRunnable.getOutput().toString()
+}
 
 fun runHilMavenCopyDependency(
     context: CodeModernizerSessionContext,
@@ -82,12 +105,6 @@ fun runMavenCopyCommands(
         val transformMvnRunner = TransformMavenRunner(project)
         context.mavenRunnerQueue.add(transformMvnRunner)
         val mvnSettings = MavenRunner.getInstance(project).settings.clone() // clone required to avoid editing user settings
-        notifyStickyInfo("current jreName", mvnSettings.jreName)
-        mvnSettings.setJreName("corretto-21")
-        // use ProjectJdkTable.getInstance().allJdks to join all of the "name"s of the list
-        val jreNames = ProjectJdkTable.getInstance().allJdks.joinToString(", ") { it.name }
-        notifyStickyInfo("jreNames", jreNames)
-
         val sourceVirtualFile = LocalFileSystem.getInstance().findFileByIoFile(sourceFolder)
         val module = sourceVirtualFile?.let { ModuleUtilCore.findModuleForFile(it, project) }
         val moduleSdk = module?.let { ModuleRootManager.getInstance(it).sdk }
@@ -198,6 +215,36 @@ private fun runMavenCopyDependencies(
     return copyTransformRunnable
 }
 
+private fun runClientSideBuild(
+    targetDir: VirtualFile,
+    mvnSettings: MavenRunnerSettings,
+    transformMavenRunner: TransformMavenRunner,
+    logger: Logger,
+    project: Project
+): TransformRunnable {
+    val customBuildCommand = CodeModernizerManager.getInstance(project).codeTransformationSession?.sessionContext?.customBuildCommand
+    val clientSideBuildCommand = if (customBuildCommand == MAVEN_BUILD_RUN_UNIT_TESTS) "test" else "test-compile"
+    val buildParams = MavenRunnerParameters(
+        false,
+        targetDir.path,
+        null,
+        listOf(clientSideBuildCommand),
+        null,
+        null
+    )
+    val buildTransformRunnable = TransformRunnable()
+    runInEdt {
+        try {
+            CodeModernizerManager.getInstance(project).getMvnBuildWindow().show()
+            transformMavenRunner.run(buildParams, mvnSettings, buildTransformRunnable, true)
+        } catch (t: Throwable) {
+            logger.error(t) { "Maven Build: Unexpected error when executing bundled Maven $clientSideBuildCommand" }
+            buildTransformRunnable.setExitCode(Integer.MIN_VALUE) // to stop looking for the exitCode
+        }
+    }
+    return buildTransformRunnable
+}
+
 private fun runMavenClean(
     sourceFolder: File,
     buildlogBuilder: StringBuilder,
@@ -212,7 +259,7 @@ private fun runMavenClean(
         sourceFolder.absolutePath,
         null,
         listOf("-Dmaven.repo.local=$destinationDir", "clean"),
-        emptyList<String>(),
+        null,
         null
     )
     val cleanTransformRunnable = TransformRunnable()
@@ -248,7 +295,7 @@ private fun runMavenInstall(
         sourceFolder.absolutePath,
         null,
         flags,
-        emptyList<String>(),
+        null,
         null
     )
     val installTransformRunnable = TransformRunnable()
@@ -284,7 +331,7 @@ private fun runMavenDependencyUpdatesReport(
         sourceFolder.absolutePath,
         null,
         dependencyUpdatesReportCommandList,
-        emptyList<String>(),
+        null,
         null
     )
     val dependencyUpdatesReportRunnable = TransformRunnable()

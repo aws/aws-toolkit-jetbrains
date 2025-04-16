@@ -25,7 +25,7 @@ fun getTransformationProgressStepsByTransformationStepId(
             if (progressStep != null) {
                 val itemToAdd = BuildProgressTimelineStepDetailItem(
                     progressStep.name(),
-                    progressStep.description(),
+                    progressStep.description().orEmpty(),
                     mapTransformationPlanApiStatus(progressStep.status()),
                     progressStep.startTime()?.toString(),
                     progressStep.endTime()?.toString()

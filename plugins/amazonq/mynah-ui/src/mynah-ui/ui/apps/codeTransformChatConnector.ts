@@ -267,8 +267,6 @@ export class CodeTransformChatConnector {
                 tabType: 'codetransform',
             })
         } else if (action.id === FormButtonIds.OpenMvnBuild) {
-            console.log('open_mvn_build')
-
             this.sendMessageToExtension({
                 command: 'codetransform-open-mvn-build',
                 tabID,
@@ -283,6 +281,12 @@ export class CodeTransformChatConnector {
         } else if (action.id === FormButtonIds.CodeTransformInputContinue) {
             this.sendMessageToExtension({
                 command: 'codetransform-continue',
+                tabID,
+                tabType: 'codetransform',
+            })
+        } else if (action.id === FormButtonIds.CodeTransformInputAgree) {
+            this.sendMessageToExtension({
+                command: 'codetransform-agree',
                 tabID,
                 tabType: 'codetransform',
             })

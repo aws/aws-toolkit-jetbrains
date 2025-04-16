@@ -6,6 +6,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockkStatic
 import io.mockk.runs
+import java.util.zip.ZipFile
 import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
@@ -17,11 +18,17 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationDownloadArtifact
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdate
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.createJavaHomePrompt
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.createClientSideBuildUploadZip
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getBillingText
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getClientInstructionArtifactId
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getTableMapping
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseBuildFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
@@ -217,6 +224,99 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
         val actual = getTableMapping(listOf(step0Update0, step0Update1, step0Update2, step0Update3))
         val expected = mapOf("0" to jobStats, "1" to depChanges, "2" to apiChanges, "-1" to fileChanges)
         assertThat(expected).isEqualTo(actual)
+    }
+
+    @Test
+    fun `getClientInstructionArtifactId extracts artifact ID from transformation plan`() {
+        val step1 = TransformationStep.builder()
+            .name("name of step 1")
+            .description("description of step 1")
+            .build()
+        val step2 = TransformationStep.builder()
+            .name("name of step 2")
+            .description("description of step 2")
+            .build()
+        val step3 = TransformationStep.builder()
+            .name("name of step 3")
+            .description("description of step 3")
+            .progressUpdates(
+                TransformationProgressUpdate.builder()
+                    .name("Requesting client-side build")
+                    .status("AWAITING_CLIENT_ACTION")
+                    .downloadArtifacts(
+                        TransformationDownloadArtifact.builder()
+                            .downloadArtifactId("id-123")
+                            .build()
+                    )
+                    .build()
+            )
+            .build()
+        val plan = TransformationPlan.builder()
+            .transformationSteps(listOf(step1, step2, step3))
+            .build()
+
+        val actual = getClientInstructionArtifactId(plan)
+        assertThat(actual).isEqualTo("id-123")
+    }
+
+    @Test
+    fun `getClientInstructionArtifactId returns null when no download artifacts present`() {
+        val step1 = TransformationStep.builder()
+            .name("name of step 1")
+            .description("description of step 1")
+            .build()
+        val step2 = TransformationStep.builder()
+            .name("name of step 2")
+            .description("description of step 2")
+            .progressUpdates(
+                TransformationProgressUpdate.builder()
+                    .name("NOT requesting client-side build")
+                    .status("NOT awaiting_client_action")
+                    .build()
+            )
+            .build()
+        val plan = TransformationPlan.builder()
+            .transformationSteps(listOf(step1, step2))
+            .build()
+
+        val actual = getClientInstructionArtifactId(plan)
+        assertThat(actual).isNull()
+    }
+
+    @Test
+    fun `createClientSideBuildUploadZip creates zip with manifest and build output`() {
+        val exitCode = 0
+        val stdout = "Build completed successfully"
+        val zipFile = createClientSideBuildUploadZip(exitCode, stdout)
+        ZipFile(zipFile).use { zip ->
+            val manifestEntry = zip.getEntry("manifest.json")
+            assertThat(manifestEntry).isNotNull
+            val manifestContent = zip.getInputStream(manifestEntry).bufferedReader().use { it.readText() }
+            assertThat(manifestContent).contains("\"capability\":\"CLIENT_SIDE_BUILD\"")
+            assertThat(manifestContent).contains("\"exitCode\":0")
+            assertThat(manifestContent).contains("\"commandLogFileName\":\"build-output.log\"")
+            val logEntry = zip.getEntry("build-output.log")
+            assertThat(logEntry).isNotNull
+            val logContent = zip.getInputStream(logEntry).bufferedReader().use { it.readText() }
+            assertThat(logContent).isEqualTo("Build completed successfully")
+        }
+        zipFile.delete()
+    }
+
+    @Test
+    fun `createJavaHomePrompt returns Windows instructions when on Windows`() {
+        System.setProperty("os.name", "Windows 10")
+        val prompt = createJavaHomePrompt("JDK_11")
+        assertThat(prompt).contains("Enter the path to JDK_11")
+        assertThat(prompt).contains("cd \"C:/Program Files/Java\"")
+    }
+
+    @Test
+    fun `createJavaHomePrompt returns Mac instructions with correct version`() {
+        System.setProperty("os.name", "Mac OS X")
+        val prompt = createJavaHomePrompt("JDK_11")
+        assertThat(prompt).contains("Enter the path to JDK_11")
+        assertThat(prompt).contains("/usr/libexec/java_home -v 11")
     }
 
     @Test

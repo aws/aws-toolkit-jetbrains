@@ -37,6 +37,7 @@ type MessageCommand =
     | 'codetransform-cancel'
     | 'codetransform-stop'
     | 'codetransform-continue'
+    | 'codetransform-agree'
     | 'codetransform-confirm-skip-tests'
     | 'codetransform-confirm-one-or-multiple-diffs'
     | 'codetransform-input-confirm-custom-dependency-versions'

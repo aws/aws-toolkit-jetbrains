@@ -83,3 +83,24 @@ fun String.toTransformationLanguage() = when (this) {
     "JDK_21" -> TransformationLanguage.JAVA_21
     else -> TransformationLanguage.UNKNOWN_TO_SDK_VERSION
 }
+
+fun createJavaHomePrompt(jdkVersion: String): String {
+    var javaHomePrompt = "Enter the path to $jdkVersion.\n\n"
+    val os = System.getProperty("os.name").lowercase()
+    if (os.contains("windows")) {
+        javaHomePrompt += "To find the JDK path, run the following commands in a new terminal: `cd \"C:/Program Files/Java\"` and then `dir`. " +
+            "If you see your JDK version, run `cd <version>` and then `cd` to show the path."
+    } else if (os.contains("mac") || os.contains("darwin")) {
+        val version = when (jdkVersion) {
+            "JDK_1_8" -> "1.8"
+            "JDK_11" -> "11"
+            "JDK_17" -> "17"
+            "JDK_21" -> "21"
+            else -> "JAVA_VERSION" // shouldn't happen; we only support Java 8, 11, 17, and 21
+        }
+        javaHomePrompt += "To find the JDK path, run the following command in a new terminal: `/usr/libexec/java_home -v $version`"
+    } else {
+        javaHomePrompt += "To find the JDK path, run the following command in a new terminal: `update-java-alternatives --list`"
+    }
+    return javaHomePrompt
+}
