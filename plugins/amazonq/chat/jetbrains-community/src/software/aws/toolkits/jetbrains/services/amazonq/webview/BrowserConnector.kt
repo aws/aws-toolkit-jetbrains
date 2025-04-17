@@ -211,7 +211,6 @@ class BrowserConnector(
                 val requestFromUi = serializer.deserializeChatMessages(node, FollowUpClickNotification::class.java)
                 AmazonQLspService.executeIfRunning(project) { server ->
                     server.followUpClick(requestFromUi.params)
-                    chatCommunicationManager.removePartialChatMessage(requestFromUi.params.tabId)
                 } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
             }
         }
