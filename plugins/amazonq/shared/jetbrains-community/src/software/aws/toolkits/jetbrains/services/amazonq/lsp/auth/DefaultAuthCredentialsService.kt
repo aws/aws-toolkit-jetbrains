@@ -88,16 +88,15 @@ class DefaultAuthCredentialsService(
         return updateTokenFromConnection(connection)
     }
 
-    private fun updateTokenFromConnection(connection: ToolkitConnection): CompletableFuture<ResponseMessage> {
-        return (connection.getConnectionSettings() as? TokenConnectionSettings)
+    private fun updateTokenFromConnection(connection: ToolkitConnection): CompletableFuture<ResponseMessage> =
+        (connection.getConnectionSettings() as? TokenConnectionSettings)
             ?.tokenProvider
             ?.delegate
             ?.let { it as? BearerTokenProvider }
             ?.currentToken()
             ?.accessToken
             ?.let { token -> updateTokenCredentials(token, true) }
-            ?:CompletableFuture.failedFuture(IllegalStateException("Unable to get token from connection"))
-    }
+            ?: CompletableFuture.failedFuture(IllegalStateException("Unable to get token from connection"))
 
     override fun invalidate(providerId: String) {
         deleteTokenCredentials()
