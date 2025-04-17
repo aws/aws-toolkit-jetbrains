@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Adjust resource requirement for starting workspace indexing"
+}

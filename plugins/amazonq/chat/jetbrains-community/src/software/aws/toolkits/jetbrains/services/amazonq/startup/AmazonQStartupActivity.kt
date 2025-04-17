@@ -63,7 +63,7 @@ class AmazonQStartupActivity : ProjectActivity {
     }
 
     private suspend fun startLsp(project: Project) {
-        // Automatically start the project context LSP after some delay when average CPU load is below 30%.
+        // Automatically start the project context LSP after some delay when average CPU load is below 40%.
         // The CPU load requirement is to avoid competing with native JetBrains indexing and other CPU expensive OS processes
         // In the future we will decouple LSP start and indexing start to let LSP perform other tasks.
         val startLspIndexingDuration = Duration.ofMinutes(30)
@@ -73,18 +73,19 @@ class AmazonQStartupActivity : ProjectActivity {
             withTimeout(startLspIndexingDuration) {
                 while (true) {
                     val cpuUsage = ManagementFactory.getOperatingSystemMXBean().systemLoadAverage
-                    if (cpuUsage > 0 && cpuUsage < 30) {
+                    if (cpuUsage > 0 && cpuUsage < 40) {
                         ProjectContextController.getInstance(project = project)
                         break
                     } else {
+                        LOG.warn { "Current CPU usage is $cpuUsage, waiting for it to be below 40% to start LSP server" }
                         delay(60_000) // Wait for 60 seconds
                     }
                 }
             }
         } catch (e: TimeoutCancellationException) {
-            LOG.warn { "Failed to start LSP server due to time out" }
+            LOG.warn { "Failed to start LSP server due to not enough resource" }
         } catch (e: Exception) {
-            LOG.warn { "Failed to start LSP server" }
+            LOG.warn { "Failed to start LSP server ${e.message}" }
         }
     }
 
