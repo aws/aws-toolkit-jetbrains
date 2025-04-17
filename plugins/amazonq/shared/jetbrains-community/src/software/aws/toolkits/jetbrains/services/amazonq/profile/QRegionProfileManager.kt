@@ -69,8 +69,9 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
         }
 
         if (profiles == null || profiles.none { it.arn == selected.arn }) {
-            invalidateProfile(selected.arn)
+            // Note that order matters, should switch to null first then invalidateProfile
             switchProfile(project, null, intent = QProfileSwitchIntent.Reload)
+            invalidateProfile(selected.arn)
             Telemetry.amazonq.profileState.use { span ->
                 span.source(QProfileSwitchIntent.Reload.value)
                     .amazonQProfileRegion(selected.region)
