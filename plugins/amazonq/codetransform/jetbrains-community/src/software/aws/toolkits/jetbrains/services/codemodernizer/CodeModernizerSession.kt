@@ -423,7 +423,7 @@ class CodeModernizerSession(
                 createUploadUrlResponse.kmsKeyArn().orEmpty(),
             ) { shouldStop.get() }
         }
-        LOG.info { "Upload of ${payload.path} to S3 succeeded with upload context of ${uploadContext.toString()}" }
+        LOG.info { "Upload of ${payload.path} to S3 succeeded with upload context of $uploadContext" }
         if (!shouldStop.get()) {
             LOG.info { "Uploaded artifact. Latency: ${calculateTotalLatency(uploadStartTime, Instant.now())} ms" }
         }

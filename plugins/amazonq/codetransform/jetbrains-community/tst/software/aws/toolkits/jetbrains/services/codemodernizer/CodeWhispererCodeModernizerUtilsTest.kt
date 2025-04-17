@@ -2,12 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.codemodernizer
+
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockkStatic
 import io.mockk.runs
-import java.util.zip.ZipFile
 import io.mockk.verify
+import kotlin.io.path.createTempFile
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
@@ -33,12 +34,12 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseBuildF
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.refreshToken
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
-import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateYamlFile
+import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import software.aws.toolkits.resources.message
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.io.path.createTempFile
+import java.util.zip.ZipFile
 
 class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase() {
     @Before

@@ -4,18 +4,21 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diff.impl.patch.PatchReader
 import com.intellij.openapi.diff.impl.patch.formove.PatchApplier
-import com.intellij.openapi.roots.ModuleRootManager
-import com.intellij.openapi.application.runWriteAction
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.module.JavaModuleType
 import com.intellij.openapi.module.ModuleManager
-import com.intellij.notification.NotificationAction
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.ModuleRootManager
+import com.intellij.openapi.util.io.FileUtil.createTempDirectory
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.serviceContainer.AlreadyDisposedException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
@@ -27,35 +30,32 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdate
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationUploadContext
+import software.amazon.awssdk.services.codewhispererruntime.model.UploadContext
 import software.amazon.awssdk.services.codewhispererruntime.model.ValidationException
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.WaiterUnrecoverableException
 import software.aws.toolkits.core.utils.Waiters.waitUntil
-import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
+import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
+import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.BILLING_RATE
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.JOB_STATISTICS_TABLE_KEY
+import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runClientSideBuild
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact.Companion.MAPPER
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.JobId
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.PlanTable
 import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.resources.message
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.Duration
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
-import com.intellij.openapi.util.io.FileUtil.createTempDirectory
-import com.intellij.openapi.vfs.LocalFileSystem
-import kotlinx.coroutines.withContext
-import software.amazon.awssdk.services.codewhispererruntime.model.TransformationUploadContext
-import software.amazon.awssdk.services.codewhispererruntime.model.UploadContext
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.core.coroutines.EDT
-import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
-import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runClientSideBuild
-import java.nio.file.Path
-import java.nio.file.Paths
 
 data class PollingResult(
     val succeeded: Boolean,
@@ -179,7 +179,7 @@ suspend fun attemptLocalBuild(plan: TransformationPlan, jobId: JobId, project: P
 }
 
 suspend fun processClientInstructions(clientInstructionsPath: Path, jobId: JobId, artifactId: String, project: Project) {
-    var copyOfProjectSources = createTempDirectory("originalCopy_${jobId.id}_${artifactId}", null).toPath()
+    var copyOfProjectSources = createTempDirectory("originalCopy_${jobId.id}_$artifactId", null).toPath()
     getLogger<CodeModernizerManager>().info("About to copy the original project ZIP to: $copyOfProjectSources")
     val originalProjectZip = CodeModernizerManager.getInstance(project).codeTransformationSession?.sessionContext?.originalUploadZipPath
     originalProjectZip?.let { unzipFile(it, copyOfProjectSources, isSqlMetadata = false, extractOnlySources = true) }
@@ -220,8 +220,10 @@ suspend fun processClientInstructions(clientInstructionsPath: Path, jobId: JobId
                     ?: throw RuntimeException("Cannot find patch file at $clientInstructionsPath")
                 FileEditorManager.getInstance(project).openFile(virtualFile, true)
             } catch (e: Exception) {
-                getLogger<CodeModernizerManager>().error("Error applying intermediate diff.patch for job ${jobId.id} and artifact $artifactId located at " +
-                    "$clientInstructionsPath: $e")
+                getLogger<CodeModernizerManager>().error(
+                    "Error applying intermediate diff.patch for job ${jobId.id} and artifact $artifactId located at " +
+                    "$clientInstructionsPath: $e"
+                )
             } finally {
                 runWriteAction {
                     ModuleManager.getInstance(project).disposeModule(tempModule)
@@ -234,7 +236,9 @@ suspend fun processClientInstructions(clientInstructionsPath: Path, jobId: JobId
     getLogger<CodeModernizerManager>().info("Ran client-side build with an exit code of $exitCode")
     val uploadZip = createClientSideBuildUploadZip(exitCode, buildOutput)
     getLogger<CodeModernizerManager>().info("Created client-side build result upload zip for job ${jobId.id} and artifact $artifactId: ${uploadZip.path}")
-    val uploadContext = UploadContext.fromTransformationUploadContext(TransformationUploadContext.builder().jobId(jobId.id).uploadArtifactType("ClientBuildResult").build())
+    val uploadContext = UploadContext.fromTransformationUploadContext(
+        TransformationUploadContext.builder().jobId(jobId.id).uploadArtifactType("ClientBuildResult").build()
+    )
     getLogger<CodeModernizerManager>().info("About to call uploadPayload for job ${jobId.id} and artifact $artifactId")
     try {
         CodeModernizerManager.getInstance(project).codeTransformationSession?.uploadPayload(uploadZip, uploadContext)

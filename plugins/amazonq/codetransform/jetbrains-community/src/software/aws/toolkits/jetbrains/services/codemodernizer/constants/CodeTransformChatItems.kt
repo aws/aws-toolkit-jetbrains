@@ -400,14 +400,12 @@ fun buildUserInputCustomDependencyVersionsChatContent() = CodeTransformChatMessa
 )
 
 fun buildPromptTargetJDKNameChatContent(version: String) = CodeTransformChatMessageContent(
-    // TODO: get this text reviewed by Allie
-    message = "Enter the name of your $version from Settings -> Project Structure -> SDKs.",
+    message = message("codemodernizer.chat.message.enter_jdk_name", version),
     type = CodeTransformChatMessageType.FinalizedAnswer,
 )
 
 fun buildInvalidTargetJdkNameChatContent(jdkName: String) = CodeTransformChatMessageContent(
-    // TODO: get this text reviewed by Allie
-    message = "I could not find '$jdkName' under Settings -> Project Structure -> SDKs. Please add the target JDK there and try again.",
+    message = message("codemodernizer.chat.message.enter_jdk_name_error", jdkName),
     type = CodeTransformChatMessageType.FinalizedAnswer,
     followUps = listOf(startNewTransformFollowUp)
 )

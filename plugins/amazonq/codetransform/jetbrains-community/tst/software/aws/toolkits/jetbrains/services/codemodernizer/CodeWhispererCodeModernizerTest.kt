@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer
 
 import com.intellij.openapi.vcs.changes.patch.ApplyPatchDifferentiatedDialog
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.LightVirtualFile
 import java.util.zip.ZipOutputStream
 import java.util.zip.ZipEntry
@@ -13,7 +12,6 @@ import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.runBlocking
-import org.jetbrains.idea.maven.execution.MavenRunnerSettings
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.doAnswer

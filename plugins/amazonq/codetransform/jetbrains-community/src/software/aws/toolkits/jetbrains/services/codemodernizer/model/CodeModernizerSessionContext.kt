@@ -17,7 +17,6 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.putNextEntry
-import software.aws.toolkits.jetbrains.services.codemodernizer.EXPLAINABILITY_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_DEPENDENCIES_ROOT_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_MANIFEST_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.TransformMavenRunner
@@ -78,7 +77,7 @@ data class CodeModernizerSessionContext(
     val sqlMetadataZip: File? = null,
     var customDependencyVersionsFile: VirtualFile? = null,
     var targetJdkName: String? = null,
-    var originalUploadZipPath: Path? = null
+    var originalUploadZipPath: Path? = null,
 ) : Disposable {
     private val mapper = jacksonObjectMapper()
     private val ignoredDependencyFileExtensions = setOf(INVALID_SUFFIX_SHA, INVALID_SUFFIX_REPOSITORIES)

@@ -36,7 +36,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.SELECTIVE_TRANSFO
 import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformActionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformCommand
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildAbsolutePathWarning
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildCheckingValidProjectChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildChooseTransformationObjectiveChatContent
@@ -59,8 +58,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildIn
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildLanguageUpgradeProjectValidChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildModuleSchemaFormChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildModuleSchemaFormIntroChatContent
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserReplyChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildProjectInvalidChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildPromptTargetJDKNameChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildSQLMetadataValidationErrorChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildSQLMetadataValidationSuccessDetailsChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildSQLMetadataValidationSuccessIntroChatContent
@@ -85,15 +84,19 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUs
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputSkipTestsFlagChatIntroContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserLanguageUpgradeSelectionSummaryChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserOneOrMultipleDiffsSelectionChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserReplyChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserSQLConversionSelectionSummaryChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserSkipTestsFlagSelectionChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserStopTransformChatContent
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.AuthenticationNeededExceptionMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformCommandMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.IncomingCodeTransformMessage
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CLIENT_SIDE_BUILD
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformConversationState
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CustomerSelection
@@ -122,10 +125,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateYam
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
-import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildPromptTargetJDKNameChatContent
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.CLIENT_SIDE_BUILD
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformConversationState
-import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
 
@@ -491,7 +490,7 @@ class CodeTransformChatController(
         }
     }
 
-    /*
+/*
     private suspend fun promptForCustomYamlFile() {
         codeTransformChatHelper.addNewMessage(buildUserInputCustomDependencyVersionsChatContent())
         val sampleYAML = """
@@ -519,7 +518,7 @@ dependencyManagement:
             FileEditorManager.getInstance(context.project).openFile(virtualFile, true)
         }
     }
-    */
+*/
 
     override suspend fun processCodeTransformContinueAction(message: IncomingCodeTransformMessage.CodeTransformContinue) {
         codeTransformChatHelper.addNewMessage(buildContinueTransformationChatContent())

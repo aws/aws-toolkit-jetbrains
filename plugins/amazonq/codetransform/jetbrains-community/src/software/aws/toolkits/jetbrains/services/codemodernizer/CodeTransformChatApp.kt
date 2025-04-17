@@ -76,7 +76,8 @@ class CodeTransformChatApp : AmazonQApp {
             CodeTransformMessageTypes.Transform.type to IncomingCodeTransformMessage.Transform::class,
             CodeTransformMessageTypes.CodeTransformStart.type to IncomingCodeTransformMessage.CodeTransformStart::class,
             CodeTransformMessageTypes.CodeTransformSelectSQLMetadata.type to IncomingCodeTransformMessage.CodeTransformSelectSQLMetadata::class,
-            CodeTransformMessageTypes.CodeTransformConfirmCustomDependencyVersions.type to IncomingCodeTransformMessage.CodeTransformConfirmCustomDependencyVersions::class,
+            CodeTransformMessageTypes.CodeTransformConfirmCustomDependencyVersions.type to
+                IncomingCodeTransformMessage.CodeTransformConfirmCustomDependencyVersions::class,
             CodeTransformMessageTypes.CodeTransformSelectSQLModuleSchema.type to IncomingCodeTransformMessage.CodeTransformSelectSQLModuleSchema::class,
             CodeTransformMessageTypes.CodeTransformStop.type to IncomingCodeTransformMessage.CodeTransformStop::class,
             CodeTransformMessageTypes.CodeTransformCancel.type to IncomingCodeTransformMessage.CodeTransformCancel::class,

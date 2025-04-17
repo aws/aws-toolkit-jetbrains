@@ -220,7 +220,7 @@ private fun runClientSideBuild(
     mvnSettings: MavenRunnerSettings,
     transformMavenRunner: TransformMavenRunner,
     logger: Logger,
-    project: Project
+    project: Project,
 ): TransformRunnable {
     val customBuildCommand = CodeModernizerManager.getInstance(project).codeTransformationSession?.sessionContext?.customBuildCommand
     val clientSideBuildCommand = if (customBuildCommand == MAVEN_BUILD_RUN_UNIT_TESTS) "test" else "test-compile"
