@@ -109,8 +109,12 @@ class CodeWhispererCustomizationDialog(
             RadioButtonOption.Customization -> run {
                 CodeWhispererModelConfigurator.getInstance().switchCustomization(project, modal.selectedCustomization?.customization)
                 notifyCustomizationIsSelected(project, modal.selectedCustomization)
-                if (modal.selectedCustomization?.customization?.profile?.arn != QRegionProfileManager.getInstance().activeProfile(project)?.arn){
-                    QRegionProfileManager.getInstance().switchProfile(project, modal.selectedCustomization?.customization?.profile, QProfileSwitchIntent.Customization)
+                if (modal.selectedCustomization?.customization?.profile?.arn != QRegionProfileManager.getInstance().activeProfile(project)?.arn) {
+                    QRegionProfileManager.getInstance().switchProfile(
+                        project,
+                        modal.selectedCustomization?.customization?.profile,
+                        QProfileSwitchIntent.Customization
+                    )
                 }
             }
         }
@@ -190,7 +194,7 @@ class CodeWhispererCustomizationDialog(
                             val baseSorted = unsorted.sortedWith(
                                 compareBy<CustomizationUiItem> {
                                     it.customization.profile?.profileName != activeProfile?.profileName
-                                }.thenBy { it.customization.profile?.profileName ?: "" }
+                                }.thenBy { it.customization.profile?.profileName.orEmpty() }
                                     .thenBy { it.customization.name }
                             )
 

@@ -178,7 +178,7 @@ class QRegionProfileManagerTest {
         client.stub {
             onGeneric { listAvailableProfilesPaginator(any<Consumer<ListAvailableProfilesRequest.Builder>>()) } doReturn iterable
         }
-        val connectionSettings = sut.getQClientSettings(project)
+        val connectionSettings = sut.getQClientSettings(project, null)
         resourceCache.addEntry(connectionSettings, QProfileResources.LIST_REGION_PROFILES, QProfileResources.LIST_REGION_PROFILES.fetch(connectionSettings))
 
         assertThat(sut.listRegionProfiles(project))
@@ -234,7 +234,7 @@ class QRegionProfileManagerTest {
             sut.activeProfile(project)
         ).isEqualTo(QRegionProfile(arn = "arn:aws:codewhisperer:eu-central-1:123456789012:profile/FOO_PROFILE", profileName = "FOO_PROFILE"))
 
-        val settings = sut.getQClientSettings(project)
+        val settings = sut.getQClientSettings(project, null)
         assertThat(settings.region.id).isEqualTo(Region.EU_CENTRAL_1.id())
 
         sut.switchProfile(
@@ -246,7 +246,7 @@ class QRegionProfileManagerTest {
             sut.activeProfile(project)
         ).isEqualTo(QRegionProfile(arn = "arn:aws:codewhisperer:us-east-1:123456789012:profile/BAR_PROFILE", profileName = "BAR_PROFILE"))
 
-        val settings2 = sut.getQClientSettings(project)
+        val settings2 = sut.getQClientSettings(project, null)
         assertThat(settings2.region.id).isEqualTo(Region.US_EAST_1.id())
     }
 
@@ -262,7 +262,7 @@ class QRegionProfileManagerTest {
         assertThat(
             sut.activeProfile(project)
         ).isEqualTo(QRegionProfile(arn = "arn:aws:codewhisperer:eu-central-1:123456789012:profile/FOO_PROFILE", profileName = "FOO_PROFILE"))
-        assertThat(sut.getQClientSettings(project).region.id).isEqualTo(Region.EU_CENTRAL_1.id())
+        assertThat(sut.getQClientSettings(project, null).region.id).isEqualTo(Region.EU_CENTRAL_1.id())
 
         val client = sut.getQClient<CodeWhispererRuntimeClient>(project)
         assertThat(client).isInstanceOf(CodeWhispererRuntimeClient::class.java)
@@ -279,7 +279,7 @@ class QRegionProfileManagerTest {
         assertThat(
             sut.activeProfile(project)
         ).isEqualTo(QRegionProfile(arn = "arn:aws:codewhisperer:us-east-1:123456789012:profile/BAR_PROFILE", profileName = "BAR_PROFILE"))
-        assertThat(sut.getQClientSettings(project).region.id).isEqualTo(Region.US_EAST_1.id())
+        assertThat(sut.getQClientSettings(project,null).region.id).isEqualTo(Region.US_EAST_1.id())
 
         val client2 = sut.getQClient<CodeWhispererRuntimeClient>(project)
         assertThat(client2).isInstanceOf(CodeWhispererRuntimeClient::class.java)

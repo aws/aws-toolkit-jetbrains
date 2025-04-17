@@ -42,6 +42,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureContext
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
@@ -431,7 +432,7 @@ class CodeWhispererModelConfiguratorTest {
 
             this.connectionIdToActiveCustomizationArn.putAll(
                 mapOf(
-                    "fake-sso-url" to CodeWhispererCustomization(arn = "arn_2", name = "name_2", description = "description_2")
+                    "fake-sso-url" to CodeWhispererCustomization(arn = "arn_2", name = "name_2", description = "description_2", profile = QRegionProfile(profileName = "myActiveProfile", arn = "arn:aws:codewhisperer:us-west-2:123456789012:profile/myActiveProfile"))
                 )
             )
 
@@ -450,6 +451,12 @@ class CodeWhispererModelConfiguratorTest {
             "<option name=\"arn\" value=\"arn_2\" />" +
             "<option name=\"name\" value=\"name_2\" />" +
             "<option name=\"description\" value=\"description_2\" />" +
+            "<option name=\"profile\">" +
+            "<QRegionProfile>" +
+            "<option name=\"arn\" value=\"arn:aws:codewhisperer:us-west-2:123456789012:profile/myActiveProfile\" />" +
+            "<option name=\"profileName\" value=\"myActiveProfile\" />" +
+            "</QRegionProfile>" +
+            "</option>" +
             "</CodeWhispererCustomization>" +
             "</value>" +
             "</entry>" +
@@ -577,7 +584,7 @@ class CodeWhispererModelConfiguratorTest {
         val fakeCustomizations = listOf(
             CodeWhispererCustomization("oldArn", "oldName", "oldDescription")
         )
-        mockClintAdaptor.stub { on { listAvailableCustomizations() } doReturn fakeCustomizations }
+        mockClintAdaptor.stub { on { listAvailableCustomizations(QRegionProfile("fake_name", "fake_arn")) } doReturn fakeCustomizations }
 
         ApplicationManager.getApplication().messageBus
             .syncPublisher(QRegionProfileSelectedListener.TOPIC)
@@ -596,7 +603,7 @@ class CodeWhispererModelConfiguratorTest {
         val fakeCustomizations = listOf(
             CodeWhispererCustomization("newArn", "newName", "newDescription")
         )
-        mockClintAdaptor.stub { on { listAvailableCustomizations() } doReturn fakeCustomizations }
+        mockClintAdaptor.stub { on { listAvailableCustomizations(QRegionProfile("fake_name", "fake_arn")) } doReturn fakeCustomizations }
 
         val latch = CountDownLatch(1)
 

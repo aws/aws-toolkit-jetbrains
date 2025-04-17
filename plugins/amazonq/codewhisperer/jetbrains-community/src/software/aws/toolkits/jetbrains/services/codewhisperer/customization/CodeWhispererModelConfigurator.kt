@@ -112,7 +112,7 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
     override fun listCustomizations(project: Project, passive: Boolean): List<CustomizationUiItem>? =
         calculateIfIamIdentityCenterConnection(project) {
             // 1. invoke API and get result
-            val listAvailableProfilesResult = tryOrNull { QRegionProfileManager.getInstance().listRegionProfiles(project) } ?: emptyList()
+            val listAvailableProfilesResult = tryOrNull { QRegionProfileManager.getInstance().listRegionProfiles(project) }.orEmpty()
 
             val aggregatedCustomizations = mutableListOf<CodeWhispererCustomization>()
 
@@ -148,7 +148,7 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
             //   (1) update the customization list snapshot (seen by users last time) if it will be displayed
             if (passive) {
                 connectionIdToIsAllowlisted[it.id] = aggregatedCustomizations.isNotEmpty()
-                if (diff?.isNotEmpty() == true && !hasShownNewCustomizationNotification.getAndSet(true)) {
+                if (diff.isNotEmpty() && !hasShownNewCustomizationNotification.getAndSet(true)) {
                     notifyNewCustomization(project)
                 }
             } else {
