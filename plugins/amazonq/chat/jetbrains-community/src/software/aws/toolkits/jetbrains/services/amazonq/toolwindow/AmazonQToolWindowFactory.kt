@@ -99,7 +99,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
                 override fun onProfileSelected(myProject: Project, profile: QRegionProfile?) {
                     if (project.isDisposed) return
                     AmazonQToolWindow.getInstance(project).disposeAndRecreate()
-                    qPanel.setContent(AmazonQToolWindow.getInstance(project).component)
+                    prepareChatContent(project, qPanel)
                 }
             }
         )
