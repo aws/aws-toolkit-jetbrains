@@ -116,10 +116,14 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
                     logger.info { "project context index starting" }
                     delay(300)
                     val isIndexSuccess = index()
-                    if (isIndexSuccess) isIndexComplete.set(true)
+                    if (isIndexSuccess) {
+                        isIndexComplete.set(true)
+                    }
                     return
                 }
+                retryCount.incrementAndGet()
             } catch (e: Exception) {
+                logger.warn(e) { "failed to init project context" }
                 if (e.stackTraceToString().contains("Connection refused")) {
                     retryCount.incrementAndGet()
                     delay(10000)
@@ -133,6 +137,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     private suspend fun initEncryption(): Boolean {
         val request = encoderServer.getEncryptionRequest()
         val response = sendMsgToLsp(LspMessage.Initialize, request)
+        logger.info { "received response to init encryption: $response" }
         return response?.responseCode == 200
     }
 
@@ -315,12 +320,12 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     private suspend fun sendMsgToLsp(msgType: LspMessage, request: String?): LspResponse? {
-        logger.info { "sending message: ${msgType.endpoint} to lsp on port ${encoderServer.port}" }
-        val url = URI("http://127.0.0.1:${encoderServer.port}/${msgType.endpoint}").toURL()
         if (!encoderServer.isNodeProcessRunning()) {
             logger.warn { "language server for ${project.name} is not running" }
             return null
         }
+        logger.info { "sending message: ${msgType.endpoint} to lsp on port ${encoderServer.port}" }
+        val url = URI("http://127.0.0.1:${encoderServer.port}/${msgType.endpoint}").toURL()
         // use 1h as timeout for index, 5 seconds for other APIs
         val timeoutMs = if (msgType is LspMessage.Index) 60.minutes.inWholeMilliseconds.toInt() else 5000
         // dedicate single thread to index operation because it can be long running
