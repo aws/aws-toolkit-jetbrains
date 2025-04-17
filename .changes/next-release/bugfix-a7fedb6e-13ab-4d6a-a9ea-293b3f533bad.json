@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Q toolwindow potentially render chat UI when it's supposed to show auth UI and it makes users not able to complete setup"
+}
