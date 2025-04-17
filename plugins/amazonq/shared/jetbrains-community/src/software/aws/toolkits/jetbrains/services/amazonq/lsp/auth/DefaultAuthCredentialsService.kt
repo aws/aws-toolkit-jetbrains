@@ -45,7 +45,9 @@ class DefaultAuthCredentialsService(
 
         if (isQConnected(project) && !isQExpired(project)) {
             updateTokenFromActiveConnection()
-            updateConfiguration()
+                .thenRun {
+                    updateConfiguration()
+                }
         }
     }
 
@@ -78,22 +80,23 @@ class DefaultAuthCredentialsService(
         updateTokenFromConnection(newConnection)
     }
 
-    private fun updateTokenFromActiveConnection() {
+    private fun updateTokenFromActiveConnection(): CompletableFuture<ResponseMessage> {
         val connection = ToolkitConnectionManager.getInstance(project)
             .activeConnectionForFeature(QConnection.getInstance())
-            ?: return
+            ?: return CompletableFuture.failedFuture(IllegalStateException("No active Q connection"))
 
-        updateTokenFromConnection(connection)
+        return updateTokenFromConnection(connection)
     }
 
-    private fun updateTokenFromConnection(connection: ToolkitConnection) {
-        (connection.getConnectionSettings() as? TokenConnectionSettings)
+    private fun updateTokenFromConnection(connection: ToolkitConnection): CompletableFuture<ResponseMessage> {
+        return (connection.getConnectionSettings() as? TokenConnectionSettings)
             ?.tokenProvider
             ?.delegate
             ?.let { it as? BearerTokenProvider }
             ?.currentToken()
             ?.accessToken
             ?.let { token -> updateTokenCredentials(token, true) }
+            ?:CompletableFuture.failedFuture(IllegalStateException("Unable to get token from connection"))
     }
 
     override fun invalidate(providerId: String) {
