@@ -15,20 +15,23 @@ import com.intellij.xdebugger.ui.DebuggerColors
 object InlineCompletionRemoteRendererFactory {
     fun createLineInlay(editor: Editor, text: String): EditorCustomElementRenderer =
         InlineCompletionLineRenderer(
-                editor, text, editor.colorsScheme.getAttributes(DebuggerColors.INLINED_VALUES_EXECUTION_LINE)
+            editor,
+            text,
+            editor.colorsScheme.getAttributes(DebuggerColors.INLINED_VALUES_EXECUTION_LINE)
         )
 
     fun createBlockInlays(editor: Editor, block: List<String>): List<EditorCustomElementRenderer> =
         block.map {
             InlineCompletionLineRenderer(
-                    editor,
-                    listOf(
-                            InlineCompletionRenderTextBlock(
-                                    it, editor.colorsScheme.getAttributes(
-                                    DebuggerColors.INLINED_VALUES_EXECUTION_LINE
-                            )
-                            )
+                editor,
+                listOf(
+                    InlineCompletionRenderTextBlock(
+                        it,
+                        editor.colorsScheme.getAttributes(
+                            DebuggerColors.INLINED_VALUES_EXECUTION_LINE
+                        )
                     )
+                )
             )
         }
 }

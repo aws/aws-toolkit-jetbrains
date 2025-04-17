@@ -49,7 +49,11 @@ class StartBackend(
         val clientHandle = ThinClientTrackerService.getInstance().associate(envId) {
             val start = System.currentTimeMillis()
             val thinClientHandle = try {
-                LinkedClientManager.getInstance().startNewClient(lifetime, localLink, URLEncoder.encode(message("caws.workspace.backend.title"), Charsets.UTF_8)) {
+                LinkedClientManager.getInstance().startNewClient(
+                    lifetime,
+                    localLink,
+                    URLEncoder.encode(message("caws.workspace.backend.title"), Charsets.UTF_8)
+                ) {
                     CodecatalystTelemetry.devEnvironmentWorkflowStatistic(
                         project = null,
                         userId = lazilyGetUserId(),
