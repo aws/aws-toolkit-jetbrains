@@ -37,4 +37,7 @@ interface AmazonQLanguageServer : LanguageServer {
 
     @JsonRequest("aws/chat/sendChatQuickAction")
     fun sendQuickAction(params: EncryptedQuickActionChatParams): CompletableFuture<String>
+
+    @JsonNotification("aws/chat/ready")
+    fun chatReady(): CompletableFuture<Unit>
 }

@@ -31,6 +31,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDoc
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_READY
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorState
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
@@ -204,6 +205,11 @@ class BrowserConnector(
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
 
                 showResult(result, partialResultToken, tabId, encryptionManager, browser)
+            }
+            CHAT_READY -> {
+                AmazonQLspService.executeIfRunning(project) { server ->
+                    server.chatReady()
+                } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
             }
         }
     }
