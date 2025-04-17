@@ -15,9 +15,14 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.UpdateConfigurationParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.BearerCredentials
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayloadData
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import java.util.concurrent.CompletableFuture
@@ -28,16 +33,19 @@ class DefaultAuthCredentialsService(
     serverInstance: Disposable,
 ) : AuthCredentialsService,
     BearerTokenProviderListener,
-    ToolkitConnectionManagerListener {
+    ToolkitConnectionManagerListener,
+    QRegionProfileSelectedListener {
 
     init {
         project.messageBus.connect(serverInstance).apply {
             subscribe(BearerTokenProviderListener.TOPIC, this@DefaultAuthCredentialsService)
             subscribe(ToolkitConnectionManagerListener.TOPIC, this@DefaultAuthCredentialsService)
+            subscribe(QRegionProfileSelectedListener.TOPIC, this@DefaultAuthCredentialsService)
         }
 
         if (isQConnected(project) && !isQExpired(project)) {
             updateTokenFromActiveConnection()
+            updateConfiguration()
         }
     }
 
@@ -108,4 +116,20 @@ class DefaultAuthCredentialsService(
                 encrypted = false
             )
         }
+
+    override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
+        updateConfiguration()
+    }
+
+    private fun updateConfiguration(): CompletableFuture<LspServerConfigurations> {
+        val payload = UpdateConfigurationParams(
+            section = "aws.q",
+            settings = mapOf(
+                "profileArn" to QRegionProfileManager.getInstance().activeProfile(project)?.arn
+            )
+        )
+        return AmazonQLspService.executeIfRunning(project) { server ->
+            server.updateConfiguration(payload)
+        } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
+    }
 }
