@@ -20,9 +20,8 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.io.await
-import com.intellij.util.net.HttpConfigurable
 import com.intellij.util.net.JdkProxyProvider
-import io.ktor.util.network.hostname
+import com.intellij.util.net.ProxyAuthentication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.TimeoutCancellationException
@@ -297,10 +296,10 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                     if (address is java.net.InetSocketAddress) {
                         put(
                             "HTTPS_PROXY",
-                            URIBuilder("http://${address.hostname}:${address.port}").apply {
-                                val login = HttpConfigurable.getInstance().proxyLogin
+                            URIBuilder("http://${address.hostName}:${address.port}").apply {
+                                val login = ProxyAuthentication.getInstance().getKnownAuthentication(address.hostName, address.port)
                                 if (login != null) {
-                                    setUserInfo(login, HttpConfigurable.getInstance().plainProxyPassword)
+                                    setUserInfo(login.userName, login.getPasswordAsString())
                                 }
                             }.build().toASCIIString()
                         )
