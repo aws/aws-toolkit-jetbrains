@@ -432,7 +432,10 @@ class CodeWhispererModelConfiguratorTest {
 
             this.connectionIdToActiveCustomizationArn.putAll(
                 mapOf(
-                    "fake-sso-url" to CodeWhispererCustomization(arn = "arn_2", name = "name_2", description = "description_2", profile = QRegionProfile(profileName = "myActiveProfile", arn = "arn:aws:codewhisperer:us-west-2:123456789012:profile/myActiveProfile"))
+                    "fake-sso-url" to CodeWhispererCustomization(
+                        arn = "arn_2", name = "name_2", description = "description_2",
+                        profile = QRegionProfile(profileName = "myActiveProfile", arn = "arn:aws:codewhisperer:us-west-2:123456789012:profile/myActiveProfile")
+                    )
                 )
             )
 
@@ -507,6 +510,10 @@ class CodeWhispererModelConfiguratorTest {
                               <option name="arn" value="arn_2" />
                               <option name="name" value="name_2" />
                               <option name="description" value="description_2" />
+                              <option name="profile"><QRegionProfile>
+                              <option name="profileName" value="myActiveProfile"/>
+                              <option name="arn" value="arn:aws:codewhisperer:us-west-2:123456789012:profile/myActiveProfile"/>
+                            </QRegionProfile></option>
                             </CodeWhispererCustomization>
                           </value>
                         </entry>
@@ -536,7 +543,8 @@ class CodeWhispererModelConfiguratorTest {
             CodeWhispererCustomization(
                 arn = "arn_2",
                 name = "name_2",
-                description = "description_2"
+                description = "description_2",
+                profile = QRegionProfile("myActiveProfile", "arn:aws:codewhisperer:us-west-2:123456789012:profile/myActiveProfile")
             )
         )
 
