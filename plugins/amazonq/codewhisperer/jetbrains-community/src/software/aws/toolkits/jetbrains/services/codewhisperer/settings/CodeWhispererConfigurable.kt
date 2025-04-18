@@ -169,7 +169,7 @@ class CodeWhispererConfigurable(private val project: Project) :
 
             row(message("aws.settings.codewhisperer.project_context_index_thread")) {
                 intTextField(
-                    range = IntRange(0, 50)
+                    range = CodeWhispererSettings.CONTEXT_INDEX_THREADS
                 ).bindIntText(codeWhispererSettings::getProjectContextIndexThreadCount, codeWhispererSettings::setProjectContextIndexThreadCount)
                     .apply {
                         connect.subscribe(
@@ -186,7 +186,7 @@ class CodeWhispererConfigurable(private val project: Project) :
 
             row(message("aws.settings.codewhisperer.project_context_index_max_size")) {
                 intTextField(
-                    range = IntRange(1, 4096)
+                    range = CodeWhispererSettings.CONTEXT_INDEX_SIZE
                 ).bindIntText(codeWhispererSettings::getProjectContextIndexMaxSize, codeWhispererSettings::setProjectContextIndexMaxSize)
                     .apply {
                         connect.subscribe(

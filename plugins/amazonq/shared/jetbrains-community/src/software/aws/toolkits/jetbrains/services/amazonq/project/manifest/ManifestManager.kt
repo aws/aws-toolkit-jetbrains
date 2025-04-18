@@ -15,7 +15,7 @@ import software.aws.toolkits.jetbrains.core.getTextFromUrl
 
 class ManifestManager {
     private val cloudFrontUrl = "https://aws-toolkit-language-servers.amazonaws.com/q-context/manifest.json"
-    val currentVersion = "0.1.46"
+    val currentVersion = "0.1.49"
     val currentOs = getOs()
     private val arch = CpuArch.CURRENT
     private val mapper = jacksonObjectMapper().apply { configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) }
