@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix workspace index process quits when hitting a race condition"
+}

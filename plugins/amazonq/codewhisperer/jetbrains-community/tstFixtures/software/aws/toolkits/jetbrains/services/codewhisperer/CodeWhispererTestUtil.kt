@@ -258,7 +258,8 @@ fun aRequestContext(
             aString()
         ),
         customizationArn = null,
-        profileArn = null
+        profileArn = null,
+        workspaceId = null,
     )
 }
 
