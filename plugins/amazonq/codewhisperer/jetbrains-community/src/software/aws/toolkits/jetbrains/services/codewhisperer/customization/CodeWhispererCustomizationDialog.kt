@@ -192,10 +192,10 @@ class CodeWhispererCustomizationDialog(
                             val activeProfile = QRegionProfileManager.getInstance().activeProfile(project)
                             // Group customizations by profile name (active profile first, then alphabetical), with the active customization on top
                             val sorted = unsorted.sortedWith(
-                                    compareBy<CustomizationUiItem> { it.customization.profile?.profileName != activeProfile?.profileName }
-                                        .thenBy   { it.customization.profile?.profileName.orEmpty() }
-                                        .thenBy   { it.customization.name }
-                                )
+                                compareBy<CustomizationUiItem> { it.customization.profile?.profileName != activeProfile?.profileName }
+                                    .thenBy { it.customization.profile?.profileName.orEmpty() }
+                                    .thenBy { it.customization.name }
+                            )
                                 .let { list -> activeCustomization?.let { list.putPickedUpFront(setOf(it)) } ?: list }
 
                             if (
