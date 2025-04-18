@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.java
 
-import org.junit.Assert.assertFalse
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.core.lambda.LambdaRuntime
@@ -19,18 +19,18 @@ class JavaHandlerCompletionProviderTest {
     @Test
     fun completionIsNotSupportedJava8() {
         val provider = HandlerCompletionProvider(projectRule.project, LambdaRuntime.JAVA8_AL2)
-        assertFalse(provider.isCompletionSupported)
+        assertThat(provider.isCompletionSupported).isFalse()
     }
 
     @Test
     fun completionIsNotSupportedJava11() {
         val provider = HandlerCompletionProvider(projectRule.project, LambdaRuntime.JAVA11)
-        assertFalse(provider.isCompletionSupported)
+        assertThat(provider.isCompletionSupported).isFalse()
     }
 
     @Test
     fun completionIsNotSupportedJava17() {
         val provider = HandlerCompletionProvider(projectRule.project, LambdaRuntime.JAVA17)
-        assertFalse(provider.isCompletionSupported)
+        assertThat(provider.isCompletionSupported).isFalse()
     }
 }

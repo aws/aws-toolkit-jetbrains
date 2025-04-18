@@ -53,6 +53,7 @@ dependencies {
     uiTestImplementation("org.kodein.di:kodein-di-jvm:7.20.2")
     uiTestImplementation(platform(libs.junit5.bom))
     uiTestImplementation(libs.junit5.jupiter)
+    uiTestImplementation(libs.assertj)
 
     // not sure why not coming in transitively for starter
     uiTestRuntimeOnly(libs.kotlin.coroutines)
@@ -92,9 +93,14 @@ tasks.register<Test>("uiTest") {
 
     dependsOn(prepareAmazonQTest)
     dependsOn(testPlugins)
-
     systemProperty("ui.test.plugins", testPlugins.get().asPath)
     systemProperty("org.gradle.project.ideProfileName", ideProfile.name)
+    val testSuite = System.getenv("TEST_DIR") ?: ""
+    if (testSuite.isNotBlank()) {
+        filter {
+            includeTestsMatching(testSuite)
+        }
+    }
 }
 
 // hack to disable ui tests in ./gradlew check

@@ -11,14 +11,26 @@ import software.aws.toolkits.jetbrains.common.session.Intent
 import software.aws.toolkits.jetbrains.common.session.SessionState
 import software.aws.toolkits.jetbrains.common.session.SessionStateConfig
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
+import software.aws.toolkits.jetbrains.services.amazonqDoc.ContentLengthException
+import software.aws.toolkits.jetbrains.services.amazonqDoc.DocGenerationException
+import software.aws.toolkits.jetbrains.services.amazonqDoc.EmptyPatchException
 import software.aws.toolkits.jetbrains.services.amazonqDoc.FEATURE_NAME
+import software.aws.toolkits.jetbrains.services.amazonqDoc.GuardrailsException
+import software.aws.toolkits.jetbrains.services.amazonqDoc.NoChangeRequiredException
+import software.aws.toolkits.jetbrains.services.amazonqDoc.PromptRefusalException
+import software.aws.toolkits.jetbrains.services.amazonqDoc.PromptTooVagueException
+import software.aws.toolkits.jetbrains.services.amazonqDoc.PromptUnrelatedException
+import software.aws.toolkits.jetbrains.services.amazonqDoc.ReadmeTooLargeException
+import software.aws.toolkits.jetbrains.services.amazonqDoc.ReadmeUpdateTooLargeException
+import software.aws.toolkits.jetbrains.services.amazonqDoc.ThrottlingException
+import software.aws.toolkits.jetbrains.services.amazonqDoc.WorkspaceEmptyException
 import software.aws.toolkits.jetbrains.services.amazonqDoc.controller.DocGenerationStep
 import software.aws.toolkits.jetbrains.services.amazonqDoc.controller.Mode
 import software.aws.toolkits.jetbrains.services.amazonqDoc.controller.docGenerationProgressMessage
-import software.aws.toolkits.jetbrains.services.amazonqDoc.docServiceError
 import software.aws.toolkits.jetbrains.services.amazonqDoc.inProgress
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendAnswerPart
 import software.aws.toolkits.jetbrains.services.amazonqDoc.messages.sendUpdatePromptProgress
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevOperation
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeGenerationResult
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Interaction
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStateAction
@@ -178,59 +190,97 @@ private suspend fun DocGenerationState.generateCode(codeGenerationId: String, mo
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "README_TOO_LARGE"
                     ),
-                    -> docServiceError(message("amazonqDoc.exception.readme_too_large"), remainingIterations = remainingIterations)
+                    -> throw ReadmeTooLargeException(
+                        operation = FeatureDevOperation.GenerateCode.toString(),
+                        desc = "Readme too large",
+                        remainingIterations = remainingIterations
+                    )
 
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "README_UPDATE_TOO_LARGE"
                     ),
-                    -> docServiceError(message("amazonqDoc.exception.readme_update_too_large"), remainingIterations = remainingIterations)
+                    -> throw ReadmeUpdateTooLargeException(
+                        operation = FeatureDevOperation.GenerateCode.toString(),
+                        desc = "Readme update too large",
+                        remainingIterations = remainingIterations
+                    )
 
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "WORKSPACE_TOO_LARGE"
                     ),
-                    -> docServiceError(message("amazonqDoc.exception.content_length_error"))
+                    -> throw ContentLengthException(
+                        operation = FeatureDevOperation.GenerateCode.toString(),
+                        desc = "Workspace too large"
+                    )
 
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "WORKSPACE_EMPTY"
                     ),
-                    -> docServiceError(message("amazonqDoc.exception.workspace_empty"))
+                    -> throw WorkspaceEmptyException(
+                        operation = FeatureDevOperation.GenerateCode.toString(),
+                        desc = "Workspace empty"
+                    )
 
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "PROMPT_UNRELATED"
                     ),
-                    -> docServiceError(message("amazonqDoc.exception.prompt_unrelated"), remainingIterations = remainingIterations)
+                    -> throw PromptUnrelatedException(
+                        operation = FeatureDevOperation.GenerateCode.toString(),
+                        desc = "Prompt unrelated",
+                        remainingIterations = remainingIterations
+                    )
 
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "PROMPT_TOO_VAGUE"
                     ),
-                    -> docServiceError(message("amazonqDoc.exception.prompt_too_vague"), remainingIterations = remainingIterations)
+                    -> throw PromptTooVagueException(
+                        operation = FeatureDevOperation.GenerateCode.toString(),
+                        desc = "Prompt too vague",
+                        remainingIterations = remainingIterations
+                    )
 
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "PromptRefusal"
                     ),
-                    -> docServiceError(message("amazonqFeatureDev.exception.prompt_refusal"), remainingIterations = remainingIterations)
+                    -> throw PromptRefusalException(
+                        operation = FeatureDevOperation.GenerateCode.toString(),
+                        desc = "Prompt refusal",
+                        remainingIterations = remainingIterations
+                    )
 
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "Guardrails"
                     ),
-                    -> docServiceError(message("amazonqDoc.error_text"))
+                    -> throw GuardrailsException(
+                        operation = FeatureDevOperation.GenerateCode.toString(),
+                        desc = "Guardrails violation"
+                    )
 
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "EmptyPatch"
                     ),
                     -> {
                         if (codeGenerationResultState.codeGenerationStatusDetail()?.contains("NO_CHANGE_REQUIRED") == true) {
-                            docServiceError(message("amazonqDoc.exception.no_change_required"))
+                            throw NoChangeRequiredException(
+                                operation = FeatureDevOperation.GenerateCode.toString(),
+                                desc = "No change required"
+                            )
                         }
-                        docServiceError(message("amazonqDoc.error_text"))
+                        throw EmptyPatchException(
+                            operation = FeatureDevOperation.GenerateCode.toString(),
+                            desc = "Empty patch"
+                        )
                     }
 
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "Throttling"
                     ),
-                    -> docServiceError(message("amazonqFeatureDev.exception.throttling"))
+                    -> throw ThrottlingException(
+                        operation = FeatureDevOperation.GenerateCode.toString(),
+                        desc = "Throttling occurred"
+                    )
 
-                    else -> docServiceError(message("amazonqDoc.error_text"))
+                    else -> throw DocGenerationException(operation = FeatureDevOperation.GenerateCode.toString(), desc = null)
                 }
             }
 
