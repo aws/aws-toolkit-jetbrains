@@ -11,6 +11,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.GetConfigu
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
 import java.util.concurrent.CompletableFuture
@@ -37,4 +40,13 @@ interface AmazonQLanguageServer : LanguageServer {
 
     @JsonRequest("aws/chat/sendChatQuickAction")
     fun sendQuickAction(params: EncryptedQuickActionChatParams): CompletableFuture<String>
+
+    @JsonNotification("aws/chat/linkClick")
+    fun linkClick(params: LinkClickParams): CompletableFuture<Unit>
+
+    @JsonNotification("aws/chat/infoLinkClick")
+    fun infoLinkClick(params: InfoLinkClickParams): CompletableFuture<Unit>
+
+    @JsonNotification("aws/chat/feedback/sourceLinkClick")
+    fun sourceLinkClick(params: SourceLinkClickParams): CompletableFuture<Unit>
 }

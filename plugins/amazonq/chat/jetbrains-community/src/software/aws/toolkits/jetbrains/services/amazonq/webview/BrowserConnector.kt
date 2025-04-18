@@ -28,15 +28,21 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INFO_LINK_CLICK
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_LINK_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SOURCE_LINK_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorState
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.QuickChatActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
 import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.AmazonQTheme
@@ -204,6 +210,24 @@ class BrowserConnector(
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
 
                 showResult(result, partialResultToken, tabId, encryptionManager, browser)
+            }
+            CHAT_LINK_CLICK -> {
+                val requestFromUi = serializer.deserializeChatMessages(node, LinkClickNotification::class.java)
+                AmazonQLspService.executeIfRunning(project) { server ->
+                    server.linkClick(requestFromUi.params)
+                } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
+            }
+            CHAT_INFO_LINK_CLICK -> {
+                val requestFromUi = serializer.deserializeChatMessages(node, InfoLinkClickNotification::class.java)
+                AmazonQLspService.executeIfRunning(project) { server ->
+                    server.infoLinkClick(requestFromUi.params)
+                } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
+            }
+            CHAT_SOURCE_LINK_CLICK -> {
+                val requestFromUi = serializer.deserializeChatMessages(node, SourceLinkClickNotification::class.java)
+                AmazonQLspService.executeIfRunning(project) { server ->
+                    server.sourceLinkClick(requestFromUi.params)
+                } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
             }
         }
     }
