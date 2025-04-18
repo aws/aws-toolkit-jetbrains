@@ -8,4 +8,10 @@ import com.google.gson.annotations.SerializedName
 data class CodeWhispererLspConfiguration(
     @SerializedName(AmazonQLspConstants.LSP_CW_OPT_OUT_KEY)
     val shouldShareData: Boolean? = null,
+
+    @SerializedName(AmazonQLspConstants.LSP_WORKSPACE_CONTEXT_ENABLED_KEY)
+    val shouldEnableWorkspaceContext: Boolean? = null,
+
+    @SerializedName(AmazonQLspConstants.LSP_CODE_REFERENCES_OPT_OUT_KEY)
+    val shouldShareCodeReferences: Boolean? = null,
 )

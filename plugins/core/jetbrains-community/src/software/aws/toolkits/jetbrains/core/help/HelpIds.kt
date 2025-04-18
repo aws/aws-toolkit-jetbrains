@@ -125,6 +125,11 @@ enum class HelpIds(shortId: String, val url: String) {
         "ToolkitAddConnectionsDialog",
         "https://docs.aws.amazon.com/toolkit-for-jetbrains/latest/userguide/setup-credentials.html"
     ),
+
+    Q_SWITCH_PROFILES_DIALOG(
+        "QSwitchProfilesDialog",
+        "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/subscribe-understanding-profile.html"
+    ),
     ;
 
     val id = "$HELP_ID_PREFIX.$shortId"

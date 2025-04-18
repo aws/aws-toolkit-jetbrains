@@ -5,11 +5,12 @@ package software.aws.toolkits.jetbrains.services.codemodernizer
 
 import com.intellij.testFramework.assertEqualsToFile
 import com.intellij.util.io.delete
-import org.junit.Assert.assertEquals
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformHilDownloadArtifact
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
+import software.aws.toolkits.jetbrains.utils.satisfiesKt
 import kotlin.io.path.createTempDirectory
 
 class CodeTransformHilDownloadArtifactTest : CodeWhispererCodeModernizerTestBase(HeavyJavaCodeInsightTestFixtureRule()) {
@@ -25,10 +26,12 @@ class CodeTransformHilDownloadArtifactTest : CodeWhispererCodeModernizerTestBase
         val hilDownloadArtifact = CodeTransformHilDownloadArtifact.create(testZipFilePath, outputFolder)
 
         // verify manifest file values
-        assertEquals(hilDownloadArtifact.manifest.pomArtifactId, "lombok")
-        assertEquals(hilDownloadArtifact.manifest.pomGroupId, "org.projectlombok")
-        assertEquals(hilDownloadArtifact.manifest.sourcePomVersion, "0.11.4")
-        assertEquals(hilDownloadArtifact.manifest.pomArtifactId, "lombok")
+        assertThat(hilDownloadArtifact.manifest).satisfiesKt {
+            assertThat(it.pomArtifactId).isEqualTo("lombok")
+            assertThat(it.pomGroupId).isEqualTo("org.projectlombok")
+            assertThat(it.sourcePomVersion).isEqualTo("0.11.4")
+            assertThat(it.pomArtifactId).isEqualTo("lombok")
+        }
 
         // verify pom file
         val testDownloadPomFile = "humanInTheLoop/pom.xml".toResourceFile().toPath()

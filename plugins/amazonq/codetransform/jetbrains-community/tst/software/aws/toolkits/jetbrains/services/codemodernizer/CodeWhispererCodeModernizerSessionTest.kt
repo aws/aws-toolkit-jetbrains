@@ -22,11 +22,6 @@ import kotlinx.coroutines.test.runTest
 import org.apache.commons.codec.digest.DigestUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -51,7 +46,6 @@ import software.amazon.awssdk.http.SdkHttpResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
-import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerSessionContext
@@ -141,8 +135,9 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         // get project.projectFile because project.projectFile can not be null
         val rootManager = ModuleRootManager.getInstance(module)
         val roots = rootManager.contentRoots
-        assertFalse(roots.isEmpty() || roots.size > 1)
-        assert(rootManager.dependencies.isEmpty())
+        assertThat(roots).hasSize(1)
+        assertThat(rootManager.dependencies).isEmpty()
+
         val root = roots[0]
         val context = CodeModernizerSessionContext(
             project,
@@ -165,11 +160,11 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
                 val fileContent = zipFile.getInputStream(entry).bufferedReader().readLine()
                 when (Path(entry.name)) {
                     Path("manifest.json") -> {
-                        assertNotNull(fileContent)
-                        assertTrue(fileContent.contains(MAVEN_BUILD_SKIP_UNIT_TESTS))
+                        assertThat(fileContent).isNotNull()
+                        assertThat(fileContent).contains(MAVEN_BUILD_SKIP_UNIT_TESTS)
                     }
-                    Path("sources/src/tmp.txt") -> assertEquals(fileText, fileContent)
-                    Path("build-logs.txt") -> assertNotNull(fileContent)
+                    Path("sources/src/tmp.txt") -> assertThat(fileContent).isEqualTo(fileText)
+                    Path("build-logs.txt") -> assertThat(fileContent).isNotNull()
                     else -> fail("Unexpected entry in zip file: $entry")
                 }
             }
@@ -190,8 +185,9 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         // get project.projectFile because project.projectFile can not be null
         val rootManager = ModuleRootManager.getInstance(module)
         val roots = rootManager.contentRoots
-        assertFalse(roots.isEmpty() || roots.size > 1)
-        assert(rootManager.dependencies.isEmpty())
+        assertThat(roots).hasSize(1)
+        assertThat(rootManager.dependencies).isEmpty()
+
         val pom = roots[0].children.first { it.name == "pom.xml" }
         val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
         val mockFile = mock(File::class.java)
@@ -204,10 +200,10 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
             assertThat(zipFile.entries().toList()).allSatisfy { entry ->
                 val fileContent = zipFile.getInputStream(entry).bufferedReader().readLine()
                 when (Path(entry.name)) {
-                    Path("manifest.json") -> assertNotNull(fileContent)
-                    Path("sources/src/tmp.java") -> assertEquals(fileText, fileContent)
-                    Path("sources/pom.xml") -> assertEquals(fileText, fileContent)
-                    Path("build-logs.txt") -> assertNotNull(fileContent)
+                    Path("manifest.json") -> assertThat(fileContent).isNotNull()
+                    Path("sources/src/tmp.java") -> assertThat(fileContent).isEqualTo(fileText)
+                    Path("sources/pom.xml") -> assertThat(fileContent).isEqualTo(fileText)
+                    Path("build-logs.txt") -> assertThat(fileContent).isNotNull()
                     else -> fail("Unexpected entry in zip file: $entry")
                 }
             }
@@ -227,7 +223,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         // get project.projectFile because project.projectFile can not be null
         val rootManager = ModuleRootManager.getInstance(module)
         val roots = rootManager.contentRoots
-        assertFalse(roots.isEmpty() || roots.size > 1)
+        assertThat(roots).hasSize(1)
 
         val pom = roots[0].children.first { it.name == "pom.xml" }
         val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
@@ -241,10 +237,10 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
             assertThat(zipFile.entries().toList()).allSatisfy { entry ->
                 val fileContent = zipFile.getInputStream(entry).bufferedReader().readLine()
                 when (Path(entry.name)) {
-                    Path("manifest.json") -> assertNotNull(fileContent)
-                    Path("sources/src/tmp.java") -> assertEquals(fileText, fileContent)
-                    Path("sources/pom.xml") -> assertEquals(fileText, fileContent)
-                    Path("build-logs.txt") -> assertNotNull(fileContent)
+                    Path("manifest.json") -> assertThat(fileContent).isNotNull()
+                    Path("sources/src/tmp.java") -> assertThat(fileContent).isEqualTo(fileText)
+                    Path("sources/pom.xml") -> assertThat(fileContent).isEqualTo(fileText)
+                    Path("build-logs.txt") -> assertThat(fileContent).isNotNull()
                     else -> fail("Unexpected entry in zip file: $entry")
                 }
             }
@@ -265,7 +261,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         )
         val rootManager = ModuleRootManager.getInstance(module)
         val roots = rootManager.contentRoots
-        assertFalse(roots.isEmpty() || roots.size > 1)
+        assertThat(roots).hasSize(1)
 
         val pom = roots[0].children.first { it.name == "pom.xml" }
         val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
@@ -279,12 +275,12 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
             assertThat(zipFile.entries().toList()).allSatisfy { entry ->
                 val fileContent = zipFile.getInputStream(entry).bufferedReader().readLine()
                 when (Path(entry.name)) {
-                    Path("manifest.json") -> assertNotNull(fileContent)
-                    Path("sources/src/tmp.java") -> assertEquals("src/tmp.java", fileContent)
-                    Path("sources/pom.xml") -> assertEquals("pom.xml", fileContent)
-                    Path("sources/someModule/src/helloworld.java") -> assertEquals("someModule/src/helloworld.java", fileContent)
-                    Path("sources/someModule/pom.xml") -> assertEquals("someModule/pom.xml", fileContent)
-                    Path("build-logs.txt") -> assertNotNull(fileContent)
+                    Path("manifest.json") -> assertThat(fileContent).isNotNull()
+                    Path("sources/src/tmp.java") -> assertThat(fileContent).isEqualTo("src/tmp.java")
+                    Path("sources/pom.xml") -> assertThat(fileContent).isEqualTo("pom.xml")
+                    Path("sources/someModule/src/helloworld.java") -> assertThat(fileContent).isEqualTo("someModule/src/helloworld.java")
+                    Path("sources/someModule/pom.xml") -> assertThat(fileContent).isEqualTo("someModule/pom.xml")
+                    Path("build-logs.txt") -> assertThat(fileContent).isNotNull()
                     else -> fail("Unexpected entry in zip file: $entry")
                 }
             }
@@ -305,7 +301,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         )
         val rootManager = ModuleRootManager.getInstance(module)
         val roots = rootManager.contentRoots
-        assertFalse(roots.isEmpty() || roots.size > 1)
+        assertThat(roots).hasSize(1)
 
         val pom = roots[0].children.first { it.name == "pom.xml" }
         val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
@@ -319,12 +315,12 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
             assertThat(zipFile.entries().toList()).allSatisfy { entry ->
                 val fileContent = zipFile.getInputStream(entry).bufferedReader().readLine()
                 when (Path(entry.name)) {
-                    Path("manifest.json") -> assertNotNull(fileContent)
-                    Path("sources/src/tmp.java") -> assertEquals("src\\tmp.java", fileContent)
-                    Path("sources/pom.xml") -> assertEquals("pom.xml", fileContent)
-                    Path("sources/someModule/src/helloworld.java") -> assertEquals("someModule\\src\\helloworld.java", fileContent)
-                    Path("sources/someModule/pom.xml") -> assertEquals("someModule\\pom.xml", fileContent)
-                    Path("build-logs.txt") -> assertNotNull(fileContent)
+                    Path("manifest.json") -> assertThat(fileContent).isNotNull()
+                    Path("sources/src/tmp.java") -> assertThat(fileContent).isEqualTo("src\\tmp.java")
+                    Path("sources/pom.xml") -> assertThat(fileContent).isEqualTo("pom.xml")
+                    Path("sources/someModule/src/helloworld.java") -> assertThat(fileContent).isEqualTo("someModule\\src\\helloworld.java")
+                    Path("sources/someModule/pom.xml") -> assertThat(fileContent).isEqualTo("someModule\\pom.xml")
+                    Path("build-logs.txt") -> assertThat(fileContent).isNotNull()
                     else -> fail("Unexpected entry in zip file: $entry")
                 }
             }
@@ -344,7 +340,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         // get project.projectFile because project.projectFile can not be null
         val rootManager = ModuleRootManager.getInstance(module)
         val roots = rootManager.contentRoots
-        assertFalse(roots.isEmpty() || roots.size > 1)
+        assertThat(roots).hasSize(1)
 
         val pom = roots[0].children.first { it.name == "pom.xml" }
         val context = CodeModernizerSessionContext(project, pom, JavaSdkVersion.JDK_1_8, JavaSdkVersion.JDK_11)
@@ -358,11 +354,11 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
             assertThat(zipFile.entries().toList()).allSatisfy { entry ->
                 val fileContent = zipFile.getInputStream(entry).bufferedReader().readLine()
                 when (Path(entry.name)) {
-                    Path("manifest.json") -> assertNotNull(fileContent)
-                    Path("sources/pom.xml") -> assertEquals("pom.xml", fileContent)
-                    Path("sources/src/tmp.java") -> assertEquals("src/tmp.java", fileContent)
-                    Path("sources/someModule/pom.xml") -> assertEquals("someModule/pom.xml", fileContent)
-                    Path("build-logs.txt") -> assertNotNull(fileContent)
+                    Path("manifest.json") -> assertThat(fileContent).isNotNull()
+                    Path("sources/pom.xml") -> assertThat(fileContent).isEqualTo("pom.xml")
+                    Path("sources/src/tmp.java") -> assertThat(fileContent).isEqualTo("src/tmp.java")
+                    Path("sources/someModule/pom.xml") -> assertThat(fileContent).isEqualTo("someModule/pom.xml")
+                    Path("build-logs.txt") -> assertThat(fileContent).isNotNull()
                     else -> throw AssertionError("Unexpected entry in zip file: $entry")
                 }
             }
@@ -404,8 +400,10 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         }
 
         val dependenciesToUpload = context.iterateThroughDependencies(tempFolder.root)
-        assertEquals(m2Folders.size * expectedFilesAfterClean.size, dependenciesToUpload.size)
-        assertTrue(dependenciesToUpload.all { it.name in expectedFilesAfterClean })
+        assertThat(dependenciesToUpload).hasSize(m2Folders.size * expectedFilesAfterClean.size)
+        assertThat(dependenciesToUpload).allSatisfy {
+            assertThat(it.name).isIn(expectedFilesAfterClean)
+        }
     }
 
     @Test
@@ -416,7 +414,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         doNothing().whenever(clientAdaptorSpy).uploadArtifactToS3(any(), any(), any(), any(), any())
         doReturn(exampleStartCodeMigrationResponse).whenever(clientAdaptorSpy).startCodeModernization(any(), any(), any())
         val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
-        assertEquals(result, CodeModernizerStartJobResult.Started(jobId))
+        assertThat(result).isEqualTo(CodeModernizerStartJobResult.Started(jobId))
         verify(clientAdaptorSpy, times(1)).createGumbyUploadUrl(any())
         verify(clientAdaptorSpy, times(1)).startCodeModernization(any(), any(), any())
         verify(clientAdaptorSpy, times(1)).uploadArtifactToS3(any(), any(), any(), any(), any())
@@ -430,7 +428,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         doReturn(exampleCreateUploadUrlResponse).whenever(clientAdaptorSpy).createGumbyUploadUrl(any())
         doAnswer { throw AlreadyDisposedException("mock exception") }.whenever(clientAdaptorSpy).uploadArtifactToS3(any(), any(), any(), any(), any())
         val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
-        assertEquals(CodeModernizerStartJobResult.Disposed, result)
+        assertThat(result).isEqualTo(CodeModernizerStartJobResult.Disposed)
     }
 
     @Test
@@ -440,7 +438,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
             .whenever(testSessionContextSpy).createZipWithModuleFiles(any())
         doAnswer { throw SsoOidcException.builder().build() }.whenever(clientAdaptorSpy).createGumbyUploadUrl(any())
         val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
-        assertEquals(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CREDENTIALS_EXPIRED), result)
+        assertThat(result).isEqualTo(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CREDENTIALS_EXPIRED))
     }
 
     @Test
@@ -448,7 +446,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         listOf(BearerTokenAuthState.NEEDS_REFRESH, BearerTokenAuthState.NOT_AUTHENTICATED).forEach {
             setupConnection(it)
             val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
-            assertEquals(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CREDENTIALS_EXPIRED), result)
+            assertThat(result).isEqualTo(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CREDENTIALS_EXPIRED))
         }
     }
 
@@ -459,9 +457,9 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         doReturn(exampleCreateUploadUrlResponse).whenever(clientAdaptorSpy).createGumbyUploadUrl(any())
         doAnswer { throw HttpRequests.HttpStatusException("mock error", 403, "mock url") }.whenever(testSessionSpy).uploadPayload(any())
         val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
-        assertEquals(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.PRESIGNED_URL_EXPIRED), result)
+        assertThat(result).isEqualTo(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.PRESIGNED_URL_EXPIRED))
         verify(testSessionStateSpy, times(1)).putJobHistory(any(), eq(TransformationStatus.FAILED), any(), any())
-        assertEquals(testSessionStateSpy.currentJobStatus, TransformationStatus.FAILED)
+        assertThat(testSessionStateSpy.currentJobStatus).isEqualTo(TransformationStatus.FAILED)
     }
 
     @Test
@@ -471,9 +469,9 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         doReturn(exampleCreateUploadUrlResponse).whenever(clientAdaptorSpy).createGumbyUploadUrl(any())
         doAnswer { throw HttpRequests.HttpStatusException("mock error", 407, "mock url") }.whenever(testSessionSpy).uploadPayload(any())
         val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
-        assertEquals(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.HTTP_ERROR(407)), result)
+        assertThat(result).isEqualTo(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.HTTP_ERROR(407)))
         verify(testSessionStateSpy, times(1)).putJobHistory(any(), eq(TransformationStatus.FAILED), any(), any())
-        assertEquals(testSessionStateSpy.currentJobStatus, TransformationStatus.FAILED)
+        assertThat(testSessionStateSpy.currentJobStatus).isEqualTo(TransformationStatus.FAILED)
     }
 
     @Test
@@ -483,9 +481,9 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         doReturn(exampleCreateUploadUrlResponse).whenever(clientAdaptorSpy).createGumbyUploadUrl(any())
         doAnswer { throw Exception("mock client-side exception") }.whenever(clientAdaptorSpy).uploadArtifactToS3(any(), any(), any(), any(), any())
         val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
-        assertEquals(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER("mock client-side exception")), result)
+        assertThat(result).isEqualTo(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.OTHER("mock client-side exception")))
         verify(testSessionStateSpy, times(1)).putJobHistory(any(), eq(TransformationStatus.FAILED), any(), any())
-        assertEquals(testSessionStateSpy.currentJobStatus, TransformationStatus.FAILED)
+        assertThat(testSessionStateSpy.currentJobStatus).isEqualTo(TransformationStatus.FAILED)
     }
 
     @Test
@@ -495,9 +493,9 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         doReturn(exampleCreateUploadUrlResponse).whenever(clientAdaptorSpy).createGumbyUploadUrl(any())
         doAnswer { throw ConnectException("mock exception") }.whenever(testSessionSpy).uploadPayload(any())
         val result = testSessionSpy.createModernizationJob(MavenCopyCommandsResult.Success(File("./mock/path/")))
-        assertEquals(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CONNECTION_REFUSED), result)
+        assertThat(result).isEqualTo(CodeModernizerStartJobResult.ZipUploadFailed(UploadFailureReason.CONNECTION_REFUSED))
         verify(testSessionStateSpy, times(1)).putJobHistory(any(), eq(TransformationStatus.FAILED), any(), any())
-        assertEquals(testSessionStateSpy.currentJobStatus, TransformationStatus.FAILED)
+        assertThat(testSessionStateSpy.currentJobStatus).isEqualTo(TransformationStatus.FAILED)
     }
 
     @Test
@@ -508,7 +506,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
 
         doNothing().whenever(testSessionStateSpy).updateJobHistory(any(), any(), any())
         val result = testSessionSpy.pollUntilJobCompletion(CodeTransformType.LANGUAGE_UPGRADE, jobId) { _, _ -> }
-        assertEquals(CodeModernizerJobCompletedResult.JobCompletedSuccessfully(jobId), result)
+        assertThat(result).isEqualTo(CodeModernizerJobCompletedResult.JobCompletedSuccessfully(jobId))
 
         // two polls to check status as we 1. check for plan existing and 2. check if job completed
         // since the transformationStatus is dynamic by the happyPathMigrationResponses so there will be 10 times to call getCodeModernizationJob
@@ -529,7 +527,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
 
         doNothing().whenever(testSessionStateSpy).updateJobHistory(any(), any(), any())
         val result = testSessionSpy.pollUntilJobCompletion(CodeTransformType.LANGUAGE_UPGRADE, jobId) { _, _ -> }
-        assertEquals(CodeModernizerJobCompletedResult.JobPartiallySucceeded(jobId), result)
+        assertThat(result).isEqualTo(CodeModernizerJobCompletedResult.JobPartiallySucceeded(jobId))
         verify(clientAdaptorSpy, times(4)).getCodeModernizationJob(any())
         verify(clientAdaptorSpy, atLeastOnce()).getCodeModernizationPlan(any())
     }
@@ -584,9 +582,9 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         val hilDownloadArtifact = CodeTransformHilDownloadArtifact.create(testZipFilePath, outputFolder)
 
         // assert null before setting
-        assertNull(testSessionSpy.getHilDownloadArtifact())
+        assertThat(testSessionSpy.getHilDownloadArtifact()).isNull()
         testSessionSpy.setHilDownloadArtifact(hilDownloadArtifact)
-        assertEquals(testSessionSpy.getHilDownloadArtifact(), hilDownloadArtifact)
+        assertThat(testSessionSpy.getHilDownloadArtifact()).isEqualTo(hilDownloadArtifact)
 
         // cleanup
         outputFolder.delete()
@@ -599,8 +597,8 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
         val hilDownloadArtifact = CodeTransformHilDownloadArtifact.create(testZipFilePath, outputFolder)
         testSessionSpy.setHilDownloadArtifact(hilDownloadArtifact)
         testSessionSpy.setHilTempDirectoryPath(outputFolder)
-        assertTrue(outputFolder.exists())
+        assertThat(outputFolder).exists()
         testSessionSpy.hilCleanup()
-        assertFalse(outputFolder.exists())
+        assertThat(outputFolder).doesNotExist()
     }
 }

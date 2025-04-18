@@ -182,6 +182,7 @@ export class QuickActionHandler {
                                 "1. Generate code based on your description and the code in your workspace",
                                 "2. Provide a list of suggestions for you to review and add to your workspace",
                                 "3. If needed, iterate based on your feedback",
+                                "",
                                 "To learn more, visit the [user guide](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/software-dev.html).",
                             ].join("\n")
                         },

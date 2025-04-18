@@ -11,29 +11,31 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.BaseProjectDirectories.Companion.getBaseDirectories
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.openapi.vfs.isFile
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.coroutines.ioDispatcher
 import software.aws.toolkits.jetbrains.services.amazonq.CHAT_EXPLICIT_PROJECT_CONTEXT_TIMEOUT
-import software.aws.toolkits.jetbrains.services.amazonq.FeatureDevSessionContext
 import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
-import java.net.URL
+import java.net.URI
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.minutes
@@ -42,6 +44,9 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     private val retryCount = AtomicInteger(0)
     val isIndexComplete = AtomicBoolean(false)
     private val mapper = jacksonObjectMapper()
+
+    // max number of requests that can be ongoing to an given server instance, excluding index()
+    private val ioDispatcher = ioDispatcher(20)
 
     init {
         cs.launch {
@@ -65,12 +70,12 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
 
     data class FileCollectionResult(
         val files: List<String>,
-        val fileSize: Int,
+        val fileSize: Int, // in MB
     )
 
     // TODO: move to LspMessage.kt
+    @JsonIgnoreProperties(ignoreUnknown = true)
     data class Usage(
-        @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("memoryUsage")
         val memoryUsage: Int? = null,
         @JsonProperty("cpuUsage")
@@ -78,8 +83,8 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     )
 
     // TODO: move to LspMessage.kt
+    @JsonIgnoreProperties(ignoreUnknown = true)
     data class Chunk(
-        @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("filePath")
         val filePath: String? = null,
         @JsonProperty("content")
@@ -102,38 +107,41 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         val programmingLanguage: String? = null,
     )
 
-    private fun initAndIndex() {
-        cs.launch {
-            while (retryCount.get() < 5) {
-                try {
-                    logger.info { "project context: about to init key" }
-                    val isInitSuccess = initEncryption()
-                    if (isInitSuccess) {
-                        logger.info { "project context index starting" }
-                        delay(300)
-                        val isIndexSuccess = index()
-                        if (isIndexSuccess) isIndexComplete.set(true)
-                        return@launch
+    private suspend fun initAndIndex() {
+        while (retryCount.get() < 5) {
+            try {
+                logger.info { "project context: about to init key" }
+                val isInitSuccess = initEncryption()
+                if (isInitSuccess) {
+                    logger.info { "project context index starting" }
+                    delay(300)
+                    val isIndexSuccess = index()
+                    if (isIndexSuccess) {
+                        isIndexComplete.set(true)
                     }
-                } catch (e: Exception) {
-                    if (e.stackTraceToString().contains("Connection refused")) {
-                        retryCount.incrementAndGet()
-                        delay(10000)
-                    } else {
-                        return@launch
-                    }
+                    return
+                }
+                retryCount.incrementAndGet()
+            } catch (e: Exception) {
+                logger.warn(e) { "failed to init project context" }
+                if (e.stackTraceToString().contains("Connection refused")) {
+                    retryCount.incrementAndGet()
+                    delay(10000)
+                } else {
+                    return
                 }
             }
         }
     }
 
-    private fun initEncryption(): Boolean {
+    private suspend fun initEncryption(): Boolean {
         val request = encoderServer.getEncryptionRequest()
         val response = sendMsgToLsp(LspMessage.Initialize, request)
+        logger.info { "received response to init encryption: $response" }
         return response?.responseCode == 200
     }
 
-    fun index(): Boolean {
+    suspend fun index(): Boolean {
         val projectRoot = project.basePath ?: return false
 
         val indexStartTime = System.currentTimeMillis()
@@ -167,23 +175,20 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
 
     // TODO: rename queryChat
     suspend fun query(prompt: String, timeout: Long?): List<RelevantDocument> = withTimeout(timeout ?: CHAT_EXPLICIT_PROJECT_CONTEXT_TIMEOUT) {
-        cs.async {
-            val encrypted = encryptRequest(QueryChatRequest(prompt))
-            val response = sendMsgToLsp(LspMessage.QueryChat, encrypted) ?: return@async emptyList()
-            val parsedResponse = mapper.readValue<List<Chunk>>(response.responseBody)
-            queryResultToRelevantDocuments(parsedResponse)
-        }.await()
+        val encrypted = encryptRequest(QueryChatRequest(prompt))
+        val response = sendMsgToLsp(LspMessage.QueryChat, encrypted) ?: return@withTimeout emptyList()
+        val parsedResponse = mapper.readValue<List<Chunk>>(response.responseBody)
+
+        return@withTimeout queryResultToRelevantDocuments(parsedResponse)
     }
 
     suspend fun queryInline(query: String, filePath: String, target: InlineContextTarget): List<InlineBm25Chunk> = withTimeout(SUPPLEMENTAL_CONTEXT_TIMEOUT) {
-        cs.async {
-            val encrypted = encryptRequest(QueryInlineCompletionRequest(query, filePath, target.toString()))
-            val r = sendMsgToLsp(LspMessage.QueryInlineCompletion, encrypted) ?: return@async emptyList()
-            return@async mapper.readValue<List<InlineBm25Chunk>>(r.responseBody)
-        }.await()
+        val encrypted = encryptRequest(QueryInlineCompletionRequest(query, filePath, target.toString()))
+        val r = sendMsgToLsp(LspMessage.QueryInlineCompletion, encrypted) ?: return@withTimeout emptyList()
+        return@withTimeout mapper.readValue<List<InlineBm25Chunk>>(r.responseBody)
     }
 
-    fun getUsage(): Usage? {
+    suspend fun getUsage(): Usage? {
         val response = sendMsgToLsp(LspMessage.GetUsageMetrics, request = null) ?: return null
         return try {
             val parsedResponse = mapper.readValue<Usage>(response.responseBody)
@@ -194,9 +199,10 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
+    @RequiresBackgroundThread
     fun updateIndex(filePaths: List<String>, mode: IndexUpdateMode) {
         val encrypted = encryptRequest(UpdateIndexRequest(filePaths, mode.command))
-        sendMsgToLsp(LspMessage.UpdateIndex, encrypted)
+        runBlocking { sendMsgToLsp(LspMessage.UpdateIndex, encrypted) }
     }
 
     private fun recordIndexWorkspace(
@@ -240,56 +246,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
-    private fun willExceedPayloadLimit(currentTotalFileSize: Long, currentFileSize: Long): Boolean {
-        val maxSize = CodeWhispererSettings.getInstance().getProjectContextIndexMaxSize()
-        return currentTotalFileSize.let { totalSize -> totalSize > (maxSize * 1024 * 1024 - currentFileSize) }
-    }
-
-    private fun isBuildOrBin(fileName: String): Boolean {
-        val regex = Regex("""bin|build|node_modules|venv|\.venv|env|\.idea|\.conda""", RegexOption.IGNORE_CASE)
-        return regex.find(fileName) != null
-    }
-
-    fun collectFiles(): FileCollectionResult {
-        val collectedFiles = mutableListOf<String>()
-        var currentTotalFileSize = 0L
-        val featureDevSessionContext = FeatureDevSessionContext(project)
-        val allFiles = mutableListOf<VirtualFile>()
-        project.getBaseDirectories().forEach {
-            VfsUtilCore.visitChildrenRecursively(
-                it,
-                object : VirtualFileVisitor<Unit>(NO_FOLLOW_SYMLINKS) {
-                    // TODO: refactor this along with /dev & codescan file traversing logic
-                    override fun visitFile(file: VirtualFile): Boolean {
-                        if ((file.isDirectory && isBuildOrBin(file.name)) ||
-                            runBlocking { featureDevSessionContext.ignoreFile(file.name) } ||
-                            (file.isFile && file.length > 10 * 1024 * 1024)
-                        ) {
-                            return false
-                        }
-                        if (file.isFile) {
-                            allFiles.add(file)
-                            return false
-                        }
-                        return true
-                    }
-                }
-            )
-        }
-
-        for (file in allFiles) {
-            if (willExceedPayloadLimit(currentTotalFileSize, file.length)) {
-                break
-            }
-            collectedFiles.add(file.path)
-            currentTotalFileSize += file.length
-        }
-
-        return FileCollectionResult(
-            files = collectedFiles.toList(),
-            fileSize = (currentTotalFileSize / 1024 / 1024).toInt()
-        )
-    }
+    fun collectFiles(): FileCollectionResult = collectFiles(project.getBaseDirectories(), ChangeListManager.getInstance(project))
 
     private fun queryResultToRelevantDocuments(queryResult: List<Chunk>): List<RelevantDocument> {
         val documents: MutableList<RelevantDocument> = mutableListOf()
@@ -310,31 +267,36 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         return encoderServer.encrypt(payloadJson)
     }
 
-    private fun sendMsgToLsp(msgType: LspMessage, request: String?): LspResponse? {
-        logger.info { "sending message: ${msgType.endpoint} to lsp on port ${encoderServer.port}" }
-        val url = URL("http://localhost:${encoderServer.port}/${msgType.endpoint}")
+    private suspend fun sendMsgToLsp(msgType: LspMessage, request: String?): LspResponse? {
         if (!encoderServer.isNodeProcessRunning()) {
             logger.warn { "language server for ${project.name} is not running" }
             return null
         }
+        logger.info { "sending message: ${msgType.endpoint} to lsp on port ${encoderServer.port}" }
+        val url = URI("http://127.0.0.1:${encoderServer.port}/${msgType.endpoint}").toURL()
         // use 1h as timeout for index, 5 seconds for other APIs
         val timeoutMs = if (msgType is LspMessage.Index) 60.minutes.inWholeMilliseconds.toInt() else 5000
-        return with(url.openConnection() as HttpURLConnection) {
-            setConnectionProperties(this)
-            setConnectionTimeout(this, timeoutMs)
-            request?.let { r ->
-                setConnectionRequest(this, r)
-            }
-            val responseCode = this.responseCode
-            logger.info { "receiving response for $msgType with responseCode $responseCode" }
+        // dedicate single thread to index operation because it can be long running
+        val dispatcher = if (msgType is LspMessage.Index) ioDispatcher(1) else ioDispatcher
 
-            val responseBody = if (responseCode == 200) {
-                this.inputStream.bufferedReader().use { reader -> reader.readText() }
-            } else {
-                ""
-            }
+        return withContext(dispatcher) {
+            with(url.openConnection() as HttpURLConnection) {
+                setConnectionProperties(this)
+                setConnectionTimeout(this, timeoutMs)
+                request?.let { r ->
+                    setConnectionRequest(this, r)
+                }
+                val responseCode = this.responseCode
+                logger.info { "receiving response for $msgType with responseCode $responseCode" }
 
-            LspResponse(responseCode, responseBody)
+                val responseBody = if (responseCode == 200) {
+                    this.inputStream.bufferedReader().use { reader -> reader.readText() }
+                } else {
+                    ""
+                }
+
+                LspResponse(responseCode, responseBody)
+            }
         }
     }
 
@@ -344,5 +306,57 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
 
     companion object {
         private val logger = getLogger<ProjectContextProvider>()
+        private val regex = Regex("""bin|build|node_modules|venv|\.venv|env|\.idea|\.conda""", RegexOption.IGNORE_CASE)
+        private val mega = (1024 * 1024).toULong()
+        private val tenMb = 10 * mega.toInt()
+
+        private fun willExceedPayloadLimit(maxSize: ULong, currentTotalFileSize: ULong, currentFileSize: Long) =
+            currentTotalFileSize.let { totalSize -> totalSize > (maxSize - currentFileSize.toUInt()) }
+
+        private fun isBuildOrBin(fileName: String): Boolean =
+            regex.find(fileName) != null
+
+        fun collectFiles(projectBaseDirectories: Set<VirtualFile>, changeListManager: ChangeListManager): FileCollectionResult {
+            val maxSize = CodeWhispererSettings.getInstance()
+                .getProjectContextIndexMaxSize().toULong() * mega
+            val collectedFiles = mutableListOf<String>()
+            var currentTotalFileSize = 0UL
+            val allFiles = mutableListOf<VirtualFile>()
+
+            projectBaseDirectories.forEach {
+                VfsUtilCore.visitChildrenRecursively(
+                    it,
+                    object : VirtualFileVisitor<Unit>(NO_FOLLOW_SYMLINKS) {
+                        // TODO: refactor this along with /dev & codescan file traversing logic
+                        override fun visitFile(file: VirtualFile): Boolean {
+                            if ((file.isDirectory && isBuildOrBin(file.name)) ||
+                                !isWorkspaceSourceContent(file, projectBaseDirectories, changeListManager, additionalGlobalIgnoreRulesForStrictSources) ||
+                                (file.isFile && file.length > tenMb)
+                            ) {
+                                return false
+                            }
+                            if (file.isFile) {
+                                allFiles.add(file)
+                                return false
+                            }
+                            return true
+                        }
+                    }
+                )
+            }
+
+            for (file in allFiles) {
+                if (willExceedPayloadLimit(maxSize, currentTotalFileSize, file.length)) {
+                    break
+                }
+                collectedFiles.add(file.path)
+                currentTotalFileSize += file.length.toUInt()
+            }
+
+            return FileCollectionResult(
+                files = collectedFiles.toList(),
+                fileSize = (currentTotalFileSize / 1024u / 1024u).toInt()
+            )
+        }
     }
 }

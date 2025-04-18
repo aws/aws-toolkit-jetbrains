@@ -1,3 +1,47 @@
+# _3.67_ (2025-04-18)
+- **(Bug Fix)** Amazon Q: Customization now resets with a warning if unavailable in the selected profile.
+- **(Bug Fix)** Q panel will get stuck while signin if users have multiple windows
+- **(Bug Fix)** Fix integer overflow when local context index input is larger than 2GB
+- **(Bug Fix)** Fix workspace index process quits when hitting a race condition
+- **(Bug Fix)** Fix infinite loop when workspace indexing server fails to initialize
+
+# _3.66_ (2025-04-11)
+- **(Feature)** The logs emitted by the Agent during user command execution will be accepted and written to `.amazonq/dev/run_command.log` file in the user's local repository.
+- **(Bug Fix)** Unit test generation now completes successfully when using the `/test` command
+
+# _3.64_ (2025-04-10)
+- **(Bug Fix)** Fix issue where IDE freezes when logging into Amazon Q
+
+# _3.65_ (2025-04-10)
+- **(Bug Fix)** Fix issue where Amazon Q cannot process chunks from local `@workspace` context
+
+# _3.63_ (2025-04-08)
+- **(Feature)** Enterprise users can choose their preferred Amazon Q profile to improve personalization and workflow across different business regions
+- **(Bug Fix)** Amazon Q /doc: close diff tab and open README file in preview mode after user accept changes
+
+# _3.62_ (2025-04-03)
+- **(Feature)** /review: automatically generate fix without clicking Generate Fix button
+- **(Bug Fix)** /transform: prompt user to re-authenticate if credentials expire during transformation
+- **(Bug Fix)** Gracefully handle additional fields in Amazon Q /dev code generation result without throwing errors
+- **(Bug Fix)** /review: set programmingLanguage to Plaintext if language is unknown
+- **(Bug Fix)** /review: Respect user option to allow code suggestions with references
+
+# _3.61_ (2025-03-27)
+- **(Feature)** Amazon Q: Moved "Include suggestions with code references" setting to General
+- **(Feature)** Add support for 2025.1
+- **(Bug Fix)** Amazon Q: Attempt to reduce thread pool contention locking IDE caused by `@workspace` making a large number of requests
+- **(Deprecation)** An upcoming release will remove support for JetBrains Gateway version 2024.3 and for IDEs based on the 2024.1 platform
+
+# _3.60_ (2025-03-20)
+- **(Feature)** AmazonQ /test now displays a concise test plan summary to users.
+- **(Bug Fix)** Fix inline completion failure due to context length exceeding the threshold
+- **(Bug Fix)** Amazon Q: Fix cases where content may be incorrectly excluded from workspace.
+
+# _3.59_ (2025-03-13)
+- **(Feature)** AmazonQ /dev and /doc: Add support for complex workspaces.
+- **(Bug Fix)** /review: normalize relative file path before unzipping
+- **(Bug Fix)** fix Q chat request timeout
+
 # _3.58_ (2025-03-06)
 - **(Bug Fix)** Amazon Q: Fix data isolation between tabs to prevent interference when using /doc in multiple tabs
 - **(Removal)** The Amazon Q inline suggestion popup goes back to being under the suggestions and is always showing.

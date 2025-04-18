@@ -3,14 +3,15 @@
 
 package software.aws.toolkits.jetbrains.uitests
 
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.assertj.core.api.Assertions.assertThat
+import org.intellij.lang.annotations.Language
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 
 private const val TEST_RESOURCES_PATH = "src/test/tstData"
-fun executePuppeteerScript(scriptContent: String): String {
+fun executePuppeteerScript(@Language("JS") scriptContent: String): String {
     val scriptFile = File("$TEST_RESOURCES_PATH/temp-script.js")
     scriptFile.parentFile.mkdirs()
     scriptFile.writeText(scriptContent)
@@ -25,7 +26,7 @@ fun executePuppeteerScript(scriptContent: String): String {
 
     scriptFile.delete()
 
-    assertEquals(0, exitCode, "Script execution failed with output: $output")
+    assertThat(exitCode).withFailMessage("Script execution failed with output: $output").isEqualTo(0)
     return output
 }
 
@@ -88,10 +89,10 @@ fun setupTestEnvironment() {
         .start()
         .waitFor()
 
-    assertEquals(0, npmInstall, "Failed to install Puppeteer")
+    assertThat(npmInstall).withFailMessage("Failed to install Puppeteer").isEqualTo(0)
 }
 
-fun writeToAwsXml(configContent: String) {
+fun writeToAwsXml(@Language("XML") configContent: String) {
     val path = Paths.get("tstData", "configAmazonQTests", "options", "aws.xml")
 
     Files.createDirectories(path.parent)
@@ -102,3 +103,44 @@ fun writeToAwsXml(configContent: String) {
         StandardOpenOption.TRUNCATE_EXISTING
     )
 }
+
+// language=JS
+val testScriptPrefix = """
+const puppeteer = require('puppeteer');
+
+async function retryIfRequired(page, request) {
+    let retryCounts = 0;
+    const maxRetries = 3;
+
+    async function retry() {
+
+        await page.waitForSelector('::-p-text(Retry)', {timeout: 600_000})
+
+        const [retry] = await page.$$('.mynah-chat-item-followup-question-option');
+        await retry.click();
+
+        console.log(`Retrying ${'$'}{++retryCounts} time(s)`);
+    }
+
+    while (retryCounts < maxRetries) {
+        const currRetryCounts = retryCounts;
+        await Promise.race([
+            retry(),
+            request()
+        ]);
+
+        // This indicates request proceed successfully. There is no more need to retry.
+        if (retryCounts === currRetryCounts) {
+            return;
+        }
+    }
+}
+
+async function closeSelectedTab(page) {
+    const selectedTabId = await page.${'$'}eval('.mynah-nav-tabs-wrapper', (el) => el.getAttribute('selected-tab'));
+
+    const closeBtn = await page.${'$'}(`span[key=mynah-main-tabs-${'$'}{selectedTabId}] label button`);
+    await closeBtn.click();
+}
+
+""".trimIndent()

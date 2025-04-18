@@ -3,19 +3,23 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.util
 
+import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.roots.ModuleRootManager
 import org.eclipse.lsp4j.WorkspaceFolder
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil.toUriString
 
 object WorkspaceFolderUtil {
     fun createWorkspaceFolders(project: Project): List<WorkspaceFolder> =
         if (project.isDefault) {
             emptyList()
         } else {
-            ProjectRootManager.getInstance(project).contentRoots.map { contentRoot ->
-                WorkspaceFolder().apply {
-                    name = contentRoot.name
-                    this.uri = contentRoot.url
+            ModuleManager.getInstance(project).modules.mapNotNull { module ->
+                ModuleRootManager.getInstance(module).contentRoots.firstOrNull()?.let { contentRoot ->
+                    WorkspaceFolder().apply {
+                        name = module.name
+                        uri = toUriString(contentRoot)
+                    }
                 }
             }
         }

@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.ModuleDependencyProvider.Companion.EP_NAME
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.SyncModuleDependenciesParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
 import java.util.concurrent.CompletableFuture
 import java.util.function.Consumer
 
@@ -45,7 +45,7 @@ class DefaultModuleDependenciesServiceTest {
         mockDependencyProvider = mockk<ModuleDependencyProvider>()
         mockLanguageServer = mockk()
 
-        every { mockLanguageServer.syncModuleDependencies(any()) } returns CompletableFuture<Unit>()
+        every { mockLanguageServer.didChangeDependencyPaths(any()) } returns CompletableFuture<Unit>()
 
         // Mock Application
         mockApplication = mockk()
@@ -89,22 +89,20 @@ class DefaultModuleDependenciesServiceTest {
     fun `test initial sync on construction`() {
         // Arrange
         val module = mockk<Module>()
-        val params = SyncModuleDependenciesParams(
+        val params = DidChangeDependencyPathsParams(
             moduleName = "testModule",
-            programmingLanguage = "Java",
-            files = listOf("src/main"),
-            dirs = listOf("lib"),
+            runtimeLanguage = "java",
+            paths = listOf("/path/to/dependency.jar"),
             includePatterns = emptyList(),
             excludePatterns = emptyList()
         )
 
         every { mockModuleManager.modules } returns arrayOf(module)
-
         prepDependencyProvider(listOf(Pair(module, params)))
 
         sut = DefaultModuleDependenciesService(project, mockk())
 
-        verify { mockLanguageServer.syncModuleDependencies(params) }
+        verify { mockLanguageServer.didChangeDependencyPaths(params) }
     }
 
     @Test
@@ -112,19 +110,17 @@ class DefaultModuleDependenciesServiceTest {
         // Arrange
         val module1 = mockk<Module>()
         val module2 = mockk<Module>()
-        val params1 = SyncModuleDependenciesParams(
+        val params1 = DidChangeDependencyPathsParams(
             moduleName = "module1",
-            programmingLanguage = "Java",
-            files = listOf("src/main1"),
-            dirs = listOf("lib1"),
+            runtimeLanguage = "java",
+            paths = listOf("/path/to/dependency1.jar"),
             includePatterns = emptyList(),
             excludePatterns = emptyList()
         )
-        val params2 = SyncModuleDependenciesParams(
+        val params2 = DidChangeDependencyPathsParams(
             moduleName = "module2",
-            programmingLanguage = "Java",
-            files = listOf("src/main2"),
-            dirs = listOf("lib2"),
+            runtimeLanguage = "python",
+            paths = listOf("/path/to/site-packages/package1"),
             includePatterns = emptyList(),
             excludePatterns = emptyList()
         )
@@ -138,41 +134,18 @@ class DefaultModuleDependenciesServiceTest {
 
         sut = DefaultModuleDependenciesService(project, mockk())
 
-        // Verify both modules were synced
-        verify { mockLanguageServer.syncModuleDependencies(params1) }
-        verify { mockLanguageServer.syncModuleDependencies(params2) }
-    }
-
-    @Test
-    fun `test rootsChanged with non-applicable module`() {
-        // Arrange
-        val module = mockk<Module>()
-
-        every { mockModuleManager.modules } returns arrayOf(module)
-
-        every {
-            EP_NAME.forEachExtensionSafe(any<Consumer<ModuleDependencyProvider>>())
-        } answers {
-            val consumer = firstArg<Consumer<ModuleDependencyProvider>>()
-            every { mockDependencyProvider.isApplicable(any()) } returns false
-            consumer.accept(mockDependencyProvider)
-        }
-
-        sut = DefaultModuleDependenciesService(project, mockk())
-
-        // Verify no sync occurred
-        verify(exactly = 0) { mockLanguageServer.syncModuleDependencies(any()) }
+        verify { mockLanguageServer.didChangeDependencyPaths(params1) }
+        verify { mockLanguageServer.didChangeDependencyPaths(params2) }
     }
 
     @Test
     fun `test rootsChanged withFileTypesChange`() {
         // Arrange
         val module = mockk<Module>()
-        val params = SyncModuleDependenciesParams(
+        val params = DidChangeDependencyPathsParams(
             moduleName = "testModule",
-            programmingLanguage = "Java",
-            files = listOf("src/main"),
-            dirs = listOf("lib"),
+            runtimeLanguage = "java",
+            paths = listOf("/path/to/dependency.jar"),
             includePatterns = emptyList(),
             excludePatterns = emptyList()
         )
@@ -182,22 +155,19 @@ class DefaultModuleDependenciesServiceTest {
 
         sut = DefaultModuleDependenciesService(project, mockk())
 
-        // Act
         sut.rootsChanged(event)
 
-        // Verify sync occurred once - once on init and rootsChange ignores
-        verify(exactly = 1) { mockLanguageServer.syncModuleDependencies(params) }
+        verify(exactly = 1) { mockLanguageServer.didChangeDependencyPaths(params) }
     }
 
     @Test
     fun `test rootsChanged after module changes`() {
         // Arrange
         val module = mockk<Module>()
-        val params = SyncModuleDependenciesParams(
+        val params = DidChangeDependencyPathsParams(
             moduleName = "testModule",
-            programmingLanguage = "Java",
-            files = listOf("src/main"),
-            dirs = listOf("lib"),
+            runtimeLanguage = "java",
+            paths = listOf("/path/to/dependency.jar"),
             includePatterns = emptyList(),
             excludePatterns = emptyList()
         )
@@ -210,14 +180,12 @@ class DefaultModuleDependenciesServiceTest {
 
         sut = DefaultModuleDependenciesService(project, mockk())
 
-        // Act
         sut.rootsChanged(event)
 
-        // Verify sync occurred twice - once on init and once after rootsChanged
-        verify(exactly = 2) { mockLanguageServer.syncModuleDependencies(params) }
+        verify(exactly = 2) { mockLanguageServer.didChangeDependencyPaths(params) }
     }
 
-    private fun prepDependencyProvider(moduleParamPairs: List<Pair<Module, SyncModuleDependenciesParams>>) {
+    private fun prepDependencyProvider(moduleParamPairs: List<Pair<Module, DidChangeDependencyPathsParams>>) {
         every { mockModuleManager.modules } returns moduleParamPairs.map { it.first }.toTypedArray()
 
         every {

@@ -7,6 +7,9 @@ import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.LanguageServer
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.GetConfigurationFromServerParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.UpdateConfigurationParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.SyncModuleDependenciesParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.identity.GetSsoTokenParams
@@ -17,6 +20,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.identity.L
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.identity.SsoTokenChangedParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.identity.UpdateProfileParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.identity.UpdateProfileResult
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -24,8 +28,8 @@ import java.util.concurrent.CompletableFuture
  */
 @Suppress("unused")
 interface AmazonQLanguageServer : LanguageServer {
-    @JsonNotification("aws/syncModuleDependencies")
-    fun syncModuleDependencies(params: SyncModuleDependenciesParams): CompletableFuture<Unit>
+    @JsonNotification("aws/didChangeDependencyPaths")
+    fun didChangeDependencyPaths(params: DidChangeDependencyPathsParams): CompletableFuture<Unit>
 
     @JsonRequest("aws/credentials/token/update")
     fun updateTokenCredentials(payload: UpdateCredentialsPayload): CompletableFuture<ResponseMessage>
@@ -47,4 +51,10 @@ interface AmazonQLanguageServer : LanguageServer {
 
     @JsonNotification("aws/identity/ssoTokenChanged")
     fun ssoTokenChanged(params: SsoTokenChangedParams): CompletableFuture<Unit>
+
+    @JsonRequest("aws/getConfigurationFromServer")
+    fun getConfigurationFromServer(params: GetConfigurationFromServerParams): CompletableFuture<LspServerConfigurations>
+
+    @JsonRequest("aws/updateConfiguration")
+    fun updateConfiguration(params: UpdateConfigurationParams): CompletableFuture<LspServerConfigurations>
 }

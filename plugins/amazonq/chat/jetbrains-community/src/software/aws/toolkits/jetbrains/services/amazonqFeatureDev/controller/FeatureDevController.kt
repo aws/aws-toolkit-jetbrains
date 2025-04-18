@@ -29,10 +29,12 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.common.util.selectFolder
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
-import software.aws.toolkits.jetbrains.services.amazonq.RepoSizeError
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
+import software.aws.toolkits.jetbrains.services.amazonq.project.RepoSizeError
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.DEFAULT_RETRY_LIMIT
@@ -93,6 +95,17 @@ class FeatureDevController(
     private val chatSessionStorage: ChatSessionStorage,
     private val authController: AuthController = AuthController(),
 ) : InboundAppMessagesHandler {
+
+    init {
+        context.project.messageBus.connect().subscribe(
+            QRegionProfileSelectedListener.TOPIC,
+            object : QRegionProfileSelectedListener {
+                override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
+                    chatSessionStorage.deleteAllSessions()
+                }
+            }
+        )
+    }
 
     val messenger = context.messagesFromAppToUi
     val toolWindow = ToolWindowManager.getInstance(context.project).getToolWindow(AmazonQToolWindowFactory.WINDOW_ID)
@@ -249,7 +262,7 @@ class FeatureDevController(
         when (sessionState) {
             is PrepareCodeGenerationState -> {
                 runInEdt {
-                    val existingFile = VfsUtil.findRelativeFile(message.filePath, session.context.selectedSourceFolder)
+                    val existingFile = VfsUtil.findRelativeFile(message.filePath, session.context.addressableRoot)
 
                     val leftDiffContent = if (existingFile == null) {
                         EmptyContent()
@@ -336,7 +349,7 @@ class FeatureDevController(
             var pollAttempt = 0
             val pollDelayMs = 10L
             while (pollAttempt < 5) {
-                val file = VfsUtil.findRelativeFile(message.filePath, session.context.selectedSourceFolder)
+                val file = VfsUtil.findRelativeFile(message.filePath, session.context.addressableRoot)
                 // Wait for the file to be created and/or updated to the new content:
                 if (file != null && file.content() == filePaths.find { it.zipFilePath == fileToUpdate }?.fileContent) {
                     // Open a diff, showing the changes have been applied and the file now has identical left/right state:
@@ -729,7 +742,7 @@ class FeatureDevController(
 
             val codeWhispererSettings = CodeWhispererSettings.getInstance().getAutoBuildSetting()
             val hasDevFile = session.context.checkForDevFile()
-            val isPromptedForAutoBuildFeature = codeWhispererSettings.containsKey(session.context.getWorkspaceRoot())
+            val isPromptedForAutoBuildFeature = codeWhispererSettings.containsKey(session.context.workspaceRoot.path)
 
             if (hasDevFile && !isPromptedForAutoBuildFeature) {
                 promptAllowQCommandsConsent(messenger, tabId)
@@ -812,8 +825,7 @@ class FeatureDevController(
 
     private suspend fun modifyDefaultSourceFolder(tabId: String) {
         val session = getSessionInfo(tabId)
-        val currentSourceFolder = session.context.selectedSourceFolder
-        val projectRoot = session.context.projectRoot
+        val workspaceRoot = session.context.workspaceRoot
 
         val modifyFolderFollowUp = FollowUp(
             pillText = message("amazonqFeatureDev.follow_up.modify_source_folder"),
@@ -825,7 +837,7 @@ class FeatureDevController(
         var reason: ModifySourceFolderErrorReason? = null
 
         withContext(EDT) {
-            val selectedFolder = selectFolder(context.project, currentSourceFolder)
+            val selectedFolder = selectFolder(context.project, workspaceRoot)
             // No folder was selected
             if (selectedFolder == null) {
                 logger.info { "Cancelled dialog and not selected any folder" }
@@ -839,8 +851,7 @@ class FeatureDevController(
                 return@withContext
             }
 
-            // The folder is not in the workspace
-            if (!selectedFolder.path.startsWith(projectRoot.path)) {
+            if (!selectedFolder.path.startsWith(workspaceRoot.path)) {
                 logger.info { "Selected folder not in workspace: ${selectedFolder.path}" }
 
                 messenger.sendAnswer(
@@ -860,7 +871,7 @@ class FeatureDevController(
 
             logger.info { "Selected correct folder inside workspace: ${selectedFolder.path}" }
 
-            session.context.selectedSourceFolder = selectedFolder
+            session.context.selectionRoot = selectedFolder
             result = Result.Succeeded
 
             messenger.sendAnswer(

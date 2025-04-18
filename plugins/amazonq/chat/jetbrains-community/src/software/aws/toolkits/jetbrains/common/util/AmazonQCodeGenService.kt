@@ -20,9 +20,9 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.common.clients.AmazonQCodeGenerateClient
 import software.aws.toolkits.jetbrains.common.session.Intent
-import software.aws.toolkits.jetbrains.services.amazonqDoc.docServiceError
 import software.aws.toolkits.jetbrains.services.amazonqDoc.session.DocGenerationStreamResult
 import software.aws.toolkits.jetbrains.services.amazonqDoc.session.ExportDocTaskAssistResultArchiveStreamResult
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ApiException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ExportParseException
@@ -30,11 +30,12 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevOperation
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ServiceException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileCorruptedException
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
-import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AmazonqTelemetry
 import software.aws.toolkits.telemetry.MetricResult
+import software.aws.toolkits.jetbrains.services.amazonqDoc.ContentLengthException as DocContentLengthException
 
 class AmazonQCodeGenService(val proxyClient: AmazonQCodeGenerateClient, val project: Project) {
     fun createConversation(): String {
@@ -70,8 +71,14 @@ class AmazonQCodeGenService(val proxyClient: AmazonQCodeGenerateClient, val proj
                 if (e is ServiceQuotaExceededException) {
                     throw MonthlyConversationLimitError(errMssg, operation = FeatureDevOperation.CreateConversation.toString(), desc = null, cause = e.cause)
                 }
+                throw ApiException.of(e.statusCode(), errMssg, operation = FeatureDevOperation.CreateConversation.toString(), desc = null, e.cause)
             }
-            throw FeatureDevException(errMssg, operation = FeatureDevOperation.CreateConversation.toString(), desc = null, e.cause)
+            throw ServiceException(
+                errMssg ?: "CreateTaskAssistConversation failed",
+                operation = FeatureDevOperation.CreateConversation.toString(),
+                desc = null,
+                e.cause
+            )
         } finally {
             AmazonqTelemetry.startConversationInvoke(
                 amazonqConversationId = conversationId,
@@ -107,12 +114,14 @@ class AmazonQCodeGenService(val proxyClient: AmazonQCodeGenerateClient, val proj
 
                 if (e is ValidationException && e.message?.contains("Invalid contentLength") == true) {
                     if (featureName?.equals("docGeneration") == true) {
-                        throw docServiceError(message("amazonqDoc.exception.content_length_error"))
+                        throw DocContentLengthException(operation = FeatureDevOperation.CreateUploadUrl.toString(), desc = null, cause = e.cause)
                     }
                     throw ContentLengthException(operation = FeatureDevOperation.CreateUploadUrl.toString(), desc = null, cause = e.cause)
                 }
+
+                throw ApiException.of(e.statusCode(), errMssg, operation = FeatureDevOperation.CreateUploadUrl.toString(), desc = null, e.cause)
             }
-            throw FeatureDevException(errMssg, operation = FeatureDevOperation.CreateUploadUrl.toString(), desc = null, e.cause)
+            throw ServiceException(errMssg ?: "CreateUploadUrl failed", operation = FeatureDevOperation.CreateUploadUrl.toString(), desc = null, e.cause)
         }
     }
 
@@ -152,12 +161,21 @@ class AmazonQCodeGenService(val proxyClient: AmazonQCodeGenerateClient, val proj
                 ) {
                     throw CodeIterationLimitException(operation = FeatureDevOperation.StartTaskAssistCodeGeneration.toString(), desc = null, e.cause)
                 } else if (e is ValidationException && e.message?.contains("repo size is exceeding the limits") == true) {
+                    if (intent == Intent.DOC) {
+                        throw DocContentLengthException(operation = FeatureDevOperation.CreateUploadUrl.toString(), desc = null, cause = e.cause)
+                    }
                     throw ContentLengthException(operation = FeatureDevOperation.StartTaskAssistCodeGeneration.toString(), desc = null, cause = e.cause)
                 } else if (e is ValidationException && e.message?.contains("zipped file is corrupted") == true) {
                     throw ZipFileCorruptedException(operation = FeatureDevOperation.StartTaskAssistCodeGeneration.toString(), desc = null, e.cause)
                 }
+                throw ApiException.of(e.statusCode(), errMssg, operation = FeatureDevOperation.StartTaskAssistCodeGeneration.toString(), desc = null, e.cause)
             }
-            throw FeatureDevException(errMssg, operation = FeatureDevOperation.StartTaskAssistCodeGeneration.toString(), desc = null, e.cause)
+            throw ServiceException(
+                errMssg ?: "StartTaskAssistCodeGeneration failed",
+                operation = FeatureDevOperation.StartTaskAssistCodeGeneration.toString(),
+                desc = null,
+                e.cause
+            )
         }
     }
 
@@ -180,8 +198,14 @@ class AmazonQCodeGenService(val proxyClient: AmazonQCodeGenerateClient, val proj
             if (e is CodeWhispererRuntimeException) {
                 errMssg = e.awsErrorDetails().errorMessage()
                 logger.warn(e) { "GetTaskAssistCodeGeneration failed for request:  ${e.requestId()}" }
+                throw ApiException.of(e.statusCode(), errMssg, operation = FeatureDevOperation.GetTaskAssistCodeGeneration.toString(), desc = null, e.cause)
             }
-            throw FeatureDevException(errMssg, operation = FeatureDevOperation.GetTaskAssistCodeGeneration.toString(), desc = null, e.cause)
+            throw ServiceException(
+                errMssg ?: "GetTaskAssistCodeGeneration failed",
+                operation = FeatureDevOperation.GetTaskAssistCodeGeneration.toString(),
+                desc = null,
+                e.cause
+            )
         }
     }
 
@@ -198,7 +222,12 @@ class AmazonQCodeGenService(val proxyClient: AmazonQCodeGenerateClient, val proj
                 errMssg = e.awsErrorDetails().errorMessage()
                 logger.warn(e) { "ExportTaskAssistArchiveResult failed for request: ${e.requestId()}" }
             }
-            throw FeatureDevException(errMssg, operation = FeatureDevOperation.ExportTaskAssistArchiveResult.toString(), desc = null, e.cause)
+            throw ServiceException(
+                errMssg ?: "ExportTaskAssistArchive failed",
+                operation = FeatureDevOperation.ExportTaskAssistArchiveResult.toString(),
+                desc = null,
+                e.cause
+            )
         }
 
         val parsedResult: ExportDocTaskAssistResultArchiveStreamResult

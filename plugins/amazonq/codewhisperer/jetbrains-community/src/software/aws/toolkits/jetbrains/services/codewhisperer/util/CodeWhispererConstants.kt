@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.util
 import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.editor.markup.EffectType
 import com.intellij.openapi.editor.markup.TextAttributes
-import com.intellij.openapi.util.registry.Registry
 import com.intellij.ui.JBColor
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
@@ -154,12 +153,8 @@ object CodeWhispererConstants {
     }
 
     object Config {
-        val CODEWHISPERER_ENDPOINT
-            get() = Registry.get("amazon.q.endpoint").asString()
-
         const val CODEWHISPERER_IDPOOL_ID = "us-east-1:70717e99-906f-4add-908c-bd9074a2f5b9"
         val Sigv4ClientRegion = Region.US_EAST_1
-        val BearerClientRegion = Region.US_EAST_1
     }
 
     object Customization {
@@ -188,6 +183,8 @@ object CodeWhispererConstants {
         const val NUMBER_OF_LINE_IN_CHUNK = 50
         const val NUMBER_OF_CHUNK_TO_FETCH = 3
         const val MAX_TOTAL_LENGTH = 20480
+        const val MAX_LENGTH_PER_CHUNK = 10240
+        const val MAX_CONTEXT_COUNT = 5
     }
 
     object Utg {

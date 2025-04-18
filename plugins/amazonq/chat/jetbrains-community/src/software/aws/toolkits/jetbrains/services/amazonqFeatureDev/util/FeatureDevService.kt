@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.project.Project
@@ -17,6 +18,7 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ApiException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.CodeIterationLimitException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ContentLengthException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ExportParseException
@@ -24,6 +26,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevOperation
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.MonthlyConversationLimitError
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ServiceException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.ZipFileCorruptedException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.clients.FeatureDevClient
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeGenerationStreamResult
@@ -35,6 +38,9 @@ import software.aws.toolkits.telemetry.Result
 private val logger = getLogger<FeatureDevClient>()
 
 class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project) {
+    private val objectMapper = jacksonObjectMapper()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+
     fun createConversation(): String {
         val startTime = System.currentTimeMillis()
         var failureReason: String? = null
@@ -75,8 +81,15 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
                 ) {
                     throw MonthlyConversationLimitError(errMssg, operation = FeatureDevOperation.CreateConversation.toString(), desc = null, cause = e.cause)
                 }
+
+                throw ApiException.of(e.statusCode(), errMssg, operation = FeatureDevOperation.CreateConversation.toString(), desc = null, e.cause)
             }
-            throw FeatureDevException(errMssg, operation = FeatureDevOperation.CreateConversation.toString(), desc = null, e.cause)
+            throw ServiceException(
+                errMssg ?: "CreateTaskAssistConversation failed",
+                operation = FeatureDevOperation.CreateConversation.toString(),
+                desc = null,
+                e.cause
+            )
         } finally {
             AmazonqTelemetry.startConversationInvoke(
                 amazonqConversationId = conversationId,
@@ -114,8 +127,10 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
                 if (e is ValidationException && e.message?.contains("Invalid contentLength") == true) {
                     throw ContentLengthException(operation = FeatureDevOperation.CreateUploadUrl.toString(), desc = null, cause = e.cause)
                 }
+
+                throw ApiException.of(e.statusCode(), errMssg, operation = FeatureDevOperation.CreateUploadUrl.toString(), desc = null, e.cause)
             }
-            throw FeatureDevException(errMssg, operation = FeatureDevOperation.CreateUploadUrl.toString(), desc = null, e.cause)
+            throw ServiceException(errMssg ?: "CreateUploadUrl failed", operation = FeatureDevOperation.CreateUploadUrl.toString(), desc = null, e.cause)
         }
     }
 
@@ -162,8 +177,14 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
                 } else if (e is ValidationException && e.message?.contains("zipped file is corrupted") == true) {
                     throw ZipFileCorruptedException(operation = FeatureDevOperation.StartTaskAssistCodeGeneration.toString(), desc = null, e.cause)
                 }
+                throw ApiException.of(e.statusCode(), errMssg, operation = FeatureDevOperation.StartTaskAssistCodeGeneration.toString(), desc = null, e.cause)
             }
-            throw FeatureDevException(errMssg, operation = FeatureDevOperation.StartTaskAssistCodeGeneration.toString(), desc = null, e.cause)
+            throw ServiceException(
+                errMssg ?: "StartTaskAssistCodeGeneration failed",
+                operation = FeatureDevOperation.StartTaskAssistCodeGeneration.toString(),
+                desc = null,
+                e.cause
+            )
         }
     }
 
@@ -186,8 +207,14 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
             if (e is CodeWhispererRuntimeException) {
                 errMssg = e.awsErrorDetails().errorMessage()
                 logger.warn(e) { "GetTaskAssistCodeGeneration failed for request:  ${e.requestId()}" }
+                throw ApiException.of(e.statusCode(), errMssg, operation = FeatureDevOperation.GetTaskAssistCodeGeneration.toString(), desc = null, e.cause)
             }
-            throw FeatureDevException(errMssg, operation = FeatureDevOperation.GetTaskAssistCodeGeneration.toString(), desc = null, e.cause)
+            throw ServiceException(
+                errMssg ?: "GetTaskAssistCodeGeneration failed",
+                operation = FeatureDevOperation.GetTaskAssistCodeGeneration.toString(),
+                desc = null,
+                e.cause
+            )
         }
     }
 
@@ -204,13 +231,18 @@ class FeatureDevService(val proxyClient: FeatureDevClient, val project: Project)
                 errMssg = e.awsErrorDetails().errorMessage()
                 logger.warn(e) { "ExportTaskAssistArchiveResult failed for request: ${e.requestId()}" }
             }
-            throw FeatureDevException(errMssg, operation = FeatureDevOperation.ExportTaskAssistArchiveResult.toString(), desc = null, e.cause)
+            throw ServiceException(
+                errMssg ?: "ExportTaskAssistArchive failed",
+                operation = FeatureDevOperation.ExportTaskAssistArchiveResult.toString(),
+                desc = null,
+                e.cause
+            )
         }
 
         val parsedResult: ExportTaskAssistResultArchiveStreamResult
         try {
             val result = exportResponse.reduce { acc, next -> acc + next } // To map the result it is needed to combine the  full byte array
-            parsedResult = jacksonObjectMapper().readValue(result)
+            parsedResult = objectMapper.readValue(result)
         } catch (e: Exception) {
             logger.error(e) { "Failed to parse downloaded code results" }
             throw ExportParseException(operation = FeatureDevOperation.ExportTaskAssistArchiveResult.toString(), desc = null, e.cause)

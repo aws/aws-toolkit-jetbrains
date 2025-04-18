@@ -24,6 +24,7 @@ import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.TextDocumentItem
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil.toUriString
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class TextDocumentServiceHandler(
@@ -51,12 +52,35 @@ class TextDocumentServiceHandler(
             FileDocumentManagerListener.TOPIC,
             this
         )
+
+        // open files on startup
+        val fileEditorManager = FileEditorManager.getInstance(project)
+        fileEditorManager.openFiles.forEach { file ->
+            handleFileOpened(file)
+        }
+    }
+
+    private fun handleFileOpened(file: VirtualFile) {
+        AmazonQLspService.executeIfRunning(project) { languageServer ->
+            toUriString(file)?.let { uri ->
+                languageServer.textDocumentService.didOpen(
+                    DidOpenTextDocumentParams().apply {
+                        textDocument = TextDocumentItem().apply {
+                            this.uri = uri
+                            text = file.inputStream.readAllBytes().decodeToString()
+                            languageId = file.fileType.name.lowercase()
+                            version = file.modificationStamp.toInt()
+                        }
+                    }
+                )
+            }
+        }
     }
 
     override fun beforeDocumentSaving(document: Document) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             val file = FileDocumentManager.getInstance().getFile(document) ?: return@executeIfRunning
-            file.toNioPath().toUri().toString().takeIf { it.isNotEmpty() }?.let { uri ->
+            toUriString(file)?.let { uri ->
                 languageServer.textDocumentService.didSave(
                     DidSaveTextDocumentParams().apply {
                         textDocument = TextDocumentIdentifier().apply {
@@ -74,7 +98,7 @@ class TextDocumentServiceHandler(
             pluginAwareExecuteOnPooledThread {
                 events.filterIsInstance<VFileContentChangeEvent>().forEach { event ->
                     val document = FileDocumentManager.getInstance().getCachedDocument(event.file) ?: return@forEach
-                    event.file.toNioPath().toUri().toString().takeIf { it.isNotEmpty() }?.let { uri ->
+                    toUriString(event.file)?.let { uri ->
                         languageServer.textDocumentService.didChange(
                             DidChangeTextDocumentParams().apply {
                                 textDocument = VersionedTextDocumentIdentifier().apply {
@@ -98,18 +122,7 @@ class TextDocumentServiceHandler(
         source: FileEditorManager,
         file: VirtualFile,
     ) {
-        AmazonQLspService.executeIfRunning(project) { languageServer ->
-            file.toNioPath().toUri().toString().takeIf { it.isNotEmpty() }?.let { uri ->
-                languageServer.textDocumentService.didOpen(
-                    DidOpenTextDocumentParams().apply {
-                        textDocument = TextDocumentItem().apply {
-                            this.uri = uri
-                            text = file.inputStream.readAllBytes().decodeToString()
-                        }
-                    }
-                )
-            }
-        }
+        handleFileOpened(file)
     }
 
     override fun fileClosed(
@@ -117,7 +130,7 @@ class TextDocumentServiceHandler(
         file: VirtualFile,
     ) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
-            file.toNioPath().toUri().toString().takeIf { it.isNotEmpty() }?.let { uri ->
+            toUriString(file)?.let { uri ->
                 languageServer.textDocumentService.didClose(
                     DidCloseTextDocumentParams().apply {
                         textDocument = TextDocumentIdentifier().apply {

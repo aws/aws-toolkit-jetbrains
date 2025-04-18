@@ -24,7 +24,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -264,7 +264,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         launcherHandler.startNotify()
 
         launcher = LSPLauncher.Builder<AmazonQLanguageServer>()
-            .setLocalService(AmazonQLanguageClientImpl())
+            .setLocalService(AmazonQLanguageClientImpl(project))
             .setRemoteInterface(AmazonQLanguageServer::class.java)
             .configureGson {
                 // TODO: maybe need adapter for initialize:
@@ -316,11 +316,18 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             initializeResult
         }
 
-        DefaultAuthCredentialsService(project, encryptionManager, this)
-        TextDocumentServiceHandler(project, this)
-        WorkspaceServiceHandler(project, this)
-        cs.launch {
-            DefaultModuleDependenciesService(project, this@AmazonQServerInstance)
+        // invokeOnCompletion results in weird lock/timeout error
+        initializeResult.asCompletableFuture().handleAsync { r, ex ->
+            if (ex != null) {
+                return@handleAsync
+            }
+
+            this@AmazonQServerInstance.apply {
+                DefaultAuthCredentialsService(project, encryptionManager, this)
+                TextDocumentServiceHandler(project, this)
+                WorkspaceServiceHandler(project, this)
+                DefaultModuleDependenciesService(project, this)
+            }
         }
     }
 

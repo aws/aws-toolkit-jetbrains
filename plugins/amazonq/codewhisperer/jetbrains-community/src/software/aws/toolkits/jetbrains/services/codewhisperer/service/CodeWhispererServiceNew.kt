@@ -33,7 +33,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.core.util.DefaultSdkAutoConstructList
-import software.amazon.awssdk.services.codewhisperer.model.CodeWhispererException
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.FileContext
@@ -54,6 +53,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManagerNew
@@ -244,7 +244,8 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                 buildCodeWhispererRequest(
                     requestContext.fileContextInfo,
                     requestContext.awaitSupplementalContext(),
-                    requestContext.customizationArn
+                    requestContext.customizationArn,
+                    requestContext.profileArn
                 )
             )
 
@@ -409,10 +410,6 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                     latencyContext
                 )
                 return
-            } else if (e is CodeWhispererException) {
-                requestId = e.requestId().orEmpty()
-                sessionId = e.awsErrorDetails().sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
-                displayMessage = e.awsErrorDetails().errorMessage() ?: message("codewhisperer.trigger.error.server_side")
             } else if (e is CodeWhispererRuntimeException) {
                 requestId = e.requestId().orEmpty()
                 sessionId = e.awsErrorDetails().sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
@@ -712,7 +709,9 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         // 5. customization
         val customizationArn = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn
 
-        return RequestContextNew(project, editor, triggerTypeInfo, caretPosition, fileContext, supplementalContext, connection, customizationArn)
+        val profileArn = QRegionProfileManager.getInstance().activeProfile(project)?.arn
+
+        return RequestContextNew(project, editor, triggerTypeInfo, caretPosition, fileContext, supplementalContext, connection, customizationArn, profileArn)
     }
 
     fun validateResponse(response: GenerateCompletionsResponse): GenerateCompletionsResponse {
@@ -830,6 +829,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
             fileContextInfo: FileContextInfo,
             supplementalContext: SupplementalContextInfo?,
             customizationArn: String?,
+            profileArn: String?,
         ): GenerateCompletionsRequest {
             val programmingLanguage = ProgrammingLanguage.builder()
                 .languageName(fileContextInfo.programmingLanguage.toCodeWhispererRuntimeLanguage().languageId)
@@ -858,6 +858,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                 .referenceTrackerConfiguration { it.recommendationsWithReferences(includeCodeWithReference) }
                 .customizationArn(customizationArn)
                 .optOutPreference(getTelemetryOptOutPreference())
+                .profileArn(profileArn)
                 .build()
         }
     }
@@ -872,6 +873,7 @@ data class RequestContextNew(
     private val supplementalContextDeferred: Deferred<SupplementalContextInfo?>,
     val connection: ToolkitConnection?,
     val customizationArn: String?,
+    val profileArn: String?,
 ) {
     // TODO: should make the entire getRequestContext() suspend function instead of making supplemental context only
     var supplementalContext: SupplementalContextInfo? = null

@@ -22,6 +22,8 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.calculateIfIamIdentityCenterConnection
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.utils.notifyInfo
@@ -48,6 +50,7 @@ private fun notifyInvalidSelectedCustomization(project: Project) {
 }
 
 private fun notifyNewCustomization(project: Project) {
+    if (ApplicationManager.getApplication().isUnitTestMode) return
     notifyInfo(
         title = message("codewhisperer.custom.dialog.title"),
         content = message("codewhisperer.notification.custom.new_customization"),
@@ -81,6 +84,18 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
 
     private var customizationArnOverrideV2: String? = null
 
+    init {
+        ApplicationManager.getApplication().messageBus.connect(this).subscribe(
+            QRegionProfileSelectedListener.TOPIC,
+            object : QRegionProfileSelectedListener {
+                override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
+                    pluginAwareExecuteOnPooledThread {
+                        CodeWhispererModelConfigurator.getInstance().listCustomizations(project, passive = true)
+                    }
+                }
+            }
+        )
+    }
     override fun showConfigDialog(project: Project) {
         runInEdt {
             calculateIfIamIdentityCenterConnection(project) {
