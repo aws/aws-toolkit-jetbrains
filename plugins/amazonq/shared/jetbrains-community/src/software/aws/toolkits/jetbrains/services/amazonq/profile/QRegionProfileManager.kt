@@ -182,7 +182,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
     }
 
     inline fun <reified T : SdkClient> getQClient(project: Project): T = getQClient(project, null, T::class)
-    inline fun <reified T : SdkClient> getQClient(project: Project, profile: QRegionProfile?): T = getQClient(project, profile, T::class)
+    inline fun <reified T : SdkClient> getQClient(project: Project, profile: QRegionProfile): T = getQClient(project, profile, T::class)
 
     fun <T : SdkClient> getQClient(project: Project, profile: QRegionProfile?, sdkClass: KClass<T>): T {
         val settings = getQClientSettings(project, profile)

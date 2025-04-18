@@ -8,7 +8,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.profile
  * 'auth' -> users change the profile through webview profile selector page
  * 'update' -> plugin auto select the profile on users' behalf as there is only 1 profile
  * 'reload' -> on plugin restart, plugin will try to reload previous selected profile
- * - 'customization' -> users selected a customization tied to a different profile, triggering a profile switch
+ * 'customization' -> users selected a customization tied to a different profile, triggering a profile switch
  */
 enum class QProfileSwitchIntent(val value: String) {
     User("user"),

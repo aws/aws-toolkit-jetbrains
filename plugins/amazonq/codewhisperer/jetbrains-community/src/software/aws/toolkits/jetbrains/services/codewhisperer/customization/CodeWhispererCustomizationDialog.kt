@@ -109,6 +109,8 @@ class CodeWhispererCustomizationDialog(
             RadioButtonOption.Customization -> run {
                 CodeWhispererModelConfigurator.getInstance().switchCustomization(project, modal.selectedCustomization?.customization)
                 notifyCustomizationIsSelected(project, modal.selectedCustomization)
+                // Switch profile if it doesn't match the customization's profile.
+                // Customizations are profile-scoped and must be used under the correct context.
                 if (modal.selectedCustomization?.customization?.profile?.arn != QRegionProfileManager.getInstance().activeProfile(project)?.arn) {
                     QRegionProfileManager.getInstance().switchProfile(
                         project,
