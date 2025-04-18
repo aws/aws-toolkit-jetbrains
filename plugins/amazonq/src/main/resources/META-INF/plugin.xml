@@ -94,6 +94,12 @@
                      defaultValue="false" restartRequired="true"/>
     </extensions>
 
+    <extensionPoints>
+        <extensionPoint qualifiedName="software.aws.toolkits.jetbrains.moduleDependencyProvider"
+                        interface="software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.ModuleDependencyProvider"
+                        dynamic="true"/>
+    </extensionPoints>
+
     <xi:include href="/META-INF/module-amazonq.xml" />
 
     <xi:include href="/META-INF/change-notes.xml" xpointer="xpointer(/idea-plugin/*)">

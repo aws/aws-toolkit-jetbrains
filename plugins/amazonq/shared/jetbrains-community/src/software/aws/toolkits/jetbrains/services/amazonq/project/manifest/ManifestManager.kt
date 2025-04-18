@@ -3,8 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.project.manifest
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.util.SystemInfo
@@ -18,10 +18,9 @@ class ManifestManager {
     val currentVersion = "0.1.49"
     val currentOs = getOs()
     private val arch = CpuArch.CURRENT
-    private val mapper = jacksonObjectMapper()
+    private val mapper = jacksonObjectMapper().apply { configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) }
 
     data class TargetContent(
-        @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("filename")
         val filename: String? = null,
         @JsonProperty("url")
@@ -33,7 +32,6 @@ class ManifestManager {
     )
 
     data class VersionTarget(
-        @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("platform")
         val platform: String? = null,
         @JsonProperty("arch")
@@ -41,8 +39,8 @@ class ManifestManager {
         @JsonProperty("contents")
         val contents: List<TargetContent>? = emptyList(),
     )
+
     data class Version(
-        @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("serverVersion")
         val serverVersion: String? = null,
         @JsonProperty("isDelisted")
@@ -52,7 +50,6 @@ class ManifestManager {
     )
 
     data class Manifest(
-        @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("manifestSchemaVersion")
         val manifestSchemaVersion: String? = null,
         @JsonProperty("artifactId")
@@ -67,7 +64,7 @@ class ManifestManager {
 
     fun getManifest(): Manifest? = fetchFromRemoteAndSave()
 
-    private fun readManifestFile(content: String): Manifest? {
+    fun readManifestFile(content: String): Manifest? {
         try {
             return mapper.readValue<Manifest>(content)
         } catch (e: Exception) {
