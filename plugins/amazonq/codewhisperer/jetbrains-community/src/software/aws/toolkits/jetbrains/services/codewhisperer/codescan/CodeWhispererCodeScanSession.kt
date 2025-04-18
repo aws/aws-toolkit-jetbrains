@@ -361,6 +361,8 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             } else {
                 null
             }
+        }.filter {
+            it.isVisible
         }.onEach { issue ->
             // Add range highlighters for all the issues found.
             runInEdt {
