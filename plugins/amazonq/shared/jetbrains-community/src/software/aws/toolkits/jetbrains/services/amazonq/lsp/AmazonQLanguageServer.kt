@@ -40,5 +40,5 @@ interface AmazonQLanguageServer : LanguageServer {
     fun sendQuickAction(params: EncryptedQuickActionChatParams): CompletableFuture<String>
 
     @JsonNotification("aws/chat/feedback")
-    fun feedback(params: FeedbackParams):  CompletableFuture<Unit>
+    fun feedback(params: FeedbackParams): CompletableFuture<Unit>
 }

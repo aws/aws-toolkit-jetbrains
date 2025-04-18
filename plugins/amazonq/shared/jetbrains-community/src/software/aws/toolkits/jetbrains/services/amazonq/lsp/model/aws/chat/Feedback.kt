@@ -5,13 +5,13 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
 data class FeedbackNotification(
     val command: String,
-    val params: FeedbackParams
+    val params: FeedbackParams,
 )
 
 data class FeedbackParams(
     val tabId: String,
     val feedbackPayload: FeedbackPayload,
-    val eventId: String?
+    val eventId: String?,
 )
 
 data class FeedbackPayload(
