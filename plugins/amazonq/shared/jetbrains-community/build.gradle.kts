@@ -22,10 +22,5 @@ dependencies {
     implementation(libs.commons.collections)
     implementation(libs.nimbus.jose.jwt)
 
-    // FIX_WHEN_MIN_IS_242
-    if (providers.gradleProperty("ideProfileName").get() == "2024.1") {
-        implementation("org.eclipse.lsp4j:org.eclipse.lsp4j:0.24.0")
-    }
-
     testFixturesApi(testFixtures(project(":plugin-core:jetbrains-community")))
 }
