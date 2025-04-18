@@ -20,7 +20,6 @@ import com.intellij.util.xmlb.annotations.Property
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.calculateIfIamIdentityCenterConnection
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
@@ -110,7 +109,8 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
     override fun listCustomizations(project: Project, passive: Boolean): List<CustomizationUiItem>? =
         calculateIfIamIdentityCenterConnection(project) {
             // 1. fetch all profiles, invoke fetch customizations API and get result for each profile and aggregate all the results
-            val listAvailableProfilesResult = tryOrNull { QRegionProfileManager.getInstance().listRegionProfiles(project) }.orEmpty()
+            val listAvailableProfilesResult = QRegionProfileManager.getInstance().listRegionProfiles(project)
+                ?: error("No profiles available for the current project")
 
             val aggregatedCustomizations = listAvailableProfilesResult.flatMap { profile ->
                 runCatching {
