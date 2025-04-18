@@ -213,7 +213,8 @@ class CodeWhispererServiceTest {
                 connection = ToolkitConnectionManager.getInstance(projectRule.project).activeConnection(),
                 latencyContext = LatencyContext(),
                 customizationArn = "fake-arn",
-                profileArn = "fake-arn"
+                profileArn = "fake-arn",
+                workspaceId = null,
             )
         )
 
