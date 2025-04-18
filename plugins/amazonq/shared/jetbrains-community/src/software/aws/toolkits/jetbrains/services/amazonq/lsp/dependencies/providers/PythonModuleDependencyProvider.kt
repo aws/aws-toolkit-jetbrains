@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.providers
 
 import com.intellij.openapi.module.Module
-import com.intellij.openapi.roots.ModuleRootManager
 import com.jetbrains.python.packaging.management.PythonPackageManager
 import com.jetbrains.python.sdk.PythonSdkUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.ModuleDependencyProvider
@@ -15,31 +14,26 @@ internal class PythonModuleDependencyProvider : ModuleDependencyProvider {
         PythonSdkUtil.findPythonSdk(module) != null
 
     override fun createParams(module: Module): DidChangeDependencyPathsParams {
-        val sourceRoots = getSourceRoots(module)
         val dependencies = mutableListOf<String>()
 
         PythonSdkUtil.findPythonSdk(module)?.let { sdk ->
-            val packageManager = PythonPackageManager.forSdk(module.project, sdk)
-            packageManager.installedPackages.forEach { pkg ->
-                dependencies.add(pkg.name)
+            PythonSdkUtil.getSitePackagesDirectory(sdk)?.let { sitePackagesDir ->
+                val packageManager = PythonPackageManager.forSdk(module.project, sdk)
+                packageManager.installedPackages.forEach { pkg ->
+                    val packageDir = sitePackagesDir.findChild(pkg.name)
+                    if (packageDir != null) {
+                        dependencies.add(packageDir.path)
+                    }
+                }
             }
         }
 
         return DidChangeDependencyPathsParams(
-            moduleName = module.name,
-            programmingLanguage = "Python",
-            files = sourceRoots,
-            dirs = dependencies,
+            moduleName = getWorkspaceFolderPath(module),
+            runtimeLanguage = "python",
+            paths = dependencies,
             includePatterns = emptyList(),
             excludePatterns = emptyList()
         )
     }
-
-    private fun getSourceRoots(module: Module): List<String> =
-        ModuleRootManager.getInstance(module).contentEntries
-            .flatMap { contentEntry ->
-                contentEntry.sourceFolders
-                    .filter { !it.isTestSource }
-                    .mapNotNull { it.file?.path }
-            }
 }

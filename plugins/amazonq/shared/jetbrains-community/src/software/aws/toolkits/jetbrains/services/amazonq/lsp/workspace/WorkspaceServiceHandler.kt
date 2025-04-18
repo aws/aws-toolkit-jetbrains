@@ -20,6 +20,8 @@ import org.eclipse.lsp4j.CreateFilesParams
 import org.eclipse.lsp4j.DeleteFilesParams
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams
 import org.eclipse.lsp4j.DidChangeWorkspaceFoldersParams
+import org.eclipse.lsp4j.DidCloseTextDocumentParams
+import org.eclipse.lsp4j.DidOpenTextDocumentParams
 import org.eclipse.lsp4j.FileChangeType
 import org.eclipse.lsp4j.FileCreate
 import org.eclipse.lsp4j.FileDelete
@@ -28,6 +30,8 @@ import org.eclipse.lsp4j.FileOperationFilter
 import org.eclipse.lsp4j.FileRename
 import org.eclipse.lsp4j.InitializeResult
 import org.eclipse.lsp4j.RenameFilesParams
+import org.eclipse.lsp4j.TextDocumentIdentifier
+import org.eclipse.lsp4j.TextDocumentItem
 import org.eclipse.lsp4j.WorkspaceFolder
 import org.eclipse.lsp4j.WorkspaceFoldersChangeEvent
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
@@ -172,6 +176,31 @@ class WorkspaceServiceHandler(
 
                     val oldUri = toUriString(parentFile)?.let { parentUri -> "$parentUri/$oldFileName" }
                     val newUri = toUriString(renamedFile)
+
+                    if (!renamedFile.isDirectory) {
+                        oldUri?.let { uri ->
+                            languageServer.textDocumentService.didClose(
+                                DidCloseTextDocumentParams().apply {
+                                    textDocument = TextDocumentIdentifier().apply {
+                                        this.uri = uri
+                                    }
+                                }
+                            )
+                        }
+
+                        newUri?.let { uri ->
+                            languageServer.textDocumentService.didOpen(
+                                DidOpenTextDocumentParams().apply {
+                                    textDocument = TextDocumentItem().apply {
+                                        this.uri = uri
+                                        text = renamedFile.inputStream.readAllBytes().decodeToString()
+                                        languageId = renamedFile.fileType.name.lowercase()
+                                        version = renamedFile.modificationStamp.toInt()
+                                    }
+                                }
+                            )
+                        }
+                    }
 
                     FileRename().apply {
                         this.oldUri = oldUri

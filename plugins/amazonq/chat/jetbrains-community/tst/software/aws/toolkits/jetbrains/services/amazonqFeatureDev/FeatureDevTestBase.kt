@@ -65,6 +65,8 @@ open class FeatureDevTestBase(
     internal val otherStatus = "Other"
     internal val testTabId = "test-tab-id"
     internal val testFilePaths = mapOf(Pair("test.ts", "This is a comment"))
+    internal val testRunCommandLogPath = ".amazonq/dev/run_command.log"
+    internal val testLogPath = mapOf(Pair(testRunCommandLogPath, "This is a log"))
     internal val testDeletedFiles = listOf("deleted.ts")
     internal val testReferences = listOf(CodeReferenceGenerated())
     internal val testChecksumSha = "test-sha"

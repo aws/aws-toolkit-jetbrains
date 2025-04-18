@@ -38,7 +38,6 @@ import org.jetbrains.idea.maven.utils.MavenProgressIndicator.MavenProgressTracke
 import org.jetbrains.plugins.gradle.jvmcompat.GradleJvmSupportMatrix
 import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
-import org.junit.Assert.fail
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.inputStream
 import software.aws.toolkits.jetbrains.utils.rules.HeavyJavaCodeInsightTestFixtureRule
@@ -146,7 +145,7 @@ fun HeavyJavaCodeInsightTestFixtureRule.setUpGradleProject(compatibility: String
     ExternalSystemUtil.refreshProjects(importSpecBuilder)
 
     if (!error.isNull) {
-        fail("Import failed: " + error.get())
+        error("Import failed: " + error.get())
     }
 
     return lambdaClass
@@ -169,6 +168,14 @@ fun HeavyJavaCodeInsightTestFixtureRule.addBreakpoint() {
 
 private fun HeavyJavaCodeInsightTestFixtureRule.copyGradleFiles() {
     val gradleRoot = findGradlew()
+
+    // annoying and can't repro locally
+    val gradleWrapperHome = Paths.get(System.getProperty("user.home"), ".gradle", "wrapper").toRealPath()
+    if (gradleWrapperHome.exists()) {
+        println("Allowing vfs access to $gradleWrapperHome")
+        VfsRootAccess.allowRootAccess(this.fixture.testRootDisposable, gradleWrapperHome.toString())
+    }
+
     val gradleFiles = setOf("gradle/wrapper", "gradlew.bat", "gradlew")
 
     gradleFiles.forEach {

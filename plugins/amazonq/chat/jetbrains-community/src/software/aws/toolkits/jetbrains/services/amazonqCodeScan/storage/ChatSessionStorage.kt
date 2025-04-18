@@ -30,4 +30,8 @@ class ChatSessionStorage {
     fun changeAuthenticationNeededNotified(authNeededNotified: Boolean) {
         sessions.keys.forEach { sessions[it]?.authNeededNotified = authNeededNotified }
     }
+
+    fun deleteAllSessions() {
+        sessions.clear()
+    }
 }

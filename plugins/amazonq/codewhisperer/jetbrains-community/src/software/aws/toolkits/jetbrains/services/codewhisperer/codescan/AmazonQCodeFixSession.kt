@@ -14,6 +14,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeFixJobR
 import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeFixJobResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.Position
 import software.amazon.awssdk.services.codewhispererruntime.model.Range
+import software.amazon.awssdk.services.codewhispererruntime.model.RecommendationsWithReferencesPreference
 import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeFixJobRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeFixJobResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadContext
@@ -24,10 +25,12 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.putNextEntry
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererZipUploadManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.getTelemetryErrorMessage
+import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.nio.file.Path
@@ -146,6 +149,7 @@ class AmazonQCodeFixSession(val project: Project) {
                 .artifactType(artifactType)
                 .uploadIntent(UploadIntent.CODE_FIX_GENERATION)
                 .uploadContext(UploadContext.fromCodeFixUploadContext(CodeFixUploadContext.builder().codeFixName(codeFixName).build()))
+                .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
                 .build()
         )
     } catch (e: Exception) {
@@ -161,12 +165,20 @@ class AmazonQCodeFixSession(val project: Project) {
         codeFixName: String? = null,
         ruleId: String? = null,
     ): StartCodeFixJobResponse {
+        val includeCodeWithReference = if (CodeWhispererSettings.getInstance().isIncludeCodeWithReference()) {
+            RecommendationsWithReferencesPreference.ALLOW
+        } else {
+            RecommendationsWithReferencesPreference.BLOCK
+        }
+
         val request = StartCodeFixJobRequest.builder()
             .uploadId(uploadId)
             .snippetRange(snippetRange)
             .codeFixName(codeFixName)
             .ruleId(ruleId)
             .description(description)
+            .referenceTrackerConfiguration { it.recommendationsWithReferences(includeCodeWithReference) }
+            .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
             .build()
 
         return try {
@@ -191,6 +203,7 @@ class AmazonQCodeFixSession(val project: Project) {
 
             val request = GetCodeFixJobRequest.builder()
                 .jobId(jobId)
+                .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
                 .build()
 
             val response = clientAdaptor.getCodeFixJob(request)
@@ -217,7 +230,11 @@ class AmazonQCodeFixSession(val project: Project) {
     }
 
     private fun getCodeFixJob(jobId: String): GetCodeFixJobResponse {
-        val response = clientAdaptor.getCodeFixJob(GetCodeFixJobRequest.builder().jobId(jobId).build())
+        val response = clientAdaptor.getCodeFixJob(
+            GetCodeFixJobRequest.builder()
+                .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
+                .jobId(jobId).build()
+        )
         return response
     }
     private fun zipFile(file: Path): File = createTemporaryZipFile {

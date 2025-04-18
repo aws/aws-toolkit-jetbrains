@@ -7,7 +7,6 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.projectRoots.JavaSdkType
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.OrderRootType
-import com.intellij.openapi.vfs.VfsUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.ModuleDependencyProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
 
@@ -16,31 +15,21 @@ internal class JavaModuleDependencyProvider : ModuleDependencyProvider {
         ModuleRootManager.getInstance(module).sdk?.sdkType is JavaSdkType
 
     override fun createParams(module: Module): DidChangeDependencyPathsParams {
-        val sourceRoots = getSourceRoots(module)
         val dependencies = mutableListOf<String>()
 
         ModuleRootManager.getInstance(module).orderEntries().forEachLibrary { library ->
-            library.getUrls(OrderRootType.CLASSES).forEach { url ->
-                dependencies.add(VfsUtil.urlToPath(url))
+            library.getFiles(OrderRootType.CLASSES).forEach { file ->
+                dependencies.add(file.path.removeSuffix("!/"))
             }
             true
         }
 
         return DidChangeDependencyPathsParams(
-            moduleName = module.name,
-            programmingLanguage = "Java",
-            files = sourceRoots,
-            dirs = dependencies,
+            moduleName = getWorkspaceFolderPath(module),
+            runtimeLanguage = "java",
+            paths = dependencies,
             includePatterns = emptyList(),
             excludePatterns = emptyList()
         )
     }
-
-    private fun getSourceRoots(module: Module): List<String> =
-        ModuleRootManager.getInstance(module).contentEntries
-            .flatMap { contentEntry ->
-                contentEntry.sourceFolders
-                    .filter { !it.isTestSource }
-                    .mapNotNull { it.file?.path }
-            }
 }

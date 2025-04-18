@@ -84,6 +84,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                                 CodeWhispererLspConfiguration(
                                     shouldShareData = CodeWhispererSettings.getInstance().isMetricOptIn(),
                                     shouldShareCodeReferences = CodeWhispererSettings.getInstance().isIncludeCodeWithReference(),
+                                    shouldEnableWorkspaceContext = CodeWhispererSettings.getInstance().isWorkspaceContextEnabled()
                                 )
                             )
                         }

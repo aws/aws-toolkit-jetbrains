@@ -15,13 +15,13 @@ import com.intellij.ide.starter.models.TestCase
 import com.intellij.ide.starter.project.LocalProjectInfo
 import com.intellij.ide.starter.runner.CurrentTestMethod
 import com.intellij.ide.starter.runner.Starter
+import com.intellij.util.io.createParentDirectories
 import org.junit.jupiter.api.Test
 import org.kodein.di.DI
 import org.kodein.di.bindSingleton
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
-import kotlin.io.path.createParentDirectories
 import kotlin.io.path.writeText
 
 class OfflineAmazonQInlineCompletionTest {
@@ -46,7 +46,7 @@ class OfflineAmazonQInlineCompletionTest {
             LocalProjectInfo(
                 Paths.get("tstData", "Hello")
             )
-        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
         Paths.get(System.getProperty("user.home"), ".aws", "sso", "cache", "ee1d2538cb8d358377d7661466c866af747a8a3f.json")
             .createParentDirectories()
             .writeText(
