@@ -63,12 +63,14 @@ class AmazonQLanguageClientImplTest {
     @Test
     fun `configuration for codeWhisperer respects opt-out`() {
         CodeWhispererSettings.getInstance().toggleMetricOptIn(false)
+        CodeWhispererSettings.getInstance().toggleWorkspaceContextEnabled(true)
         assertThat(sut.configuration(configurationParams("aws.codeWhisperer")).get())
             .singleElement()
             .isEqualTo(
                 CodeWhispererLspConfiguration(
                     shouldShareData = false,
-                    shouldShareCodeReferences = false
+                    shouldShareCodeReferences = false,
+                    shouldEnableWorkspaceContext = true
                 )
             )
     }
@@ -76,12 +78,28 @@ class AmazonQLanguageClientImplTest {
     @Test
     fun `configuration for codeWhisperer respects opt-in`() {
         CodeWhispererSettings.getInstance().toggleMetricOptIn(true)
+        CodeWhispererSettings.getInstance().toggleWorkspaceContextEnabled(true)
         assertThat(sut.configuration(configurationParams("aws.codeWhisperer")).get())
             .singleElement()
             .isEqualTo(
                 CodeWhispererLspConfiguration(
                     shouldShareData = true,
-                    shouldShareCodeReferences = false
+                    shouldShareCodeReferences = false,
+                    shouldEnableWorkspaceContext = true
+                )
+            )
+    }
+
+    @Test
+    fun `configuration for workspace context respects opt-in`() {
+        CodeWhispererSettings.getInstance().toggleWorkspaceContextEnabled(false)
+        assertThat(sut.configuration(configurationParams("aws.codeWhisperer")).get())
+            .singleElement()
+            .isEqualTo(
+                CodeWhispererLspConfiguration(
+                    shouldShareData = true,
+                    shouldShareCodeReferences = false,
+                    shouldEnableWorkspaceContext = false
                 )
             )
     }

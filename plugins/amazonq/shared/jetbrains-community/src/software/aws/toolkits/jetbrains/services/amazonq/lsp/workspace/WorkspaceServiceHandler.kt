@@ -156,6 +156,8 @@ class WorkspaceServiceHandler(
                                     textDocument = TextDocumentItem().apply {
                                         this.uri = uri
                                         text = renamedFile.inputStream.readAllBytes().decodeToString()
+                                        languageId = renamedFile.fileType.name.lowercase()
+                                        version = renamedFile.modificationStamp.toInt()
                                     }
                                 }
                             )
