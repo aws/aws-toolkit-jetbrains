@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Q panel will get stuck while signin if users have multiple windows"
-}
