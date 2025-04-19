@@ -19,8 +19,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credential
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import java.util.concurrent.CompletableFuture
-import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
-
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 /**
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
  */
@@ -94,7 +93,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                             add(
                                 AmazonQLspConfiguration(
                                     optOutTelemetry = AwsSettings.getInstance().isTelemetryEnabled,
-                                    customization = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn
+                                    customization = QRegionProfileManager.getInstance().activeProfile(project)?.arn
                                 )
                             )
                         }

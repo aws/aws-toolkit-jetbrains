@@ -22,6 +22,10 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
+import io.mockk.mockkObject
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
+
 
 @ExtendWith(ApplicationExtension::class)
 class AmazonQLanguageClientImplTest {
@@ -127,25 +131,61 @@ class AmazonQLanguageClientImplTest {
     }
 
     @Test
-    fun `configuration for Amazon Q respects telemetry enabled`() {
-        AwsSettings.getInstance().isTelemetryEnabled = true
+    fun `configuration for Amazon Q respects telemetry disabled`() {
+        // Mock ToolkitConnectionManager
+        val mockConnectionManager = mockk<ToolkitConnectionManager>()
+        every { project.service<ToolkitConnectionManager>() } returns mockConnectionManager
+
+        // Mock QRegionProfileManager
+        val mockProfileManager = mockk<QRegionProfileManager>()
+        mockkObject(QRegionProfileManager.Companion)
+        every { QRegionProfileManager.getInstance() } returns mockProfileManager
+
+        // Mock the active profile with an ARN
+        val mockProfile = mockk<QRegionProfile> {
+            every { arn } returns "test:arn:123"
+        }
+        every { mockProfileManager.activeProfile(project) } returns mockProfile
+
+        // Mock AWS Settings
+        AwsSettings.getInstance().isTelemetryEnabled = false
+
         assertThat(sut.configuration(configurationParams("aws.q")).get())
             .singleElement()
             .isEqualTo(
                 AmazonQLspConfiguration(
-                    optOutTelemetry = true
+                    optOutTelemetry = false,
+                    customization = "test:arn:123"
                 )
             )
     }
 
     @Test
-    fun `configuration for Amazon Q respects telemetry disabled`() {
-        AwsSettings.getInstance().isTelemetryEnabled = false
+    fun `configuration for Amazon Q respects telemetry enabled`() {
+        // Mock ToolkitConnectionManager
+        val mockConnectionManager = mockk<ToolkitConnectionManager>()
+        every { project.service<ToolkitConnectionManager>() } returns mockConnectionManager
+
+        // Mock QRegionProfileManager
+        val mockProfileManager = mockk<QRegionProfileManager>()
+        mockkObject(QRegionProfileManager.Companion)
+        every { QRegionProfileManager.getInstance() } returns mockProfileManager
+
+        // Mock the active profile with an ARN
+        val mockProfile = mockk<QRegionProfile> {
+            every { arn } returns "test:arn:123"
+        }
+        every { mockProfileManager.activeProfile(project) } returns mockProfile
+
+        // Mock AWS Settings
+        AwsSettings.getInstance().isTelemetryEnabled = true
+
         assertThat(sut.configuration(configurationParams("aws.q")).get())
             .singleElement()
             .isEqualTo(
                 AmazonQLspConfiguration(
-                    optOutTelemetry = false
+                    optOutTelemetry = true,
+                    customization = "test:arn:123"
                 )
             )
     }

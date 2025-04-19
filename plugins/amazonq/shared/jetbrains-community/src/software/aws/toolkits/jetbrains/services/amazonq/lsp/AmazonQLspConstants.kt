@@ -7,7 +7,7 @@ object AmazonQLspConstants {
     const val AWS_BUILDER_ID_URL = "https://view.awsapps.com/start"
     const val LSP_CW_CONFIGURATION_KEY = "aws.codeWhisperer"
     const val LSP_CW_OPT_OUT_KEY = "shareCodeWhispererContentWithAWS"
-    const val LSP_CODE_REFERENCES_OPT_OUT_KEY = "includeSuggestionsWithCodeReferences
+    const val LSP_CODE_REFERENCES_OPT_OUT_KEY = "includeSuggestionsWithCodeReferences"
     const val LSP_Q_CONFIGURATION_KEY = "aws.q"
     const val LSP_OPT_OUT_TELEMETRY_CONFIGURATION_KEY = "optOutTelemetry"
     const val LSP_ENABLE_TELEMETRY_EVENTS_CONFIGURATION_KEY = "enableTelemetryEventsToDestination"
