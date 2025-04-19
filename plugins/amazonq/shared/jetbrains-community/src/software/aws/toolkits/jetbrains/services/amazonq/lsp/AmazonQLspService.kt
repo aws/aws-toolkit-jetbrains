@@ -71,6 +71,7 @@ import java.io.PipedOutputStream
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.nio.charset.StandardCharsets
+import java.util.Collections
 import java.util.concurrent.Future
 import kotlin.time.Duration.Companion.seconds
 
@@ -109,7 +110,7 @@ internal class LSPProcessListener : ProcessListener {
 
 @Service(Service.Level.PROJECT)
 class AmazonQLspService(private val project: Project, private val cs: CoroutineScope) : Disposable {
-    private val lspInitializedMessageReceivedListener = mutableListOf<AmazonQInitializeMessageReceivedListener>()
+    private val lspInitializedMessageReceivedListener = Collections.synchronizedList(mutableListOf<AmazonQInitializeMessageReceivedListener>())
     fun addLspInitializeMessageListener(listener: AmazonQInitializeMessageReceivedListener) = lspInitializedMessageReceivedListener.add(listener)
     fun notifyInitializeMessageReceived() = lspInitializedMessageReceivedListener.forEach { it() }
 
