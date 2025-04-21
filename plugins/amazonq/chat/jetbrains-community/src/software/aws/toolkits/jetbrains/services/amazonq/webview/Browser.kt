@@ -43,7 +43,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                 "mynah",
                 AssetResourceHandler.AssetResourceHandlerFactory(),
             )
-        AmazonQLspService.getInstance(project).addServerStartedListener {
+        AmazonQLspService.getInstance(project).addLspInitializeMessageListener {
             loadWebView(
                 isCodeTransformAvailable,
                 isFeatureDevAvailable,

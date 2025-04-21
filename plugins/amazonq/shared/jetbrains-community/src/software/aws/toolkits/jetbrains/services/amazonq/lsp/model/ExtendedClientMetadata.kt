@@ -11,6 +11,15 @@ data class ExtendedClientMetadata(
 
 data class AwsMetadata(
     val clientInfo: ClientInfoMetadata,
+    val awsClientCapabilities: AwsClientCapabilities,
+)
+
+data class AwsClientCapabilities(
+    val q: DeveloperProfiles,
+)
+
+data class DeveloperProfiles(
+    val developerProfiles: Boolean,
 )
 
 data class ClientInfoMetadata(
@@ -37,6 +46,11 @@ fun createExtendedClientMetadata(): ExtendedClientMetadata {
                 clientId = metadata.clientId,
                 version = metadata.parentProductVersion,
                 name = metadata.parentProduct
+            ),
+            awsClientCapabilities = AwsClientCapabilities(
+                q = DeveloperProfiles(
+                    developerProfiles = true
+                )
             )
         )
     )

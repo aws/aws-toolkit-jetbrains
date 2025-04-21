@@ -6,24 +6,25 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat
 import com.google.gson.Gson
 import com.google.gson.TypeAdapter
 import com.google.gson.TypeAdapterFactory
+import com.google.gson.reflect.TypeToken
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 import org.eclipse.lsp4j.InitializeResult
 import java.io.IOException
 
 class AmazonQLspTypeAdapterFactory : TypeAdapterFactory {
-    override fun <T : Any?> create(gson: Gson, type: com.google.gson.reflect.TypeToken<T>): TypeAdapter<T>? {
+    override fun <T : Any?> create(gson: Gson, type: TypeToken<T>): TypeAdapter<T>? {
         if (type.rawType === InitializeResult::class.java) {
             val delegate: TypeAdapter<InitializeResult?> = gson.getDelegateAdapter(this, type) as TypeAdapter<InitializeResult?>
 
             return object : TypeAdapter<InitializeResult>() {
                 @Throws(IOException::class)
-                override fun write(out: JsonWriter?, value: InitializeResult?) {
+                override fun write(out: JsonWriter, value: InitializeResult?) {
                     delegate.write(out, value)
                 }
 
                 @Throws(IOException::class)
-                override fun read(`in`: JsonReader?): InitializeResult =
+                override fun read(`in`: JsonReader): InitializeResult =
                     gson.fromJson(`in`, AwsExtendedInitializeResult::class.java)
             } as TypeAdapter<T>
         }
@@ -31,7 +32,7 @@ class AmazonQLspTypeAdapterFactory : TypeAdapterFactory {
     }
 }
 
-class AwsExtendedInitializeResult : InitializeResult() {
+class AwsExtendedInitializeResult(awsServerCapabilities: AwsServerCapabilities? = null) : InitializeResult() {
     private var awsServerCapabilities: AwsServerCapabilities? = null
 
     fun getAwsServerCapabilities(): AwsServerCapabilities? = awsServerCapabilities

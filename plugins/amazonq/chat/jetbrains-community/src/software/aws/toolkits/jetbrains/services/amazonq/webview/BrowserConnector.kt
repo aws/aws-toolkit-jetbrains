@@ -152,7 +152,7 @@ class BrowserConnector(
     private fun handleFlareChatMessages(browser: Browser, node: JsonNode) {
         when (node.command) {
             SEND_CHAT_COMMAND_PROMPT -> {
-                val requestFromUi = serializer.deserializeChatMessages(node, SendChatPromptRequest::class.java)
+                val requestFromUi = serializer.deserializeChatMessages<SendChatPromptRequest>(node)
                 val chatPrompt = ChatPrompt(
                     requestFromUi.params.prompt.prompt,
                     requestFromUi.params.prompt.escapedPrompt,
@@ -190,7 +190,7 @@ class BrowserConnector(
                 showResult(result, partialResultToken, tabId, encryptionManager, browser)
             }
             CHAT_QUICK_ACTION -> {
-                val requestFromUi = serializer.deserializeChatMessages(node, QuickChatActionRequest::class.java)
+                val requestFromUi = serializer.deserializeChatMessages<QuickChatActionRequest>(node)
                 val tabId = requestFromUi.params.tabId
                 val quickActionParams = requestFromUi.params
                 val partialResultToken = chatCommunicationManager.addPartialChatMessage(tabId)

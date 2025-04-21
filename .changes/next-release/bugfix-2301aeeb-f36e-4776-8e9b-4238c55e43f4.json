@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "/dev: Fix prompt to enable devfile build not triggering when devfile is present."
+}

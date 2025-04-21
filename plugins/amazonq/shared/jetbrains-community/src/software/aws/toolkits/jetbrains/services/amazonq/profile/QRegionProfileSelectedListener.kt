@@ -8,7 +8,7 @@ import com.intellij.util.messages.Topic
 
 interface QRegionProfileSelectedListener {
     companion object {
-        @Topic.ProjectLevel
+        @Topic.AppLevel
         val TOPIC = Topic.create("QRegionProfileSelected", QRegionProfileSelectedListener::class.java)
     }
 

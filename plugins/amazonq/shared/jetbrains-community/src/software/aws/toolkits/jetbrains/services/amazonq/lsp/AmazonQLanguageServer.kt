@@ -9,8 +9,11 @@ import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.LanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.GetConfigurationFromServerParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.UpdateConfigurationParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
 import java.util.concurrent.CompletableFuture
@@ -32,12 +35,15 @@ interface AmazonQLanguageServer : LanguageServer {
     @JsonRequest("aws/getConfigurationFromServer")
     fun getConfigurationFromServer(params: GetConfigurationFromServerParams): CompletableFuture<LspServerConfigurations>
 
-    @JsonRequest("aws/chat/sendChatPrompt")
-    fun sendChatPrompt(params: EncryptedChatParams): CompletableFuture<String>
+    @JsonRequest("aws/updateConfiguration")
+    fun updateConfiguration(params: UpdateConfigurationParams): CompletableFuture<LspServerConfigurations>
 
-    @JsonRequest("aws/chat/sendChatQuickAction")
-    fun sendQuickAction(params: EncryptedQuickActionChatParams): CompletableFuture<String>
+    @JsonRequest(SEND_CHAT_COMMAND_PROMPT)
+    fun sendChatPrompt(params: EncryptedChatParams): CompletableFuture<String>
 
     @JsonNotification("aws/chat/ready")
     fun chatReady(): CompletableFuture<Unit>
+
+    @JsonRequest(CHAT_QUICK_ACTION)
+    fun sendQuickAction(params: EncryptedQuickActionChatParams): CompletableFuture<String>
 }
