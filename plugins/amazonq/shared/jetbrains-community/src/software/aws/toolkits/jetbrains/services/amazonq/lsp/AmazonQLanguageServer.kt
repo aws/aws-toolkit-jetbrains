@@ -11,6 +11,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.GetConfigu
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.UpdateConfigurationParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_READY
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
@@ -41,7 +42,7 @@ interface AmazonQLanguageServer : LanguageServer {
     @JsonRequest(SEND_CHAT_COMMAND_PROMPT)
     fun sendChatPrompt(params: EncryptedChatParams): CompletableFuture<String>
 
-    @JsonNotification("aws/chat/ready")
+    @JsonNotification(CHAT_READY)
     fun chatReady(): CompletableFuture<Unit>
 
     @JsonRequest(CHAT_QUICK_ACTION)
