@@ -4,9 +4,9 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
 data class TabEventRequest(
-    val command: String,
-    val params: TabEventParams,
-)
+    override val command: String,
+    override val params: TabEventParams,
+) : ChatNotification<TabEventParams>
 
 data class TabEventParams(
     val tabId: String,

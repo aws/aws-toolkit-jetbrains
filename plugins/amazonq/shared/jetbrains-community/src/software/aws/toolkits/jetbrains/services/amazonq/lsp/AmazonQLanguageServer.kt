@@ -11,6 +11,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.GetConfigu
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.UpdateConfigurationParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_ADD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_CHANGE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_REMOVE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
@@ -42,13 +45,13 @@ interface AmazonQLanguageServer : LanguageServer {
     @JsonRequest(SEND_CHAT_COMMAND_PROMPT)
     fun sendChatPrompt(params: EncryptedChatParams): CompletableFuture<String>
 
-    @JsonNotification("aws/chat/tabAdd")
+    @JsonNotification(CHAT_TAB_ADD)
     fun tabAdd(params: TabEventParams): CompletableFuture<Unit>
 
-    @JsonNotification("aws/chat/tabRemove")
+    @JsonNotification(CHAT_TAB_REMOVE)
     fun tabRemove(params: TabEventParams): CompletableFuture<Unit>
 
-    @JsonNotification("aws/chat/tabChange")
+    @JsonNotification(CHAT_TAB_CHANGE)
     fun tabChange(params: TabEventParams): CompletableFuture<Unit>
 
     @JsonRequest(CHAT_QUICK_ACTION)
