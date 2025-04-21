@@ -43,6 +43,7 @@ import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureContext
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
@@ -83,6 +84,7 @@ class CodeWhispererModelConfiguratorTest {
     private lateinit var mockClient: CodeWhispererRuntimeClient
     private lateinit var abManager: CodeWhispererFeatureConfigService
     private lateinit var mockClintAdaptor: CodeWhispererClientAdaptor
+    private lateinit var mockQRegionProfileManager: QRegionProfileManager
 
     @Before
     fun setup() {
@@ -125,6 +127,11 @@ class CodeWhispererModelConfiguratorTest {
 
         mockClintAdaptor = mock()
         projectRule.project.registerServiceInstance(CodeWhispererClientAdaptor::class.java, mockClintAdaptor)
+
+        mockQRegionProfileManager = mock {
+            on { listRegionProfiles(any()) }.thenReturn(listOf(QRegionProfile("fake_name", "fake_arn")))
+        }
+        ApplicationManager.getApplication().replaceService(QRegionProfileManager::class.java, mockQRegionProfileManager, disposableRule.disposable)
     }
 
     @Test
