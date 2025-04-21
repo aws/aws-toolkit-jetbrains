@@ -19,6 +19,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.SystemInfo
+import com.intellij.util.animation.consumer
 import com.intellij.util.io.await
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -44,6 +45,7 @@ import org.eclipse.lsp4j.jsonrpc.Launcher.Builder
 import org.eclipse.lsp4j.jsonrpc.MessageConsumer
 import org.eclipse.lsp4j.jsonrpc.messages.Message
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
+import org.eclipse.lsp4j.launch.LSPLauncher
 import org.slf4j.event.Level
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -69,6 +71,7 @@ import java.io.PipedOutputStream
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.nio.charset.StandardCharsets
+import java.util.Collections
 import java.util.concurrent.Future
 import kotlin.time.Duration.Companion.seconds
 
@@ -107,9 +110,9 @@ internal class LSPProcessListener : ProcessListener {
 
 @Service(Service.Level.PROJECT)
 class AmazonQLspService(private val project: Project, private val cs: CoroutineScope) : Disposable {
-    private val serverStartedListener = mutableListOf<AmazonQServerStartedListener>()
-    fun addServerStartedListener(listener: AmazonQServerStartedListener) = serverStartedListener.add(listener)
-    fun notifyServerStarted() = serverStartedListener.forEach { it() }
+    private val lspInitializedMessageReceivedListener = Collections.synchronizedList(mutableListOf<AmazonQInitializeMessageReceivedListener>())
+    fun addLspInitializeMessageListener(listener: AmazonQInitializeMessageReceivedListener) = lspInitializedMessageReceivedListener.add(listener)
+    fun notifyInitializeMessageReceived() = lspInitializedMessageReceivedListener.forEach { it() }
 
     private var instance: Deferred<AmazonQServerInstance>
     val capabilities
@@ -275,23 +278,18 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         launcherHandler.addProcessListener(inputWrapper)
         launcherHandler.startNotify()
 
-        class AmazonQServerBuilder : Builder<AmazonQLanguageServer>() {
-            private val customMessageTracer = MessageTracer()
-
-            override fun wrapMessageConsumer(consumer: MessageConsumer?): MessageConsumer =
-                super.wrapMessageConsumer { message ->
-                    customMessageTracer.trace("INCOMING", message)
+        launcher = LSPLauncher.Builder<AmazonQLanguageServer>()
+            .wrapMessages { consumer ->
+                MessageConsumer {
+                        message ->
                     if (message is ResponseMessage && message.result is AwsExtendedInitializeResult) {
                         val result = message.result as AwsExtendedInitializeResult
                         AwsServerCapabilitiesProvider.getInstance(project).setAwsServerCapabilities(result.getAwsServerCapabilities())
-                        AmazonQLspService.getInstance(project).notifyServerStarted()
+                        AmazonQLspService.getInstance(project).notifyInitializeMessageReceived()
                     }
                     consumer?.consume(message)
-                    customMessageTracer.trace("PROCESSED", message)
                 }
-        }
-
-        launcher = AmazonQServerBuilder()
+            }
             .setLocalService(AmazonQLanguageClientImpl(project))
             .setRemoteInterface(AmazonQLanguageServer::class.java)
             .configureGson {
@@ -392,4 +390,4 @@ private class AmazonQServerInstance(private val project: Project, private val cs
     }
 }
 
-typealias AmazonQServerStartedListener = () -> Unit
+typealias AmazonQInitializeMessageReceivedListener = () -> Unit

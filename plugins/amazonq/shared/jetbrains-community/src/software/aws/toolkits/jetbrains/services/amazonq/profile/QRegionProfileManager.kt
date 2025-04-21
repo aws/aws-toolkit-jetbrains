@@ -144,7 +144,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
             }
         }
 
-        project.messageBus
+        ApplicationManager.getApplication().messageBus
             .syncPublisher(QRegionProfileSelectedListener.TOPIC)
             .onProfileSelected(project, newProfile)
     }
