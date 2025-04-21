@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
 import org.eclipse.lsp4j.Position
@@ -217,19 +216,19 @@ class BrowserConnector(
                 showResult(result, partialResultToken, tabId, encryptionManager, browser)
             }
             CHAT_LINK_CLICK -> {
-                handleUiRequest<LinkClickNotification, LinkClickParams>(node) { server, params ->
+                handleChatNotification<LinkClickNotification, LinkClickParams>(node) { server, params ->
                     server.linkClick(params)
                 }
             }
 
             CHAT_INFO_LINK_CLICK -> {
-                handleUiRequest<InfoLinkClickNotification, InfoLinkClickParams>(node) { server, params ->
+                handleChatNotification<InfoLinkClickNotification, InfoLinkClickParams>(node) { server, params ->
                     server.infoLinkClick(params)
                 }
             }
 
             CHAT_SOURCE_LINK_CLICK -> {
-                handleUiRequest<SourceLinkClickNotification, SourceLinkClickParams>(node) { server, params ->
+                handleChatNotification<SourceLinkClickNotification, SourceLinkClickParams>(node) { server, params ->
                     server.sourceLinkClick(params)
                 }
             }
@@ -255,7 +254,7 @@ class BrowserConnector(
         }
     }
 
-    private inline fun <reified T, R> handleUiRequest(
+    private inline fun <reified T, R> handleChatNotification(
         node: JsonNode,
         crossinline serverAction: (server: AmazonQLanguageServer, params: R) -> CompletableFuture<*>,
     ): CompletableFuture<*> where T : ChatNotification<R> {
