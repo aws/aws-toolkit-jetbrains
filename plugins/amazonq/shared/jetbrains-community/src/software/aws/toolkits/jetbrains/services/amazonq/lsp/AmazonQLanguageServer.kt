@@ -7,6 +7,9 @@ import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.LanguageServer
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.GetConfigurationFromServerParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.UpdateConfigurationParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
@@ -29,4 +32,10 @@ interface AmazonQLanguageServer : LanguageServer {
 
     @JsonNotification("aws/credentials/token/delete")
     fun deleteTokenCredentials(): CompletableFuture<Unit>
+
+    @JsonRequest("aws/getConfigurationFromServer")
+    fun getConfigurationFromServer(params: GetConfigurationFromServerParams): CompletableFuture<LspServerConfigurations>
+
+    @JsonRequest("aws/updateConfiguration")
+    fun updateConfiguration(params: UpdateConfigurationParams): CompletableFuture<LspServerConfigurations>
 }

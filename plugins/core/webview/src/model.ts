@@ -1,14 +1,22 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-export type BrowserSetupData = {
+export type AuthSetupMessageFromIde = {
     stage: Stage,
     regions: Region[],
     idcInfo: IdcInfo,
     cancellable: boolean,
     feature: string,
-    existConnections: AwsBearerTokenConnection[]
+    existConnections: AwsBearerTokenConnection[],
 }
+
+export type ListProfilesMessageFromIde = {
+    stage: Stage,
+    status: 'succeeded' | 'failed' | 'pending',
+    profiles: Profile[],
+    errorMessage: string
+}
+
 
 // plugin interface [AwsBearerTokenConnection]
 export interface AwsBearerTokenConnection {
@@ -18,6 +26,7 @@ export interface AwsBearerTokenConnection {
     scopes: string[],
     id: string
 }
+
 export const SONO_URL = "https://view.awsapps.com/start"
 
 export type Stage =
@@ -26,7 +35,8 @@ export type Stage =
     'CONNECTED' |
     'AUTHENTICATING' |
     'AWS_PROFILE' |
-    'REAUTH'
+    'REAUTH' |
+    'PROFILE_SELECT'
 
 export type Feature = 'Q' | 'codecatalyst' | 'awsExplorer'
 
@@ -50,7 +60,28 @@ export interface State {
     lastLoginIdcInfo: IdcInfo,
     feature: Feature,
     cancellable: boolean,
-    existingConnections: AwsBearerTokenConnection[]
+    existingConnections: AwsBearerTokenConnection[],
+    listProfilesResult: ListProfileResult | undefined,
+    selectedProfile: Profile | undefined
+}
+
+export interface ListProfileResult {
+    status: 'succeeded' | 'failed' | 'pending'
+}
+
+export class ListProfileSuccessResult implements ListProfileResult {
+    status: 'succeeded' = 'succeeded'
+    constructor(readonly profiles: Profile[]) {}
+}
+
+export class ListProfileFailureResult implements ListProfileResult {
+    status: 'failed' = 'failed'
+    constructor(readonly errorMessage: string) {}
+}
+
+export class ListProfilePendingResult implements ListProfileResult {
+    status: 'pending' = 'pending'
+    constructor() {}
 }
 
 export enum LoginIdentifier {
@@ -66,6 +97,15 @@ export interface LoginOption {
 
     requiresBrowser(): boolean
 }
+
+export interface Profile {
+    profileName: string
+    accountId: string
+    region: string
+    arn: String
+}
+
+export const GENERIC_PROFILE_LOAD_ERROR = "We couldn't load your Q Developer profiles. Please try again.";
 
 export class LongLivedIAM implements LoginOption {
     id: LoginIdentifier = LoginIdentifier.IAM_CREDENTIAL

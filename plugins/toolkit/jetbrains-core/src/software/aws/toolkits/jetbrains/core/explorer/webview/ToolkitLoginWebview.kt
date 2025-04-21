@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.core.explorer.webview
 
+import com.intellij.ide.BrowserUtil
 import com.intellij.ide.ui.LafManagerListener
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -60,6 +61,7 @@ import software.aws.toolkits.jetbrains.utils.isTookitConnected
 import software.aws.toolkits.telemetry.FeatureId
 import software.aws.toolkits.telemetry.UiTelemetry
 import java.awt.event.ActionListener
+import java.net.URI
 import javax.swing.JButton
 import javax.swing.JComponent
 
@@ -242,6 +244,18 @@ class ToolkitWebviewBrowser(val project: Project, private val parentDisposable: 
                 } else {
                     UiTelemetry.click(project, signInOption)
                 }
+            }
+
+            is BrowserMessage.SwitchProfile -> {}
+
+            is BrowserMessage.ListProfiles -> {}
+
+            is BrowserMessage.PublishWebviewTelemetry -> {
+                publishTelemetry(message)
+            }
+
+            is BrowserMessage.OpenUrl -> {
+                BrowserUtil.browse(URI(message.externalLink))
             }
         }
     }
