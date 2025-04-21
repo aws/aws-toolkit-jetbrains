@@ -8,3 +8,10 @@ data class WorkspaceInfo(val workspaceRoot: String, val workspaceId: String)
 
 // This represents the entire array
 data class LspServerConfigurations(val workspaces: List<WorkspaceInfo>)
+
+data class UpdateConfigurationParams(
+    val section: String,
+    val settings: LSPAny,
+)
+
+typealias LSPAny = Any?

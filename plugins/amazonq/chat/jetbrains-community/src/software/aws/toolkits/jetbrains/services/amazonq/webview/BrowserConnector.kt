@@ -28,6 +28,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_COPY_CODE_TO_CLIPBOARD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatParams
@@ -153,7 +154,7 @@ class BrowserConnector(
     private fun handleFlareChatMessages(browser: Browser, node: JsonNode) {
         when (node.command) {
             SEND_CHAT_COMMAND_PROMPT -> {
-                val requestFromUi = serializer.deserializeChatMessages(node, SendChatPromptRequest::class.java)
+                val requestFromUi = serializer.deserializeChatMessages<SendChatPromptRequest>(node)
                 val chatPrompt = ChatPrompt(
                     requestFromUi.params.prompt.prompt,
                     requestFromUi.params.prompt.escapedPrompt,
@@ -191,7 +192,7 @@ class BrowserConnector(
                 showResult(result, partialResultToken, tabId, encryptionManager, browser)
             }
             CHAT_QUICK_ACTION -> {
-                val requestFromUi = serializer.deserializeChatMessages(node, QuickChatActionRequest::class.java)
+                val requestFromUi = serializer.deserializeChatMessages<QuickChatActionRequest>(node)
                 val tabId = requestFromUi.params.tabId
                 val quickActionParams = requestFromUi.params
                 val partialResultToken = chatCommunicationManager.addPartialChatMessage(tabId)
@@ -232,6 +233,9 @@ class BrowserConnector(
                 isPartialResult = false
             )
             browser.postChat(messageToChat)
+                showResult(result, partialResultToken, tabId, encryptionManager, browser)
+            }
         }
+
+
     }
-}
