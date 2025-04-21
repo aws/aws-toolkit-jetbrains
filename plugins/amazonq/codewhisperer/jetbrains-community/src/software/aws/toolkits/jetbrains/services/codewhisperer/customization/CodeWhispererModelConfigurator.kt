@@ -149,10 +149,17 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
             activeCustomization(project)?.let { activeCustom ->
                 if (aggregatedCustomizations.isEmpty()) {
                     invalidateSelectedAndNotify(project)
-                } else if (!aggregatedCustomizations.any { latestCustom -> latestCustom.arn == activeCustom.arn } ||
-                    (activeCustom.profile != null && activeCustom.profile != QRegionProfileManager.getInstance().activeProfile(project))
-                ) {
-                    invalidateSelectedAndNotify(project)
+                } else {
+                    if (activeCustom.profile == null) {
+                        aggregatedCustomizations.find { latestCustom -> latestCustom.arn == activeCustom.arn }?.profile?.let { matchedProfile ->
+                            activeCustom.profile = matchedProfile
+                        }
+                    }
+                    if (!aggregatedCustomizations.any { latestCustom -> latestCustom.arn == activeCustom.arn } ||
+                        (activeCustom.profile != null && activeCustom.profile != QRegionProfileManager.getInstance().activeProfile(project))
+                    ) {
+                        invalidateSelectedAndNotify(project)
+                    }
                 }
             }
 
