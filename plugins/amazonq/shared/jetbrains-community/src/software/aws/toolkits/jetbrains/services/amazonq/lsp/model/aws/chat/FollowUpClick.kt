@@ -4,9 +4,9 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
 data class FollowUpClickNotification(
-    val command: String,
-    val params: FollowUpClickParams,
-)
+    override val command: String,
+    override val params: FollowUpClickParams,
+) : ChatNotification<FollowUpClickParams>
 
 data class FollowUpClickParams(
     val tabId: String,
