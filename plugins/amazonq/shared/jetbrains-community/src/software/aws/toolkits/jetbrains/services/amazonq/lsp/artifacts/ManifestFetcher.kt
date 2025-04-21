@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
+import com.intellij.openapi.util.registry.Registry
 import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.deleteIfExists
 import software.aws.toolkits.core.utils.error
@@ -24,8 +25,8 @@ class ManifestFetcher(
     companion object {
         private val logger = getLogger<ManifestFetcher>()
 
-        private const val DEFAULT_MANIFEST_URL =
-            "https://aws-toolkit-language-servers.amazonaws.com/remoteWorkspaceContext/0/manifest.json"
+        private val DEFAULT_MANIFEST_URL =
+            Registry.get("amazon.q.flare.endpoint").asString()
 
         private val DEFAULT_MANIFEST_PATH: Path = getToolkitsCommonCacheRoot()
             .resolve("aws")
