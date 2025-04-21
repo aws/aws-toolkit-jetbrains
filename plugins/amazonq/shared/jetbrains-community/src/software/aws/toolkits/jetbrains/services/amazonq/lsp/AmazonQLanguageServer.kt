@@ -10,6 +10,7 @@ import org.eclipse.lsp4j.services.LanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.GetConfigurationFromServerParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.UpdateConfigurationParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_COPY_CODE_TO_CLIPBOARD_NOTIFICATION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyCodeToClipboardParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
@@ -42,7 +43,7 @@ interface AmazonQLanguageServer : LanguageServer {
     @JsonRequest(SEND_CHAT_COMMAND_PROMPT)
     fun sendChatPrompt(params: EncryptedChatParams): CompletableFuture<String>
 
-    @JsonNotification("aws/chat/copyCodeToClipboard")
+    @JsonNotification(CHAT_COPY_CODE_TO_CLIPBOARD_NOTIFICATION)
     fun copyCodeToClipboard(params: CopyCodeToClipboardParams): CompletableFuture<Unit>
 
     @JsonRequest(CHAT_QUICK_ACTION)

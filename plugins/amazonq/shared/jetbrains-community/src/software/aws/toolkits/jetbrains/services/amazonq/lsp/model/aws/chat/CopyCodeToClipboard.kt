@@ -4,9 +4,9 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
 data class CopyCodeToClipboardNotification(
-    val command: String,
-    val params: CopyCodeToClipboardParams,
-)
+    override val command: String,
+    override val params: CopyCodeToClipboardParams,
+) : ChatNotification<CopyCodeToClipboardParams>
 
 data class CopyCodeToClipboardParams(
     val tabId: String,
