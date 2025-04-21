@@ -244,26 +244,22 @@ class CodeTestChatController(
                     })
                 }
                 .build()
+            if (!fileInfo.fileInWorkspace) {
+                val messageContent =
+                    "<span style=\"color: #EE9D28;\">&#9888;<b> I can't generate tests for ${fileInfo.fileName}" +
+                        " because it's outside the project directory.</b><br></span> " +
+                        "I can still provide examples, instructions and code suggestions."
 
-            val messageContent = if (fileInfo.fileInWorkspace) {
-                "<span style=\"color: #EE9D28;\">&#9888;<b> ${fileInfo.fileLanguage.languageId} is not a " +
-                    "language I support specialized unit test generation for at the moment.</b><br></span>The languages " +
-                    "I support now are Python and Java. I can still provide examples, instructions and code suggestions."
-            } else {
-                "<span style=\"color: #EE9D28;\">&#9888;<b> I can't generate tests for ${fileInfo.fileName}" +
-                    " because it's outside the project directory.</b><br></span> " +
-                    "I can still provide examples, instructions and code suggestions."
+                codeTestChatHelper.addNewMessage(
+                    CodeTestChatMessageContent(
+                        message = messageContent,
+                        type = ChatMessageType.Answer,
+                        canBeVoted = false
+                    ),
+                    message.tabId,
+                    false
+                )
             }
-
-            codeTestChatHelper.addNewMessage(
-                CodeTestChatMessageContent(
-                    message = messageContent,
-                    type = ChatMessageType.Answer,
-                    canBeVoted = false
-                ),
-                message.tabId,
-                false
-            )
             testResponseMessageId = codeTestChatHelper.addAnswer(
                 CodeTestChatMessageContent(
                     message = "",

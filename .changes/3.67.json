@@ -1,0 +1,20 @@
+{
+  "date" : "2025-04-18",
+  "version" : "3.67",
+  "entries" : [ {
+    "type" : "bugfix",
+    "description" : "Amazon Q: Customization now resets with a warning if unavailable in the selected profile."
+  }, {
+    "type" : "bugfix",
+    "description" : "Q panel will get stuck while signin if users have multiple windows"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix integer overflow when local context index input is larger than 2GB"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix workspace index process quits when hitting a race condition"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix infinite loop when workspace indexing server fails to initialize"
+  } ]
+}

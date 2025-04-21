@@ -32,8 +32,8 @@ class ArtifactManager(
 
     companion object {
         private val DEFAULT_VERSION_RANGE = SupportedManifestVersionRange(
-            startVersion = SemVer("3.0.0", 3, 0, 0),
-            endVersion = SemVer("4.0.0", 4, 0, 0)
+            startVersion = SemVer("1.0.0", 1, 0, 0),
+            endVersion = SemVer("2.0.0", 2, 0, 0)
         )
         private val logger = getLogger<ArtifactManager>()
     }
