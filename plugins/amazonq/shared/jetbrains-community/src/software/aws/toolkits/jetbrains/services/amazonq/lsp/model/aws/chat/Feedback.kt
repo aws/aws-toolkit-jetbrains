@@ -4,9 +4,9 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
 data class FeedbackNotification(
-    val command: String,
-    val params: FeedbackParams,
-)
+    override val command: String,
+    override val params: FeedbackParams,
+) : ChatNotification<FeedbackParams>
 
 data class FeedbackParams(
     val tabId: String,

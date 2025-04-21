@@ -10,9 +10,11 @@ import org.eclipse.lsp4j.services.LanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.GetConfigurationFromServerParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.UpdateConfigurationParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FEEDBACK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FeedbackParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
@@ -44,6 +46,6 @@ interface AmazonQLanguageServer : LanguageServer {
     @JsonRequest(CHAT_QUICK_ACTION)
     fun sendQuickAction(params: EncryptedQuickActionChatParams): CompletableFuture<String>
 
-    @JsonNotification("aws/chat/feedback")
+    @JsonNotification(CHAT_FEEDBACK)
     fun feedback(params: FeedbackParams): CompletableFuture<Unit>
 }

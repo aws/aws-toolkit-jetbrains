@@ -24,21 +24,21 @@ import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FEEDBACK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorState
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.QuickChatActionRequest
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FeedbackNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FeedbackParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.QuickChatActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
@@ -211,10 +211,9 @@ class BrowserConnector(
                 showResult(result, partialResultToken, tabId, encryptionManager, browser)
             }
             CHAT_FEEDBACK -> {
-                val requestFromUi = serializer.deserializeChatMessages(node, FeedbackNotification::class.java)
-                AmazonQLspService.executeIfRunning(project) { server ->
-                    server.feedback(requestFromUi.params)
-                } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
+                handleChatNotification<FeedbackNotification, FeedbackParams>(node) { server, params ->
+                    server.feedback(params)
+                }
             }
         }
     }
@@ -235,8 +234,17 @@ class BrowserConnector(
                 isPartialResult = false
             )
             browser.postChat(messageToChat)
-                showResult(result, partialResultToken, tabId, encryptionManager, browser)
-            }
+            showResult(result, partialResultToken, tabId, encryptionManager, browser)
         }
+    }
+
+    private inline fun <reified T, R> handleChatNotification(
+        node: JsonNode,
+        crossinline serverAction: (server: AmazonQLanguageServer, params: R) -> CompletableFuture<*>,
+    ): CompletableFuture<*> where T : ChatNotification<R> {
+        val requestFromUi = serializer.deserializeChatMessages<T>(node)
+        return AmazonQLspService.executeIfRunning(project) { server ->
+            serverAction(server, requestFromUi.params)
+        } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
     }
 }
