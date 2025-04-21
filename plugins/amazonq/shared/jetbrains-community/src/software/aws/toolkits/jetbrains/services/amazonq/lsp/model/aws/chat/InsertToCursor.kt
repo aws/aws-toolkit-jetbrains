@@ -7,9 +7,9 @@ import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.TextDocumentIdentifier
 
 data class InsertToCursorPositionNotification(
-    val command: String,
-    val params: InsertToCursorPositionParams,
-)
+    override val command: String,
+    override val params: InsertToCursorPositionParams,
+) : ChatNotification<InsertToCursorPositionParams>
 
 data class InsertToCursorPositionParams(
     val tabId: String,
