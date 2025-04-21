@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
 import org.eclipse.lsp4j.Position
@@ -27,10 +28,13 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorState
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.QuickChatActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
@@ -147,7 +151,7 @@ class BrowserConnector(
     private fun handleFlareChatMessages(browser: Browser, node: JsonNode) {
         when (node.command) {
             SEND_CHAT_COMMAND_PROMPT -> {
-                val requestFromUi = serializer.deserializeChatMessages(node, SendChatPromptRequest::class.java)
+                val requestFromUi = serializer.deserializeChatMessages<SendChatPromptRequest>(node)
                 val chatPrompt = ChatPrompt(
                     requestFromUi.params.prompt.prompt,
                     requestFromUi.params.prompt.escapedPrompt,
@@ -167,7 +171,6 @@ class BrowserConnector(
                     )
                 )
 
-                val partialResultToken = chatCommunicationManager.addPartialChatMessage(requestFromUi.params.tabId)
                 val chatParams = ChatParams(
                     requestFromUi.params.tabId,
                     chatPrompt,
@@ -175,24 +178,52 @@ class BrowserConnector(
                     cursorState
                 )
 
+                val tabId = requestFromUi.params.tabId
+                val partialResultToken = chatCommunicationManager.addPartialChatMessage(tabId)
+
                 var encryptionManager: JwtEncryptionManager? = null
                 val result = AmazonQLspService.executeIfRunning(project) { server ->
                     encryptionManager = this.encryptionManager
                     encryptionManager?.encrypt(chatParams)?.let { EncryptedChatParams(it, partialResultToken) }?.let { server.sendChatPrompt(it) }
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
-
-                result.whenComplete {
-                        value, error ->
-                    chatCommunicationManager.removePartialChatMessage(partialResultToken)
-                    val messageToChat = ChatCommunicationManager.convertToJsonToSendToChat(
-                        node.command,
-                        requestFromUi.params.tabId,
-                        encryptionManager?.decrypt(value).orEmpty(),
-                        isPartialResult = false
-                    )
-                    browser.postChat(messageToChat)
-                }
+                showResult(result, partialResultToken, tabId, encryptionManager, browser)
             }
+            CHAT_QUICK_ACTION -> {
+                val requestFromUi = serializer.deserializeChatMessages<QuickChatActionRequest>(node)
+                val tabId = requestFromUi.params.tabId
+                val quickActionParams = requestFromUi.params
+                val partialResultToken = chatCommunicationManager.addPartialChatMessage(tabId)
+                var encryptionManager: JwtEncryptionManager? = null
+                val result = AmazonQLspService.executeIfRunning(project) { server ->
+                    encryptionManager = this.encryptionManager
+                    encryptionManager?.encrypt(quickActionParams)?.let {
+                        EncryptedQuickActionChatParams(it, partialResultToken)
+                    }?.let {
+                        server.sendQuickAction(it)
+                    }
+                } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
+
+                showResult(result, partialResultToken, tabId, encryptionManager, browser)
+            }
+        }
+    }
+
+    private fun showResult(
+        result: CompletableFuture<String>,
+        partialResultToken: String,
+        tabId: String,
+        encryptionManager: JwtEncryptionManager?,
+        browser: Browser,
+    ) {
+        result.whenComplete { value, error ->
+            chatCommunicationManager.removePartialChatMessage(partialResultToken)
+            val messageToChat = ChatCommunicationManager.convertToJsonToSendToChat(
+                SEND_CHAT_COMMAND_PROMPT,
+                tabId,
+                encryptionManager?.decrypt(value).orEmpty(),
+                isPartialResult = false
+            )
+            browser.postChat(messageToChat)
         }
     }
 }

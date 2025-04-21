@@ -7,6 +7,7 @@ import com.intellij.idea.AppMode
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.components.JBLoadingPanel
 import com.intellij.ui.components.JBPanelWithEmptyText
@@ -24,7 +25,7 @@ import java.awt.event.ActionListener
 import java.util.concurrent.CompletableFuture
 import javax.swing.JButton
 
-class AmazonQPanel(private val parent: Disposable) {
+class AmazonQPanel(private val parent: Disposable, val project: Project) {
     private val webviewContainer = Wrapper()
     val browser = CompletableFuture<Browser>()
 
@@ -91,7 +92,7 @@ class AmazonQPanel(private val parent: Disposable) {
                 loadingPanel.stopLoading()
                 runInEdt {
                     browser.complete(
-                        Browser(parent, webUri).also {
+                        Browser(parent, webUri, project).also {
                             wrapper.setContent(it.component())
                         }
                     )

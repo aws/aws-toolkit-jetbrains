@@ -49,7 +49,7 @@ class AmazonQToolWindow private constructor(
     private val browserConnector = BrowserConnector(project = project)
     private val editorThemeAdapter = EditorThemeAdapter()
 
-    private val chatPanel = AmazonQPanel(parent = this)
+    private val chatPanel = AmazonQPanel(parent = this, project)
 
     val component: JComponent = chatPanel.component
 
