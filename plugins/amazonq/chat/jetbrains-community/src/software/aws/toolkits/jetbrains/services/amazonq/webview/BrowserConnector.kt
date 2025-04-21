@@ -24,6 +24,7 @@ import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
@@ -32,17 +33,21 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_LINK_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SOURCE_LINK_CLICK
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorState
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.QuickChatActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
 import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.AmazonQTheme
@@ -212,22 +217,21 @@ class BrowserConnector(
                 showResult(result, partialResultToken, tabId, encryptionManager, browser)
             }
             CHAT_LINK_CLICK -> {
-                val requestFromUi = serializer.deserializeChatMessages(node, LinkClickNotification::class.java)
-                AmazonQLspService.executeIfRunning(project) { server ->
-                    server.linkClick(requestFromUi.params)
-                } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
+                handleUiRequest<LinkClickNotification, LinkClickParams>(node) { server, params ->
+                    server.linkClick(params)
+                }
             }
+
             CHAT_INFO_LINK_CLICK -> {
-                val requestFromUi = serializer.deserializeChatMessages(node, InfoLinkClickNotification::class.java)
-                AmazonQLspService.executeIfRunning(project) { server ->
-                    server.infoLinkClick(requestFromUi.params)
-                } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
+                handleUiRequest<InfoLinkClickNotification, InfoLinkClickParams>(node) { server, params ->
+                    server.infoLinkClick(params)
+                }
             }
+
             CHAT_SOURCE_LINK_CLICK -> {
-                val requestFromUi = serializer.deserializeChatMessages(node, SourceLinkClickNotification::class.java)
-                AmazonQLspService.executeIfRunning(project) { server ->
-                    server.sourceLinkClick(requestFromUi.params)
-                } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
+                handleUiRequest<SourceLinkClickNotification, SourceLinkClickParams>(node) { server, params ->
+                    server.sourceLinkClick(params)
+                }
             }
         }
     }
@@ -249,5 +253,15 @@ class BrowserConnector(
             )
             browser.postChat(messageToChat)
         }
+    }
+
+    private inline fun <reified T, R> handleUiRequest(
+        node: JsonNode,
+        crossinline serverAction: (server: AmazonQLanguageServer, params: R) -> CompletableFuture<*>,
+    ): CompletableFuture<*> where T : ChatNotification<R> {
+        val requestFromUi = serializer.deserializeChatMessages<T>(node)
+        return AmazonQLspService.executeIfRunning(project) { server ->
+            serverAction(server, requestFromUi.params)
+        } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
     }
 }

@@ -3,19 +3,19 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
 data class InfoLinkClickNotification(
-    val command: String,
-    val params: InfoLinkClickParams,
-)
+    override val command: String,
+    override val params: InfoLinkClickParams,
+) : ChatNotification<InfoLinkClickParams>
 
 data class SourceLinkClickNotification(
-    val command: String,
-    val params: SourceLinkClickParams,
-)
+    override val command: String,
+    override val params: SourceLinkClickParams,
+) : ChatNotification<SourceLinkClickParams>
 
 data class LinkClickNotification(
-    val command: String,
-    val params: LinkClickParams,
-)
+    override val command: String,
+    override val params: LinkClickParams,
+) : ChatNotification<LinkClickParams>
 
 data class InfoLinkClickParams(
     val tabId: String,
