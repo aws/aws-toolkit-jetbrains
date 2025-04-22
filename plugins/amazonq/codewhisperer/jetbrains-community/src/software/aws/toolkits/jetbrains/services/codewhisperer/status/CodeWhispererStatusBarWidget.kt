@@ -23,6 +23,7 @@ import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileWatcher
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.gettingstarted.QActionGroups.Q_SIGNED_OUT_ACTION_GROUP
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomizationListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.QStatusBarLoggedInActionGroup
@@ -121,7 +122,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
     }
 
     override fun getIcon(): Icon =
-        if (isQExpired(project)) {
+        if (isQExpired(project) || QRegionProfileManager.getInstance().isPendingProfileSelection(project)) {
             AllIcons.General.BalloonWarning
         } else if (!isQConnected(project)) {
             AllIcons.RunConfigurations.TestState.Run
