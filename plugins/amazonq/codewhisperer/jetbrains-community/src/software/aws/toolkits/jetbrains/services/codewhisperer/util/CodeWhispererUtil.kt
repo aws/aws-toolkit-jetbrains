@@ -388,21 +388,19 @@ fun getDiagnosticsType(message: String): String {
         ?.key ?: "OTHER"
 }
 
-fun convertSeverity(severity: HighlightSeverity): String {
-    return when {
-        severity == HighlightSeverity.ERROR -> "ERROR"
-        severity == HighlightSeverity.WARNING ||
-            severity == HighlightSeverity.WEAK_WARNING -> "WARNING"
-        severity == HighlightSeverity.INFORMATION -> "INFORMATION"
-        severity.toString().contains("TEXT", ignoreCase = true) -> "HINT"
-        severity == HighlightSeverity.INFO -> "INFORMATION"
-        // For severities that might indicate performance issues
-        severity.toString().contains("PERFORMANCE", ignoreCase = true) -> "WARNING"
-        // For deprecation warnings
-        severity.toString().contains("DEPRECATED", ignoreCase = true) -> "WARNING"
-        // Default case
-        else -> "INFORMATION"
-    }
+fun convertSeverity(severity: HighlightSeverity): String = when {
+    severity == HighlightSeverity.ERROR -> "ERROR"
+    severity == HighlightSeverity.WARNING ||
+        severity == HighlightSeverity.WEAK_WARNING -> "WARNING"
+    severity == HighlightSeverity.INFORMATION -> "INFORMATION"
+    severity.toString().contains("TEXT", ignoreCase = true) -> "HINT"
+    severity == HighlightSeverity.INFO -> "INFORMATION"
+    // For severities that might indicate performance issues
+    severity.toString().contains("PERFORMANCE", ignoreCase = true) -> "WARNING"
+    // For deprecation warnings
+    severity.toString().contains("DEPRECATED", ignoreCase = true) -> "WARNING"
+    // Default case
+    else -> "INFORMATION"
 }
 
 fun getDocumentDiagnostics(document: Document, project: Project): List<IdeDiagnostic> = runCatching {
@@ -437,7 +435,7 @@ fun getDocumentDiagnostics(document: Document, project: Project): List<IdeDiagno
                 .build()
         }
 }.getOrElse { e ->
-    getLogger<CodeWhispererUtil>().warn("Failed to get document diagnostics", e)
+    getLogger<CodeWhispererUtil>().warn(e) { "Failed to get document diagnostics" }
     emptyList()
 }
 
@@ -446,9 +444,7 @@ data class DiagnosticDifferences(
     val removed: List<IdeDiagnostic>,
 )
 
-fun serializeDiagnostics(diagnostic: IdeDiagnostic): String {
-    return "${diagnostic.source()}-${diagnostic.severity()}-${diagnostic.ideDiagnosticType()}"
-}
+fun serializeDiagnostics(diagnostic: IdeDiagnostic): String = "${diagnostic.source()}-${diagnostic.severity()}-${diagnostic.ideDiagnosticType()}"
 
 fun getDiagnosticDifferences(oldDiagnostic: List<IdeDiagnostic>, newDiagnostic: List<IdeDiagnostic>): DiagnosticDifferences {
     val oldSet = oldDiagnostic.map { i -> serializeDiagnostics(i) }.toSet()
