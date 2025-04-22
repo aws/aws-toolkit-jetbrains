@@ -234,7 +234,6 @@ class BrowserConnector(
                 isPartialResult = false
             )
             browser.postChat(messageToChat)
-            showResult(result, partialResultToken, tabId, encryptionManager, browser)
         }
     }
 
