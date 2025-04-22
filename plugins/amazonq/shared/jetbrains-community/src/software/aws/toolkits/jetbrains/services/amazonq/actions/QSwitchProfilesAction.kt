@@ -22,9 +22,7 @@ class QSwitchProfilesAction : AnAction(message("action.q.switchProfiles.text")),
         e.presentation.icon = AllIcons.Actions.SwapPanels
         val project = e.project ?: return
         if (QRegionProfileManager.getInstance().isPendingProfileSelection(project)) {
-            e.presentation.text = """
-                <html><body>Change profile <font color="${JBColor.GRAY.getHexString()}">(Select a profile to proceed)</font></body></html>
-            """.trimIndent()
+            e.presentation.text = message("action.q.switchProfiles.text.action_required", JBColor.GRAY.getHexString())
         }
     }
 
