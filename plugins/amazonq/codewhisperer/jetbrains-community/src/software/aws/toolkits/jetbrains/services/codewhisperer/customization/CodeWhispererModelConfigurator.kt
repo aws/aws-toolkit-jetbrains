@@ -23,9 +23,9 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.calculateIfIamIdentityCenterConnection
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
@@ -108,24 +108,25 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
     @RequiresBackgroundThread
     override fun listCustomizations(project: Project, passive: Boolean): List<CustomizationUiItem>? =
         calculateIfIamIdentityCenterConnection(project) {
-            // 1. fetch all profiles, invoke fetch customizations API and get result for each profile and aggregate all the results
-            val listAvailableProfilesResult = QRegionProfileManager.getInstance().listRegionProfiles(project)
-                ?: error("Attempted to fetch profiles while there does not exist")
+            // 1. invoke API and get result
+            val listAvailableCustomizationsResult = try {
+                CodeWhispererClientAdaptor.getInstance(project).listAvailableCustomizations()
+            } catch (e: Exception) {
+                val requestId = (e as? CodeWhispererRuntimeException)?.requestId()
+                val logMessage = if (CodeWhispererConstants.Customization.noAccessToCustomizationExceptionPredicate(e)) {
+                    // TODO: not required for non GP users
+                    "ListAvailableCustomizations: connection ${it.id} is not allowlisted, requestId: ${requestId.orEmpty()}"
+                } else {
+                    "ListAvailableCustomizations: failed due to unknown error ${e.message}, requestId: ${requestId.orEmpty()}"
+                }
 
-            val aggregatedCustomizations = listAvailableProfilesResult.flatMap { profile ->
-                runCatching {
-                    CodeWhispererClientAdaptor.getInstance(project).listAvailableCustomizations(profile)
-                }.onFailure { e ->
-                    val requestId = (e as? CodeWhispererRuntimeException)?.requestId()
-                    val logMessage = "ListAvailableCustomizations: failed due to unknown error ${e.message}, " +
-                        "requestId: ${requestId.orEmpty()}, profileName: ${profile.profileName}"
-                    LOG.debug { logMessage }
-                }.getOrDefault(emptyList())
+                LOG.debug { logMessage }
+                null
             }
 
             // 2. get diff
             val previousCustomizationsShapshot = connectionToCustomizationsShownLastTime.getOrElse(it.id) { emptyList() }
-            val diff = aggregatedCustomizations.filterNot { customization -> previousCustomizationsShapshot.contains(customization.arn) }.toSet()
+            val diff = listAvailableCustomizationsResult?.filterNot { customization -> previousCustomizationsShapshot.contains(customization.arn) }?.toSet()
 
             // 3 if passive,
             //   (1) update allowlisting
@@ -134,36 +135,42 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
             //   if not passive,
             //   (1) update the customization list snapshot (seen by users last time) if it will be displayed
             if (passive) {
-                connectionIdToIsAllowlisted[it.id] = aggregatedCustomizations.isNotEmpty()
-                if (diff.isNotEmpty() && !hasShownNewCustomizationNotification.getAndSet(true)) {
+                connectionIdToIsAllowlisted[it.id] = listAvailableCustomizationsResult != null
+                if (diff?.isNotEmpty() == true && !hasShownNewCustomizationNotification.getAndSet(true)) {
                     notifyNewCustomization(project)
                 }
             } else {
-                connectionToCustomizationsShownLastTime[it.id] = aggregatedCustomizations.map { customization -> customization.arn }.toMutableList()
+                listAvailableCustomizationsResult?.let { customizations ->
+                    connectionToCustomizationsShownLastTime[it.id] = customizations.map { customization -> customization.arn }.toMutableList()
+                }
             }
 
             // 4. invalidate selected customization if
             //    (1) the API call failed
             //    (2) the selected customization is not in the resultset of API call
-            //    (3) the existing q region profile associated with the selected customization does not match the currently active profile
             activeCustomization(project)?.let { activeCustom ->
-                if (aggregatedCustomizations.isEmpty()) {
+                if (listAvailableCustomizationsResult == null) {
                     invalidateSelectedAndNotify(project)
-                } else if (!aggregatedCustomizations.any { latestCustom -> latestCustom.arn == activeCustom.arn } ||
-                    (activeCustom.profile != null && activeCustom.profile != QRegionProfileManager.getInstance().activeProfile(project))
-                ) {
+                } else if (!listAvailableCustomizationsResult.any { latestCustom -> latestCustom.arn == activeCustom.arn }) {
                     invalidateSelectedAndNotify(project)
                 }
             }
 
             // 5. transform result to UI items and return
-            val nameToCount = aggregatedCustomizations.groupingBy { customization -> customization.name }.eachCount()
-            val customizationUiItems = aggregatedCustomizations.map { customization ->
-                CustomizationUiItem(
-                    customization,
-                    isNew = diff.contains(customization),
-                    shouldPrefixAccountId = (nameToCount[customization.name] ?: 0) > 1
-                )
+            val customizationUiItems = if (diff != null) {
+                listAvailableCustomizationsResult.let { customizations ->
+                    val nameToCount = customizations.groupingBy { customization -> customization.name }.eachCount()
+
+                    customizations.map { customization ->
+                        CustomizationUiItem(
+                            customization,
+                            isNew = diff.contains(customization),
+                            shouldPrefixAccountId = (nameToCount[customization.name] ?: 0) > 1
+                        )
+                    }
+                }
+            } else {
+                null
             }
             connectionToCustomizationUiItems[it.id] = customizationUiItems
 
