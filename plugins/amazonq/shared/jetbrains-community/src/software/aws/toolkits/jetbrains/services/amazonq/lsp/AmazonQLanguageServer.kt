@@ -13,6 +13,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.UpdateConf
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INFO_LINK_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_LINK_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_READY
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SOURCE_LINK_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
@@ -49,6 +50,9 @@ interface AmazonQLanguageServer : LanguageServer {
 
     @JsonRequest(CHAT_QUICK_ACTION)
     fun sendQuickAction(params: EncryptedQuickActionChatParams): CompletableFuture<String>
+
+    @JsonNotification(CHAT_READY)
+    fun chatReady(): CompletableFuture<Unit>
 
     @JsonNotification(CHAT_LINK_CLICK)
     fun linkClick(params: LinkClickParams): CompletableFuture<Unit>
