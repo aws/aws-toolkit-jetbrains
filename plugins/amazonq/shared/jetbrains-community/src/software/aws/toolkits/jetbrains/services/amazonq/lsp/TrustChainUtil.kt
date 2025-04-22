@@ -94,7 +94,8 @@ object TrustChainUtil {
         val trustChain = try {
             resolveTrustChain(certificates.toList(), ks)
         } catch (e: Exception) {
-            LOG.warn(e) { "Passed Apache PKIX verification but could not build trust anchor via CertPathBuilder" }
+            // Java PKIX is happy with leaf cert in certification path, but Node.JS will not respect in NODE_CA_CERTS
+            LOG.warn(e) { "Passed Apache PKIX verification but could not build trust anchor via CertPathBuilder? maybe user accepted leaf cert but not intermediate" }
             emptyList()
         }
 
