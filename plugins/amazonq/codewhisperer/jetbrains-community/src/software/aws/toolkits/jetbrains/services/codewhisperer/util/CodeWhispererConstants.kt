@@ -59,7 +59,6 @@ object CodeWhispererConstants {
     val scanResultsKey = DataKey.create<CodeScanResponse>("amazonq.codescan.result")
     val scanScopeKey = DataKey.create<CodeAnalysisScope>("amazonq.codescan.scope")
 
-    const val Q_CUSTOM_LEARN_MORE_URI = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/customizations.html"
     const val Q_SUPPORTED_LANG_URI = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/q-language-ide-support.html"
     const val CODEWHISPERER_CODE_SCAN_LEARN_MORE_URI = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/security-scans.html"
     const val CODEWHISPERER_ONBOARDING_DOCUMENTATION_URI = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/features.html"

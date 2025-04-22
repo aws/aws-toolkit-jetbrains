@@ -29,7 +29,6 @@ import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileSwitchIntent
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.Q_CUSTOM_LEARN_MORE_URI
 import software.aws.toolkits.jetbrains.ui.AsyncComboBox
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
@@ -174,7 +173,7 @@ class CodeWhispererCustomizationDialog(
             lateinit var customizationComment: Row
             indent {
                 noCustomizationComment = row("") {
-                    rowComment(message("codewhisperer.custom.dialog.option.customization.description.no_customization", Q_CUSTOM_LEARN_MORE_URI))
+                    rowComment(message("codewhisperer.custom.dialog.option.customization.description.no_customization", "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/customizations.html"))
                 }.visible(false)
 
                 customizationComment = row("") {

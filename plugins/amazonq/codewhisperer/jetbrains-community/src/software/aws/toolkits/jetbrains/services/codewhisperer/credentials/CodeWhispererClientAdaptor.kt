@@ -1,4 +1,4 @@
-// Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.credentials
@@ -78,8 +78,6 @@ interface CodeWhispererClientAdaptor {
     fun startCodeFixJob(request: StartCodeFixJobRequest): StartCodeFixJobResponse
 
     fun getCodeFixJob(request: GetCodeFixJobRequest): GetCodeFixJobResponse
-
-    fun listAvailableCustomizations(profile: QRegionProfile): List<CodeWhispererCustomization>
 
     fun startTestGeneration(uploadId: String, targetCode: List<TargetCode>, userInput: String): StartTestGenerationResponse
 
@@ -281,29 +279,6 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
     override fun startCodeFixJob(request: StartCodeFixJobRequest): StartCodeFixJobResponse = bearerClient().startCodeFixJob(request)
 
     override fun getCodeFixJob(request: GetCodeFixJobRequest): GetCodeFixJobResponse = bearerClient().getCodeFixJob(request)
-
-    // DO NOT directly use this method to fetch customizations, use wrapper [CodeWhispererModelConfigurator.listCustomization()] instead
-    override fun listAvailableCustomizations(profile: QRegionProfile): List<CodeWhispererCustomization> =
-        QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project, profile).listAvailableCustomizationsPaginator(
-            ListAvailableCustomizationsRequest.builder().profileArn(profile.arn).build()
-        )
-            .stream()
-            .toList()
-            .flatMap { resp ->
-                LOG.debug {
-                    "listAvailableCustomizations: requestId: ${resp.responseMetadata().requestId()}, customizations: ${
-                        resp.customizations().map { it.name() }
-                    }"
-                }
-                resp.customizations().map {
-                    CodeWhispererCustomization(
-                        arn = it.arn(),
-                        name = it.name(),
-                        description = it.description(),
-                        profile = profile
-                    )
-                }
-            }
 
     override fun startTestGeneration(uploadId: String, targetCode: List<TargetCode>, userInput: String): StartTestGenerationResponse =
         bearerClient().startTestGeneration { builder ->

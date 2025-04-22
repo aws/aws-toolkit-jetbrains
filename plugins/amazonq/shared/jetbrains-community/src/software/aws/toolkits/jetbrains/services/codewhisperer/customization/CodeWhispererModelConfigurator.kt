@@ -17,6 +17,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.xmlb.annotations.MapAnnotation
 import com.intellij.util.xmlb.annotations.Property
+import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -25,7 +26,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.calculateIfIamIdentityCe
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
-import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
@@ -105,6 +105,29 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
         }
     }
 
+    /**
+     * DO NOT directly use this method to fetch customizations, use wrapper [listCustomizations] instead
+     */
+    private fun listAvailableCustomizations(project: Project, profile: QRegionProfile): List<CodeWhispererCustomization> =
+        QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project, profile).listAvailableCustomizationsPaginator {
+            it.profileArn(profile.arn)
+        }.flatMap { resp ->
+            LOG.debug {
+                "listAvailableCustomizations: requestId: ${resp.responseMetadata().requestId()}, customizations: ${
+                    resp.customizations().map { it.name() }
+                }"
+            }
+
+            resp.customizations().map {
+                CodeWhispererCustomization(
+                    arn = it.arn(),
+                    name = it.name(),
+                    description = it.description(),
+                    profile = profile
+                )
+            }
+        }
+
     @RequiresBackgroundThread
     override fun listCustomizations(project: Project, passive: Boolean): List<CustomizationUiItem>? =
         calculateIfIamIdentityCenterConnection(project) {
@@ -114,7 +137,7 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
 
             val aggregatedCustomizations = listAvailableProfilesResult.flatMap { profile ->
                 runCatching {
-                    CodeWhispererClientAdaptor.getInstance(project).listAvailableCustomizations(profile)
+                    listAvailableCustomizations(project, profile)
                 }.onFailure { e ->
                     val requestId = (e as? CodeWhispererRuntimeException)?.requestId()
                     val logMessage = "ListAvailableCustomizations: failed due to unknown error ${e.message}, " +

@@ -19,7 +19,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credential
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import java.util.concurrent.CompletableFuture
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
+
 /**
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
  */
@@ -78,14 +79,16 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
         return CompletableFuture.completedFuture(
             buildList {
+                val qSettings = CodeWhispererSettings.getInstance()
                 params.items.forEach {
                     when (it.section) {
                         AmazonQLspConstants.LSP_CW_CONFIGURATION_KEY -> {
                             add(
                                 CodeWhispererLspConfiguration(
-                                    shouldShareData = CodeWhispererSettings.getInstance().isMetricOptIn(),
-                                    shouldShareCodeReferences = CodeWhispererSettings.getInstance().isIncludeCodeWithReference(),
-                                    shouldEnableWorkspaceContext = CodeWhispererSettings.getInstance().isWorkspaceContextEnabled()
+                                    shouldShareData = qSettings.isMetricOptIn(),
+                                    shouldShareCodeReferences = qSettings.isIncludeCodeWithReference(),
+                                    // server context
+                                    shouldEnableWorkspaceContext = qSettings.isWorkspaceContextEnabled()
                                 )
                             )
                         }
@@ -93,7 +96,14 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                             add(
                                 AmazonQLspConfiguration(
                                     optOutTelemetry = AwsSettings.getInstance().isTelemetryEnabled,
-                                    customization = QRegionProfileManager.getInstance().activeProfile(project)?.arn
+                                    customization = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn,
+                                    // local context
+                                    enableLocalIndexing = qSettings.isProjectContextEnabled(),
+                                    indexWorkerThreads = qSettings.getProjectContextIndexThreadCount(),
+                                    enableGpuAcceleration = qSettings.isProjectContextGpu(),
+                                    localIndexing = LocalIndexingConfiguration(
+                                        maxIndexSizeMB = qSettings.getProjectContextIndexMaxSize()
+                                    )
                                 )
                             )
                         }
