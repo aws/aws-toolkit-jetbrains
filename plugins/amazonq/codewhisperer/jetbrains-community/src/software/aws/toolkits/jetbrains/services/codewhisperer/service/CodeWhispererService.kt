@@ -89,7 +89,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDocumentDiagnostics
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDocumentDiagnostics
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.utils.isInjectedText
 import software.aws.toolkits.jetbrains.utils.isQExpired
