@@ -38,7 +38,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.UserIntent
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
@@ -82,7 +81,7 @@ interface CodeWhispererClientAdaptor {
 
     fun getCodeFixJob(request: GetCodeFixJobRequest): GetCodeFixJobResponse
 
-    fun listAvailableCustomizations(profile: QRegionProfile): List<CodeWhispererCustomization>
+    fun listAvailableCustomizations(): List<CodeWhispererCustomization>
 
     fun startTestGeneration(uploadId: String, targetCode: List<TargetCode>, userInput: String): StartTestGenerationResponse
 
@@ -286,9 +285,9 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
     override fun getCodeFixJob(request: GetCodeFixJobRequest): GetCodeFixJobResponse = bearerClient().getCodeFixJob(request)
 
     // DO NOT directly use this method to fetch customizations, use wrapper [CodeWhispererModelConfigurator.listCustomization()] instead
-    override fun listAvailableCustomizations(profile: QRegionProfile): List<CodeWhispererCustomization> =
-        QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project, profile).listAvailableCustomizationsPaginator(
-            ListAvailableCustomizationsRequest.builder().profileArn(profile.arn).build()
+    override fun listAvailableCustomizations(): List<CodeWhispererCustomization> =
+        bearerClient().listAvailableCustomizationsPaginator(
+            ListAvailableCustomizationsRequest.builder().profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn).build()
         )
             .stream()
             .toList()
@@ -302,8 +301,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     CodeWhispererCustomization(
                         arn = it.arn(),
                         name = it.name(),
-                        description = it.description(),
-                        profile = profile
+                        description = it.description()
                     )
                 }
             }
