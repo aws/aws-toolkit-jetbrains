@@ -35,7 +35,6 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import kotlin.reflect.full.memberFunctions
 import kotlin.test.Test
@@ -79,7 +78,7 @@ class CodeWhispererFeatureConfigServiceTest {
 
         projectRule.project.replaceService(
             QRegionProfileManager::class.java,
-            mock<QRegionProfileManager> { on { getQClient(any<Project>(), eq(QRegionProfile()), eq(CodeWhispererRuntimeClient::class)) } doReturn mockClient },
+            mock<QRegionProfileManager> { on { getQClient(any<Project>(), eq(CodeWhispererRuntimeClient::class)) } doReturn mockClient },
             disposableRule.disposable
         )
 
