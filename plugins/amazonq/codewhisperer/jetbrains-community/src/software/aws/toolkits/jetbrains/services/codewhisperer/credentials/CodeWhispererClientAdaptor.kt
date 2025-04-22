@@ -37,6 +37,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.TargetCode
 import software.amazon.awssdk.services.codewhispererruntime.model.UserIntent
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
@@ -50,6 +51,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDiagnosticDifferences
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDocumentDiagnostics
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.DiagnosticDifferences
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import java.time.Instant
@@ -347,7 +349,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             added = emptyList(),
             removed = emptyList()
         )
-        if (suggestionState == CodewhispererSuggestionState.Accept) {
+        if (suggestionState == CodewhispererSuggestionState.Accept && isInternalUser(getStartUrl(project))) {
             val oldDiagnostics = requestContext.diagnostics.orEmpty()
             // wait for the IDE itself to update its diagnostics for current file
             Thread.sleep(500)

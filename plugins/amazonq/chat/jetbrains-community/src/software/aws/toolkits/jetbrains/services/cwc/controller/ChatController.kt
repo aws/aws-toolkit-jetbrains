@@ -87,6 +87,7 @@ import software.aws.toolkits.telemetry.CwsprChatCommandType
 import java.time.Instant
 import java.util.UUID
 import kotlinx.coroutines.delay
+import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 
 data class TestCommandMessage(
     val sender: String = "codetest",
@@ -240,10 +241,12 @@ class ChatController private constructor(
                     )
                 }
             }
-            // wait for the IDE itself to update its diagnostics for current file
-            delay(500)
-            val newDiagnostics = getDocumentDiagnostics(editor.document, context.project)
-            message.diagnosticsDifferences = getDiagnosticDifferences(oldDiagnostics, newDiagnostics)
+            if (isInternalUser(getStartUrl(context.project))) {
+                // wait for the IDE itself to update its diagnostics for current file
+                delay(500)
+                val newDiagnostics = getDocumentDiagnostics(editor.document, context.project)
+                message.diagnosticsDifferences = getDiagnosticDifferences(oldDiagnostics, newDiagnostics)
+            }
         }
         telemetryHelper.recordInteractWithMessage(message)
 
