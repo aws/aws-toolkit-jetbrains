@@ -8,8 +8,10 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAware
+import com.intellij.ui.JBColor
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileDialog
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getHexString
 import software.aws.toolkits.resources.AmazonQBundle.message
 
 class QSwitchProfilesAction : AnAction(message("action.q.switchProfiles.text")), DumbAware {
@@ -18,6 +20,10 @@ class QSwitchProfilesAction : AnAction(message("action.q.switchProfiles.text")),
 
     override fun update(e: AnActionEvent) {
         e.presentation.icon = AllIcons.Actions.SwapPanels
+        val project = e.project ?: return
+        if (QRegionProfileManager.getInstance().isPendingProfileSelection(project)) {
+            e.presentation.text = message("action.q.switchProfiles.text.action_required", JBColor.GRAY.getHexString())
+        }
     }
 
     override fun actionPerformed(e: AnActionEvent) {
