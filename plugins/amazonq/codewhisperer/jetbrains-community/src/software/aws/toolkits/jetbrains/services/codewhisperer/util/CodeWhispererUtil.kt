@@ -443,10 +443,14 @@ data class DiagnosticDifferences(
     val removed: List<IdeDiagnostic>
 )
 
+fun serializeDiagnostics(diagnostic: IdeDiagnostic): String {
+    return "${diagnostic.source()}-${diagnostic.severity()}-${diagnostic.ideDiagnosticType()}"
+}
+
 fun getDiagnosticDifferences(oldDiagnostic: List<IdeDiagnostic>, newDiagnostic: List<IdeDiagnostic>): DiagnosticDifferences {
-    val oldSet = oldDiagnostic.map { i -> i.toString() }.toSet()
-    val newSet = newDiagnostic.map { i -> i.toString() }.toSet()
-    val added = newDiagnostic.filter { i -> !oldSet.contains(i.toString()) }.distinctBy { it.toString() }
-    val removed = oldDiagnostic.filter { i -> !newSet.contains(i.toString()) }.distinctBy { it.toString() }
+    val oldSet = oldDiagnostic.map { i -> serializeDiagnostics(i) }.toSet()
+    val newSet = newDiagnostic.map { i -> serializeDiagnostics(i) }.toSet()
+    val added = newDiagnostic.filter { i -> !oldSet.contains(serializeDiagnostics(i)) }.distinctBy { serializeDiagnostics(it) }
+    val removed = oldDiagnostic.filter { i -> !newSet.contains(serializeDiagnostics(i)) }.distinctBy { serializeDiagnostics(it)}
     return DiagnosticDifferences(added, removed)
 }
