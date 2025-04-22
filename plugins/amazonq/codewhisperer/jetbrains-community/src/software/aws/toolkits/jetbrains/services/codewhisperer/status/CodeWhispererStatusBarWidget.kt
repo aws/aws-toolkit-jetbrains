@@ -85,7 +85,7 @@ class CodeWhispererStatusBarWidget(project: Project) :
             object : QRegionProfileSelectedListener {
                 override fun onProfileSelected(
                     project: Project,
-                    profile: QRegionProfile?
+                    profile: QRegionProfile?,
                 ) {
                     if (project == this@CodeWhispererStatusBarWidget.project) {
                         statusBar.updateWidget(ID)
