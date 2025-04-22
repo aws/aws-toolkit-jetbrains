@@ -506,6 +506,8 @@ class TelemetryHelperTest {
                     acceptedLineCount(code.lines().size)
                     customizationArn(customizationArn)
                     hasProjectLevelContext(false)
+                    addedIdeDiagnostics(emptyList())
+                    removedIdeDiagnostics(emptyList())
                 }.build()
             )
         )
