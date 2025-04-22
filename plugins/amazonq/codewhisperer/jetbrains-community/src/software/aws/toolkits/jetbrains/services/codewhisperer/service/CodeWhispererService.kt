@@ -899,7 +899,7 @@ data class RequestContext(
     val customizationArn: String?,
     val profileArn: String?,
     val workspaceId: String?,
-    val diagnostics: List<IdeDiagnostic>?
+    val diagnostics: List<IdeDiagnostic>?,
 ) {
     // TODO: should make the entire getRequestContext() suspend function instead of making supplemental context only
     var supplementalContext: SupplementalContextInfo? = null

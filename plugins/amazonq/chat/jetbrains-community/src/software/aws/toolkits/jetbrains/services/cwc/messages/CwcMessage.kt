@@ -96,7 +96,7 @@ sealed interface IncomingCwcMessage : CwcMessage {
         val codeBlockIndex: Int?,
         val totalCodeBlocks: Int?,
         val codeBlockLanguage: String?,
-        var diagnosticsDifferences: DiagnosticDifferences?
+        var diagnosticsDifferences: DiagnosticDifferences?,
     ) : IncomingCwcMessage, TabId, MessageId
 
     data class TriggerTabIdReceived(

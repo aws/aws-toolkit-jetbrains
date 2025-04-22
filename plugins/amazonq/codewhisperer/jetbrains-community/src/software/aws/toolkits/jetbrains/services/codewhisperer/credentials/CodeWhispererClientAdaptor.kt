@@ -48,9 +48,9 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestCon
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.DiagnosticDifferences
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDiagnosticDifferences
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDocumentDiagnostics
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.DiagnosticDifferences
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState

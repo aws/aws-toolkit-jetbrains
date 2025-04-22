@@ -388,7 +388,6 @@ fun getDiagnosticsType(message: String): String {
         ?.key ?: "OTHER"
 }
 
-
 fun convertSeverity(severity: HighlightSeverity): String {
     return when {
         severity == HighlightSeverity.ERROR -> "ERROR"
@@ -421,15 +420,20 @@ fun getDocumentDiagnostics(document: Document, project: Project): List<IdeDiagno
                 .source(info.inspectionToolId)
                 .range(
                     Range.builder()
-                        .start(Position.builder()
-                            .line(startLine)
-                            .character(document.getLineStartOffset(startLine))
-                            .build())
-                        .end(Position.builder()
-                            .line(endLine)
-                            .character(document.getLineStartOffset(endLine))
-                            .build())
-                        .build())
+                        .start(
+                            Position.builder()
+                                .line(startLine)
+                                .character(document.getLineStartOffset(startLine))
+                                .build()
+                        )
+                        .end(
+                            Position.builder()
+                                .line(endLine)
+                                .character(document.getLineStartOffset(endLine))
+                                .build()
+                        )
+                        .build()
+                )
                 .build()
         }
 }.getOrElse { e ->
@@ -437,10 +441,9 @@ fun getDocumentDiagnostics(document: Document, project: Project): List<IdeDiagno
     emptyList()
 }
 
-
 data class DiagnosticDifferences(
     val added: List<IdeDiagnostic>,
-    val removed: List<IdeDiagnostic>
+    val removed: List<IdeDiagnostic>,
 )
 
 fun serializeDiagnostics(diagnostic: IdeDiagnostic): String {
@@ -451,6 +454,6 @@ fun getDiagnosticDifferences(oldDiagnostic: List<IdeDiagnostic>, newDiagnostic: 
     val oldSet = oldDiagnostic.map { i -> serializeDiagnostics(i) }.toSet()
     val newSet = newDiagnostic.map { i -> serializeDiagnostics(i) }.toSet()
     val added = newDiagnostic.filter { i -> !oldSet.contains(serializeDiagnostics(i)) }.distinctBy { serializeDiagnostics(it) }
-    val removed = oldDiagnostic.filter { i -> !newSet.contains(serializeDiagnostics(i)) }.distinctBy { serializeDiagnostics(it)}
+    val removed = oldDiagnostic.filter { i -> !newSet.contains(serializeDiagnostics(i)) }.distinctBy { serializeDiagnostics(it) }
     return DiagnosticDifferences(added, removed)
 }

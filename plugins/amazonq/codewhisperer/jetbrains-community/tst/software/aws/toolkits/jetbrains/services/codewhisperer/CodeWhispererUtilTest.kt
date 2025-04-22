@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
+import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.util.SimpleModificationTracker
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import kotlinx.coroutines.runBlocking
@@ -12,7 +13,10 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
 import software.amazon.awssdk.services.codewhispererruntime.model.OptOutPreference
+import software.amazon.awssdk.services.codewhispererruntime.model.Position
+import software.amazon.awssdk.services.codewhispererruntime.model.Range
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.aws.toolkits.core.utils.test.aStringWithLineCount
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
@@ -24,20 +28,16 @@ import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCompletionType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getUnmodifiedAcceptedCharsCount
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.convertSeverity
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDiagnosticDifferences
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDiagnosticsType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.runIfIdcConnectionOrTelemetryEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.toCodeChunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.truncateLineByLine
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDiagnosticDifferences
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDiagnosticsType
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.convertSeverity
-import com.intellij.lang.annotation.HighlightSeverity
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.jetbrains.utils.rules.JavaCodeInsightTestFixtureRule
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
-import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
-import software.amazon.awssdk.services.codewhispererruntime.model.Position
-import software.amazon.awssdk.services.codewhispererruntime.model.Range
 
 class CodeWhispererUtilTest {
     @JvmField
@@ -315,6 +315,7 @@ class CodeWhispererUtilTest {
         val file = fixture.addFileToProject("workspace/projectA1/src/Sample.java", "").virtualFile
         assertThat(file.isWithin(projectRoot)).isFalse()
     }
+
     @Test
     fun `getDiagnosticsType correctly identifies syntax errors`() {
         val messages = listOf(
@@ -360,20 +361,24 @@ class CodeWhispererUtilTest {
             .ideDiagnosticType("SYNTAX_ERROR")
             .severity("ERROR")
             .source("inspection1")
-            .range(Range.builder()
-                .start(Position.builder().line(0).character(0).build())
-                .end(Position.builder().line(0).character(10).build())
-                .build())
+            .range(
+                Range.builder()
+                    .start(Position.builder().line(0).character(0).build())
+                    .end(Position.builder().line(0).character(10).build())
+                    .build()
+            )
             .build()
 
         val diagnostic2 = IdeDiagnostic.builder()
             .ideDiagnosticType("TYPE_ERROR")
             .severity("WARNING")
             .source("inspection2")
-            .range(Range.builder()
-                .start(Position.builder().line(1).character(0).build())
-                .end(Position.builder().line(1).character(10).build())
-                .build())
+            .range(
+                Range.builder()
+                    .start(Position.builder().line(1).character(0).build())
+                    .end(Position.builder().line(1).character(10).build())
+                    .build()
+            )
             .build()
 
         val oldList = listOf(diagnostic1)
@@ -391,10 +396,12 @@ class CodeWhispererUtilTest {
             .ideDiagnosticType("SYNTAX_ERROR")
             .severity("ERROR")
             .source("inspection1")
-            .range(Range.builder()
-                .start(Position.builder().line(0).character(0).build())
-                .end(Position.builder().line(0).character(10).build())
-                .build())
+            .range(
+                Range.builder()
+                    .start(Position.builder().line(0).character(0).build())
+                    .end(Position.builder().line(0).character(10).build())
+                    .build()
+            )
             .build()
 
         val emptyList = emptyList<IdeDiagnostic>()
@@ -415,10 +422,12 @@ class CodeWhispererUtilTest {
             .ideDiagnosticType("SYNTAX_ERROR")
             .severity("ERROR")
             .source("inspection1")
-            .range(Range.builder()
-                .start(Position.builder().line(0).character(0).build())
-                .end(Position.builder().line(0).character(10).build())
-                .build())
+            .range(
+                Range.builder()
+                    .start(Position.builder().line(0).character(0).build())
+                    .end(Position.builder().line(0).character(10).build())
+                    .build()
+            )
             .build()
 
         val list = listOf(diagnostic)
