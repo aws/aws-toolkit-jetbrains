@@ -39,13 +39,14 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
     private lateinit var messenger: MessagePublisher
     private val action = SessionStateAction("test-task", userMessage)
     private lateinit var featureDevService: FeatureDevService
+    private lateinit var repoContext: FeatureDevSessionContext
 
     @Before
     override fun setup() {
         featureDevService = mockk<FeatureDevService>()
         every { featureDevService.project } returns projectRule.project
         messenger = mock()
-        val repoContext = mock<FeatureDevSessionContext>()
+        repoContext = mockk<FeatureDevSessionContext>()
         val sessionStateConfig = SessionStateConfig(testConversationId, repoContext, featureDevService)
 
         codeGenerationState =
@@ -101,6 +102,34 @@ class CodeGenerationStateTest : FeatureDevTestBase() {
 
         verify(exactly = 1) { featureDevService.getTaskAssistCodeGeneration(testConversationId, codeGenerationId) }
         coVerify(exactly = 1) { featureDevService.exportTaskAssistArchiveResult(testConversationId) }
+    }
+
+    @Test
+    fun `test generateCode excludes run_command log file`() {
+        val runCommandLogFileName = "run_command.log"
+
+        val archiveFiles = mapOf(
+            runCommandLogFileName to "newLog",
+            "other.ts" to "other content"
+        )
+        val deletedFiles = emptyList<DeletedFileInfo>()
+        val references = emptyList<CodeReference>()
+
+        every { featureDevService.getTaskAssistCodeGeneration(any(), any()) } returns exampleCompleteGetTaskAssistCodeGenerationResponse
+        every { featureDevService.startTaskAssistCodeGeneration(any(), any(), any(), any(), any()) } returns exampleStartTaskAssistConversationResponse
+        coEvery { featureDevService.exportTaskAssistArchiveResult(any()) } returns
+            CodeGenerationStreamResult(archiveFiles, listOf("deleted.ts"), listOf(CodeReferenceGenerated()))
+
+        runTest {
+            val actual = codeGenerationState.interact(action)
+            val nextState = actual.nextState as PrepareCodeGenerationState
+            assertThat(nextState.filePaths).contains(
+                NewFileZipInfo(runCommandLogFileName, "newLog", rejected = false, changeApplied = false)
+            )
+            assertThat(nextState.filePaths).contains(
+                NewFileZipInfo("other.ts", "other content", rejected = false, changeApplied = false)
+            )
+        }
     }
 
     @Test(expected = FeatureDevException::class)

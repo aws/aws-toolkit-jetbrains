@@ -19,6 +19,8 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.gettingstarted.emitUserState
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindow
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindowFactory
@@ -52,6 +54,10 @@ class AmazonQStartupActivity : ProjectActivity {
                 CodeWhispererExplorerActionManager.getInstance().setIsFirstRestartAfterQInstall(false)
             }
         }
+
+        QRegionProfileManager.getInstance().validateProfile(project)
+
+        AmazonQLspService.getInstance(project)
         startLsp(project)
         if (runOnce.get()) return
         emitUserState(project)

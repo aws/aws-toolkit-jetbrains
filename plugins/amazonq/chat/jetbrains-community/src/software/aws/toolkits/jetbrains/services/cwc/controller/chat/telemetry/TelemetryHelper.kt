@@ -64,6 +64,8 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
         UserIntent.EXPLAIN_CODE_SELECTION -> CwsprChatUserIntent.ExplainCodeSelection
         UserIntent.GENERATE_UNIT_TESTS -> CwsprChatUserIntent.GenerateUnitTests
         UserIntent.UNKNOWN_TO_SDK_VERSION -> CwsprChatUserIntent.Unknown
+        UserIntent.GENERATE_CLOUDFORMATION_TEMPLATE -> CwsprChatUserIntent.Unknown
+        UserIntent.CODE_GENERATION -> CwsprChatUserIntent.Unknown
     }
 
     private fun getTelemetryTriggerType(triggerType: TriggerType): CwsprChatTriggerInteraction = when (triggerType) {
