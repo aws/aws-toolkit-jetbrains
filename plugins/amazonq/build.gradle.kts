@@ -36,6 +36,7 @@ dependencies {
     implementation(project(":plugin-amazonq:codewhisperer"))
     implementation(project(":plugin-amazonq:mynah-ui"))
     implementation(project(":plugin-amazonq:shared"))
+    implementation(libs.bundles.jackson)
 
     testImplementation(project(":plugin-core"))
 }
