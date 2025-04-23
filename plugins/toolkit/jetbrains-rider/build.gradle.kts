@@ -389,7 +389,7 @@ tasks.withType<DetektCreateBaselineTask>().configureEach {
 }
 
 configurations.all {
-    if (name.contains("detekt")) {
+    if (name.contains("detekt") || name.contains("kotlinCompiler")) {
         return@all
     }
 
