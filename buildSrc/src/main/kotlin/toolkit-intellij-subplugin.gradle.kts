@@ -48,9 +48,11 @@ configurations {
 
         // Exclude dependencies that ship with iDE
         exclude(group = "org.slf4j")
-        // we want kotlinx-coroutines-debug and kotlinx-coroutines-test
-        exclude(group = "org.jetbrains.kotlinx", "kotlinx-coroutines-core-jvm")
-        exclude(group = "org.jetbrains.kotlinx", "kotlinx-coroutines-core")
+        if (!name.startsWith("kotlinCompiler")) {
+            // we want kotlinx-coroutines-debug and kotlinx-coroutines-test
+            exclude(group = "org.jetbrains.kotlinx", "kotlinx-coroutines-core-jvm")
+            exclude(group = "org.jetbrains.kotlinx", "kotlinx-coroutines-core")
+        }
 
         resolutionStrategy.eachDependency {
             if (requested.group == "org.jetbrains.kotlinx" && requested.name.startsWith("kotlinx-coroutines")) {
