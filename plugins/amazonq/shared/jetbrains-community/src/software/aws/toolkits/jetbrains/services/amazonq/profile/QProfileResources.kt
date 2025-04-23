@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.profile
 
+import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.aws.toolkits.core.ClientConnectionSettings
 import software.aws.toolkits.core.utils.debug
@@ -28,7 +29,7 @@ object QProfileResources {
                 val awsRegion = AwsRegionProvider.getInstance()[regionKey] ?: return@flatMap emptyList()
                 val client = AwsClientManager
                     .getInstance()
-                    .getClient(CodeWhispererRuntimeClient::class, connectionSettings.withRegion(awsRegion))
+                    .getClient<CodeWhispererRuntimeClient>(connectionSettings.withRegion(awsRegion))
 
                 try {
                     val profiles = client.listAvailableProfilesPaginator {}
@@ -39,6 +40,12 @@ object QProfileResources {
                     profiles
                 } catch (e: Exception) {
                     LOG.warn(e) { "Failed to list Q profiles for region $regionKey" }
+
+                    // service has low TPS so only suppress if not a service error
+                    if (e is AwsServiceException) {
+                        throw e
+                    }
+
                     emptyList()
                 }
             }
