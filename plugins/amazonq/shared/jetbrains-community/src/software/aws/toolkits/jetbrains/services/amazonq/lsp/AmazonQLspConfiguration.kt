@@ -25,7 +25,7 @@ data class AmazonQLspConfiguration(
 )
 
 data class LocalIndexingConfiguration(
-    val ignoreFilePatterns:  List<String>? = null,
+    val ignoreFilePatterns: List<String>? = null,
     val maxFileSizeMB: Int? = null,
     val maxIndexSizeMB: Int? = null,
     val indexCacheDirPath: String? = null,
