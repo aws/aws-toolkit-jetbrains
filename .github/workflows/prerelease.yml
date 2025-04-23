@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         build_target: [ ':plugin-core:buildPlugin', ':plugin-toolkit:intellij-standalone:buildPlugin', ':plugin-amazonq:buildPlugin' ]
-        version: [ '2024.1', '2024.2', '2024.3', '2025.1' ]
+        version: [ '2024.2', '2024.3', '2025.1' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
