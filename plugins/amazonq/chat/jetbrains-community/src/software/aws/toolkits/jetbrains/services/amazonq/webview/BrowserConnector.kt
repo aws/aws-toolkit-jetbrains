@@ -7,8 +7,6 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.project.Project
-import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
 import com.intellij.ui.jcef.JBCefJSQuery.Response
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.awaitClose
@@ -23,6 +21,8 @@ import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
@@ -285,9 +285,9 @@ class BrowserConnector(
             CHAT_BUTTON_CLICK -> {
                 handleChatNotification<ButtonClickNotification, ButtonClickParams>(node) { server, params ->
                     server.buttonClick(params)
-                }.thenApply{ response ->
+                }.thenApply { response ->
                     if (response is ButtonClickResult && !response.success) {
-                        LOG.warn {"Failed to execute action associated with button with reason: ${response.failureReason}"}
+                        LOG.warn { "Failed to execute action associated with button with reason: ${response.failureReason}" }
                     }
                 }
             }
