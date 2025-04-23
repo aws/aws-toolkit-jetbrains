@@ -35,6 +35,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_READY
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SOURCE_LINK_CLICK
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_ADD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_CHANGE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_REMOVE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
@@ -55,6 +58,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventRequest
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
 import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.AmazonQTheme
@@ -231,6 +236,22 @@ class BrowserConnector(
             CHAT_READY -> {
                 handleChatNotification<ChatReadyNotification, Unit>(node) { server, _ ->
                     server.chatReady()
+                }
+            }
+            CHAT_TAB_ADD -> {
+                handleChatNotification<TabEventRequest, TabEventParams>(node) { server, params ->
+                    server.tabAdd(params)
+                }
+            }
+            CHAT_TAB_REMOVE -> {
+                handleChatNotification<TabEventRequest, TabEventParams>(node) { server, params ->
+                    chatCommunicationManager.removePartialChatMessage(params.tabId)
+                    server.tabRemove(params)
+                }
+            }
+            CHAT_TAB_CHANGE -> {
+                handleChatNotification<TabEventRequest, TabEventParams>(node) { server, params ->
+                    server.tabChange(params)
                 }
             }
             CHAT_LINK_CLICK -> {

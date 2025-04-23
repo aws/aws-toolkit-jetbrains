@@ -17,6 +17,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_READY
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SOURCE_LINK_CLICK
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_ADD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_CHANGE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_REMOVE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FeedbackParams
@@ -25,6 +28,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoL
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
 import java.util.concurrent.CompletableFuture
@@ -51,6 +55,15 @@ interface AmazonQLanguageServer : LanguageServer {
 
     @JsonRequest(SEND_CHAT_COMMAND_PROMPT)
     fun sendChatPrompt(params: EncryptedChatParams): CompletableFuture<String>
+
+    @JsonNotification(CHAT_TAB_ADD)
+    fun tabAdd(params: TabEventParams): CompletableFuture<Unit>
+
+    @JsonNotification(CHAT_TAB_REMOVE)
+    fun tabRemove(params: TabEventParams): CompletableFuture<Unit>
+
+    @JsonNotification(CHAT_TAB_CHANGE)
+    fun tabChange(params: TabEventParams): CompletableFuture<Unit>
 
     @JsonRequest(CHAT_QUICK_ACTION)
     fun sendQuickAction(params: EncryptedQuickActionChatParams): CompletableFuture<String>
