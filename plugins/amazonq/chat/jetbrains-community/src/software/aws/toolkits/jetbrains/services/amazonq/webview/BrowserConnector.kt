@@ -323,5 +323,7 @@ class BrowserConnector(
         } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
     }
 
-    private val LOG = getLogger<BrowserConnector>()
+    companion object {
+        private val LOG = getLogger<BrowserConnector>()
+    }
 }
