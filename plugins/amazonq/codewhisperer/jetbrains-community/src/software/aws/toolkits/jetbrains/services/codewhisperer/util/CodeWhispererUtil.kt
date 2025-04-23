@@ -373,8 +373,8 @@ fun getDiagnosticsType(message: String): String {
     val lowercaseMessage = message.lowercase()
 
     val diagnosticPatterns = mapOf(
-        "SYNTAX_ERROR" to listOf("expected", "indent", "syntax"),
         "TYPE_ERROR" to listOf("type", "cast"),
+        "SYNTAX_ERROR" to listOf("expected", "indent", "syntax"),
         "REFERENCE_ERROR" to listOf("undefined", "not defined", "undeclared", "reference", "symbol"),
         "BEST_PRACTICE" to listOf("deprecated", "unused", "uninitialized", "not initialized"),
         "SECURITY" to listOf("security", "vulnerability")
@@ -435,7 +435,7 @@ fun getDocumentDiagnostics(document: Document, project: Project): List<IdeDiagno
                 .build()
         }
 }.getOrElse { e ->
-    getLogger<CodeWhispererUtil>().warn(e) { "Failed to get document diagnostics" }
+    getLogger<CodeWhispererUtil>().warn { "Failed to get document diagnostics ${e.message}" }
     emptyList()
 }
 
