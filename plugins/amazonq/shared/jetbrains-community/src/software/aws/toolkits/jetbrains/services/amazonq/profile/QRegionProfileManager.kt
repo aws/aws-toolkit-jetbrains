@@ -15,7 +15,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.xmlb.annotations.MapAnnotation
 import com.intellij.util.xmlb.annotations.Property
-import kotlinx.coroutines.CoroutineScope
 import software.amazon.awssdk.core.SdkClient
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.utils.debug
@@ -38,12 +37,11 @@ import software.aws.toolkits.telemetry.Telemetry
 import java.time.Duration
 import java.util.Collections
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Future
 import kotlin.reflect.KClass
 
 @Service(Service.Level.APP)
 @State(name = "qProfileStates", storages = [Storage("aws.xml")])
-class QRegionProfileManager(private val cs: CoroutineScope) : PersistentStateComponent<QProfileState>, Disposable {
+class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposable {
 
     // Map to store connectionId to its active profile
     private val connectionIdToActiveProfile = Collections.synchronizedMap<String, QRegionProfile>(mutableMapOf())
