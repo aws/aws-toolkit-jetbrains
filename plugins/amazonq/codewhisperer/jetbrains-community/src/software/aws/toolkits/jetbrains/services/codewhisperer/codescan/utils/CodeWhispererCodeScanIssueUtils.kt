@@ -28,6 +28,8 @@ import software.aws.toolkits.core.utils.convertMarkdownToHTML
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.ToolkitPlaces
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReference
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReferencePosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanHighlightingFilesPanel
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanIssue
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
@@ -349,7 +351,15 @@ fun applySuggestedFix(project: Project, issue: CodeWhispererCodeScanIssue) {
                 LOG.debug { "Applied fix with reference: $reference" }
                 val originalContent = updatedContent.substring(reference.recommendationContentSpan().start(), reference.recommendationContentSpan().end())
                 LOG.debug { "Original content from reference span: $originalContent" }
-                manager.addReferenceLogPanelEntry(reference = reference, null, null, originalContent.split("\n"))
+                manager.addReferenceLogPanelEntry(reference = InlineCompletionReference(
+                    referenceName = reference.repository(),
+                    referenceUrl = reference.url(),
+                    licenseName = reference.licenseName(),
+                    position = InlineCompletionReferencePosition(
+                        startCharacter = reference.recommendationContentSpan().start(),
+                        endCharacter = reference.recommendationContentSpan().end(),
+                    ),
+                ), null, null, originalContent.split("\n"))
             }
             broadcastQEvent(QFeatureEvent.FINISHES_EDITING)
         }

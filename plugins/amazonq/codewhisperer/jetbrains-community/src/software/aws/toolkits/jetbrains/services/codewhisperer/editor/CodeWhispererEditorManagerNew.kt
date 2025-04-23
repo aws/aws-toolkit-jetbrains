@@ -56,7 +56,7 @@ class CodeWhispererEditorManagerNew {
             broadcastQEvent(QFeatureEvent.STARTS_EDITING)
             document.replaceString(originalOffset, endOffsetToReplace, reformatted)
             PsiDocumentManager.getInstance(project).commitDocument(document)
-            primaryCaret.moveToOffset(endOffset + detail.rightOverlap.length)
+            primaryCaret.moveToOffset(endOffset)
 
             broadcastQEvent(QFeatureEvent.FINISHES_EDITING)
         }
@@ -65,17 +65,18 @@ class CodeWhispererEditorManagerNew {
             WriteCommandAction.runWriteCommandAction(project) {
                 val rangeMarker = document.createRangeMarker(originalOffset, endOffset, true)
 
-                CodeWhispererTelemetryServiceNew.getInstance().enqueueAcceptedSuggestionEntry(
-                    detail.requestId,
-                    requestContext,
-                    responseContext,
-                    Instant.now(),
-                    PsiDocumentManager.getInstance(project).getPsiFile(document)?.virtualFile,
-                    rangeMarker,
-                    remainingRecommendation,
-                    selectedIndex,
-                    detail.completionType
-                )
+                // TODO YUX: handle accepted entry on service side
+//                CodeWhispererTelemetryServiceNew.getInstance().enqueueAcceptedSuggestionEntry(
+//                    detail.itemId,
+//                    requestContext,
+//                    responseContext,
+//                    Instant.now(),
+//                    PsiDocumentManager.getInstance(project).getPsiFile(document)?.virtualFile,
+//                    rangeMarker,
+//                    remainingRecommendation,
+//                    selectedIndex,
+//                    detail.completionType
+//                )
 
                 ApplicationManager.getApplication().messageBus.syncPublisher(
                     CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
@@ -106,7 +107,6 @@ class CodeWhispererEditorManagerNew {
     fun getMatchingSymbolsFromRecommendation(
         editor: Editor,
         recommendation: String,
-        isTruncatedOnRight: Boolean,
         sessionContext: SessionContextNew,
     ): List<Pair<Int, Int>> {
         val result = mutableListOf<Pair<Int, Int>>()
@@ -123,8 +123,6 @@ class CodeWhispererEditorManagerNew {
 
         result.add(0 to caretOffset)
         result.add(recommendation.length + 1 to lineEndOffset)
-
-        if (isTruncatedOnRight) return result
 
         while (current < recommendation.length &&
             totalDocLengthChecked < lineText.length &&
@@ -208,17 +206,9 @@ class CodeWhispererEditorManagerNew {
     fun findOverLappingLines(
         editor: Editor,
         recommendationLines: List<String>,
-        isTruncatedOnRight: Boolean,
         sessionContext: SessionContextNew,
     ): Int {
         val caretOffset = editor.caretModel.offset
-        if (isTruncatedOnRight) {
-            // insertEndOffset value only makes sense when there are matching closing brackets, if there's right context
-            // resolution applied, set this value to the current caret offset
-            sessionContext.insertEndOffset = caretOffset
-            return 0
-        }
-
         val text = editor.document.charsSequence
         val document = editor.document
         val textLines = mutableListOf<Pair<String, Int>>()

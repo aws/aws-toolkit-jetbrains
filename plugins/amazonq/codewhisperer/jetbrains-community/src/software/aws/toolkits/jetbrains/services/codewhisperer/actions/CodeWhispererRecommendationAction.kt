@@ -38,22 +38,23 @@ class CodeWhispererRecommendationAction : AnAction(message("codewhisperer.trigge
         latencyContext.codewhispererEndToEndStart = System.nanoTime()
         val editor = e.getRequiredData(CommonDataKeys.EDITOR)
         if (!(
-                if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
-                    CodeWhispererServiceNew.getInstance().canDoInvocation(editor, CodewhispererTriggerType.OnDemand)
-                } else {
+//                if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
+//                    CodeWhispererServiceNew.getInstance().canDoInvocation(editor, CodewhispererTriggerType.OnDemand)
+//                } else {
                     CodeWhispererService.getInstance().canDoInvocation(editor, CodewhispererTriggerType.OnDemand)
-                }
+//                }
                 )
         ) {
             return
         }
 
         val triggerType = TriggerTypeInfo(CodewhispererTriggerType.OnDemand, CodeWhispererAutomatedTriggerType.Unknown())
-        val job = if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
-            CodeWhispererServiceNew.getInstance().showRecommendationsInPopup(editor, triggerType, latencyContext)
-        } else {
-            CodeWhispererService.getInstance().showRecommendationsInPopup(editor, triggerType, latencyContext)
-        }
+//        val job = if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
+//            CodeWhispererServiceNew.getInstance().showRecommendationsInPopup(editor, triggerType, latencyContext)
+//        } else {
+//            CodeWhispererService.getInstance().showRecommendationsInPopup(editor, triggerType, latencyContext)
+//        }
+        val job = CodeWhispererService.getInstance().showRecommendationsInPopup(editor, triggerType, latencyContext)
 
         e.getData(CommonDataKeys.EDITOR)?.getUserData(ACTION_JOB_KEY)?.set(job)
     }

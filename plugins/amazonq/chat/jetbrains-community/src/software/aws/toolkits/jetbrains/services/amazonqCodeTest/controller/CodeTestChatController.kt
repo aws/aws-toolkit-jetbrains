@@ -54,6 +54,8 @@ import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReference
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReferencePosition
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.CodeWhispererUTGChatManager
@@ -637,7 +639,15 @@ class CodeTestChatController(
                         }
                         LOG.debug { "Original code content from reference span: $originalContent" }
                         withContext(EDT) {
-                            manager.addReferenceLogPanelEntry(reference = reference, null, null, originalContent?.split("\n"))
+                            manager.addReferenceLogPanelEntry(reference = InlineCompletionReference(
+                                referenceName = reference.repository(),
+                                referenceUrl = reference.url(),
+                                licenseName = reference.licenseName(),
+                                position = InlineCompletionReferencePosition(
+                                    startCharacter = reference.recommendationContentSpan().start(),
+                                    endCharacter = reference.recommendationContentSpan().end()
+                                )
+                            ), null, null, originalContent?.split("\n"))
                             manager.toolWindow?.show()
                         }
                     }

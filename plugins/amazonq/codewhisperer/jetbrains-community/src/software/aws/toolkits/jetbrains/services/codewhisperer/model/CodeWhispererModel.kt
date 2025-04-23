@@ -12,10 +12,10 @@ import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import software.amazon.awssdk.services.codewhispererruntime.model.Completion
-import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionItem
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManagerNew
@@ -26,7 +26,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererServiceNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContextNew
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryServiceNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.setIntelliSensePopupAlpha
@@ -103,7 +102,7 @@ data class RecommendationContext(
 )
 
 data class RecommendationContextNew(
-    val details: MutableList<DetailContextNew>,
+    val details: MutableList<DetailContext>,
     val userInputOriginal: String,
     val userInputSinceInvocation: String,
     val position: VisualPosition,
@@ -113,28 +112,15 @@ data class RecommendationContextNew(
 
 data class PreviewContext(
     val jobId: Int,
-    val detail: DetailContextNew,
+    val detail: DetailContext,
     val userInput: String,
     val typeahead: String,
 )
 
 data class DetailContext(
-    val requestId: String,
-    val recommendation: Completion,
-    val reformatted: Completion,
+    val itemId: String,
+    val completion: InlineCompletionItem,
     val isDiscarded: Boolean,
-    val isTruncatedOnRight: Boolean,
-    val rightOverlap: String = "",
-    val completionType: CodewhispererCompletionType,
-)
-
-data class DetailContextNew(
-    val requestId: String,
-    val recommendation: Completion,
-    val reformatted: Completion,
-    val isDiscarded: Boolean,
-    val isTruncatedOnRight: Boolean,
-    val rightOverlap: String = "",
     val completionType: CodewhispererCompletionType,
     var hasSeen: Boolean = false,
     var isAccepted: Boolean = false,
@@ -177,11 +163,11 @@ data class SessionContextNew(
 
     @RequiresEdt
     override fun dispose() {
-        CodeWhispererTelemetryServiceNew.getInstance().sendUserDecisionEventForAll(
-            this,
-            hasAccepted,
-            CodeWhispererInvocationStatusNew.getInstance().popupStartTimestamp?.let { Duration.between(it, Instant.now()) }
-        )
+//        CodeWhispererTelemetryServiceNew.getInstance().sendUserDecisionEventForAll(
+//            this,
+//            hasAccepted,
+//            CodeWhispererInvocationStatusNew.getInstance().popupStartTimestamp?.let { Duration.between(it, Instant.now()) }
+//        )
         setIntelliSensePopupAlpha(editor, 0f)
         CodeWhispererInvocationStatusNew.getInstance().setDisplaySessionActive(false)
 
@@ -214,7 +200,6 @@ data class TriggerTypeInfo(
 
 data class InvocationContext(
     val requestContext: RequestContext,
-    val responseContext: ResponseContext,
     val recommendationContext: RecommendationContext,
     val popup: JBPopup,
 ) : Disposable {
@@ -223,7 +208,6 @@ data class InvocationContext(
 
 data class InvocationContextNew(
     val requestContext: RequestContextNew,
-    val responseContext: ResponseContext,
     val recommendationContext: RecommendationContextNew,
 ) : Disposable {
     private var isDisposed = false
@@ -237,15 +221,13 @@ data class InvocationContextNew(
 }
 data class WorkerContext(
     val requestContext: RequestContext,
-    val responseContext: ResponseContext,
-    val response: GenerateCompletionsResponse,
+    val completions: InlineCompletionListWithReferences,
     val popup: JBPopup,
 )
 
 data class WorkerContextNew(
     val requestContext: RequestContextNew,
-    val responseContext: ResponseContext,
-    val response: GenerateCompletionsResponse,
+    val completions: InlineCompletionListWithReferences,
 )
 
 data class CodeScanTelemetryEvent(

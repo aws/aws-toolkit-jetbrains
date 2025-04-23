@@ -5,6 +5,9 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Document
+import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.editor.event.DocumentEvent
+import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileDocumentManagerListener
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -24,15 +27,17 @@ import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.TextDocumentItem
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil.toUriString
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class TextDocumentServiceHandler(
     private val project: Project,
-    serverInstance: Disposable,
+    private val serverInstance: Disposable,
 ) : FileDocumentManagerListener,
     FileEditorManagerListener,
-    BulkFileListener {
+    BulkFileListener,
+    DocumentListener {
 
     init {
         // didOpen & didClose events
@@ -61,6 +66,15 @@ class TextDocumentServiceHandler(
     }
 
     private fun handleFileOpened(file: VirtualFile) {
+        FileDocumentManager.getInstance().getDocument(file)?.addDocumentListener(
+            object : DocumentListener {
+                override fun documentChanged(event: DocumentEvent) {
+                    realTimeEdit(event)
+                }
+            },
+            serverInstance
+        )
+        println("called handleFileOpened")
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             toUriString(file)?.let { uri ->
                 languageServer.textDocumentService.didOpen(
@@ -78,6 +92,7 @@ class TextDocumentServiceHandler(
     }
 
     override fun beforeDocumentSaving(document: Document) {
+        println("called beforeDocumentSaving")
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             val file = FileDocumentManager.getInstance().getFile(document) ?: return@executeIfRunning
             toUriString(file)?.let { uri ->
@@ -94,6 +109,7 @@ class TextDocumentServiceHandler(
     }
 
     override fun after(events: MutableList<out VFileEvent>) {
+        println("called after")
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             pluginAwareExecuteOnPooledThread {
                 events.filterIsInstance<VFileContentChangeEvent>().forEach { event ->
@@ -129,6 +145,7 @@ class TextDocumentServiceHandler(
         source: FileEditorManager,
         file: VirtualFile,
     ) {
+        println("called fileClosed")
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             toUriString(file)?.let { uri ->
                 languageServer.textDocumentService.didClose(
@@ -140,5 +157,30 @@ class TextDocumentServiceHandler(
                 )
             }
         }
+    }
+
+    private fun realTimeEdit(event: DocumentEvent) {
+        println("called real time document changed on document: ${event.document}")
+        AmazonQLspService.executeIfRunning(project) { languageServer ->
+            pluginAwareExecuteOnPooledThread {
+                val vFile = FileDocumentManager.getInstance().getFile(event.document) ?: return@pluginAwareExecuteOnPooledThread
+                toUriString(vFile)?.let { uri ->
+                    languageServer.textDocumentService.didChange(
+                        DidChangeTextDocumentParams().apply {
+                            textDocument = VersionedTextDocumentIdentifier().apply {
+                                this.uri = uri
+                                version = event.document.modificationStamp.toInt()
+                            }
+                            contentChanges = listOf(
+                                TextDocumentContentChangeEvent().apply {
+                                    text = event.document.text
+                                }
+                            )
+                        }
+                    )
+                }
+            }
+        }
+        // Process document changes here
     }
 }

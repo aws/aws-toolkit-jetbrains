@@ -8,6 +8,7 @@ import com.intellij.notification.NotificationAction
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.Service
@@ -26,11 +27,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.eclipse.lsp4j.Position
+import org.eclipse.lsp4j.TextDocumentIdentifier
+import org.eclipse.lsp4j.jsonrpc.messages.Either
 import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.core.util.DefaultSdkAutoConstructList
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
@@ -53,8 +56,13 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionContext
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionTriggerKind
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionWithReferencesParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil.toUriString
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManagerNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getCaretPosition
@@ -63,7 +71,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJson
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContextNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
@@ -90,8 +98,6 @@ import software.aws.toolkits.jetbrains.utils.isInjectedText
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
-import software.aws.toolkits.telemetry.CodewhispererCompletionType
-import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import java.util.concurrent.TimeUnit
 
@@ -241,120 +247,123 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         var lastRecommendationIndex = -1
 
         try {
-            val responseIterable = CodeWhispererClientAdaptor.getInstance(requestContext.project).generateCompletionsPaginator(
-                buildCodeWhispererRequest(
-                    requestContext.fileContextInfo,
-                    requestContext.awaitSupplementalContext(),
-                    requestContext.customizationArn,
-                    requestContext.profileArn
-                )
-            )
-
             var startTime = System.nanoTime()
             latencyContext.codewhispererPreprocessingEnd = System.nanoTime()
             latencyContext.paginationAllCompletionsStart = System.nanoTime()
             CodeWhispererInvocationStatusNew.getInstance().setInvocationStart()
             var requestCount = 0
-            for (response in responseIterable) {
-                requestCount++
-                val endTime = System.nanoTime()
-                val latency = TimeUnit.NANOSECONDS.toMillis(endTime - startTime).toDouble()
-                startTime = endTime
-                val requestId = response.responseMetadata().requestId()
-                val sessionId = response.sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
-                if (requestCount == 1) {
-                    latencyContext.codewhispererPostprocessingStart = System.nanoTime()
-                    latencyContext.paginationFirstCompletionTime = latency
-                    latencyContext.firstRequestId = requestId
-                    CodeWhispererInvocationStatusNew.getInstance().setInvocationSessionId(sessionId)
+            var nextToken: Either<String, Int>? = null
+            do {
+                val result = AmazonQLspService.executeIfRunning(requestContext.project) { server ->
+                    val params = createInlineCompletionParams(requestContext.editor, requestContext.triggerTypeInfo, nextToken)
+                    println("cursor position: ${params.position.line}, ${params.position.character}")
+                    server.inlineCompletionWithReferences(params)
                 }
-                if (response.nextToken().isEmpty()) {
-                    latencyContext.paginationAllCompletionsEnd = System.nanoTime()
-                }
-                val responseContext = ResponseContext(sessionId)
-                logServiceInvocation(requestId, requestContext, responseContext, response.completions(), latency, null)
-                lastRecommendationIndex += response.completions().size
-                ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_CODE_COMPLETION_PERFORMED)
-                    .onSuccess(requestContext.fileContextInfo)
-                CodeWhispererTelemetryServiceNew.getInstance().sendServiceInvocationEvent(
-                    currentJobId,
-                    requestId,
-                    requestContext,
-                    responseContext,
-                    lastRecommendationIndex,
-                    true,
-                    latency,
-                    null
-                )
+                println(result)
+                result?.thenAccept { completion ->
+                    println(completion)
+                    nextToken = completion.partialResultToken
+                    val a = 1
+                    requestCount++
+                    val endTime = System.nanoTime()
+                    val latency = TimeUnit.NANOSECONDS.toMillis(endTime - startTime).toDouble()
+                    startTime = endTime
+//                    val requestId = response.responseMetadata().requestId()
+//                    val sessionId = response.sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
+                    if (requestCount == 1) {
+                        latencyContext.codewhispererPostprocessingStart = System.nanoTime()
+                        latencyContext.paginationFirstCompletionTime = latency
+//                        latencyContext.firstRequestId = requestId
+//                        CodeWhispererInvocationStatusNew.getInstance().setInvocationSessionId(sessionId)
+                    }
+//                    if (response.nextToken().isEmpty()) {
+//                        latencyContext.paginationAllCompletionsEnd = System.nanoTime()
+//                    }
+//                    val responseContext = ResponseContext(sessionId)
+//                    logServiceInvocation(requestId, requestContext, responseContext, response.completions(), latency, null)
+                    lastRecommendationIndex += completion.items.size
+                    ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_CODE_COMPLETION_PERFORMED)
+                        .onSuccess(requestContext.fileContextInfo)
+//                    CodeWhispererTelemetryServiceNew.getInstance().sendServiceInvocationEvent(
+//                        currentJobId,
+//                        requestId,
+//                        requestContext,
+//                        responseContext,
+//                        lastRecommendationIndex,
+//                        true,
+//                        latency,
+//                        null
+//                    )
 
-                val validatedResponse = validateResponse(response)
+//                    val validatedResponse = validateResponse(response)
 
-                runInEdt {
-                    // If delay is not met, add them to the worker queue and process them later.
-                    // On first response, workers queue must be empty. If there's enough delay before showing,
-                    // process CodeWhisperer UI rendering and workers queue will remain empty throughout this
-                    // CodeWhisperer session. If there's not enough delay before showing, the CodeWhisperer UI rendering task
-                    // will be added to the workers queue.
-                    // On subsequent responses, if they see workers queue is not empty, it means the first worker
-                    // task hasn't been finished yet, in this case simply add another task to the queue. If they
-                    // see worker queue is empty, the previous tasks must have been finished before this. In this
-                    // case render CodeWhisperer UI directly.
-                    val workerContext = WorkerContextNew(requestContext, responseContext, validatedResponse)
-                    if (workerContexts.isNotEmpty()) {
-                        workerContexts.add(workerContext)
-                    } else {
-                        if (ongoingRequests.values.filterNotNull().isEmpty() &&
-                            !CodeWhispererInvocationStatusNew.getInstance().hasEnoughDelayToShowCodeWhisperer()
-                        ) {
-                            // It's the first response, and no enough delay before showing
-                            projectCoroutineScope(requestContext.project).launch {
-                                while (!CodeWhispererInvocationStatusNew.getInstance().hasEnoughDelayToShowCodeWhisperer()) {
-                                    delay(CodeWhispererConstants.POPUP_DELAY_CHECK_INTERVAL)
-                                }
-                                runInEdt {
-                                    workerContexts.forEach {
-                                        processCodeWhispererUI(
-                                            sessionContext,
-                                            it,
-                                            ongoingRequests[currentJobId],
-                                            cs,
-                                            currentJobId
-                                        )
-                                        if (!ongoingRequests.contains(currentJobId)) {
-                                            job?.cancel()
-                                        }
-                                    }
-                                    workerContexts.clear()
-                                }
-                            }
+                    runInEdt {
+                        // If delay is not met, add them to the worker queue and process them later.
+                        // On first response, workers queue must be empty. If there's enough delay before showing,
+                        // process CodeWhisperer UI rendering and workers queue will remain empty throughout this
+                        // CodeWhisperer session. If there's not enough delay before showing, the CodeWhisperer UI rendering task
+                        // will be added to the workers queue.
+                        // On subsequent responses, if they see workers queue is not empty, it means the first worker
+                        // task hasn't been finished yet, in this case simply add another task to the queue. If they
+                        // see worker queue is empty, the previous tasks must have been finished before this. In this
+                        // case render CodeWhisperer UI directly.
+                        val workerContext = WorkerContextNew(requestContext, completion)
+                        if (workerContexts.isNotEmpty()) {
                             workerContexts.add(workerContext)
                         } else {
-                            // Have enough delay before showing for the first response, or it's subsequent responses
-                            processCodeWhispererUI(
-                                sessionContext,
-                                workerContext,
-                                ongoingRequests[currentJobId],
-                                cs,
-                                currentJobId
-                            )
-                            if (!ongoingRequests.contains(currentJobId)) {
-                                job?.cancel()
+                            if (ongoingRequests.values.filterNotNull().isEmpty() &&
+                                !CodeWhispererInvocationStatusNew.getInstance().hasEnoughDelayToShowCodeWhisperer()
+                            ) {
+                                // It's the first response, and no enough delay before showing
+                                projectCoroutineScope(requestContext.project).launch {
+                                    while (!CodeWhispererInvocationStatusNew.getInstance().hasEnoughDelayToShowCodeWhisperer()) {
+                                        delay(CodeWhispererConstants.POPUP_DELAY_CHECK_INTERVAL)
+                                    }
+                                    runInEdt {
+                                        workerContexts.forEach {
+                                            processCodeWhispererUI(
+                                                sessionContext,
+                                                it,
+                                                ongoingRequests[currentJobId],
+                                                cs,
+                                                currentJobId
+                                            )
+                                            if (!ongoingRequests.contains(currentJobId)) {
+                                                job?.cancel()
+                                            }
+                                        }
+                                        workerContexts.clear()
+                                    }
+                                }
+                                workerContexts.add(workerContext)
+                            } else {
+                                // Have enough delay before showing for the first response, or it's subsequent responses
+                                processCodeWhispererUI(
+                                    sessionContext,
+                                    workerContext,
+                                    ongoingRequests[currentJobId],
+                                    cs,
+                                    currentJobId
+                                )
+                                if (!ongoingRequests.contains(currentJobId)) {
+                                    job?.cancel()
+                                }
                             }
                         }
                     }
+                    if (!cs.isActive) {
+                        // If job is cancelled before we do another request, don't bother making
+                        // another API call to save resources
+                        LOG.debug { "Skipping sending remaining requests on inactive CodeWhisperer session exit" }
+                        return@thenAccept
+                    }
+                    if (requestCount >= PAGINATION_REQUEST_COUNT_ALLOWED) {
+                        LOG.debug { "Only $PAGINATION_REQUEST_COUNT_ALLOWED request per pagination session for now" }
+                        CodeWhispererInvocationStatusNew.getInstance().finishInvocation()
+                        return@thenAccept
+                    }
                 }
-                if (!cs.isActive) {
-                    // If job is cancelled before we do another request, don't bother making
-                    // another API call to save resources
-                    LOG.debug { "Skipping sending remaining requests on inactive CodeWhisperer session exit" }
-                    return
-                }
-                if (requestCount >= PAGINATION_REQUEST_COUNT_ALLOWED) {
-                    LOG.debug { "Only $PAGINATION_REQUEST_COUNT_ALLOWED request per pagination session for now" }
-                    CodeWhispererInvocationStatusNew.getInstance().finishInvocation()
-                    break
-                }
-            }
+            } while (nextToken != null)
         } catch (e: Exception) {
             val requestId: String
             val sessionId: String
@@ -478,21 +487,20 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         jobId: Int,
     ) {
         val requestContext = workerContext.requestContext
-        val responseContext = workerContext.responseContext
-        val response = workerContext.response
-        val requestId = response.responseMetadata().requestId()
+        val completions = workerContext.completions
+//        val requestId = response.responseMetadata().requestId()
 
         // At this point when we are in EDT, the state of the popup will be thread-safe
         // across this thread execution, so if popup is disposed, we will stop here.
         // This extra check is needed because there's a time between when we get the response and
         // when we enter the EDT.
         if (!coroutine.isActive || sessionContext.isDisposed()) {
-            LOG.debug { "Stop showing CodeWhisperer recommendations on CodeWhisperer session exit. RequestId: $requestId, jobId: $jobId" }
+            LOG.debug { "Stop showing CodeWhisperer recommendations on CodeWhisperer session exit. session id: ${completions.sessionId}, jobId: $jobId" }
             return
         }
 
         if (requestContext.editor.isDisposed) {
-            LOG.debug { "Stop showing all CodeWhisperer recommendations since editor is disposed. RequestId: $requestId, jobId: $jobId" }
+            LOG.debug { "Stop showing all CodeWhisperer recommendations since editor is disposed. session id: ${completions.sessionId}, jobId: $jobId" }
             disposeDisplaySession(false)
             return
         }
@@ -507,7 +515,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         val nextStates: InvocationContextNew?
         if (currStates == null) {
             // first response for the jobId
-            nextStates = initStates(jobId, requestContext, responseContext, response, caretMovement)
+            nextStates = initStates(jobId, requestContext, completions, caretMovement)
 
             // receiving a null state means caret has moved backward,
             // so we are going to cancel the current job
@@ -516,9 +524,9 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
             }
         } else {
             // subsequent responses for the jobId
-            nextStates = updateStates(currStates, response)
+            nextStates = updateStates(currStates, completions)
         }
-        LOG.debug { "Adding ${response.completions().size} completions to the session. RequestId: $requestId, jobId: $jobId" }
+        LOG.debug { "Adding ${completions.items.size} completions to the session. session id: ${completions.sessionId}, jobId: $jobId" }
 
         // TODO: may have bug when it's a mix of auto-trigger + manual trigger
         val hasAtLeastOneValid = checkRecommendationsValidity(nextStates, true)
@@ -530,23 +538,21 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         // since it won't be sent automatically later
         // TODO: may have bug; visit later
         if (nextStates.recommendationContext.details.isEmpty()) {
-            LOG.debug { "Received just an empty list from this session, requestId: $requestId" }
-            CodeWhispererTelemetryServiceNew.getInstance().sendUserDecisionEvent(
-                requestContext,
-                responseContext,
-                DetailContextNew(
-                    requestId,
-                    Completion.builder().build(),
-                    Completion.builder().build(),
-                    false,
-                    false,
-                    "",
-                    CodewhispererCompletionType.Line
-                ),
-                -1,
-                CodewhispererSuggestionState.Empty,
-                nextStates.recommendationContext.details.size
-            )
+            // TODO YUX: fully remove userDecision
+            LOG.debug { "Received just an empty list from this session. session id: ${completions.sessionId}" }
+//            CodeWhispererTelemetryServiceNew.getInstance().sendUserDecisionEvent(
+//                requestContext,
+//                responseContext,
+//                DetailContextNew(
+//                    requestId,
+//                    InlineCompletionItem(),
+//                    false,
+//                    CodewhispererCompletionType.Line
+//                ),
+//                -1,
+//                CodewhispererSuggestionState.Empty,
+//                nextStates.recommendationContext.details.size
+//            )
         }
         if (!hasAtLeastOneValid) {
             LOG.debug { "None of the recommendations are valid, exiting current CodeWhisperer pagination session" }
@@ -565,21 +571,18 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
     private fun initStates(
         jobId: Int,
         requestContext: RequestContextNew,
-        responseContext: ResponseContext,
-        response: GenerateCompletionsResponse,
+        completions: InlineCompletionListWithReferences,
         caretMovement: CaretMovement,
     ): InvocationContextNew? {
-        val requestId = response.responseMetadata().requestId()
-        val recommendations = response.completions()
         val visualPosition = requestContext.editor.caretModel.visualPosition
 
         if (caretMovement == CaretMovement.MOVE_BACKWARD) {
-            LOG.debug { "Caret moved backward, discarding all of the recommendations and exiting the session. Request ID: $requestId, jobId: $jobId" }
-            val detailContexts = recommendations.map {
-                DetailContextNew("", it, it, true, false, "", getCompletionType(it))
+//            LOG.debug { "Caret moved backward, discarding all of the recommendations and exiting the session. Request ID: $requestId, jobId: $jobId" }
+            val detailContexts = completions.items.map {
+                DetailContext("", it, true, getCompletionType(it))
             }.toMutableList()
             val recommendationContext = RecommendationContextNew(detailContexts, "", "", VisualPosition(0, 0), jobId)
-            ongoingRequests[jobId] = buildInvocationContext(requestContext, responseContext, recommendationContext)
+            ongoingRequests[jobId] = buildInvocationContext(requestContext, recommendationContext)
             disposeDisplaySession(false)
             return null
         }
@@ -590,38 +593,34 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         )
         val userInput =
             if (caretMovement == CaretMovement.NO_CHANGE) {
-                LOG.debug { "Caret position not changed since invocation. Request ID: $requestId" }
+                LOG.debug { "Caret position not changed since invocation. Session Id: ${completions.sessionId}" }
                 ""
             } else {
                 userInputOriginal.trimStart().also {
                     LOG.debug {
-                        "Caret position moved forward since invocation. Request ID: $requestId, " +
+                        "Caret position moved forward since invocation. Session Id: ${completions.sessionId}, " +
                             "user input since invocation: $userInputOriginal, " +
                             "user input without leading spaces: $it"
                     }
                 }
             }
         val detailContexts = CodeWhispererRecommendationManager.getInstance().buildDetailContext(
-            requestContext,
             userInput,
-            recommendations,
-            requestId
+            completions,
         )
         val recommendationContext = RecommendationContextNew(detailContexts, userInputOriginal, userInput, visualPosition, jobId)
-        ongoingRequests[jobId] = buildInvocationContext(requestContext, responseContext, recommendationContext)
+        ongoingRequests[jobId] = buildInvocationContext(requestContext, recommendationContext)
         return ongoingRequests[jobId]
     }
 
     private fun updateStates(
         states: InvocationContextNew,
-        response: GenerateCompletionsResponse,
+        completions: InlineCompletionListWithReferences,
     ): InvocationContextNew {
         val recommendationContext = states.recommendationContext
         val newDetailContexts = CodeWhispererRecommendationManager.getInstance().buildDetailContext(
-            states.requestContext,
             recommendationContext.userInputSinceInvocation,
-            response.completions(),
-            response.responseMetadata().requestId()
+            completions,
         )
 
         recommendationContext.details.addAll(newDetailContexts)
@@ -633,7 +632,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         val details = states.recommendationContext.details
 
         // set to true when at least one is not discarded or empty
-        val hasAtLeastOneValid = details.any { !it.isDiscarded && it.recommendation.content().isNotEmpty() }
+        val hasAtLeastOneValid = details.any { !it.isDiscarded && it.completion.insertText.isNotEmpty() }
 
         if (!hasAtLeastOneValid && showHint && states.requestContext.triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
             showCodeWhispererInfoHint(
@@ -736,7 +735,6 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
 
     private fun buildInvocationContext(
         requestContext: RequestContextNew,
-        responseContext: ResponseContext,
         recommendationContext: RecommendationContextNew,
     ): InvocationContextNew {
         // Creating a disposable for managing all listeners lifecycle attached to the popup.
@@ -744,12 +742,35 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         // After pagination, listeners need to be updated as states are updated, for the same popup,
         // so disposable chain becomes popup -> disposable -> listeners updates, and disposable gets replaced on every
         // state update.
-        val states = InvocationContextNew(requestContext, responseContext, recommendationContext)
+        val states = InvocationContextNew(requestContext, recommendationContext)
         Disposer.register(states) {
             job?.cancel(CancellationException("Cancelling the current coroutine when the pagination session context is disposed"))
         }
         return states
     }
+
+    private fun createInlineCompletionParams(editor: Editor, triggerTypeInfo: TriggerTypeInfo, nextToken: Either<String, Int>?): InlineCompletionWithReferencesParams =
+        ReadAction.compute<InlineCompletionWithReferencesParams, RuntimeException> {
+            InlineCompletionWithReferencesParams(
+                context = InlineCompletionContext(
+                    // Map the triggerTypeInfo to appropriate InlineCompletionTriggerKind
+                    triggerKind = when (triggerTypeInfo.triggerType) {
+                        CodewhispererTriggerType.OnDemand -> InlineCompletionTriggerKind.Invoke
+                        CodewhispererTriggerType.AutoTrigger -> InlineCompletionTriggerKind.Automatic
+                        else -> InlineCompletionTriggerKind.Invoke
+                    }
+                ),
+            ).apply {
+                textDocument = TextDocumentIdentifier(toUriString(editor.virtualFile))
+                position = Position(
+                    editor.caretModel.primaryCaret.logicalPosition.line,
+                    editor.caretModel.primaryCaret.logicalPosition.column
+                )
+                if (nextToken != null) {
+                    workDoneToken = nextToken
+                }
+            }
+        }
 
     private fun logServiceInvocation(
         requestId: String,

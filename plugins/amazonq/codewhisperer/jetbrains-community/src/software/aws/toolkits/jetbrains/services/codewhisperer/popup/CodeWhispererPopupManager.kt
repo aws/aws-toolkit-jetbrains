@@ -44,6 +44,8 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Import
 import software.amazon.awssdk.services.codewhispererruntime.model.Reference
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionImports
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReference
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addHorizontalGlue
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.horizontalPanelConstraints
@@ -121,7 +123,7 @@ class CodeWhispererPopupManager {
         indexChange: Int,
         recommendationAdded: Boolean = false,
     ) {
-        val (_, _, recommendationContext, popup) = states
+        val (_, recommendationContext, popup) = states
         val (details) = recommendationContext
         if (recommendationAdded) {
             LOG.debug {
@@ -189,7 +191,7 @@ class CodeWhispererPopupManager {
     }
 
     private fun resolveTypeahead(states: InvocationContext, selectedIndex: Int, typeahead: String): String {
-        val recommendation = states.recommendationContext.details[selectedIndex].reformatted.content()
+        val recommendation = states.recommendationContext.details[selectedIndex].completion.insertText
         val userInput = states.recommendationContext.userInputSinceInvocation
         var indexOfFirstNonWhiteSpace = typeahead.indexOfFirst { !it.isWhitespace() }
         if (indexOfFirstNonWhiteSpace == -1) {
@@ -212,8 +214,8 @@ class CodeWhispererPopupManager {
         val validSelectedIndex = getValidSelectedIndex(details, userInput, selectedIndex, typeaheadOriginal)
         updateSelectedRecommendationLabelText(validSelectedIndex, validCount)
         updateNavigationPanel(validSelectedIndex, validCount)
-        updateImportPanel(details[selectedIndex].recommendation.mostRelevantMissingImports())
-        updateCodeReferencePanel(states.requestContext.project, details[selectedIndex].recommendation.references())
+        updateImportPanel(details[selectedIndex].completion.mostRelevantMissingImports)
+        updateCodeReferencePanel(states.requestContext.project, details[selectedIndex].completion.references)
     }
 
     fun render(
@@ -366,13 +368,14 @@ class CodeWhispererPopupManager {
             }
             if (sessionContext.perceivedLatency < 0) {
                 val perceivedLatency = CodeWhispererInvocationStatus.getInstance().getTimeSinceDocumentChanged()
-                CodeWhispererTelemetryService.getInstance().sendPerceivedLatencyEvent(
-                    detailContexts[selectedIndex].requestId,
-                    states.requestContext,
-                    states.responseContext,
-                    perceivedLatency
-                )
-                CodeWhispererTelemetryService.getInstance().sendClientComponentLatencyEvent(states)
+                // TODO: call perceived Latency hook
+//                CodeWhispererTelemetryService.getInstance().sendPerceivedLatencyEvent(
+//                    detailContexts[selectedIndex].itemId,
+//                    states.requestContext,
+//                    states.responseContext,
+//                    perceivedLatency
+//                )
+//                CodeWhispererTelemetryService.getInstance().sendClientComponentLatencyEvent(states)
                 sessionContext.perceivedLatency = perceivedLatency
             }
         }
@@ -399,7 +402,7 @@ class CodeWhispererPopupManager {
         }
 
     fun getReformattedRecommendation(detailContext: DetailContext, userInput: String) =
-        detailContext.reformatted.content().substring(userInput.length)
+        detailContext.completion.insertText.substring(userInput.length)
 
     fun initPopupListener(states: InvocationContext) {
         addPopupListener(states)
@@ -568,31 +571,31 @@ class CodeWhispererPopupManager {
         popupComponents.nextButton.isEnabled = multipleRecommendation && validSelectedIndex != validCount - 1
     }
 
-    private fun updateImportPanel(imports: List<Import>) {
+    private fun updateImportPanel(imports: List<InlineCompletionImports>?) {
         popupComponents.panel.apply {
             if (components.contains(popupComponents.importPanel)) {
                 remove(popupComponents.importPanel)
             }
         }
-        if (imports.isEmpty()) return
+        if (imports.isNullOrEmpty()) return
 
         val firstImport = imports.first()
         val choice = if (imports.size > 2) 2 else imports.size - 1
-        val message = message("codewhisperer.popup.import_info", firstImport.statement(), imports.size - 1, choice)
+        val message = message("codewhisperer.popup.import_info", firstImport.statement, imports.size - 1, choice)
         popupComponents.panel.add(popupComponents.importPanel, horizontalPanelConstraints)
         popupComponents.importLabel.text = message
     }
 
-    private fun updateCodeReferencePanel(project: Project, references: List<Reference>) {
+    private fun updateCodeReferencePanel(project: Project, references: List<InlineCompletionReference>?) {
         popupComponents.panel.apply {
             if (components.contains(popupComponents.codeReferencePanel)) {
                 remove(popupComponents.codeReferencePanel)
             }
         }
-        if (references.isEmpty()) return
+        if (references.isNullOrEmpty()) return
 
         popupComponents.panel.add(popupComponents.codeReferencePanel, horizontalPanelConstraints)
-        val licenses = references.map { it.licenseName() }.toSet()
+        val licenses = references.map { it.licenseName }.toSet()
         popupComponents.codeReferencePanelLink.apply {
             actionListeners.toList().forEach {
                 removeActionListener(it)
@@ -669,13 +672,13 @@ class CodeWhispererPopupManager {
 
     private fun isValidRecommendation(detailContext: DetailContext, userInput: String, typeahead: String): Boolean {
         if (detailContext.isDiscarded) return false
-        if (detailContext.recommendation.content().isEmpty()) return false
+        if (detailContext.completion.insertText.isEmpty()) return false
         val indexOfFirstNonWhiteSpace = typeahead.indexOfFirst { !it.isWhitespace() }
         if (indexOfFirstNonWhiteSpace == -1) return true
 
         for (i in 0..indexOfFirstNonWhiteSpace) {
             val subTypeahead = typeahead.substring(i)
-            if (detailContext.reformatted.content().startsWith(userInput + subTypeahead)) return true
+            if (detailContext.completion.insertText.startsWith(userInput + subTypeahead)) return true
         }
         return false
     }

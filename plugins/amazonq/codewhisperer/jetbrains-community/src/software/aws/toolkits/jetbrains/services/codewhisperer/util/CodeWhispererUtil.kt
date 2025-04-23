@@ -39,6 +39,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnecti
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnectionType
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionItem
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererManager.Companion.taskTypeToFilename
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
@@ -180,8 +181,8 @@ fun VirtualFile.toCodeChunk(path: String): Sequence<Chunk> = sequence {
 fun VirtualFile.isWithin(ancestor: VirtualFile): Boolean = VfsUtilCore.isAncestor(ancestor, this, false)
 
 object CodeWhispererUtil {
-    fun getCompletionType(completion: Completion): CodewhispererCompletionType {
-        val content = completion.content()
+    fun getCompletionType(completion: InlineCompletionItem): CodewhispererCompletionType {
+        val content = completion.insertText
         val nonBlankLines = content.split("\n").count { it.isNotBlank() }
 
         return when {

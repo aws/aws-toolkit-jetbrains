@@ -367,7 +367,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
                 serviceInvocation,
                 1,
                 "codewhispererSessionId" to states.responseContext.sessionId,
-                "codewhispererRequestId" to states.recommendationContext.details[0].requestId,
+                "codewhispererRequestId" to states.recommendationContext.details[0].itemId,
             )
         }
     }
@@ -385,7 +385,7 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
             userDecision,
             states.recommendationContext.details.size,
             "codewhispererSessionId" to states.responseContext.sessionId,
-            "codewhispererRequestId" to states.recommendationContext.details[0].requestId,
+            "codewhispererRequestId" to states.recommendationContext.details[0].itemId,
         )
     }
 

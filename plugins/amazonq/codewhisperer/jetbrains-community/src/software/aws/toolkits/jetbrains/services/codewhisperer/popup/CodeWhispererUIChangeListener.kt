@@ -41,7 +41,6 @@ class CodeWhispererUIChangeListener : CodeWhispererPopupStateChangeListener {
         val matchingSymbols = editorManager.getMatchingSymbolsFromRecommendation(
             editor,
             firstLineOfRemaining,
-            detail.isTruncatedOnRight,
             sessionContext
         )
 
@@ -50,7 +49,7 @@ class CodeWhispererUIChangeListener : CodeWhispererPopupStateChangeListener {
         }
 
         // Add the strike-though hint for the remaining non-matching first-line right context for multi-line completions
-        if (!detail.isTruncatedOnRight && otherLinesOfRemaining.isNotEmpty()) {
+        if (otherLinesOfRemaining.isNotEmpty()) {
             val rangeHighlighter = editor.markupModel.addRangeHighlighter(
                 matchingSymbols[matchingSymbols.size - 2].second,
                 lineEndOffset,
@@ -76,7 +75,6 @@ class CodeWhispererUIChangeListener : CodeWhispererPopupStateChangeListener {
         val overlappingLinesCount = editorManager.findOverLappingLines(
             editor,
             otherLinesOfRemaining,
-            detail.isTruncatedOnRight,
             sessionContext
         )
 
@@ -117,7 +115,6 @@ class CodeWhispererUIChangeListener : CodeWhispererPopupStateChangeListener {
         val overlappingLinesCount = editorManager.findOverLappingLines(
             editor,
             otherLinesOfRemaining,
-            detail.isTruncatedOnRight,
             sessionContext
         )
         CodeWhispererPopupManager.getInstance().render(

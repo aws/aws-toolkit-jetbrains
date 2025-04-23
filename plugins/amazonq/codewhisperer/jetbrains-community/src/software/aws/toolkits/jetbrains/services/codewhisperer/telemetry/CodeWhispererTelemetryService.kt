@@ -154,8 +154,8 @@ class CodeWhispererTelemetryService {
         suggestionState: CodewhispererSuggestionState,
         numOfRecommendations: Int,
     ) {
-        val requestId = detailContext.requestId
-        val recommendation = detailContext.recommendation
+        val requestId = detailContext.itemId
+        val completion = detailContext.completion
         val (project, _, triggerTypeInfo) = requestContext
         val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toTelemetryType()
         val supplementalContext = requestContext.supplementalContext
@@ -165,7 +165,7 @@ class CodeWhispererTelemetryService {
                 "Index: $index, " +
                 "State: $suggestionState, " +
                 "Request ID: $requestId, " +
-                "Recommendation: ${recommendation.content()}"
+                "Recommendation: ${completion.insertText}"
         }
         val startUrl = getConnectionStartUrl(requestContext.connection)
         val importEnabled = CodeWhispererSettings.getInstance().isImportAdderEnabled()
@@ -178,9 +178,9 @@ class CodeWhispererTelemetryService {
             codewhispererRequestId = requestId,
             codewhispererSessionId = responseContext.sessionId,
             codewhispererSuggestionIndex = index.toLong(),
-            codewhispererSuggestionReferenceCount = recommendation.references().size.toLong(),
-            codewhispererSuggestionReferences = jacksonObjectMapper().writeValueAsString(recommendation.references().map { it.licenseName() }.toSet().toList()),
-            codewhispererSuggestionImportCount = if (importEnabled) recommendation.mostRelevantMissingImports().size.toLong() else null,
+            codewhispererSuggestionReferenceCount = completion.references?.size?.toLong() ?: 0,
+            codewhispererSuggestionReferences = jacksonObjectMapper().writeValueAsString(completion.references?.map { it.licenseName }?.toSet()?.toList()),
+            codewhispererSuggestionImportCount = if (importEnabled) completion.mostRelevantMissingImports?.size?.toLong() else null,
             codewhispererSuggestionState = suggestionState,
             codewhispererTriggerType = triggerTypeInfo.triggerType,
             credentialStartUrl = startUrl,
@@ -190,100 +190,100 @@ class CodeWhispererTelemetryService {
         )
     }
 
-    fun sendUserTriggerDecisionEvent(
-        requestContext: RequestContext,
-        responseContext: ResponseContext,
-        recommendationContext: RecommendationContext,
-        suggestionState: CodewhispererSuggestionState,
-        popupShownTime: Duration?,
-        suggestionReferenceCount: Int,
-        generatedLineCount: Int,
-        acceptedCharCount: Int,
-    ) {
-        val project = requestContext.project
-        val totalImportCount = recommendationContext.details.fold(0) { grandTotal, detail ->
-            grandTotal + detail.recommendation.mostRelevantMissingImports().size
-        }
-
-        val automatedTriggerType = requestContext.triggerTypeInfo.automatedTriggerType
-        val triggerChar = if (automatedTriggerType is CodeWhispererAutomatedTriggerType.SpecialChar) {
-            automatedTriggerType.specialChar.toString()
-        } else {
-            null
-        }
-
-        val language = requestContext.fileContextInfo.programmingLanguage
-
-        val classifierResult = requestContext.triggerTypeInfo.automatedTriggerType.calculationResult
-
-        val classifierThreshold = CodeWhispererAutoTriggerService.getThreshold()
-
-        val supplementalContext = requestContext.supplementalContext
-        val completionType = if (recommendationContext.details.isEmpty()) CodewhispererCompletionType.Line else recommendationContext.details[0].completionType
-
-        // only send if it's a pro tier user
-        projectCoroutineScope(project).launch {
-            runIfIdcConnectionOrTelemetryEnabled(project) {
-                try {
-                    val response = CodeWhispererClientAdaptor.getInstance(project)
-                        .sendUserTriggerDecisionTelemetry(
-                            requestContext,
-                            responseContext,
-                            completionType,
-                            suggestionState,
-                            suggestionReferenceCount,
-                            generatedLineCount,
-                            recommendationContext.details.size,
-                            acceptedCharCount
-                        )
-                    LOG.debug {
-                        "Successfully sent user trigger decision telemetry. RequestId: ${response.responseMetadata().requestId()}"
-                    }
-                } catch (e: Exception) {
-                    val requestId = if (e is CodeWhispererRuntimeException) e.requestId() else null
-                    LOG.debug {
-                        "Failed to send user trigger decision telemetry. RequestId: $requestId, ErrorMessage: ${e.message}"
-                    }
-                }
-            }
-        }
-
-        CodewhispererTelemetry.userTriggerDecision(
-            project = project,
-            codewhispererSessionId = responseContext.sessionId,
-            codewhispererFirstRequestId = requestContext.latencyContext.firstRequestId,
-            credentialStartUrl = getConnectionStartUrl(requestContext.connection),
-            codewhispererIsPartialAcceptance = null,
-            codewhispererPartialAcceptanceCount = null,
-            codewhispererCharactersAccepted = acceptedCharCount.toLong(),
-            codewhispererCharactersRecommended = null,
-            codewhispererCompletionType = completionType,
-            codewhispererLanguage = language.toTelemetryType(),
-            codewhispererTriggerType = requestContext.triggerTypeInfo.triggerType,
-            codewhispererAutomatedTriggerType = automatedTriggerType.telemetryType,
-            codewhispererLineNumber = requestContext.caretPosition.line.toLong(),
-            codewhispererCursorOffset = requestContext.caretPosition.offset.toLong(),
-            codewhispererSuggestionCount = recommendationContext.details.size.toLong(),
-            codewhispererSuggestionImportCount = totalImportCount.toLong(),
-            codewhispererTotalShownTime = popupShownTime?.toMillis()?.toDouble(),
-            codewhispererTriggerCharacter = triggerChar,
-            codewhispererTypeaheadLength = recommendationContext.userInputSinceInvocation.length.toLong(),
-            codewhispererTimeSinceLastDocumentChange = CodeWhispererInvocationStatus.getInstance().getTimeSinceDocumentChanged(),
-            codewhispererTimeSinceLastUserDecision = codewhispererTimeSinceLastUserDecision,
-            codewhispererTimeToFirstRecommendation = requestContext.latencyContext.paginationFirstCompletionTime,
-            codewhispererPreviousSuggestionState = previousUserTriggerDecision,
-            codewhispererSuggestionState = suggestionState,
-            codewhispererClassifierResult = classifierResult,
-            codewhispererClassifierThreshold = classifierThreshold,
-            codewhispererCustomizationArn = requestContext.customizationArn,
-            codewhispererSupplementalContextIsUtg = supplementalContext?.isUtg,
-            codewhispererSupplementalContextLength = supplementalContext?.contentLength?.toLong(),
-            codewhispererSupplementalContextTimeout = supplementalContext?.isProcessTimeout,
-            codewhispererSupplementalContextStrategyId = supplementalContext?.strategy.toString(),
-            codewhispererGettingStartedTask = getGettingStartedTaskType(requestContext.editor),
-            codewhispererFeatureEvaluations = CodeWhispererFeatureConfigService.getInstance().getFeatureConfigsTelemetry()
-        )
-    }
+//    fun sendUserTriggerDecisionEvent(
+//        requestContext: RequestContext,
+//        responseContext: ResponseContext,
+//        recommendationContext: RecommendationContext,
+//        suggestionState: CodewhispererSuggestionState,
+//        popupShownTime: Duration?,
+//        suggestionReferenceCount: Int,
+//        generatedLineCount: Int,
+//        acceptedCharCount: Int,
+//    ) {
+//        val project = requestContext.project
+//        val totalImportCount = recommendationContext.details.fold(0) { grandTotal, detail ->
+//            grandTotal + detail.recommendation.mostRelevantMissingImports().size
+//        }
+//
+//        val automatedTriggerType = requestContext.triggerTypeInfo.automatedTriggerType
+//        val triggerChar = if (automatedTriggerType is CodeWhispererAutomatedTriggerType.SpecialChar) {
+//            automatedTriggerType.specialChar.toString()
+//        } else {
+//            null
+//        }
+//
+//        val language = requestContext.fileContextInfo.programmingLanguage
+//
+//        val classifierResult = requestContext.triggerTypeInfo.automatedTriggerType.calculationResult
+//
+//        val classifierThreshold = CodeWhispererAutoTriggerService.getThreshold()
+//
+//        val supplementalContext = requestContext.supplementalContext
+//        val completionType = if (recommendationContext.details.isEmpty()) CodewhispererCompletionType.Line else recommendationContext.details[0].completionType
+//
+//         only send if it's a pro tier user
+//        projectCoroutineScope(project).launch {
+//            runIfIdcConnectionOrTelemetryEnabled(project) {
+//                try {
+//                    val response = CodeWhispererClientAdaptor.getInstance(project)
+//                        .sendUserTriggerDecisionTelemetry(
+//                            requestContext,
+//                            responseContext,
+//                            completionType,
+//                            suggestionState,
+//                            suggestionReferenceCount,
+//                            generatedLineCount,
+//                            recommendationContext.details.size,
+//                            acceptedCharCount
+//                        )
+//                    LOG.debug {
+//                        "Successfully sent user trigger decision telemetry. RequestId: ${response.responseMetadata().requestId()}"
+//                    }
+//                } catch (e: Exception) {
+//                    val requestId = if (e is CodeWhispererRuntimeException) e.requestId() else null
+//                    LOG.debug {
+//                        "Failed to send user trigger decision telemetry. RequestId: $requestId, ErrorMessage: ${e.message}"
+//                    }
+//                }
+//            }
+//        }
+//
+//        CodewhispererTelemetry.userTriggerDecision(
+//            project = project,
+//            codewhispererSessionId = responseContext.sessionId,
+//            codewhispererFirstRequestId = requestContext.latencyContext.firstRequestId,
+//            credentialStartUrl = getConnectionStartUrl(requestContext.connection),
+//            codewhispererIsPartialAcceptance = null,
+//            codewhispererPartialAcceptanceCount = null,
+//            codewhispererCharactersAccepted = acceptedCharCount.toLong(),
+//            codewhispererCharactersRecommended = null,
+//            codewhispererCompletionType = completionType,
+//            codewhispererLanguage = language.toTelemetryType(),
+//            codewhispererTriggerType = requestContext.triggerTypeInfo.triggerType,
+//            codewhispererAutomatedTriggerType = automatedTriggerType.telemetryType,
+//            codewhispererLineNumber = requestContext.caretPosition.line.toLong(),
+//            codewhispererCursorOffset = requestContext.caretPosition.offset.toLong(),
+//            codewhispererSuggestionCount = recommendationContext.details.size.toLong(),
+//            codewhispererSuggestionImportCount = totalImportCount.toLong(),
+//            codewhispererTotalShownTime = popupShownTime?.toMillis()?.toDouble(),
+//            codewhispererTriggerCharacter = triggerChar,
+//            codewhispererTypeaheadLength = recommendationContext.userInputSinceInvocation.length.toLong(),
+//            codewhispererTimeSinceLastDocumentChange = CodeWhispererInvocationStatus.getInstance().getTimeSinceDocumentChanged(),
+//            codewhispererTimeSinceLastUserDecision = codewhispererTimeSinceLastUserDecision,
+//            codewhispererTimeToFirstRecommendation = requestContext.latencyContext.paginationFirstCompletionTime,
+//            codewhispererPreviousSuggestionState = previousUserTriggerDecision,
+//            codewhispererSuggestionState = suggestionState,
+//            codewhispererClassifierResult = classifierResult,
+//            codewhispererClassifierThreshold = classifierThreshold,
+//            codewhispererCustomizationArn = requestContext.customizationArn,
+//            codewhispererSupplementalContextIsUtg = supplementalContext?.isUtg,
+//            codewhispererSupplementalContextLength = supplementalContext?.contentLength?.toLong(),
+//            codewhispererSupplementalContextTimeout = supplementalContext?.isProcessTimeout,
+//            codewhispererSupplementalContextStrategyId = supplementalContext?.strategy.toString(),
+//            codewhispererGettingStartedTask = getGettingStartedTaskType(requestContext.editor),
+//            codewhispererFeatureEvaluations = CodeWhispererFeatureConfigService.getInstance().getFeatureConfigsTelemetry()
+//        )
+//    }
 
     private fun mapToTelemetryScope(codeAnalysisScope: CodeWhispererConstants.CodeAnalysisScope, initiatedByChat: Boolean): CodewhispererCodeScanScope =
         when (codeAnalysisScope) {
@@ -452,62 +452,62 @@ class CodeWhispererTelemetryService {
         )
     }
 
-    fun sendUserDecisionEventForAll(
-        requestContext: RequestContext,
-        responseContext: ResponseContext,
-        recommendationContext: RecommendationContext,
-        sessionContext: SessionContext,
-        hasUserAccepted: Boolean,
-        popupShownTime: Duration? = null,
-    ) {
-        val detailContexts = recommendationContext.details
-        val decisions = mutableListOf<CodewhispererSuggestionState>()
-
-        detailContexts.forEachIndexed { index, detailContext ->
-            val suggestionState = recordSuggestionState(
-                index,
-                sessionContext.selectedIndex,
-                sessionContext.seen.contains(index),
-                hasUserAccepted,
-                detailContext.isDiscarded,
-                detailContext.recommendation.content().isEmpty()
-            )
-            sendUserDecisionEvent(requestContext, responseContext, detailContext, index, suggestionState, detailContexts.size)
-
-            decisions.add(suggestionState)
-        }
-
-        with(aggregateUserDecision(decisions)) {
-            // the order of the following matters
-            // step 1, send out current decision
-            previousUserTriggerDecisionTimestamp = Instant.now()
-
-            val referenceCount = if (hasUserAccepted && detailContexts[sessionContext.selectedIndex].recommendation.hasReferences()) 1 else 0
-            val acceptedContent =
-                if (hasUserAccepted) {
-                    detailContexts[sessionContext.selectedIndex].recommendation.content()
-                } else {
-                    ""
-                }
-            val generatedLineCount = if (acceptedContent.isEmpty()) 0 else acceptedContent.split("\n").size
-            val acceptedCharCount = acceptedContent.length
-            sendUserTriggerDecisionEvent(
-                requestContext,
-                responseContext,
-                recommendationContext,
-                CodewhispererSuggestionState.from(this.toString()),
-                popupShownTime,
-                referenceCount,
-                generatedLineCount,
-                acceptedCharCount
-            )
-
-            // step 2, put current decision into queue for later reference
-            previousUserTriggerDecisions.add(this)
+//    fun sendUserDecisionEventForAll(
+//        requestContext: RequestContext,
+//        responseContext: ResponseContext,
+//        recommendationContext: RecommendationContext,
+//        sessionContext: SessionContext,
+//        hasUserAccepted: Boolean,
+//        popupShownTime: Duration? = null,
+//    ) {
+//        val detailContexts = recommendationContext.details
+//        val decisions = mutableListOf<CodewhispererSuggestionState>()
+//
+//        detailContexts.forEachIndexed { index, detailContext ->
+//            val suggestionState = recordSuggestionState(
+//                index,
+//                sessionContext.selectedIndex,
+//                sessionContext.seen.contains(index),
+//                hasUserAccepted,
+//                detailContext.isDiscarded,
+//                detailContext.recommendation.content().isEmpty()
+//            )
+//            sendUserDecisionEvent(requestContext, responseContext, detailContext, index, suggestionState, detailContexts.size)
+//
+//            decisions.add(suggestionState)
+//        }
+//
+//        with(aggregateUserDecision(decisions)) {
+//             the order of the following matters
+//             step 1, send out current decision
+//            previousUserTriggerDecisionTimestamp = Instant.now()
+//
+//            val referenceCount = if (hasUserAccepted && detailContexts[sessionContext.selectedIndex].recommendation.hasReferences()) 1 else 0
+//            val acceptedContent =
+//                if (hasUserAccepted) {
+//                    detailContexts[sessionContext.selectedIndex].recommendation.content()
+//                } else {
+//                    ""
+//                }
+//            val generatedLineCount = if (acceptedContent.isEmpty()) 0 else acceptedContent.split("\n").size
+//            val acceptedCharCount = acceptedContent.length
+//            sendUserTriggerDecisionEvent(
+//                requestContext,
+//                responseContext,
+//                recommendationContext,
+//                CodewhispererSuggestionState.from(this.toString()),
+//                popupShownTime,
+//                referenceCount,
+//                generatedLineCount,
+//                acceptedCharCount
+//            )
+//
+//             step 2, put current decision into queue for later reference
+//            previousUserTriggerDecisions.add(this)
             // we need this as well because AutotriggerService will reset the queue periodically
-            CodeWhispererAutoTriggerService.getInstance().addPreviousDecision(this)
-        }
-    }
+//            CodeWhispererAutoTriggerService.getInstance().addPreviousDecision(this)
+//        }
+//    }
 
     /**
      * Aggregate recommendation level user decision to trigger level user decision based on the following rule
@@ -560,31 +560,31 @@ class CodeWhispererTelemetryService {
         )
     }
 
-    fun sendClientComponentLatencyEvent(states: InvocationContext) {
-        val requestContext = states.requestContext
-        val responseContext = states.responseContext
-        val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toTelemetryType()
-        val startUrl = getConnectionStartUrl(requestContext.connection)
-        CodewhispererTelemetry.clientComponentLatency(
-            project = requestContext.project,
-            codewhispererSessionId = responseContext.sessionId,
-            codewhispererRequestId = requestContext.latencyContext.firstRequestId,
-            codewhispererFirstCompletionLatency = requestContext.latencyContext.paginationFirstCompletionTime,
-            codewhispererPreprocessingLatency = requestContext.latencyContext.getCodeWhispererPreprocessingLatency(),
-            codewhispererEndToEndLatency = requestContext.latencyContext.getCodeWhispererEndToEndLatency(),
-            codewhispererAllCompletionsLatency = requestContext.latencyContext.getCodeWhispererAllCompletionsLatency(),
-            codewhispererPostprocessingLatency = requestContext.latencyContext.getCodeWhispererPostprocessingLatency(),
-            codewhispererCredentialFetchingLatency = requestContext.latencyContext.getCodeWhispererCredentialFetchingLatency(),
-            codewhispererTriggerType = requestContext.triggerTypeInfo.triggerType,
-            codewhispererCompletionType = CodewhispererCompletionType.Line,
-            codewhispererLanguage = codewhispererLanguage,
-            credentialStartUrl = startUrl,
-            codewhispererCustomizationArn = requestContext.customizationArn,
-        )
-    }
+//    fun sendClientComponentLatencyEvent(states: InvocationContext) {
+//        val requestContext = states.requestContext
+//        val responseContext = states.responseContext
+//        val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toTelemetryType()
+//        val startUrl = getConnectionStartUrl(requestContext.connection)
+//        CodewhispererTelemetry.clientComponentLatency(
+//            project = requestContext.project,
+//            codewhispererSessionId = responseContext.sessionId,
+//            codewhispererRequestId = requestContext.latencyContext.firstRequestId,
+//            codewhispererFirstCompletionLatency = requestContext.latencyContext.paginationFirstCompletionTime,
+//            codewhispererPreprocessingLatency = requestContext.latencyContext.getCodeWhispererPreprocessingLatency(),
+//            codewhispererEndToEndLatency = requestContext.latencyContext.getCodeWhispererEndToEndLatency(),
+//            codewhispererAllCompletionsLatency = requestContext.latencyContext.getCodeWhispererAllCompletionsLatency(),
+//            codewhispererPostprocessingLatency = requestContext.latencyContext.getCodeWhispererPostprocessingLatency(),
+//            codewhispererCredentialFetchingLatency = requestContext.latencyContext.getCodeWhispererCredentialFetchingLatency(),
+//            codewhispererTriggerType = requestContext.triggerTypeInfo.triggerType,
+//            codewhispererCompletionType = CodewhispererCompletionType.Line,
+//            codewhispererLanguage = codewhispererLanguage,
+//            credentialStartUrl = startUrl,
+//            codewhispererCustomizationArn = requestContext.customizationArn,
+//        )
+//    }
 
     fun sendOnboardingClickEvent(language: CodeWhispererProgrammingLanguage, taskType: CodewhispererGettingStartedTask) {
-        // Project instance is not needed. We look at these metrics for each clientId.
+//         Project instance is not needed. We look at these metrics for each clientId.
         CodewhispererTelemetry.onboardingClick(project = null, codewhispererLanguage = language.toTelemetryType(), codewhispererGettingStartedTask = taskType)
     }
 

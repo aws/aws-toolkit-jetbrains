@@ -21,14 +21,15 @@ class CodeWhispererPopupListener(private val states: InvocationContext) : JBPopu
         super.onClosed(event)
         val (requestContext, responseContext, recommendationContext) = states
 
-        CodeWhispererTelemetryService.getInstance().sendUserDecisionEventForAll(
-            requestContext,
-            responseContext,
-            recommendationContext,
-            CodeWhispererPopupManager.getInstance().sessionContext,
-            event.isOk,
-            CodeWhispererInvocationStatus.getInstance().popupStartTimestamp?.let { Duration.between(it, Instant.now()) }
-        )
+        // TODO YUX: call flare hooks
+//        CodeWhispererTelemetryService.getInstance().sendUserDecisionEventForAll(
+//            requestContext,
+//            responseContext,
+//            recommendationContext,
+//            CodeWhispererPopupManager.getInstance().sessionContext,
+//            event.isOk,
+//            CodeWhispererInvocationStatus.getInstance().popupStartTimestamp?.let { Duration.between(it, Instant.now()) }
+//        )
 
         CodeWhispererInvocationStatus.getInstance().setDisplaySessionActive(false)
     }

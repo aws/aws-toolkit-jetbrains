@@ -40,6 +40,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Sourc
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionWithReferencesParams
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -47,6 +49,9 @@ import java.util.concurrent.CompletableFuture
  */
 @Suppress("unused")
 interface AmazonQLanguageServer : LanguageServer {
+    @JsonRequest("aws/textDocument/inlineCompletionWithReferences")
+    fun inlineCompletionWithReferences(params: InlineCompletionWithReferencesParams): CompletableFuture<InlineCompletionListWithReferences>
+
     @JsonNotification("aws/didChangeDependencyPaths")
     fun didChangeDependencyPaths(params: DidChangeDependencyPathsParams): CompletableFuture<Unit>
 
