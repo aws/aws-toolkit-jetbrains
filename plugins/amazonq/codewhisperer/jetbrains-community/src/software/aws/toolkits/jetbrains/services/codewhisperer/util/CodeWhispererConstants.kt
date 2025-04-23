@@ -156,27 +156,6 @@ object CodeWhispererConstants {
         val Sigv4ClientRegion = Region.US_EAST_1
     }
 
-    object Customization {
-        private const val noAccessToCustomizationMessage = "Your account is not authorized to use CodeWhisperer Enterprise."
-        private const val invalidCustomizationMessage = "You are not authorized to access"
-
-        val noAccessToCustomizationExceptionPredicate: (e: Exception) -> Boolean = { e ->
-            if (e !is CodeWhispererRuntimeException) {
-                false
-            } else {
-                e is AccessDeniedException && (e.message?.contains(noAccessToCustomizationMessage, ignoreCase = true) ?: false)
-            }
-        }
-
-        val invalidCustomizationExceptionPredicate: (e: Exception) -> Boolean = { e ->
-            if (e !is CodeWhispererRuntimeException) {
-                false
-            } else {
-                e is AccessDeniedException && (e.message?.contains(invalidCustomizationMessage, ignoreCase = true) ?: false)
-            }
-        }
-    }
-
     object CrossFile {
         const val CHUNK_SIZE = 60
         const val NUMBER_OF_LINE_IN_CHUNK = 50

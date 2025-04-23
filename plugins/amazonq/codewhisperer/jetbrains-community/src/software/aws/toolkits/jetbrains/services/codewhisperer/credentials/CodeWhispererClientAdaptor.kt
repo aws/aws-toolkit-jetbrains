@@ -1,4 +1,4 @@
-// Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.credentials
@@ -38,7 +38,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.UserIntent
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage

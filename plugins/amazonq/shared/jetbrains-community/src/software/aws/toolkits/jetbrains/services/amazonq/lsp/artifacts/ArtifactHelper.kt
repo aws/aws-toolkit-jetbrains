@@ -79,6 +79,16 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
             .sortedByDescending { (_, semVer) -> semVer }
     }
 
+    fun getLatestLocalLspArtifact(): Path {
+        val localFolders = getSubFolders(lspArtifactsPath)
+        return localFolders.map { localFolder ->
+            localFolder to SemVer.parseFromText(localFolder.fileName.toString())
+        }
+            .sortedByDescending { (_, semVer) -> semVer }
+            .first()
+            .first
+    }
+
     fun getExistingLspArtifacts(versions: List<ManifestManager.Version>, target: ManifestManager.VersionTarget?): Boolean {
         if (versions.isEmpty() || target?.contents == null) return false
 

@@ -19,6 +19,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.SystemInfo
+import com.intellij.util.animation.consumer
 import com.intellij.util.io.await
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -40,6 +41,10 @@ import org.eclipse.lsp4j.SynchronizationCapabilities
 import org.eclipse.lsp4j.TextDocumentClientCapabilities
 import org.eclipse.lsp4j.WorkspaceClientCapabilities
 import org.eclipse.lsp4j.jsonrpc.Launcher
+import org.eclipse.lsp4j.jsonrpc.Launcher.Builder
+import org.eclipse.lsp4j.jsonrpc.MessageConsumer
+import org.eclipse.lsp4j.jsonrpc.messages.Message
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.slf4j.event.Level
 import software.aws.toolkits.core.utils.getLogger
@@ -50,6 +55,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactMa
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.auth.DefaultAuthCredentialsService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.DefaultModuleDependenciesService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AmazonQLspTypeAdapterFactory
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsExtendedInitializeResult
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.createExtendedClientMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument.TextDocumentServiceHandler
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
@@ -63,6 +71,7 @@ import java.io.PipedOutputStream
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.nio.charset.StandardCharsets
+import java.util.Collections
 import java.util.concurrent.Future
 import kotlin.time.Duration.Companion.seconds
 
@@ -101,9 +110,15 @@ internal class LSPProcessListener : ProcessListener {
 
 @Service(Service.Level.PROJECT)
 class AmazonQLspService(private val project: Project, private val cs: CoroutineScope) : Disposable {
+    private val lspInitializedMessageReceivedListener = Collections.synchronizedList(mutableListOf<AmazonQInitializeMessageReceivedListener>())
+    fun addLspInitializeMessageListener(listener: AmazonQInitializeMessageReceivedListener) = lspInitializedMessageReceivedListener.add(listener)
+    fun notifyInitializeMessageReceived() = lspInitializedMessageReceivedListener.forEach { it() }
+
     private var instance: Deferred<AmazonQServerInstance>
     val capabilities
         get() = instance.getCompleted().initializeResult.getCompleted().capabilities
+    val encryptionManager
+        get() = instance.getCompleted().encryptionManager
 
     // dont allow lsp commands if server is restarting
     private val mutex = Mutex(false)
@@ -194,7 +209,7 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
 }
 
 private class AmazonQServerInstance(private val project: Project, private val cs: CoroutineScope) : Disposable {
-    private val encryptionManager = JwtEncryptionManager()
+    val encryptionManager = JwtEncryptionManager()
 
     private val launcher: Launcher<AmazonQLanguageServer>
 
@@ -264,6 +279,17 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         launcherHandler.startNotify()
 
         launcher = LSPLauncher.Builder<AmazonQLanguageServer>()
+            .wrapMessages { consumer ->
+                MessageConsumer {
+                        message ->
+                    if (message is ResponseMessage && message.result is AwsExtendedInitializeResult) {
+                        val result = message.result as AwsExtendedInitializeResult
+                        AwsServerCapabilitiesProvider.getInstance(project).setAwsServerCapabilities(result.getAwsServerCapabilities())
+                        AmazonQLspService.getInstance(project).notifyInitializeMessageReceived()
+                    }
+                    consumer?.consume(message)
+                }
+            }
             .setLocalService(AmazonQLanguageClientImpl(project))
             .setRemoteInterface(AmazonQLanguageServer::class.java)
             .configureGson {
@@ -272,6 +298,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
 
                 // otherwise Gson treats all numbers as double which causes deser issues
                 it.setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+                it.registerTypeAdapterFactory(AmazonQLspTypeAdapterFactory())
             }.traceMessages(
                 PrintWriter(
                     object : StringWriter() {
@@ -346,7 +373,21 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         }
     }
 
+    class MessageTracer {
+        private val traceLogger = LOG.atLevel(if (isDeveloperMode()) Level.INFO else Level.DEBUG)
+
+        fun trace(direction: String, message: Message) {
+            traceLogger.log {
+                buildString {
+                    append("$direction: ")
+                    append(message.toString())
+                }
+            }
+        }
+    }
     companion object {
         private val LOG = getLogger<AmazonQServerInstance>()
     }
 }
+
+typealias AmazonQInitializeMessageReceivedListener = () -> Unit
