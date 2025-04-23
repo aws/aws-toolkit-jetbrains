@@ -114,7 +114,6 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
         val future = CompletableFuture.supplyAsync {
             listRegionProfiles(project)
         }.whenComplete { t, u ->
-            // This runs when the future completes (success or failure)
             this.job = null
         }
 
