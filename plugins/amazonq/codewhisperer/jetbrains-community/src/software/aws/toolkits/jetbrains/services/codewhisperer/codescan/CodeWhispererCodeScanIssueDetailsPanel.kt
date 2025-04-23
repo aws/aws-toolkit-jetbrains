@@ -37,8 +37,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.ope
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.sendCodeFixGeneratedTelemetryToServiceAPI
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.truncateIssueTitle
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.getHexString
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getHexString
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.Component
