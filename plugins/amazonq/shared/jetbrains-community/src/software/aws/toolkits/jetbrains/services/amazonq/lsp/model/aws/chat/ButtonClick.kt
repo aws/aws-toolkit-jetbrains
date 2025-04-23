@@ -14,7 +14,7 @@ data class ButtonClickParams(
     val buttonId: String,
 )
 
-data class ButtonClickResult (
+data class ButtonClickResult(
     val success: Boolean,
     val failureReason: String?,
 )

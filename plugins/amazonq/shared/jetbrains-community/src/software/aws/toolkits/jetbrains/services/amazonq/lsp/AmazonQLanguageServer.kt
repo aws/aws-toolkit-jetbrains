@@ -91,6 +91,4 @@ interface AmazonQLanguageServer : LanguageServer {
 
     @JsonRequest(CHAT_BUTTON_CLICK)
     fun buttonClick(params: ButtonClickParams): CompletableFuture<ButtonClickResult>
-
-
 }

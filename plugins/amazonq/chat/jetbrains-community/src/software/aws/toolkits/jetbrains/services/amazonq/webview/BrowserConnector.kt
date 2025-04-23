@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.project.Project
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import com.intellij.ui.jcef.JBCefJSQuery.Response
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.awaitClose
@@ -30,6 +32,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommun
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickResult
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_BUTTON_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FEEDBACK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FOLLOW_UP_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INFO_LINK_CLICK
@@ -281,6 +285,10 @@ class BrowserConnector(
             CHAT_BUTTON_CLICK -> {
                 handleChatNotification<ButtonClickNotification, ButtonClickParams>(node) { server, params ->
                     server.buttonClick(params)
+                }.thenApply{ response ->
+                    if (response is ButtonClickResult && !response.success) {
+                        LOG.warn {"Failed to execute action associated with button with reason: ${response.failureReason}"}
+                    }
                 }
             }
         }
@@ -314,4 +322,6 @@ class BrowserConnector(
             serverAction(server, requestFromUi.params)
         } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
     }
+
+    private val LOG = getLogger<BrowserConnector>()
 }
