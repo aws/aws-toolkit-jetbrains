@@ -75,7 +75,7 @@ class QRegionProfileDialog(
 
             combo.proposeModelUpdate { model ->
                 try {
-                    QRegionProfileManager.getInstance().listRegionProfiles(project)?.forEach {
+                    QRegionProfileManager.getInstance().listProfilesCompletableFuture(project).get()?.forEach {
                         model.addElement(it)
                     } ?: error("Attempted to fetch profiles while there does not exist")
 

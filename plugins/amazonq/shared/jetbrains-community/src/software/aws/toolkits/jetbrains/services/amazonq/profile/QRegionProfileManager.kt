@@ -15,6 +15,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.xmlb.annotations.MapAnnotation
 import com.intellij.util.xmlb.annotations.Property
+import kotlinx.coroutines.CoroutineScope
 import software.amazon.awssdk.core.SdkClient
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.utils.debug
@@ -36,15 +37,18 @@ import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Telemetry
 import java.time.Duration
 import java.util.Collections
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Future
 import kotlin.reflect.KClass
 
 @Service(Service.Level.APP)
 @State(name = "qProfileStates", storages = [Storage("aws.xml")])
-class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposable {
+class QRegionProfileManager(private val cs: CoroutineScope) : PersistentStateComponent<QProfileState>, Disposable {
 
     // Map to store connectionId to its active profile
     private val connectionIdToActiveProfile = Collections.synchronizedMap<String, QRegionProfile>(mutableMapOf())
     private val connectionIdToProfileCount = mutableMapOf<String, Int>()
+    private var job: CompletableFuture<List<QRegionProfile>?>? = null
 
     init {
         ApplicationManager.getApplication().messageBus.connect(this)
@@ -65,7 +69,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
         val conn = getIdcConnectionOrNull(project)
         val selected = activeProfile(project) ?: return
         val profiles = tryOrNull {
-            listRegionProfiles(project)
+            listProfilesCompletableFuture(project).get()
         }
 
         if (profiles == null || profiles.none { it.arn == selected.arn }) {
@@ -102,6 +106,22 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
             LOG.warn(e) { "Failed to list region profiles: ${e.message}" }
             throw e
         }
+    }
+
+    fun listProfilesCompletableFuture(project: Project): CompletableFuture<List<QRegionProfile>?> {
+        this.job?.let { ongoingJob ->
+            return ongoingJob
+        }
+
+        val future = CompletableFuture.supplyAsync {
+            listRegionProfiles(project)
+        }.whenComplete { t, u ->
+            // This runs when the future completes (success or failure)
+            this.job = null
+        }
+
+        this.job = future
+        return future
     }
 
     fun activeProfile(project: Project): QRegionProfile? = getIdcConnectionOrNull(project)?.let { connectionIdToActiveProfile[it.id] }
