@@ -16,6 +16,8 @@ import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
@@ -71,6 +73,10 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 }
             }
         }
+
+    override fun openTab(params: OpenTabParams): CompletableFuture<OpenTabResult> {
+        return CompletableFuture.completedFuture(OpenTabResult(""))
+    }
 
     override fun configuration(params: ConfigurationParams): CompletableFuture<List<Any>> {
         if (params.items.isEmpty()) {
