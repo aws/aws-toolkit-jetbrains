@@ -18,6 +18,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Encry
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PROMPT_INPUT_OPTIONS_CHANGE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
@@ -58,4 +60,7 @@ interface AmazonQLanguageServer : LanguageServer {
 
     @JsonNotification(CHAT_SOURCE_LINK_CLICK)
     fun sourceLinkClick(params: SourceLinkClickParams): CompletableFuture<Unit>
+
+    @JsonNotification(PROMPT_INPUT_OPTIONS_CHANGE)
+    fun promptInputOptionsChange(params: PromptInputOptionChangeParams): CompletableFuture<Unit>
 }
