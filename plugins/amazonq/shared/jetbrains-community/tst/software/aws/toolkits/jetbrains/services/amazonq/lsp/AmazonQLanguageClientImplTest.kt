@@ -5,9 +5,13 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
 import com.google.gson.Gson
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.ApplicationExtension
+import com.intellij.testFramework.junit5.TestDisposable
+import com.intellij.testFramework.replaceService
 import io.mockk.every
 import io.mockk.mockk
 import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
@@ -25,6 +29,8 @@ import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import io.mockk.mockkObject
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
+import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 
 
 @ExtendWith(ApplicationExtension::class)
@@ -131,21 +137,20 @@ class AmazonQLanguageClientImplTest {
     }
 
     @Test
-    fun `configuration for Amazon Q respects telemetry disabled`() {
+    fun `configuration for Amazon Q respects telemetry disabled`(@TestDisposable disposable: Disposable) {
         // Mock ToolkitConnectionManager
         val mockConnectionManager = mockk<ToolkitConnectionManager>()
         every { project.service<ToolkitConnectionManager>() } returns mockConnectionManager
 
-        // Mock QRegionProfileManager
-        val mockProfileManager = mockk<QRegionProfileManager>()
-        mockkObject(QRegionProfileManager.Companion)
-        every { QRegionProfileManager.getInstance() } returns mockProfileManager
-
-        // Mock the active profile with an ARN
-        val mockProfile = mockk<QRegionProfile> {
-            every { arn } returns "test:arn:123"
+        // Mock CodeWhispererModelConfigurator
+        val mockConfigurator = mockk<CodeWhispererModelConfigurator> {
+            every { activeCustomization(project) } returns CodeWhispererCustomization(
+                arn = "test:arn:123",
+                name = "name",
+                description = "description",
+            )
         }
-        every { mockProfileManager.activeProfile(project) } returns mockProfile
+        ApplicationManager.getApplication().replaceService(CodeWhispererModelConfigurator::class.java, mockConfigurator, disposable)
 
         // Mock AWS Settings
         AwsSettings.getInstance().isTelemetryEnabled = false
@@ -155,27 +160,33 @@ class AmazonQLanguageClientImplTest {
             .isEqualTo(
                 AmazonQLspConfiguration(
                     optOutTelemetry = false,
-                    customization = "test:arn:123"
+                    enableTelemetryEvents = null,
+                    customization = "test:arn:123",
+                    enableLocalIndexing = false,
+                    enableGpuAcceleration = false,
+                    indexWorkerThreads = 0,
+                    localIndexing = LocalIndexingConfiguration(
+                        maxIndexSizeMB = 250,
+                    )
                 )
             )
     }
 
     @Test
-    fun `configuration for Amazon Q respects telemetry enabled`() {
+    fun `configuration for Amazon Q respects telemetry enabled`(@TestDisposable disposable: Disposable) {
         // Mock ToolkitConnectionManager
         val mockConnectionManager = mockk<ToolkitConnectionManager>()
         every { project.service<ToolkitConnectionManager>() } returns mockConnectionManager
 
-        // Mock QRegionProfileManager
-        val mockProfileManager = mockk<QRegionProfileManager>()
-        mockkObject(QRegionProfileManager.Companion)
-        every { QRegionProfileManager.getInstance() } returns mockProfileManager
-
-        // Mock the active profile with an ARN
-        val mockProfile = mockk<QRegionProfile> {
-            every { arn } returns "test:arn:123"
+        // Mock CodeWhispererModelConfigurator
+        val mockConfigurator = mockk<CodeWhispererModelConfigurator> {
+            every { activeCustomization(project) } returns CodeWhispererCustomization(
+                arn = "test:arn:123",
+                name = "name",
+                description = "description",
+            )
         }
-        every { mockProfileManager.activeProfile(project) } returns mockProfile
+        ApplicationManager.getApplication().replaceService(CodeWhispererModelConfigurator::class.java, mockConfigurator, disposable)
 
         // Mock AWS Settings
         AwsSettings.getInstance().isTelemetryEnabled = true
@@ -185,7 +196,14 @@ class AmazonQLanguageClientImplTest {
             .isEqualTo(
                 AmazonQLspConfiguration(
                     optOutTelemetry = true,
-                    customization = "test:arn:123"
+                    enableTelemetryEvents = null,
+                    customization = "test:arn:123",
+                    enableLocalIndexing = false,
+                    enableGpuAcceleration = false,
+                    indexWorkerThreads = 0,
+                    localIndexing = LocalIndexingConfiguration(
+                        maxIndexSizeMB = 250,
+                    )
                 )
             )
     }

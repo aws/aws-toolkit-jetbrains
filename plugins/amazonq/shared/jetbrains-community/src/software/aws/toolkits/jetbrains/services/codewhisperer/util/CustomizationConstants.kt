@@ -14,7 +14,7 @@ object CustomizationConstants {
         if (e !is CodeWhispererRuntimeException) {
             false
         } else {
-            e is software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException && (e.message?.contains(noAccessToCustomizationMessage, ignoreCase = true) ?: false)
+            e is AccessDeniedException && (e.message?.contains(noAccessToCustomizationMessage, ignoreCase = true) ?: false)
         }
     }
 
