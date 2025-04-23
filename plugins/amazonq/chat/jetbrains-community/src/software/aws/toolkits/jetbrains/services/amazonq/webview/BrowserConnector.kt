@@ -28,6 +28,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FEEDBACK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FOLLOW_UP_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INFO_LINK_CLICK
@@ -274,6 +276,11 @@ class BrowserConnector(
             CHAT_FOLLOW_UP_CLICK -> {
                 handleChatNotification<FollowUpClickNotification, FollowUpClickParams>(node) { server, params ->
                     server.followUpClick(params)
+                }
+            }
+            CHAT_BUTTON_CLICK -> {
+                handleChatNotification<ButtonClickNotification, ButtonClickParams>(node) { server, params ->
+                    server.buttonClick(params)
                 }
             }
         }
