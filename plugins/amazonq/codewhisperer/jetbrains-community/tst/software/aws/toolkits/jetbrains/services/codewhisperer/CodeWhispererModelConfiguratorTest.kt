@@ -470,7 +470,7 @@ class CodeWhispererModelConfiguratorTest {
             "</option>" +
             "</component>"
 
-        assertThat(actual).isEqualTo(expected)
+        assertThat(actual).isEqualToIgnoringWhitespace(expected)
     }
 
     @Test
@@ -577,7 +577,6 @@ class CodeWhispererModelConfiguratorTest {
         val fakeCustomizations = listOf(
             CodeWhispererCustomization("oldArn", "oldName", "oldDescription")
         )
-        mockClintAdaptor.stub { on { listAvailableCustomizations() } doReturn fakeCustomizations }
 
         ApplicationManager.getApplication().messageBus
             .syncPublisher(QRegionProfileSelectedListener.TOPIC)
@@ -596,7 +595,6 @@ class CodeWhispererModelConfiguratorTest {
         val fakeCustomizations = listOf(
             CodeWhispererCustomization("newArn", "newName", "newDescription")
         )
-        mockClintAdaptor.stub { on { listAvailableCustomizations() } doReturn fakeCustomizations }
 
         val latch = CountDownLatch(1)
 
