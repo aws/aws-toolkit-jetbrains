@@ -574,10 +574,6 @@ class CodeWhispererModelConfiguratorTest {
 
         assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(oldCustomization)
 
-        val fakeCustomizations = listOf(
-            CodeWhispererCustomization("oldArn", "oldName", "oldDescription")
-        )
-
         ApplicationManager.getApplication().messageBus
             .syncPublisher(QRegionProfileSelectedListener.TOPIC)
             .onProfileSelected(projectRule.project, null)
@@ -592,9 +588,6 @@ class CodeWhispererModelConfiguratorTest {
         val oldCustomization = CodeWhispererCustomization("oldArn", "oldName", "oldDescription")
         sut.switchCustomization(projectRule.project, oldCustomization)
         assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(oldCustomization)
-        val fakeCustomizations = listOf(
-            CodeWhispererCustomization("newArn", "newName", "newDescription")
-        )
 
         val latch = CountDownLatch(1)
 
