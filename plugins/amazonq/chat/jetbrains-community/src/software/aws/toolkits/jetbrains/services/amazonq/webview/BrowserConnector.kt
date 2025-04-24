@@ -38,6 +38,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FOLLOW_UP_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INFO_LINK_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_LINK_CLICK
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_PROMPT_OPTION_ACKNOWLEDGED
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_READY
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SOURCE_LINK_CLICK
@@ -59,6 +60,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoL
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PROMPT_INPUT_OPTIONS_CHANGE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.QuickChatActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
@@ -277,6 +281,21 @@ class BrowserConnector(
                     server.sourceLinkClick(params)
                 }
             }
+
+            PROMPT_INPUT_OPTIONS_CHANGE -> {
+                handleChatNotification<PromptInputOptionChangeNotification, PromptInputOptionChangeParams>(node) {
+                        server, params ->
+                    server.promptInputOptionsChange(params)
+                }
+            }
+
+            CHAT_PROMPT_OPTION_ACKNOWLEDGED -> {
+                val acknowledgedMessage = node.get("params").get("messageId")
+                if (acknowledgedMessage.asText() == "programmerModeCardId") {
+                    MeetQSettings.getInstance().amazonQChatPairProgramming = false
+                }
+            }
+
             CHAT_FOLLOW_UP_CLICK -> {
                 handleChatNotification<FollowUpClickNotification, FollowUpClickParams>(node) { server, params ->
                     server.followUpClick(params)
