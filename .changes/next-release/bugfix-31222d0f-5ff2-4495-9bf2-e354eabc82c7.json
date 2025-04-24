@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Amazon Q: Fix issue where context menu items are not available after re-opening projects or restarting the IDE"
+}
