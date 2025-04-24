@@ -48,7 +48,7 @@ configurations {
 
         // Exclude dependencies that ship with iDE
         exclude(group = "org.slf4j")
-        if (!name.startsWith("kotlinCompiler") && !name.startsWith("generateModels")) {
+        if (!name.startsWith("kotlinCompiler") && !name.startsWith("generateModels") && !name.startsWith("rdGen")) {
             // we want kotlinx-coroutines-debug and kotlinx-coroutines-test
             exclude(group = "org.jetbrains.kotlinx", "kotlinx-coroutines-core-jvm")
             exclude(group = "org.jetbrains.kotlinx", "kotlinx-coroutines-core")

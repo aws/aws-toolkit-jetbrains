@@ -388,7 +388,7 @@ tasks.withType<DetektCreateBaselineTask>().configureEach {
 }
 
 configurations.all {
-    if (name.contains("detekt") || name.contains("kotlinCompiler")) {
+    if (name.contains("detekt") || name.contains("kotlinCompiler") || name.contains("rdGen")) {
         return@all
     }
 
