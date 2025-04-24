@@ -172,10 +172,10 @@ object CodeWhispererTestUtil {
     const val leftContext_success_Iac = "# Create an S3 Bucket named CodeWhisperer in CloudFormation"
     const val leftContext_failure_Iac = "Create an S3 Bucket named CodeWhisperer"
 
-    internal fun pythonResponseWithToken(token: String): GenerateCompletionsResponse =
+    fun pythonResponseWithToken(token: String): GenerateCompletionsResponse =
         pythonResponse.toBuilder().nextToken(token).build()
 
-    internal fun generateMockCompletionDetail(content: String): Completion {
+    fun generateMockCompletionDetail(content: String): Completion {
         val referenceInfo = getReferenceInfo()
         return Completion.builder().content(content)
             .references(
@@ -184,9 +184,9 @@ object CodeWhispererTestUtil {
             .build()
     }
 
-    internal fun getReferenceInfo() = testReferenceInfoPair[Random.nextInt(testReferenceInfoPair.size)]
+    fun getReferenceInfo() = testReferenceInfoPair[Random.nextInt(testReferenceInfoPair.size)]
 
-    internal fun generateMockCompletionDetail(
+    fun generateMockCompletionDetail(
         content: String,
         licenseName: String,
         repository: String,
