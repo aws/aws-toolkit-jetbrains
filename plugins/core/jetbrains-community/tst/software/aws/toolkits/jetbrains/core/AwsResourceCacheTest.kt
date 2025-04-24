@@ -243,7 +243,7 @@ class AwsResourceCacheTest {
         whenever(mockResource.fetch(any())).thenReturn("hello")
         val viewResource = Resource.view(mockResource) { toList() }
 
-        val filteredAndMapped = viewResource.filter { it != 'l' }.map { it.toUpperCase() }
+        val filteredAndMapped = viewResource.filter { it != 'l' }.map { it.uppercaseChar() }
         assertThat(sut.getResource(filteredAndMapped, connectionSettings)).hasValue(listOf('H', 'E', 'O'))
 
         val find = viewResource.find { it == 'l' }
