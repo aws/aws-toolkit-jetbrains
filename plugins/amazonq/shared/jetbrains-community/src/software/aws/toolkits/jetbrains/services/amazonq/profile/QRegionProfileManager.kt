@@ -16,6 +16,7 @@ import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.xmlb.annotations.MapAnnotation
 import com.intellij.util.xmlb.annotations.Property
 import software.amazon.awssdk.core.SdkClient
+import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -68,14 +69,19 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
         val selected = activeProfile(project) ?: return
         val profiles = try {
             listRegionProfiles(project)
-        } catch (_: Exception) {
-            // if we can't list profiles assume it is valid
-            LOG.warn { "Continuing with $selected since listAvailableProfiles failed" }
-            return
+        } catch (e: Exception) {
+            if (e is AccessDeniedException) {
+                null
+            } else {
+                // if we can't list profiles assume it is valid
+                LOG.warn { "Continuing with $selected since listAvailableProfiles failed" }
+                return
+            }
         }
 
         // succeeded in listing profiles, but none match selected
-        if (profiles?.none { it.arn == selected.arn } == true) {
+        // profiles should be null if access denied or connection is not IdC
+        if (profiles == null || profiles.none { it.arn == selected.arn }) {
             invalidateProfile(selected.arn)
             switchProfile(project, null, intent = QProfileSwitchIntent.Reload)
             Telemetry.amazonq.profileState.use { span ->

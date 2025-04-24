@@ -15,7 +15,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
@@ -201,10 +200,14 @@ class QRegionProfileManagerTest {
             this.connectionIdToActiveProfile[activeConn.id] = fooProfile
             this.connectionIdToActiveProfile[anotherConn.id] = barProfile
         }
-        resourceCache.addEntry(activeConn.getConnectionSettings(), QProfileResources.LIST_REGION_PROFILES, listOf(
-            QRegionProfile("foo", "foo-arn-v2"),
-            QRegionProfile("bar", "bar-arn"),
-        ))
+        resourceCache.addEntry(
+            activeConn.getConnectionSettings(),
+            QProfileResources.LIST_REGION_PROFILES,
+            listOf(
+                QRegionProfile("foo", "foo-arn-v2"),
+                QRegionProfile("bar", "bar-arn"),
+            )
+        )
 
         sut.loadState(state)
         assertThat(sut.activeProfile(project)).isEqualTo(fooProfile)
