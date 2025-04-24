@@ -15,6 +15,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
@@ -191,20 +192,30 @@ class QRegionProfileManagerTest {
 
     @Test
     fun `validateProfile should cross validate selected profile with latest API response for current project and remove it if its not longer accessible`() {
-        val client = clientRule.create<CodeWhispererRuntimeClient>()
-        val mockResponse: SdkIterable<Profile> = SdkIterable<Profile> {
-            listOf(
-                Profile.builder().profileName("foo").arn("foo-arn-v2").build(),
-                Profile.builder().profileName("bar").arn("bar-arn").build(),
-            ).toMutableList().iterator()
+        val activeConn =
+            ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) ?: fail("connection shouldn't be null")
+        val anotherConn = authRule.createConnection(ManagedSsoProfile(ssoRegion = "us-east-1", startUrl = "anotherUrl", scopes = Q_SCOPES))
+        val fooProfile = QRegionProfile("foo", "foo-arn")
+        val barProfile = QRegionProfile("bar", "bar-arn")
+        val state = QProfileState().apply {
+            this.connectionIdToActiveProfile[activeConn.id] = fooProfile
+            this.connectionIdToActiveProfile[anotherConn.id] = barProfile
         }
-        val iterable: ListAvailableProfilesIterable = mock {
-            on { it.profiles() } doReturn mockResponse
-        }
-        client.stub {
-            onGeneric { listAvailableProfilesPaginator(any<Consumer<ListAvailableProfilesRequest.Builder>>()) } doReturn iterable
-        }
+        resourceCache.addEntry(activeConn.getConnectionSettings(), QProfileResources.LIST_REGION_PROFILES, listOf(
+            QRegionProfile("foo", "foo-arn-v2"),
+            QRegionProfile("bar", "bar-arn"),
+        ))
 
+        sut.loadState(state)
+        assertThat(sut.activeProfile(project)).isEqualTo(fooProfile)
+
+        sut.validateProfile(project)
+        assertThat(sut.activeProfile(project)).isNull()
+        assertThat(sut.state.connectionIdToActiveProfile).isEqualTo(mapOf(anotherConn.id to barProfile))
+    }
+
+    @Test
+    fun `validateProfile does not clear profile if profiles cannot be listed`() {
         val activeConn =
             ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) ?: fail("connection shouldn't be null")
         val anotherConn = authRule.createConnection(ManagedSsoProfile(ssoRegion = "us-east-1", startUrl = "anotherUrl", scopes = Q_SCOPES))
@@ -218,8 +229,7 @@ class QRegionProfileManagerTest {
         assertThat(sut.activeProfile(project)).isEqualTo(fooProfile)
 
         sut.validateProfile(project)
-        assertThat(sut.activeProfile(project)).isNull()
-        assertThat(sut.state.connectionIdToActiveProfile).isEqualTo(mapOf(anotherConn.id to barProfile))
+        assertThat(sut.activeProfile(project)).isEqualTo(fooProfile)
     }
 
     @Test

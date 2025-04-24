@@ -19,7 +19,6 @@ import software.amazon.awssdk.core.SdkClient
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
@@ -59,16 +58,24 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
             )
     }
 
-    // should be call on project startup to validate if profile is still active
+    /**
+     * Called on project startup to validate if selected profile is still active
+     */
+    @Deprecated("This is a giant hack and we are not handling all the cases")
     @RequiresBackgroundThread
     fun validateProfile(project: Project) {
         val conn = getIdcConnectionOrNull(project)
         val selected = activeProfile(project) ?: return
-        val profiles = tryOrNull {
+        val profiles = try {
             listRegionProfiles(project)
+        } catch (_: Exception) {
+            // if we can't list profiles assume it is valid
+            LOG.warn { "Continuing with $selected since listAvailableProfiles failed" }
+            return
         }
 
-        if (profiles == null || profiles.none { it.arn == selected.arn }) {
+        // succeeded in listing profiles, but none match selected
+        if (profiles?.none { it.arn == selected.arn } == true) {
             invalidateProfile(selected.arn)
             switchProfile(project, null, intent = QProfileSwitchIntent.Reload)
             Telemetry.amazonq.profileState.use { span ->
@@ -83,6 +90,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
 
     fun listRegionProfiles(project: Project): List<QRegionProfile>? {
         val connection = getIdcConnectionOrNull(project) ?: return null
+
         return try {
             val connectionSettings = connection.getConnectionSettings()
             val mappedProfiles = AwsResourceCache.getInstance().getResourceNow(
