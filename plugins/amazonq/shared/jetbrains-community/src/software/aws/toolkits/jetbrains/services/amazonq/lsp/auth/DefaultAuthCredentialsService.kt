@@ -5,8 +5,11 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.auth
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
+import com.intellij.util.concurrency.AppExecutorUtil
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import software.aws.toolkits.core.TokenConnectionSettings
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
@@ -26,6 +29,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSe
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 
 class DefaultAuthCredentialsService(
     private val project: Project,
@@ -34,7 +40,12 @@ class DefaultAuthCredentialsService(
 ) : AuthCredentialsService,
     BearerTokenProviderListener,
     ToolkitConnectionManagerListener,
-    QRegionProfileSelectedListener {
+    QRegionProfileSelectedListener,
+    Disposable {
+
+    private val scheduler: ScheduledExecutorService = AppExecutorUtil.getAppScheduledExecutorService()
+    private var tokenSyncTask: ScheduledFuture<*>? = null
+    private val tokenSyncIntervalSeconds = 10L
 
     init {
         project.messageBus.connect(serverInstance).apply {
@@ -49,6 +60,26 @@ class DefaultAuthCredentialsService(
                     updateConfiguration()
                 }
         }
+
+        // Start periodic token sync
+        startPeriodicTokenSync()
+    }
+
+    private fun startPeriodicTokenSync() {
+        tokenSyncTask = scheduler.scheduleWithFixedDelay(
+            {
+                try {
+                    if (isQConnected(project) && !isQExpired(project)) {
+                        updateTokenFromActiveConnection()
+                    }
+                } catch (e: Exception) {
+                    LOG.warn(e) { "Failed to sync bearer token to Flare" }
+                }
+            },
+            tokenSyncIntervalSeconds,
+            tokenSyncIntervalSeconds,
+            TimeUnit.SECONDS
+        )
     }
 
     override fun updateTokenCredentials(accessToken: String, encrypted: Boolean): CompletableFuture<ResponseMessage> {
@@ -133,5 +164,14 @@ class DefaultAuthCredentialsService(
         return AmazonQLspService.executeIfRunning(project) { server ->
             server.updateConfiguration(payload)
         } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
+    }
+
+    override fun dispose() {
+        tokenSyncTask?.cancel(false)
+        tokenSyncTask = null
+    }
+
+    companion object {
+        private val LOG = getLogger<DefaultAuthCredentialsService>()
     }
 }
