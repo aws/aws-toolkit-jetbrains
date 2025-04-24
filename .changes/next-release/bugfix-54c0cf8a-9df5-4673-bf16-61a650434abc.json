@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Not show code scan tool window tab when switch to Problem ToolWindow"
+}
