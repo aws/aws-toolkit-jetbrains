@@ -26,7 +26,6 @@ import software.amazon.awssdk.arns.Arn
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.Q_CUSTOM_LEARN_MORE_URI
 import software.aws.toolkits.jetbrains.ui.AsyncComboBox
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.message
@@ -162,7 +161,12 @@ class CodeWhispererCustomizationDialog(
             lateinit var customizationComment: Row
             indent {
                 noCustomizationComment = row("") {
-                    rowComment(message("codewhisperer.custom.dialog.option.customization.description.no_customization", Q_CUSTOM_LEARN_MORE_URI))
+                    rowComment(
+                        message(
+                            "codewhisperer.custom.dialog.option.customization.description.no_customization",
+                            "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/customizations.html"
+                        )
+                    )
                 }.visible(false)
 
                 customizationComment = row("") {

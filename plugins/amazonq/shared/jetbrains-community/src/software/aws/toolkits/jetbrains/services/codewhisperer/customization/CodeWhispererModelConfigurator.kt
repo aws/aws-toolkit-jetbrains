@@ -17,15 +17,16 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.xmlb.annotations.MapAnnotation
 import com.intellij.util.xmlb.annotations.Property
+import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.calculateIfIamIdentityCenterConnection
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
-import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CustomizationConstants
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
@@ -105,15 +106,36 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
         }
     }
 
+    /**
+     * DO NOT directly use this method to fetch customizations, use wrapper [listCustomizations] instead
+     */
+    private fun listAvailableCustomizations(project: Project): List<CodeWhispererCustomization> =
+        QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project)
+            .listAvailableCustomizationsPaginator {}
+            .flatMap { resp ->
+                LOG.debug {
+                    "listAvailableCustomizations: requestId: ${resp.responseMetadata().requestId()}, customizations: ${
+                        resp.customizations().map { it.name() }
+                    }"
+                }
+                resp.customizations().map {
+                    CodeWhispererCustomization(
+                        arn = it.arn(),
+                        name = it.name(),
+                        description = it.description()
+                    )
+                }
+            }
+
     @RequiresBackgroundThread
     override fun listCustomizations(project: Project, passive: Boolean): List<CustomizationUiItem>? =
         calculateIfIamIdentityCenterConnection(project) {
             // 1. invoke API and get result
             val listAvailableCustomizationsResult = try {
-                CodeWhispererClientAdaptor.getInstance(project).listAvailableCustomizations()
+                listAvailableCustomizations(project)
             } catch (e: Exception) {
                 val requestId = (e as? CodeWhispererRuntimeException)?.requestId()
-                val logMessage = if (CodeWhispererConstants.Customization.noAccessToCustomizationExceptionPredicate(e)) {
+                val logMessage = if (CustomizationConstants.noAccessToCustomizationExceptionPredicate(e)) {
                     // TODO: not required for non GP users
                     "ListAvailableCustomizations: connection ${it.id} is not allowlisted, requestId: ${requestId.orEmpty()}"
                 } else {

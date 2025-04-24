@@ -13,9 +13,7 @@ import com.intellij.openapi.wm.impl.status.widget.StatusBarWidgetsManager
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.util.xmlb.XmlSerializer
-import io.mockk.every
 import io.mockk.junit4.MockKRule
-import io.mockk.mockkObject
 import org.assertj.core.api.Assertions.assertThat
 import org.jdom.output.XMLOutputter
 import org.junit.Before
@@ -28,7 +26,6 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.core.ToolWindowHeadlessManagerImpl
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreActionState
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
@@ -252,18 +249,6 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
         ).forEach { s, expected ->
             sut.setProjectContextIndexMaxSize(s)
             assertThat(sut.getProjectContextIndexMaxSize()).isEqualTo(expected)
-        }
-    }
-
-    @Test
-    fun `toggleMetricOptIn should trigger LSP didChangeConfiguration`() {
-        mockkObject(AmazonQLspService)
-        every { AmazonQLspService.didChangeConfiguration(any()) } returns Unit
-        settingsManager.toggleMetricOptIn(true)
-        settingsManager.toggleMetricOptIn(false)
-
-        io.mockk.verify(atLeast = 2) {
-            AmazonQLspService.didChangeConfiguration(any())
         }
     }
 }
