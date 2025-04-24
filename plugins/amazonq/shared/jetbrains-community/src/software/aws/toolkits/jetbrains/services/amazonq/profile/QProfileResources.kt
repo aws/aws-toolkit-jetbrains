@@ -3,8 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.profile
 
+import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.aws.toolkits.core.ClientConnectionSettings
+import software.aws.toolkits.core.utils.debug
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.Resource
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
@@ -25,15 +29,31 @@ object QProfileResources {
                 val awsRegion = AwsRegionProvider.getInstance()[regionKey] ?: return@flatMap emptyList()
                 val client = AwsClientManager
                     .getInstance()
-                    .getClient(CodeWhispererRuntimeClient::class, connectionSettings.withRegion(awsRegion))
+                    .getClient<CodeWhispererRuntimeClient>(connectionSettings.withRegion(awsRegion))
 
-                client.listAvailableProfilesPaginator {}
-                    .profiles()
-                    .map { p -> QRegionProfile(arn = p.arn(), profileName = p.profileName() ?: "<no name>") }
+                try {
+                    val profiles = client.listAvailableProfilesPaginator {}
+                        .profiles()
+                        .map { p -> QRegionProfile(arn = p.arn(), profileName = p.profileName() ?: "<no name>") }
+                    LOG.debug { "Found profiles for region $regionKey : $profiles" }
+
+                    profiles
+                } catch (e: Exception) {
+                    LOG.warn(e) { "Failed to list Q profiles for region $regionKey" }
+
+                    // service has low TPS so only suppress if not a service error
+                    if (e is AwsServiceException) {
+                        throw e
+                    }
+
+                    emptyList()
+                }
             }
             return mappedProfiles
         }
 
         override fun expiry(): Duration = Duration.ofSeconds(60)
     }
+
+    private val LOG = getLogger<QProfileResources>()
 }

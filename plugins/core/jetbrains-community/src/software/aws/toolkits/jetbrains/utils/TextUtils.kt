@@ -29,7 +29,7 @@ fun formatText(project: Project, language: Language, content: String): String {
  * Designed to convert underscore separated words (e.g. UPDATE_COMPLETE) into title cased human readable text
  * (e.g. Update Complete)
  */
-fun String.toHumanReadable() = StringUtil.toTitleCase(toLowerCase().replace('_', ' '))
+fun String.toHumanReadable() = StringUtil.toTitleCase(lowercase().replace('_', ' '))
 
 fun generateUnifiedPatch(patch: String, filePath: String): TextFilePatch {
     val unifiedPatch = "--- $filePath\n+++ $filePath\n$patch"
