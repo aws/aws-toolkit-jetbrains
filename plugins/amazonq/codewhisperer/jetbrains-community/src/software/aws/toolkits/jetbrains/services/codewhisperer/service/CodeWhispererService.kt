@@ -53,6 +53,10 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.GetConfigurationFromServerParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
@@ -91,6 +95,9 @@ import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
+import java.net.URI
+import java.nio.file.Paths
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
 @Service
@@ -231,7 +238,9 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     buildCodeWhispererRequest(
                         requestContext.fileContextInfo,
                         requestContext.awaitSupplementalContext(),
-                        requestContext.customizationArn
+                        requestContext.customizationArn,
+                        requestContext.profileArn,
+                        requestContext.workspaceId,
                     )
                 )
 
@@ -666,7 +675,44 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         // 5. customization
         val customizationArn = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn
 
-        return RequestContext(project, editor, triggerTypeInfo, caretPosition, fileContext, supplementalContext, connection, latencyContext, customizationArn)
+        val profileArn = QRegionProfileManager.getInstance().activeProfile(project)?.arn
+
+        var workspaceId: String? = null
+        try {
+            val workspacesInfos = getWorkspaceIds(project).get().workspaces
+            for (workspaceInfo in workspacesInfos) {
+                val workspaceRootPath = Paths.get(URI(workspaceInfo.workspaceRoot)).toString()
+                if (psiFile.virtualFile.path.startsWith(workspaceRootPath)) {
+                    workspaceId = workspaceInfo.workspaceId
+                    LOG.info { "Found workspaceId from LSP '$workspaceId'" }
+                    break
+                }
+            }
+        } catch (e: Exception) {
+            LOG.warn { "Cannot get workspaceId from LSP'$e'" }
+        }
+        return RequestContext(
+            project,
+            editor,
+            triggerTypeInfo,
+            caretPosition,
+            fileContext,
+            supplementalContext,
+            connection,
+            latencyContext,
+            customizationArn,
+            profileArn,
+            workspaceId,
+        )
+    }
+
+    private fun getWorkspaceIds(project: Project): CompletableFuture<LspServerConfigurations> {
+        val payload = GetConfigurationFromServerParams(
+            section = "aws.q.workspaceContext"
+        )
+        return AmazonQLspService.executeIfRunning(project) { server ->
+            server.getConfigurationFromServer(payload)
+        } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
     }
 
     fun validateResponse(response: GenerateCompletionsResponse): GenerateCompletionsResponse {
@@ -800,6 +846,8 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             fileContextInfo: FileContextInfo,
             supplementalContext: SupplementalContextInfo?,
             customizationArn: String?,
+            profileArn: String?,
+            workspaceId: String?,
         ): GenerateCompletionsRequest {
             val programmingLanguage = ProgrammingLanguage.builder()
                 .languageName(fileContextInfo.programmingLanguage.toCodeWhispererRuntimeLanguage().languageId)
@@ -828,6 +876,8 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 .referenceTrackerConfiguration { it.recommendationsWithReferences(includeCodeWithReference) }
                 .customizationArn(customizationArn)
                 .optOutPreference(getTelemetryOptOutPreference())
+                .profileArn(profileArn)
+                .workspaceId(workspaceId)
                 .build()
         }
     }
@@ -843,6 +893,8 @@ data class RequestContext(
     val connection: ToolkitConnection?,
     val latencyContext: LatencyContext,
     val customizationArn: String?,
+    val profileArn: String?,
+    val workspaceId: String?,
 ) {
     // TODO: should make the entire getRequestContext() suspend function instead of making supplemental context only
     var supplementalContext: SupplementalContextInfo? = null

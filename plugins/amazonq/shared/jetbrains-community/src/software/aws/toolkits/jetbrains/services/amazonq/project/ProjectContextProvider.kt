@@ -70,12 +70,12 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
 
     data class FileCollectionResult(
         val files: List<String>,
-        val fileSize: Int,
+        val fileSize: Int, // in MB
     )
 
     // TODO: move to LspMessage.kt
+    @JsonIgnoreProperties(ignoreUnknown = true)
     data class Usage(
-        @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("memoryUsage")
         val memoryUsage: Int? = null,
         @JsonProperty("cpuUsage")
@@ -83,8 +83,8 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     )
 
     // TODO: move to LspMessage.kt
+    @JsonIgnoreProperties(ignoreUnknown = true)
     data class Chunk(
-        @JsonIgnoreProperties(ignoreUnknown = true)
         @JsonProperty("filePath")
         val filePath: String? = null,
         @JsonProperty("content")
@@ -116,10 +116,14 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
                     logger.info { "project context index starting" }
                     delay(300)
                     val isIndexSuccess = index()
-                    if (isIndexSuccess) isIndexComplete.set(true)
+                    if (isIndexSuccess) {
+                        isIndexComplete.set(true)
+                    }
                     return
                 }
+                retryCount.incrementAndGet()
             } catch (e: Exception) {
+                logger.warn(e) { "failed to init project context" }
                 if (e.stackTraceToString().contains("Connection refused")) {
                     retryCount.incrementAndGet()
                     delay(10000)
@@ -133,6 +137,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     private suspend fun initEncryption(): Boolean {
         val request = encoderServer.getEncryptionRequest()
         val response = sendMsgToLsp(LspMessage.Initialize, request)
+        logger.info { "received response to init encryption: $response" }
         return response?.responseCode == 200
     }
 
@@ -241,59 +246,7 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
         }
     }
 
-    private fun willExceedPayloadLimit(currentTotalFileSize: Long, currentFileSize: Long): Boolean {
-        val maxSize = CodeWhispererSettings.getInstance().getProjectContextIndexMaxSize()
-        return currentTotalFileSize.let { totalSize -> totalSize > (maxSize * 1024 * 1024 - currentFileSize) }
-    }
-
-    private fun isBuildOrBin(fileName: String): Boolean {
-        val regex = Regex("""bin|build|node_modules|venv|\.venv|env|\.idea|\.conda""", RegexOption.IGNORE_CASE)
-        return regex.find(fileName) != null
-    }
-
-    fun collectFiles(): FileCollectionResult {
-        val collectedFiles = mutableListOf<String>()
-        var currentTotalFileSize = 0L
-        val allFiles = mutableListOf<VirtualFile>()
-
-        val projectBaseDirectories = project.getBaseDirectories()
-        val changeListManager = ChangeListManager.getInstance(project)
-
-        projectBaseDirectories.forEach {
-            VfsUtilCore.visitChildrenRecursively(
-                it,
-                object : VirtualFileVisitor<Unit>(NO_FOLLOW_SYMLINKS) {
-                    // TODO: refactor this along with /dev & codescan file traversing logic
-                    override fun visitFile(file: VirtualFile): Boolean {
-                        if ((file.isDirectory && isBuildOrBin(file.name)) ||
-                            !isWorkspaceSourceContent(file, projectBaseDirectories, changeListManager, additionalGlobalIgnoreRulesForStrictSources) ||
-                            (file.isFile && file.length > 10 * 1024 * 1024)
-                        ) {
-                            return false
-                        }
-                        if (file.isFile) {
-                            allFiles.add(file)
-                            return false
-                        }
-                        return true
-                    }
-                }
-            )
-        }
-
-        for (file in allFiles) {
-            if (willExceedPayloadLimit(currentTotalFileSize, file.length)) {
-                break
-            }
-            collectedFiles.add(file.path)
-            currentTotalFileSize += file.length
-        }
-
-        return FileCollectionResult(
-            files = collectedFiles.toList(),
-            fileSize = (currentTotalFileSize / 1024 / 1024).toInt()
-        )
-    }
+    fun collectFiles(): FileCollectionResult = collectFiles(project.getBaseDirectories(), ChangeListManager.getInstance(project))
 
     private fun queryResultToRelevantDocuments(queryResult: List<Chunk>): List<RelevantDocument> {
         val documents: MutableList<RelevantDocument> = mutableListOf()
@@ -315,12 +268,12 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
     }
 
     private suspend fun sendMsgToLsp(msgType: LspMessage, request: String?): LspResponse? {
-        logger.info { "sending message: ${msgType.endpoint} to lsp on port ${encoderServer.port}" }
-        val url = URI("http://127.0.0.1:${encoderServer.port}/${msgType.endpoint}").toURL()
         if (!encoderServer.isNodeProcessRunning()) {
             logger.warn { "language server for ${project.name} is not running" }
             return null
         }
+        logger.info { "sending message: ${msgType.endpoint} to lsp on port ${encoderServer.port}" }
+        val url = URI("http://127.0.0.1:${encoderServer.port}/${msgType.endpoint}").toURL()
         // use 1h as timeout for index, 5 seconds for other APIs
         val timeoutMs = if (msgType is LspMessage.Index) 60.minutes.inWholeMilliseconds.toInt() else 5000
         // dedicate single thread to index operation because it can be long running
@@ -353,5 +306,57 @@ class ProjectContextProvider(val project: Project, private val encoderServer: En
 
     companion object {
         private val logger = getLogger<ProjectContextProvider>()
+        private val regex = Regex("""bin|build|node_modules|venv|\.venv|env|\.idea|\.conda""", RegexOption.IGNORE_CASE)
+        private val mega = (1024 * 1024).toULong()
+        private val tenMb = 10 * mega.toInt()
+
+        private fun willExceedPayloadLimit(maxSize: ULong, currentTotalFileSize: ULong, currentFileSize: Long) =
+            currentTotalFileSize.let { totalSize -> totalSize > (maxSize - currentFileSize.toUInt()) }
+
+        private fun isBuildOrBin(fileName: String): Boolean =
+            regex.find(fileName) != null
+
+        fun collectFiles(projectBaseDirectories: Set<VirtualFile>, changeListManager: ChangeListManager): FileCollectionResult {
+            val maxSize = CodeWhispererSettings.getInstance()
+                .getProjectContextIndexMaxSize().toULong() * mega
+            val collectedFiles = mutableListOf<String>()
+            var currentTotalFileSize = 0UL
+            val allFiles = mutableListOf<VirtualFile>()
+
+            projectBaseDirectories.forEach {
+                VfsUtilCore.visitChildrenRecursively(
+                    it,
+                    object : VirtualFileVisitor<Unit>(NO_FOLLOW_SYMLINKS) {
+                        // TODO: refactor this along with /dev & codescan file traversing logic
+                        override fun visitFile(file: VirtualFile): Boolean {
+                            if ((file.isDirectory && isBuildOrBin(file.name)) ||
+                                !isWorkspaceSourceContent(file, projectBaseDirectories, changeListManager, additionalGlobalIgnoreRulesForStrictSources) ||
+                                (file.isFile && file.length > tenMb)
+                            ) {
+                                return false
+                            }
+                            if (file.isFile) {
+                                allFiles.add(file)
+                                return false
+                            }
+                            return true
+                        }
+                    }
+                )
+            }
+
+            for (file in allFiles) {
+                if (willExceedPayloadLimit(maxSize, currentTotalFileSize, file.length)) {
+                    break
+                }
+                collectedFiles.add(file.path)
+                currentTotalFileSize += file.length.toUInt()
+            }
+
+            return FileCollectionResult(
+                files = collectedFiles.toList(),
+                fileSize = (currentTotalFileSize / 1024u / 1024u).toInt()
+            )
+        }
     }
 }
