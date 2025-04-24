@@ -22,7 +22,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeFixJobR
 import software.amazon.awssdk.services.codewhispererruntime.model.GetTestGenerationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.IdeCategory
 import software.amazon.awssdk.services.codewhispererruntime.model.InlineChatUserDecision
-import software.amazon.awssdk.services.codewhispererruntime.model.ListAvailableCustomizationsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.ListCodeAnalysisFindingsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.ListCodeAnalysisFindingsResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.ListFeatureEvaluationsResponse
@@ -35,8 +34,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.StartTestGener
 import software.amazon.awssdk.services.codewhispererruntime.model.SuggestionState
 import software.amazon.awssdk.services.codewhispererruntime.model.TargetCode
 import software.amazon.awssdk.services.codewhispererruntime.model.UserIntent
-import software.aws.toolkits.core.utils.debug
-import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
@@ -774,10 +771,6 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
         requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
-    }
-
-    companion object {
-        private val LOG = getLogger<CodeWhispererClientAdaptorImpl>()
     }
 }
 

@@ -120,9 +120,9 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
                 }
                 resp.customizations().map {
                     CodeWhispererCustomization(
-                            arn = it.arn(),
-                            name = it.name(),
-                            description = it.description()
+                        arn = it.arn(),
+                        name = it.name(),
+                        description = it.description()
                     )
                 }
             }

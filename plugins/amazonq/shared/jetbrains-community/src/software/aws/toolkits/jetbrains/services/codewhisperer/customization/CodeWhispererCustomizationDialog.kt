@@ -161,7 +161,12 @@ class CodeWhispererCustomizationDialog(
             lateinit var customizationComment: Row
             indent {
                 noCustomizationComment = row("") {
-                    rowComment(message("codewhisperer.custom.dialog.option.customization.description.no_customization", "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/customizations.html"))
+                    rowComment(
+                        message(
+                            "codewhisperer.custom.dialog.option.customization.description.no_customization",
+                            "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/customizations.html"
+                        )
+                    )
                 }.visible(false)
 
                 customizationComment = row("") {
