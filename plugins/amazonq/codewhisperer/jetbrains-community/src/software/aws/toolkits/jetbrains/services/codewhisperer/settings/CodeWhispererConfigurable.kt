@@ -291,11 +291,11 @@ class CodeWhispererConfigurable(private val project: Project) :
             .also { map ->
                 val list = map.getOrPut(null) { mutableListOf() } as MutableList<() -> Unit>
                 list.add {
-                    ProjectManager.getInstance().openProjects.forEach {
-                        if (it.isDisposed) {
+                    ProjectManager.getInstance().openProjects.forEach { project ->
+                        if (project.isDisposed) {
                             return@forEach
                         }
-                        AmazonQLspService.didChangeConfiguration(it)
+                        AmazonQLspService.didChangeConfiguration(project)
                     }
                 }
             }
