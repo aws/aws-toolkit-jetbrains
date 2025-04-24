@@ -293,7 +293,6 @@ class BrowserConnector(
             CHAT_FOLLOW_UP_CLICK -> {
                 handleChatNotification<FollowUpClickNotification, FollowUpClickParams>(node) { server, params ->
                     server.followUpClick(params)
-
                 }
             }
         }

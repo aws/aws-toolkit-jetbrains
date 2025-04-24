@@ -90,5 +90,4 @@ interface AmazonQLanguageServer : LanguageServer {
 
     @JsonNotification(CHAT_FOLLOW_UP_CLICK)
     fun followUpClick(params: FollowUpClickParams): CompletableFuture<Unit>
-
 }
