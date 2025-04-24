@@ -64,6 +64,8 @@ data class PollingResult(
     val transformationPlan: TransformationPlan?,
 )
 
+private const val isClientSideBuildEnabled = false
+
 /**
  * Wrapper around [waitUntil] that polls the API DescribeMigrationJob to check the migration job status.
  */
@@ -117,7 +119,8 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                     delay(sleepDurationMillis)
                     newPlan = clientAdaptor.getCodeModernizationPlan(this).transformationPlan()
                 }
-                if (newStatus == TransformationStatus.TRANSFORMING && newPlan != null) {
+                // TODO: remove flag when releasing CSB
+                if (isClientSideBuildEnabled && newStatus == TransformationStatus.TRANSFORMING && newPlan != null) {
                     attemptLocalBuild(newPlan, this, project)
                 }
                 if (newStatus != state) {

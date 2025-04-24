@@ -4,18 +4,22 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.controller
 
 import com.intellij.ide.BrowserUtil
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.util.io.FileUtil.createTempDirectory
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.readText
+import com.intellij.testFramework.LightVirtualFile
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import org.jetbrains.yaml.YAMLFileType
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
@@ -76,6 +80,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTr
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformStoppingChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserCancelledChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserHilSelection
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputCustomDependencyVersionsChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputLanguageUpgradeChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputOneOrMultipleDiffsChatIntroContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputOneOrMultipleDiffsFlagChatContent
@@ -93,7 +98,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.Authenti
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformCommandMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.IncomingCodeTransformMessage
-import software.aws.toolkits.jetbrains.services.codemodernizer.model.CLIENT_SIDE_BUILD
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformConversationState
@@ -430,23 +434,22 @@ class CodeTransformChatController(
 
     override suspend fun processCodeTransformOneOrMultipleDiffs(message: IncomingCodeTransformMessage.CodeTransformConfirmOneOrMultipleDiffs) {
         val transformCapabilities = when (message.oneOrMultipleDiffsSelection) {
+            // TODO: add CLIENT_SIDE_BUILD to both below when releasing CSB
             message("codemodernizer.chat.message.one_or_multiple_diffs_form.multiple_diffs") -> listOf(
                 EXPLAINABILITY_V1,
-                CLIENT_SIDE_BUILD,
                 SELECTIVE_TRANSFORMATION_V1
             )
             else -> listOf(
                 EXPLAINABILITY_V1,
-                CLIENT_SIDE_BUILD
             )
         }
         telemetry.submitSelection(message.oneOrMultipleDiffsSelection)
         codeTransformChatHelper.addNewMessage(buildUserOneOrMultipleDiffsSelectionChatContent(message.oneOrMultipleDiffsSelection))
         codeModernizerManager.codeTransformationSession?.let {
             it.sessionContext.transformCapabilities = transformCapabilities
+            codeModernizerManager.runLocalMavenBuild(context.project, it)
         }
-        promptForTargetJdkName(message.tabId)
-        // TODO: when custom 1P upgrades ready, delete line above and uncomment line below
+        // TODO: when releasing CSB, delete "runLocalMavenBuild" line above and uncomment line below
         // promptForCustomYamlFile()
     }
 
@@ -458,14 +461,14 @@ class CodeTransformChatController(
             val selectedFile = FileChooser.chooseFile(descriptor, null, null) ?: return@withContext
             val isValid = validateYamlFile(selectedFile.readText())
             if (!isValid) {
-                codeTransformChatHelper.addNewMessage(buildCustomDependencyVersionsFileInvalidChatContent())
+                codeTransformChatHelper.updateLastPendingMessage(buildCustomDependencyVersionsFileInvalidChatContent())
                 codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
                 return@withContext
             }
             codeModernizerManager.codeTransformationSession?.let {
                 it.sessionContext.customDependencyVersionsFile = selectedFile
             }
-            codeTransformChatHelper.addNewMessage(buildCustomDependencyVersionsFileValidChatContent())
+            codeTransformChatHelper.updateLastPendingMessage(buildCustomDependencyVersionsFileValidChatContent())
             promptForTargetJdkName(message.tabId)
         }
     }
@@ -490,7 +493,6 @@ class CodeTransformChatController(
         }
     }
 
-/*
     private suspend fun promptForCustomYamlFile() {
         codeTransformChatHelper.addNewMessage(buildUserInputCustomDependencyVersionsChatContent())
         val sampleYAML = """
@@ -518,7 +520,6 @@ dependencyManagement:
             FileEditorManager.getInstance(context.project).openFile(virtualFile, true)
         }
     }
-*/
 
     override suspend fun processCodeTransformContinueAction(message: IncomingCodeTransformMessage.CodeTransformContinue) {
         codeTransformChatHelper.addNewMessage(buildContinueTransformationChatContent())

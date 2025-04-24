@@ -89,7 +89,7 @@ private val confirmOneOrMultipleDiffsSelectionButton = Button(
 
 private val confirmCustomDependencyVersionsButton = Button(
     keepCardAfterClick = true,
-    waitMandatoryFormItems = true, // TODO: what does this do?
+    waitMandatoryFormItems = true,
     text = "Select file",
     id = CodeTransformButtonId.ConfirmCustomDependencyVersions.id,
 )
@@ -396,7 +396,7 @@ fun buildUserInputCustomDependencyVersionsChatContent() = CodeTransformChatMessa
         confirmCustomDependencyVersionsButton,
         continueTransformationButton,
     ),
-    type = CodeTransformChatMessageType.FinalizedAnswer,
+    type = CodeTransformChatMessageType.PendingAnswer,
 )
 
 fun buildPromptTargetJDKNameChatContent(version: String) = CodeTransformChatMessageContent(
