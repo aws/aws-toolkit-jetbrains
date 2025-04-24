@@ -23,7 +23,7 @@ import software.aws.toolkits.jetbrains.core.webview.LoginBrowser
 import software.aws.toolkits.jetbrains.services.telemetry.MockTelemetryServiceExtension
 import kotlin.test.assertNotNull
 
-class TestLoginBrowser(project: Project) : LoginBrowser(project, "", "") {
+class TestLoginBrowser(project: Project) : LoginBrowser(project) {
     // test env can't initiate a real jcef and will throw error
     override val jcefBrowser: JBCefBrowserBase
         get() = mock()
