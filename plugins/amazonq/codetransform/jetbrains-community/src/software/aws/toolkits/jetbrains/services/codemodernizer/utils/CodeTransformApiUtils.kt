@@ -34,13 +34,13 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadContext
 import software.amazon.awssdk.services.codewhispererruntime.model.ValidationException
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
-import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.WaiterUnrecoverableException
 import software.aws.toolkits.core.utils.Waiters.waitUntil
+import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
-import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
+import software.aws.toolkits.jetbrains.services.codemodernizer.client.GumbyClient
 import software.aws.toolkits.jetbrains.services.codemodernizer.commands.CodeTransformMessageListener
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.BILLING_RATE
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.JOB_STATISTICS_TABLE_KEY
@@ -64,7 +64,7 @@ data class PollingResult(
     val transformationPlan: TransformationPlan?,
 )
 
-private const val isClientSideBuildEnabled = false
+private const val IS_CLIENT_SIDE_BUILD_ENABLED = false
 
 /**
  * Wrapper around [waitUntil] that polls the API DescribeMigrationJob to check the migration job status.
@@ -120,7 +120,7 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                     newPlan = clientAdaptor.getCodeModernizationPlan(this).transformationPlan()
                 }
                 // TODO: remove flag when releasing CSB
-                if (isClientSideBuildEnabled && newStatus == TransformationStatus.TRANSFORMING && newPlan != null) {
+                if (IS_CLIENT_SIDE_BUILD_ENABLED && newStatus == TransformationStatus.TRANSFORMING && newPlan != null) {
                     attemptLocalBuild(newPlan, this, project)
                 }
                 if (newStatus != state) {
@@ -225,7 +225,7 @@ suspend fun processClientInstructions(clientInstructionsPath: Path, jobId: JobId
             } catch (e: Exception) {
                 getLogger<CodeModernizerManager>().error(
                     "Error applying intermediate diff.patch for job ${jobId.id} and artifact $artifactId located at " +
-                    "$clientInstructionsPath: $e"
+                        "$clientInstructionsPath: $e"
                 )
             } finally {
                 runWriteAction {

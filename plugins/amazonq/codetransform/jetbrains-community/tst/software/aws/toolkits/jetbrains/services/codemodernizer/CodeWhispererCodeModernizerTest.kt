@@ -5,9 +5,6 @@ package software.aws.toolkits.jetbrains.services.codemodernizer
 
 import com.intellij.openapi.vcs.changes.patch.ApplyPatchDifferentiatedDialog
 import com.intellij.testFramework.LightVirtualFile
-import java.util.zip.ZipOutputStream
-import java.util.zip.ZipEntry
-import java.io.FileOutputStream
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
@@ -41,6 +38,9 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.downloadCli
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.filterOnlyParentFiles
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
+import java.io.FileOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import kotlin.io.path.Path
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
