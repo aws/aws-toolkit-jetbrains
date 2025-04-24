@@ -74,10 +74,9 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             }
         }
 
-    override fun openTab(params: OpenTabParams): CompletableFuture<OpenTabResult> {
-        //TODO implement chat history, this is here to unblock chat functionality
-        return CompletableFuture.completedFuture(OpenTabResult(""))
-    }
+    override fun openTab(params: OpenTabParams): CompletableFuture<OpenTabResult> =
+        // TODO implement chat history, this is here to unblock chat functionality
+        CompletableFuture.completedFuture(OpenTabResult(""))
 
     override fun configuration(params: ConfigurationParams): CompletableFuture<List<Any>> {
         if (params.items.isEmpty()) {
