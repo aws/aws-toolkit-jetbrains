@@ -21,6 +21,8 @@ import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
@@ -28,6 +30,10 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickResult
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_BUTTON_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FEEDBACK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FOLLOW_UP_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INFO_LINK_CLICK
@@ -276,6 +282,15 @@ class BrowserConnector(
                     server.followUpClick(params)
                 }
             }
+            CHAT_BUTTON_CLICK -> {
+                handleChatNotification<ButtonClickNotification, ButtonClickParams>(node) { server, params ->
+                    server.buttonClick(params)
+                }.thenApply { response ->
+                    if (response is ButtonClickResult && !response.success) {
+                        LOG.warn { "Failed to execute action associated with button with reason: ${response.failureReason}" }
+                    }
+                }
+            }
         }
     }
 
@@ -306,5 +321,9 @@ class BrowserConnector(
         return AmazonQLspService.executeIfRunning(project) { server ->
             serverAction(server, requestFromUi.params)
         } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
+    }
+
+    companion object {
+        private val LOG = getLogger<BrowserConnector>()
     }
 }
