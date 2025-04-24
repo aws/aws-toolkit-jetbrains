@@ -11,6 +11,7 @@ import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.options.ex.Settings
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.ui.emptyText
 import com.intellij.ui.components.ActionLink
 import com.intellij.ui.components.fields.ExpandableTextField
@@ -23,6 +24,7 @@ import com.intellij.util.concurrency.EdtExecutorService
 import com.intellij.util.execution.ParametersListUtil
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
@@ -284,6 +286,20 @@ class CodeWhispererConfigurable(private val project: Project) :
                 }
             }
         }
+    }.also {
+        val newCallbacks = it.applyCallbacks.toMutableMap()
+            .also { map ->
+                val list = map.getOrPut(null) { mutableListOf() } as MutableList<() -> Unit>
+                list.add {
+                    ProjectManager.getInstance().openProjects.forEach {
+                        if (it.isDisposed) {
+                            return@forEach
+                        }
+                        AmazonQLspService.didChangeConfiguration(it)
+                    }
+                }
+            }
+        it.applyCallbacks = newCallbacks
     }
 
     companion object {
