@@ -7,23 +7,60 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.ui.ColoredListCellRenderer
+import com.intellij.ui.SimpleTextAttributes
+import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.BottomGap
-import com.intellij.ui.dsl.builder.bind
+import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.builder.toNullableProperty
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.help.HelpIds
+import software.aws.toolkits.jetbrains.ui.AsyncComboBox
+import software.aws.toolkits.jetbrains.utils.ui.selected
 import software.aws.toolkits.resources.AmazonQBundle.message
+import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Telemetry
 import javax.swing.JComponent
+import javax.swing.JList
+
+data class QRegionProfileDialogState(
+    var selectedProfile: QRegionProfile? = null,
+)
 
 class QRegionProfileDialog(
     private var project: Project,
-    private var profiles: List<QRegionProfile>,
-    private var selectedProfile: QRegionProfile, // default
+    val state: QRegionProfileDialogState = QRegionProfileDialogState(),
+    private var selectedProfile: QRegionProfile?,
 ) : DialogWrapper(project) {
+
+    private val renderer = object : ColoredListCellRenderer<QRegionProfile>() {
+        override fun customizeCellRenderer(
+            list: JList<out QRegionProfile>,
+            value: QRegionProfile?,
+            index: Int,
+            selected: Boolean,
+            hasFocus: Boolean,
+        ) {
+            value?.let {
+                append(
+                    if (it == selectedProfile) {
+                        "${it.profileName} - ${it.region} (connected)"
+                    } else {
+                        "${it.profileName} - ${it.region}"
+                    },
+                    SimpleTextAttributes.REGULAR_ATTRIBUTES
+                )
+
+                append(" " + message("action.q.switchProfiles.dialog.account.label", it.accountId), SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES)
+            }
+        }
+    }
+
+    private val combo = AsyncComboBox<QRegionProfile>(customRenderer = renderer)
 
     private val panel: DialogPanel by lazy {
         panel {
@@ -36,32 +73,40 @@ class QRegionProfileDialog(
             }
             separator().bottomGap(BottomGap.MEDIUM)
 
-            buttonsGroup {
-                profiles.forEach { profile ->
-                    row {
-                        radioButton("", profile)
+            combo.proposeModelUpdate { model ->
+                try {
+                    QRegionProfileManager.getInstance().listRegionProfiles(project)?.forEach {
+                        model.addElement(it)
+                    } ?: error("Attempted to fetch profiles while there does not exist")
 
-                        panel {
-                            val regionDisplay = if (profile == selectedProfile) {
-                                "${profile.profileName} - ${profile.region} (connected)"
-                            } else {
-                                "${profile.profileName} - ${profile.region}"
-                            }
-                            row { label(regionDisplay) }
-                            row {
-                                label(message("action.q.switchProfiles.dialog.account.label", profile.accountId)).applyToComponent {
-                                    font = font.deriveFont(font.size2D - 2.0f)
-                                }
-                            }
-                        }
-                    }.bottomGap(BottomGap.MEDIUM)
+                    model.selectedItem = selectedProfile
+                } catch (e: Exception) {
+                    val conn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) as? AwsBearerTokenConnection
+                    Telemetry.amazonq.didSelectProfile.use { span ->
+                        span.source(QProfileSwitchIntent.User.value)
+                            .amazonQProfileRegion(QRegionProfileManager.getInstance().activeProfile(project)?.region ?: "not-set")
+                            .ssoRegion(conn?.region)
+                            .credentialStartUrl(conn?.startUrl)
+                            .result(MetricResult.Failed)
+                            .reason(e.message)
+                    }
+                    throw e
                 }
-            }.bind({ selectedOption }, { selectedOption = it })
+            }
+
+            row {
+                cell(combo)
+                    .align(AlignX.FILL)
+                    .errorOnApply(AwsCoreBundle.message("gettingstarted.setup.error.not_selected")) { it.selected() == null }
+                    .bindItem(state::selectedProfile.toNullableProperty())
+            }
 
             separator().bottomGap(BottomGap.MEDIUM)
         }
     }
-    private var selectedOption: QRegionProfile = selectedProfile // user selected
+
+    private val selectedOption
+        get() = state.selectedProfile // user selected
 
     init {
         title = message("action.q.switchProfiles.dialog.text")
@@ -87,7 +132,7 @@ class QRegionProfileDialog(
         Telemetry.amazonq.didSelectProfile.use { span ->
             span.source(QProfileSwitchIntent.User.value)
                 .amazonQProfileRegion(profileManager.activeProfile(project)?.region ?: "not-set")
-                .profileCount(profiles.size)
+                .profileCount(combo.model.size)
                 .ssoRegion(conn?.region)
                 .credentialStartUrl(conn?.startUrl)
                 .result(MetricResult.Cancelled)

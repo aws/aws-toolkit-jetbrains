@@ -41,8 +41,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.sen
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.utils.truncateIssueTitle
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.getHexString
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getHexString
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeFixAction
 import software.aws.toolkits.telemetry.MetricResult

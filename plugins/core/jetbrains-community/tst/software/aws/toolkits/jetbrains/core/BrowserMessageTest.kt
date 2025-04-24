@@ -174,6 +174,17 @@ class BrowserMessageTest {
                 event = "{ \"metricName\": \"foo\" }"
             )
         )
+
+        assertDeserializedInstanceOf<BrowserMessage.OpenUrl>(
+            """
+            {
+                "command": "openUrl",
+                "externalLink": "foo"
+            }
+            """
+        ).isEqualTo(
+            BrowserMessage.OpenUrl("foo")
+        )
     }
 
     @Test
@@ -295,6 +306,14 @@ class BrowserMessageTest {
             {
                 "command": "loginIAM",
                 "accessKey": "foo"
+            }
+            """
+        )
+
+        assertDeserializedWillThrow<MismatchedInputException>(
+            """
+            {
+                "command": "openUrl"
             }
             """
         )

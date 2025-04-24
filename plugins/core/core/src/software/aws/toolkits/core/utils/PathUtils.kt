@@ -212,3 +212,6 @@ private fun<T> tryOrLogShortException(log: Logger, block: () -> T) = try {
     log.warn { "${e::class.simpleName}: ${e.message}" }
     null
 }
+
+// https://github.com/corretto/corretto-21/blob/364eb35886643e504344136075f4a2442d6c0cb0/src/jdk.zipfs/share/classes/jdk/nio/zipfs/ZipFileSystem.java#L90C33-L90C78
+const val ZIP_PROPERTY_POSIX = "enablePosixFileAttributes"

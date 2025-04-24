@@ -479,7 +479,7 @@ class FeatureDevController(
                 ),
             )
 
-            if (!session.context.checkForDevFile()) {
+            if (!session.context.hasDevFile()) {
                 followUps.add(
                     FollowUp(
                         pillText = message("amazonqFeatureDev.follow_up.generate_dev_file"),
@@ -741,7 +741,7 @@ class FeatureDevController(
             }
 
             val codeWhispererSettings = CodeWhispererSettings.getInstance().getAutoBuildSetting()
-            val hasDevFile = session.context.checkForDevFile()
+            val hasDevFile = session.context.hasDevFile()
             val isPromptedForAutoBuildFeature = codeWhispererSettings.containsKey(session.context.workspaceRoot.path)
 
             if (hasDevFile && !isPromptedForAutoBuildFeature) {

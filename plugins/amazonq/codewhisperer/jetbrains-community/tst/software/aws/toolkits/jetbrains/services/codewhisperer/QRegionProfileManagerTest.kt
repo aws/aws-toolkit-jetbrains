@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.codewhisperer
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.replaceService
 import com.intellij.util.xmlb.XmlSerializer
 import org.assertj.core.api.Assertions.assertThat
 import org.jdom.output.XMLOutputter
@@ -15,7 +16,9 @@ import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.whenever
 import software.amazon.awssdk.core.pagination.sync.SdkIterable
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
@@ -34,6 +37,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QEndpoints
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileResources
@@ -85,6 +89,10 @@ class QRegionProfileManagerTest {
         sut = QRegionProfileManager()
         val conn = authRule.createConnection(ManagedSsoProfile(ssoRegion = "us-east-1", startUrl = "", scopes = Q_SCOPES))
         ToolkitConnectionManager.getInstance(project).switchConnection(conn)
+        val realManager = ToolkitConnectionManager.getInstance(project)
+        val managerSpy = spy(realManager)
+        doReturn(BearerTokenAuthState.AUTHORIZED).whenever(managerSpy).connectionStateForFeature(QConnection.getInstance())
+        project.replaceService(ToolkitConnectionManager::class.java, managerSpy, disposableRule.disposable)
     }
 
     @Test
@@ -106,7 +114,7 @@ class QRegionProfileManagerTest {
                 logoutFromSsoConnection(project, it)
             }
         }
-
+        ToolkitConnectionManager.getInstance(project).switchConnection(null)
         assertThat(ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())).isNull()
         assertThat(sut.activeProfile(project)).isNull()
     }
@@ -383,5 +391,29 @@ class QRegionProfileManagerTest {
         assertThat(actualState.connectionIdToProfileList).hasSize(1)
         val profileList = actualState.connectionIdToProfileList["conn-123"]
         assertThat(profileList).isEqualTo(2)
+    }
+
+    @Test
+    fun `getIdcConnectionOrNull handles NOT_AUTH and AUTHORIZED correctly`() {
+        val managerSpy = ToolkitConnectionManager.getInstance(project)
+        doReturn(BearerTokenAuthState.NOT_AUTHENTICATED).whenever(managerSpy)
+            .connectionStateForFeature(QConnection.getInstance())
+
+        // NOT AUTHORIZED
+        val notAuthConn = sut.getIdcConnectionOrNull(project)
+        assertThat(notAuthConn).isNull()
+
+        doReturn(BearerTokenAuthState.AUTHORIZED)
+            .whenever(managerSpy).connectionStateForFeature(QConnection.getInstance())
+
+        // AUTHORIZED
+        val normalConn = authRule.createConnection(
+            ManagedSsoProfile(ssoRegion = "us-east-1", startUrl = "", scopes = Q_SCOPES)
+        )
+        managerSpy.switchConnection(normalConn)
+
+        val normalConnectionResult = sut.getIdcConnectionOrNull(project)
+        assertThat(normalConnectionResult).isNotNull()
+        assertThat(normalConnectionResult).isEqualTo(normalConn)
     }
 }
