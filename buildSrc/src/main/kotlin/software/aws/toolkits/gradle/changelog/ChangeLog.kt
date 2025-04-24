@@ -39,7 +39,7 @@ enum class ChangeType(val sectionTitle: String) {
 
     class Serializer : StdSerializer<ChangeType>(ChangeType::class.java) {
         override fun serialize(value: ChangeType, gen: JsonGenerator?, provider: SerializerProvider?) {
-            gen?.writeString(value.name.toLowerCase())
+            gen?.writeString(value.name.lowercase())
         }
     }
 }

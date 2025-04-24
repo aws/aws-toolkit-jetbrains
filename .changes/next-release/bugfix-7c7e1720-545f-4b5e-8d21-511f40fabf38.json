@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Fix LinkageError while attempting to do Amazon Q inline suggestions in certain environments"
+}
