@@ -18,7 +18,7 @@ import kotlin.test.fail
 open class CodeWhispererImportAdderTestBase(
     val importAdder: CodeWhispererImportAdder,
     @Rule @JvmField val projectRule: CodeInsightTestFixtureRule,
-    internal val fileExtension: String,
+    val fileExtension: String,
 ) {
 
     fun <T> testCreateNewImportPsiElementReturnValueForStatements(
