@@ -21,6 +21,8 @@ import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
@@ -28,10 +30,15 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickResult
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_BUTTON_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FEEDBACK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FOLLOW_UP_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INFO_LINK_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_LINK_CLICK
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_PROMPT_OPTION_ACKNOWLEDGED
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_READY
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SOURCE_LINK_CLICK
@@ -53,6 +60,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoL
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PROMPT_INPUT_OPTIONS_CHANGE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.QuickChatActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
@@ -268,9 +278,33 @@ class BrowserConnector(
                     server.sourceLinkClick(params)
                 }
             }
+
+            PROMPT_INPUT_OPTIONS_CHANGE -> {
+                handleChatNotification<PromptInputOptionChangeNotification, PromptInputOptionChangeParams>(node) {
+                        server, params ->
+                    server.promptInputOptionsChange(params)
+                }
+            }
+
+            CHAT_PROMPT_OPTION_ACKNOWLEDGED -> {
+                val acknowledgedMessage = node.get("params").get("messageId")
+                if (acknowledgedMessage.asText() == "programmerModeCardId") {
+                    MeetQSettings.getInstance().amazonQChatPairProgramming = false
+                }
+            }
+
             CHAT_FOLLOW_UP_CLICK -> {
                 handleChatNotification<FollowUpClickNotification, FollowUpClickParams>(node) { server, params ->
                     server.followUpClick(params)
+                }
+            }
+            CHAT_BUTTON_CLICK -> {
+                handleChatNotification<ButtonClickNotification, ButtonClickParams>(node) { server, params ->
+                    server.buttonClick(params)
+                }.thenApply { response ->
+                    if (response is ButtonClickResult && !response.success) {
+                        LOG.warn { "Failed to execute action associated with button with reason: ${response.failureReason}" }
+                    }
                 }
             }
         }
@@ -303,5 +337,9 @@ class BrowserConnector(
         return AmazonQLspService.executeIfRunning(project) { server ->
             serverAction(server, requestFromUi.params)
         } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
+    }
+
+    companion object {
+        private val LOG = getLogger<BrowserConnector>()
     }
 }

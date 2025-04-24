@@ -11,3 +11,27 @@ data class TabEventRequest(
 data class TabEventParams(
     val tabId: String,
 )
+
+data class OpenTabResult(
+    val tabId: String,
+)
+
+data class OpenTabParams(
+    val tabId: String? = null,
+    val newTabOptions: NewTabOptions? = null,
+)
+
+data class NewTabOptions(
+    val state: TabState? = null,
+    val data: TabData? = null,
+)
+
+data class TabState(
+    val inProgress: Boolean? = null,
+    val cancellable: Boolean? = null,
+)
+
+data class TabData(
+    val placeholderText: String? = null,
+    val messages: List<ChatMessage>,
+)
