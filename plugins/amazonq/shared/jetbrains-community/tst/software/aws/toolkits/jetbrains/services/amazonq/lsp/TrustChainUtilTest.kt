@@ -3,27 +3,31 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
+import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.common.Slf4jNotifier
-import com.github.tomakehurst.wiremock.common.ssl.KeyStoreSettings
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
-import com.github.tomakehurst.wiremock.junit5.WireMockExtension
 import com.intellij.testFramework.ApplicationExtension
+import com.intellij.util.net.ssl.CertificateManager
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.junit.jupiter.api.extension.RegisterExtension
 import java.net.URI
 import java.security.cert.X509Certificate
-
 import java.math.BigInteger
 import java.security.KeyPairGenerator
 import java.security.KeyStore
-import java.util.*
 import org.bouncycastle.asn1.x500.X500Name
-import org.bouncycastle.asn1.x509.*
-import org.bouncycastle.cert.X509v3CertificateBuilder
+import org.bouncycastle.asn1.x509.BasicConstraints
+import org.bouncycastle.asn1.x509.Extension
+import org.bouncycastle.asn1.x509.GeneralName
+import org.bouncycastle.asn1.x509.GeneralNames
+import org.bouncycastle.asn1.x509.KeyUsage
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder
+import org.junit.jupiter.api.extension.AfterAllCallback
+import org.junit.jupiter.api.extension.ExtensionContext
 import software.aws.toolkits.core.utils.outputStream
 import java.nio.file.Files
 import java.nio.file.Path
@@ -31,32 +35,121 @@ import java.security.KeyPair
 import java.security.PrivateKey
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import java.util.Date
 
 @ExtendWith(ApplicationExtension::class)
-class TrustChainUtilTest {
+class TrustChainUtilTest : AfterAllCallback {
     companion object {
-        @RegisterExtension
-        @JvmStatic
-        val wm1 = WireMockExtension.newInstance()
-            .options(
-                wireMockConfig()
-                    .httpDisabled(true)
-                    .http2TlsDisabled(true)
-                    .keystorePath(Files.createTempFile("certs", "jks").toAbsolutePath().apply { CertificateGenerator.generateCertificateChain(this) }.toString())
-                    .keystoreType("jks")
-                    .keystorePassword("changeit")
-                    .keyManagerPassword("changeit")
-                    .dynamicHttpsPort()
-                    .notifier(Slf4jNotifier(true))
-            )
-            .build()
+        private val certs = CertificateGenerator.generateCertificateChain()
+    }
+
+    override fun afterAll(context: ExtensionContext) {
+        CertificateManager.getInstance().customTrustManager.apply {
+            certificates.toList().forEach { removeCertificate(it) }
+        }
+
+        assertThat(CertificateManager.getInstance().customTrustManager.certificates).isEmpty()
     }
 
     @Test
-    fun `TrustChainUtil should return a valid trust chain`() {
-        val trustChain = TrustChainUtil.getTrustChain(URI("https://localhost:${wm1.httpsPort}"))
-        println(trustChain)
-        assert(trustChain.isNotEmpty())
+    fun `returns chain from server if leaf is trust anchor`() {
+        mockWithOptions(
+            {
+                it.keystorePath(
+                    Files.createTempFile("certs", "jks")
+                        .toAbsolutePath()
+                        .apply {
+                            CertificateGenerator.saveToKeyStore(
+                                this,
+                                certs.values.first(),
+                                certs.keys.take(2).toTypedArray(),
+                            )
+                        }
+                        .toString()
+                )
+            }
+        ) {
+            val trustChain = TrustChainUtil.getTrustChain(URI("https://localhost:${it.httpsPort()}"))
+            // leaf, intermediate
+            assertThat(trustChain)
+                .isEqualTo(certs.keys.take(2).toList())
+        }
+    }
+
+    @Test
+    fun `returns entire chain if CA is trusted`() {
+        CertificateManager.getInstance().customTrustManager.addCertificate(certs.keys.last())
+
+        mockWithOptions(
+            {
+                it.keystorePath(
+                    Files.createTempFile("certs", "jks")
+                        .toAbsolutePath()
+                        .apply {
+                            CertificateGenerator.saveToKeyStore(
+                                this,
+                                certs.values.first(),
+                                certs.keys.take(2).toTypedArray(),
+                            )
+                        }
+                        .toString()
+                )
+            }
+        ) {
+            val trustChain = TrustChainUtil.getTrustChain(URI("https://localhost:${it.httpsPort()}"))
+            // leaf, intermediate, root
+            assertThat(trustChain)
+                .isEqualTo(certs.keys.toList())
+        }
+    }
+
+    @Test
+    fun `returns entire chain if CA is trusted but only returns leaf`() {
+        CertificateManager.getInstance().customTrustManager.addCertificate(certs.keys.last())
+
+        mockWithOptions(
+            {
+                it.keystorePath(
+                    Files.createTempFile("certs", "jks")
+                        .toAbsolutePath()
+                        .apply {
+                            CertificateGenerator.saveToKeyStore(
+                                this,
+                                certs.values.first(),
+                                certs.keys.take(1).toTypedArray(),
+                            )
+                        }
+                        .toString()
+                )
+            }
+        ) {
+            val trustChain = TrustChainUtil.getTrustChain(URI("https://localhost:${it.httpsPort()}"))
+            // leaf, intermediate, root
+            assertThat(trustChain)
+                .isEqualTo(certs.keys.toList())
+        }
+    }
+
+    private fun mockWithOptions(options: (WireMockConfiguration) -> Unit, runnable: (WireMockServer) -> Unit) {
+        val server = WireMockServer(
+            wireMockConfig()
+                .httpDisabled(true)
+                .http2TlsDisabled(true)
+                .keystoreType("jks")
+                .keystorePassword("changeit")
+                .keyManagerPassword("changeit")
+                .dynamicHttpsPort()
+                .notifier(Slf4jNotifier(true))
+                .apply { options(this) }
+        )
+
+        try {
+            server.start()
+
+            runnable(server)
+        } finally {
+            server.stop()
+        }
     }
 }
 
@@ -66,7 +159,7 @@ class CertificateGenerator {
         private const val SIGNATURE_ALGORITHM = "SHA256withRSA"
         private const val KEY_SIZE = 4096
 
-        fun generateCertificateChain(keystorePath: Path) {
+        fun generateCertificateChain(): Map<X509Certificate, KeyPair> {
             // Generate Root CA
             val rootKeyPair = generateKeyPair()
             val rootCert = generateRootCertificate(rootKeyPair)
@@ -87,12 +180,10 @@ class CertificateGenerator {
                 intermediateKeyPair.private
             )
 
-            // Store in KeyStore
-            saveToKeyStore(
-                keystorePath,
-                rootKeyPair, rootCert,
-                intermediateKeyPair, intermediateCert,
-                leafKeyPair, leafCert
+            return linkedMapOf(
+                leafCert to leafKeyPair,
+                intermediateCert to intermediateKeyPair,
+                rootCert to rootKeyPair,
             )
         }
 
@@ -213,7 +304,7 @@ class CertificateGenerator {
                         GeneralName(GeneralName.dNSName, "localhost"),
                         GeneralName(GeneralName.iPAddress, "127.0.0.1"),
                         GeneralName(GeneralName.iPAddress, "::1")
-                )
+                    )
                 )
 
                 addExtension(
@@ -230,14 +321,10 @@ class CertificateGenerator {
                 .getCertificate(certBuilder.build(signer))
         }
 
-        private fun saveToKeyStore(
+        fun saveToKeyStore(
             keystorePath: Path,
-            rootKeyPair: KeyPair,
-            rootCert: X509Certificate,
-            intermediateKeyPair: KeyPair,
-            intermediateCert: X509Certificate,
             leafKeyPair: KeyPair,
-            leafCert: X509Certificate
+            trustChain: Array<X509Certificate>
         ) {
             val password = "changeit".toCharArray()
 
@@ -246,28 +333,12 @@ class CertificateGenerator {
                 load(null, password)
             }
 
-            // Store root CA
-//            keyStore.setKeyEntry(
-//                "root",
-//                rootKeyPair.private,
-//                password,
-//                arrayOf(rootCert)
-//            )
-
-//            // Store intermediate CA
-//            keyStore.setKeyEntry(
-//                "intermediate",
-//                intermediateKeyPair.private,
-//                password,
-//                arrayOf(intermediateCert, rootCert)
-//            )
-
             // Store leaf certificate
             keyStore.setKeyEntry(
                 "leaf",
                 leafKeyPair.private,
                 password,
-                arrayOf(leafCert, intermediateCert)
+                trustChain
             )
 
             // Save to file
