@@ -4,7 +4,12 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.customization
 
 data class CodeWhispererCustomization(
+    @JvmField
     val arn: String = "",
+
+    @JvmField
     val name: String = "",
+
+    @JvmField
     val description: String? = null,
 )
