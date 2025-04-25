@@ -34,6 +34,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Butto
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_BUTTON_CLICK
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_CREATE_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FEEDBACK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FOLLOW_UP_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INFO_LINK_CLICK
@@ -49,6 +50,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatN
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatReadyNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CreatePromptNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CreatePromptParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorState
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
@@ -305,6 +308,13 @@ class BrowserConnector(
                     if (response is ButtonClickResult && !response.success) {
                         LOG.warn { "Failed to execute action associated with button with reason: ${response.failureReason}" }
                     }
+                }
+            }
+
+            CHAT_CREATE_PROMPT -> {
+                handleChatNotification<CreatePromptNotification, CreatePromptParams>(node) {
+                        server, params ->
+                    server.createPrompt(params)
                 }
             }
         }
