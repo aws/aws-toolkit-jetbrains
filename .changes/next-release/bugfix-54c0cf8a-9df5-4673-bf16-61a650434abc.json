@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Not show code scan tool window tab when switch to Problem ToolWindow"
+  "description" : "Do not always show 'Amazon Q Code Issues' tab when switching to the 'Problems' tool window"
 }
