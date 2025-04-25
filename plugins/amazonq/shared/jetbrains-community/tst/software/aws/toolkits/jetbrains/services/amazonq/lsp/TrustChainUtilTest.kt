@@ -7,6 +7,8 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.common.Slf4jNotifier
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
+import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.util.ExecUtil
 import com.intellij.testFramework.ApplicationExtension
 import com.intellij.util.net.ssl.CertificateManager
 import org.assertj.core.api.Assertions.assertThat
@@ -26,9 +28,11 @@ import org.bouncycastle.asn1.x509.KeyUsage
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder
-import org.junit.jupiter.api.extension.AfterAllCallback
-import org.junit.jupiter.api.extension.ExtensionContext
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.TestInstance
 import software.aws.toolkits.core.utils.outputStream
+import software.aws.toolkits.core.utils.writeText
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.KeyPair
@@ -38,12 +42,15 @@ import java.time.temporal.ChronoUnit
 import java.util.Date
 
 @ExtendWith(ApplicationExtension::class)
-class TrustChainUtilTest : AfterAllCallback {
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class TrustChainUtilTest {
     companion object {
         private val certs = CertificateGenerator.generateCertificateChain()
     }
 
-    override fun afterAll(context: ExtensionContext) {
+    @BeforeEach
+    @AfterEach
+    fun clearCerts() {
         CertificateManager.getInstance().customTrustManager.apply {
             certificates.toList().forEach { removeCertificate(it) }
         }
@@ -77,7 +84,7 @@ class TrustChainUtilTest : AfterAllCallback {
     }
 
     @Test
-    fun `returns entire chain if CA is trusted`() {
+    fun `returns entire chain if CA is trust anchor`() {
         CertificateManager.getInstance().customTrustManager.addCertificate(certs.keys.last())
 
         mockWithOptions(
@@ -97,16 +104,43 @@ class TrustChainUtilTest : AfterAllCallback {
             }
         ) {
             val trustChain = TrustChainUtil.getTrustChain(URI("https://localhost:${it.httpsPort()}"))
-            // leaf, intermediate, root
+            // leaf, intermediate
             assertThat(trustChain)
                 .isEqualTo(certs.keys.toList())
         }
     }
 
     @Test
-    fun `returns entire chain if CA is trusted but only returns leaf`() {
-        CertificateManager.getInstance().customTrustManager.addCertificate(certs.keys.last())
+    fun `returns empty if CA is trusted but does not provide intermediate`() {
+        val (leaf, _, root) = certs.keys.take(3)
+        assertThat(
+            TrustChainUtil.resolveTrustChain(listOf(leaf), listOf(root))
+        ).isEmpty()
+    }
 
+    @Test
+    fun `returns entire chain if CA is trusted and provides intermediate`() {
+        val (leaf, intermediate, root) = certs.keys.take(3)
+        assertThat(
+            TrustChainUtil.resolveTrustChain(listOf(leaf, intermediate), listOf(root))
+        ).isEqualTo(
+            listOf(leaf, intermediate, root)
+        )
+    }
+
+    @Test
+    fun `returns empty if CA is not trusted`() {
+        val (leaf, intermediate) = certs.keys.take(2)
+        assertThat(
+            TrustChainUtil.resolveTrustChain(
+                listOf(leaf, intermediate),
+                listOf(CertificateManager.getInstance().trustManager.acceptedIssuers.first())
+            )
+        ).isEmpty()
+    }
+
+    @Test
+    fun `node accepts full chain`() {
         mockWithOptions(
             {
                 it.keystorePath(
@@ -116,19 +150,107 @@ class TrustChainUtilTest : AfterAllCallback {
                             CertificateGenerator.saveToKeyStore(
                                 this,
                                 certs.values.first(),
-                                certs.keys.take(1).toTypedArray(),
+                                certs.keys.take(2).toTypedArray(),
                             )
                         }
                         .toString()
                 )
+            },
+            {
+                val pemFile = Files.createTempFile("test", ".pem").apply {
+                    writeText(
+                        TrustChainUtil.certsToPem(certs.keys.toList())
+                    )
+                }
+
+                val output = ExecUtil.execAndGetOutput(
+                    GeneralCommandLine(
+                        "node",
+                        "--use-bundled-ca",
+                        Files.createTempFile("test", ".js").apply { writeText(nodeTest(it.httpsPort())) }.toAbsolutePath().toString(),
+                    ).withEnvironment("NODE_EXTRA_CA_CERTS", pemFile.toAbsolutePath().toString())
+                )
+
+                assertThat(output.exitCode).withFailMessage { "node validation failed: ${output.stdout}\n${output.stderr}" }
+                    .isEqualTo(0)
             }
-        ) {
-            val trustChain = TrustChainUtil.getTrustChain(URI("https://localhost:${it.httpsPort()}"))
-            // leaf, intermediate, root
-            assertThat(trustChain)
-                .isEqualTo(certs.keys.toList())
-        }
+        )
     }
+
+    @Test
+    fun `node does not accept intermediate only`() {
+        mockWithOptions(
+            {
+                it.keystorePath(
+                    Files.createTempFile("certs", "jks")
+                        .toAbsolutePath()
+                        .apply {
+                            CertificateGenerator.saveToKeyStore(
+                                this,
+                                certs.values.first(),
+                                certs.keys.take(2).toTypedArray(),
+                            )
+                        }
+                        .toString()
+                )
+            },
+            {
+                val pemFile = Files.createTempFile("test", ".pem").apply {
+                    writeText(
+                        TrustChainUtil.certsToPem(certs.keys.take(2).toList())
+                    )
+                }
+
+                // node does not support partial chains
+                val output = ExecUtil.execAndGetOutput(
+                    GeneralCommandLine(
+                        "node",
+                        "--use-bundled-ca",
+                        Files.createTempFile("test", ".js").apply { writeText(nodeTest(it.httpsPort())) }.toAbsolutePath().toString(),
+                    ).withEnvironment("NODE_EXTRA_CA_CERTS", pemFile.toAbsolutePath().toString())
+                )
+
+                assertThat(output.exitCode).withFailMessage { "node validation succeeded instead of failed: ${output.stdout}\n${output.stderr}" }
+                    .isEqualTo(1)
+            }
+        )
+    }
+
+    // language=JavaScript
+    private fun nodeTest(port: Int) = """
+        const https = require("https");
+        
+        async function main() {  // Wrapped in async function for better error handling
+            try {
+                const options = {
+                    host: "localhost",
+                    port: $port,
+                    path: "/",
+                    requestCert: true,
+                    rejectUnauthorized: true,
+                };
+        
+                const req = https.get(options, (res) => {
+                    console.log("Certificate authorized:", res.socket.authorized);
+                    const cert = res.socket.getPeerCertificate();
+                    console.log("Certificate details:", cert);
+                    process.exit(0)
+                });
+        
+                req.on("error", (err) => {  // Added error handling
+                    console.error("Request error:", err);
+                    process.exit(1)
+                });
+        
+                req.end();
+            } catch (error) {
+                console.error("Error:", error);
+                process.exit(1)
+            }
+        }
+        
+        main();
+    """.trimIndent()
 
     private fun mockWithOptions(options: (WireMockConfiguration) -> Unit, runnable: (WireMockServer) -> Unit) {
         val server = WireMockServer(
@@ -251,7 +373,8 @@ class CertificateGenerator {
                 addExtension(
                     Extension.basicConstraints,
                     true,
-                    BasicConstraints(true)
+                    // not allowed to issue sub-CA
+                    BasicConstraints(0)
                 )
                 addExtension(
                     Extension.keyUsage,

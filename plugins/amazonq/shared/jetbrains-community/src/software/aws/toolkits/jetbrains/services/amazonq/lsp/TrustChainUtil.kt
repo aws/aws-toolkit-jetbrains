@@ -11,8 +11,10 @@ import org.apache.http.conn.ssl.DefaultHostnameVerifier
 import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.impl.client.SystemDefaultCredentialsProvider
 import org.apache.http.impl.conn.SystemDefaultRoutePlanner
+import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.core.utils.writeText
 import java.net.URI
 import java.security.KeyStore
 import java.security.cert.CertPathBuilder
@@ -23,10 +25,14 @@ import java.security.cert.PKIXBuilderParameters
 import java.security.cert.PKIXCertPathBuilderResult
 import java.security.cert.X509CertSelector
 import java.security.cert.X509Certificate
+import java.util.Base64
 import kotlin.collections.ifEmpty
 
 object TrustChainUtil {
     private val LOG = getLogger<TrustChainUtil>()
+
+    @TestOnly
+    fun resolveTrustChain(certs: Collection<X509Certificate>, trustAnchors: Collection<X509Certificate>) = resolveTrustChain(certs, keystoreFromCertificates(trustAnchors))
 
     /**
      * Build and validate the complete certificate chain
@@ -35,34 +41,41 @@ object TrustChainUtil {
      * @return The complete certificate chain
      */
     fun resolveTrustChain(certs: Collection<X509Certificate>, trustAnchors: KeyStore): List<X509Certificate> {
-        // Create the selector for the certificate
-        val selector = X509CertSelector()
-        selector.certificate = certs.first()
+        try {
+            // Create the selector for the certificate
+            val selector = X509CertSelector()
+            selector.certificate = certs.first()
 
-        // Create the parameters for path validation
-        val pkixParams = PKIXBuilderParameters(trustAnchors, selector)
+            // Create the parameters for path validation
+            val pkixParams = PKIXBuilderParameters(trustAnchors, selector)
 
-        // Disable CRL checking since we just want to build the path
-        pkixParams.isRevocationEnabled = false
+            // Disable CRL checking since we just want to build the path
+            pkixParams.isRevocationEnabled = false
 
-        // Create a CertStore containing the certificate we want to validate
-        val ccsp = CollectionCertStoreParameters(certs)
-        val certStore = CertStore.getInstance("Collection", ccsp)
-        pkixParams.addCertStore(certStore)
+            // Create a CertStore containing the certificate we want to validate
+            val ccsp = CollectionCertStoreParameters(certs)
+            val certStore = CertStore.getInstance("Collection", ccsp)
+            pkixParams.addCertStore(certStore)
 
-        // Get the certification path
-        val builder = CertPathBuilder.getInstance("PKIX")
-        val result = builder.build(pkixParams) as PKIXCertPathBuilderResult
-        val certPath = result.certPath
-        val chain = (certPath.certificates as List<X509Certificate>).toMutableList()
+            // Get the certification path
+            val builder = CertPathBuilder.getInstance("PKIX")
+            val result = builder.build(pkixParams) as PKIXCertPathBuilderResult
+            val certPath = result.certPath
+            val chain = (certPath.certificates as List<X509Certificate>).toMutableList()
 
-        // Add the trust anchor (root CA) to complete the chain
-        val trustAnchorCert = result.trustAnchor.trustedCert
-        if (trustAnchorCert != null) {
-            chain.add(trustAnchorCert)
+            // Add the trust anchor (root CA) to complete the chain
+            val trustAnchorCert = result.trustAnchor.trustedCert
+            if (trustAnchorCert != null) {
+                chain.add(trustAnchorCert)
+            }
+
+            return chain
+        } catch (e: Exception) {
+            // Java PKIX is happy with leaf cert in certification path, but Node.JS will not respect in NODE_CA_CERTS
+            LOG.warn(e) { "Could not build trust anchor via CertPathBuilder? maybe user accepted leaf cert but not intermediate" }
+
+            return emptyList()
         }
-
-        return chain
     }
 
     fun getTrustChain(uri: URI): List<X509Certificate> {
@@ -81,7 +94,7 @@ object TrustChainUtil {
             .setSSLContext(CertificateManager.getInstance().sslContext)
 
         // client request will fail if user did not accept cert
-        client.build().execute(RequestBuilder.options(uri).build())
+        client.build().use { it.execute(RequestBuilder.options(uri).build()) }
 
         val certificates = peerCerts as Array<X509Certificate>
 
@@ -95,7 +108,7 @@ object TrustChainUtil {
             resolveTrustChain(certificates.toList(), ks)
         } catch (e: Exception) {
             // Java PKIX is happy with leaf cert in certification path, but Node.JS will not respect in NODE_CA_CERTS
-            LOG.warn(e) { "Passed Apache PKIX verification but could not build trust anchor via CertPathBuilder? maybe user accepted leaf cert but not intermediate" }
+            LOG.warn(e) { "Passed Apache PKIX verification but could not build trust anchor via CertPathBuilder? maybe user accepted leaf cert but not root" }
             emptyList()
         }
 
@@ -105,6 +118,15 @@ object TrustChainUtil {
             certificates.toList()
         }
     }
+
+    fun certsToPem(certs: List<X509Certificate>): String =
+        buildList {
+            certs.forEach {
+                add("-----BEGIN CERTIFICATE-----")
+                add(Base64.getMimeEncoder(64, System.lineSeparator().toByteArray()).encodeToString(it.encoded))
+                add("-----END CERTIFICATE-----")
+            }
+        }.joinToString(separator = System.lineSeparator())
 
     private fun keystoreFromCertificates(certificates: Collection<X509Certificate>): KeyStore {
         val ks = KeyStore.getInstance(KeyStore.getDefaultType())

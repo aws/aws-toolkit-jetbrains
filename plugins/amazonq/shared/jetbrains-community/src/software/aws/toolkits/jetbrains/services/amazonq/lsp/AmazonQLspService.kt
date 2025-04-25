@@ -267,13 +267,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         val rtsTrustChain = TrustChainUtil.getTrustChain(qUri)
         val extraCaCerts = Files.createTempFile("q-extra-ca", ".pem").apply {
             writeText(
-                buildList {
-                    rtsTrustChain.forEach {
-                        add("-----BEGIN CERTIFICATE-----")
-                        add(Base64.getMimeEncoder(64, System.lineSeparator().toByteArray()).encodeToString(it.encoded))
-                        add("-----END CERTIFICATE-----")
-                    }
-                }.joinToString(separator = System.lineSeparator())
+                TrustChainUtil.certsToPem(rtsTrustChain)
             )
         }
 
