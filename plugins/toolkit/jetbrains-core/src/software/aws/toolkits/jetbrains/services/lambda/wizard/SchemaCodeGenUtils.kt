@@ -64,7 +64,7 @@ class SchemaCodeGenUtils {
             if (builder.isNotEmpty()) {
                 builder.append(IdentifierFormatter.PACKAGE_SEPARATOR)
             }
-            builder.append(IdentifierFormatter.toValidIdentifier(segment.toLowerCase()))
+            builder.append(IdentifierFormatter.toValidIdentifier(segment.lowercase()))
             return this
         }
 
