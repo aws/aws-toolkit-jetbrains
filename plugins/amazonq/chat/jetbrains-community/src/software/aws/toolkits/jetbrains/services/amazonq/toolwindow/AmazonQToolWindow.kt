@@ -94,7 +94,9 @@ class AmazonQToolWindow private constructor(
         appConnections.clear()
         prepareBrowser()
 
-        ApplicationManager.getApplication().messageBus.syncPublisher(LafManagerListener.TOPIC).lookAndFeelChanged(LafManager.getInstance())
+        runInEdt {
+            ApplicationManager.getApplication().messageBus.syncPublisher(LafManagerListener.TOPIC).lookAndFeelChanged(LafManager.getInstance())
+        }
     }
 
     private fun sendMessage(message: AmazonQMessage, tabType: String) {

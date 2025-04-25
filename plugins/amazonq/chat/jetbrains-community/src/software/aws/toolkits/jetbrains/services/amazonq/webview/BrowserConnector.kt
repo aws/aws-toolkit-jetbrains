@@ -21,6 +21,8 @@ import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
@@ -28,28 +30,52 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickResult
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_BUTTON_CLICK
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_COPY_CODE_TO_CLIPBOARD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FEEDBACK
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FOLLOW_UP_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INFO_LINK_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INSERT_TO_CURSOR
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_LINK_CLICK
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_PROMPT_OPTION_ACKNOWLEDGED
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_READY
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SOURCE_LINK_CLICK
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_ADD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_CHANGE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_REMOVE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatReadyNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyCodeToClipboardNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyCodeToClipboardParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorState
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FeedbackNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FeedbackParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FollowUpClickNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FollowUpClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InsertToCursorPositionNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InsertToCursorPositionParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PROMPT_INPUT_OPTIONS_CHANGE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.QuickChatActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventRequest
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
 import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.AmazonQTheme
@@ -77,13 +103,6 @@ class BrowserConnector(
             .onEach { json ->
                 val node = serializer.toNode(json)
                 when (node.command) {
-                    "ui-is-ready" -> {
-                        uiReady.complete(true)
-                        RunOnceUtil.runOnceForApp("AmazonQ-UI-Ready") {
-                            MeetQSettings.getInstance().reinvent2024OnboardingCount += 1
-                        }
-                    }
-
                     "disclaimer-acknowledged" -> {
                         MeetQSettings.getInstance().disclaimerAcknowledged = true
                     }
@@ -218,6 +237,36 @@ class BrowserConnector(
 
                 showResult(result, partialResultToken, tabId, encryptionManager, browser)
             }
+            CHAT_FEEDBACK -> {
+                handleChatNotification<FeedbackNotification, FeedbackParams>(node) { server, params ->
+                    server.feedback(params)
+                }
+            }
+            CHAT_READY -> {
+                handleChatNotification<ChatReadyNotification, Unit>(node) { server, _ ->
+                    uiReady.complete(true)
+                    RunOnceUtil.runOnceForApp("AmazonQ-UI-Ready") {
+                        MeetQSettings.getInstance().reinvent2024OnboardingCount += 1
+                    }
+                    server.chatReady()
+                }
+            }
+            CHAT_TAB_ADD -> {
+                handleChatNotification<TabEventRequest, TabEventParams>(node) { server, params ->
+                    server.tabAdd(params)
+                }
+            }
+            CHAT_TAB_REMOVE -> {
+                handleChatNotification<TabEventRequest, TabEventParams>(node) { server, params ->
+                    chatCommunicationManager.removePartialChatMessage(params.tabId)
+                    server.tabRemove(params)
+                }
+            }
+            CHAT_TAB_CHANGE -> {
+                handleChatNotification<TabEventRequest, TabEventParams>(node) { server, params ->
+                    server.tabChange(params)
+                }
+            }
             CHAT_INSERT_TO_CURSOR -> {
                 handleChatNotification<InsertToCursorPositionNotification, InsertToCursorPositionParams>(node) { server, params ->
                     server.insertToCursorPosition(params)
@@ -238,6 +287,40 @@ class BrowserConnector(
             CHAT_SOURCE_LINK_CLICK -> {
                 handleChatNotification<SourceLinkClickNotification, SourceLinkClickParams>(node) { server, params ->
                     server.sourceLinkClick(params)
+                }
+            }
+
+            PROMPT_INPUT_OPTIONS_CHANGE -> {
+                handleChatNotification<PromptInputOptionChangeNotification, PromptInputOptionChangeParams>(node) {
+                        server, params ->
+                    server.promptInputOptionsChange(params)
+                }
+            }
+
+            CHAT_PROMPT_OPTION_ACKNOWLEDGED -> {
+                val acknowledgedMessage = node.get("params").get("messageId")
+                if (acknowledgedMessage.asText() == "programmerModeCardId") {
+                    MeetQSettings.getInstance().amazonQChatPairProgramming = false
+                }
+            }
+
+            CHAT_FOLLOW_UP_CLICK -> {
+                handleChatNotification<FollowUpClickNotification, FollowUpClickParams>(node) { server, params ->
+                    server.followUpClick(params)
+                }
+            }
+            CHAT_BUTTON_CLICK -> {
+                handleChatNotification<ButtonClickNotification, ButtonClickParams>(node) { server, params ->
+                    server.buttonClick(params)
+                }.thenApply { response ->
+                    if (response is ButtonClickResult && !response.success) {
+                        LOG.warn { "Failed to execute action associated with button with reason: ${response.failureReason}" }
+                    }
+                }
+            }
+            CHAT_COPY_CODE_TO_CLIPBOARD -> {
+                handleChatNotification<CopyCodeToClipboardNotification, CopyCodeToClipboardParams>(node) { server, params ->
+                    server.copyCodeToClipboard(params)
                 }
             }
         }
@@ -270,5 +353,9 @@ class BrowserConnector(
         return AmazonQLspService.executeIfRunning(project) { server ->
             serverAction(server, requestFromUi.params)
         } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
+    }
+
+    companion object {
+        private val LOG = getLogger<BrowserConnector>()
     }
 }

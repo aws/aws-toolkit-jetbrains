@@ -8,8 +8,6 @@ import com.intellij.openapi.editor.markup.EffectType
 import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.ui.JBColor
 import software.amazon.awssdk.regions.Region
-import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
-import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeScanResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
@@ -59,7 +57,6 @@ object CodeWhispererConstants {
     val scanResultsKey = DataKey.create<CodeScanResponse>("amazonq.codescan.result")
     val scanScopeKey = DataKey.create<CodeAnalysisScope>("amazonq.codescan.scope")
 
-    const val Q_CUSTOM_LEARN_MORE_URI = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/customizations.html"
     const val Q_SUPPORTED_LANG_URI = "https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/q-language-ide-support.html"
     const val CODEWHISPERER_CODE_SCAN_LEARN_MORE_URI = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/security-scans.html"
     const val CODEWHISPERER_ONBOARDING_DOCUMENTATION_URI = "https://docs.aws.amazon.com/codewhisperer/latest/userguide/features.html"
@@ -155,27 +152,6 @@ object CodeWhispererConstants {
     object Config {
         const val CODEWHISPERER_IDPOOL_ID = "us-east-1:70717e99-906f-4add-908c-bd9074a2f5b9"
         val Sigv4ClientRegion = Region.US_EAST_1
-    }
-
-    object Customization {
-        private const val noAccessToCustomizationMessage = "Your account is not authorized to use CodeWhisperer Enterprise."
-        private const val invalidCustomizationMessage = "You are not authorized to access"
-
-        val noAccessToCustomizationExceptionPredicate: (e: Exception) -> Boolean = { e ->
-            if (e !is CodeWhispererRuntimeException) {
-                false
-            } else {
-                e is AccessDeniedException && (e.message?.contains(noAccessToCustomizationMessage, ignoreCase = true) ?: false)
-            }
-        }
-
-        val invalidCustomizationExceptionPredicate: (e: Exception) -> Boolean = { e ->
-            if (e !is CodeWhispererRuntimeException) {
-                false
-            } else {
-                e is AccessDeniedException && (e.message?.contains(invalidCustomizationMessage, ignoreCase = true) ?: false)
-            }
-        }
     }
 
     object CrossFile {

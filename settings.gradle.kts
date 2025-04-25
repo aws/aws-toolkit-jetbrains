@@ -100,13 +100,8 @@ include("ui-tests")
 include("sandbox-all")
 include("ui-tests-starter")
 when (providers.gradleProperty("ideProfileName").get()) {
-    // FIX_WHEN_MIN_IS_242: `tmp-all` test module no longer needed in 242+
-    "2024.1" -> {
-        include("tmp-all")
-        project(":ui-tests-starter").projectDir = file("noop")
-    }
+    // FIX_WHEN_MIN_IS_243
     "2024.2" -> {
-        // only available 243+
         project(":ui-tests-starter").projectDir = file("noop")
     }
 }
@@ -163,7 +158,7 @@ file("plugins").listFiles()?.forEach root@ {
             if (it.name == "jetbrains-gateway") {
                 when (providers.gradleProperty("ideProfileName").get()) {
                     // buildSrc is evaluated after settings so we can't key off of IdeVersions.kt
-                    "2023.3", "2024.1", "2024.2" -> {
+                    "2024.2", "2024.3" -> {
                         return@forEach
                     }
                 }

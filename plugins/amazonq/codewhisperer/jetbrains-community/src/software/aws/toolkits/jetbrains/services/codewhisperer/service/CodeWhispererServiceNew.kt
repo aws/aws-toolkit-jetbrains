@@ -83,6 +83,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.notifyErrorCodeWhispererUsageLimit
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.CustomizationConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.utils.isInjectedText
@@ -360,7 +361,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
             val displayMessage: String
 
             if (
-                CodeWhispererConstants.Customization.invalidCustomizationExceptionPredicate(e) ||
+                CustomizationConstants.invalidCustomizationExceptionPredicate(e) ||
                 e is ResourceNotFoundException
             ) {
                 (e as CodeWhispererRuntimeException)

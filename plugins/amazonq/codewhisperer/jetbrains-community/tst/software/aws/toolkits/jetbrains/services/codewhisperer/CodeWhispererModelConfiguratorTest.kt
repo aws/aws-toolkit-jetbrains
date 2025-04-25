@@ -470,7 +470,7 @@ class CodeWhispererModelConfiguratorTest {
             "</option>" +
             "</component>"
 
-        assertThat(actual).isEqualTo(expected)
+        assertThat(actual).isEqualToIgnoringWhitespace(expected)
     }
 
     @Test
@@ -574,11 +574,6 @@ class CodeWhispererModelConfiguratorTest {
 
         assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(oldCustomization)
 
-        val fakeCustomizations = listOf(
-            CodeWhispererCustomization("oldArn", "oldName", "oldDescription")
-        )
-        mockClintAdaptor.stub { on { listAvailableCustomizations() } doReturn fakeCustomizations }
-
         ApplicationManager.getApplication().messageBus
             .syncPublisher(QRegionProfileSelectedListener.TOPIC)
             .onProfileSelected(projectRule.project, null)
@@ -593,10 +588,6 @@ class CodeWhispererModelConfiguratorTest {
         val oldCustomization = CodeWhispererCustomization("oldArn", "oldName", "oldDescription")
         sut.switchCustomization(projectRule.project, oldCustomization)
         assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(oldCustomization)
-        val fakeCustomizations = listOf(
-            CodeWhispererCustomization("newArn", "newName", "newDescription")
-        )
-        mockClintAdaptor.stub { on { listAvailableCustomizations() } doReturn fakeCustomizations }
 
         val latch = CountDownLatch(1)
 
