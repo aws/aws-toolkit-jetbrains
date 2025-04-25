@@ -1,4 +1,4 @@
 {
   "type" : "bugfix",
-  "description" : "Q toolwindow potentially render chat UI when it's supposed to show auth UI and it makes users not able to complete setup"
+  "description" : "Fix issue where user can become stuck because Amazon Q Chat does not show authentication prompt"
 }
