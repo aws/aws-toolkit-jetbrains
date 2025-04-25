@@ -38,10 +38,10 @@ data class SourceLink(
 
 data class ChatItemAction(
     val pillText: String,
-    val prompt: String,
-    val disabled: Boolean,
-    val description: String,
-    val type: String,
+    val prompt: String? = null,
+    val disabled: Boolean? = null,
+    val description: String? = null,
+    val type: String? = null,
 )
 
 data class RecommendationContentSpan(

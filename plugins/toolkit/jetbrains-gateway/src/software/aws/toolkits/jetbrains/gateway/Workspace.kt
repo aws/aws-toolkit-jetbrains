@@ -37,7 +37,7 @@ data class Workspace(
         // TODO: probably need to model the @sha:[...] case better
         val (productCode, buildNumber) = ide.runtime().substringAfter("$JB_ECR_DOMAIN/").split(':', limit = 2)
 
-        productCode.substringBefore("@sha").toUpperCase() to buildNumber
+        productCode.substringBefore("@sha").uppercase() to buildNumber
     }
 
     val platformProduct = build?.let { IntelliJPlatformProduct.fromProductCode(it.first) }
