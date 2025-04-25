@@ -16,10 +16,10 @@ import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.xmlb.annotations.MapAnnotation
 import com.intellij.util.xmlb.annotations.Property
 import software.amazon.awssdk.core.SdkClient
+import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
@@ -59,15 +59,28 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
             )
     }
 
-    // should be call on project startup to validate if profile is still active
+    /**
+     * Called on project startup to validate if selected profile is still active
+     */
+    @Deprecated("This is a giant hack and we are not handling all the cases")
     @RequiresBackgroundThread
     fun validateProfile(project: Project) {
         val conn = getIdcConnectionOrNull(project)
         val selected = activeProfile(project) ?: return
-        val profiles = tryOrNull {
+        val profiles = try {
             listRegionProfiles(project)
+        } catch (e: Exception) {
+            if (e is AccessDeniedException) {
+                null
+            } else {
+                // if we can't list profiles assume it is valid
+                LOG.warn { "Continuing with $selected since listAvailableProfiles failed" }
+                return
+            }
         }
 
+        // succeeded in listing profiles, but none match selected
+        // profiles should be null if access denied or connection is not IdC
         if (profiles == null || profiles.none { it.arn == selected.arn }) {
             // Note that order matters, should switch to null first then invalidateProfile
             switchProfile(project, null, intent = QProfileSwitchIntent.Reload)
@@ -84,6 +97,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
 
     fun listRegionProfiles(project: Project): List<QRegionProfile>? {
         val connection = getIdcConnectionOrNull(project) ?: return null
+
         return try {
             val connectionSettings = connection.getConnectionSettings()
             val mappedProfiles = AwsResourceCache.getInstance().getResourceNow(
