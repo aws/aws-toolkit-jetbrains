@@ -16,9 +16,12 @@ import org.eclipse.lsp4j.ShowMessageRequestParams
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatUpdateParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
@@ -129,5 +132,26 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         } catch (e: Exception) {
             error("Cannot handle partial chat")
         }
+    }
+
+    override fun sendChatUpdate(params: ChatUpdateParams): CompletableFuture<Unit> {
+        // Process the chat update notification from the server
+        // This notification is used to add or update messages in a specific tab
+        val tabId = params.tabId
+        val state = params.state
+        val data = params.data
+
+        val encryptionManager = AmazonQLspService.getInstance(project).encryptionManager
+
+        val uiMessage = ChatCommunicationManager.convertToJsonToSendToChat(
+            command = SEND_CHAT_COMMAND_PROMPT,
+            tabId = tabId,
+            params = encryptionManager.decrypt(params.toString()),
+            isPartialResult = false
+        )
+
+        AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+        
+        return CompletableFuture.completedFuture(Unit)
     }
 }
