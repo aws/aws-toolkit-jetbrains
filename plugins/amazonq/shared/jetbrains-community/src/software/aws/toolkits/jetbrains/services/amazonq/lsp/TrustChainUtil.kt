@@ -14,7 +14,6 @@ import org.apache.http.impl.conn.SystemDefaultRoutePlanner
 import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.core.utils.writeText
 import java.net.URI
 import java.security.KeyStore
 import java.security.cert.CertPathBuilder
@@ -32,7 +31,10 @@ object TrustChainUtil {
     private val LOG = getLogger<TrustChainUtil>()
 
     @TestOnly
-    fun resolveTrustChain(certs: Collection<X509Certificate>, trustAnchors: Collection<X509Certificate>) = resolveTrustChain(certs, keystoreFromCertificates(trustAnchors))
+    fun resolveTrustChain(certs: Collection<X509Certificate>, trustAnchors: Collection<X509Certificate>) = resolveTrustChain(
+        certs,
+        keystoreFromCertificates(trustAnchors)
+    )
 
     /**
      * Build and validate the complete certificate chain
@@ -133,7 +135,7 @@ object TrustChainUtil {
         ks.load(null, null)
         certificates.forEachIndexed { index, cert ->
             ks.setCertificateEntry(
-                cert.getSubjectX500Principal().toString() + "-" + DigestUtil.sha256Hex(cert.encoded),
+                cert.subjectX500Principal.toString() + "-" + DigestUtil.sha256Hex(cert.encoded),
                 cert
             )
         }

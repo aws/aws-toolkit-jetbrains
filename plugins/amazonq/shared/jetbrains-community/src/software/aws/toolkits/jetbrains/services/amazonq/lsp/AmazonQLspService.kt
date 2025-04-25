@@ -71,7 +71,6 @@ import java.net.Proxy
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
-import java.util.Base64
 import java.util.concurrent.Future
 import kotlin.time.Duration.Companion.seconds
 
