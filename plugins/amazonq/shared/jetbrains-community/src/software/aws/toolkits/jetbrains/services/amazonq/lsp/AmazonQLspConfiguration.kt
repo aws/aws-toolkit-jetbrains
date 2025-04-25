@@ -15,6 +15,11 @@ data class AmazonQLspConfiguration(
     @SerializedName(AmazonQLspConstants.LSP_CUSTOMIZATION_CONFIGURATION_KEY)
     val customization: String? = null,
 
+    @SerializedName(AmazonQLspConstants.LSP_PROJECT_CONTEXT_KEY)
+    val projectContext: QProjectContext,
+)
+
+data class QProjectContext(
     val enableLocalIndexing: Boolean? = null,
 
     val enableGpuAcceleration: Boolean? = null,
