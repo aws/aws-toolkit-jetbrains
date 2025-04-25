@@ -55,7 +55,7 @@ class PathMapper(private val mappings: List<PathMapping>) {
 
         fun normalizeLocal(localPath: String): String {
             val updatedPath = if (SystemInfo.isWindows) {
-                localPath.toLowerCase()
+                localPath.lowercase()
             } else {
                 localPath
             }
