@@ -16,6 +16,7 @@ dependencies {
     implementation(project(":plugin-core:sdk-codegen"))
     implementation(project(":plugin-core:webview"))
     implementation(libs.slf4j.api)
+    implementation(libs.slf4j.jdk14)
 }
 
 tasks.check {
