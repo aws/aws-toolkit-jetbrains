@@ -13,6 +13,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.UpdateConf
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_BUTTON_CLICK
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_COPY_CODE_TO_CLIPBOARD_NOTIFICATION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FEEDBACK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FOLLOW_UP_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INFO_LINK_CLICK
@@ -23,6 +24,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_ADD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_CHANGE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_REMOVE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyCodeToClipboardParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FeedbackParams
@@ -60,6 +62,9 @@ interface AmazonQLanguageServer : LanguageServer {
 
     @JsonRequest(SEND_CHAT_COMMAND_PROMPT)
     fun sendChatPrompt(params: EncryptedChatParams): CompletableFuture<String>
+
+    @JsonNotification(CHAT_COPY_CODE_TO_CLIPBOARD_NOTIFICATION)
+    fun copyCodeToClipboard(params: CopyCodeToClipboardParams): CompletableFuture<Unit>
 
     @JsonNotification(CHAT_TAB_ADD)
     fun tabAdd(params: TabEventParams): CompletableFuture<Unit>
