@@ -14,6 +14,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
@@ -69,8 +70,29 @@ class DefaultAuthCredentialsService(
         tokenSyncTask = scheduler.scheduleWithFixedDelay(
             {
                 try {
-                    if (isQConnected(project) && !isQExpired(project)) {
-                        updateTokenFromActiveConnection()
+                    if (isQConnected(project)) {
+                        if (isQExpired(project)) {
+                            val manager = ToolkitConnectionManager.getInstance(project)
+                            val connection = manager.activeConnectionForFeature(QConnection.getInstance()) ?: return@scheduleWithFixedDelay
+
+                            // Try to refresh the token if it's in NEEDS_REFRESH state
+                            val tokenProvider = (connection.getConnectionSettings() as? TokenConnectionSettings)
+                                ?.tokenProvider
+                                ?.delegate
+                                ?.let { it as? BearerTokenProvider } ?: return@scheduleWithFixedDelay
+
+                            if (tokenProvider.state() == BearerTokenAuthState.NEEDS_REFRESH) {
+                                try {
+                                    tokenProvider.resolveToken()
+                                    // Now that the token is refreshed, update it in Flare
+                                    updateTokenFromActiveConnection()
+                                } catch (e: Exception) {
+                                    LOG.warn(e) { "Failed to refresh bearer token" }
+                                }
+                            }
+                        } else {
+                            updateTokenFromActiveConnection()
+                        }
                     }
                 } catch (e: Exception) {
                     LOG.warn(e) { "Failed to sync bearer token to Flare" }
