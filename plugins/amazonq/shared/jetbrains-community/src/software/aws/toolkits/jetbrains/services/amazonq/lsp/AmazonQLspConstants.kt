@@ -13,4 +13,5 @@ object AmazonQLspConstants {
     const val LSP_ENABLE_TELEMETRY_EVENTS_CONFIGURATION_KEY = "enableTelemetryEventsToDestination"
     const val LSP_CUSTOMIZATION_CONFIGURATION_KEY = "customization"
     const val LSP_WORKSPACE_CONTEXT_ENABLED_KEY = "workspaceContext"
+    const val LSP_PROJECT_CONTEXT_KEY = "projectContext"
 }

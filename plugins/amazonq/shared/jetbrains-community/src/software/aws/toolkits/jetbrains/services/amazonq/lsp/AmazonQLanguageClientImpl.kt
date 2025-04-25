@@ -115,6 +115,21 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                                 )
                             )
                         }
+                        AmazonQLspConstants.LSP_PROJECT_CONTEXT_KEY -> {
+                            add(
+                                AmazonQLspConfiguration(
+                                    optOutTelemetry = AwsSettings.getInstance().isTelemetryEnabled,
+                                    customization = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn,
+                                    // local context
+                                    enableLocalIndexing = qSettings.isProjectContextEnabled(),
+                                    indexWorkerThreads = qSettings.getProjectContextIndexThreadCount(),
+                                    enableGpuAcceleration = qSettings.isProjectContextGpu(),
+                                    localIndexing = LocalIndexingConfiguration(
+                                        maxIndexSizeMB = qSettings.getProjectContextIndexMaxSize()
+                                    )
+                                )
+                            )
+                        }
                     }
                 }
             }
