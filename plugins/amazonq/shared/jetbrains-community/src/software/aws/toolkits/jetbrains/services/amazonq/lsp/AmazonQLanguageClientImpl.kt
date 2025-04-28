@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.project.Project
 import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
@@ -16,9 +17,11 @@ import org.eclipse.lsp4j.ShowMessageRequestParams
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
@@ -76,9 +79,24 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             }
         }
 
-    override fun openTab(params: OpenTabParams): CompletableFuture<OpenTabResult> =
-        // TODO implement chat history, this is here to unblock chat functionality
-        CompletableFuture.completedFuture(OpenTabResult(""))
+    override fun openTab(params: OpenTabParams): CompletableFuture<OpenTabResult> {
+        val tabId = params.tabId.orEmpty()
+
+        // Convert params to JSON to send to the UI
+        val paramsJson = jacksonObjectMapper().writeValueAsString(params)
+
+        val uiMessage = ChatCommunicationManager.convertToJsonToSendToChat(
+            command = CHAT_OPEN_TAB,
+            tabId = tabId,
+            params = paramsJson,
+            isPartialResult = false
+        )
+
+        AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+
+        // Return the tabId (either existing or newly created)
+        return CompletableFuture.completedFuture(OpenTabResult(tabId))
+    }
 
     override fun configuration(params: ConfigurationParams): CompletableFuture<List<Any>> {
         if (params.items.isEmpty()) {
