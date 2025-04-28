@@ -165,7 +165,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
     }
 
     private fun invalidateProfile(arn: String) {
-        val updated = connectionIdToActiveProfile.filterValues { it.arn != arn }
+        val updated = connectionIdToActiveProfile.filterValues { it != null && it.arn != arn }
         connectionIdToActiveProfile.clear()
         connectionIdToActiveProfile.putAll(updated)
     }
