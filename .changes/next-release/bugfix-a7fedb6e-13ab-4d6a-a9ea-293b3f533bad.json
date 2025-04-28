@@ -1,4 +1,0 @@
-{
-  "type" : "bugfix",
-  "description" : "Fix issue where user can become stuck because Amazon Q Chat does not show authentication prompt"
-}
