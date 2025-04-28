@@ -9,6 +9,7 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.readText
 import kotlinx.coroutines.withContext
 import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.createTemporaryZipFile
@@ -195,7 +196,12 @@ fun parseXmlDependenciesReport(pathToXmlDependency: Path): DependencyUpdatesRepo
     return report
 }
 
-fun validateYamlFile(fileContents: String): Boolean {
+fun validateYamlFile(file: VirtualFile): Boolean {
+    if (!file.name.lowercase().endsWith(".yaml")) {
+        getLogger<CodeTransformChatController>().error { "Custom versions file is not a YAML file: ${file.name}"}
+        return false
+    }
+    val fileContents = file.readText()
     val requiredKeys = listOf("dependencyManagement:", "identifier:", "targetVersion:")
     for (key in requiredKeys) {
         if (!fileContents.contains(key)) {

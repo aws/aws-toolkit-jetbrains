@@ -370,7 +370,6 @@ class CodeTransformChatController(
         withContext(EDT) {
             val descriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
                 .withDescription("Select metadata file")
-                .withExtensionFilter("zip")
 
             val selectedZipFile = FileChooser.chooseFile(descriptor, null, null) ?: return@withContext
             val extractedZip = createTempDirectory("codeTransformSQLMetadata", null)
@@ -452,9 +451,8 @@ class CodeTransformChatController(
         withContext(EDT) {
             val descriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
                 .withDescription("Select .yaml file")
-                .withExtensionFilter("yaml")
             val selectedFile = FileChooser.chooseFile(descriptor, null, null) ?: return@withContext
-            val isValid = validateYamlFile(selectedFile.readText())
+            val isValid = validateYamlFile(selectedFile)
             if (!isValid) {
                 codeTransformChatHelper.updateLastPendingMessage(buildCustomDependencyVersionsFileInvalidChatContent())
                 codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())

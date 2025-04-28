@@ -458,7 +458,7 @@ fun buildSQLMetadataValidationErrorChatContent(errorReason: String) = CodeTransf
 
 fun buildCustomDependencyVersionsFileInvalidChatContent() = CodeTransformChatMessageContent(
     type = CodeTransformChatMessageType.FinalizedAnswer,
-    message = "The .yaml file you uploaded does not follow the format of the sample YAML file provided.",
+    message = "The file you uploaded does not follow the format of the sample YAML file provided.",
 )
 
 fun buildUserCancelledChatContent() = CodeTransformChatMessageContent(
