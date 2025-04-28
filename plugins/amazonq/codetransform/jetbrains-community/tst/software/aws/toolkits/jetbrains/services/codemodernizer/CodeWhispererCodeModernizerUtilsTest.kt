@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer
 
+import com.intellij.testFramework.LightVirtualFile
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockkStatic
@@ -10,6 +11,7 @@ import io.mockk.runs
 import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
+import org.jetbrains.yaml.YAMLFileType
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
@@ -33,7 +35,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseBuildF
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.refreshToken
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateYamlFile
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateCustomVersionsFile
 import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import software.aws.toolkits.resources.message
@@ -326,7 +328,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
     }
 
     @Test
-    fun `WHEN validateYamlFile on fully valid yaml file THEN passes validation`() {
+    fun `WHEN validateCustomVersionsFile on fully valid yaml file THEN passes validation`() {
         val sampleFileContents = """name: "custom-dependency-management"
 description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
 dependencyManagement:
@@ -341,12 +343,13 @@ dependencyManagement:
         versionProperty: "plugin.version"
         """.trimIndent()
 
-        val isValidYaml = validateYamlFile(sampleFileContents)
-        assertThat(isValidYaml).isTrue()
+        val virtualFile = LightVirtualFile("test-valid.yaml", YAMLFileType.YML, sampleFileContents)
+        val isValidFile = validateCustomVersionsFile(virtualFile)
+        assertThat(isValidFile).isTrue()
     }
 
     @Test
-    fun `WHEN validateYamlFile on invalid yaml file THEN fails validation`() {
+    fun `WHEN validateCustomVersionsFile on invalid yaml file THEN fails validation`() {
         val sampleFileContents = """name: "custom-dependency-management"
 description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
 invalidKey:
@@ -361,8 +364,30 @@ invalidKey:
         versionProperty: "plugin.version"
         """.trimIndent()
 
-        val isValidYaml = validateYamlFile(sampleFileContents)
-        assertThat(isValidYaml).isFalse()
+        val virtualFile = LightVirtualFile("test-invalid.yaml", YAMLFileType.YML, sampleFileContents)
+        val isValidFile = validateCustomVersionsFile(virtualFile)
+        assertThat(isValidFile).isFalse()
+    }
+
+    @Test
+    fun `WHEN validateCustomVersionsFile on non-yaml file THEN fails validation`() {
+        val sampleFileContents = """name: "custom-dependency-management"
+description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
+dependencyManagement:
+  dependencies:
+    - identifier: "com.example:library1"
+        targetVersion: "2.1.0"
+        versionProperty: "library1.version"
+        originType: "FIRST_PARTY"
+  plugins:
+    - identifier: "com.example.plugin"
+        targetVersion: "1.2.0"
+        versionProperty: "plugin.version"
+        """.trimIndent()
+
+        val virtualFile = LightVirtualFile("test-invalid-file-type.txt", sampleFileContents)
+        val isValidFile = validateCustomVersionsFile(virtualFile)
+        assertThat(isValidFile).isFalse()
     }
 
     @Test

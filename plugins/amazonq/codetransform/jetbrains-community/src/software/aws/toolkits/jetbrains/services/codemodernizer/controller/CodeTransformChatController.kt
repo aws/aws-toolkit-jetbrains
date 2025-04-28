@@ -12,7 +12,6 @@ import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.util.io.FileUtil.createTempDirectory
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.readText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -119,8 +118,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isCodeTrans
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toVirtualFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateCustomVersionsFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateYamlFile
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
@@ -452,7 +451,7 @@ class CodeTransformChatController(
             val descriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
                 .withDescription("Select .yaml file")
             val selectedFile = FileChooser.chooseFile(descriptor, null, null) ?: return@withContext
-            val isValid = validateYamlFile(selectedFile)
+            val isValid = validateCustomVersionsFile(selectedFile)
             if (!isValid) {
                 codeTransformChatHelper.updateLastPendingMessage(buildCustomDependencyVersionsFileInvalidChatContent())
                 codeTransformChatHelper.addNewMessage(buildStartNewTransformFollowup())
