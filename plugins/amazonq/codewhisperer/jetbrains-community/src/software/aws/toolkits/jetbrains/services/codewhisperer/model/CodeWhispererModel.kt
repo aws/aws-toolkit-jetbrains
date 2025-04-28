@@ -206,6 +206,7 @@ data class InvocationContext(
 
 data class InvocationContextNew(
     val requestContext: RequestContextNew,
+    val responseContext: ResponseContext,
     val recommendationContext: RecommendationContextNew,
 ) : Disposable {
     private var isDisposed = false

@@ -49,6 +49,6 @@ object CodeWhispererImportAdderListener : CodeWhispererUserActionListener {
             LOG.debug { "No import adder found for $language" }
             return
         }
-//        importAdder.insertImportStatements(states, previews, sessionContext)
+        importAdder.insertImportStatements(states, previews, sessionContext)
     }
 }

@@ -66,19 +66,6 @@ class CodeWhispererEditorManager {
             WriteCommandAction.runWriteCommandAction(project) {
                 val rangeMarker = document.createRangeMarker(originalOffset, endOffset, true)
 
-                // TODO: send accepted suggestion code percentage event
-//                CodeWhispererTelemetryService.getInstance().enqueueAcceptedSuggestionEntry(
-//                    detail.itemId,
-//                    requestContext,
-//                    responseContext,
-//                    Instant.now(),
-//                    PsiDocumentManager.getInstance(project).getPsiFile(document)?.virtualFile,
-//                    rangeMarker,
-//                    remainingRecommendation,
-//                    selectedIndex,
-//                    detail.completionType
-//                )
-
                 ApplicationManager.getApplication().messageBus.syncPublisher(
                     CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,
                 ).afterAccept(states, sessionContext, rangeMarker)

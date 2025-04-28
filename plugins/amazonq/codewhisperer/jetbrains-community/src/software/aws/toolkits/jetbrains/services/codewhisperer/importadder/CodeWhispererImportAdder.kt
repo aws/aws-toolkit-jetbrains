@@ -27,22 +27,19 @@ abstract class CodeWhispererImportAdder {
     fun insertImportStatements(states: InvocationContext, sessionContext: SessionContext) {
         val completion = states.recommendationContext.details[sessionContext.selectedIndex].completion
         val imports = completion.mostRelevantMissingImports
-        // TODO YUX:
-//        LOG.info { "Adding ${imports.size} imports for completions, sessionId: ${completion..sessionId}" }
+        LOG.info { "Adding ${imports?.size ?: 0} imports for completions, sessionId: ${states.responseContext.sessionId}" }
         imports?.forEach {
             insertImportStatement(states, it)
         }
     }
 
-//    fun insertImportStatements(states: InvocationContextNew, previews: List<PreviewContext>, sessionContext: SessionContextNew) {
-//        val completion = states.recommendationContext.details[sessionContext.selectedIndex].completion
-//        val imports = completion.mostRelevantMissingImports
-//        val imports = previews[sessionContext.selectedIndex].detail.recommendation.mostRelevantMissingImports()
-//        LOG.info { "Adding ${imports.size} imports for completions, sessionId: ${states.responseContext.sessionId}" }
-//        imports.forEach {
-//            insertImportStatement(states, it)
-//        }
-//    }
+    fun insertImportStatements(states: InvocationContextNew, previews: List<PreviewContext>, sessionContext: SessionContextNew) {
+        val imports = previews[sessionContext.selectedIndex].detail.completion.mostRelevantMissingImports
+        LOG.info { "Adding ${imports?.size ?: 0} imports for completions, sessionId: ${states.responseContext.sessionId}" }
+        imports?.forEach {
+            insertImportStatement(states, it)
+        }
+    }
 
     private fun insertImportStatement(states: InvocationContext, import: InlineCompletionImports) {
         val project = states.requestContext.project
@@ -76,13 +73,13 @@ abstract class CodeWhispererImportAdder {
         LOG.info { "Added import: $added" }
     }
 
-    private fun insertImportStatement(states: InvocationContextNew, import: Import) {
+    private fun insertImportStatement(states: InvocationContextNew, import: InlineCompletionImports) {
         val project = states.requestContext.project
         val editor = states.requestContext.editor
         val document = editor.document
         val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document) ?: return
 
-        val statement = import.statement()
+        val statement = import.statement
         LOG.info { "Import statement to be added: $statement" }
         val newImport = createNewImportPsiElement(psiFile, statement)
         if (newImport == null) {

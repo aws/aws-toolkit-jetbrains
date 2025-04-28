@@ -351,6 +351,7 @@ fun applySuggestedFix(project: Project, issue: CodeWhispererCodeScanIssue) {
                 LOG.debug { "Applied fix with reference: $reference" }
                 val originalContent = updatedContent.substring(reference.recommendationContentSpan().start(), reference.recommendationContentSpan().end())
                 LOG.debug { "Original content from reference span: $originalContent" }
+                // TODO flare: hook codescan references with flare correctly, this is only a compile error fix which is not tested
                 manager.addReferenceLogPanelEntry(reference = InlineCompletionReference(
                     referenceName = reference.repository(),
                     referenceUrl = reference.url(),

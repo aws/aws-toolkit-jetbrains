@@ -17,6 +17,7 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.CodeReference
 
 object ReferenceLogController {
     fun addReferenceLog(originalCode: String, codeReferences: List<CodeReference>?, editor: Editor, project: Project, inlineChatStartPosition: CaretPosition?) {
+        // TODO flare: hook /dev references with flare correctly, this is only a compile error fix which is not tested
         codeReferences?.let { references ->
             val cwReferences = references.map { reference ->
                 InlineCompletionReference(
@@ -44,6 +45,7 @@ object ReferenceLogController {
     fun addReferenceLog(codeReferences: List<CodeReferenceGenerated>?, project: Project) {
         val manager = CodeWhispererCodeReferenceManager.getInstance(project)
 
+        // TODO flare: hook /dev references with flare correctly, this is only a compile error fix which is not tested
         codeReferences?.forEach { reference ->
             val cwReferences = InlineCompletionReference(
                 referenceName = reference.repository ?: "",

@@ -37,7 +37,6 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either
 import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.core.util.DefaultSdkAutoConstructList
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
-import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.FileContext
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
@@ -267,33 +266,14 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                     val endTime = System.nanoTime()
                     val latency = TimeUnit.NANOSECONDS.toMillis(endTime - startTime).toDouble()
                     startTime = endTime
-//                    val requestId = response.responseMetadata().requestId()
-//                    val sessionId = response.sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
                     if (requestCount == 1) {
                         latencyContext.paginationFirstCompletionTime = latency
-//                        latencyContext.firstRequestId = requestId
-//                        CodeWhispererInvocationStatusNew.getInstance().setInvocationSessionId(sessionId)
                     }
-//                    if (response.nextToken().isEmpty()) {
-//                        latencyContext.paginationAllCompletionsEnd = System.nanoTime()
-//                    }
                     val responseContext = ResponseContext(completion.sessionId)
-//                    logServiceInvocation(requestId, requestContext, responseContext, response.completions(), latency, null)
+                    logServiceInvocation(requestContext, responseContext, completion, latency, null)
                     lastRecommendationIndex += completion.items.size
                     ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_CODE_COMPLETION_PERFORMED)
                         .onSuccess(requestContext.fileContextInfo)
-//                    CodeWhispererTelemetryServiceNew.getInstance().sendServiceInvocationEvent(
-//                        currentJobId,
-//                        requestId,
-//                        requestContext,
-//                        responseContext,
-//                        lastRecommendationIndex,
-//                        true,
-//                        latency,
-//                        null
-//                    )
-
-//                    val validatedResponse = validateResponse(response)
 
                     runInEdt {
                         // If delay is not met, add them to the worker queue and process them later.
@@ -393,7 +373,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                     "The provided customization ${requestContext.customizationArn} is not found, " +
                         "will fallback to the default and retry generate completion"
                 }
-                logServiceInvocation(requestId, requestContext, responseContext, emptyList(), null, exceptionType)
+                logServiceInvocation(requestContext, responseContext, null, null, exceptionType)
 
                 notifyWarn(
                     title = "",
@@ -439,7 +419,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
             val exceptionType = e::class.simpleName
             val responseContext = ResponseContext(sessionId)
             CodeWhispererInvocationStatusNew.getInstance().setInvocationSessionId(sessionId)
-            logServiceInvocation(requestId, requestContext, responseContext, emptyList(), null, exceptionType)
+            logServiceInvocation(requestContext, responseContext, null, null, exceptionType)
             CodeWhispererTelemetryServiceNew.getInstance().sendServiceInvocationEvent(
                 currentJobId,
                 requestId,
@@ -485,8 +465,8 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         jobId: Int,
     ) {
         val requestContext = workerContext.requestContext
+        val responseContext = workerContext.responseContext
         val completions = workerContext.completions
-//        val requestId = response.responseMetadata().requestId()
 
         // At this point when we are in EDT, the state of the popup will be thread-safe
         // across this thread execution, so if popup is disposed, we will stop here.
@@ -513,7 +493,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         val nextStates: InvocationContextNew?
         if (currStates == null) {
             // first response for the jobId
-            nextStates = initStates(jobId, requestContext, completions, caretMovement)
+            nextStates = initStates(jobId, requestContext, responseContext, completions, caretMovement)
 
             // receiving a null state means caret has moved backward,
             // so we are going to cancel the current job
@@ -538,19 +518,6 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         if (nextStates.recommendationContext.details.isEmpty()) {
             // TODO YUX: fully remove userDecision
             LOG.debug { "Received just an empty list from this session. session id: ${completions.sessionId}" }
-//            CodeWhispererTelemetryServiceNew.getInstance().sendUserDecisionEvent(
-//                requestContext,
-//                responseContext,
-//                DetailContextNew(
-//                    requestId,
-//                    InlineCompletionItem(),
-//                    false,
-//                    CodewhispererCompletionType.Line
-//                ),
-//                -1,
-//                CodewhispererSuggestionState.Empty,
-//                nextStates.recommendationContext.details.size
-//            )
         }
         if (!hasAtLeastOneValid) {
             LOG.debug { "None of the recommendations are valid, exiting current CodeWhisperer pagination session" }
@@ -569,18 +536,19 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
     private fun initStates(
         jobId: Int,
         requestContext: RequestContextNew,
+        responseContext: ResponseContext,
         completions: InlineCompletionListWithReferences,
         caretMovement: CaretMovement,
     ): InvocationContextNew? {
         val visualPosition = requestContext.editor.caretModel.visualPosition
 
         if (caretMovement == CaretMovement.MOVE_BACKWARD) {
-//            LOG.debug { "Caret moved backward, discarding all of the recommendations and exiting the session. Request ID: $requestId, jobId: $jobId" }
+            LOG.debug { "Caret moved backward, discarding all of the recommendations. Session Id: ${completions.sessionId}, jobId: $jobId" }
             val detailContexts = completions.items.map {
                 DetailContext("", it, true, getCompletionType(it))
             }.toMutableList()
             val recommendationContext = RecommendationContextNew(detailContexts, "", "", VisualPosition(0, 0), jobId)
-            ongoingRequests[jobId] = buildInvocationContext(requestContext, recommendationContext)
+            ongoingRequests[jobId] = buildInvocationContext(requestContext, responseContext, recommendationContext)
             disposeDisplaySession(false)
             return null
         }
@@ -607,7 +575,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
             completions,
         )
         val recommendationContext = RecommendationContextNew(detailContexts, userInputOriginal, userInput, visualPosition, jobId)
-        ongoingRequests[jobId] = buildInvocationContext(requestContext, recommendationContext)
+        ongoingRequests[jobId] = buildInvocationContext(requestContext, responseContext, recommendationContext)
         return ongoingRequests[jobId]
     }
 
@@ -733,6 +701,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
 
     private fun buildInvocationContext(
         requestContext: RequestContextNew,
+        responseContext: ResponseContext,
         recommendationContext: RecommendationContextNew,
     ): InvocationContextNew {
         // Creating a disposable for managing all listeners lifecycle attached to the popup.
@@ -740,7 +709,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         // After pagination, listeners need to be updated as states are updated, for the same popup,
         // so disposable chain becomes popup -> disposable -> listeners updates, and disposable gets replaced on every
         // state update.
-        val states = InvocationContextNew(requestContext, recommendationContext)
+        val states = InvocationContextNew(requestContext, responseContext, recommendationContext)
         Disposer.register(states) {
             job?.cancel(CancellationException("Cancelling the current coroutine when the pagination session context is disposed"))
         }
@@ -771,18 +740,16 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         }
 
     private fun logServiceInvocation(
-        requestId: String,
         requestContext: RequestContextNew,
         responseContext: ResponseContext,
-        recommendations: List<Completion>,
+        completions: InlineCompletionListWithReferences?,
         latency: Double?,
         exceptionType: String?,
     ) {
-        val recommendationLogs = recommendations.map { it.content().trimEnd() }
-            .reduceIndexedOrNull { index, acc, recommendation -> "$acc\n[${index + 1}]\n$recommendation" }
+        val recommendationLogs = completions?.items?.map { it.insertText.trimEnd() }
+            ?.reduceIndexedOrNull { index, acc, recommendation -> "$acc\n[${index + 1}]\n$recommendation" }
         LOG.info {
             "SessionId: ${responseContext.sessionId}, " +
-                "RequestId: $requestId, " +
                 "Jetbrains IDE: ${ApplicationInfo.getInstance().fullApplicationName}, " +
                 "IDE version: ${ApplicationInfo.getInstance().apiVersion}, " +
                 "Filename: ${requestContext.fileContextInfo.filename}, " +
@@ -844,43 +811,6 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         }
 
         fun hasReAuthPromptBeenShown() = reAuthPromptShown
-
-        fun buildCodeWhispererRequest(
-            fileContextInfo: FileContextInfo,
-            supplementalContext: SupplementalContextInfo?,
-            customizationArn: String?,
-            profileArn: String?,
-        ): GenerateCompletionsRequest {
-            val programmingLanguage = ProgrammingLanguage.builder()
-                .languageName(fileContextInfo.programmingLanguage.toCodeWhispererRuntimeLanguage().languageId)
-                .build()
-            val fileContext = FileContext.builder()
-                .leftFileContent(fileContextInfo.caretContext.leftFileContext)
-                .rightFileContent(fileContextInfo.caretContext.rightFileContext)
-                .filename(fileContextInfo.fileRelativePath ?: fileContextInfo.filename)
-                .programmingLanguage(programmingLanguage)
-                .build()
-            val supplementalContexts = supplementalContext?.contents?.map {
-                SupplementalContext.builder()
-                    .content(it.content)
-                    .filePath(it.path)
-                    .build()
-            }.orEmpty()
-            val includeCodeWithReference = if (CodeWhispererSettings.getInstance().isIncludeCodeWithReference()) {
-                RecommendationsWithReferencesPreference.ALLOW
-            } else {
-                RecommendationsWithReferencesPreference.BLOCK
-            }
-
-            return GenerateCompletionsRequest.builder()
-                .fileContext(fileContext)
-                .supplementalContexts(supplementalContexts)
-                .referenceTrackerConfiguration { it.recommendationsWithReferences(includeCodeWithReference) }
-                .customizationArn(customizationArn)
-                .optOutPreference(getTelemetryOptOutPreference())
-                .profileArn(profileArn)
-                .build()
-        }
     }
 }
 

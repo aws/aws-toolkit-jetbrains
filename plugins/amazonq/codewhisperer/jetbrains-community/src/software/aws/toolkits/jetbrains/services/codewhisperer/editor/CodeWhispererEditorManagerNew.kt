@@ -31,7 +31,6 @@ class CodeWhispererEditorManagerNew {
         val selectedIndex = sessionContext.selectedIndex
         val preview = previews[selectedIndex]
         val states = CodeWhispererServiceNew.getInstance().getAllPaginationSessions()[preview.jobId] ?: return
-        val (requestContext, responseContext) = states
         val (project, editor) = sessionContext
         val document = editor.document
         val primaryCaret = editor.caretModel.primaryCaret
@@ -64,19 +63,6 @@ class CodeWhispererEditorManagerNew {
         ApplicationManager.getApplication().invokeLater {
             WriteCommandAction.runWriteCommandAction(project) {
                 val rangeMarker = document.createRangeMarker(originalOffset, endOffset, true)
-
-                // TODO YUX: handle accepted entry on service side
-//                CodeWhispererTelemetryServiceNew.getInstance().enqueueAcceptedSuggestionEntry(
-//                    detail.itemId,
-//                    requestContext,
-//                    responseContext,
-//                    Instant.now(),
-//                    PsiDocumentManager.getInstance(project).getPsiFile(document)?.virtualFile,
-//                    rangeMarker,
-//                    remainingRecommendation,
-//                    selectedIndex,
-//                    detail.completionType
-//                )
 
                 ApplicationManager.getApplication().messageBus.syncPublisher(
                     CodeWhispererPopupManager.CODEWHISPERER_USER_ACTION_PERFORMED,

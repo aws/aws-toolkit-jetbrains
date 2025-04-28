@@ -262,17 +262,10 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                         val endTime = System.nanoTime()
                         val latency = TimeUnit.NANOSECONDS.toMillis(endTime - startTime).toDouble()
                         startTime = endTime
-//                        val requestId = response.responseMetadata().requestId()
-//                        val sessionId = completion.sessionId
                         if (requestCount == 1) {
                             requestContext.latencyContext.paginationFirstCompletionTime =
                                 (endTime - requestContext.latencyContext.codewhispererEndToEndStart).toDouble()
-//                            requestContext.latencyContext.firstRequestId = requestId
-//                            CodeWhispererInvocationStatus.getInstance().setInvocationSessionId(sessionId)
                         }
-//                        if (response.nextToken().isEmpty()) {
-//                            requestContext.latencyContext.paginationAllCompletionsEnd = System.nanoTime()
-//                        }
                         val responseContext = ResponseContext(completion.sessionId)
                         logServiceInvocation(requestContext, responseContext, completion, latency, null)
                         lastRecommendationIndex += completion.items.size
@@ -341,16 +334,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     val exceptionType = e::class.simpleName
                     val responseContext = ResponseContext(sessionId)
 
-//                    CodeWhispererTelemetryService.getInstance().sendServiceInvocationEvent(
-//                        requestId,
-//                        requestContext,
-//                        responseContext,
-//                        lastRecommendationIndex,
-//                        false,
-//                        0.0,
-//                        exceptionType
-//                    )
-//
                     LOG.debug {
                         "The provided customization ${requestContext.customizationArn} is not found, " +
                             "will fallback to the default and retry generate completion"
@@ -405,16 +388,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 val responseContext = ResponseContext(sessionId)
                 CodeWhispererInvocationStatus.getInstance().setInvocationSessionId(sessionId)
                 logServiceInvocation(requestContext, responseContext, null, null, exceptionType)
-//                CodeWhispererTelemetryService.getInstance().sendServiceInvocationEvent(
-//                    requestId,
-//                    requestContext,
-//                    responseContext,
-//                    lastRecommendationIndex,
-//                    false,
-//                    0.0,
-//                    exceptionType
-//                )
-//
+
                 if (e is ThrottlingException &&
                     e.message == CodeWhispererConstants.THROTTLING_MESSAGE
                 ) {
@@ -514,9 +488,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             updateCodeWhisperer(nextStates, isPopupShowing)
         }
         return nextStates
-    }
-
-    fun handleLspInlineCompletion(project: Project, editor: Editor, triggerType: TriggerTypeInfo, nextToken: Either<String, Int>?) {
     }
 
     private fun initStates(
@@ -667,25 +638,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
     }
 
-    fun validateResponse(response: GenerateCompletionsResponse): GenerateCompletionsResponse {
-        // If contentSpans in reference are not consistent with content(recommendations),
-        // remove the incorrect references.
-        val validatedRecommendations = response.completions().map {
-            val validReferences = it.hasReferences() && it.references().isNotEmpty() &&
-                it.references().none { reference ->
-                    val span = reference.recommendationContentSpan()
-                    span.start() > span.end() || span.start() < 0 || span.end() > it.content().length
-                }
-            if (validReferences) {
-                it
-            } else {
-                it.toBuilder().references(DefaultSdkAutoConstructList.getInstance()).build()
-            }
-        }
-
-        return response.toBuilder().completions(validatedRecommendations).build()
-    }
-
     private fun buildInvocationContext(
         requestContext: RequestContext,
         responseContext: ResponseContext,
@@ -814,45 +766,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         }
 
         fun hasReAuthPromptBeenShown() = reAuthPromptShown
-
-        fun buildCodeWhispererRequest(
-            fileContextInfo: FileContextInfo,
-            supplementalContext: SupplementalContextInfo?,
-            customizationArn: String?,
-            profileArn: String?,
-            workspaceId: String?,
-        ): GenerateCompletionsRequest {
-            val programmingLanguage = ProgrammingLanguage.builder()
-                .languageName(fileContextInfo.programmingLanguage.toCodeWhispererRuntimeLanguage().languageId)
-                .build()
-            val fileContext = FileContext.builder()
-                .leftFileContent(fileContextInfo.caretContext.leftFileContext)
-                .rightFileContent(fileContextInfo.caretContext.rightFileContext)
-                .filename(fileContextInfo.fileRelativePath ?: fileContextInfo.filename)
-                .programmingLanguage(programmingLanguage)
-                .build()
-            val supplementalContexts = supplementalContext?.contents?.map {
-                SupplementalContext.builder()
-                    .content(it.content)
-                    .filePath(it.path)
-                    .build()
-            }.orEmpty()
-            val includeCodeWithReference = if (CodeWhispererSettings.getInstance().isIncludeCodeWithReference()) {
-                RecommendationsWithReferencesPreference.ALLOW
-            } else {
-                RecommendationsWithReferencesPreference.BLOCK
-            }
-
-            return GenerateCompletionsRequest.builder()
-                .fileContext(fileContext)
-                .supplementalContexts(supplementalContexts)
-                .referenceTrackerConfiguration { it.recommendationsWithReferences(includeCodeWithReference) }
-                .customizationArn(customizationArn)
-                .optOutPreference(getTelemetryOptOutPreference())
-                .profileArn(profileArn)
-                .workspaceId(workspaceId)
-                .build()
-        }
     }
 }
 
