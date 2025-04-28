@@ -22,7 +22,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommun
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatUpdateParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
@@ -145,7 +145,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         val paramsJson = jacksonObjectMapper().writeValueAsString(params)
 
         val uiMessage = ChatCommunicationManager.convertToJsonToSendToChat(
-            command = SEND_CHAT_COMMAND_PROMPT,
+            command = CHAT_SEND_UPDATE,
             tabId = tabId,
             params = paramsJson,
             isPartialResult = false
