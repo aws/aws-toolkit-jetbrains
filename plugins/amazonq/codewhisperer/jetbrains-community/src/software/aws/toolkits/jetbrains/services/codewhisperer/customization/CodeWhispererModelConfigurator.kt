@@ -149,10 +149,19 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
             activeCustomization(project)?.let { activeCustom ->
                 if (customizations.isEmpty()) {
                     invalidateSelectedAndNotify(project)
-                } else if (!customizations.any { latestCustom -> latestCustom.arn == activeCustom.arn } ||
-                    (activeCustom.profile != null && activeCustom.profile != QRegionProfileManager.getInstance().activeProfile(project))
-                ) {
+                } else if (customizations.none { latestCustom -> latestCustom.arn == activeCustom.arn }) {
                     invalidateSelectedAndNotify(project)
+                } else {
+                    // for backward compatibility, previous schema didn't have profile arn, so backfill profile here if it's null
+                    if (activeCustom.profile == null) {
+                        customizations.find { c -> c.arn == activeCustom.arn }?.profile?.let { p ->
+                            activeCustom.profile = p
+                        }
+                    }
+
+                    if (activeCustom.profile != null && activeCustom.profile != QRegionProfileManager.getInstance().activeProfile(project)) {
+                        invalidateSelectedAndNotify(project)
+                    }
                 }
             }
 
