@@ -22,6 +22,7 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.messages.Topic
+import io.ktor.client.request.request
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -141,8 +142,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         val project = editor.project ?: return
         if (!isCodeWhispererEnabled(project)) return
 
-        latencyContext.credentialFetchingStart = System.nanoTime()
-
         // try to refresh automatically if possible, otherwise ask user to login again
         if (isQExpired(project)) {
             // consider changing to only running once a ~minute since this is relatively expensive
@@ -243,8 +242,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         val job = coroutineScope.launch {
             try {
                 var startTime = System.nanoTime()
-                requestContext.latencyContext.codewhispererPreprocessingEnd = System.nanoTime()
-                requestContext.latencyContext.paginationAllCompletionsStart = System.nanoTime()
                 CodeWhispererInvocationStatus.getInstance().setInvocationStart()
                 var requestCount = 0
                 var nextToken: Either<String, Int>? = null
@@ -262,10 +259,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                         val endTime = System.nanoTime()
                         val latency = TimeUnit.NANOSECONDS.toMillis(endTime - startTime).toDouble()
                         startTime = endTime
-                        if (requestCount == 1) {
-                            requestContext.latencyContext.paginationFirstCompletionTime =
-                                (endTime - requestContext.latencyContext.codewhispererEndToEndStart).toDouble()
-                        }
                         val responseContext = ResponseContext(completion.sessionId)
                         logServiceInvocation(requestContext, responseContext, completion, latency, null)
                         lastRecommendationIndex += completion.items.size
@@ -440,7 +433,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
 
         if (requestContext.editor.isDisposed) {
             LOG.debug { "Stop showing CodeWhisperer recommendations since editor is disposed. session id: ${responseContext.sessionId}" }
-            sendDiscardedUserDecisionEventForAll(requestContext.project, completions.sessionId, completions)
+            sendDiscardedUserDecisionEventForAll(requestContext.project, requestContext.latencyContext, responseContext.sessionId, completions)
             CodeWhispererPopupManager.getInstance().cancelPopup(popup)
             return null
         }
@@ -464,7 +457,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             // Intellisense popup, so we are going to cancel the job
             if (nextStates == null) {
                 LOG.debug { "Cancelling popup and exiting CodeWhisperer session. session id: ${responseContext.sessionId}" }
-                sendDiscardedUserDecisionEventForAll(requestContext.project, completions.sessionId, completions)
+                sendDiscardedUserDecisionEventForAll(requestContext.project, requestContext.latencyContext, responseContext.sessionId, completions)
                 CodeWhispererPopupManager.getInstance().cancelPopup(popup)
                 return null
             }
@@ -570,6 +563,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
 
     private fun sendDiscardedUserDecisionEventForAll(
         project: Project,
+        latencyContext: LatencyContext,
         sessionId: String,
         completions: InlineCompletionListWithReferences,
     ) {
@@ -577,7 +571,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             DetailContext(it.itemId, it, true, getCompletionType(it))
         }
         val recommendationContext = RecommendationContext(detailContexts, "", VisualPosition(0, 0))
-        CodeWhispererTelemetryService.getInstance().sendUserTriggerDecisionEvent(project, sessionId, recommendationContext)
+        CodeWhispererTelemetryService.getInstance().sendUserTriggerDecisionEvent(project, latencyContext, sessionId, recommendationContext)
     }
 
     fun getRequestContext(

@@ -79,29 +79,6 @@ interface CodeWhispererClientAdaptor {
 
     fun getTestGeneration(jobId: String, jobGroupName: String): GetTestGenerationResponse
 
-    fun sendUserTriggerDecisionTelemetry(
-        requestContext: RequestContext,
-        responseContext: ResponseContext,
-        completionType: CodewhispererCompletionType,
-        suggestionState: CodewhispererSuggestionState,
-        suggestionReferenceCount: Int,
-        lineCount: Int,
-        numberOfRecommendations: Int,
-        acceptedCharCount: Int,
-    ): SendTelemetryEventResponse
-
-    fun sendUserTriggerDecisionTelemetry(
-        sessionContext: SessionContextNew,
-        requestContext: RequestContextNew,
-        responseContext: ResponseContext,
-        completionType: CodewhispererCompletionType,
-        suggestionState: CodewhispererSuggestionState,
-        suggestionReferenceCount: Int,
-        lineCount: Int,
-        numberOfRecommendations: Int,
-        acceptedCharCount: Int,
-    ): SendTelemetryEventResponse
-
     fun sendCodePercentageTelemetry(
         language: CodeWhispererProgrammingLanguage,
         customizationArn: String?,
@@ -291,100 +268,6 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             builder.testGenerationJobGroupName(jobGroupName)
             builder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
         }
-
-    override fun sendUserTriggerDecisionTelemetry(
-        requestContext: RequestContext,
-        responseContext: ResponseContext,
-        completionType: CodewhispererCompletionType,
-        suggestionState: CodewhispererSuggestionState,
-        suggestionReferenceCount: Int,
-        lineCount: Int,
-        numberOfRecommendations: Int,
-        acceptedCharCount: Int,
-    ): SendTelemetryEventResponse {
-        val fileContext = requestContext.fileContextInfo
-        val programmingLanguage = fileContext.programmingLanguage
-        var e2eLatency = requestContext.latencyContext.getCodeWhispererEndToEndLatency()
-
-        // When we send a userTriggerDecision for neither Accept nor Reject, service side should not use this value
-        // and client side will set this value to 0.0.
-        if (suggestionState != CodewhispererSuggestionState.Accept &&
-            suggestionState != CodewhispererSuggestionState.Reject
-        ) {
-            e2eLatency = 0.0
-        }
-
-        return bearerClient().sendTelemetryEvent { requestBuilder ->
-            requestBuilder.telemetryEvent { telemetryEventBuilder ->
-                telemetryEventBuilder.userTriggerDecisionEvent {
-                    it.requestId(requestContext.latencyContext.firstRequestId)
-                    it.completionType(completionType.toCodeWhispererSdkType())
-                    it.programmingLanguage { builder -> builder.languageName(programmingLanguage.toCodeWhispererRuntimeLanguage().languageId) }
-                    it.sessionId(responseContext.sessionId)
-                    it.recommendationLatencyMilliseconds(e2eLatency)
-                    it.triggerToResponseLatencyMilliseconds(requestContext.latencyContext.paginationFirstCompletionTime)
-                    it.perceivedLatencyMilliseconds(requestContext.latencyContext.perceivedLatency)
-                    it.suggestionState(suggestionState.toCodeWhispererSdkType())
-                    it.timestamp(Instant.now())
-                    it.suggestionReferenceCount(suggestionReferenceCount)
-                    it.generatedLine(lineCount)
-                    it.customizationArn(requestContext.customizationArn.nullize(nullizeSpaces = true))
-                    it.numberOfRecommendations(numberOfRecommendations)
-                    it.acceptedCharacterCount(acceptedCharCount)
-                }
-            }
-            requestBuilder.optOutPreference(getTelemetryOptOutPreference())
-            requestBuilder.userContext(codeWhispererUserContext())
-            requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
-        }
-    }
-
-    override fun sendUserTriggerDecisionTelemetry(
-        sessionContext: SessionContextNew,
-        requestContext: RequestContextNew,
-        responseContext: ResponseContext,
-        completionType: CodewhispererCompletionType,
-        suggestionState: CodewhispererSuggestionState,
-        suggestionReferenceCount: Int,
-        lineCount: Int,
-        numberOfRecommendations: Int,
-        acceptedCharCount: Int,
-    ): SendTelemetryEventResponse {
-        val fileContext = requestContext.fileContextInfo
-        val programmingLanguage = fileContext.programmingLanguage
-        var e2eLatency = sessionContext.latencyContext.getCodeWhispererEndToEndLatency()
-
-        // When we send a userTriggerDecision of Empty or Discard, we set the time users see the first
-        // suggestion to be now.
-        if (e2eLatency < 0) {
-            e2eLatency = TimeUnit.NANOSECONDS.toMillis(
-                System.nanoTime() - sessionContext.latencyContext.codewhispererEndToEndStart
-            ).toDouble()
-        }
-        return bearerClient().sendTelemetryEvent { requestBuilder ->
-            requestBuilder.telemetryEvent { telemetryEventBuilder ->
-                telemetryEventBuilder.userTriggerDecisionEvent {
-                    it.requestId(sessionContext.latencyContext.firstRequestId)
-                    it.completionType(completionType.toCodeWhispererSdkType())
-                    it.programmingLanguage { builder -> builder.languageName(programmingLanguage.toCodeWhispererRuntimeLanguage().languageId) }
-                    it.sessionId(responseContext.sessionId)
-                    it.recommendationLatencyMilliseconds(e2eLatency)
-                    it.triggerToResponseLatencyMilliseconds(sessionContext.latencyContext.paginationFirstCompletionTime)
-                    it.perceivedLatencyMilliseconds(sessionContext.latencyContext.perceivedLatency)
-                    it.suggestionState(suggestionState.toCodeWhispererSdkType())
-                    it.timestamp(Instant.now())
-                    it.suggestionReferenceCount(suggestionReferenceCount)
-                    it.generatedLine(lineCount)
-                    it.customizationArn(requestContext.customizationArn.nullize(nullizeSpaces = true))
-                    it.numberOfRecommendations(numberOfRecommendations)
-                    it.acceptedCharacterCount(acceptedCharCount)
-                }
-            }
-            requestBuilder.optOutPreference(getTelemetryOptOutPreference())
-            requestBuilder.userContext(codeWhispererUserContext())
-            requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
-        }
-    }
 
     override fun sendCodePercentageTelemetry(
         language: CodeWhispererProgrammingLanguage,

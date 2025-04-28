@@ -94,7 +94,6 @@ class CodeWhispererAutoTriggerService : CodeWhispererAutoTriggerHandler, Disposa
         lastInvocationLineNum = runReadAction { editor.caretModel.visualPosition.line }
 
         val latencyContext = LatencyContext().apply {
-            codewhispererPreprocessingStart = System.nanoTime()
             codewhispererEndToEndStart = System.nanoTime()
         }
 

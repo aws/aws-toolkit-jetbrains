@@ -37,13 +37,8 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either
 import software.amazon.awssdk.core.exception.SdkServiceException
 import software.amazon.awssdk.core.util.DefaultSdkAutoConstructList
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
-import software.amazon.awssdk.services.codewhispererruntime.model.FileContext
-import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
-import software.amazon.awssdk.services.codewhispererruntime.model.ProgrammingLanguage
-import software.amazon.awssdk.services.codewhispererruntime.model.RecommendationsWithReferencesPreference
 import software.amazon.awssdk.services.codewhispererruntime.model.ResourceNotFoundException
-import software.amazon.awssdk.services.codewhispererruntime.model.SupplementalContext
 import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -87,12 +82,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeInsightsSettingsFacade
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCompletionType
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.notifyErrorCodeWhispererUsageLimit
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CustomizationConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
-import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.utils.isInjectedText
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.notifyWarn
@@ -137,7 +130,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         val project = editor.project ?: return
         if (!isCodeWhispererEnabled(project)) return
 
-        latencyContext.credentialFetchingStart = System.nanoTime()
+        latencyContext.crdentialFetchingStart = System.nanoTime()
 
         // try to refresh automatically if possible, otherwise ask user to login again
         if (isQExpired(project)) {
@@ -246,8 +239,6 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
 
         try {
             var startTime = System.nanoTime()
-            latencyContext.codewhispererPreprocessingEnd = System.nanoTime()
-            latencyContext.paginationAllCompletionsStart = System.nanoTime()
             CodeWhispererInvocationStatusNew.getInstance().setInvocationStart()
             var requestCount = 0
             var nextToken: Either<String, Int>? = null
@@ -266,9 +257,6 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                     val endTime = System.nanoTime()
                     val latency = TimeUnit.NANOSECONDS.toMillis(endTime - startTime).toDouble()
                     startTime = endTime
-                    if (requestCount == 1) {
-                        latencyContext.paginationFirstCompletionTime = latency
-                    }
                     val responseContext = ResponseContext(completion.sessionId)
                     logServiceInvocation(requestContext, responseContext, completion, latency, null)
                     lastRecommendationIndex += completion.items.size
@@ -585,7 +573,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
     ): InvocationContextNew {
         val recommendationContext = states.recommendationContext
         val newDetailContexts = CodeWhispererRecommendationManager.getInstance().buildDetailContext(
-            recommendationContext.userInputSinceInvocation,
+            recommendationContext.userInput,
             completions,
         )
 
@@ -640,7 +628,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         ongoingRequests.values.filterNotNull().flatMap { element ->
             val context = element.recommendationContext
             context.details.map {
-                PreviewContext(context.jobId, it, context.userInputSinceInvocation, context.typeahead)
+                PreviewContext(context.jobId, it, context.userInput, context.typeahead)
             }
         }
 

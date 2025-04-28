@@ -178,8 +178,7 @@ class CodeWhispererPopupManager {
             selectedIndex,
             sessionContext.seen,
             sessionContext.toBeRemovedHighlighter,
-            isPopupShowing = sessionContext.isPopupShowing,
-            perceivedLatency = sessionContext.perceivedLatency
+            isPopupShowing = sessionContext.isPopupShowing
         )
 
         ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_POPUP_STATE_CHANGED).stateChanged(
@@ -362,15 +361,6 @@ class CodeWhispererPopupManager {
                 )
                 editor.putUserData(PopupFactoryImpl.ANCHOR_POPUP_POSITION, popupPositionForRemote)
                 popup.showInBestPositionFor(editor)
-            }
-            if (sessionContext.perceivedLatency < 0) {
-                val perceivedLatency = min(
-                    CodeWhispererInvocationStatus.getInstance().getTimeSinceDocumentChanged(),
-                    CodeWhispererInvocationStatus.getInstance().getTimeSinceLastManualTrigger()
-                )
-                // TODO: call perceived Latency hook
-//                CodeWhispererTelemetryService.getInstance().sendClientComponentLatencyEvent(states)
-                sessionContext.perceivedLatency = perceivedLatency
             }
         }
 

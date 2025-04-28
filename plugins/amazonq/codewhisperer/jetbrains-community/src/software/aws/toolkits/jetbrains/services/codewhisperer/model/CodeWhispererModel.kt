@@ -27,6 +27,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryServiceNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.setIntelliSensePopupAlpha
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
@@ -100,8 +101,7 @@ data class RecommendationContext(
 
 data class RecommendationContextNew(
     val details: MutableList<DetailContext>,
-    val userInputOriginal: String,
-    val userInputSinceInvocation: String,
+    val userInput: String,
     val position: VisualPosition,
     val jobId: Int,
     var typeahead: String = "",
@@ -131,7 +131,6 @@ data class SessionContext(
     var toBeRemovedHighlighter: RangeHighlighter? = null,
     var insertEndOffset: Int = -1,
     var isPopupShowing: Boolean = false,
-    var perceivedLatency: Double = -1.0,
 )
 
 data class SessionContextNew(
@@ -160,11 +159,7 @@ data class SessionContextNew(
 
     @RequiresEdt
     override fun dispose() {
-//        CodeWhispererTelemetryServiceNew.getInstance().sendUserDecisionEventForAll(
-//            this,
-//            hasAccepted,
-//            CodeWhispererInvocationStatusNew.getInstance().popupStartTimestamp?.let { Duration.between(it, Instant.now()) }
-//        )
+        CodeWhispererTelemetryServiceNew.getInstance().sendUserTriggerDecisionEvent(this.project, this.latencyContext)
         setIntelliSensePopupAlpha(editor, 0f)
         CodeWhispererInvocationStatusNew.getInstance().setDisplaySessionActive(false)
 
@@ -256,28 +251,15 @@ data class CodeScanResponseContext(
 )
 
 data class LatencyContext(
-    var credentialFetchingStart: Long = 0L,
-
-    var codewhispererPreprocessingStart: Long = 0L,
-    var codewhispererPreprocessingEnd: Long = 0L,
-
-    var paginationFirstCompletionTime: Double = 0.0,
     var perceivedLatency: Double = 0.0,
 
     var codewhispererEndToEndStart: Long = 0L,
     var codewhispererEndToEndEnd: Long = 0L,
 
-    var paginationAllCompletionsStart: Long = 0L,
-    var paginationAllCompletionsEnd: Long = 0L,
-
     var firstRequestId: String = "",
 ) {
     fun getCodeWhispererEndToEndLatency() = TimeUnit.NANOSECONDS.toMillis(
         codewhispererEndToEndEnd - codewhispererEndToEndStart
-    ).toDouble()
-
-    fun getCodeWhispererAllCompletionsLatency() = TimeUnit.NANOSECONDS.toMillis(
-        paginationAllCompletionsEnd - paginationAllCompletionsStart
     ).toDouble()
 
     // For auto-trigger it's from the time when last char typed
