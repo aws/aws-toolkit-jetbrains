@@ -48,7 +48,7 @@ class CodeWhispererExplorerActionManager : PersistentStateComponent<CodeWhispere
         actionState.value[CodeWhispererExploreStateType.IsAutoEnabled] = isAutoEnabled
     }
 
-    fun isAutoEnabledForCodeScan(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.IsAutoCodeScanEnabled, true)
+    fun isAutoEnabledForCodeScan(): Boolean = actionState.value.getOrDefault(CodeWhispererExploreStateType.IsAutoCodeScanEnabled, false)
 
     fun setAutoEnabledForCodeScan(isAutoEnabledForCodeScan: Boolean) {
         actionState.value[CodeWhispererExploreStateType.IsAutoCodeScanEnabled] = isAutoEnabledForCodeScan

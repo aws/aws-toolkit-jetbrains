@@ -1,3 +1,17 @@
+# _3.68_ (2025-04-23)
+- **(Feature)** Amazon Q: Show visual indicator in status bar if profile selection is needed to continue with Q Inline / Q Chat
+- **(Feature)** Amazon Q /test: Remove unsupported message for non-java python languages
+- **(Bug Fix)** /dev: Fix prompt to enable devfile build not triggering when devfile is present.
+- **(Bug Fix)** /review disable auto scan by default
+- **(Bug Fix)** /review: disabled highlighter for ignored issues
+
+# _3.67_ (2025-04-18)
+- **(Bug Fix)** Amazon Q: Customization now resets with a warning if unavailable in the selected profile.
+- **(Bug Fix)** Q panel will get stuck while signin if users have multiple windows
+- **(Bug Fix)** Fix integer overflow when local context index input is larger than 2GB
+- **(Bug Fix)** Fix workspace index process quits when hitting a race condition
+- **(Bug Fix)** Fix infinite loop when workspace indexing server fails to initialize
+
 # _3.66_ (2025-04-11)
 - **(Feature)** The logs emitted by the Agent during user command execution will be accepted and written to `.amazonq/dev/run_command.log` file in the user's local repository.
 - **(Bug Fix)** Unit test generation now completes successfully when using the `/test` command
