@@ -6,10 +6,10 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.LanguageClient
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatUpdateParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import java.util.concurrent.CompletableFuture
 
@@ -25,5 +25,5 @@ interface AmazonQLanguageClient : LanguageClient {
     fun openTab(params: OpenTabParams): CompletableFuture<OpenTabResult>
 
     @JsonNotification(CHAT_SEND_UPDATE)
-    fun sendChatUpdate(params: ChatUpdateParams) : CompletableFuture<Unit>
+    fun sendChatUpdate(params: ChatUpdateParams): CompletableFuture<Unit>
 }

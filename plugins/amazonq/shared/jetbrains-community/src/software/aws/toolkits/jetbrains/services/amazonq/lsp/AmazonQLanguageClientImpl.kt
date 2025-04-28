@@ -152,7 +152,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         )
 
         AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
-        
+
         return CompletableFuture.completedFuture(Unit)
     }
 }

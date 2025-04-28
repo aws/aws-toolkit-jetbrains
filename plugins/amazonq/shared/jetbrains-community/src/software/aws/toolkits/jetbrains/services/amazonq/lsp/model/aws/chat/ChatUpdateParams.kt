@@ -6,5 +6,5 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 data class ChatUpdateParams(
     val tabId: String,
     val state: TabState? = null,
-    val data: TabData? = null
+    val data: TabData? = null,
 )
