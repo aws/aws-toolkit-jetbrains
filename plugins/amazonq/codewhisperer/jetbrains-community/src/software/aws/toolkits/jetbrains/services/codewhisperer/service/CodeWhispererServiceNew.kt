@@ -130,8 +130,6 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         val project = editor.project ?: return
         if (!isCodeWhispererEnabled(project)) return
 
-        latencyContext.crdentialFetchingStart = System.nanoTime()
-
         // try to refresh automatically if possible, otherwise ask user to login again
         if (isQExpired(project)) {
             // consider changing to only running once a ~minute since this is relatively expensive
@@ -245,12 +243,9 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
             do {
                 val result = AmazonQLspService.executeIfRunning(requestContext.project) { server ->
                     val params = createInlineCompletionParams(requestContext.editor, requestContext.triggerTypeInfo, nextToken)
-                    println("cursor position: ${params.position.line}, ${params.position.character}")
                     server.inlineCompletionWithReferences(params)
                 }
-                println(result)
                 result?.thenAccept { completion ->
-                    println(completion)
                     nextToken = completion.partialResultToken
                     val a = 1
                     requestCount++
@@ -335,58 +330,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
             val sessionId: String
             val displayMessage: String
 
-            if (
-                CustomizationConstants.invalidCustomizationExceptionPredicate(e) ||
-                e is ResourceNotFoundException
-            ) {
-                (e as CodeWhispererRuntimeException)
-
-                requestId = e.requestId().orEmpty()
-                sessionId = e.awsErrorDetails().sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
-                val exceptionType = e::class.simpleName
-                val responseContext = ResponseContext(sessionId)
-
-                CodeWhispererTelemetryServiceNew.getInstance().sendServiceInvocationEvent(
-                    currentJobId,
-                    requestId,
-                    requestContext,
-                    responseContext,
-                    lastRecommendationIndex,
-                    false,
-                    0.0,
-                    exceptionType
-                )
-
-                LOG.debug {
-                    "The provided customization ${requestContext.customizationArn} is not found, " +
-                        "will fallback to the default and retry generate completion"
-                }
-                logServiceInvocation(requestContext, responseContext, null, null, exceptionType)
-
-                notifyWarn(
-                    title = "",
-                    content = message("codewhisperer.notification.custom.not_available"),
-                    project = requestContext.project,
-                    notificationActions = listOf(
-                        NotificationAction.create(
-                            message("codewhisperer.notification.custom.simple.button.select_another_customization")
-                        ) { _, notification ->
-                            CodeWhispererModelConfigurator.getInstance().showConfigDialog(requestContext.project)
-                            notification.expire()
-                        }
-                    )
-                )
-                CodeWhispererInvocationStatusNew.getInstance().finishInvocation()
-
-                requestContext.customizationArn?.let { CodeWhispererModelConfigurator.getInstance().invalidateCustomization(it) }
-
-                showRecommendationsInPopup(
-                    requestContext.editor,
-                    requestContext.triggerTypeInfo,
-                    latencyContext
-                )
-                return
-            } else if (e is CodeWhispererRuntimeException) {
+            if (e is CodeWhispererRuntimeException) {
                 requestId = e.requestId().orEmpty()
                 sessionId = e.awsErrorDetails().sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
                 displayMessage = e.awsErrorDetails().errorMessage() ?: message("codewhisperer.trigger.error.server_side")
@@ -535,7 +479,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
             val detailContexts = completions.items.map {
                 DetailContext("", it, true, getCompletionType(it))
             }.toMutableList()
-            val recommendationContext = RecommendationContextNew(detailContexts, "", "", VisualPosition(0, 0), jobId)
+            val recommendationContext = RecommendationContextNew(detailContexts, "", VisualPosition(0, 0), jobId)
             ongoingRequests[jobId] = buildInvocationContext(requestContext, responseContext, recommendationContext)
             disposeDisplaySession(false)
             return null
@@ -637,48 +581,13 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         // 1. file context
         val fileContext: FileContextInfo = runReadAction { FileContextProvider.getInstance(project).extractFileContext(editor, psiFile) }
 
-        // the upper bound for supplemental context duration is 50ms
-        // 2. supplemental context
-        val supplementalContext = cs.async {
-            try {
-                FileContextProvider.getInstance(project).extractSupplementalFileContext(psiFile, fileContext, timeout = SUPPLEMENTAL_CONTEXT_TIMEOUT)
-            } catch (e: Exception) {
-                LOG.warn { "Run into unexpected error when fetching supplemental context, error: ${e.message}" }
-                null
-            }
-        }
-
         // 3. caret position
         val caretPosition = runReadAction { getCaretPosition(editor) }
 
         // 4. connection
         val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
 
-        // 5. customization
-        val customizationArn = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn
-
-        val profileArn = QRegionProfileManager.getInstance().activeProfile(project)?.arn
-
-        return RequestContextNew(project, editor, triggerTypeInfo, caretPosition, fileContext, supplementalContext, connection, customizationArn, profileArn)
-    }
-
-    fun validateResponse(response: GenerateCompletionsResponse): GenerateCompletionsResponse {
-        // If contentSpans in reference are not consistent with content(recommendations),
-        // remove the incorrect references.
-        val validatedRecommendations = response.completions().map {
-            val validReferences = it.hasReferences() && it.references().isNotEmpty() &&
-                it.references().none { reference ->
-                    val span = reference.recommendationContentSpan()
-                    span.start() > span.end() || span.start() < 0 || span.end() > it.content().length
-                }
-            if (validReferences) {
-                it
-            } else {
-                it.toBuilder().references(DefaultSdkAutoConstructList.getInstance()).build()
-            }
-        }
-
-        return response.toBuilder().completions(validatedRecommendations).build()
+        return RequestContextNew(project, editor, triggerTypeInfo, caretPosition, fileContext, connection)
     }
 
     private fun buildInvocationContext(
@@ -802,30 +711,8 @@ data class RequestContextNew(
     val triggerTypeInfo: TriggerTypeInfo,
     val caretPosition: CaretPosition,
     val fileContextInfo: FileContextInfo,
-    private val supplementalContextDeferred: Deferred<SupplementalContextInfo?>,
     val connection: ToolkitConnection?,
-    val customizationArn: String?,
-    val profileArn: String?,
-) {
-    // TODO: should make the entire getRequestContext() suspend function instead of making supplemental context only
-    var supplementalContext: SupplementalContextInfo? = null
-        private set
-        get() = when (field) {
-            null -> {
-                if (!supplementalContextDeferred.isCompleted) {
-                    error("attempt to access supplemental context before awaiting the deferred")
-                } else {
-                    null
-                }
-            }
-            else -> field
-        }
-
-    suspend fun awaitSupplementalContext(): SupplementalContextInfo? {
-        supplementalContext = supplementalContextDeferred.await()
-        return supplementalContext
-    }
-}
+)
 
 interface CodeWhispererIntelliSenseOnHoverListener {
     fun onEnter() {}

@@ -187,7 +187,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
 
         val language = psiFile.programmingLanguage()
         val leftContext = requestContext.fileContextInfo.caretContext.leftFileContext
-        // TODO: remove language check, flare needs to implement json aws template support only
+        // TODO flare: remove language check, flare needs to implement json aws template support only
         if (!language.isCodeCompletionSupported() || (
                 language is CodeWhispererJson && !isSupportedJsonFormat(
                     requestContext.fileContextInfo.filename,
@@ -248,12 +248,9 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 do {
                     val result = AmazonQLspService.executeIfRunning(requestContext.project) { server ->
                         val params = createInlineCompletionParams(requestContext.editor, requestContext.triggerTypeInfo, nextToken)
-                        println("cursor position: ${params.position.line}, ${params.position.character}")
                         server.inlineCompletionWithReferences(params)
                     }
-                    println(result)
                     result?.thenAccept { completion ->
-                        println(completion)
                         nextToken = completion.partialResultToken
                         requestCount++
                         val endTime = System.nanoTime()
@@ -311,7 +308,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     }?.get()
                 } while (nextToken != null)
             } catch (e: Exception) {
-                // TODO YUX: flare doesn't return exceptions
+                // TODO flare: flare doesn't return exceptions
                 val requestId: String
                 val sessionId: String
                 val displayMessage: String
@@ -494,13 +491,11 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
 
         if (CodeWhispererPopupManager.getInstance().hasConflictingPopups(requestContext.editor)) {
             LOG.debug { "Detect conflicting popup window with CodeWhisperer popup, not showing CodeWhisperer popup" }
-            // TODO YUX: log discard
             return null
         }
 
         if (caretMovement == CaretMovement.MOVE_BACKWARD) {
             LOG.debug { "Caret moved backward, discarding all of the recommendations. Session Id: ${completions.sessionId}" }
-            // TODO YUX: log discard
             return null
         }
         val userInput =
@@ -593,8 +588,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         // 5. customization
         val customizationArn = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn
 
-        val profileArn = QRegionProfileManager.getInstance().activeProfile(project)?.arn
-
         var workspaceId: String? = null
         try {
             val workspacesInfos = getWorkspaceIds(project).get().workspaces
@@ -618,7 +611,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             connection,
             latencyContext,
             customizationArn,
-            profileArn,
             workspaceId,
         )
     }
@@ -772,7 +764,6 @@ data class RequestContext(
     val connection: ToolkitConnection?,
     val latencyContext: LatencyContext,
     val customizationArn: String?,
-    val profileArn: String?,
     val workspaceId: String?,
 )
 
