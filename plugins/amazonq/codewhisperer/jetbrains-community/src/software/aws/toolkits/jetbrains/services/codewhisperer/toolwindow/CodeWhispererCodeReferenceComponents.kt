@@ -122,7 +122,7 @@ class CodeWhispererCodeReferenceComponents(private val project: Project) {
             )
             add(JLabel(" from ").asCodeReferencePanelFont(), inlineLabelConstraints)
             // TODO YUX: reference repository?
-//            add(JLabel(ref.repository), inlineLabelConstraints)
+            add(JLabel(ref.referenceName), inlineLabelConstraints)
         } else {
             add(
                 JLabel(ref.licenseName).apply {
@@ -132,7 +132,7 @@ class CodeWhispererCodeReferenceComponents(private val project: Project) {
             )
             add(JLabel(" from ").asCodeReferencePanelFont(), inlineLabelConstraints)
             // TODO YUX: reference repository?
-//            add(repoNameLink(ref.repository(), ref.referenceUrl), inlineLabelConstraints)
+            add(repoNameLink(ref.referenceName, ref.referenceUrl), inlineLabelConstraints)
         }
 
         if (!lineNums.isNullOrEmpty()) {

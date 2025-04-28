@@ -50,7 +50,6 @@ class CodeWhispererRecommendationAction : AnAction(message("codewhisperer.trigge
         }
 
         val triggerType = TriggerTypeInfo(CodewhispererTriggerType.OnDemand, CodeWhispererAutomatedTriggerType.Unknown())
-        CodeWhispererInvocationStatus.getInstance().timeAtLastManualTrigger = Instant.now()
         val job = if (CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()) {
             CodeWhispererServiceNew.getInstance().showRecommendationsInPopup(editor, triggerType, latencyContext)
         } else {

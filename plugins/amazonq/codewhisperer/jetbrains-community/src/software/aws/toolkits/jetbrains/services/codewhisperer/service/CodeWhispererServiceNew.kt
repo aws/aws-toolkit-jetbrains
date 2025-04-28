@@ -541,28 +541,22 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
             return null
         }
 
-        val userInputOriginal = CodeWhispererEditorManagerNew.getInstance().getUserInputSinceInvocation(
-            requestContext.editor,
-            requestContext.caretPosition.offset
-        )
         val userInput =
             if (caretMovement == CaretMovement.NO_CHANGE) {
                 LOG.debug { "Caret position not changed since invocation. Session Id: ${completions.sessionId}" }
                 ""
             } else {
-                userInputOriginal.trimStart().also {
-                    LOG.debug {
-                        "Caret position moved forward since invocation. Session Id: ${completions.sessionId}, " +
-                            "user input since invocation: $userInputOriginal, " +
-                            "user input without leading spaces: $it"
-                    }
-                }
+                LOG.debug { "Caret position moved forward since invocation. Session Id: ${completions.sessionId}" }
+                CodeWhispererEditorManagerNew.getInstance().getUserInputSinceInvocation(
+                    requestContext.editor,
+                    requestContext.caretPosition.offset
+                )
             }
         val detailContexts = CodeWhispererRecommendationManager.getInstance().buildDetailContext(
             userInput,
             completions,
         )
-        val recommendationContext = RecommendationContextNew(detailContexts, userInputOriginal, userInput, visualPosition, jobId)
+        val recommendationContext = RecommendationContextNew(detailContexts, userInput, visualPosition, jobId)
         ongoingRequests[jobId] = buildInvocationContext(requestContext, responseContext, recommendationContext)
         return ongoingRequests[jobId]
     }

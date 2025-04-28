@@ -25,7 +25,6 @@ class CodeWhispererInvocationStatus {
     private var timeAtLastInvocationStart: Instant? = null
     var completionShownTime: Instant? = null
         private set
-    var timeAtLastManualTrigger: Instant = Instant.now()
 
     fun checkExistingInvocationAndSet(): Boolean =
         if (isInvokingCodeWhisperer.getAndSet(true)) {
@@ -65,8 +64,6 @@ class CodeWhispererInvocationStatus {
         val timeInDouble = timeSinceDocumentChanged.toMillis().toDouble()
         return timeInDouble
     }
-
-    fun getTimeSinceLastManualTrigger() = Duration.between(timeAtLastManualTrigger, Instant.now()).toMillis().toDouble()
 
     fun hasEnoughDelayToShowCodeWhisperer(): Boolean {
         val timeCanShowCodeWhisperer = timeAtLastDocumentChanged.plusMillis(CodeWhispererConstants.POPUP_DELAY)

@@ -252,8 +252,8 @@ class CodeWhispererPopupManagerNew {
         }
         val editor = sessionContext.editor
         val previews = CodeWhispererServiceNew.getInstance().getAllSuggestionsPreviewInfo()
-        val userInputOriginal = previews[sessionContext.selectedIndex].userInput
-        val userInputLines = userInputOriginal.split("\n").size - 1
+        val userInput = previews[sessionContext.selectedIndex].userInput
+        val userInputLines = userInput.split("\n").size - 1
         val popupSize = (popup as AbstractPopup).preferredContentSize
         val yAboveFirstLine = p.y - popupSize.height + userInputLines * editor.lineHeight
         val popupRect = Rectangle(p.x, yAboveFirstLine, popupSize.width, popupSize.height)

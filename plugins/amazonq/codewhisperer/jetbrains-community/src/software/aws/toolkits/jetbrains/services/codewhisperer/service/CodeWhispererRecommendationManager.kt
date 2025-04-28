@@ -43,33 +43,5 @@ class CodeWhispererRecommendationManager {
 
     companion object {
         fun getInstance(): CodeWhispererRecommendationManager = service()
-
-        /**
-         * a function to trim extra prefixing new line character (only leave 1 new line character)
-         * example:
-         *  content = "\n\n\nfoo\n\nbar\nbaz"
-         *  return = "\nfoo\n\nbar\nbaz"
-         *
-         * example:
-         *  content = "\n\n\tfoobar\nbaz"
-         *  return = "\n\tfoobar\nbaz"
-         */
-        fun trimExtraPrefixNewLine(content: String): String {
-            if (content.isEmpty()) {
-                return ""
-            }
-
-            val firstChar = content.first()
-            if (firstChar != '\n') {
-                return content
-            }
-
-            var index = 1
-            while (index < content.length && content[index] == '\n') {
-                index++
-            }
-
-            return firstChar + content.substring(index)
-        }
     }
 }

@@ -131,7 +131,6 @@ class CodeWhispererPopupManager {
                 .recommendationAdded(states, sessionContext)
             return
         }
-        val userInputOriginal = recommendationContext.userInput
         val userInput = recommendationContext.userInput
         val typeaheadOriginal = run {
             val startOffset = states.requestContext.caretPosition.offset
@@ -144,11 +143,11 @@ class CodeWhispererPopupManager {
             // userInput + typeahead
             val prefix = states.requestContext.editor.document.charsSequence
                 .substring(startOffset, currOffset)
-            if (prefix.length < userInputOriginal.length) {
+            if (prefix.length < userInput.length) {
                 cancelPopup(popup)
                 return
             } else {
-                prefix.substring(userInputOriginal.length)
+                prefix.substring(userInput.length)
             }
         }
         val isReverse = indexChange < 0
@@ -284,12 +283,11 @@ class CodeWhispererPopupManager {
         val caretPoint = states.requestContext.editor.offsetToXY(states.requestContext.caretPosition.offset)
         val editor = states.requestContext.editor
         val detailContexts = states.recommendationContext.details
-        val userInputOriginal = states.recommendationContext.userInput
         val userInput = states.recommendationContext.userInput
         val selectedIndex = sessionContext.selectedIndex
         val typeaheadOriginal = sessionContext.typeaheadOriginal
         val typeahead = sessionContext.typeahead
-        val userInputLines = userInputOriginal.split("\n").size - 1
+        val userInputLines = userInput.split("\n").size - 1
         val lineCount = getReformattedRecommendation(detailContexts[selectedIndex], userInput).split("\n").size
         val additionalLines = typeaheadOriginal.split("\n").size - typeahead.split("\n").size
         val popupSize = (popup as AbstractPopup).preferredContentSize
