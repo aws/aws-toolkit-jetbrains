@@ -32,7 +32,7 @@ import java.util.Stack
 @Service
 class CodeWhispererEditorManager {
     fun updateEditorWithRecommendation(states: InvocationContext, sessionContext: SessionContext) {
-        val (requestContext, recommendationContext) = states
+        val (requestContext, _, recommendationContext) = states
         val (project, editor) = requestContext
         val document = editor.document
         val primaryCaret = editor.caretModel.primaryCaret
@@ -41,7 +41,7 @@ class CodeWhispererEditorManager {
         val detail = recommendationContext.details[selectedIndex]
         val reformatted = CodeWhispererPopupManager.getInstance().getReformattedRecommendation(
             detail,
-            recommendationContext.userInputSinceInvocation
+            recommendationContext.userInput
         )
         val remainingRecommendation = reformatted.substring(typeahead.length)
         val originalOffset = primaryCaret.offset - typeahead.length
@@ -50,6 +50,8 @@ class CodeWhispererEditorManager {
 
         val insertEndOffset = sessionContext.insertEndOffset
         val endOffsetToReplace = if (insertEndOffset != -1) insertEndOffset else primaryCaret.offset
+
+        detail.isAccepted = true
 
         WriteCommandAction.runWriteCommandAction(project) {
             broadcastQEvent(QFeatureEvent.STARTS_EDITING)

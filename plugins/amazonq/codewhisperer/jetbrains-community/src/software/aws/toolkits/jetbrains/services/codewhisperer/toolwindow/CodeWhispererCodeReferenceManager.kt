@@ -110,7 +110,7 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
     }
 
     fun insertCodeReference(states: InvocationContext, selectedIndex: Int) {
-        val (requestContext, recommendationContext) = states
+        val (requestContext, _, recommendationContext) = states
         val (_, editor, _, caretPosition) = requestContext
         val (_, completion) = recommendationContext.details[selectedIndex]
         insertCodeReference(completion.insertText, completion.references, editor, caretPosition, completion)
@@ -119,11 +119,11 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
     fun insertCodeReference(states: InvocationContextNew, previews: List<PreviewContext>, selectedIndex: Int) {
         val detail = previews[selectedIndex].detail
         insertCodeReference(
-            detail.recommendation.content(),
-            detail.reformatted.references(),
+            detail.completion.insertText,
+            detail.completion.references,
             states.requestContext.editor,
             states.requestContext.caretPosition,
-            detail.recommendation
+            detail.completion
         )
     }
 

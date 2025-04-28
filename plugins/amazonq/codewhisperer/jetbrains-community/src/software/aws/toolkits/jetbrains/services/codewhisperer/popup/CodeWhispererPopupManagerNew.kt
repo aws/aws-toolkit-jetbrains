@@ -220,7 +220,6 @@ class CodeWhispererPopupManagerNew {
         // 4. User navigating through the completions or typing as the completion shows. We should not update the latency
         // end time and should not emit any events in this case.
         if (!CodeWhispererInvocationStatusNew.getInstance().isDisplaySessionActive()) {
-            sessionContext.latencyContext.codewhispererPostprocessingEnd = System.nanoTime()
             sessionContext.latencyContext.codewhispererEndToEndEnd = System.nanoTime()
             val triggerTypeOfLastTrigger = CodeWhispererServiceNew.getInstance().getAllPaginationSessions()
                 .values.filterNotNull().last().requestContext.triggerTypeInfo.triggerType

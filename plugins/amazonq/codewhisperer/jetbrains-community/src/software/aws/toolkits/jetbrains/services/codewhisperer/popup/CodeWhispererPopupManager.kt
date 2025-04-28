@@ -40,8 +40,6 @@ import com.intellij.ui.popup.AbstractPopup
 import com.intellij.ui.popup.PopupFactoryImpl
 import com.intellij.util.messages.Topic
 import com.intellij.util.ui.UIUtil
-import software.amazon.awssdk.services.codewhispererruntime.model.Import
-import software.amazon.awssdk.services.codewhispererruntime.model.Reference
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionImports
@@ -67,7 +65,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.Co
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererPrevButtonActionListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererScrollListener
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererColorUtil.POPUP_DIM_HEX
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.POPUP_INFO_TEXT_SIZE
@@ -81,6 +78,7 @@ import java.awt.event.ComponentListener
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JLabel
+import kotlin.math.min
 
 @Service
 class CodeWhispererPopupManager {
@@ -123,7 +121,7 @@ class CodeWhispererPopupManager {
         indexChange: Int,
         recommendationAdded: Boolean = false,
     ) {
-        val (_, recommendationContext, popup) = states
+        val (_, _, recommendationContext, popup) = states
         val (details) = recommendationContext
         if (recommendationAdded) {
             LOG.debug {
@@ -133,8 +131,8 @@ class CodeWhispererPopupManager {
                 .recommendationAdded(states, sessionContext)
             return
         }
-        val userInputOriginal = recommendationContext.userInputOriginal
-        val userInput = recommendationContext.userInputSinceInvocation
+        val userInputOriginal = recommendationContext.userInput
+        val userInput = recommendationContext.userInput
         val typeaheadOriginal = run {
             val startOffset = states.requestContext.caretPosition.offset
             val currOffset = states.requestContext.editor.caretModel.offset
@@ -192,7 +190,7 @@ class CodeWhispererPopupManager {
 
     private fun resolveTypeahead(states: InvocationContext, selectedIndex: Int, typeahead: String): String {
         val recommendation = states.recommendationContext.details[selectedIndex].completion.insertText
-        val userInput = states.recommendationContext.userInputSinceInvocation
+        val userInput = states.recommendationContext.userInput
         var indexOfFirstNonWhiteSpace = typeahead.indexOfFirst { !it.isWhitespace() }
         if (indexOfFirstNonWhiteSpace == -1) {
             indexOfFirstNonWhiteSpace = typeahead.length
@@ -206,7 +204,7 @@ class CodeWhispererPopupManager {
     }
 
     fun updatePopupPanel(states: InvocationContext, sessionContext: SessionContext) {
-        val userInput = states.recommendationContext.userInputSinceInvocation
+        val userInput = states.recommendationContext.userInput
         val details = states.recommendationContext.details
         val selectedIndex = sessionContext.selectedIndex
         val typeaheadOriginal = sessionContext.typeaheadOriginal
@@ -238,7 +236,6 @@ class CodeWhispererPopupManager {
         // 4. User navigating through the completions or typing as the completion shows. We should not update the latency
         // end time and should not emit any events in this case.
         if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()) {
-            states.requestContext.latencyContext.codewhispererPostprocessingEnd = System.nanoTime()
             states.requestContext.latencyContext.codewhispererEndToEndEnd = System.nanoTime()
             states.requestContext.latencyContext.perceivedLatency =
                 states.requestContext.latencyContext.getPerceivedLatency(states.requestContext.triggerTypeInfo.triggerType)
@@ -288,8 +285,8 @@ class CodeWhispererPopupManager {
         val caretPoint = states.requestContext.editor.offsetToXY(states.requestContext.caretPosition.offset)
         val editor = states.requestContext.editor
         val detailContexts = states.recommendationContext.details
-        val userInputOriginal = states.recommendationContext.userInputOriginal
-        val userInput = states.recommendationContext.userInputSinceInvocation
+        val userInputOriginal = states.recommendationContext.userInput
+        val userInput = states.recommendationContext.userInput
         val selectedIndex = sessionContext.selectedIndex
         val typeaheadOriginal = sessionContext.typeaheadOriginal
         val typeahead = sessionContext.typeahead
@@ -367,14 +364,11 @@ class CodeWhispererPopupManager {
                 popup.showInBestPositionFor(editor)
             }
             if (sessionContext.perceivedLatency < 0) {
-                val perceivedLatency = CodeWhispererInvocationStatus.getInstance().getTimeSinceDocumentChanged()
+                val perceivedLatency = min(
+                    CodeWhispererInvocationStatus.getInstance().getTimeSinceDocumentChanged(),
+                    CodeWhispererInvocationStatus.getInstance().getTimeSinceLastManualTrigger()
+                )
                 // TODO: call perceived Latency hook
-//                CodeWhispererTelemetryService.getInstance().sendPerceivedLatencyEvent(
-//                    detailContexts[selectedIndex].itemId,
-//                    states.requestContext,
-//                    states.responseContext,
-//                    perceivedLatency
-//                )
 //                CodeWhispererTelemetryService.getInstance().sendClientComponentLatencyEvent(states)
                 sessionContext.perceivedLatency = perceivedLatency
             }

@@ -17,38 +17,6 @@ import kotlin.math.min
 
 @Service
 class CodeWhispererRecommendationManager {
-    fun reformatReference(requestContext: RequestContext, recommendation: Completion): Completion {
-        // startOffset is the offset at the start of user input since invocation
-        val invocationStartOffset = requestContext.caretPosition.offset
-
-        val startOffsetSinceUserInput = requestContext.editor.caretModel.offset
-        val endOffset = invocationStartOffset + recommendation.content().length
-
-        if (startOffsetSinceUserInput > endOffset) return recommendation
-
-        val reformattedReferences = recommendation.references().filter {
-            val referenceStart = invocationStartOffset + it.recommendationContentSpan().start()
-            val referenceEnd = invocationStartOffset + it.recommendationContentSpan().end()
-            referenceStart < endOffset && referenceEnd > startOffsetSinceUserInput
-        }.map {
-            val referenceStart = invocationStartOffset + it.recommendationContentSpan().start()
-            val referenceEnd = invocationStartOffset + it.recommendationContentSpan().end()
-            val updatedReferenceStart = max(referenceStart, startOffsetSinceUserInput)
-            val updatedReferenceEnd = min(referenceEnd, endOffset)
-            it.toBuilder().recommendationContentSpan(
-                Span.builder()
-                    .start(updatedReferenceStart - invocationStartOffset)
-                    .end(updatedReferenceEnd - invocationStartOffset)
-                    .build()
-            ).build()
-        }
-
-        return Completion.builder()
-            .content(recommendation.content())
-            .references(reformattedReferences)
-            .build()
-    }
-
     fun buildRecommendationChunks(
         recommendation: String,
         matchingSymbols: List<Pair<Int, Int>>,
@@ -71,49 +39,6 @@ class CodeWhispererRecommendationManager {
                 getCompletionType(it)
             )
         }.toMutableList()
-    }
-
-    fun findRightContextOverlap(
-        requestContext: RequestContext,
-        recommendation: Completion,
-    ): String {
-        val document = requestContext.editor.document
-        val caret = requestContext.editor.caretModel.primaryCaret
-        val rightContext = document.charsSequence.subSequence(caret.offset, document.charsSequence.length).toString()
-        val recommendationContent = recommendation.content()
-        return findRightContextOverlap(rightContext, recommendationContent)
-    }
-
-    @VisibleForTesting
-    fun findRightContextOverlap(rightContext: String, recommendationContent: String): String {
-        val rightContextFirstLine = rightContext.substringBefore("\n")
-        val overlap =
-            if (rightContextFirstLine.isEmpty()) {
-                val tempOverlap = overlap(recommendationContent, rightContext)
-                if (tempOverlap.isEmpty()) overlap(recommendationContent.trimEnd(), trimExtraPrefixNewLine(rightContext)) else tempOverlap
-            } else {
-                // this is necessary to prevent display issue if first line of right context is not empty
-                var tempOverlap = overlap(recommendationContent, rightContext)
-                if (tempOverlap.isEmpty()) {
-                    tempOverlap = overlap(recommendationContent.trimEnd(), trimExtraPrefixNewLine(rightContext))
-                }
-                if (recommendationContent.substring(0, recommendationContent.length - tempOverlap.length).none { it == '\n' }) {
-                    tempOverlap
-                } else {
-                    ""
-                }
-            }
-        return overlap
-    }
-
-    fun overlap(first: String, second: String): String {
-        for (i in max(0, first.length - second.length) until first.length) {
-            val suffix = first.substring(i)
-            if (second.startsWith(suffix)) {
-                return suffix
-            }
-        }
-        return ""
     }
 
     companion object {

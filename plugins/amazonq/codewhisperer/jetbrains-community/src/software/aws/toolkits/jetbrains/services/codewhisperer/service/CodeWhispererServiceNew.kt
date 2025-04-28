@@ -163,7 +163,6 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
             }
         }
 
-        latencyContext.credentialFetchingEnd = System.nanoTime()
         val psiFile = runReadAction { PsiDocumentManager.getInstance(project).getPsiFile(editor.document) }
 
         if (psiFile == null) {
@@ -271,7 +270,6 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
 //                    val requestId = response.responseMetadata().requestId()
 //                    val sessionId = response.sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
                     if (requestCount == 1) {
-                        latencyContext.codewhispererPostprocessingStart = System.nanoTime()
                         latencyContext.paginationFirstCompletionTime = latency
 //                        latencyContext.firstRequestId = requestId
 //                        CodeWhispererInvocationStatusNew.getInstance().setInvocationSessionId(sessionId)
@@ -279,7 +277,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
 //                    if (response.nextToken().isEmpty()) {
 //                        latencyContext.paginationAllCompletionsEnd = System.nanoTime()
 //                    }
-//                    val responseContext = ResponseContext(sessionId)
+                    val responseContext = ResponseContext(completion.sessionId)
 //                    logServiceInvocation(requestId, requestContext, responseContext, response.completions(), latency, null)
                     lastRecommendationIndex += completion.items.size
                     ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_CODE_COMPLETION_PERFORMED)
@@ -307,7 +305,7 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                         // task hasn't been finished yet, in this case simply add another task to the queue. If they
                         // see worker queue is empty, the previous tasks must have been finished before this. In this
                         // case render CodeWhisperer UI directly.
-                        val workerContext = WorkerContextNew(requestContext, completion)
+                        val workerContext = WorkerContextNew(requestContext, responseContext, completion)
                         if (workerContexts.isNotEmpty()) {
                             workerContexts.add(workerContext)
                         } else {

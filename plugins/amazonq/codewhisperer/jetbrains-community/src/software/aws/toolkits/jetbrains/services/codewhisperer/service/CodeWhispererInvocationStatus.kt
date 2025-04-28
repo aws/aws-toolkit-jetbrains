@@ -23,8 +23,9 @@ class CodeWhispererInvocationStatus {
         private set
     private var isDisplaySessionActive: Boolean = false
     private var timeAtLastInvocationStart: Instant? = null
-    var popupStartTimestamp: Instant? = null
+    var completionShownTime: Instant? = null
         private set
+    var timeAtLastManualTrigger: Instant = Instant.now()
 
     fun checkExistingInvocationAndSet(): Boolean =
         if (isInvokingCodeWhisperer.getAndSet(true)) {
@@ -52,10 +53,11 @@ class CodeWhispererInvocationStatus {
 
     fun documentChanged() {
         timeAtLastDocumentChanged = Instant.now()
+        println("document change now")
     }
 
-    fun setPopupStartTimestamp() {
-        popupStartTimestamp = Instant.now()
+    fun completionShown() {
+        completionShownTime = Instant.now()
     }
 
     fun getTimeSinceDocumentChanged(): Double {
@@ -63,6 +65,8 @@ class CodeWhispererInvocationStatus {
         val timeInDouble = timeSinceDocumentChanged.toMillis().toDouble()
         return timeInDouble
     }
+
+    fun getTimeSinceLastManualTrigger() = Duration.between(timeAtLastManualTrigger, Instant.now()).toMillis().toDouble()
 
     fun hasEnoughDelayToShowCodeWhisperer(): Boolean {
         val timeCanShowCodeWhisperer = timeAtLastDocumentChanged.plusMillis(CodeWhispererConstants.POPUP_DELAY)

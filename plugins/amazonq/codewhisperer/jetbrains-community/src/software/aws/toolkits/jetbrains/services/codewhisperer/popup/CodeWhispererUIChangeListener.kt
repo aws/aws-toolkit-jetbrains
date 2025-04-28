@@ -27,10 +27,12 @@ class CodeWhispererUIChangeListener : CodeWhispererPopupStateChangeListener {
         val document = editor.document
         val lineEndOffset = document.getLineEndOffset(document.getLineNumber(caretOffset))
 
+        detail.hasSeen = true
+
         // get matching brackets from recommendations to the brackets after caret position
         val remaining = CodeWhispererPopupManager.getInstance().getReformattedRecommendation(
             detail,
-            states.recommendationContext.userInputSinceInvocation
+            states.recommendationContext.userInput
         ).substring(typeahead.length)
 
         val remainingLines = remaining.split("\n")
@@ -105,7 +107,7 @@ class CodeWhispererUIChangeListener : CodeWhispererPopupStateChangeListener {
         // get matching brackets from recommendations to the brackets after caret position
         val remaining = CodeWhispererPopupManager.getInstance().getReformattedRecommendation(
             detail,
-            states.recommendationContext.userInputSinceInvocation
+            states.recommendationContext.userInput
         ).substring(typeahead.length)
 
         val remainingLines = remaining.split("\n")

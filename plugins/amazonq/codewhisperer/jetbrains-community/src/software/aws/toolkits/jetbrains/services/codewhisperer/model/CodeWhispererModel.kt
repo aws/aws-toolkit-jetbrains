@@ -26,7 +26,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispe
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererServiceNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContextNew
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryServiceNew
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.setIntelliSensePopupAlpha
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
@@ -35,8 +35,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.UtgStrategy
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import software.aws.toolkits.telemetry.Result
-import java.time.Duration
-import java.time.Instant
 import java.util.concurrent.TimeUnit
 
 data class Chunk(
@@ -96,8 +94,7 @@ data class SupplementalContextInfo(
 
 data class RecommendationContext(
     val details: List<DetailContext>,
-    val userInputOriginal: String,
-    val userInputSinceInvocation: String,
+    val userInput: String,
     val position: VisualPosition,
 )
 
@@ -200,6 +197,7 @@ data class TriggerTypeInfo(
 
 data class InvocationContext(
     val requestContext: RequestContext,
+    val responseContext: ResponseContext,
     val recommendationContext: RecommendationContext,
     val popup: JBPopup,
 ) : Disposable {
@@ -221,12 +219,14 @@ data class InvocationContextNew(
 }
 data class WorkerContext(
     val requestContext: RequestContext,
+    val responseContext: ResponseContext,
     val completions: InlineCompletionListWithReferences,
     val popup: JBPopup,
 )
 
 data class WorkerContextNew(
     val requestContext: RequestContextNew,
+    val responseContext: ResponseContext,
     val completions: InlineCompletionListWithReferences,
 )
 
@@ -256,16 +256,12 @@ data class CodeScanResponseContext(
 
 data class LatencyContext(
     var credentialFetchingStart: Long = 0L,
-    var credentialFetchingEnd: Long = 0L,
 
     var codewhispererPreprocessingStart: Long = 0L,
     var codewhispererPreprocessingEnd: Long = 0L,
 
     var paginationFirstCompletionTime: Double = 0.0,
     var perceivedLatency: Double = 0.0,
-
-    var codewhispererPostprocessingStart: Long = 0L,
-    var codewhispererPostprocessingEnd: Long = 0L,
 
     var codewhispererEndToEndStart: Long = 0L,
     var codewhispererEndToEndEnd: Long = 0L,
@@ -281,18 +277,6 @@ data class LatencyContext(
 
     fun getCodeWhispererAllCompletionsLatency() = TimeUnit.NANOSECONDS.toMillis(
         paginationAllCompletionsEnd - paginationAllCompletionsStart
-    ).toDouble()
-
-    fun getCodeWhispererPostprocessingLatency() = TimeUnit.NANOSECONDS.toMillis(
-        codewhispererPostprocessingEnd - codewhispererPostprocessingStart
-    ).toDouble()
-
-    fun getCodeWhispererCredentialFetchingLatency() = TimeUnit.NANOSECONDS.toMillis(
-        credentialFetchingEnd - credentialFetchingStart
-    ).toDouble()
-
-    fun getCodeWhispererPreprocessingLatency() = TimeUnit.NANOSECONDS.toMillis(
-        codewhispererPreprocessingEnd - codewhispererPreprocessingStart
     ).toDouble()
 
     // For auto-trigger it's from the time when last char typed

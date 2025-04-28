@@ -18,6 +18,10 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.InlineCompletionStates
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LogInlineCompletionSessionResultsParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanIssue
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
@@ -26,6 +30,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContex
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutoTriggerService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
@@ -94,100 +99,124 @@ class CodeWhispererTelemetryService {
         )
     }
 
-    fun sendServiceInvocationEvent(
-        requestId: String,
-        requestContext: RequestContext,
-        responseContext: ResponseContext,
-        lastRecommendationIndex: Int,
-        invocationSuccess: Boolean,
-        latency: Double,
-        exceptionType: String?,
+//    fun sendServiceInvocationEvent(
+//        requestId: String,
+//        requestContext: RequestContext,
+//        responseContext: ResponseContext,
+//        lastRecommendationIndex: Int,
+//        invocationSuccess: Boolean,
+//        latency: Double,
+//        exceptionType: String?,
+//    ) {
+//        val (triggerType, automatedTriggerType) = requestContext.triggerTypeInfo
+//        val (offset, line) = requestContext.caretPosition
+//
+//        // since python now only supports UTG but not cross file context
+//        val supContext = if (requestContext.fileContextInfo.programmingLanguage.isUTGSupported() &&
+//            requestContext.supplementalContext?.isUtg == true
+//        ) {
+//            requestContext.supplementalContext
+//        } else if (requestContext.fileContextInfo.programmingLanguage.isSupplementalContextSupported() &&
+//            requestContext.supplementalContext?.isUtg == false
+//        ) {
+//            requestContext.supplementalContext
+//        } else {
+//            null
+//        }
+//
+//        val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toTelemetryType()
+//        val startUrl = getConnectionStartUrl(requestContext.connection)
+//        CodewhispererTelemetry.serviceInvocation(
+//            project = requestContext.project,
+//            codewhispererAutomatedTriggerType = automatedTriggerType.telemetryType,
+//            codewhispererCompletionType = CodewhispererCompletionType.Line,
+//            codewhispererCursorOffset = offset.toLong(),
+//            codewhispererGettingStartedTask = getGettingStartedTaskType(requestContext.editor),
+//            codewhispererLanguage = codewhispererLanguage,
+//            codewhispererLastSuggestionIndex = lastRecommendationIndex.toLong(),
+//            codewhispererLineNumber = line.toLong(),
+//            codewhispererRequestId = requestId,
+//            codewhispererSessionId = responseContext.sessionId,
+//            codewhispererTriggerType = triggerType,
+//            duration = latency,
+//            reason = exceptionType,
+//            success = invocationSuccess,
+//            credentialStartUrl = startUrl,
+//            codewhispererImportRecommendationEnabled = CodeWhispererSettings.getInstance().isImportAdderEnabled(),
+//            codewhispererSupplementalContextTimeout = supContext?.isProcessTimeout,
+//            codewhispererSupplementalContextIsUtg = supContext?.isUtg,
+//            codewhispererSupplementalContextLatency = supContext?.latency?.toDouble(),
+//            codewhispererSupplementalContextLength = supContext?.contentLength?.toLong(),
+//            codewhispererCustomizationArn = requestContext.customizationArn,
+//        )
+//    }
+
+//    fun sendUserDecisionEvent(
+//        requestContext: RequestContext,
+//        responseContext: ResponseContext,
+//        detailContext: DetailContext,
+//        index: Int,
+//        suggestionState: CodewhispererSuggestionState,
+//        numOfRecommendations: Int,
+//    ) {
+//        val requestId = detailContext.itemId
+//        val completion = detailContext.completion
+//        val (project, _, triggerTypeInfo) = requestContext
+//        val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toTelemetryType()
+//        val supplementalContext = requestContext.supplementalContext
+//
+//        LOG.debug {
+//            "Recording user decisions of recommendation. " +
+//                "Index: $index, " +
+//                "State: $suggestionState, " +
+//                "Request ID: $requestId, " +
+//                "Recommendation: ${completion.insertText}"
+//        }
+//        val startUrl = getConnectionStartUrl(requestContext.connection)
+//        val importEnabled = CodeWhispererSettings.getInstance().isImportAdderEnabled()
+//        CodewhispererTelemetry.userDecision(
+//            project = project,
+//            codewhispererCompletionType = detailContext.completionType,
+//            codewhispererGettingStartedTask = getGettingStartedTaskType(requestContext.editor),
+//            codewhispererLanguage = codewhispererLanguage,
+//            codewhispererPaginationProgress = numOfRecommendations.toLong(),
+//            codewhispererRequestId = requestId,
+//            codewhispererSessionId = responseContext.sessionId,
+//            codewhispererSuggestionIndex = index.toLong(),
+//            codewhispererSuggestionReferenceCount = completion.references?.size?.toLong() ?: 0,
+//            codewhispererSuggestionReferences = jacksonObjectMapper().writeValueAsString(completion.references?.map { it.licenseName }?.toSet()?.toList()),
+//            codewhispererSuggestionImportCount = if (importEnabled) completion.mostRelevantMissingImports?.size?.toLong() else null,
+//            codewhispererSuggestionState = suggestionState,
+//            codewhispererTriggerType = triggerTypeInfo.triggerType,
+//            credentialStartUrl = startUrl,
+//            codewhispererSupplementalContextIsUtg = supplementalContext?.isUtg,
+//            codewhispererSupplementalContextLength = supplementalContext?.contentLength?.toLong(),
+//            codewhispererSupplementalContextTimeout = supplementalContext?.isProcessTimeout,
+//        )
+//    }
+
+    fun sendUserTriggerDecisionEvent(
+        project: Project,
+        sessionId: String,
+        recommendationContext: RecommendationContext,
     ) {
-        val (triggerType, automatedTriggerType) = requestContext.triggerTypeInfo
-        val (offset, line) = requestContext.caretPosition
-
-        // since python now only supports UTG but not cross file context
-        val supContext = if (requestContext.fileContextInfo.programmingLanguage.isUTGSupported() &&
-            requestContext.supplementalContext?.isUtg == true
-        ) {
-            requestContext.supplementalContext
-        } else if (requestContext.fileContextInfo.programmingLanguage.isSupplementalContextSupported() &&
-            requestContext.supplementalContext?.isUtg == false
-        ) {
-            requestContext.supplementalContext
-        } else {
-            null
+        AmazonQLspService.executeIfRunning(project) { server ->
+            val params = LogInlineCompletionSessionResultsParams(
+                sessionId = sessionId,
+                completionSessionResult = recommendationContext.details.associate {
+                    it.itemId to InlineCompletionStates(
+                        seen = it.hasSeen,
+                        accepted = it.isAccepted,
+                        discarded = it.isDiscarded
+                    )
+                },
+                firstCompletionDisplayLatency = CodeWhispererPopupManager.getInstance().sessionContext.perceivedLatency,
+                totalSessionDisplayTime = CodeWhispererInvocationStatus.getInstance().completionShownTime?.let { Duration.between(it, Instant.now()) }
+                    ?.toMillis()?.toDouble(),
+                typeaheadLength = recommendationContext.userInput.length.toLong()
+            )
+            server.logInlineCompletionSessionResults(params)
         }
-
-        val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toTelemetryType()
-        val startUrl = getConnectionStartUrl(requestContext.connection)
-        CodewhispererTelemetry.serviceInvocation(
-            project = requestContext.project,
-            codewhispererAutomatedTriggerType = automatedTriggerType.telemetryType,
-            codewhispererCompletionType = CodewhispererCompletionType.Line,
-            codewhispererCursorOffset = offset.toLong(),
-            codewhispererGettingStartedTask = getGettingStartedTaskType(requestContext.editor),
-            codewhispererLanguage = codewhispererLanguage,
-            codewhispererLastSuggestionIndex = lastRecommendationIndex.toLong(),
-            codewhispererLineNumber = line.toLong(),
-            codewhispererRequestId = requestId,
-            codewhispererSessionId = responseContext.sessionId,
-            codewhispererTriggerType = triggerType,
-            duration = latency,
-            reason = exceptionType,
-            success = invocationSuccess,
-            credentialStartUrl = startUrl,
-            codewhispererImportRecommendationEnabled = CodeWhispererSettings.getInstance().isImportAdderEnabled(),
-            codewhispererSupplementalContextTimeout = supContext?.isProcessTimeout,
-            codewhispererSupplementalContextIsUtg = supContext?.isUtg,
-            codewhispererSupplementalContextLatency = supContext?.latency?.toDouble(),
-            codewhispererSupplementalContextLength = supContext?.contentLength?.toLong(),
-            codewhispererCustomizationArn = requestContext.customizationArn,
-        )
-    }
-
-    fun sendUserDecisionEvent(
-        requestContext: RequestContext,
-        responseContext: ResponseContext,
-        detailContext: DetailContext,
-        index: Int,
-        suggestionState: CodewhispererSuggestionState,
-        numOfRecommendations: Int,
-    ) {
-        val requestId = detailContext.itemId
-        val completion = detailContext.completion
-        val (project, _, triggerTypeInfo) = requestContext
-        val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toTelemetryType()
-        val supplementalContext = requestContext.supplementalContext
-
-        LOG.debug {
-            "Recording user decisions of recommendation. " +
-                "Index: $index, " +
-                "State: $suggestionState, " +
-                "Request ID: $requestId, " +
-                "Recommendation: ${completion.insertText}"
-        }
-        val startUrl = getConnectionStartUrl(requestContext.connection)
-        val importEnabled = CodeWhispererSettings.getInstance().isImportAdderEnabled()
-        CodewhispererTelemetry.userDecision(
-            project = project,
-            codewhispererCompletionType = detailContext.completionType,
-            codewhispererGettingStartedTask = getGettingStartedTaskType(requestContext.editor),
-            codewhispererLanguage = codewhispererLanguage,
-            codewhispererPaginationProgress = numOfRecommendations.toLong(),
-            codewhispererRequestId = requestId,
-            codewhispererSessionId = responseContext.sessionId,
-            codewhispererSuggestionIndex = index.toLong(),
-            codewhispererSuggestionReferenceCount = completion.references?.size?.toLong() ?: 0,
-            codewhispererSuggestionReferences = jacksonObjectMapper().writeValueAsString(completion.references?.map { it.licenseName }?.toSet()?.toList()),
-            codewhispererSuggestionImportCount = if (importEnabled) completion.mostRelevantMissingImports?.size?.toLong() else null,
-            codewhispererSuggestionState = suggestionState,
-            codewhispererTriggerType = triggerTypeInfo.triggerType,
-            credentialStartUrl = startUrl,
-            codewhispererSupplementalContextIsUtg = supplementalContext?.isUtg,
-            codewhispererSupplementalContextLength = supplementalContext?.contentLength?.toLong(),
-            codewhispererSupplementalContextTimeout = supplementalContext?.isProcessTimeout,
-        )
     }
 
 //    fun sendUserTriggerDecisionEvent(
@@ -535,29 +564,6 @@ class CodeWhispererTelemetryService {
         } else {
             CodewhispererPreviousSuggestionState.Discard
         }
-    }
-
-    fun sendPerceivedLatencyEvent(
-        requestId: String,
-        requestContext: RequestContext,
-        responseContext: ResponseContext,
-        latency: Double,
-    ) {
-        val (project, _, triggerTypeInfo) = requestContext
-        val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage.toTelemetryType()
-        val startUrl = getConnectionStartUrl(requestContext.connection)
-        CodewhispererTelemetry.perceivedLatency(
-            project = project,
-            codewhispererCompletionType = CodewhispererCompletionType.Line,
-            codewhispererLanguage = codewhispererLanguage,
-            codewhispererRequestId = requestId,
-            codewhispererSessionId = responseContext.sessionId,
-            codewhispererTriggerType = triggerTypeInfo.triggerType,
-            duration = latency,
-            passive = true,
-            credentialStartUrl = startUrl,
-            codewhispererCustomizationArn = requestContext.customizationArn,
-        )
     }
 
 //    fun sendClientComponentLatencyEvent(states: InvocationContext) {

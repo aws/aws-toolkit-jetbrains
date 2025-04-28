@@ -15,10 +15,12 @@ import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileMa
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererServiceNew
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicReference
 
 class CodeWhispererRecommendationAction : AnAction(message("codewhisperer.trigger.service")), DumbAware {
@@ -54,6 +56,7 @@ class CodeWhispererRecommendationAction : AnAction(message("codewhisperer.trigge
 //        } else {
 //            CodeWhispererService.getInstance().showRecommendationsInPopup(editor, triggerType, latencyContext)
 //        }
+        CodeWhispererInvocationStatus.getInstance().timeAtLastManualTrigger = Instant.now()
         val job = CodeWhispererService.getInstance().showRecommendationsInPopup(editor, triggerType, latencyContext)
 
         e.getData(CommonDataKeys.EDITOR)?.getUserData(ACTION_JOB_KEY)?.set(job)

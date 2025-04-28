@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.event.DocumentEvent
@@ -66,15 +67,17 @@ class TextDocumentServiceHandler(
     }
 
     private fun handleFileOpened(file: VirtualFile) {
-        FileDocumentManager.getInstance().getDocument(file)?.addDocumentListener(
-            object : DocumentListener {
-                override fun documentChanged(event: DocumentEvent) {
-                    realTimeEdit(event)
-                }
-            },
-            serverInstance
-        )
-        println("called handleFileOpened")
+        ApplicationManager.getApplication().runReadAction {
+            FileDocumentManager.getInstance().getDocument(file)?.addDocumentListener(
+                object : DocumentListener {
+                    override fun documentChanged(event: DocumentEvent) {
+                        realTimeEdit(event)
+                    }
+                },
+                serverInstance
+            )
+            println("called handleFileOpened")
+        }
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             toUriString(file)?.let { uri ->
                 languageServer.textDocumentService.didOpen(
