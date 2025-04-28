@@ -180,11 +180,13 @@ class AmazonQLanguageClientImplTest {
                 AmazonQLspConfiguration(
                     optOutTelemetry = telemetryEnabled,
                     customization = customizationArn,
-                    enableLocalIndexing = enableIndexing,
-                    enableGpuAcceleration = enableGpu,
-                    indexWorkerThreads = workerThreads,
-                    localIndexing = LocalIndexingConfiguration(
-                        maxIndexSizeMB = indexSize,
+                    projectContext = ProjectContextConfiguration(
+                        enableLocalIndexing = enableIndexing,
+                        enableGpuAcceleration = enableGpu,
+                        indexWorkerThreads = workerThreads,
+                        localIndexing = LocalIndexingConfiguration(
+                            maxIndexSizeMB = indexSize,
+                        )
                     )
                 )
             )
@@ -196,14 +198,16 @@ class AmazonQLanguageClientImplTest {
             optOutTelemetry = true,
             enableTelemetryEvents = true,
             customization = "arn",
-            enableLocalIndexing = true,
-            enableGpuAcceleration = true,
-            indexWorkerThreads = 123,
-            localIndexing = LocalIndexingConfiguration(
-                maxFileSizeMB = 789,
-                maxIndexSizeMB = 456,
-                indexCacheDirPath = "/a/path",
-                ignoreFilePatterns = listOf("ignore", "patterns")
+            projectContext = ProjectContextConfiguration(
+                enableLocalIndexing = true,
+                enableGpuAcceleration = true,
+                indexWorkerThreads = 123,
+                localIndexing = LocalIndexingConfiguration(
+                    maxFileSizeMB = 789,
+                    maxIndexSizeMB = 456,
+                    indexCacheDirPath = "/a/path",
+                    ignoreFilePatterns = listOf("ignore", "patterns")
+                )
             )
         )
 
@@ -214,17 +218,19 @@ class AmazonQLanguageClientImplTest {
                 "optOutTelemetry": true,
                 "enableTelemetryEventsToDestination": true,
                 "customization": "arn",
-                "enableLocalIndexing": true,
-                "enableGpuAcceleration": true,
-                "indexWorkerThreads": 123,
-                "localIndexing": {
-                    "ignoreFilePatterns": [
-                        "ignore",
-                        "patterns"
-                    ],
-                    "maxFileSizeMB": 789,
-                    "maxIndexSizeMB": 456,
-                    "indexCacheDirPath": "/a/path"
+                "projectContext": {
+                    "enableLocalIndexing": true,
+                    "enableGpuAcceleration": true,
+                    "indexWorkerThreads": 123,
+                    "localIndexing": {
+                        "ignoreFilePatterns": [
+                            "ignore",
+                            "patterns"
+                        ],
+                        "maxFileSizeMB": 789,
+                        "maxIndexSizeMB": 456,
+                        "indexCacheDirPath": "/a/path"
+                    }
                 }
             }
             """.trimIndent()
