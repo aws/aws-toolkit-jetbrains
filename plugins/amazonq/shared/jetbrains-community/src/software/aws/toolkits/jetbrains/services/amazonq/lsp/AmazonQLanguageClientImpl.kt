@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.project.Project
 import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
@@ -140,15 +141,13 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         // Process the chat update notification from the server
         // This notification is used to add or update messages in a specific tab
         val tabId = params.tabId
-        val state = params.state
-        val data = params.data
 
-        val encryptionManager = AmazonQLspService.getInstance(project).encryptionManager
+        val paramsJson = jacksonObjectMapper().writeValueAsString(params)
 
         val uiMessage = ChatCommunicationManager.convertToJsonToSendToChat(
             command = SEND_CHAT_COMMAND_PROMPT,
             tabId = tabId,
-            params = encryptionManager.decrypt(params.toString()),
+            params = paramsJson,
             isPartialResult = false
         )
 
