@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.google.gson.Gson
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.project.Project
 import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
@@ -138,18 +138,12 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     }
 
     override fun sendChatUpdate(params: ChatUpdateParams): CompletableFuture<Unit> {
-        // Process the chat update notification from the server
-        // This notification is used to add or update messages in a specific tab
-        val tabId = params.tabId
-
-        val paramsJson = jacksonObjectMapper().writeValueAsString(params)
-
-        val uiMessage = ChatCommunicationManager.convertToJsonToSendToChat(
-            command = CHAT_SEND_UPDATE,
-            tabId = tabId,
-            params = paramsJson,
-            isPartialResult = false
-        )
+        val uiMessage = """
+        {
+        "command":"$CHAT_SEND_UPDATE",
+        "params":${Gson().toJson(params)}
+        }
+    """.trimIndent()
 
         AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
 
