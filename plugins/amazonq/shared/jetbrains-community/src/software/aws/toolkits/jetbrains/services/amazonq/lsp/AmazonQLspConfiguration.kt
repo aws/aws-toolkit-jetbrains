@@ -14,9 +14,7 @@ data class AmazonQLspConfiguration(
 
     @SerializedName(AmazonQLspConstants.LSP_CUSTOMIZATION_CONFIGURATION_KEY)
     val customization: String? = null,
-)
 
-data class QProjectContext(
     val projectContext: ProjectContextConfiguration? = null,
 )
 
