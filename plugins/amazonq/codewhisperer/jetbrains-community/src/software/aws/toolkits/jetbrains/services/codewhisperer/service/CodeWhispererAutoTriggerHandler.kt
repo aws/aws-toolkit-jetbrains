@@ -7,6 +7,7 @@ import com.intellij.openapi.editor.Editor
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
@@ -17,6 +18,10 @@ interface CodeWhispererAutoTriggerHandler {
         automatedTriggerType: CodeWhispererAutomatedTriggerType,
         latencyContext: LatencyContext,
     ) {
+        val project = editor.project ?: return
+        if (QRegionProfileManager.getInstance().hasValidConnectionButNoActiveProfile(project)) {
+            return
+        }
         val triggerTypeInfo = TriggerTypeInfo(CodewhispererTriggerType.AutoTrigger, automatedTriggerType)
 
         LOG.debug { "autotriggering CodeWhisperer with type ${automatedTriggerType.telemetryType}" }

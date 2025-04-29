@@ -9,4 +9,5 @@
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="migration.software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager"/>
     </extensions>
+
 </idea-plugin>

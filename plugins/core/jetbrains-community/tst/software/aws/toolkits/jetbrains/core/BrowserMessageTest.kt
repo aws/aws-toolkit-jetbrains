@@ -161,6 +161,30 @@ class BrowserMessageTest {
                 signInOptionClicked = null
             )
         )
+
+        assertDeserializedInstanceOf<BrowserMessage.PublishWebviewTelemetry>(
+            """
+            {
+                "command": "webviewTelemetry",
+                "event": "{ \"metricName\": \"foo\" }"
+            }
+            """.trimIndent()
+        ).isEqualTo(
+            BrowserMessage.PublishWebviewTelemetry(
+                event = "{ \"metricName\": \"foo\" }"
+            )
+        )
+
+        assertDeserializedInstanceOf<BrowserMessage.OpenUrl>(
+            """
+            {
+                "command": "openUrl",
+                "externalLink": "foo"
+            }
+            """
+        ).isEqualTo(
+            BrowserMessage.OpenUrl("foo")
+        )
     }
 
     @Test
@@ -282,6 +306,14 @@ class BrowserMessageTest {
             {
                 "command": "loginIAM",
                 "accessKey": "foo"
+            }
+            """
+        )
+
+        assertDeserializedWillThrow<MismatchedInputException>(
+            """
+            {
+                "command": "openUrl"
             }
             """
         )
