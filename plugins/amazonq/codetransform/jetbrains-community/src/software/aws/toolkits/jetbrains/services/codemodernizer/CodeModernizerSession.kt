@@ -338,7 +338,7 @@ class CodeModernizerSession(
     fun resumeTransformation() {
         val clientAdaptor = GumbyClient.getInstance(sessionContext.project)
         clientAdaptor.resumeCodeTransformation(state.currentJobId as JobId, TransformationUserActionStatus.COMPLETED)
-        getLogger<CodeModernizerManager>().info("Successfully resumed transformation with status of COMPLETED")
+        getLogger<CodeModernizerManager>().info { "Successfully resumed transformation with status of COMPLETED" }
     }
 
     fun rejectHilAndContinue(): ResumeTransformationResponse {

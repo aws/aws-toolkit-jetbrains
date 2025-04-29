@@ -34,8 +34,8 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getTableMap
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseBuildFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.refreshToken
-import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateCustomVersionsFile
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
 import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import software.aws.toolkits.resources.message

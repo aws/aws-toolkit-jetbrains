@@ -198,7 +198,7 @@ fun parseXmlDependenciesReport(pathToXmlDependency: Path): DependencyUpdatesRepo
 
 fun validateCustomVersionsFile(file: VirtualFile): Boolean {
     if (!file.name.lowercase().endsWith(".yaml")) {
-        getLogger<CodeTransformChatController>().error { "Custom versions file is not a YAML file: ${file.name}"}
+        getLogger<CodeTransformChatController>().error { "Custom versions file is not a YAML file: ${file.name}" }
         return false
     }
     val fileContents = file.readText()

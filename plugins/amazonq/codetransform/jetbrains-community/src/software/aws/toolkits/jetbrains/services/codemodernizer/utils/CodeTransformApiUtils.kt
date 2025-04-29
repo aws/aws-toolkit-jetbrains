@@ -36,7 +36,9 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ValidationExce
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
 import software.aws.toolkits.core.utils.WaiterUnrecoverableException
 import software.aws.toolkits.core.utils.Waiters.waitUntil
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeTransformTelemetryManager
@@ -172,22 +174,22 @@ suspend fun JobId.pollTransformationStatusAndPlan(
 
 suspend fun attemptLocalBuild(plan: TransformationPlan, jobId: JobId, project: Project) {
     val artifactId = getClientInstructionArtifactId(plan)
-    getLogger<CodeModernizerManager>().info("Found artifactId: $artifactId")
+    getLogger<CodeModernizerManager>().info { "Found artifactId: $artifactId" }
     if (artifactId != null) {
         val clientInstructionsPath = downloadClientInstructions(jobId, artifactId, project)
-        getLogger<CodeModernizerManager>().info("Downloaded client instructions for job ${jobId.id} and artifact $artifactId at: $clientInstructionsPath")
+        getLogger<CodeModernizerManager>().info { "Downloaded client instructions for job ${jobId.id} and artifact $artifactId at: $clientInstructionsPath" }
         processClientInstructions(clientInstructionsPath, jobId, artifactId, project)
-        getLogger<CodeModernizerManager>().info("Finished processing client instructions for job ${jobId.id} and artifact $artifactId")
+        getLogger<CodeModernizerManager>().info { "Finished processing client instructions for job ${jobId.id} and artifact $artifactId" }
     }
 }
 
 suspend fun processClientInstructions(clientInstructionsPath: Path, jobId: JobId, artifactId: String, project: Project) {
     var copyOfProjectSources = createTempDirectory("originalCopy_${jobId.id}_$artifactId", null).toPath()
-    getLogger<CodeModernizerManager>().info("About to copy the original project ZIP to: $copyOfProjectSources")
+    getLogger<CodeModernizerManager>().info { "About to copy the original project ZIP to: $copyOfProjectSources" }
     val originalProjectZip = CodeModernizerManager.getInstance(project).codeTransformationSession?.sessionContext?.originalUploadZipPath
     originalProjectZip?.let { unzipFile(it, copyOfProjectSources, isSqlMetadata = false, extractOnlySources = true) }
     copyOfProjectSources = copyOfProjectSources.resolve("sources") // where the user's source code is within the upload ZIP
-    getLogger<CodeModernizerManager>().info("Copied and unzipped original project sources to: $copyOfProjectSources")
+    getLogger<CodeModernizerManager>().info { "Copied and unzipped original project sources to: $copyOfProjectSources" }
 
     val targetDir = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(copyOfProjectSources.toFile())
         ?: throw RuntimeException("Cannot find copy of project sources directory")
@@ -217,16 +219,16 @@ suspend fun processClientInstructions(clientInstructionsPath: Path, jobId: JobId
                     null,
                     null
                 ).execute()
-                getLogger<CodeModernizerManager>().info("Successfully applied patch file at $clientInstructionsPath")
+                getLogger<CodeModernizerManager>().info { "Successfully applied patch file at $clientInstructionsPath" }
 
                 val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(clientInstructionsPath.toFile())
                     ?: throw RuntimeException("Cannot find patch file at $clientInstructionsPath")
                 FileEditorManager.getInstance(project).openFile(virtualFile, true)
             } catch (e: Exception) {
-                getLogger<CodeModernizerManager>().error(
+                getLogger<CodeModernizerManager>().error {
                     "Error applying intermediate diff.patch for job ${jobId.id} and artifact $artifactId located at " +
                         "$clientInstructionsPath: $e"
-                )
+                }
             } finally {
                 runWriteAction {
                     ModuleManager.getInstance(project).disposeModule(tempModule)
@@ -236,21 +238,21 @@ suspend fun processClientInstructions(clientInstructionsPath: Path, jobId: JobId
     }
 
     val (exitCode, buildOutput) = runClientSideBuild(targetDir, CodeModernizerManager.LOG, project)
-    getLogger<CodeModernizerManager>().info("Ran client-side build with an exit code of $exitCode")
+    getLogger<CodeModernizerManager>().info { "Ran client-side build with an exit code of $exitCode" }
     val uploadZip = createClientSideBuildUploadZip(exitCode, buildOutput)
-    getLogger<CodeModernizerManager>().info("Created client-side build result upload zip for job ${jobId.id} and artifact $artifactId: ${uploadZip.path}")
+    getLogger<CodeModernizerManager>().info { "Created client-side build result upload zip for job ${jobId.id} and artifact $artifactId: ${uploadZip.path}" }
     val uploadContext = UploadContext.fromTransformationUploadContext(
         TransformationUploadContext.builder().jobId(jobId.id).uploadArtifactType("ClientBuildResult").build()
     )
     getLogger<CodeModernizerManager>().info("About to call uploadPayload for job ${jobId.id} and artifact $artifactId")
     try {
         CodeModernizerManager.getInstance(project).codeTransformationSession?.uploadPayload(uploadZip, uploadContext)
-        getLogger<CodeModernizerManager>().info("Upload succeeded; about to call ResumeTransformation for job ${jobId.id} and artifact $artifactId now")
+        getLogger<CodeModernizerManager>().info { "Upload succeeded; about to call ResumeTransformation for job ${jobId.id} and artifact $artifactId now" }
         CodeModernizerManager.getInstance(project).codeTransformationSession?.resumeTransformation()
     } finally {
         uploadZip.deleteRecursively()
         copyOfProjectSources.toFile().deleteRecursively()
-        getLogger<CodeModernizerManager>().info("Deleted copy of project sources and client-side build upload ZIP")
+        getLogger<CodeModernizerManager>().info { "Deleted copy of project sources and client-side build upload ZIP" }
     }
     // switch back to Transformation Hub view
     runInEdt {
