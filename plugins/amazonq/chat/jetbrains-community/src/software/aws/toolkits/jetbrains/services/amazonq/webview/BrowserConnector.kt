@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonq.webview
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.google.gson.Gson
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.project.Project
@@ -28,6 +29,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializ
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickNotification
@@ -37,6 +39,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_COPY_CODE_TO_CLIPBOARD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FEEDBACK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FOLLOW_UP_CLICK
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_GET_SERIALIZED_CHAT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INFO_LINK_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INSERT_TO_CURSOR
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_LINK_CLICK
@@ -45,6 +48,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_READY
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SOURCE_LINK_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_ADD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_BAR_ACTIONS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_CHANGE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_REMOVE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatNotification
@@ -60,6 +64,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Feedb
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FeedbackParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FollowUpClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FollowUpClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InsertToCursorPositionNotification
@@ -74,6 +80,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventRequest
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
@@ -145,6 +153,14 @@ class BrowserConnector(
 
         // Wait for UI ready before starting to send messages to the UI.
         uiReady.await()
+
+        // Chat options including history and quick actions need to be sent in once UI is ready
+        val showChatOptions = """{
+            "command": "chatOptions",
+            "params": ${Gson().toJson(AwsServerCapabilitiesProvider.getInstance(project).getChatOptions())}
+            }
+        """.trimIndent()
+        browser.postChat(showChatOptions)
 
         // Send inbound messages to the browser
         val inboundMessages = connections.map { it.messagesFromAppToUi.flow }.merge()
@@ -322,6 +338,21 @@ class BrowserConnector(
                 handleChatNotification<CopyCodeToClipboardNotification, CopyCodeToClipboardParams>(node) { server, params ->
                     server.copyCodeToClipboard(params)
                 }
+            }
+
+            CHAT_GET_SERIALIZED_CHAT -> {
+                handleChatNotification<GetSerializedChatRequest, GetSerializedChatParams>(node)
+                {
+                        server, params -> server.getSerializedActions(params)
+                }
+            }
+
+            CHAT_TAB_BAR_ACTIONS -> {
+                handleChatNotification<TabBarActionRequest, TabBarActionParams>(node)
+                {
+                    server, params -> server.tabBarActions(params)
+                }
+
             }
         }
     }

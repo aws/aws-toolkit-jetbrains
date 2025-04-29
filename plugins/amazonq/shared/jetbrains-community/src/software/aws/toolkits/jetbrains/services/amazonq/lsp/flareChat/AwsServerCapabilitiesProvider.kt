@@ -15,7 +15,7 @@ class AwsServerCapabilitiesProvider {
         this.serverCapabilities = serverCapabilities
     }
 
-    fun getChatOptions() = serverCapabilities?.chatOptions ?: DEFAULT_CHAT_OPTIONS
+    fun getChatOptions() =  DEFAULT_CHAT_OPTIONS
 
     companion object {
         fun getInstance(project: Project) = project.service<AwsServerCapabilitiesProvider>()
@@ -30,7 +30,9 @@ class AwsServerCapabilitiesProvider {
                         )
                     )
                 )
-            )
+            ),
+            history = true,
+            export = true
         )
     }
 }
@@ -41,6 +43,8 @@ data class AwsServerCapabilities(
 
 data class ChatOptions(
     val quickActions: QuickActions,
+    val history: Boolean,
+    val export: Boolean
 )
 
 data class QuickActions(
