@@ -136,7 +136,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                                     optOutTelemetry = AwsSettings.getInstance().isTelemetryEnabled,
                                     customization = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)?.arn,
                                     // local context
-                                    projectContext = QProjectContext(
+                                    projectContext = ProjectContextConfiguration(
                                         enableLocalIndexing = qSettings.isProjectContextEnabled(),
                                         indexWorkerThreads = qSettings.getProjectContextIndexThreadCount(),
                                         enableGpuAcceleration = qSettings.isProjectContextGpu(),

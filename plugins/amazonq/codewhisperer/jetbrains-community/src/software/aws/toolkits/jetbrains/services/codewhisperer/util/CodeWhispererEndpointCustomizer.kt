@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntime
 import software.amazon.awssdk.services.codewhispererstreaming.CodeWhispererStreamingAsyncClientBuilder
 import software.aws.toolkits.core.ToolkitClientCustomizer
 import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QDefaultServiceConfig
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QEndpoints
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import java.net.Proxy
@@ -42,7 +43,7 @@ class CodeWhispererEndpointCustomizer : ToolkitClientCustomizer {
         if (builder is CodeWhispererRuntimeClientBuilder || builder is CodeWhispererStreamingAsyncClientBuilder) {
             val endpoint = tryOrNull { QEndpoints.getQEndpointWithRegion(regionId) }
                 ?.let { URI.create(it) }
-                ?: URI.create(QEndpoints.Q_DEFAULT_SERVICE_CONFIG.ENDPOINT)
+                ?: URI.create(QDefaultServiceConfig.ENDPOINT)
             builder
                 .endpointOverride(endpoint)
                 .region(Region.of(regionId))

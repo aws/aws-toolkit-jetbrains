@@ -65,7 +65,7 @@ open class NewChange : ChangeLogTask() {
         )
     }
 
-    private fun newFile(changeType: ChangeType) = nextReleaseDirectory.file("${changeType.name.toLowerCase()}-${UUID.randomUUID()}.json").get().asFile.apply {
+    private fun newFile(changeType: ChangeType) = nextReleaseDirectory.file("${changeType.name.lowercase()}-${UUID.randomUUID()}.json").get().asFile.apply {
         parentFile?.mkdirs()
         createNewFile()
     }
