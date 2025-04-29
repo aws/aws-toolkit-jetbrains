@@ -16,7 +16,6 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.saveFileFromUrl
-import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 import software.aws.toolkits.resources.AwsCoreBundle
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
@@ -30,7 +29,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
     }
     private val currentAttempt = AtomicInteger(0)
 
-    fun removeDelistedVersions(delistedVersions: List<ManifestManager.Version>) {
+    fun removeDelistedVersions(delistedVersions: List<Version>) {
         val localFolders = getSubFolders(lspArtifactsPath)
 
         delistedVersions.forEach { delistedVersion ->
@@ -89,7 +88,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
             .first
     }
 
-    fun getExistingLspArtifacts(versions: List<ManifestManager.Version>, target: ManifestManager.VersionTarget?): Boolean {
+    fun getExistingLspArtifacts(versions: List<Version>, target: VersionTarget?): Boolean {
         if (versions.isEmpty() || target?.contents == null) return false
 
         val localLSPPath = lspArtifactsPath.resolve(versions.first().serverVersion.toString())
@@ -113,7 +112,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
         return !hasInvalidFiles
     }
 
-    suspend fun tryDownloadLspArtifacts(project: Project, versions: List<ManifestManager.Version>, target: ManifestManager.VersionTarget?): Path? {
+    suspend fun tryDownloadLspArtifacts(project: Project, versions: List<Version>, target: VersionTarget?): Path? {
         val temporaryDownloadPath = lspArtifactsPath.resolve("temp")
         val downloadPath = lspArtifactsPath.resolve(versions.first().serverVersion.toString())
 
@@ -156,7 +155,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
     }
 
     @VisibleForTesting
-    internal fun downloadLspArtifacts(downloadPath: Path, target: ManifestManager.VersionTarget?): Boolean {
+    internal fun downloadLspArtifacts(downloadPath: Path, target: VersionTarget?): Boolean {
         if (target == null || target.contents.isNullOrEmpty()) {
             logger.warn { "No target contents available for download" }
             return false
@@ -210,7 +209,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
         return "sha384:$contentHash" == expectedHash
     }
 
-    private fun validateDownloadedFiles(downloadPath: Path, contents: List<ManifestManager.TargetContent>) {
+    private fun validateDownloadedFiles(downloadPath: Path, contents: List<TargetContent>) {
         val missingFiles = contents
             .mapNotNull { it.filename }
             .filter { filename ->

@@ -9,7 +9,6 @@ import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 import java.nio.file.Path
 
 class ArtifactManager(
@@ -24,8 +23,8 @@ class ArtifactManager(
         val endVersion: SemVer,
     )
     data class LSPVersions(
-        val deListedVersions: List<ManifestManager.Version>,
-        val inRangeVersions: List<ManifestManager.Version>,
+        val deListedVersions: List<Version>,
+        val inRangeVersions: List<Version>,
     )
 
     private val manifestVersionRanges: SupportedManifestVersionRange = manifestRange ?: DEFAULT_VERSION_RANGE
@@ -70,7 +69,7 @@ class ArtifactManager(
     }
 
     @VisibleForTesting
-    internal fun getLSPVersionsFromManifestWithSpecifiedRange(manifest: ManifestManager.Manifest): LSPVersions {
+    internal fun getLSPVersionsFromManifestWithSpecifiedRange(manifest: Manifest): LSPVersions {
         if (manifest.versions.isNullOrEmpty()) return LSPVersions(emptyList(), emptyList())
 
         val (deListed, inRange) = manifest.versions.mapNotNull { version ->
@@ -91,7 +90,7 @@ class ArtifactManager(
         )
     }
 
-    private fun getTargetFromLspManifest(versions: List<ManifestManager.Version>): ManifestManager.VersionTarget {
+    private fun getTargetFromLspManifest(versions: List<Version>): VersionTarget {
         val currentOS = getCurrentOS()
         val currentArchitecture = getCurrentArchitecture()
 

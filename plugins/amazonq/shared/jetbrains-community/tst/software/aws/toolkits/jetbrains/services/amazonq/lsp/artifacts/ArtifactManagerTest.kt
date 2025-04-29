@@ -20,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager.SupportedManifestVersionRange
-import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 import java.nio.file.Path
 
 @TestOnly
@@ -63,7 +62,7 @@ class ArtifactManagerTest {
 
     @Test
     fun `fetch artifact does not have any valid lsp versions`() {
-        every { manifestFetcher.fetch() }.returns(ManifestManager.Manifest())
+        every { manifestFetcher.fetch() }.returns(Manifest())
         artifactManager = spyk(ArtifactManager(mockProject, manifestFetcher, artifactHelper, manifestVersionRanges))
 
         every { artifactManager.getLSPVersionsFromManifestWithSpecifiedRange(any()) }.returns(
@@ -81,7 +80,7 @@ class ArtifactManagerTest {
     fun `fetch artifact if inRangeVersions are not available should fallback to local lsp`() {
         val expectedResult = listOf(Pair(tempDir, SemVer("1.0.0", 1, 0, 0)))
 
-        every { manifestFetcher.fetch() }.returns(ManifestManager.Manifest())
+        every { manifestFetcher.fetch() }.returns(Manifest())
         every { artifactHelper.getAllLocalLspArtifactsWithinManifestRange(any()) }.returns(expectedResult)
 
         runBlocking { artifactManager.fetchArtifact() }
@@ -92,15 +91,15 @@ class ArtifactManagerTest {
 
     @Test
     fun `fetch artifact have valid version in local system`() {
-        val target = ManifestManager.VersionTarget(platform = "temp", arch = "temp")
-        val versions = listOf(ManifestManager.Version("1.0.0", targets = listOf(target)))
+        val target = VersionTarget(platform = "temp", arch = "temp")
+        val versions = listOf(Version("1.0.0", targets = listOf(target)))
 
         artifactManager = spyk(ArtifactManager(mockProject, manifestFetcher, artifactHelper, manifestVersionRanges))
 
         every { artifactManager.getLSPVersionsFromManifestWithSpecifiedRange(any()) }.returns(
             ArtifactManager.LSPVersions(deListedVersions = emptyList(), inRangeVersions = versions)
         )
-        every { manifestFetcher.fetch() }.returns(ManifestManager.Manifest())
+        every { manifestFetcher.fetch() }.returns(Manifest())
 
         mockkStatic("software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.LspUtilsKt")
         every { getCurrentOS() }.returns("temp")
@@ -118,8 +117,8 @@ class ArtifactManagerTest {
 
     @Test
     fun `fetch artifact does not have valid version in local system`() {
-        val target = ManifestManager.VersionTarget(platform = "temp", arch = "temp")
-        val versions = listOf(ManifestManager.Version("1.0.0", targets = listOf(target)))
+        val target = VersionTarget(platform = "temp", arch = "temp")
+        val versions = listOf(Version("1.0.0", targets = listOf(target)))
         val expectedResult = listOf(Pair(tempDir, SemVer("1.0.0", 1, 0, 0)))
 
         artifactManager = spyk(ArtifactManager(mockProject, manifestFetcher, artifactHelper, manifestVersionRanges))
@@ -127,7 +126,7 @@ class ArtifactManagerTest {
         every { artifactManager.getLSPVersionsFromManifestWithSpecifiedRange(any()) }.returns(
             ArtifactManager.LSPVersions(deListedVersions = emptyList(), inRangeVersions = versions)
         )
-        every { manifestFetcher.fetch() }.returns(ManifestManager.Manifest())
+        every { manifestFetcher.fetch() }.returns(Manifest())
 
         mockkStatic("software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.LspUtilsKt")
         every { getCurrentOS() }.returns("temp")

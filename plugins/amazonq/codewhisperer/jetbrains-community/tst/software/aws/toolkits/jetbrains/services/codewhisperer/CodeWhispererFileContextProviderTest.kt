@@ -15,16 +15,13 @@ import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.mockito.Mockito.mockConstruction
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
-import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
@@ -33,10 +30,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.core.utils.test.aStringWithLineCount
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
-import software.aws.toolkits.jetbrains.services.amazonq.project.EncoderServer
-import software.aws.toolkits.jetbrains.services.amazonq.project.InlineBm25Chunk
-import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
-import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCpp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCsharp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererGo
@@ -75,7 +68,6 @@ class CodeWhispererFileContextProviderTest {
 
     // dependencies
     lateinit var featureConfigService: CodeWhispererFeatureConfigService
-    lateinit var mockProjectContext: ProjectContextController
 
     lateinit var fixture: JavaCodeInsightTestFixture
     lateinit var project: Project
@@ -94,9 +86,6 @@ class CodeWhispererFileContextProviderTest {
                 featureConfigService,
                 disposableRule.disposable
             )
-
-        mockProjectContext = mock()
-        project.replaceService(ProjectContextController::class.java, mockProjectContext, disposableRule.disposable)
     }
 
     @Test
@@ -139,7 +128,6 @@ class CodeWhispererFileContextProviderTest {
 
     @Test
     fun `extractSupplementalFileContext should timeout 50ms`() = runTest {
-        mockProjectContext.stub { onBlocking { queryInline(any(), any()) }.doReturn(emptyList()) }
         sut = spy(sut)
 
         val files = NaiveSampleCase.setupFixture(fixture)
@@ -161,103 +149,19 @@ class CodeWhispererFileContextProviderTest {
     }
 
     @Test
-    fun `should return empty if both project context and opentabs context return empty`() = runTest {
+    fun `should return empty if opentabs context return empty`() = runTest {
         sut = spy(sut)
 
-        mockProjectContext.stub { onBlocking { queryInline(any(), any()) }.doReturn(emptyList()) }
         val queryPsi = projectRule.fixture.addFileToProject("Foo.java", "public Foo {}")
         val mockFileContext = aFileContextInfo(CodeWhispererJava.INSTANCE)
 
         val result = sut.extractSupplementalFileContextForSrc(queryPsi, mockFileContext)
 
-        verify(sut, times(1)).fetchProjectContext(any(), any(), any())
         verify(sut, times(1)).fetchOpenTabsContext(any(), any(), any())
 
         assertThat(result.isUtg).isFalse
         assertThat(result.strategy).isEqualTo(CrossFileStrategy.Empty)
         assertThat(result.contents).isEmpty()
-    }
-
-    @Test
-    fun `should only use openTabsContext if projectContext is empty`() = runTest {
-        mockProjectContext.stub { onBlocking { queryInline(any(), any()) }.doReturn(emptyList()) }
-        featureConfigService.stub { on { getInlineCompletion() } doReturn false }
-        sut = spy(sut)
-
-        val files = NaiveSampleCase.setupFixture(fixture)
-        val queryPsi = files[0]
-        val mockFileContext = aFileContextInfo(CodeWhispererJava.INSTANCE)
-
-        val result = sut.extractSupplementalFileContextForSrc(queryPsi, mockFileContext)
-
-        verify(sut, times(1)).fetchProjectContext(any(), any(), any())
-        verify(sut, times(1)).fetchOpenTabsContext(any(), any(), any())
-
-        assertThat(result.isUtg).isFalse
-        assertThat(result.strategy).isEqualTo(CrossFileStrategy.OpenTabsBM25)
-        assertThat(result.contents).isNotEmpty
-    }
-
-    @Test
-    fun `should call both and use openTabsContext if projectContext is empty when it's enabled`() = runTest {
-        mockProjectContext.stub { onBlocking { queryInline(any(), any()) }.doReturn(emptyList()) }
-        featureConfigService.stub { on { getInlineCompletion() } doReturn true }
-        sut = spy(sut)
-
-        val files = NaiveSampleCase.setupFixture(fixture)
-        val queryPsi = files[0]
-        val mockFileContext = aFileContextInfo(CodeWhispererJava.INSTANCE)
-
-        val result = sut.extractSupplementalFileContextForSrc(queryPsi, mockFileContext)
-
-        verify(sut, times(1)).fetchProjectContext(any(), any(), any())
-        verify(sut, times(1)).fetchOpenTabsContext(any(), any(), any())
-
-        assertThat(result.isUtg).isFalse
-        assertThat(result.strategy).isEqualTo(CrossFileStrategy.OpenTabsBM25)
-        assertThat(result.contents).isNotEmpty
-    }
-
-    // move to projectContextControllerTest
-    @Test
-    fun `projectContextController should return empty result if provider throws`() = runTest {
-        mockConstruction(ProjectContextProvider::class.java).use { providerContext ->
-            mockConstruction(EncoderServer::class.java).use { serverContext ->
-                assertThat(providerContext.constructed()).hasSize(0)
-                assertThat(serverContext.constructed()).hasSize(0)
-                val controller = ProjectContextController(project, TestScope())
-                assertThat(providerContext.constructed()).hasSize(1)
-                assertThat(serverContext.constructed()).hasSize(1)
-
-                whenever(providerContext.constructed()[0].queryInline(any(), any(), any())).thenThrow(RuntimeException("mock exception"))
-
-                val result = controller.queryInline("query", "filePath")
-                assertThat(result).isEmpty()
-            }
-        }
-    }
-
-    @Test
-    fun `should use both project context and open tabs if both are present`() = runTest {
-        mockProjectContext.stub {
-            runBlocking {
-                doReturn(
-                    listOf(
-                        InlineBm25Chunk("project_context1", "path1", 0.0),
-                    )
-                ).whenever(it).queryInline(any(), any())
-            }
-        }
-        sut = spy(sut)
-        val files = NaiveSampleCase.setupFixture(fixture)
-        val queryPsi = files[0]
-        val mockFileContext = aFileContextInfo(CodeWhispererJava.INSTANCE)
-
-        val result = sut.extractSupplementalFileContextForSrc(queryPsi, mockFileContext)
-
-        assertThat(result.isUtg).isFalse
-        assertThat(result.strategy).isEqualTo(CrossFileStrategy.Codemap)
-        assertThat(result.contents).hasSize(4)
     }
 
     @Test
@@ -437,8 +341,7 @@ class CodeWhispererFileContextProviderTest {
     }
 
     @Test
-    fun `extractSupplementalFileContext should return opentabs context if project context is empty`() = runTest {
-        mockProjectContext.stub { onBlocking { queryInline(any(), any()) }.doReturn(emptyList()) }
+    fun `extractSupplementalFileContext should return opentabs context`() = runTest {
         val files = NaiveSampleCase.setupFixture(fixture)
         val queryPsi = files[0]
 

@@ -25,7 +25,6 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
@@ -227,20 +226,6 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         val query = generateQuery(targetContext)
 
         val contexts = withContext(coroutineContext) {
-            val projectContextDeferred1 = async {
-                val timedCodemapContext = measureTimedValue { fetchProjectContext(query, psiFile, targetContext) }
-                val codemapContext = timedCodemapContext.value
-                LOG.debug {
-                    buildString {
-                        append("time elapse for fetching project context=${timedCodemapContext.duration.inWholeMilliseconds}ms; ")
-                        append("numberOfChunks=${codemapContext.contents.size}; ")
-                        append("totalLength=${codemapContext.contentLength}")
-                    }
-                }
-
-                codemapContext
-            }
-
             val openTabsContextDeferred1 = async {
                 val timedOpentabContext = measureTimedValue { fetchOpenTabsContext(query, psiFile, targetContext) }
                 val opentabContext = timedOpentabContext.value
@@ -255,7 +240,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
                 opentabContext
             }
 
-            awaitAll(projectContextDeferred1, openTabsContextDeferred1)
+            awaitAll(openTabsContextDeferred1)
         }
 
         val projectContext = contexts.find { it.strategy == CrossFileStrategy.Codemap }
@@ -354,25 +339,6 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         }
 
         return context.copy(contents = c)
-    }
-
-    @VisibleForTesting
-    suspend fun fetchProjectContext(query: String, psiFile: PsiFile, targetContext: FileContextInfo): SupplementalContextInfo {
-        val response = ProjectContextController.getInstance(project).queryInline(query, psiFile.virtualFile?.path.orEmpty())
-
-        return SupplementalContextInfo(
-            isUtg = false,
-            contents = response.map {
-                Chunk(
-                    content = it.content,
-                    path = it.filePath,
-                    nextChunk = it.content,
-                    score = it.score
-                )
-            },
-            targetFileName = targetContext.filename,
-            strategy = CrossFileStrategy.Codemap
-        )
     }
 
     @VisibleForTesting
