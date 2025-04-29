@@ -6,5 +6,5 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws
 data class InlineCompletionStates(
     val seen: Boolean,
     val accepted: Boolean,
-    val discarded: Boolean
+    val discarded: Boolean,
 )

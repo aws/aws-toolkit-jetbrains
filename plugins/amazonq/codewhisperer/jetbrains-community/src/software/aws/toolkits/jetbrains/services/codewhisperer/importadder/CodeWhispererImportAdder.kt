@@ -8,7 +8,6 @@ import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
-import software.amazon.awssdk.services.codewhispererruntime.model.Import
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info

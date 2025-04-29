@@ -9,7 +9,6 @@ import com.intellij.util.text.nullize
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatInteractWithMessageEvent
 import software.amazon.awssdk.services.codewhispererruntime.model.ChatMessageInteractionType
-import software.amazon.awssdk.services.codewhispererruntime.model.CompletionType
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.Dimension
@@ -31,23 +30,15 @@ import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeAnaly
 import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeFixJobRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.StartCodeFixJobResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTestGenerationResponse
-import software.amazon.awssdk.services.codewhispererruntime.model.SuggestionState
 import software.amazon.awssdk.services.codewhispererruntime.model.TargetCode
 import software.amazon.awssdk.services.codewhispererruntime.model.UserIntent
 import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContextNew
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
-import software.aws.toolkits.telemetry.CodewhispererCompletionType
-import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import java.time.Instant
-import java.util.concurrent.TimeUnit
 
 // As the connection is project-level, we need to make this project-level too
 @Deprecated(
@@ -655,18 +646,4 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         requestBuilder.userContext(codeWhispererUserContext())
         requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
-}
-
-private fun CodewhispererSuggestionState.toCodeWhispererSdkType() = when {
-    this == CodewhispererSuggestionState.Accept -> SuggestionState.ACCEPT
-    this == CodewhispererSuggestionState.Reject -> SuggestionState.REJECT
-    this == CodewhispererSuggestionState.Empty -> SuggestionState.EMPTY
-    this == CodewhispererSuggestionState.Discard -> SuggestionState.DISCARD
-    else -> SuggestionState.UNKNOWN_TO_SDK_VERSION
-}
-
-private fun CodewhispererCompletionType.toCodeWhispererSdkType() = when {
-    this == CodewhispererCompletionType.Line -> CompletionType.LINE
-    this == CodewhispererCompletionType.Block -> CompletionType.BLOCK
-    else -> CompletionType.UNKNOWN_TO_SDK_VERSION
 }

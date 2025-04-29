@@ -23,11 +23,7 @@ import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.awt.RelativePoint
-import software.amazon.awssdk.services.codewhispererruntime.model.Reference
-import software.amazon.awssdk.services.codewhispererruntime.model.Span
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionItem
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReference
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReferencePosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getPopupPositionAboveText
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getRelativePathToContentRoot
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.horizontalPanelConstraints
@@ -70,7 +66,7 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
         toolWindow?.show()
     }
 
-    fun insertCodeReference(originalCode: String, references: List<InlineCompletionReference>?, editor: Editor, caretPosition: CaretPosition, completion: InlineCompletionItem?) {
+    fun insertCodeReference(originalCode: String, references: List<InlineCompletionReference>?, editor: Editor, caretPosition: CaretPosition) {
         val startOffset = caretPosition.offset
         val relativePath = getRelativePathToContentRoot(editor)
         references?.forEachIndexed { i, reference ->
@@ -113,7 +109,7 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
         val (requestContext, _, recommendationContext) = states
         val (_, editor, _, caretPosition) = requestContext
         val (_, completion) = recommendationContext.details[selectedIndex]
-        insertCodeReference(completion.insertText, completion.references, editor, caretPosition, completion)
+        insertCodeReference(completion.insertText, completion.references, editor, caretPosition)
     }
 
     fun insertCodeReference(states: InvocationContextNew, previews: List<PreviewContext>, selectedIndex: Int) {
@@ -123,7 +119,6 @@ class CodeWhispererCodeReferenceManager(private val project: Project) {
             detail.completion.references,
             states.requestContext.editor,
             states.requestContext.caretPosition,
-            detail.completion
         )
     }
 

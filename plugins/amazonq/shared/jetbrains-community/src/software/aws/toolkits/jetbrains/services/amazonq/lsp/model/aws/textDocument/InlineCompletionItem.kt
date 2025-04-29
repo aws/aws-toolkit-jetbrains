@@ -7,5 +7,5 @@ data class InlineCompletionItem(
     var itemId: String,
     var insertText: String,
     var references: List<InlineCompletionReference>?,
-    var mostRelevantMissingImports: List<InlineCompletionImports>?
+    var mostRelevantMissingImports: List<InlineCompletionImports>?,
 )

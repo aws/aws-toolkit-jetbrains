@@ -5,8 +5,6 @@ package software.aws.toolkits.jetbrains.services.cwc.controller
 
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
-import software.amazon.awssdk.services.codewhispererruntime.model.Reference
-import software.amazon.awssdk.services.codewhispererruntime.model.Span
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReference
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReferencePosition
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.CodeReferenceGenerated

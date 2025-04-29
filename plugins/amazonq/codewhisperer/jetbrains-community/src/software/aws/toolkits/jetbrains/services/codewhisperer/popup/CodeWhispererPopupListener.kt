@@ -5,16 +5,10 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.popup
 
 import com.intellij.openapi.ui.popup.JBPopupListener
 import com.intellij.openapi.ui.popup.LightweightWindowEvent
-import io.ktor.client.request.request
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.InlineCompletionStates
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LogInlineCompletionSessionResultsParams
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererServiceNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
-import java.time.Duration
-import java.time.Instant
 
 class CodeWhispererPopupListener(private val states: InvocationContext) : JBPopupListener {
     override fun beforeShown(event: LightweightWindowEvent) {

@@ -8,7 +8,6 @@ import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.ActionLink
-import software.amazon.awssdk.services.codewhispererruntime.model.Reference
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReference
@@ -121,7 +120,6 @@ class CodeWhispererCodeReferenceComponents(private val project: Project) {
                 inlineLabelConstraints
             )
             add(JLabel(" from ").asCodeReferencePanelFont(), inlineLabelConstraints)
-            // TODO YUX: reference repository?
             add(JLabel(ref.referenceName), inlineLabelConstraints)
         } else {
             add(
@@ -131,7 +129,6 @@ class CodeWhispererCodeReferenceComponents(private val project: Project) {
                 inlineLabelConstraints
             )
             add(JLabel(" from ").asCodeReferencePanelFont(), inlineLabelConstraints)
-            // TODO YUX: reference repository?
             add(repoNameLink(ref.referenceName, ref.referenceUrl), inlineLabelConstraints)
         }
 

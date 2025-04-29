@@ -78,7 +78,6 @@ import java.awt.event.ComponentListener
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JLabel
-import kotlin.math.min
 
 @Service
 class CodeWhispererPopupManager {

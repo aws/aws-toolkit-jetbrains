@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.service
 
 import com.intellij.codeInsight.hint.HintManager
-import com.intellij.notification.NotificationAction
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
@@ -24,9 +23,7 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.messages.Topic
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -35,29 +32,22 @@ import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import software.amazon.awssdk.core.exception.SdkServiceException
-import software.amazon.awssdk.core.util.DefaultSdkAutoConstructList
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
-import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
-import software.amazon.awssdk.services.codewhispererruntime.model.ResourceNotFoundException
 import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
-import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionContext
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionTriggerKind
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionWithReferencesParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil.toUriString
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManagerNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getCaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.isSupportedJsonFormat
@@ -72,7 +62,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyConte
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.PreviewContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
-import software.aws.toolkits.jetbrains.services.codewhisperer.model.SupplementalContextInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.WorkerContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManagerNew
@@ -84,11 +73,9 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCompletionType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.notifyErrorCodeWhispererUsageLimit
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CustomizationConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
 import software.aws.toolkits.jetbrains.utils.isInjectedText
 import software.aws.toolkits.jetbrains.utils.isQExpired
-import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import java.util.concurrent.TimeUnit
@@ -247,7 +234,6 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                 }
                 result?.thenAccept { completion ->
                     nextToken = completion.partialResultToken
-                    val a = 1
                     requestCount++
                     val endTime = System.nanoTime()
                     val latency = TimeUnit.NANOSECONDS.toMillis(endTime - startTime).toDouble()
@@ -335,7 +321,6 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                 sessionId = e.awsErrorDetails().sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
                 displayMessage = e.awsErrorDetails().errorMessage() ?: message("codewhisperer.trigger.error.server_side")
             } else {
-                requestId = ""
                 sessionId = ""
                 val statusCode = if (e is SdkServiceException) e.statusCode() else 0
                 displayMessage =
@@ -352,16 +337,6 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
             val responseContext = ResponseContext(sessionId)
             CodeWhispererInvocationStatusNew.getInstance().setInvocationSessionId(sessionId)
             logServiceInvocation(requestContext, responseContext, null, null, exceptionType)
-            CodeWhispererTelemetryServiceNew.getInstance().sendServiceInvocationEvent(
-                currentJobId,
-                requestId,
-                requestContext,
-                responseContext,
-                lastRecommendationIndex,
-                false,
-                0.0,
-                exceptionType
-            )
 
             if (e is ThrottlingException &&
                 e.message == CodeWhispererConstants.THROTTLING_MESSAGE
@@ -448,7 +423,6 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         // since it won't be sent automatically later
         // TODO: may have bug; visit later
         if (nextStates.recommendationContext.details.isEmpty()) {
-            // TODO YUX: fully remove userDecision
             LOG.debug { "Received just an empty list from this session. session id: ${completions.sessionId}" }
         }
         if (!hasAtLeastOneValid) {
@@ -607,7 +581,11 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
         return states
     }
 
-    private fun createInlineCompletionParams(editor: Editor, triggerTypeInfo: TriggerTypeInfo, nextToken: Either<String, Int>?): InlineCompletionWithReferencesParams =
+    private fun createInlineCompletionParams(
+        editor: Editor,
+        triggerTypeInfo: TriggerTypeInfo,
+        nextToken: Either<String, Int>?,
+    ): InlineCompletionWithReferencesParams =
         ReadAction.compute<InlineCompletionWithReferencesParams, RuntimeException> {
             InlineCompletionWithReferencesParams(
                 context = InlineCompletionContext(

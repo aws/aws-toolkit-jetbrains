@@ -8,5 +8,5 @@ data class LogInlineCompletionSessionResultsParams(
     val completionSessionResult: Map<String, InlineCompletionStates>,
     val firstCompletionDisplayLatency: Double?,
     val totalSessionDisplayTime: Double?,
-    val typeaheadLength: Long
+    val typeaheadLength: Long,
 )

@@ -11,5 +11,5 @@ data class InlineCompletionReference(
 )
 
 data class InlineCompletionImports(
-    var statement: String
+    var statement: String,
 )

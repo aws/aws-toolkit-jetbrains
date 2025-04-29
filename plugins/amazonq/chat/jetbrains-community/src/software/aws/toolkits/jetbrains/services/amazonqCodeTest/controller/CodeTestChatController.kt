@@ -640,15 +640,20 @@ class CodeTestChatController(
                         LOG.debug { "Original code content from reference span: $originalContent" }
                         withContext(EDT) {
                             // TODO flare: hook /test references with flare correctly, this is only a compile error fix which is not tested
-                            manager.addReferenceLogPanelEntry(reference = InlineCompletionReference(
-                                referenceName = reference.repository(),
-                                referenceUrl = reference.url(),
-                                licenseName = reference.licenseName(),
-                                position = InlineCompletionReferencePosition(
-                                    startCharacter = reference.recommendationContentSpan().start(),
-                                    endCharacter = reference.recommendationContentSpan().end()
-                                )
-                            ), null, null, originalContent?.split("\n"))
+                            manager.addReferenceLogPanelEntry(
+                                reference = InlineCompletionReference(
+                                    referenceName = reference.repository(),
+                                    referenceUrl = reference.url(),
+                                    licenseName = reference.licenseName(),
+                                    position = InlineCompletionReferencePosition(
+                                        startCharacter = reference.recommendationContentSpan().start(),
+                                        endCharacter = reference.recommendationContentSpan().end()
+                                    )
+                                ),
+                                null,
+                                null,
+                                originalContent?.split("\n")
+                            )
                             manager.toolWindow?.show()
                         }
                     }
