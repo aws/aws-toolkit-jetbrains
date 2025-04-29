@@ -244,7 +244,7 @@ suspend fun processClientInstructions(clientInstructionsPath: Path, jobId: JobId
     val uploadContext = UploadContext.fromTransformationUploadContext(
         TransformationUploadContext.builder().jobId(jobId.id).uploadArtifactType("ClientBuildResult").build()
     )
-    getLogger<CodeModernizerManager>().info("About to call uploadPayload for job ${jobId.id} and artifact $artifactId")
+    getLogger<CodeModernizerManager>().info { "About to call uploadPayload for job ${jobId.id} and artifact $artifactId" }
     try {
         CodeModernizerManager.getInstance(project).codeTransformationSession?.uploadPayload(uploadZip, uploadContext)
         getLogger<CodeModernizerManager>().info { "Upload succeeded; about to call ResumeTransformation for job ${jobId.id} and artifact $artifactId now" }

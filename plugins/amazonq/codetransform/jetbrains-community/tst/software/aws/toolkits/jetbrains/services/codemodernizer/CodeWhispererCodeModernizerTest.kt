@@ -38,6 +38,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.downloadCli
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.filterOnlyParentFiles
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
+import java.io.ByteArrayOutputStream
 import java.io.FileOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
@@ -160,8 +161,15 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
             DownloadArtifactResult.ParseZipFailure(
                 ParseZipFailureReason(TransformationDownloadArtifactType.LOGS, "Could not find build log")
             )
-        val mockDownloadResult = listOf<ByteArray>()
-        doReturn(mockDownloadResult).whenever(clientAdaptorSpy)
+        val mockZipBytes = ByteArrayOutputStream().use { bos ->
+            ZipOutputStream(bos).use { zos ->
+                zos.putNextEntry(ZipEntry("some-other-file.txt"))
+                zos.write("mock content".toByteArray())
+                zos.closeEntry()
+            }
+            bos.toByteArray()
+        }
+        doReturn(listOf(mockZipBytes)).whenever(clientAdaptorSpy)
             .downloadExportResultArchive(jobId, null, TransformationDownloadArtifactType.LOGS)
         val result = handler.downloadArtifact(jobId, TransformationDownloadArtifactType.LOGS, false)
         verify(clientAdaptorSpy, times(1)).downloadExportResultArchive(jobId, null, TransformationDownloadArtifactType.LOGS)
@@ -172,10 +180,21 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
     fun `downloadClientInstructions downloads and extracts patch file`() = runBlocking {
         val jobId = JobId("test-job-id")
         val artifactId = "test-artifact-id"
-        val mockBytes = "mock content".toByteArray()
-        doReturn(mockBytes).whenever(clientAdaptorSpy).downloadExportResultArchive(jobId, artifactId)
+        val mockZipBytes = ByteArrayOutputStream().use { bos ->
+            ZipOutputStream(bos).use { zos ->
+                zos.putNextEntry(ZipEntry("diff.patch"))
+                zos.write("mock content".toByteArray())
+                zos.closeEntry()
+            }
+            bos.toByteArray()
+        }
+        doReturn(listOf(mockZipBytes)).whenever(clientAdaptorSpy).downloadExportResultArchive(
+            jobId,
+            artifactId,
+            TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS
+        )
         val result = downloadClientInstructions(jobId, artifactId, project)
-        verify(clientAdaptorSpy).downloadExportResultArchive(jobId, artifactId)
+        verify(clientAdaptorSpy).downloadExportResultArchive(jobId, artifactId, TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS)
         assertEquals(result.fileName.toString(), "diff.patch")
     }
 
