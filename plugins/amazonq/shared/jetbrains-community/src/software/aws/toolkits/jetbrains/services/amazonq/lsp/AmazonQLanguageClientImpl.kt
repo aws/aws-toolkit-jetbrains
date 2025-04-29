@@ -19,6 +19,7 @@ import org.eclipse.lsp4j.ShowDocumentParams
 import org.eclipse.lsp4j.ShowDocumentResult
 import org.eclipse.lsp4j.ShowMessageRequestParams
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
@@ -75,13 +76,13 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
                     FileEditorManager.getInstance(project).openFile(virtualFile, true)
                 } catch (e: Exception) {
-                    LOG.warn("Failed to show document: ${params.uri}")
+                    LOG.warn { "Failed to show document: ${params.uri}" }
                 }
             }
 
             return CompletableFuture.completedFuture(ShowDocumentResult(true))
         } catch (e: Exception) {
-            LOG.warn("Error showing document")
+            LOG.warn { "Error showing document" }
             return CompletableFuture.completedFuture(ShowDocumentResult(false))
         }
     }
