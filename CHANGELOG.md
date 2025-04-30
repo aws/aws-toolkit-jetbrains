@@ -1,3 +1,10 @@
+# _3.69_ (2025-04-28)
+- **(Bug Fix)** Amazon Q: Fix issue where context menu items are not available after re-opening projects or restarting the IDE
+- **(Bug Fix)** Fix LinkageError while attempting to do Amazon Q inline suggestions in certain environments
+- **(Bug Fix)** Fix issue where user can become stuck because Amazon Q Chat does not show authentication prompt
+- **(Removal)** Removed support for 2024.1.x IDEs
+- **(Removal)** Removed support for Gateway 2024.3
+
 # _3.68_ (2025-04-23)
 - **(Feature)** Amazon Q: Show visual indicator in status bar if profile selection is needed to continue with Q Inline / Q Chat
 - **(Feature)** Amazon Q /test: Remove unsupported message for non-java python languages
