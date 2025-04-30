@@ -20,12 +20,12 @@ data class OpenTabParams(
 data class OpenTabResponse(
     val requestId: String,
     val command: String,
-    val params: OpenTabResponseParams
+    val params: OpenTabResponseParams,
 )
 
 data class OpenTabResponseParams(
     val success: Boolean,
-    val result: OpenTabResult
+    val result: OpenTabResult,
 )
 
 data class OpenTabResult(
