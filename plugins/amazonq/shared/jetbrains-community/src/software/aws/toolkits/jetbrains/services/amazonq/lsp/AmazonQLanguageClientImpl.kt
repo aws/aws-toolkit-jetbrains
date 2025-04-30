@@ -3,11 +3,22 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
+import com.google.gson.Gson
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.invokeAndWaitIfNeeded
+import com.intellij.openapi.fileChooser.FileChooser
+import com.intellij.openapi.fileChooser.FileChooserDescriptor
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
+import com.intellij.openapi.fileChooser.FileChooserFactory
+import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.ui.components.textFieldWithBrowseButton
+import com.intellij.ui.dsl.builder.panel
 import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
 import org.eclipse.lsp4j.ConfigurationParams
 import org.eclipse.lsp4j.MessageActionItem
@@ -23,14 +34,30 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
+import software.aws.toolkits.jetbrains.utils.computeOnEdt
+import java.io.File
+import java.io.FileFilter
+import java.net.URI
+import java.util.UUID
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
+import javax.swing.JComponent
+import javax.swing.JFileChooser
+import javax.swing.filechooser.FileNameExtensionFilter
 
 /**
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
@@ -87,6 +114,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         }
     }
 
+
     override fun getConnectionMetadata(): CompletableFuture<ConnectionMetadata> =
         CompletableFuture.supplyAsync {
             val connection = ToolkitConnectionManager.getInstance(project)
@@ -110,6 +138,71 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     override fun openTab(params: OpenTabParams): CompletableFuture<OpenTabResult> =
         // TODO implement chat history, this is here to unblock chat functionality
         CompletableFuture.completedFuture(OpenTabResult(""))
+
+    override fun showSaveFileDialog(params: ShowSaveFileDialogParams): CompletableFuture<ShowSaveFileDialogResult> {
+        val filters = mutableMapOf<String, String>()
+        val formatMappings = listOf(
+            FormatMapping("markdown", "Markdown", "md"),
+            FormatMapping("html", "HTML", "html")
+        )
+
+        params.supportedFormats.forEach { format ->
+            formatMappings.find { it.format == format }?.let { mapping ->
+                filters[mapping.key] = mapping.extensions
+            }
+        }
+
+        val saveAtUri = params.defaultURI ?:"export-chat.html"
+
+        return CompletableFuture.supplyAsync{
+
+            return@supplyAsync invokeAndWaitIfNeeded {
+                val descriptor = FileSaverDescriptor("Export", "Choose a location to export").apply {
+                    withFileFilter { file ->
+                        filters.values.any { ext ->
+                            file.name.endsWith(".$ext")
+                        }
+                    }
+                }
+
+                val chosenFile = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project).save(saveAtUri)
+
+                chosenFile?.let {
+                    return@invokeAndWaitIfNeeded ShowSaveFileDialogResult(chosenFile.file.toURI())
+                    // TODO: Add error state shown in chat ui instead of throwing
+                } ?: throw Error( "Export failed")
+            }
+
+
+        }
+
+
+    }
+
+    override fun getSerializedChat(params: GetSerializedChatParams): CompletableFuture<GetSerializedChatResult> {
+        val requestId = UUID.randomUUID().toString()
+        val result = CompletableFuture<GetSerializedChatResult>()
+
+        pendingSerializedChatRequests[requestId] = result
+
+        val uiMessage = """
+                {
+                "command": "$GET_SERIALIZED_CHAT_REQUEST_METHOD",
+                "params": ${Gson().toJson(params)},
+                "requestId": "$requestId"
+                }
+        """.trimIndent()
+        AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+
+        result.orTimeout(30000, TimeUnit.MILLISECONDS)
+            .whenComplete { _, error ->
+                if (error != null) {
+                    pendingSerializedChatRequests.remove(requestId)
+                }
+            }
+
+        return result
+    }
 
     override fun configuration(params: ConfigurationParams): CompletableFuture<List<Any>> {
         if (params.items.isEmpty()) {
@@ -166,5 +259,31 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
     companion object {
         private val LOG = getLogger<AmazonQLanguageClientImpl>()
+        private val pendingSerializedChatRequests = ConcurrentHashMap<String, CompletableFuture<GetSerializedChatResult>>()
+        fun completeSerializedChatResponse(requestId: String, content: String) {
+            pendingSerializedChatRequests.remove(requestId)?.complete(GetSerializedChatResult((content)))
+        }
+    }
+}
+
+data class FormatMapping(
+    val format: String,
+    val key: String,
+    val extensions: String
+)
+
+class aaaaa(val project: Project, val descriptor: FileChooserDescriptor): DialogWrapper(project) {
+
+
+    init {
+        super.init()
+        title = "Export"
+    }
+
+    override fun createCenterPanel(): JComponent? =  panel {
+        row {
+            textFieldWithBrowseButton(project, descriptor)
+        }
+
     }
 }

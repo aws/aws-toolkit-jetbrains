@@ -32,3 +32,14 @@ data class GetSerializedChatRequest(
     override val command: String,
     override val params: GetSerializedChatParams,
 ) : ChatNotification<GetSerializedChatParams>
+
+data class GetSerializedChatResponseParams(
+    val success: Boolean,
+    val result: GetSerializedChatResult
+)
+
+data class GetSerializedChatResponse(
+    val requestId: String,
+    val command: String,
+    val params: GetSerializedChatResponseParams,
+)

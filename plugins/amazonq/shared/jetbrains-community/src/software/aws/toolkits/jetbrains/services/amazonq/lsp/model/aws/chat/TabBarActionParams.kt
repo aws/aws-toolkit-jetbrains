@@ -3,10 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
-//data class TabBarActionParams(
-//    val tabId: String?,
-//    val action: TabBarAction
-//)
 data class TabBarActionParams(
     val tabId: String?,
     val action: String
@@ -20,8 +16,7 @@ data class TabBarActionParams(
 
 
 enum class TabBarAction(val value: String) {
-    EXPORT("export"),
-    HISTORY("history");
+    EXPORT("export");
 
     override fun toString(): String {
         return name.lowercase()

@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
 import org.eclipse.lsp4j.Position
@@ -26,6 +27,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageClientImpl
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
@@ -42,7 +44,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FEEDBACK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FILE_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FOLLOW_UP_CLICK
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_GET_SERIALIZED_CHAT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INFO_LINK_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INSERT_TO_CURSOR
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_LINK_CLICK
@@ -71,8 +72,10 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileC
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FollowUpClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FollowUpClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatRequest
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResponse
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InsertToCursorPositionNotification
@@ -347,17 +350,25 @@ class BrowserConnector(
                 }
             }
 
-            CHAT_GET_SERIALIZED_CHAT -> {
-                handleChatNotification<GetSerializedChatRequest, GetSerializedChatParams>(node)
-                {
-                        server, params -> server.getSerializedActions(params)
-                }
+            GET_SERIALIZED_CHAT_REQUEST_METHOD -> {
+                val response = serializer.deserializeChatMessages<GetSerializedChatResponse>(node)
+                AmazonQLanguageClientImpl.completeSerializedChatResponse(
+                    response.requestId,
+                    response.params.result.content
+                )
             }
 
             CHAT_TAB_BAR_ACTIONS -> {
                 handleChatNotification<TabBarActionRequest, TabBarActionParams>(node)
                 {
-                    server, params -> server.tabBarActions(params)
+                    server, params ->
+                    val result = server.tabBarActions(params)
+                    result.whenComplete { params1, error ->
+                        val res = ChatCommunicationManager.convertNotificationToJsonForChat(CHAT_TAB_BAR_ACTIONS, params1)
+                        browser.postChat(res)
+                    }
+
+
                 }
 
             }

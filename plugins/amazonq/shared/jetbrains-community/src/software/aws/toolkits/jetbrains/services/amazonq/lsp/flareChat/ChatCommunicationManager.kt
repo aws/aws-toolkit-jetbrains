@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat
 
+import com.google.gson.Gson
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -65,5 +66,13 @@ class ChatCommunicationManager {
                 "isPartialResult": $isPartialResult
                 }
             """.trimIndent()
+
+        inline fun <reified T> convertNotificationToJsonForChat(command: String, params: T? = null) =
+            """
+    {
+    "command":"$command",
+    "params": ${if (params != null) Gson().toJson(params) else "{}"}
+    }
+    """.trimIndent()
     }
 }

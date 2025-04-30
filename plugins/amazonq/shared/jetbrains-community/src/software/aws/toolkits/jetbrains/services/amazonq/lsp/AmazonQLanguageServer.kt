@@ -18,7 +18,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FEEDBACK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FILE_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FOLLOW_UP_CLICK
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_GET_SERIALIZED_CHAT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INFO_LINK_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INSERT_TO_CURSOR_NOTIFICATION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_LINK_CLICK
@@ -36,6 +35,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Encry
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FeedbackParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FollowUpClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
@@ -124,7 +124,7 @@ interface AmazonQLanguageServer : LanguageServer {
     @JsonRequest(CHAT_TAB_BAR_ACTIONS)
     fun tabBarActions(params: TabBarActionParams): CompletableFuture<TabBarActionResult>
 
-    @JsonRequest(CHAT_GET_SERIALIZED_CHAT)
+    @JsonRequest(GET_SERIALIZED_CHAT_REQUEST_METHOD)
     fun getSerializedActions(params: GetSerializedChatParams): CompletableFuture<GetSerializedChatResult>
 
     @JsonNotification(CHAT_CREATE_PROMPT)
