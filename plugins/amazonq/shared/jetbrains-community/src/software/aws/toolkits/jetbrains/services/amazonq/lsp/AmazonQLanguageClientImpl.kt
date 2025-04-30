@@ -168,7 +168,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 val chosenFile = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project).save(saveAtUri)
 
                 chosenFile?.let {
-                    return@invokeAndWaitIfNeeded ShowSaveFileDialogResult(chosenFile.file.toURI())
+                    return@invokeAndWaitIfNeeded ShowSaveFileDialogResult(chosenFile.file.path)
                     // TODO: Add error state shown in chat ui instead of throwing
                 } ?: throw Error( "Export failed")
             }
