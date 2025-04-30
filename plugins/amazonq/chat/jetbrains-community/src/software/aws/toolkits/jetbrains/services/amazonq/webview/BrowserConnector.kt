@@ -1,9 +1,10 @@
 // Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-
+@file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.amazonq.webview
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.google.gson.Gson
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.project.Project
@@ -28,6 +29,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializ
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickNotification
@@ -37,6 +39,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_COPY_CODE_TO_CLIPBOARD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_DISCLAIMER_ACKNOWLEDGED
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FEEDBACK
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FILE_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FOLLOW_UP_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INFO_LINK_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INSERT_TO_CURSOR
@@ -59,6 +62,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Encry
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FeedbackNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FeedbackParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileClickNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FollowUpClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FollowUpClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickNotification
@@ -146,6 +151,14 @@ class BrowserConnector(
 
         // Wait for UI ready before starting to send messages to the UI.
         uiReady.await()
+
+        // Chat options including history and quick actions need to be sent in once UI is ready
+        val showChatOptions = """{
+            "command": "chatOptions",
+            "params": ${Gson().toJson(AwsServerCapabilitiesProvider.getInstance(project).getChatOptions())}
+            }
+        """.trimIndent()
+        browser.postChat(showChatOptions)
 
         // Send inbound messages to the browser
         val inboundMessages = connections.map { it.messagesFromAppToUi.flow }.merge()
@@ -278,33 +291,33 @@ class BrowserConnector(
                     server.linkClick(params)
                 }
             }
-
             CHAT_INFO_LINK_CLICK -> {
                 handleChatNotification<InfoLinkClickNotification, InfoLinkClickParams>(node) { server, params ->
                     server.infoLinkClick(params)
                 }
             }
-
             CHAT_SOURCE_LINK_CLICK -> {
                 handleChatNotification<SourceLinkClickNotification, SourceLinkClickParams>(node) { server, params ->
                     server.sourceLinkClick(params)
                 }
             }
-
+            CHAT_FILE_CLICK -> {
+                handleChatNotification<FileClickNotification, FileClickParams>(node) { server, params ->
+                    server.fileClick(params)
+                }
+            }
             PROMPT_INPUT_OPTIONS_CHANGE -> {
                 handleChatNotification<PromptInputOptionChangeNotification, PromptInputOptionChangeParams>(node) {
                         server, params ->
                     server.promptInputOptionsChange(params)
                 }
             }
-
             CHAT_PROMPT_OPTION_ACKNOWLEDGED -> {
                 val acknowledgedMessage = node.get("params").get("messageId")
                 if (acknowledgedMessage.asText() == "programmerModeCardId") {
                     MeetQSettings.getInstance().amazonQChatPairProgramming = false
                 }
             }
-
             CHAT_FOLLOW_UP_CLICK -> {
                 handleChatNotification<FollowUpClickNotification, FollowUpClickParams>(node) { server, params ->
                     server.followUpClick(params)
