@@ -169,7 +169,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         }
     }
 
-
     override fun sendChatUpdate(params: ChatUpdateParams): CompletableFuture<Unit> {
         val uiMessage = """
         {
