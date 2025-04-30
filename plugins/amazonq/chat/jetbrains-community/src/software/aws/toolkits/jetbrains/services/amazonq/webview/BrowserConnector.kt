@@ -107,8 +107,6 @@ class BrowserConnector(
         addMessageHook(browser)
             .onEach { json ->
                 val node = serializer.toNode(json)
-                println(node.command)
-                println(node)
                 when (node.command) {
                     "disclaimer-acknowledged" -> {
                         MeetQSettings.getInstance().disclaimerAcknowledged = true
