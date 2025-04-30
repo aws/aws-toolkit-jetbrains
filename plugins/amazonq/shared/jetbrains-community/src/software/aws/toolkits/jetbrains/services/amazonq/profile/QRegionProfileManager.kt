@@ -16,10 +16,10 @@ import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.xmlb.annotations.MapAnnotation
 import com.intellij.util.xmlb.annotations.Property
 import software.amazon.awssdk.core.SdkClient
+import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
@@ -59,18 +59,32 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
             )
     }
 
-    // should be call on project startup to validate if profile is still active
+    /**
+     * Called on project startup to validate if selected profile is still active
+     */
+    @Deprecated("This is a giant hack and we are not handling all the cases")
     @RequiresBackgroundThread
     fun validateProfile(project: Project) {
         val conn = getIdcConnectionOrNull(project)
         val selected = activeProfile(project) ?: return
-        val profiles = tryOrNull {
+        val profiles = try {
             listRegionProfiles(project)
+        } catch (e: Exception) {
+            if (e is AccessDeniedException) {
+                null
+            } else {
+                // if we can't list profiles assume it is valid
+                LOG.warn { "Continuing with $selected since listAvailableProfiles failed" }
+                return
+            }
         }
 
+        // succeeded in listing profiles, but none match selected
+        // profiles should be null if access denied or connection is not IdC
         if (profiles == null || profiles.none { it.arn == selected.arn }) {
-            invalidateProfile(selected.arn)
+            // Note that order matters, should switch to null first then invalidateProfile
             switchProfile(project, null, intent = QProfileSwitchIntent.Reload)
+            invalidateProfile(selected.arn)
             Telemetry.amazonq.profileState.use { span ->
                 span.source(QProfileSwitchIntent.Reload.value)
                     .amazonQProfileRegion(selected.region)
@@ -83,6 +97,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
 
     fun listRegionProfiles(project: Project): List<QRegionProfile>? {
         val connection = getIdcConnectionOrNull(project) ?: return null
+
         return try {
             val connectionSettings = connection.getConnectionSettings()
             val mappedProfiles = AwsResourceCache.getInstance().getResourceNow(
@@ -150,7 +165,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
     }
 
     private fun invalidateProfile(arn: String) {
-        val updated = connectionIdToActiveProfile.filterValues { it.arn != arn }
+        val updated = connectionIdToActiveProfile.filterValues { it != null && it.arn != arn }
         connectionIdToActiveProfile.clear()
         connectionIdToActiveProfile.putAll(updated)
     }
@@ -166,26 +181,27 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
         (connectionIdToProfileCount[conn.id] ?: 0) > 1
     } ?: false
 
-    fun getQClientSettings(project: Project, profile: QRegionProfile?): TokenConnectionSettings {
+    fun getQClientSettings(project: Project): TokenConnectionSettings {
         val conn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
         if (conn !is AwsBearerTokenConnection) {
             error("not a bearer connection")
         }
 
         val settings = conn.getConnectionSettings()
-        val defaultRegion = AwsRegionProvider.getInstance()[QEndpoints.Q_DEFAULT_SERVICE_CONFIG.REGION] ?: error("unknown region from Q default service config")
+        val awsRegion = AwsRegionProvider.getInstance()[QDefaultServiceConfig.REGION] ?: error("unknown region from Q default service config")
 
-        val regionId = profile?.region ?: activeProfile(project)?.region
-        val awsRegion = regionId?.let { AwsRegionProvider.getInstance()[it] } ?: defaultRegion
-
-        return settings.withRegion(awsRegion)
+        // TODO: different window should be able to select different profile
+        return activeProfile(project)?.let { profile ->
+            AwsRegionProvider.getInstance()[profile.region]?.let { region ->
+                settings.withRegion(region)
+            }
+        } ?: settings.withRegion(awsRegion)
     }
 
-    inline fun <reified T : SdkClient> getQClient(project: Project): T = getQClient(project, null, T::class)
-    inline fun <reified T : SdkClient> getQClient(project: Project, profile: QRegionProfile): T = getQClient(project, profile, T::class)
+    inline fun <reified T : SdkClient> getQClient(project: Project): T = getQClient(project, T::class)
 
-    fun <T : SdkClient> getQClient(project: Project, profile: QRegionProfile?, sdkClass: KClass<T>): T {
-        val settings = getQClientSettings(project, profile)
+    fun <T : SdkClient> getQClient(project: Project, sdkClass: KClass<T>): T {
+        val settings = getQClientSettings(project)
         val client = AwsClientManager.getInstance().getClient(sdkClass, settings)
         return client
     }

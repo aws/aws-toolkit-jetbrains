@@ -178,7 +178,7 @@ class QRegionProfileManagerTest {
         client.stub {
             onGeneric { listAvailableProfilesPaginator(any<Consumer<ListAvailableProfilesRequest.Builder>>()) } doReturn iterable
         }
-        val connectionSettings = sut.getQClientSettings(project, null)
+        val connectionSettings = sut.getQClientSettings(project)
         resourceCache.addEntry(connectionSettings, QProfileResources.LIST_REGION_PROFILES, QProfileResources.LIST_REGION_PROFILES.fetch(connectionSettings))
 
         assertThat(sut.listRegionProfiles(project))
@@ -191,20 +191,34 @@ class QRegionProfileManagerTest {
 
     @Test
     fun `validateProfile should cross validate selected profile with latest API response for current project and remove it if its not longer accessible`() {
-        val client = clientRule.create<CodeWhispererRuntimeClient>()
-        val mockResponse: SdkIterable<Profile> = SdkIterable<Profile> {
+        val activeConn =
+            ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) ?: fail("connection shouldn't be null")
+        val anotherConn = authRule.createConnection(ManagedSsoProfile(ssoRegion = "us-east-1", startUrl = "anotherUrl", scopes = Q_SCOPES))
+        val fooProfile = QRegionProfile("foo", "foo-arn")
+        val barProfile = QRegionProfile("bar", "bar-arn")
+        val state = QProfileState().apply {
+            this.connectionIdToActiveProfile[activeConn.id] = fooProfile
+            this.connectionIdToActiveProfile[anotherConn.id] = barProfile
+        }
+        resourceCache.addEntry(
+            activeConn.getConnectionSettings(),
+            QProfileResources.LIST_REGION_PROFILES,
             listOf(
-                Profile.builder().profileName("foo").arn("foo-arn-v2").build(),
-                Profile.builder().profileName("bar").arn("bar-arn").build(),
-            ).toMutableList().iterator()
-        }
-        val iterable: ListAvailableProfilesIterable = mock {
-            on { it.profiles() } doReturn mockResponse
-        }
-        client.stub {
-            onGeneric { listAvailableProfilesPaginator(any<Consumer<ListAvailableProfilesRequest.Builder>>()) } doReturn iterable
-        }
+                QRegionProfile("foo", "foo-arn-v2"),
+                QRegionProfile("bar", "bar-arn"),
+            )
+        )
 
+        sut.loadState(state)
+        assertThat(sut.activeProfile(project)).isEqualTo(fooProfile)
+
+        sut.validateProfile(project)
+        assertThat(sut.activeProfile(project)).isNull()
+        assertThat(sut.state.connectionIdToActiveProfile).isEqualTo(mapOf(anotherConn.id to barProfile))
+    }
+
+    @Test
+    fun `validateProfile does not clear profile if profiles cannot be listed`() {
         val activeConn =
             ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance()) ?: fail("connection shouldn't be null")
         val anotherConn = authRule.createConnection(ManagedSsoProfile(ssoRegion = "us-east-1", startUrl = "anotherUrl", scopes = Q_SCOPES))
@@ -218,8 +232,7 @@ class QRegionProfileManagerTest {
         assertThat(sut.activeProfile(project)).isEqualTo(fooProfile)
 
         sut.validateProfile(project)
-        assertThat(sut.activeProfile(project)).isNull()
-        assertThat(sut.state.connectionIdToActiveProfile).isEqualTo(mapOf(anotherConn.id to barProfile))
+        assertThat(sut.activeProfile(project)).isEqualTo(fooProfile)
     }
 
     @Test
@@ -234,7 +247,7 @@ class QRegionProfileManagerTest {
             sut.activeProfile(project)
         ).isEqualTo(QRegionProfile(arn = "arn:aws:codewhisperer:eu-central-1:123456789012:profile/FOO_PROFILE", profileName = "FOO_PROFILE"))
 
-        val settings = sut.getQClientSettings(project, null)
+        val settings = sut.getQClientSettings(project)
         assertThat(settings.region.id).isEqualTo(Region.EU_CENTRAL_1.id())
 
         sut.switchProfile(
@@ -246,7 +259,7 @@ class QRegionProfileManagerTest {
             sut.activeProfile(project)
         ).isEqualTo(QRegionProfile(arn = "arn:aws:codewhisperer:us-east-1:123456789012:profile/BAR_PROFILE", profileName = "BAR_PROFILE"))
 
-        val settings2 = sut.getQClientSettings(project, null)
+        val settings2 = sut.getQClientSettings(project)
         assertThat(settings2.region.id).isEqualTo(Region.US_EAST_1.id())
     }
 
@@ -262,7 +275,7 @@ class QRegionProfileManagerTest {
         assertThat(
             sut.activeProfile(project)
         ).isEqualTo(QRegionProfile(arn = "arn:aws:codewhisperer:eu-central-1:123456789012:profile/FOO_PROFILE", profileName = "FOO_PROFILE"))
-        assertThat(sut.getQClientSettings(project, null).region.id).isEqualTo(Region.EU_CENTRAL_1.id())
+        assertThat(sut.getQClientSettings(project).region.id).isEqualTo(Region.EU_CENTRAL_1.id())
 
         val client = sut.getQClient<CodeWhispererRuntimeClient>(project)
         assertThat(client).isInstanceOf(CodeWhispererRuntimeClient::class.java)
@@ -279,7 +292,7 @@ class QRegionProfileManagerTest {
         assertThat(
             sut.activeProfile(project)
         ).isEqualTo(QRegionProfile(arn = "arn:aws:codewhisperer:us-east-1:123456789012:profile/BAR_PROFILE", profileName = "BAR_PROFILE"))
-        assertThat(sut.getQClientSettings(project, null).region.id).isEqualTo(Region.US_EAST_1.id())
+        assertThat(sut.getQClientSettings(project).region.id).isEqualTo(Region.US_EAST_1.id())
 
         val client2 = sut.getQClient<CodeWhispererRuntimeClient>(project)
         assertThat(client2).isInstanceOf(CodeWhispererRuntimeClient::class.java)
