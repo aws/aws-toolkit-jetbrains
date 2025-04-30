@@ -188,7 +188,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
         }
 
         val settings = conn.getConnectionSettings()
-        val awsRegion = AwsRegionProvider.getInstance()[QEndpoints.Q_DEFAULT_SERVICE_CONFIG.REGION] ?: error("unknown region from Q default service config")
+        val awsRegion = AwsRegionProvider.getInstance()[QDefaultServiceConfig.REGION] ?: error("unknown region from Q default service config")
 
         // TODO: different window should be able to select different profile
         return activeProfile(project)?.let { profile ->
