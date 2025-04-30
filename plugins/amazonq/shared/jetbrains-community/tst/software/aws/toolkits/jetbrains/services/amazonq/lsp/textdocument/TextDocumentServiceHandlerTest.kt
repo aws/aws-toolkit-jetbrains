@@ -15,6 +15,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
+import com.intellij.testFramework.ApplicationRule
+import com.intellij.testFramework.LightVirtualFile
 import com.intellij.util.messages.MessageBus
 import com.intellij.util.messages.MessageBusConnection
 import io.mockk.every
@@ -24,6 +26,7 @@ import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.runs
 import io.mockk.slot
+import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
@@ -34,6 +37,7 @@ import org.eclipse.lsp4j.DidSaveTextDocumentParams
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.services.TextDocumentService
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
@@ -44,6 +48,10 @@ import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
 
 class TextDocumentServiceHandlerTest {
+    @Rule
+    @JvmField
+    val application = ApplicationRule()
+
     private lateinit var project: Project
     private lateinit var mockFileEditorManager: FileEditorManager
     private lateinit var mockLanguageServer: AmazonQLanguageServer
@@ -57,7 +65,7 @@ class TextDocumentServiceHandlerTest {
         mockTextDocumentService = mockk<TextDocumentService>()
         mockLanguageServer = mockk<AmazonQLanguageServer>()
 
-        mockApplication = mockk<Application>()
+        mockApplication = spyk<Application>(ApplicationManager.getApplication())
         mockkStatic(ApplicationManager::class)
         every { ApplicationManager.getApplication() } returns mockApplication
         every { mockApplication.executeOnPooledThread(any<Callable<*>>()) } answers {
@@ -311,18 +319,19 @@ class TextDocumentServiceHandlerTest {
 
         val mockFileType = mockk<FileType> {
             every { name } returns fileTypeName
+            every { isBinary } returns false
         }
 
-        return mockk<VirtualFile> {
+        return spyk<VirtualFile>(LightVirtualFile("test.java")) {
             every { url } returns uri.path
             every { toNioPath() } returns path
             every { isDirectory } returns false
             every { fileSystem } returns mockk {
                 every { protocol } returns "file"
             }
-            every { this@mockk.inputStream } returns inputStream
+            every { this@spyk.inputStream } returns inputStream
             every { fileType } returns mockFileType
-            every { this@mockk.modificationStamp } returns modificationStamp
+            every { this@spyk.modificationStamp } returns modificationStamp
         }
     }
 
