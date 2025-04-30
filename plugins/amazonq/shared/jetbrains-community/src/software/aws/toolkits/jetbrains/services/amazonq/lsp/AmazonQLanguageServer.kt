@@ -15,6 +15,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Butto
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_BUTTON_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_CONVERSATION_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_COPY_CODE_TO_CLIPBOARD_NOTIFICATION
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_CREATE_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FEEDBACK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FILE_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FOLLOW_UP_CLICK
@@ -31,6 +32,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ConversationClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ConversationClickResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyCodeToClipboardParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CreatePromptParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FeedbackParams
@@ -123,4 +125,7 @@ interface AmazonQLanguageServer : LanguageServer {
 
     @JsonRequest(CHAT_BUTTON_CLICK)
     fun buttonClick(params: ButtonClickParams): CompletableFuture<ButtonClickResult>
+
+    @JsonNotification(CHAT_CREATE_PROMPT)
+    fun createPrompt(params: CreatePromptParams): CompletableFuture<Unit>
 }
