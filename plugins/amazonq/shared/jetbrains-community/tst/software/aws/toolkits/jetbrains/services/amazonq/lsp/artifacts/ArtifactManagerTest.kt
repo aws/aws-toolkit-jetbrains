@@ -3,28 +3,31 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
-import com.intellij.openapi.project.Project
+import com.intellij.testFramework.ProjectExtension
 import com.intellij.util.text.SemVer
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
-import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.jetbrains.annotations.TestOnly
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import org.junit.jupiter.api.io.TempDir
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager.SupportedManifestVersionRange
 import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 import java.nio.file.Path
 
-@TestOnly
 class ArtifactManagerTest {
+    companion object {
+        @JvmField
+        @RegisterExtension
+        val projectExtension = ProjectExtension()
+    }
 
     @TempDir
     lateinit var tempDir: Path
@@ -33,7 +36,6 @@ class ArtifactManagerTest {
     private lateinit var artifactManager: ArtifactManager
     private lateinit var manifestFetcher: ManifestFetcher
     private lateinit var manifestVersionRanges: SupportedManifestVersionRange
-    private lateinit var mockProject: Project
 
     @BeforeEach
     fun setUp() {
@@ -43,11 +45,7 @@ class ArtifactManagerTest {
             startVersion = SemVer("1.0.0", 1, 0, 0),
             endVersion = SemVer("2.0.0", 2, 0, 0)
         )
-        mockProject = mockk<Project>(relaxed = true) {
-            every { basePath } returns tempDir.toString()
-            every { name } returns "TestProject"
-        }
-        artifactManager = ArtifactManager(mockProject, manifestFetcher, artifactHelper, manifestVersionRanges)
+        artifactManager = ArtifactManager()
     }
 
     @Test
@@ -55,7 +53,7 @@ class ArtifactManagerTest {
         every { manifestFetcher.fetch() }.returns(null)
 
         assertThatThrownBy {
-            runBlocking { artifactManager.fetchArtifact() }
+            runBlocking { artifactManager.fetchArtifact(projectExtension.project) }
         }
             .isInstanceOf(LspException::class.java)
             .hasFieldOrPropertyWithValue("errorCode", LspException.ErrorCode.MANIFEST_FETCH_FAILED)
@@ -64,14 +62,14 @@ class ArtifactManagerTest {
     @Test
     fun `fetch artifact does not have any valid lsp versions`() {
         every { manifestFetcher.fetch() }.returns(ManifestManager.Manifest())
-        artifactManager = spyk(ArtifactManager(mockProject, manifestFetcher, artifactHelper, manifestVersionRanges))
+        artifactManager = spyk(ArtifactManager())
 
         every { artifactManager.getLSPVersionsFromManifestWithSpecifiedRange(any()) }.returns(
             ArtifactManager.LSPVersions(deListedVersions = emptyList(), inRangeVersions = emptyList())
         )
 
         assertThatThrownBy {
-            runBlocking { artifactManager.fetchArtifact() }
+            runBlocking { artifactManager.fetchArtifact(projectExtension.project) }
         }
             .isInstanceOf(LspException::class.java)
             .hasFieldOrPropertyWithValue("errorCode", LspException.ErrorCode.NO_COMPATIBLE_LSP_VERSION)
@@ -84,7 +82,7 @@ class ArtifactManagerTest {
         every { manifestFetcher.fetch() }.returns(ManifestManager.Manifest())
         every { artifactHelper.getAllLocalLspArtifactsWithinManifestRange(any()) }.returns(expectedResult)
 
-        runBlocking { artifactManager.fetchArtifact() }
+        runBlocking { artifactManager.fetchArtifact(projectExtension.project) }
 
         verify(exactly = 1) { manifestFetcher.fetch() }
         verify(exactly = 1) { artifactHelper.getAllLocalLspArtifactsWithinManifestRange(any()) }
@@ -95,7 +93,7 @@ class ArtifactManagerTest {
         val target = ManifestManager.VersionTarget(platform = "temp", arch = "temp")
         val versions = listOf(ManifestManager.Version("1.0.0", targets = listOf(target)))
 
-        artifactManager = spyk(ArtifactManager(mockProject, manifestFetcher, artifactHelper, manifestVersionRanges))
+        artifactManager = spyk(ArtifactManager())
 
         every { artifactManager.getLSPVersionsFromManifestWithSpecifiedRange(any()) }.returns(
             ArtifactManager.LSPVersions(deListedVersions = emptyList(), inRangeVersions = versions)
@@ -110,7 +108,7 @@ class ArtifactManagerTest {
         coEvery { artifactHelper.tryDownloadLspArtifacts(any(), any(), any()) } returns tempDir
         every { artifactHelper.deleteOlderLspArtifacts(any()) } just Runs
 
-        runBlocking { artifactManager.fetchArtifact() }
+        runBlocking { artifactManager.fetchArtifact(projectExtension.project) }
 
         verify(exactly = 1) { runBlocking { artifactHelper.tryDownloadLspArtifacts(any(), any(), any()) } }
         verify(exactly = 1) { artifactHelper.deleteOlderLspArtifacts(any()) }
@@ -122,7 +120,7 @@ class ArtifactManagerTest {
         val versions = listOf(ManifestManager.Version("1.0.0", targets = listOf(target)))
         val expectedResult = listOf(Pair(tempDir, SemVer("1.0.0", 1, 0, 0)))
 
-        artifactManager = spyk(ArtifactManager(mockProject, manifestFetcher, artifactHelper, manifestVersionRanges))
+        artifactManager = spyk(ArtifactManager())
 
         every { artifactManager.getLSPVersionsFromManifestWithSpecifiedRange(any()) }.returns(
             ArtifactManager.LSPVersions(deListedVersions = emptyList(), inRangeVersions = versions)
@@ -137,7 +135,7 @@ class ArtifactManagerTest {
         every { artifactHelper.deleteOlderLspArtifacts(any()) } just Runs
         every { artifactHelper.getAllLocalLspArtifactsWithinManifestRange(any()) }.returns(expectedResult)
 
-        runBlocking { artifactManager.fetchArtifact() }
+        runBlocking { artifactManager.fetchArtifact(projectExtension.project) }
 
         verify(exactly = 0) { runBlocking { artifactHelper.tryDownloadLspArtifacts(any(), any(), any()) } }
         verify(exactly = 1) { artifactHelper.deleteOlderLspArtifacts(any()) }

@@ -7,6 +7,7 @@ import com.intellij.idea.AppMode
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.components.JBLoadingPanel
@@ -18,8 +19,10 @@ import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.AlignY
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.jcef.JBCefApp
+import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactHelper
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager
 import software.aws.toolkits.jetbrains.services.amazonq.webview.Browser
 import java.awt.event.ActionListener
 import java.util.concurrent.CompletableFuture
@@ -88,7 +91,7 @@ class AmazonQPanel(private val parent: Disposable, val project: Project) {
             wrapper.setContent(loadingPanel)
 
             ApplicationManager.getApplication().executeOnPooledThread {
-                val webUri = ArtifactHelper().getLatestLocalLspArtifact().resolve("amazonq-ui.js").toUri()
+                val webUri = runBlocking { service<ArtifactManager>().fetchArtifact(project).resolve("amazonq-ui.js").toUri() }
                 loadingPanel.stopLoading()
                 runInEdt {
                     browser.complete(
