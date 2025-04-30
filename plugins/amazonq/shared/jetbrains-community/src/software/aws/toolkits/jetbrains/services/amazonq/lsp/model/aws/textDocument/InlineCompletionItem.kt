@@ -6,6 +6,6 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocum
 data class InlineCompletionItem(
     var itemId: String,
     var insertText: String,
-    var references: List<InlineCompletionReference>?,
-    var mostRelevantMissingImports: List<InlineCompletionImports>?,
+    var references: List<InlineCompletionReference>? = null,
+    var mostRelevantMissingImports: List<InlineCompletionImports>? = null,
 )

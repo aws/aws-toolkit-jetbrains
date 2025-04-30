@@ -12,8 +12,6 @@ import software.amazon.awssdk.services.codewhispererruntime.model.ChatMessageInt
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.CreateUploadUrlResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.Dimension
-import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsRequest
-import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeAnalysisRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeAnalysisResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.GetCodeFixJobRequest
@@ -47,10 +45,6 @@ import java.time.Instant
 )
 interface CodeWhispererClientAdaptor {
     val project: Project
-
-    fun generateCompletionsPaginator(
-        firstRequest: GenerateCompletionsRequest,
-    ): Sequence<GenerateCompletionsResponse>
 
     fun createUploadUrl(
         request: CreateUploadUrlRequest,
@@ -220,15 +214,6 @@ interface CodeWhispererClientAdaptor {
 
 open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispererClientAdaptor {
     fun bearerClient() = QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project)
-
-    override fun generateCompletionsPaginator(firstRequest: GenerateCompletionsRequest) = sequence<GenerateCompletionsResponse> {
-        var nextToken: String? = firstRequest.nextToken()
-        do {
-            val response = bearerClient().generateCompletions(firstRequest.copy { it.nextToken(nextToken) })
-            nextToken = response.nextToken()
-            yield(response)
-        } while (!nextToken.isNullOrEmpty())
-    }
 
     override fun createUploadUrl(request: CreateUploadUrlRequest): CreateUploadUrlResponse =
         bearerClient().createUploadUrl(request)

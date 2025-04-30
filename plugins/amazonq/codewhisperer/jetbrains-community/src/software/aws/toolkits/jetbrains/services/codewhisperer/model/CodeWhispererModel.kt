@@ -10,10 +10,8 @@ import com.intellij.openapi.editor.markup.RangeHighlighter
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkits.jetbrains.services.amazonq.SUPPLEMENTAL_CONTEXT_TIMEOUT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionItem
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.sessionconfig.PayloadContext
@@ -30,9 +28,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseCo
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryServiceNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.setIntelliSensePopupAlpha
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CrossFileStrategy
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.SupplementalContextStrategy
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.UtgStrategy
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import software.aws.toolkits.telemetry.Result
@@ -45,11 +40,6 @@ data class Chunk(
     val score: Double = 0.0,
 )
 
-data class ListUtgCandidateResult(
-    val vfile: VirtualFile?,
-    val strategy: UtgStrategy,
-)
-
 data class CaretContext(val leftFileContext: String, val rightFileContext: String, val leftContextOnCurrentLine: String = "")
 
 data class FileContextInfo(
@@ -58,40 +48,6 @@ data class FileContextInfo(
     val programmingLanguage: CodeWhispererProgrammingLanguage,
     val fileRelativePath: String?,
 )
-
-data class SupplementalContextInfo(
-    val isUtg: Boolean,
-    val contents: List<Chunk>,
-    val targetFileName: String,
-    val strategy: SupplementalContextStrategy,
-    val latency: Long = 0L,
-) {
-    val contentLength: Int
-        get() = contents.fold(0) { acc, chunk ->
-            acc + chunk.content.length
-        }
-
-    val isProcessTimeout: Boolean
-        get() = latency > SUPPLEMENTAL_CONTEXT_TIMEOUT
-
-    companion object {
-        fun emptyCrossFileContextInfo(targetFileName: String): SupplementalContextInfo = SupplementalContextInfo(
-            isUtg = false,
-            contents = emptyList(),
-            targetFileName = targetFileName,
-            strategy = CrossFileStrategy.Empty,
-            latency = 0L
-        )
-
-        fun emptyUtgFileContextInfo(targetFileName: String): SupplementalContextInfo = SupplementalContextInfo(
-            isUtg = true,
-            contents = emptyList(),
-            targetFileName = targetFileName,
-            strategy = UtgStrategy.Empty,
-            latency = 0L
-        )
-    }
-}
 
 data class RecommendationContext(
     val details: List<DetailContext>,

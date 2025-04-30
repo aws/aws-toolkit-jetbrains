@@ -8,5 +8,5 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either
 data class InlineCompletionListWithReferences(
     var items: List<InlineCompletionItem>,
     var sessionId: String,
-    var partialResultToken: Either<String, Int>?,
+    var partialResultToken: Either<String, Int>? = null,
 )

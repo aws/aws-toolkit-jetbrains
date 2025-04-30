@@ -52,7 +52,6 @@ class CodeWhispererInvocationStatus {
 
     fun documentChanged() {
         timeAtLastDocumentChanged = Instant.now()
-        println("document change now")
     }
 
     fun completionShown() {

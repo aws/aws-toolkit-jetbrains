@@ -622,7 +622,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         return states
     }
 
-    private fun createInlineCompletionParams(
+    fun createInlineCompletionParams(
         editor: Editor,
         triggerTypeInfo: TriggerTypeInfo,
         nextToken: Either<String, Int>?,

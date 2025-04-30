@@ -19,9 +19,9 @@ object ReferenceLogController {
         codeReferences?.let { references ->
             val cwReferences = references.map { reference ->
                 InlineCompletionReference(
-                    referenceName = reference.repository ?: "",
-                    referenceUrl = reference.url ?: "",
-                    licenseName = reference.licenseName ?: "",
+                    referenceName = reference.repository.orEmpty(),
+                    referenceUrl = reference.url.orEmpty(),
+                    licenseName = reference.licenseName.orEmpty(),
                     position = InlineCompletionReferencePosition(
                         startCharacter = reference.recommendationContentSpan?.start ?: 0,
                         endCharacter = reference.recommendationContentSpan?.end ?: 0,
@@ -35,7 +35,6 @@ object ReferenceLogController {
                 cwReferences,
                 editor,
                 inlineChatStartPosition ?: CodeWhispererEditorUtil.getCaretPosition(editor),
-                null,
             )
         }
     }
@@ -46,9 +45,9 @@ object ReferenceLogController {
         // TODO flare: hook /dev references with flare correctly, this is only a compile error fix which is not tested
         codeReferences?.forEach { reference ->
             val cwReferences = InlineCompletionReference(
-                referenceName = reference.repository ?: "",
-                referenceUrl = reference.url ?: "",
-                licenseName = reference.licenseName ?: "",
+                referenceName = reference.repository.orEmpty(),
+                referenceUrl = reference.url.orEmpty(),
+                licenseName = reference.licenseName.orEmpty(),
                 position = InlineCompletionReferencePosition(
                     startCharacter = reference.recommendationContentSpan?.start ?: 0,
                     endCharacter = reference.recommendationContentSpan?.end ?: 0,

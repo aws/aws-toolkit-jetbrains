@@ -155,17 +155,8 @@ object CodeWhispererConstants {
     }
 
     object CrossFile {
-        const val CHUNK_SIZE = 60
         const val NUMBER_OF_LINE_IN_CHUNK = 50
         const val NUMBER_OF_CHUNK_TO_FETCH = 3
-        const val MAX_TOTAL_LENGTH = 20480
-        const val MAX_LENGTH_PER_CHUNK = 10240
-        const val MAX_CONTEXT_COUNT = 5
-    }
-
-    object Utg {
-        const val UTG_SEGMENT_SIZE = 10200
-        const val UTG_PREFIX = "UTG\n"
     }
 
     object TryExampleFileContent {

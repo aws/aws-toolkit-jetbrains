@@ -112,7 +112,7 @@ class CodeWhispererCodeReferenceComponents(private val project: Project) {
 
         // if url to source package/repo is missing, the UX remains the same as we have for now
         // if url to source package/repo is present, the url pointing to the source will be present and remove the hyperlink to SPDX
-        if (ref.referenceUrl.isNullOrEmpty()) {
+        if (ref.referenceUrl.isEmpty()) {
             add(
                 licenseNameLink(ref.licenseName).apply {
                     font = font.deriveFont(Font.ITALIC + Font.BOLD)

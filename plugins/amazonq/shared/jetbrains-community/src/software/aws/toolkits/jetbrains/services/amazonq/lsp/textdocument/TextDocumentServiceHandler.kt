@@ -74,7 +74,6 @@ class TextDocumentServiceHandler(
                 },
                 serverInstance
             )
-            println("called handleFileOpened")
         }
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             toUriString(file)?.let { uri ->
@@ -93,7 +92,6 @@ class TextDocumentServiceHandler(
     }
 
     override fun beforeDocumentSaving(document: Document) {
-        println("called beforeDocumentSaving")
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             val file = FileDocumentManager.getInstance().getFile(document) ?: return@executeIfRunning
             toUriString(file)?.let { uri ->
@@ -110,7 +108,6 @@ class TextDocumentServiceHandler(
     }
 
     override fun after(events: MutableList<out VFileEvent>) {
-        println("called after")
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             pluginAwareExecuteOnPooledThread {
                 events.filterIsInstance<VFileContentChangeEvent>().forEach { event ->
@@ -146,7 +143,6 @@ class TextDocumentServiceHandler(
         source: FileEditorManager,
         file: VirtualFile,
     ) {
-        println("called fileClosed")
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             toUriString(file)?.let { uri ->
                 languageServer.textDocumentService.didClose(
@@ -161,7 +157,6 @@ class TextDocumentServiceHandler(
     }
 
     private fun realTimeEdit(event: DocumentEvent) {
-        println("called real time document changed on document: ${event.document}")
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             pluginAwareExecuteOnPooledThread {
                 val vFile = FileDocumentManager.getInstance().getFile(event.document) ?: return@pluginAwareExecuteOnPooledThread
