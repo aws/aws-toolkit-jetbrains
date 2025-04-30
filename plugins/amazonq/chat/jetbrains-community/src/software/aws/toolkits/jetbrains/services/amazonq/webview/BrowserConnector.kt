@@ -38,6 +38,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Butto
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_BUTTON_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_COPY_CODE_TO_CLIPBOARD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_CREATE_PROMPT
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_DISCLAIMER_ACKNOWLEDGED
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FEEDBACK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FILE_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FOLLOW_UP_CLICK
@@ -111,7 +112,7 @@ class BrowserConnector(
             .onEach { json ->
                 val node = serializer.toNode(json)
                 when (node.command) {
-                    "disclaimer-acknowledged" -> {
+                    CHAT_DISCLAIMER_ACKNOWLEDGED -> {
                         MeetQSettings.getInstance().disclaimerAcknowledged = true
                     }
 
