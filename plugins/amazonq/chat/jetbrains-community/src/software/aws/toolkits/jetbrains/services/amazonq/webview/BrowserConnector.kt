@@ -37,16 +37,16 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Butto
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_BUTTON_CLICK
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_CONVERSATION_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_COPY_CODE_TO_CLIPBOARD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FEEDBACK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FILE_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FOLLOW_UP_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INFO_LINK_CLICK
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_CONVERSATION_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INSERT_TO_CURSOR
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_LINK_CLICK
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_LIST_CONVERSATIONS
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_PROMPT_OPTION_ACKNOWLEDGED
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_READY
@@ -76,7 +76,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Inser
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InsertToCursorPositionParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ListConversationsParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ListConversationsRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResponse
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PROMPT_INPUT_OPTIONS_CHANGE
@@ -260,7 +259,7 @@ class BrowserConnector(
             }
             CHAT_LIST_CONVERSATIONS -> {
                 val requestFromUi = serializer.deserializeChatMessages<ListConversationsRequest>(node)
-                val result =  AmazonQLspService.executeIfRunning(project) { server ->
+                val result = AmazonQLspService.executeIfRunning(project) { server ->
                     server.listConversations(requestFromUi.params)
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
 
@@ -276,7 +275,7 @@ class BrowserConnector(
             }
             CHAT_CONVERSATION_CLICK -> {
                 val requestFromUi = serializer.deserializeChatMessages<ConversationClickRequest>(node)
-                val result =  AmazonQLspService.executeIfRunning(project) { server ->
+                val result = AmazonQLspService.executeIfRunning(project) { server ->
                     server.conversationClick(requestFromUi.params)
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
 
