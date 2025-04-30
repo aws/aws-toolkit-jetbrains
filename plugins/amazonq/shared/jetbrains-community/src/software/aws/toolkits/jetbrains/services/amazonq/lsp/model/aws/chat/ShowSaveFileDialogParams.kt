@@ -11,5 +11,5 @@ data class ShowSaveFileDialogParams(
 )
 
 data class ShowSaveFileDialogResult(
-    val target: URI
+    val target: String
 )
