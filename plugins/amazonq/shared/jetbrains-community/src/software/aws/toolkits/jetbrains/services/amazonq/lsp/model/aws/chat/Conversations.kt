@@ -9,7 +9,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 typealias FilterValue = String
 
 data class TextBasedFilterOption(
-    val type: String, // 'textarea' | 'textinput'
+    val type: TextInputType,
     val placeholder: String? = null,
     val icon: IconType? = null,
 )
@@ -55,6 +55,11 @@ data class ConversationsList(
 }
 
 typealias ListConversationsResult = ConversationsList
+
+enum class TextInputType {
+    TEXTAREA,
+    TEXTINPUT,
+}
 
 enum class ConversationAction {
     DELETE,
