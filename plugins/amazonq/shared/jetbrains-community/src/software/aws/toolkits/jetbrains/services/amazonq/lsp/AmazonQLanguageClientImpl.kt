@@ -1,9 +1,11 @@
 // Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+@file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.google.gson.Gson
+import java.util.UUID
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -34,6 +36,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credential
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 
 /**
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
@@ -111,22 +115,28 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         }
 
     override fun openTab(params: OpenTabParams): CompletableFuture<OpenTabResult> {
-        val tabId = params.tabId.orEmpty()
+        val requestId = UUID.randomUUID().toString()
+        val result = CompletableFuture<OpenTabResult>()
 
-        // Convert params to JSON to send to the UI
-        val paramsJson = jacksonObjectMapper().writeValueAsString(params)
+        pendingTabRequests[requestId] = result
 
-        val uiMessage = ChatCommunicationManager.convertToJsonToSendToChat(
-            command = CHAT_OPEN_TAB,
-            tabId = tabId,
-            params = paramsJson,
-            isPartialResult = false
-        )
-
+        val uiMessage = """
+                {
+                "command": "$CHAT_OPEN_TAB",
+                "params": ${Gson().toJson(params)},
+                "requestId": "$requestId"
+                }
+                        """.trimIndent()
         AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
 
-        // Return the tabId (either existing or newly created)
-        return CompletableFuture.completedFuture(OpenTabResult(tabId))
+        result.orTimeout(30000, TimeUnit.MILLISECONDS)
+            .whenComplete { _, error ->
+                if (error != null) {
+                    pendingTabRequests.remove(requestId)
+                }
+            }
+
+        return result
     }
 
     override fun configuration(params: ConfigurationParams): CompletableFuture<List<Any>> {
@@ -184,5 +194,11 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
     companion object {
         private val LOG = getLogger<AmazonQLanguageClientImpl>()
+
+        private val pendingTabRequests = ConcurrentHashMap<String, CompletableFuture<OpenTabResult>>()
+
+        fun completeTabOpen(requestId: String, tabId: String) {
+            pendingTabRequests.remove(requestId)?.complete(OpenTabResult(tabId))
+        }
     }
 }

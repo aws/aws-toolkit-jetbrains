@@ -26,6 +26,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageClientImpl
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
@@ -42,6 +43,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INFO_LINK_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_INSERT_TO_CURSOR
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_LINK_CLICK
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_PROMPT_OPTION_ACKNOWLEDGED
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_QUICK_ACTION
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_READY
@@ -68,6 +70,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Inser
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InsertToCursorPositionParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResponse
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PROMPT_INPUT_OPTIONS_CHANGE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeParams
@@ -104,6 +107,8 @@ class BrowserConnector(
         addMessageHook(browser)
             .onEach { json ->
                 val node = serializer.toNode(json)
+                println(node.command)
+                println(node)
                 when (node.command) {
                     "disclaimer-acknowledged" -> {
                         MeetQSettings.getInstance().disclaimerAcknowledged = true
@@ -276,6 +281,13 @@ class BrowserConnector(
                 handleChatNotification<TabEventRequest, TabEventParams>(node) { server, params ->
                     server.tabChange(params)
                 }
+            }
+            CHAT_OPEN_TAB -> {
+                val response = serializer.deserializeChatMessages<OpenTabResponse>(node)
+                AmazonQLanguageClientImpl.completeTabOpen(
+                    response.requestId,
+                    response.params.result.tabId
+                )
             }
             CHAT_INSERT_TO_CURSOR -> {
                 handleChatNotification<InsertToCursorPositionNotification, InsertToCursorPositionParams>(node) { server, params ->
