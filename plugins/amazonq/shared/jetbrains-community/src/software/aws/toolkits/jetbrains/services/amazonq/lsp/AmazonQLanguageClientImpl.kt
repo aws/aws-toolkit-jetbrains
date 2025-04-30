@@ -1,8 +1,10 @@
 // Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+@file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
+import com.google.gson.Gson
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -23,14 +25,19 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
+import java.util.UUID
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 
 /**
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
@@ -107,9 +114,30 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             }
         }
 
-    override fun openTab(params: OpenTabParams): CompletableFuture<OpenTabResult> =
-        // TODO implement chat history, this is here to unblock chat functionality
-        CompletableFuture.completedFuture(OpenTabResult(""))
+    override fun openTab(params: OpenTabParams): CompletableFuture<OpenTabResult> {
+        val requestId = UUID.randomUUID().toString()
+        val result = CompletableFuture<OpenTabResult>()
+
+        pendingTabRequests[requestId] = result
+
+        val uiMessage = """
+                {
+                "command": "$CHAT_OPEN_TAB",
+                "params": ${Gson().toJson(params)},
+                "requestId": "$requestId"
+                }
+        """.trimIndent()
+        AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+
+        result.orTimeout(30000, TimeUnit.MILLISECONDS)
+            .whenComplete { _, error ->
+                if (error != null) {
+                    pendingTabRequests.remove(requestId)
+                }
+            }
+
+        return result
+    }
 
     override fun configuration(params: ConfigurationParams): CompletableFuture<List<Any>> {
         if (params.items.isEmpty()) {
@@ -166,5 +194,11 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
     companion object {
         private val LOG = getLogger<AmazonQLanguageClientImpl>()
+
+        private val pendingTabRequests = ConcurrentHashMap<String, CompletableFuture<OpenTabResult>>()
+
+        fun completeTabOpen(requestId: String, tabId: String) {
+            pendingTabRequests.remove(requestId)?.complete(OpenTabResult(tabId))
+        }
     }
 }

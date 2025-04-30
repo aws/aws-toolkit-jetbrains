@@ -12,13 +12,24 @@ data class TabEventParams(
     val tabId: String,
 )
 
-data class OpenTabResult(
-    val tabId: String,
-)
-
 data class OpenTabParams(
     val tabId: String? = null,
     val newTabOptions: NewTabOptions? = null,
+)
+
+data class OpenTabResponse(
+    val requestId: String,
+    val command: String,
+    val params: OpenTabResponseParams,
+)
+
+data class OpenTabResponseParams(
+    val success: Boolean,
+    val result: OpenTabResult,
+)
+
+data class OpenTabResult(
+    val tabId: String,
 )
 
 data class NewTabOptions(
