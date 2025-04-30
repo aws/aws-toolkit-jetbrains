@@ -168,13 +168,11 @@ class BrowserConnector(
 
     suspend fun connectTheme(
         chatBrowser: CefBrowser,
-        loginBrowser: CefBrowser,
         themeSource: Flow<AmazonQTheme>,
     ) = coroutineScope {
         themeSource
             .distinctUntilChanged()
             .onEach {
-                themeBrowserAdapter.updateLoginThemeInBrowser(loginBrowser, it)
                 themeBrowserAdapter.updateThemeInBrowser(chatBrowser, it, uiReady)
             }
             .launchIn(this)
