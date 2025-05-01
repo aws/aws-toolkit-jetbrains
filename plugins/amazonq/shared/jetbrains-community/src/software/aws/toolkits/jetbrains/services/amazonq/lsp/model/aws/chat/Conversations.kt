@@ -56,35 +56,21 @@ data class ConversationsList(
 
 typealias ListConversationsResult = ConversationsList
 
-enum class TextInputType {
-    TEXTAREA,
-    TEXTINPUT,
+enum class TextInputType(val value: String) {
+    TEXTAREA("textarea"),
+    TEXTINPUT("textinput"),
     ;
 
-    val value: String
-        get() = name.lowercase()
-
-    companion object {
-        private val stringToEnum: Map<String, TextInputType> = TextInputType.entries.associateBy { it.name.lowercase() }
-
-        fun fromString(value: String): TextInputType = stringToEnum[value] ?: throw IllegalArgumentException("Unknown IconType: $value")
-    }
+    override fun toString(): String = value
 }
 
-enum class ConversationAction {
-    DELETE,
-    EXPORT,
-    OPEN,
+enum class ConversationAction(val value: String) {
+    DELETE("delete"),
+    EXPORT("export"),
+    OPEN("open"),
     ;
 
-    val value: String
-        get() = name.lowercase()
-
-    companion object {
-        private val stringToEnum: Map<String, ConversationAction> = ConversationAction.entries.associateBy { it.name.lowercase() }
-
-        fun fromString(value: String): ConversationAction = stringToEnum[value] ?: throw IllegalArgumentException("Unknown IconType: $value")
-    }
+    override fun toString(): String = value
 }
 
 data class ConversationClickParams(
