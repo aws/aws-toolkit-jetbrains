@@ -37,7 +37,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileC
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FollowUpClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InsertToCursorPositionParams
@@ -129,5 +128,4 @@ interface AmazonQLanguageServer : LanguageServer {
 
     @JsonNotification(CHAT_CREATE_PROMPT)
     fun createPrompt(params: CreatePromptParams): CompletableFuture<Unit>
-
 }

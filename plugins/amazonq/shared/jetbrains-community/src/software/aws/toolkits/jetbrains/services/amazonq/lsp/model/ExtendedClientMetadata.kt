@@ -16,7 +16,7 @@ data class AwsMetadata(
 
 data class AwsClientCapabilities(
     val q: DeveloperProfiles,
-    val window: WindowSettings
+    val window: WindowSettings,
 )
 
 data class DeveloperProfiles(
@@ -24,7 +24,7 @@ data class DeveloperProfiles(
 )
 
 data class WindowSettings(
-    val showSaveFileDialog: Boolean
+    val showSaveFileDialog: Boolean,
 )
 
 data class ClientInfoMetadata(

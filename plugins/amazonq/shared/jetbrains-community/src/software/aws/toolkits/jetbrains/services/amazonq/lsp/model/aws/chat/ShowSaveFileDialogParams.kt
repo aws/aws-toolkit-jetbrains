@@ -3,13 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
-import java.net.URI
-
 data class ShowSaveFileDialogParams(
     val supportedFormats: List<String>,
-    val defaultURI: String?
+    val defaultUri: String?,
 )
 
 data class ShowSaveFileDialogResult(
-    val target: String
+    val targetUri: String,
 )

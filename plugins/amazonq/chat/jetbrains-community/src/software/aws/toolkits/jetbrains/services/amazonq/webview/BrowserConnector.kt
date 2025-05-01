@@ -73,8 +73,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileC
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FollowUpClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FollowUpClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResponse
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickParams
@@ -233,7 +231,7 @@ class BrowserConnector(
                     requestFromUi.params.tabId,
                     chatPrompt,
                     textDocumentIdentifier,
-                    cursorState
+                    cursorState,
                 )
 
                 val tabId = requestFromUi.params.tabId
@@ -359,18 +357,14 @@ class BrowserConnector(
             }
 
             CHAT_TAB_BAR_ACTIONS -> {
-                handleChatNotification<TabBarActionRequest, TabBarActionParams>(node)
-                {
-                    server, params ->
+                handleChatNotification<TabBarActionRequest, TabBarActionParams>(node) {
+                        server, params ->
                     val result = server.tabBarActions(params)
                     result.whenComplete { params1, error ->
                         val res = ChatCommunicationManager.convertNotificationToJsonForChat(CHAT_TAB_BAR_ACTIONS, params1)
                         browser.postChat(res)
                     }
-
-
                 }
-
             }
             CHAT_CREATE_PROMPT -> {
                 handleChatNotification<CreatePromptNotification, CreatePromptParams>(node) {

@@ -5,26 +5,25 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
 data class GetSerializedChatParams(
     val tabId: String,
-    val format : String
+    val format: String,
 ) {
     companion object {
-        fun create(tabId: String, format: SerializedChatFormat): GetSerializedChatParams {
-            return GetSerializedChatParams(tabId, format.value)
-        }
+        fun create(tabId: String, format: SerializedChatFormat): GetSerializedChatParams =
+            GetSerializedChatParams(tabId, format.value)
     }
 }
 
 enum class SerializedChatFormat(val value: String) {
     HTML("html"),
-    MARKDOWN("markdown");
+    MARKDOWN("markdown"),
+    ;
 
-    override fun toString(): String {
-        return name.lowercase()
-    }
+    override fun toString(): String =
+        name.lowercase()
 }
 
 data class GetSerializedChatResult(
-    val content: String
+    val content: String,
 )
 
 data class GetSerializedChatRequest(
@@ -35,7 +34,7 @@ data class GetSerializedChatRequest(
 
 data class GetSerializedChatResponseParams(
     val success: Boolean,
-    val result: GetSerializedChatResult
+    val result: GetSerializedChatResult,
 )
 
 data class GetSerializedChatResponse(

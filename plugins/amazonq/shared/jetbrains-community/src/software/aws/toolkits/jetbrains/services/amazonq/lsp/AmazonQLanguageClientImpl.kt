@@ -1,24 +1,17 @@
 // Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-
+@file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
 import com.google.gson.Gson
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
-import com.intellij.openapi.fileChooser.FileChooser
-import com.intellij.openapi.fileChooser.FileChooserDescriptor
-import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFileManager
-import com.intellij.ui.components.textFieldWithBrowseButton
-import com.intellij.ui.dsl.builder.panel
 import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
 import org.eclipse.lsp4j.ConfigurationParams
 import org.eclipse.lsp4j.MessageActionItem
@@ -47,17 +40,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credential
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
-import software.aws.toolkits.jetbrains.utils.computeOnEdt
-import java.io.File
-import java.io.FileFilter
-import java.net.URI
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
-import javax.swing.JComponent
-import javax.swing.JFileChooser
-import javax.swing.filechooser.FileNameExtensionFilter
 
 /**
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
@@ -114,7 +99,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         }
     }
 
-
     override fun getConnectionMetadata(): CompletableFuture<ConnectionMetadata> =
         CompletableFuture.supplyAsync {
             val connection = ToolkitConnectionManager.getInstance(project)
@@ -152,10 +136,9 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             }
         }
 
-        val saveAtUri = params.defaultURI ?:"export-chat.html"
+        val saveAtUri = params.defaultUri ?: "export-chat.html"
 
-        return CompletableFuture.supplyAsync{
-
+        return CompletableFuture.supplyAsync {
             return@supplyAsync invokeAndWaitIfNeeded {
                 val descriptor = FileSaverDescriptor("Export", "Choose a location to export").apply {
                     withFileFilter { file ->
@@ -170,20 +153,16 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 chosenFile?.let {
                     return@invokeAndWaitIfNeeded ShowSaveFileDialogResult(chosenFile.file.path)
                     // TODO: Add error state shown in chat ui instead of throwing
-                } ?: throw Error( "Export failed")
+                } ?: throw Error("Export failed")
             }
-
-
         }
-
-
     }
 
     override fun getSerializedChat(params: GetSerializedChatParams): CompletableFuture<GetSerializedChatResult> {
         val requestId = UUID.randomUUID().toString()
         val result = CompletableFuture<GetSerializedChatResult>()
 
-        pendingSerializedChatRequests[requestId] = result
+        ChatCommunicationManager.pendingSerializedChatRequests[requestId] = result
 
         val uiMessage = """
                 {
@@ -197,7 +176,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         result.orTimeout(30000, TimeUnit.MILLISECONDS)
             .whenComplete { _, error ->
                 if (error != null) {
-                    pendingSerializedChatRequests.remove(requestId)
+                    ChatCommunicationManager.pendingSerializedChatRequests.remove(requestId)
                 }
             }
 
@@ -259,31 +238,11 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
     companion object {
         private val LOG = getLogger<AmazonQLanguageClientImpl>()
-        private val pendingSerializedChatRequests = ConcurrentHashMap<String, CompletableFuture<GetSerializedChatResult>>()
-        fun completeSerializedChatResponse(requestId: String, content: String) {
-            pendingSerializedChatRequests.remove(requestId)?.complete(GetSerializedChatResult((content)))
-        }
     }
 }
 
 data class FormatMapping(
     val format: String,
     val key: String,
-    val extensions: String
+    val extensions: String,
 )
-
-class aaaaa(val project: Project, val descriptor: FileChooserDescriptor): DialogWrapper(project) {
-
-
-    init {
-        super.init()
-        title = "Export"
-    }
-
-    override fun createCenterPanel(): JComponent? =  panel {
-        row {
-            textFieldWithBrowseButton(project, descriptor)
-        }
-
-    }
-}

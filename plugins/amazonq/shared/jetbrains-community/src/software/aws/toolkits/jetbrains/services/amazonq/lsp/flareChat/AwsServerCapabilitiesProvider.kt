@@ -15,7 +15,7 @@ class AwsServerCapabilitiesProvider {
         this.serverCapabilities = serverCapabilities
     }
 
-    fun getChatOptions() =  serverCapabilities?.chatOptions ?: DEFAULT_CHAT_OPTIONS
+    fun getChatOptions() = serverCapabilities?.chatOptions ?: DEFAULT_CHAT_OPTIONS
 
     companion object {
         fun getInstance(project: Project) = project.service<AwsServerCapabilitiesProvider>()
