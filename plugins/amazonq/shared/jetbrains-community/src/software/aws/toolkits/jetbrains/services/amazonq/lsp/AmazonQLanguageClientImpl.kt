@@ -38,6 +38,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.customization.Code
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 
 /**
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
@@ -116,7 +117,8 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
     override fun openTab(params: OpenTabParams): CompletableFuture<OpenTabResult> {
         val requestId = UUID.randomUUID().toString()
-        val result = ChatCommunicationManager.getInstance(project).addPendingOpenTabRequest(requestId)
+        val result = CompletableFuture<OpenTabResult>()
+        ChatCommunicationManager.pendingTabRequests[requestId] = result
 
         val uiMessage = """
                 {
@@ -126,6 +128,11 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 }
         """.trimIndent()
         AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+
+        result.orTimeout(30000, TimeUnit.MILLISECONDS)
+            .whenComplete { _, error ->
+                ChatCommunicationManager.pendingTabRequests.remove(requestId)
+            }
 
         return result
     }
