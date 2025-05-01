@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
 import org.eclipse.lsp4j.Position
@@ -50,6 +51,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_READY
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SOURCE_LINK_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_ADD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_BAR_ACTIONS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_CHANGE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_REMOVE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatNotification
@@ -69,6 +71,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileC
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FollowUpClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FollowUpClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResponse
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InsertToCursorPositionNotification
@@ -83,6 +87,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventRequest
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
@@ -222,7 +228,7 @@ class BrowserConnector(
                     requestFromUi.params.tabId,
                     chatPrompt,
                     textDocumentIdentifier,
-                    cursorState
+                    cursorState,
                 )
 
                 val tabId = requestFromUi.params.tabId
@@ -339,6 +345,24 @@ class BrowserConnector(
                 }
             }
 
+            GET_SERIALIZED_CHAT_REQUEST_METHOD -> {
+                val response = serializer.deserializeChatMessages<GetSerializedChatResponse>(node)
+                ChatCommunicationManager.completeSerializedChatResponse(
+                    response.requestId,
+                    response.params.result.content
+                )
+            }
+
+            CHAT_TAB_BAR_ACTIONS -> {
+                handleChatNotification<TabBarActionRequest, TabBarActionParams>(node) {
+                        server, params ->
+                    val result = server.tabBarActions(params)
+                    result.whenComplete { params1, error ->
+                        val res = ChatCommunicationManager.convertNotificationToJsonForChat(CHAT_TAB_BAR_ACTIONS, params1)
+                        browser.postChat(res)
+                    }
+                }
+            }
             CHAT_CREATE_PROMPT -> {
                 handleChatNotification<CreatePromptNotification, CreatePromptParams>(node) {
                         server, params ->
