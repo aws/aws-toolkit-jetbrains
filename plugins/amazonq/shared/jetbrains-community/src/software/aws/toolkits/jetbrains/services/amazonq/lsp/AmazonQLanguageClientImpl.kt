@@ -28,6 +28,8 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatUpdateParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
@@ -36,6 +38,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.customization.Code
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 
 /**
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
@@ -114,7 +117,8 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
     override fun openTab(params: OpenTabParams): CompletableFuture<OpenTabResult> {
         val requestId = UUID.randomUUID().toString()
-        val result = ChatCommunicationManager.getInstance(project).addPendingOpenTabRequest(requestId)
+        val result = CompletableFuture<OpenTabResult>()
+        ChatCommunicationManager.pendingTabRequests[requestId] = result
 
         val uiMessage = """
                 {
@@ -124,6 +128,11 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 }
         """.trimIndent()
         AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+
+        result.orTimeout(30000, TimeUnit.MILLISECONDS)
+            .whenComplete { _, error ->
+                ChatCommunicationManager.pendingTabRequests.remove(requestId)
+            }
 
         return result
     }
@@ -179,6 +188,19 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         } catch (e: Exception) {
             error("Cannot handle partial chat")
         }
+    }
+
+    override fun sendChatUpdate(params: ChatUpdateParams): CompletableFuture<Unit> {
+        val uiMessage = """
+        {
+        "command":"$CHAT_SEND_UPDATE",
+        "params":${Gson().toJson(params)}
+        }
+        """.trimIndent()
+
+        AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+
+        return CompletableFuture.completedFuture(Unit)
     }
 
     companion object {

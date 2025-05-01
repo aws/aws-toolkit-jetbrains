@@ -322,7 +322,7 @@ class BrowserConnector(
             }
             CHAT_OPEN_TAB -> {
                 val response = serializer.deserializeChatMessages<OpenTabResponse>(node)
-                chatCommunicationManager.completeTabOpen(
+                ChatCommunicationManager.completeTabOpen(
                     response.requestId,
                     response.params.result.tabId
                 )
