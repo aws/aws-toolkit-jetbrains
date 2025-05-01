@@ -26,7 +26,6 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageClientImpl
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
@@ -40,6 +39,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_CONVERSATION_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_COPY_CODE_TO_CLIPBOARD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_CREATE_PROMPT
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_DISCLAIMER_ACKNOWLEDGED
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FEEDBACK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FILE_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_FOLLOW_UP_CLICK
@@ -118,7 +118,7 @@ class BrowserConnector(
             .onEach { json ->
                 val node = serializer.toNode(json)
                 when (node.command) {
-                    "disclaimer-acknowledged" -> {
+                    CHAT_DISCLAIMER_ACKNOWLEDGED -> {
                         MeetQSettings.getInstance().disclaimerAcknowledged = true
                     }
 
@@ -178,13 +178,11 @@ class BrowserConnector(
 
     suspend fun connectTheme(
         chatBrowser: CefBrowser,
-        loginBrowser: CefBrowser,
         themeSource: Flow<AmazonQTheme>,
     ) = coroutineScope {
         themeSource
             .distinctUntilChanged()
             .onEach {
-                themeBrowserAdapter.updateLoginThemeInBrowser(loginBrowser, it)
                 themeBrowserAdapter.updateThemeInBrowser(chatBrowser, it, uiReady)
             }
             .launchIn(this)
@@ -324,7 +322,7 @@ class BrowserConnector(
             }
             CHAT_OPEN_TAB -> {
                 val response = serializer.deserializeChatMessages<OpenTabResponse>(node)
-                AmazonQLanguageClientImpl.completeTabOpen(
+                chatCommunicationManager.completeTabOpen(
                     response.requestId,
                     response.params.result.tabId
                 )

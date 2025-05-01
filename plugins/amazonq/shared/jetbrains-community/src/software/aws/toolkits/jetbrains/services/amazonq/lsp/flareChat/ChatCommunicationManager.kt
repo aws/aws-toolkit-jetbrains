@@ -9,13 +9,30 @@ import com.intellij.openapi.project.Project
 import org.eclipse.lsp4j.ProgressParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ProgressNotificationUtils.getObject
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 
 @Service(Service.Level.PROJECT)
 class ChatCommunicationManager {
     private val chatPartialResultMap = ConcurrentHashMap<String, String>()
+    private val pendingTabRequests = ConcurrentHashMap<String, CompletableFuture<OpenTabResult>>()
+
+    fun addPendingOpenTabRequest(requestId: String): CompletableFuture<OpenTabResult> {
+        return CompletableFuture<OpenTabResult>().also { future ->
+            pendingTabRequests[requestId] = future
+            future.orTimeout(30000, TimeUnit.MILLISECONDS)
+                .whenComplete { _, error ->
+                    if (error != null) {
+                        pendingTabRequests.remove(requestId)
+                    }
+                }
+        }
+    }
+
     private fun getPartialChatMessage(partialResultToken: String): String =
         chatPartialResultMap.getValue(partialResultToken)
 
@@ -53,6 +70,11 @@ class ChatCommunicationManager {
             AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
         }
     }
+
+    fun completeTabOpen(requestId: String, tabId: String) {
+        pendingTabRequests.remove(requestId)?.complete(OpenTabResult(tabId))
+    }
+
     companion object {
         fun getInstance(project: Project) = project.service<ChatCommunicationManager>()
 
