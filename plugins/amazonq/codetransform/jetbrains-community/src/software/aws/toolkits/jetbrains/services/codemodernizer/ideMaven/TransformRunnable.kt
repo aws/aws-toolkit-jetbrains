@@ -4,12 +4,14 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven
 
 class TransformRunnable : Runnable {
-    var exitCode: Int? = null
+    private var exitCode: Int? = null
     private var output: String? = null
 
     fun setExitCode(i: Int) {
         exitCode = i
     }
+
+    fun getExitCode(): Int? = exitCode
 
     override fun run() {
         // do nothing

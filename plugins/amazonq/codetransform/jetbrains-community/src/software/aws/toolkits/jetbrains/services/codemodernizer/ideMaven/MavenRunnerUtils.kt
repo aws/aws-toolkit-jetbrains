@@ -47,7 +47,7 @@ fun runClientSideBuild(targetDir: VirtualFile, logger: Logger, project: Project)
             FileEditorManager.getInstance(project).openFile(buildLogOutputVirtualFile, true)
         }
     }
-    return buildRunnable.exitCode to buildRunnable.getOutput().toString()
+    return buildRunnable.getExitCode() to buildRunnable.getOutput().toString()
 }
 
 fun runHilMavenCopyDependency(
