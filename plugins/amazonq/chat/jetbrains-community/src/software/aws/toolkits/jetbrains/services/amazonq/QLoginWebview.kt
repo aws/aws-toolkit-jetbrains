@@ -18,6 +18,10 @@ import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.jcef.JBCefJSQuery
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import org.cef.CefApp
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
@@ -40,6 +44,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileSwitchIn
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
+import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.EditorThemeAdapter
+import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.ThemeBrowserAdapter
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.jetbrains.utils.isQWebviewsAvailable
@@ -54,7 +60,7 @@ import javax.swing.JButton
 import javax.swing.JComponent
 
 @Service(Service.Level.PROJECT)
-class QWebviewPanel private constructor(val project: Project) : Disposable {
+class QWebviewPanel private constructor(val project: Project, private val scope: CoroutineScope) : Disposable {
     private val webviewContainer = Wrapper()
     var browser: QWebviewBrowser? = null
         private set
@@ -102,6 +108,14 @@ class QWebviewPanel private constructor(val project: Project) : Disposable {
         } else {
             browser = QWebviewBrowser(project, this).also {
                 webviewContainer.add(it.component())
+
+                val themeBrowserAdapter = ThemeBrowserAdapter()
+                EditorThemeAdapter().onThemeChange()
+                    .distinctUntilChanged()
+                    .onEach { theme ->
+                        themeBrowserAdapter.updateLoginThemeInBrowser(it.jcefBrowser.cefBrowser, theme)
+                    }
+                    .launchIn(scope)
             }
         }
     }
