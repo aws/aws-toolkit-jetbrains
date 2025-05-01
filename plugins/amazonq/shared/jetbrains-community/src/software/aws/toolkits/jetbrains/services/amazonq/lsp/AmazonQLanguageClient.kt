@@ -3,8 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
+import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.LanguageClient
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatUpdateParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
@@ -32,4 +35,7 @@ interface AmazonQLanguageClient : LanguageClient {
 
     @JsonRequest(GET_SERIALIZED_CHAT_REQUEST_METHOD)
     fun getSerializedChat(params: GetSerializedChatParams): CompletableFuture<GetSerializedChatResult>
+
+    @JsonNotification(CHAT_SEND_UPDATE)
+    fun sendChatUpdate(params: ChatUpdateParams): CompletableFuture<Unit>
 }

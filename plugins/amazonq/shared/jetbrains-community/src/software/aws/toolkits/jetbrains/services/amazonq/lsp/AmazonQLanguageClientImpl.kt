@@ -28,6 +28,8 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatUpdateParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
@@ -226,6 +228,19 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         } catch (e: Exception) {
             error("Cannot handle partial chat")
         }
+    }
+
+    override fun sendChatUpdate(params: ChatUpdateParams): CompletableFuture<Unit> {
+        val uiMessage = """
+        {
+        "command":"$CHAT_SEND_UPDATE",
+        "params":${Gson().toJson(params)}
+        }
+        """.trimIndent()
+
+        AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+
+        return CompletableFuture.completedFuture(Unit)
     }
 
     companion object {
