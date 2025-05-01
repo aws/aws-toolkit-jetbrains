@@ -101,7 +101,6 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
             val wrapper = Wrapper()
             loadingPanel.startLoading()
 
-//            loadingPanel.add(JBPanelWithEmptyText().withEmptyText("Wait for chat to be ready"))
             webviewContainer.add(wrapper)
             wrapper.setContent(loadingPanel)
 
