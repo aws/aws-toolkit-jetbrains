@@ -128,6 +128,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                             }
                         }, 
                         {
+                        agenticMode: true,
                         quickActionCommands: $quickActionConfig,
                         disclaimerAcknowledged: ${MeetQSettings.getInstance().disclaimerAcknowledged},
                         pairProgrammingAcknowledged: ${!MeetQSettings.getInstance().amazonQChatPairProgramming}
