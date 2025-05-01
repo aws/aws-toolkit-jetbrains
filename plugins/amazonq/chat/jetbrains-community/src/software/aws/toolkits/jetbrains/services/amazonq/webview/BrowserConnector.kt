@@ -350,7 +350,7 @@ class BrowserConnector(
 
             GET_SERIALIZED_CHAT_REQUEST_METHOD -> {
                 val response = serializer.deserializeChatMessages<GetSerializedChatResponse>(node)
-                AmazonQLanguageClientImpl.completeSerializedChatResponse(
+                ChatCommunicationManager.completeSerializedChatResponse(
                     response.requestId,
                     response.params.result.content
                 )
