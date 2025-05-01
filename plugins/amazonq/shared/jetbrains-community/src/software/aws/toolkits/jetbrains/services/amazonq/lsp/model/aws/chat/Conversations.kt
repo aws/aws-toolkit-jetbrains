@@ -58,13 +58,33 @@ typealias ListConversationsResult = ConversationsList
 
 enum class TextInputType {
     TEXTAREA,
-    TEXTINPUT;
+    TEXTINPUT,
+    ;
+
+    val value: String
+        get() = name.lowercase()
+
+    companion object {
+        private val stringToEnum: Map<String, TextInputType> = TextInputType.entries.associateBy { it.name.lowercase() }
+
+        fun fromString(value: String): TextInputType = stringToEnum[value] ?: throw IllegalArgumentException("Unknown IconType: $value")
+    }
 }
 
 enum class ConversationAction {
     DELETE,
     EXPORT,
-    OPEN;
+    OPEN,
+    ;
+
+    val value: String
+        get() = name.lowercase()
+
+    companion object {
+        private val stringToEnum: Map<String, ConversationAction> = ConversationAction.entries.associateBy { it.name.lowercase() }
+
+        fun fromString(value: String): ConversationAction = stringToEnum[value] ?: throw IllegalArgumentException("Unknown IconType: $value")
+    }
 }
 
 data class ConversationClickParams(
