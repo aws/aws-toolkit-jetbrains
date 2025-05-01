@@ -56,19 +56,15 @@ data class ConversationsList(
 
 typealias ListConversationsResult = ConversationsList
 
-enum class TextInputType(val value: String) {
-    TEXTAREA("textarea"),
-    TEXTINPUT("textinput");
-
-    override fun toString() = value
+enum class TextInputType {
+    TEXTAREA,
+    TEXTINPUT;
 }
 
-enum class ConversationAction(val value: String) {
-    DELETE("delete"),
-    EXPORT("export"),
-    OPEN("open");
-
-    override fun toString() = value
+enum class ConversationAction {
+    DELETE,
+    EXPORT,
+    OPEN;
 }
 
 data class ConversationClickParams(
