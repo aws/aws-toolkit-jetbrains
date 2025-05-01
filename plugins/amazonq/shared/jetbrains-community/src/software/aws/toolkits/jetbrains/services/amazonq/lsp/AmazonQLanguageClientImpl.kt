@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp
 import com.google.gson.Gson
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -124,25 +123,19 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         CompletableFuture.completedFuture(OpenTabResult(""))
 
     override fun showSaveFileDialog(params: ShowSaveFileDialogParams): CompletableFuture<ShowSaveFileDialogResult> {
-        val filters = mutableMapOf<String, String>()
-        val formatMappings = listOf(
-            FormatMapping("markdown", "Markdown", "md"),
-            FormatMapping("html", "HTML", "html")
-        )
+        val filters = mutableListOf<String>()
+        val formatMappings = mapOf("markdown" to "md", "html" to "html")
 
         params.supportedFormats.forEach { format ->
-            formatMappings.find { it.format == format }?.let { mapping ->
-                filters[mapping.key] = mapping.extensions
-            }
+            formatMappings[format]?.let { filters.add(it) }
         }
-
-        val saveAtUri = params.defaultUri ?: "export-chat.html"
-
-        return CompletableFuture.supplyAsync {
-            return@supplyAsync invokeAndWaitIfNeeded {
+        val defaultUri = params.defaultUri ?: "export-chat.md"
+        val saveAtUri = defaultUri.substring(defaultUri.lastIndexOf("/"))
+        return CompletableFuture.supplyAsync(
+            {
                 val descriptor = FileSaverDescriptor("Export", "Choose a location to export").apply {
                     withFileFilter { file ->
-                        filters.values.any { ext ->
+                        filters.any { ext ->
                             file.name.endsWith(".$ext")
                         }
                     }
@@ -151,11 +144,12 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 val chosenFile = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project).save(saveAtUri)
 
                 chosenFile?.let {
-                    return@invokeAndWaitIfNeeded ShowSaveFileDialogResult(chosenFile.file.path)
+                    ShowSaveFileDialogResult(chosenFile.file.path)
                     // TODO: Add error state shown in chat ui instead of throwing
                 } ?: throw Error("Export failed")
-            }
-        }
+            },
+            ApplicationManager.getApplication()::invokeLater
+        )
     }
 
     override fun getSerializedChat(params: GetSerializedChatParams): CompletableFuture<GetSerializedChatResult> {
@@ -175,9 +169,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
         result.orTimeout(30000, TimeUnit.MILLISECONDS)
             .whenComplete { _, error ->
-                if (error != null) {
-                    ChatCommunicationManager.pendingSerializedChatRequests.remove(requestId)
-                }
+                ChatCommunicationManager.pendingSerializedChatRequests.remove(requestId)
             }
 
         return result
@@ -240,9 +232,3 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         private val LOG = getLogger<AmazonQLanguageClientImpl>()
     }
 }
-
-data class FormatMapping(
-    val format: String,
-    val key: String,
-    val extensions: String,
-)
