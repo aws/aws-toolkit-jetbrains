@@ -1,8 +1,10 @@
 // Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+@file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
+import com.google.gson.Gson
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -23,7 +25,10 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatUpdateParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
@@ -162,6 +167,19 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         } catch (e: Exception) {
             error("Cannot handle partial chat")
         }
+    }
+
+    override fun sendChatUpdate(params: ChatUpdateParams): CompletableFuture<Unit> {
+        val uiMessage = """
+        {
+        "command":"$CHAT_SEND_UPDATE",
+        "params":${Gson().toJson(params)}
+        }
+        """.trimIndent()
+
+        AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+
+        return CompletableFuture.completedFuture(Unit)
     }
 
     companion object {
