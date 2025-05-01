@@ -26,7 +26,6 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageClientImpl
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
@@ -288,7 +287,7 @@ class BrowserConnector(
             }
             CHAT_OPEN_TAB -> {
                 val response = serializer.deserializeChatMessages<OpenTabResponse>(node)
-                AmazonQLanguageClientImpl.completeTabOpen(
+                chatCommunicationManager.completeTabOpen(
                     response.requestId,
                     response.params.result.tabId
                 )
