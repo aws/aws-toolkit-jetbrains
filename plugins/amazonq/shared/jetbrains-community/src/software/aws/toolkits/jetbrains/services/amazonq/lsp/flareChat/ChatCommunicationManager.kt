@@ -1,14 +1,16 @@
 // Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-
+@file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat
 
+import com.google.gson.Gson
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.eclipse.lsp4j.ProgressParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ProgressNotificationUtils.getObject
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import java.util.UUID
@@ -59,6 +61,11 @@ class ChatCommunicationManager {
     companion object {
         fun getInstance(project: Project) = project.service<ChatCommunicationManager>()
 
+        val pendingSerializedChatRequests = ConcurrentHashMap<String, CompletableFuture<GetSerializedChatResult>>()
+        fun completeSerializedChatResponse(requestId: String, content: String) {
+            pendingSerializedChatRequests.remove(requestId)?.complete(GetSerializedChatResult((content)))
+        }
+
         fun convertToJsonToSendToChat(command: String, tabId: String, params: String, isPartialResult: Boolean): String =
             """
                 {
@@ -67,6 +74,14 @@ class ChatCommunicationManager {
                 "params": $params,
                 "isPartialResult": $isPartialResult
                 }
+            """.trimIndent()
+
+        inline fun <reified T> convertNotificationToJsonForChat(command: String, params: T? = null) =
+            """
+    {
+    "command":"$command",
+    "params": ${if (params != null) Gson().toJson(params) else "{}"}
+    }
             """.trimIndent()
 
         val pendingTabRequests = ConcurrentHashMap<String, CompletableFuture<OpenTabResult>>()
