@@ -8,8 +8,18 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.eclipse.lsp4j.ProgressParams
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
+import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ProgressNotificationUtils.getObject
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthFollowUpClickedParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthFollowUpType
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
@@ -58,8 +68,43 @@ class ChatCommunicationManager {
         }
     }
 
+    fun handleAuthFollowUpClicked(project: Project, params: AuthFollowUpClickedParams) {
+        val incomingType = params.authFollowUpType
+        val connectionManager = ToolkitConnectionManager.getInstance(project)
+        try {
+            when (incomingType) {
+                AuthFollowUpType.RE_AUTH.value, AuthFollowUpType.MISSING_SCOPES.value -> {
+                    connectionManager.activeConnectionForFeature(QConnection.getInstance())?.let {
+                        reauthConnectionIfNeeded(project, it, isReAuth = true)
+                    }
+                    return
+                }
+                AuthFollowUpType.FULL_AUTH.value, AuthFollowUpType.USE_SUPPORTED_AUTH.value -> {
+                    // Logout by deleting token credentials
+                    val validConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
+                    val connection = validConnection.activeConnectionBearer
+                    if (connection != null) {
+                        logoutFromSsoConnection(project, connection)
+                    } else {
+                        LOG.warn { "No valid connection found for logout" }
+                    }
+                    return
+                }
+                else -> {
+                    LOG.warn { "Unknown auth follow up type: $incomingType" }
+                    throw IllegalStateException("Error occurred while attempting to handle auth follow up: Unknown AuthFollowUpType $incomingType")
+                }
+            }
+        } catch (ex: Exception) {
+            LOG.warn(ex) { "Failed to handle authentication when auth follow up clicked" }
+            throw ex
+        }
+    }
+
     companion object {
         fun getInstance(project: Project) = project.service<ChatCommunicationManager>()
+
+        val LOG = getLogger<ChatCommunicationManager>()
 
         val pendingSerializedChatRequests = ConcurrentHashMap<String, CompletableFuture<GetSerializedChatResult>>()
         fun completeSerializedChatResponse(requestId: String, content: String) {
