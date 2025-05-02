@@ -266,7 +266,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
 
     init {
         // will cause slow service init, but maybe fine for now. will not block UI since fetch/extract will be under background progress
-        val artifact = runBlocking { ArtifactManager(project, manifestRange = null).fetchArtifact() }.toAbsolutePath()
+        val artifact = runBlocking { service<ArtifactManager>().fetchArtifact(project) }.toAbsolutePath()
         val node = if (SystemInfo.isWindows) "node.exe" else "node"
         val cmd = GeneralCommandLine(
             artifact.resolve(node).toString(),

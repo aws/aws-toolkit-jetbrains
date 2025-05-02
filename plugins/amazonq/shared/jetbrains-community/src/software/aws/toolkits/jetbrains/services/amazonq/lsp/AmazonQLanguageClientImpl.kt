@@ -1,10 +1,13 @@
 // Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-
+@file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
+import com.google.gson.Gson
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.fileChooser.FileChooserFactory
+import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFileManager
@@ -23,14 +26,25 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatUpdateParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
+import java.util.UUID
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 
 /**
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
@@ -107,9 +121,80 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             }
         }
 
-    override fun openTab(params: OpenTabParams): CompletableFuture<OpenTabResult> =
-        // TODO implement chat history, this is here to unblock chat functionality
-        CompletableFuture.completedFuture(OpenTabResult(""))
+    override fun openTab(params: OpenTabParams): CompletableFuture<OpenTabResult> {
+        val requestId = UUID.randomUUID().toString()
+        val result = CompletableFuture<OpenTabResult>()
+        ChatCommunicationManager.pendingTabRequests[requestId] = result
+
+        val uiMessage = """
+                {
+                "command": "$CHAT_OPEN_TAB",
+                "params": ${Gson().toJson(params)},
+                "requestId": "$requestId"
+                }
+        """.trimIndent()
+        AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+
+        result.orTimeout(30000, TimeUnit.MILLISECONDS)
+            .whenComplete { _, error ->
+                ChatCommunicationManager.pendingTabRequests.remove(requestId)
+            }
+
+        return result
+    }
+
+    override fun showSaveFileDialog(params: ShowSaveFileDialogParams): CompletableFuture<ShowSaveFileDialogResult> {
+        val filters = mutableListOf<String>()
+        val formatMappings = mapOf("markdown" to "md", "html" to "html")
+
+        params.supportedFormats.forEach { format ->
+            formatMappings[format]?.let { filters.add(it) }
+        }
+        val defaultUri = params.defaultUri ?: "export-chat.md"
+        val saveAtUri = defaultUri.substring(defaultUri.lastIndexOf("/"))
+        return CompletableFuture.supplyAsync(
+            {
+                val descriptor = FileSaverDescriptor("Export", "Choose a location to export").apply {
+                    withFileFilter { file ->
+                        filters.any { ext ->
+                            file.name.endsWith(".$ext")
+                        }
+                    }
+                }
+
+                val chosenFile = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project).save(saveAtUri)
+
+                chosenFile?.let {
+                    ShowSaveFileDialogResult(chosenFile.file.path)
+                    // TODO: Add error state shown in chat ui instead of throwing
+                } ?: throw Error("Export failed")
+            },
+            ApplicationManager.getApplication()::invokeLater
+        )
+    }
+
+    override fun getSerializedChat(params: GetSerializedChatParams): CompletableFuture<GetSerializedChatResult> {
+        val requestId = UUID.randomUUID().toString()
+        val result = CompletableFuture<GetSerializedChatResult>()
+
+        ChatCommunicationManager.pendingSerializedChatRequests[requestId] = result
+
+        val uiMessage = """
+                {
+                "command": "$GET_SERIALIZED_CHAT_REQUEST_METHOD",
+                "params": ${Gson().toJson(params)},
+                "requestId": "$requestId"
+                }
+        """.trimIndent()
+        AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+
+        result.orTimeout(30000, TimeUnit.MILLISECONDS)
+            .whenComplete { _, error ->
+                ChatCommunicationManager.pendingSerializedChatRequests.remove(requestId)
+            }
+
+        return result
+    }
 
     override fun configuration(params: ConfigurationParams): CompletableFuture<List<Any>> {
         if (params.items.isEmpty()) {
@@ -162,6 +247,19 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         } catch (e: Exception) {
             error("Cannot handle partial chat")
         }
+    }
+
+    override fun sendChatUpdate(params: ChatUpdateParams): CompletableFuture<Unit> {
+        val uiMessage = """
+        {
+        "command":"$CHAT_SEND_UPDATE",
+        "params":${Gson().toJson(params)}
+        }
+        """.trimIndent()
+
+        AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+
+        return CompletableFuture.completedFuture(Unit)
     }
 
     companion object {
