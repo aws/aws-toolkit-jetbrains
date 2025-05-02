@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
+import com.intellij.serviceContainer.NonInjectable
 import com.intellij.util.text.SemVer
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
@@ -19,9 +20,11 @@ import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.Manifes
 import java.nio.file.Path
 
 @Service
-class ArtifactManager {
-    private val manifestFetcher: ManifestFetcher = ManifestFetcher()
-    private val artifactHelper: ArtifactHelper = ArtifactHelper()
+class ArtifactManager @NonInjectable internal constructor(private val manifestFetcher: ManifestFetcher, private val artifactHelper: ArtifactHelper) {
+    constructor() : this(
+        ManifestFetcher(),
+        ArtifactHelper()
+    )
 
     // we currently cannot handle the versions swithing in the middle of a user's session
     private val mutex = Mutex()
