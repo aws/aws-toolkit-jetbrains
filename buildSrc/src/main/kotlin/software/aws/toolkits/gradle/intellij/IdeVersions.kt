@@ -103,23 +103,23 @@ object IdeVersions {
         Profile(
             name = "2025.1",
             gateway = ProductProfile(
-                sdkVersion = "251.23774-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "251.23774.441-CUSTOM-SNAPSHOT",
                 bundledPlugins = listOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
-                sdkVersion = "251.23774.109-EAP-SNAPSHOT",
+                sdkVersion = "2025.1",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
                 ),
                 marketplacePlugins = listOf(
-                    "PythonCore:251.23774.109",
-                    "Docker:251.23774.109"
+                    "PythonCore:251.23774.460",
+                    "Docker:251.23774.466"
                 )
             ),
             ultimate = ProductProfile(
-                sdkVersion = "251.23774.109-EAP-SNAPSHOT",
+                sdkVersion = "2025.1",
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
                     "JavaScriptDebugger",
@@ -127,16 +127,16 @@ object IdeVersions {
                     "com.jetbrains.codeWithMe",
                 ),
                 marketplacePlugins = listOf(
-                    "Pythonid:251.23774.109",
-                    "org.jetbrains.plugins.go:251.23774.109",
+                    "Pythonid:251.23774.460",
+                    "org.jetbrains.plugins.go:251.23774.435",
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2025.1-EAP8-SNAPSHOT",
+                sdkVersion = "2025.1",
                 bundledPlugins = commonPlugins,
                 netFrameworkTarget = "net472",
                 rdGenVersion = "2025.1.1",
-                nugetVersion = " 2025.1.0-eap08"
+                nugetVersion = " 2025.1.0"
             )
         ),
     ).associateBy { it.name }
