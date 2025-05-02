@@ -76,6 +76,12 @@ class ChatCommunicationManager {
                 }
             """.trimIndent()
 
+        val pendingTabRequests = ConcurrentHashMap<String, CompletableFuture<OpenTabResult>>()
+
+        fun completeTabOpen(requestId: String, tabId: String) {
+            pendingTabRequests.remove(requestId)?.complete(OpenTabResult(tabId))
+        }
+
         inline fun <reified T> convertNotificationToJsonForChat(command: String, params: T? = null) =
             """
     {
