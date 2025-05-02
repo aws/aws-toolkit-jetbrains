@@ -89,11 +89,5 @@ class ChatCommunicationManager {
     "params": ${if (params != null) Gson().toJson(params) else "{}"}
     }
             """.trimIndent()
-
-        val pendingTabRequests = ConcurrentHashMap<String, CompletableFuture<OpenTabResult>>()
-
-        fun completeTabOpen(requestId: String, tabId: String) {
-            pendingTabRequests.remove(requestId)?.complete(OpenTabResult(tabId))
-        }
     }
 }
