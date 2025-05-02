@@ -18,7 +18,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import org.assertj.core.api.Assertions.assertThat
-import org.jetbrains.io.response
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -88,7 +87,6 @@ open class CodeWhispererTestBase {
 
     protected lateinit var popupManagerSpy: CodeWhispererPopupManager
     protected lateinit var clientAdaptorSpy: CodeWhispererClientAdaptor
-    protected lateinit var invocationStatusSpy: CodeWhispererInvocationStatus
     internal lateinit var stateManager: CodeWhispererExplorerActionManager
     protected lateinit var recommendationManager: CodeWhispererRecommendationManager
     protected lateinit var codewhispererService: CodeWhispererService
@@ -128,16 +126,6 @@ open class CodeWhispererTestBase {
             }
         }
         ApplicationManager.getApplication().replaceService(CodeWhispererPopupManager::class.java, popupManagerSpy, disposableRule.disposable)
-
-        invocationStatusSpy = spy(CodeWhispererInvocationStatus.getInstance())
-        invocationStatusSpy.stub {
-            on {
-                hasEnoughDelayToShowCodeWhisperer()
-            } doAnswer {
-                true
-            }
-        }
-        ApplicationManager.getApplication().replaceService(CodeWhispererInvocationStatus::class.java, invocationStatusSpy, disposableRule.disposable)
 
         stateManager = spy(CodeWhispererExplorerActionManager.getInstance())
         recommendationManager = CodeWhispererRecommendationManager.getInstance()

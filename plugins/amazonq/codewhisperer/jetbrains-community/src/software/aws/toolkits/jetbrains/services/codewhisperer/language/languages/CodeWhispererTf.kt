@@ -11,8 +11,6 @@ class CodeWhispererTf private constructor() : CodeWhispererProgrammingLanguage()
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Tf
 
-    override fun isCodeCompletionSupported(): Boolean = true
-
     override fun isAutoFileScanSupported(): Boolean = true
 
     override fun lineCommentPrefix(): String = "#"

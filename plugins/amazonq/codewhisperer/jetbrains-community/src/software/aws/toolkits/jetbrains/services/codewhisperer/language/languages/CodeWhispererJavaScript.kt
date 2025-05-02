@@ -11,13 +11,7 @@ class CodeWhispererJavaScript private constructor() : CodeWhispererProgrammingLa
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Javascript
 
-    override fun isCodeCompletionSupported(): Boolean = true
-
     override fun isAutoFileScanSupported(): Boolean = true
-
-    override fun isImportAdderSupported(): Boolean = true
-
-    override fun isSupplementalContextSupported() = true
 
     companion object {
         const val ID = "javascript"

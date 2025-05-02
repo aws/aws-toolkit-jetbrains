@@ -4,8 +4,6 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.Application
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.serviceIfCreated
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -17,6 +15,7 @@ import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.LightVirtualFile
+import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.util.messages.MessageBus
 import com.intellij.util.messages.MessageBusConnection
 import io.mockk.every
@@ -44,7 +43,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil
 import java.net.URI
 import java.nio.file.Path
-import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
 
 class TextDocumentServiceHandlerTest {
@@ -57,7 +55,7 @@ class TextDocumentServiceHandlerTest {
     private lateinit var mockLanguageServer: AmazonQLanguageServer
     private lateinit var mockTextDocumentService: TextDocumentService
     private lateinit var sut: TextDocumentServiceHandler
-    private lateinit var mockApplication: Application
+//    private lateinit var mockApplication: Application
 
     @Before
     fun setup() {
@@ -65,12 +63,12 @@ class TextDocumentServiceHandlerTest {
         mockTextDocumentService = mockk<TextDocumentService>()
         mockLanguageServer = mockk<AmazonQLanguageServer>()
 
-        mockApplication = spyk<Application>(ApplicationManager.getApplication())
-        mockkStatic(ApplicationManager::class)
-        every { ApplicationManager.getApplication() } returns mockApplication
-        every { mockApplication.executeOnPooledThread(any<Callable<*>>()) } answers {
-            CompletableFuture.completedFuture(firstArg<Callable<*>>().call())
-        }
+//        mockApplication = spyk<Application>(ApplicationManager.getApplication())
+//        mockkStatic(ApplicationManager::class)
+//        every { ApplicationManager.getApplication() } returns mockApplication
+//        every { mockApplication.executeOnPooledThread(any<Callable<*>>()) } answers {
+//            CompletableFuture.completedFuture(firstArg<Callable<*>>().call())
+//        }
 
         // Mock the LSP service
         val mockLspService = mockk<AmazonQLspService>()
@@ -218,7 +216,9 @@ class TextDocumentServiceHandlerTest {
             every { FileDocumentManager.getInstance() } returns fileDocumentManager
 
             // Call the handler method
-            sut.after(mutableListOf(changeEvent))
+            runInEdtAndWait {
+                sut.after(mutableListOf(changeEvent))
+            }
         }
 
         // Verify the correct LSP method was called with matching parameters

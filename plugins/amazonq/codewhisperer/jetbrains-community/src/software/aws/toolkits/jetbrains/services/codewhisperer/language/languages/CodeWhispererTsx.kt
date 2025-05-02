@@ -11,11 +11,7 @@ class CodeWhispererTsx private constructor() : CodeWhispererProgrammingLanguage(
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Tsx
 
-    override fun isCodeCompletionSupported(): Boolean = true
-
     override fun toCodeWhispererRuntimeLanguage(): CodeWhispererProgrammingLanguage = CodeWhispererTypeScript.INSTANCE
-
-    override fun isSupplementalContextSupported() = true
 
     companion object {
         const val ID = "tsx"

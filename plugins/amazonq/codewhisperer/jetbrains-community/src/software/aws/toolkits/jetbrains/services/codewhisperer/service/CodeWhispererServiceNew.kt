@@ -6,7 +6,6 @@ package software.aws.toolkits.jetbrains.services.codewhisperer.service
 import com.intellij.codeInsight.hint.HintManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationInfo
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
@@ -50,10 +49,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocume
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil.toUriString
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManagerNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getCaretPosition
-import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.isSupportedJsonFormat
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJson
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
@@ -65,8 +62,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionConte
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.WorkerContextNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManagerNew
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService.Companion.CODEWHISPERER_CODE_COMPLETION_PERFORMED
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryServiceNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeInsightsSettingsFacade
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
@@ -157,7 +152,6 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
             getRequestContext(triggerTypeInfo, editor, project, psiFile)
         } catch (e: Exception) {
             LOG.debug { e.message.toString() }
-            CodeWhispererTelemetryServiceNew.getInstance().sendFailedServiceInvocationEvent(project, e::class.simpleName)
             return
         }
         val caretContext = requestContext.fileContextInfo.caretContext
@@ -167,25 +161,6 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                 LOG.debug { "same caretContext found from job: $k, left context ${vCaretContext.leftContextOnCurrentLine}, jobId: $currentJobId" }
                 return
             }
-        }
-
-        val language = requestContext.fileContextInfo.programmingLanguage
-        val leftContext = requestContext.fileContextInfo.caretContext.leftFileContext
-        if (!language.isCodeCompletionSupported() || (
-                language is CodeWhispererJson && !isSupportedJsonFormat(
-                    requestContext.fileContextInfo.filename,
-                    leftContext
-                )
-                )
-        ) {
-            LOG.debug { "Programming language $language is not supported by CodeWhisperer" }
-            if (triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
-                showCodeWhispererInfoHint(
-                    requestContext.editor,
-                    message("codewhisperer.language.error", psiFile.fileType.name)
-                )
-            }
-            return
         }
 
         LOG.debug {
@@ -241,8 +216,6 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
                     val responseContext = ResponseContext(completion.sessionId)
                     logServiceInvocation(requestContext, responseContext, completion, latency, null)
                     lastRecommendationIndex += completion.items.size
-                    ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_CODE_COMPLETION_PERFORMED)
-                        .onSuccess(requestContext.fileContextInfo)
 
                     runInEdt {
                         // If delay is not met, add them to the worker queue and process them later.
@@ -673,13 +646,6 @@ class CodeWhispererServiceNew(private val cs: CoroutineScope) : Disposable {
 
         fun getInstance(): CodeWhispererServiceNew = service()
         const val KET_SESSION_ID = "x-amzn-SessionId"
-        private var reAuthPromptShown = false
-
-        fun markReAuthPromptShown() {
-            reAuthPromptShown = true
-        }
-
-        fun hasReAuthPromptBeenShown() = reAuthPromptShown
     }
 }
 

@@ -11,15 +11,7 @@ class CodeWhispererJava private constructor() : CodeWhispererProgrammingLanguage
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Java
 
-    override fun isCodeCompletionSupported(): Boolean = true
-
     override fun isAutoFileScanSupported(): Boolean = true
-
-    override fun isImportAdderSupported(): Boolean = true
-
-    override fun isSupplementalContextSupported() = true
-
-    override fun isUTGSupported() = true
 
     companion object {
         const val ID = "java"

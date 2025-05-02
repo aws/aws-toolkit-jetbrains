@@ -4,10 +4,8 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.service
 
 import com.intellij.codeInsight.hint.HintManager
-import com.intellij.notification.NotificationAction
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationInfo
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
@@ -21,19 +19,17 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import com.intellij.util.messages.Topic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.TextDocumentIdentifier
+import org.eclipse.lsp4j.jsonrpc.JsonRpcException
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import software.amazon.awssdk.core.exception.SdkServiceException
-import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeException
-import software.amazon.awssdk.services.codewhispererruntime.model.ResourceNotFoundException
 import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -42,7 +38,6 @@ import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
-import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
@@ -57,11 +52,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil.toU
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getCaretPosition
-import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.isSupportedJsonFormat
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJson
-import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.DetailContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
@@ -72,19 +64,15 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeI
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.WorkerContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.CodeWhispererPopupManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CaretMovement
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeInsightsSettingsFacade
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCompletionType
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.notifyErrorCodeWhispererUsageLimit
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CustomizationConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
 import software.aws.toolkits.jetbrains.utils.isInjectedText
 import software.aws.toolkits.jetbrains.utils.isQExpired
-import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import java.net.URI
@@ -164,29 +152,10 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             getRequestContext(triggerTypeInfo, editor, project, psiFile, latencyContext)
         } catch (e: Exception) {
             LOG.debug { e.message.toString() }
-            CodeWhispererTelemetryService.getInstance().sendFailedServiceInvocationEvent(project, e::class.simpleName)
             return
         }
 
-        val language = psiFile.programmingLanguage()
-        val leftContext = requestContext.fileContextInfo.caretContext.leftFileContext
-        // TODO flare: remove language check, flare needs to implement json aws template support only
-        if (!language.isCodeCompletionSupported() || (
-                language is CodeWhispererJson && !isSupportedJsonFormat(
-                    requestContext.fileContextInfo.filename,
-                    leftContext
-                )
-                )
-        ) {
-            LOG.debug { "Programming language $language is not supported by CodeWhisperer" }
-            if (triggerTypeInfo.triggerType == CodewhispererTriggerType.OnDemand) {
-                showCodeWhispererInfoHint(
-                    requestContext.editor,
-                    message("codewhisperer.language.error", psiFile.fileType.name)
-                )
-            }
-            return
-        }
+        // TODO flare: since IDE local language check got removed, flare needs to implement json aws template support only
 
         LOG.debug {
             "Calling CodeWhisperer service, trigger type: ${triggerTypeInfo.triggerType}" +
@@ -212,7 +181,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             }
         }
 
-        val workerContexts = mutableListOf<WorkerContext>()
         // When popup is disposed we will cancel this coroutine. The only places popup can get disposed should be
         // from CodeWhispererPopupManager.cancelPopup() and CodeWhispererPopupManager.closePopup().
         // It's possible and ok that coroutine will keep running until the next time we check it's state.
@@ -220,7 +188,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         val coroutineScope = disposableCoroutineScope(popup)
 
         var states: InvocationContext? = null
-        var lastRecommendationIndex = -1
 
         val job = coroutineScope.launch {
             try {
@@ -232,117 +199,37 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                         val params = createInlineCompletionParams(requestContext.editor, requestContext.triggerTypeInfo, nextToken)
                         server.inlineCompletionWithReferences(params)
                     }
-                    result?.thenAccept { completion ->
-                        nextToken = completion.partialResultToken
-                        val endTime = System.nanoTime()
-                        val latency = TimeUnit.NANOSECONDS.toMillis(endTime - startTime).toDouble()
-                        startTime = endTime
-                        val responseContext = ResponseContext(completion.sessionId)
-                        logServiceInvocation(requestContext, responseContext, completion, latency, null)
-                        lastRecommendationIndex += completion.items.size
-                        ApplicationManager.getApplication().messageBus.syncPublisher(CODEWHISPERER_CODE_COMPLETION_PERFORMED)
-                            .onSuccess(requestContext.fileContextInfo)
-                        broadcastQEvent(QFeatureEvent.INVOCATION)
+                    val completion = result?.await() ?: break
+                    nextToken = completion.partialResultToken
+                    val endTime = System.nanoTime()
+                    val latency = TimeUnit.NANOSECONDS.toMillis(endTime - startTime).toDouble()
+                    startTime = endTime
+                    val responseContext = ResponseContext(completion.sessionId)
+                    logServiceInvocation(requestContext, responseContext, completion, latency, null)
 
-                        runInEdt {
-                            // If delay is not met, add them to the worker queue and process them later.
-                            // On first response, workers queue must be empty. If there's enough delay before showing,
-                            // process CodeWhisperer UI rendering and workers queue will remain empty throughout this
-                            // CodeWhisperer session. If there's not enough delay before showing, the CodeWhisperer UI rendering task
-                            // will be added to the workers queue.
-                            // On subsequent responses, if they see workers queue is not empty, it means the first worker
-                            // task hasn't been finished yet, in this case simply add another task to the queue. If they
-                            // see worker queue is empty, the previous tasks must have been finished before this. In this
-                            // case render CodeWhisperer UI directly.
-                            val workerContext = WorkerContext(requestContext, responseContext, completion, popup)
-                            if (workerContexts.isNotEmpty()) {
-                                workerContexts.add(workerContext)
-                            } else {
-                                if (states == null && !popup.isDisposed &&
-                                    !CodeWhispererInvocationStatus.getInstance().hasEnoughDelayToShowCodeWhisperer()
-                                ) {
-                                    // It's the first response, and no enough delay before showing
-                                    projectCoroutineScope(requestContext.project).launch {
-                                        while (!CodeWhispererInvocationStatus.getInstance().hasEnoughDelayToShowCodeWhisperer()) {
-                                            delay(CodeWhispererConstants.POPUP_DELAY_CHECK_INTERVAL)
-                                        }
-                                        runInEdt {
-                                            workerContexts.forEach {
-                                                states = processCodeWhispererUI(it, states)
-                                            }
-                                            workerContexts.clear()
-                                        }
-                                    }
-                                    workerContexts.add(workerContext)
-                                } else {
-                                    // Have enough delay before showing for the first response, or it's subsequent responses
-                                    states = processCodeWhispererUI(workerContext, states)
-                                }
-                            }
-                        }
-                        if (!isActive) {
-                            // If job is cancelled before we do another request, don't bother making
-                            // another API call to save resources
-                            LOG.debug { "Skipping sending remaining requests on CodeWhisperer session exit" }
-                            return@thenAccept
-                        }
-                    }?.get()
+                    val workerContext = WorkerContext(requestContext, responseContext, completion, popup)
+                    runInEdt {
+                        states = processCodeWhispererUI(workerContext, states)
+                    }
+                    if (!isActive) {
+                        // If job is cancelled before we do another request, don't bother making
+                        // another API call to save resources
+                        LOG.debug { "Skipping sending remaining requests on CodeWhisperer session exit" }
+                        return@launch
+                    }
                 } while (nextToken != null)
             } catch (e: Exception) {
                 // TODO flare: flare doesn't return exceptions
-                val requestId: String
-                val sessionId: String
+                val sessionId = ""
                 val displayMessage: String
 
-                if (
-                    CustomizationConstants.invalidCustomizationExceptionPredicate(e) ||
-                    e is ResourceNotFoundException
-                ) {
-                    (e as CodeWhispererRuntimeException)
-
-                    requestId = e.requestId() ?: ""
-                    sessionId = e.awsErrorDetails().sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
-                    val exceptionType = e::class.simpleName
-                    val responseContext = ResponseContext(sessionId)
-
-                    LOG.debug {
-                        "The provided customization ${requestContext.customizationArn} is not found, " +
-                            "will fallback to the default and retry generate completion"
+                if (e is JsonRpcException) {
+                    // TODO: only log once to avoid auto-trigger spam?
+                    LOG.debug(e) {
+                        "Error talking to Q LSP server"
                     }
-                    logServiceInvocation(requestContext, responseContext, null, null, exceptionType)
-
-                    notifyWarn(
-                        title = "",
-                        content = message("codewhisperer.notification.custom.not_available"),
-                        project = requestContext.project,
-                        notificationActions = listOf(
-                            NotificationAction.create(
-                                message("codewhisperer.notification.custom.simple.button.select_another_customization")
-                            ) { _, notification ->
-                                CodeWhispererModelConfigurator.getInstance().showConfigDialog(requestContext.project)
-                                notification.expire()
-                            }
-                        )
-                    )
-                    CodeWhispererInvocationStatus.getInstance().finishInvocation()
-                    CodeWhispererInvocationStatus.getInstance().setInvocationComplete()
-
-                    requestContext.customizationArn?.let { CodeWhispererModelConfigurator.getInstance().invalidateCustomization(it) }
-
-                    projectCoroutineScope(requestContext.project).launch {
-                        showRecommendationsInPopup(
-                            requestContext.editor,
-                            requestContext.triggerTypeInfo,
-                            requestContext.latencyContext
-                        )
-                    }
-                    return@launch
-                } else if (e is CodeWhispererRuntimeException) {
-                    requestId = e.requestId() ?: ""
-                    sessionId = e.awsErrorDetails().sdkHttpResponse().headers().getOrDefault(KET_SESSION_ID, listOf(requestId))[0]
-                    displayMessage = e.awsErrorDetails().errorMessage() ?: message("codewhisperer.trigger.error.server_side")
+                    displayMessage = "Q LSP server failed to communicate, try restarting the current project."
                 } else {
-                    sessionId = ""
                     val statusCode = if (e is SdkServiceException) e.statusCode() else 0
                     displayMessage =
                         if (statusCode >= 500) {
@@ -722,11 +609,6 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         private val LOG = getLogger<CodeWhispererService>()
         private const val MAX_REFRESH_ATTEMPT = 3
 
-        val CODEWHISPERER_CODE_COMPLETION_PERFORMED: Topic<CodeWhispererCodeCompletionServiceListener> = Topic.create(
-            "CodeWhisperer code completion service invoked",
-            CodeWhispererCodeCompletionServiceListener::class.java
-        )
-
         fun getInstance(): CodeWhispererService = service()
         const val KET_SESSION_ID = "x-amzn-SessionId"
         private var reAuthPromptShown = false
@@ -754,7 +636,3 @@ data class RequestContext(
 data class ResponseContext(
     val sessionId: String,
 )
-
-interface CodeWhispererCodeCompletionServiceListener {
-    fun onSuccess(fileContextInfo: FileContextInfo) {}
-}

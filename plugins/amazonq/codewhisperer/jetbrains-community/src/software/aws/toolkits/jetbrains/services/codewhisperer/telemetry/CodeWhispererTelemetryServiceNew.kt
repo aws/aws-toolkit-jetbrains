@@ -3,12 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.telemetry
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import org.apache.commons.collections4.queue.CircularFifoQueue
-import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
@@ -25,42 +22,18 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getConnectionStartUrl
 import software.aws.toolkits.telemetry.CodewhispererCodeScanScope
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
-import software.aws.toolkits.telemetry.CodewhispererLanguage
-import software.aws.toolkits.telemetry.CodewhispererPreviousSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTelemetry
-import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import software.aws.toolkits.telemetry.Component
 import software.aws.toolkits.telemetry.Result
 import java.time.Duration
 import java.time.Instant
-import java.util.Queue
 
 @Service
 class CodeWhispererTelemetryServiceNew {
-    // store previous 5 userTrigger decisions
-    private val previousUserTriggerDecisions = CircularFifoQueue<CodewhispererPreviousSuggestionState>(5)
-
-    val previousUserTriggerDecision: CodewhispererPreviousSuggestionState?
-        get() = if (previousUserTriggerDecisions.isNotEmpty()) previousUserTriggerDecisions.last() else null
 
     companion object {
         fun getInstance(): CodeWhispererTelemetryServiceNew = service()
         val LOG = getLogger<CodeWhispererTelemetryServiceNew>()
-        const val NO_ACCEPTED_INDEX = -1
-    }
-
-    fun sendFailedServiceInvocationEvent(project: Project, exceptionType: String?) {
-        CodewhispererTelemetry.serviceInvocation(
-            project = project,
-            codewhispererCursorOffset = 0,
-            codewhispererLanguage = CodewhispererLanguage.Unknown,
-            codewhispererLastSuggestionIndex = -1,
-            codewhispererLineNumber = 0,
-            codewhispererTriggerType = CodewhispererTriggerType.Unknown,
-            duration = 0.0,
-            reason = exceptionType,
-            success = false,
-        )
     }
 
     fun sendSecurityScanEvent(codeScanEvent: CodeScanTelemetryEvent, project: Project? = null) {
@@ -161,11 +134,5 @@ class CodeWhispererTelemetryServiceNew {
     fun sendOnboardingClickEvent(language: CodeWhispererProgrammingLanguage, taskType: CodewhispererGettingStartedTask) {
         // Project instance is not needed. We look at these metrics for each clientId.
         CodewhispererTelemetry.onboardingClick(project = null, codewhispererLanguage = language.toTelemetryType(), codewhispererGettingStartedTask = taskType)
-    }
-
-    @TestOnly
-    fun previousDecisions(): Queue<CodewhispererPreviousSuggestionState> {
-        assert(ApplicationManager.getApplication().isUnitTestMode)
-        return this.previousUserTriggerDecisions
     }
 }

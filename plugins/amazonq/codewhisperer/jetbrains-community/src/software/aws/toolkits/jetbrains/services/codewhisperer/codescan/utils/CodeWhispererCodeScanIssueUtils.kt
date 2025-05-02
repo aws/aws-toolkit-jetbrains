@@ -40,8 +40,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_ISSUE_TITLE_MAX_LENGTH
@@ -340,7 +338,6 @@ fun applySuggestedFix(project: Project, issue: CodeWhispererCodeScanIssue) {
     try {
         val manager = CodeWhispererCodeReferenceManager.getInstance(issue.project)
         WriteCommandAction.runWriteCommandAction(issue.project) {
-            broadcastQEvent(QFeatureEvent.STARTS_EDITING)
             val document = FileDocumentManager.getInstance().getDocument(issue.file) ?: return@runWriteCommandAction
 
             val documentContent = document.text
@@ -367,7 +364,6 @@ fun applySuggestedFix(project: Project, issue: CodeWhispererCodeScanIssue) {
                     originalContent.split("\n")
                 )
             }
-            broadcastQEvent(QFeatureEvent.FINISHES_EDITING)
         }
         if (issue.suggestedFixes[0].references.isNotEmpty()) {
             manager.toolWindow?.show()

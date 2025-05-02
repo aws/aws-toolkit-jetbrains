@@ -9,7 +9,6 @@ import com.intellij.openapi.components.service
 import com.intellij.util.messages.Topic
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -64,11 +63,6 @@ class CodeWhispererInvocationStatus {
         return timeInDouble
     }
 
-    fun hasEnoughDelayToShowCodeWhisperer(): Boolean {
-        val timeCanShowCodeWhisperer = timeAtLastDocumentChanged.plusMillis(CodeWhispererConstants.POPUP_DELAY)
-        return timeCanShowCodeWhisperer.isBefore(Instant.now())
-    }
-
     fun isDisplaySessionActive(): Boolean = isDisplaySessionActive
 
     fun setDisplaySessionActive(value: Boolean) {
@@ -82,11 +76,6 @@ class CodeWhispererInvocationStatus {
     fun setInvocationSessionId(sessionId: String?) {
         LOG.debug { "Set current CodeWhisperer invocation sessionId: $sessionId" }
         invokingSessionId = sessionId
-    }
-
-    fun hasEnoughDelayToInvokeCodeWhisperer(): Boolean {
-        val timeCanShowCodeWhisperer = timeAtLastInvocationStart?.plusMillis(CodeWhispererConstants.INVOCATION_INTERVAL) ?: return true
-        return timeCanShowCodeWhisperer.isBefore(Instant.now())
     }
 
     companion object {

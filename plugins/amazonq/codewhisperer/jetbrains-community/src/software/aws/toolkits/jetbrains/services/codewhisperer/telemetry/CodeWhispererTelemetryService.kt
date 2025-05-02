@@ -3,14 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.telemetry
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
-import org.apache.commons.collections4.queue.CircularFifoQueue
-import org.jetbrains.annotations.TestOnly
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
@@ -22,57 +17,26 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanTele
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.RecommendationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererInvocationStatus
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getCodeWhispererStartUrl
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getConnectionStartUrl
 import software.aws.toolkits.jetbrains.settings.AwsSettings
 import software.aws.toolkits.telemetry.CodeFixAction
 import software.aws.toolkits.telemetry.CodewhispererCodeScanScope
-import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererGettingStartedTask
-import software.aws.toolkits.telemetry.CodewhispererLanguage
-import software.aws.toolkits.telemetry.CodewhispererPreviousSuggestionState
-import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import software.aws.toolkits.telemetry.CodewhispererTelemetry
-import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import software.aws.toolkits.telemetry.Component
 import software.aws.toolkits.telemetry.CredentialSourceId
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Result
-import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
-import java.util.Queue
-import kotlin.io.path.pathString
 
 @Service
 class CodeWhispererTelemetryService {
-    // store previous 5 userTrigger decisions
-    private val previousUserTriggerDecisions = CircularFifoQueue<CodewhispererPreviousSuggestionState>(5)
-
-    val previousUserTriggerDecision: CodewhispererPreviousSuggestionState?
-        get() = if (previousUserTriggerDecisions.isNotEmpty()) previousUserTriggerDecisions.last() else null
-
     companion object {
         fun getInstance(): CodeWhispererTelemetryService = service()
         val LOG = getLogger<CodeWhispererTelemetryService>()
-        const val NO_ACCEPTED_INDEX = -1
-    }
-
-    fun sendFailedServiceInvocationEvent(project: Project, exceptionType: String?) {
-        CodewhispererTelemetry.serviceInvocation(
-            project = project,
-            codewhispererCursorOffset = 0,
-            codewhispererLanguage = CodewhispererLanguage.Unknown,
-            codewhispererLastSuggestionIndex = -1,
-            codewhispererLineNumber = 0,
-            codewhispererTriggerType = CodewhispererTriggerType.Unknown,
-            duration = 0.0,
-            reason = exceptionType,
-            success = false,
-        )
     }
 
     fun sendUserTriggerDecisionEvent(
@@ -236,106 +200,9 @@ class CodeWhispererTelemetryService {
         )
     }
 
-    fun enqueueAcceptedSuggestionEntry(
-        requestId: String,
-        requestContext: RequestContext,
-        responseContext: ResponseContext,
-        time: Instant,
-        vFile: VirtualFile?,
-        range: RangeMarker,
-        suggestion: String,
-        selectedIndex: Int,
-        completionType: CodewhispererCompletionType,
-    ) {
-        val codewhispererLanguage = requestContext.fileContextInfo.programmingLanguage
-        CodeWhispererUserModificationTracker.getInstance(requestContext.project).enqueue(
-            AcceptedSuggestionEntry(
-                time,
-                vFile,
-                range,
-                suggestion,
-                responseContext.sessionId,
-                requestId,
-                selectedIndex,
-                requestContext.triggerTypeInfo.triggerType,
-                completionType,
-                codewhispererLanguage,
-                null,
-                null,
-                requestContext.connection
-            )
-        )
-    }
-
-    /**
-     * Aggregate recommendation level user decision to trigger level user decision based on the following rule
-     * - Accept if there is an Accept
-     * - Reject if there is a Reject
-     * - Empty if all decisions are Empty
-     * - Record the accepted suggestion index
-     * - Discard otherwise
-     */
-    fun aggregateUserDecision(decisions: List<CodewhispererSuggestionState>): CodewhispererPreviousSuggestionState {
-        var isEmpty = true
-
-        for (decision in decisions) {
-            if (decision == CodewhispererSuggestionState.Accept) {
-                return CodewhispererPreviousSuggestionState.Accept
-            } else if (decision == CodewhispererSuggestionState.Reject) {
-                return CodewhispererPreviousSuggestionState.Reject
-            } else if (decision != CodewhispererSuggestionState.Empty) {
-                isEmpty = false
-            }
-        }
-
-        return if (isEmpty) {
-            CodewhispererPreviousSuggestionState.Empty
-        } else {
-            CodewhispererPreviousSuggestionState.Discard
-        }
-    }
-
     fun sendOnboardingClickEvent(language: CodeWhispererProgrammingLanguage, taskType: CodewhispererGettingStartedTask) {
         // Project instance is not needed. We look at these metrics for each clientId.
         CodewhispererTelemetry.onboardingClick(project = null, codewhispererLanguage = language.toTelemetryType(), codewhispererGettingStartedTask = taskType)
-    }
-
-    fun recordSuggestionState(
-        index: Int,
-        selectedIndex: Int,
-        hasSeen: Boolean,
-        hasUserAccepted: Boolean,
-        isDiscarded: Boolean,
-        isEmpty: Boolean,
-    ): CodewhispererSuggestionState =
-        if (isEmpty) {
-            CodewhispererSuggestionState.Empty
-        } else if (isDiscarded) {
-            CodewhispererSuggestionState.Discard
-        } else if (!hasSeen) {
-            CodewhispererSuggestionState.Unseen
-        } else if (hasUserAccepted) {
-            if (selectedIndex == index) {
-                CodewhispererSuggestionState.Accept
-            } else {
-                CodewhispererSuggestionState.Ignore
-            }
-        } else {
-            CodewhispererSuggestionState.Reject
-        }
-
-    @TestOnly
-    fun previousDecisions(): Queue<CodewhispererPreviousSuggestionState> {
-        assert(ApplicationManager.getApplication().isUnitTestMode)
-        return this.previousUserTriggerDecisions
-    }
-
-    fun sendInvalidZipEvent(filePath: Path, projectRoot: Path, relativePath: String) {
-        CodewhispererTelemetry.invalidZip(
-            filePath = filePath.pathString,
-            workspaceRoot = projectRoot.pathString,
-            relativePath = relativePath
-        )
     }
 }
 

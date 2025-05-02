@@ -19,18 +19,13 @@ object CodeWhispererConstants {
     const val CHARACTERS_LIMIT = 10240
     const val BEGINNING_OF_FILE = 0
     const val FILENAME_CHARS_LIMIT = 1024
-    const val INVOCATION_KEY_INTERVAL_THRESHOLD = 15
     val SPECIAL_CHARACTERS_LIST = listOf("{", "[", "(", ":")
     val PAIRED_BRACKETS = mapOf('{' to '}', '(' to ')', '[' to ']', '<' to '>')
     val PAIRED_QUOTES = setOf('"', '\'', '`')
-    const val INVOCATION_TIME_INTERVAL_THRESHOLD = 2
     const val LEFT_CONTEXT_ON_CURRENT_LINE = 50
     const val POPUP_INFO_TEXT_SIZE = 11f
     const val POPUP_BUTTON_TEXT_SIZE = 12f
-    const val POPUP_DELAY: Long = 250
     const val POPUP_DELAY_CHECK_INTERVAL: Long = 25
-    const val IDLE_TIME_CHECK_INTERVAL: Long = 25
-    const val SUPPLEMETAL_CONTEXT_BUFFER = 10L
 
     val AWSTemplateKeyWordsRegex = Regex("(AWSTemplateFormatVersion|Resources|AWS::|Description)")
     val AWSTemplateCaseInsensitiveKeyWordsRegex = Regex("(cloudformation|cfn|template|description)")
@@ -48,10 +43,6 @@ object CodeWhispererConstants {
         "tsconfig.json",
         "vcpkg.json"
     )
-
-    // TODO: this is currently set to 2050 to account for the server side 0.5 TPS and and extra 50 ms buffer to
-    // avoid ThrottlingException as much as possible.
-    const val INVOCATION_INTERVAL: Long = 2050
 
     val runScanKey = DataKey.create<Boolean>("amazonq.codescan.run")
     val scanResultsKey = DataKey.create<CodeScanResponse>("amazonq.codescan.result")

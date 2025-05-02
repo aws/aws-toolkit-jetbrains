@@ -19,15 +19,7 @@ abstract class CodeWhispererProgrammingLanguage {
 
     abstract fun toTelemetryType(): CodewhispererLanguage
 
-    open fun isCodeCompletionSupported(): Boolean = false
-
     open fun isAutoFileScanSupported(): Boolean = false
-
-    open fun isImportAdderSupported(): Boolean = false
-
-    open fun isSupplementalContextSupported(): Boolean = false
-
-    open fun isUTGSupported(): Boolean = false
 
     open fun toCodeWhispererRuntimeLanguage(): CodeWhispererProgrammingLanguage = this
 
