@@ -482,7 +482,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         )
     }
 
-    private fun getWorkspaceIds(project: Project): CompletableFuture<LspServerConfigurations> {
+    fun getWorkspaceIds(project: Project): CompletableFuture<LspServerConfigurations> {
         val payload = GetConfigurationFromServerParams(
             section = "aws.q.workspaceContext"
         )
