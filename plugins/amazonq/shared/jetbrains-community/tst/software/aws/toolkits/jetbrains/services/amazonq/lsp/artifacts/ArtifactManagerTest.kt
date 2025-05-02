@@ -47,6 +47,7 @@ class ArtifactManagerTest {
             startVersion = SemVer("1.0.0", 1, 0, 0),
             endVersion = SemVer("2.0.0", 2, 0, 0)
         )
+
         artifactManager = spyk(ArtifactManager(manifestFetcher, artifactHelper))
     }
 
