@@ -19,7 +19,6 @@ import software.aws.toolkits.core.telemetry.TelemetryBatcher
 import software.aws.toolkits.core.telemetry.TelemetryPublisher
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.Pause
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.actions.Resume
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.telemetry.NoOpPublisher
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
@@ -83,7 +82,6 @@ class CodeWhispererTelemetryTest : CodeWhispererTestBase() {
         super.tearDown()
         telemetryService.dispose()
         AwsSettings.getInstance().isTelemetryEnabled = isTelemetryEnabledDefault
-        CodeWhispererCodeCoverageTracker.getInstancesMap().clear()
     }
 
     companion object {

@@ -3,7 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
+import com.intellij.openapi.project.Project
 import org.eclipse.lsp4j.jsonrpc.messages.Either
+import org.mockito.kotlin.mock
 import software.amazon.awssdk.awscore.DefaultAwsResponseMetadata
 import software.amazon.awssdk.awscore.util.AwsHeader
 import software.amazon.awssdk.http.SdkHttpResponse
@@ -30,8 +32,14 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererSql
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererTypeScript
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.FileContextInfo
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.LatencyContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.model.TriggerTypeInfo
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererAutomatedTriggerType
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
+import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestContext
+import software.aws.toolkits.telemetry.CodewhispererTriggerType
 import java.nio.file.Paths
 import kotlin.random.Random
 
@@ -118,6 +126,43 @@ fun aFileContextInfo(language: CodeWhispererProgrammingLanguage? = null): FileCo
     ).random()
 
     return FileContextInfo(caretContextInfo, fileName, programmingLanguage, fileRelativePath)
+}
+
+fun aTriggerType(): CodewhispererTriggerType =
+    CodewhispererTriggerType.values().filterNot { it == CodewhispererTriggerType.Unknown }.random()
+
+fun aRequestContext(
+    project: Project,
+    myFileContextInfo: FileContextInfo? = null,
+): RequestContext {
+    val triggerType = aTriggerType()
+    val automatedTriggerType = if (triggerType == CodewhispererTriggerType.AutoTrigger) {
+        listOf(
+            CodeWhispererAutomatedTriggerType.IdleTime(),
+            CodeWhispererAutomatedTriggerType.Enter(),
+            CodeWhispererAutomatedTriggerType.SpecialChar('a'),
+            CodeWhispererAutomatedTriggerType.IntelliSense()
+        ).random()
+    } else {
+        CodeWhispererAutomatedTriggerType.Unknown()
+    }
+
+    return RequestContext(
+        project,
+        mock(),
+        TriggerTypeInfo(triggerType, automatedTriggerType),
+        CaretPosition(Random.nextInt(), Random.nextInt()),
+        fileContextInfo = myFileContextInfo ?: aFileContextInfo(),
+        null,
+        LatencyContext(
+            Random.nextDouble(),
+            Random.nextLong(),
+            Random.nextLong(),
+            aString()
+        ),
+        customizationArn = null,
+        workspaceId = null,
+    )
 }
 
 fun aProgrammingLanguage(): CodeWhispererProgrammingLanguage = listOf(

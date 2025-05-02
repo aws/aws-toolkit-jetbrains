@@ -63,13 +63,6 @@ class TextDocumentServiceHandlerTest {
         mockTextDocumentService = mockk<TextDocumentService>()
         mockLanguageServer = mockk<AmazonQLanguageServer>()
 
-//        mockApplication = spyk<Application>(ApplicationManager.getApplication())
-//        mockkStatic(ApplicationManager::class)
-//        every { ApplicationManager.getApplication() } returns mockApplication
-//        every { mockApplication.executeOnPooledThread(any<Callable<*>>()) } answers {
-//            CompletableFuture.completedFuture(firstArg<Callable<*>>().call())
-//        }
-
         // Mock the LSP service
         val mockLspService = mockk<AmazonQLspService>()
 
