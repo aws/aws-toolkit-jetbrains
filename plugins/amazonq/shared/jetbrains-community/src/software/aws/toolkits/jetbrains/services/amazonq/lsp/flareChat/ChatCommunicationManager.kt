@@ -86,12 +86,6 @@ class ChatCommunicationManager {
 
         val pendingTabRequests = ConcurrentHashMap<String, CompletableFuture<OpenTabResult>>()
 
-        fun addPendingOpenTabRequest(requestId: String): CompletableFuture<OpenTabResult> {
-            return CompletableFuture<OpenTabResult>().also { future ->
-                pendingTabRequests[requestId] = future
-            }
-        }
-
         fun completeTabOpen(requestId: String, tabId: String) {
             pendingTabRequests.remove(requestId)?.complete(OpenTabResult(tabId))
         }
