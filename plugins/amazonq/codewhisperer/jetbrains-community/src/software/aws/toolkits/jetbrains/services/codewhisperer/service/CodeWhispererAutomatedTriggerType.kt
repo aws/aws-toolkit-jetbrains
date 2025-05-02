@@ -7,7 +7,6 @@ import software.aws.toolkits.telemetry.CodewhispererAutomatedTriggerType
 
 sealed class CodeWhispererAutomatedTriggerType(
     val telemetryType: CodewhispererAutomatedTriggerType,
-    var calculationResult: Double? = null,
 ) {
     class Classifier : CodeWhispererAutomatedTriggerType(CodewhispererAutomatedTriggerType.Classifier)
     class SpecialChar(val specialChar: Char) :

@@ -54,6 +54,8 @@ import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReference
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReferencePosition
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.CodeWhispererUTGChatManager
@@ -74,8 +76,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.messages.sendA
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.isWithin
 import software.aws.toolkits.jetbrains.services.cwc.ChatConstants
@@ -637,7 +637,21 @@ class CodeTestChatController(
                         }
                         LOG.debug { "Original code content from reference span: $originalContent" }
                         withContext(EDT) {
-                            manager.addReferenceLogPanelEntry(reference = reference, null, null, originalContent?.split("\n"))
+                            // TODO flare: hook /test references with flare correctly, this is only a compile error fix which is not tested
+                            manager.addReferenceLogPanelEntry(
+                                reference = InlineCompletionReference(
+                                    referenceName = reference.repository(),
+                                    referenceUrl = reference.url(),
+                                    licenseName = reference.licenseName(),
+                                    position = InlineCompletionReferencePosition(
+                                        startCharacter = reference.recommendationContentSpan().start(),
+                                        endCharacter = reference.recommendationContentSpan().end()
+                                    )
+                                ),
+                                null,
+                                null,
+                                originalContent?.split("\n")
+                            )
                             manager.toolWindow?.show()
                         }
                     }
@@ -1298,7 +1312,6 @@ class CodeTestChatController(
                 "Processing message: $message " +
                 "tabId: $tabId"
         }
-        broadcastQEvent(QFeatureEvent.INVOCATION)
         when (session.conversationState) {
             ConversationState.WAITING_FOR_BUILD_COMMAND_INPUT -> handleBuildCommandInput(session, message)
             ConversationState.WAITING_FOR_REGENERATE_INPUT -> handleRegenerateInput(session, message)
