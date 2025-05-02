@@ -3,9 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import org.eclipse.lsp4j.jsonrpc.messages.Either
-import org.mockito.kotlin.mock
 import software.amazon.awssdk.awscore.DefaultAwsResponseMetadata
 import software.amazon.awssdk.awscore.util.AwsHeader
 import software.amazon.awssdk.http.SdkHttpResponse
@@ -133,6 +133,7 @@ fun aTriggerType(): CodewhispererTriggerType =
 
 fun aRequestContext(
     project: Project,
+    editor: Editor,
     myFileContextInfo: FileContextInfo? = null,
 ): RequestContext {
     val triggerType = aTriggerType()
@@ -149,7 +150,7 @@ fun aRequestContext(
 
     return RequestContext(
         project,
-        mock(),
+        editor,
         TriggerTypeInfo(triggerType, automatedTriggerType),
         CaretPosition(Random.nextInt(), Random.nextInt()),
         fileContextInfo = myFileContextInfo ?: aFileContextInfo(),

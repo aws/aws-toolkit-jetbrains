@@ -127,7 +127,7 @@ open class CodeWhispererTestBase {
             onGeneric {
                 getRequestContext(any(), any(), any(), any(), any())
             } doAnswer {
-                aRequestContext(projectRule.project)
+                aRequestContext(projectRule.project, projectRule.fixture.editor)
             }
         }
         ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererService, disposableRule.disposable)
