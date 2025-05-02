@@ -9,44 +9,49 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 typealias FilterValue = String
 
 data class TextBasedFilterOption(
-    val type: TextInputType,
-    val placeholder: String? = null,
-    val icon: IconType? = null,
-)
+    val type: String,
+    val placeholder: String?,
+    val icon: IconType?,
+) {
+    companion object {
+        fun create(type: TextInputType, placeholder: String, icon: IconType): TextBasedFilterOption =
+            TextBasedFilterOption(type.value, placeholder, icon)
+    }
+}
 
 data class FilterOption(
     val id: String,
     val type: String,
-    val placeholder: String? = null,
-    val icon: IconType? = null,
+    val placeholder: String?,
+    val icon: IconType?,
 )
 
 data class Action(
     val id: String,
-    val icon: IconType? = null,
+    val icon: IconType?,
     val text: String,
 )
 
 data class ConversationItem(
     val id: String,
-    val icon: IconType? = null,
-    val description: String? = null,
-    val actions: List<Action>? = null,
+    val icon: IconType?,
+    val description: String?,
+    val actions: List<Action>?,
 )
 
 data class ConversationItemGroup(
-    val groupName: String? = null,
-    val icon: IconType? = null,
-    val items: List<ConversationItem>? = null,
+    val groupName: String?,
+    val icon: IconType?,
+    val items: List<ConversationItem>?,
 )
 
 data class ListConversationsParams(
-    val filter: Map<String, FilterValue>? = null,
+    val filter: Map<String, FilterValue>?,
 )
 
 data class ConversationsList(
-    val header: Header? = null,
-    val filterOptions: List<FilterOption>? = null,
+    val header: Header?,
+    val filterOptions: List<FilterOption>?,
     val list: List<ConversationItemGroup>,
 ) {
     data class Header(
@@ -56,47 +61,43 @@ data class ConversationsList(
 
 typealias ListConversationsResult = ConversationsList
 
-enum class TextInputType {
-    TEXTAREA,
-    TEXTINPUT,
+enum class TextInputType(val value: String) {
+    TEXTAREA("textarea"),
+    TEXTINPUT("textinput"),
     ;
 
-    val value: String
-        get() = name.lowercase()
-
-    companion object {
-        private val stringToEnum: Map<String, TextInputType> = TextInputType.entries.associateBy { it.name.lowercase() }
-
-        fun fromString(value: String): TextInputType = stringToEnum[value] ?: throw IllegalArgumentException("Unknown IconType: $value")
-    }
+    override fun toString(): String =
+        name.lowercase()
 }
 
-enum class ConversationAction {
-    DELETE,
-    EXPORT,
-    OPEN,
+enum class ConversationAction(val value: String) {
+    DELETE("delete"),
+    EXPORT("markdown"),
     ;
 
-    val value: String
-        get() = name.lowercase()
-
-    companion object {
-        private val stringToEnum: Map<String, ConversationAction> = ConversationAction.entries.associateBy { it.name.lowercase() }
-
-        fun fromString(value: String): ConversationAction = stringToEnum[value] ?: throw IllegalArgumentException("Unknown IconType: $value")
-    }
+    override fun toString(): String =
+        name.lowercase()
 }
-
 data class ConversationClickParams(
     val id: String,
-    val action: ConversationAction? = null,
-)
+    val action: String?,
+) {
+    companion object {
+        fun create(id: String, action: ConversationAction): ConversationClickParams =
+            ConversationClickParams(id, action.value)
+    }
+}
 
 data class ConversationClickResult(
     val id: String,
-    val action: ConversationAction? = null,
+    val action: String?,
     val success: Boolean,
-)
+) {
+    companion object {
+        fun create(id: String, action: ConversationAction, success: Boolean): ConversationClickResult =
+            ConversationClickResult(id, action.value, success)
+    }
+}
 
 data class ListConversationsRequest(
     override val command: String,
