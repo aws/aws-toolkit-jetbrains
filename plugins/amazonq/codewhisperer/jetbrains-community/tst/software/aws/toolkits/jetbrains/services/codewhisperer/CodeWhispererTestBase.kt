@@ -96,7 +96,7 @@ open class CodeWhispererTestBase {
     private lateinit var originalExplorerActionState: CodeWhispererExploreActionState
     private lateinit var originalSettings: CodeWhispererConfiguration
     private lateinit var qRegionProfileManagerSpy: QRegionProfileManager
-    private lateinit var codeScanManager: CodeWhispererCodeScanManager
+    protected lateinit var codeScanManager: CodeWhispererCodeScanManager
 
     @Before
     open fun setUp() {
