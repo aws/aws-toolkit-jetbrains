@@ -26,19 +26,17 @@ import software.aws.toolkits.jetbrains.uitests.TestCIServer
 import software.aws.toolkits.jetbrains.uitests.clearAwsXmlFile
 import software.aws.toolkits.jetbrains.uitests.docTests.prepTestData
 import software.aws.toolkits.jetbrains.uitests.docTests.scripts.createReadmeScripts.acceptReadmeTestScript
-import software.aws.toolkits.jetbrains.uitests.docTests.scripts.createReadmeScripts.createReadmePromptedToConfirmFolderTestScript
-import software.aws.toolkits.jetbrains.uitests.docTests.scripts.createReadmeScripts.makeChangesFlowTestScript
-import software.aws.toolkits.jetbrains.uitests.docTests.scripts.createReadmeScripts.newReadmeDiffViewerTestScript
-import software.aws.toolkits.jetbrains.uitests.docTests.scripts.createReadmeScripts.rejectReadmeTestScript
-import software.aws.toolkits.jetbrains.uitests.docTests.scripts.createReadmeScripts.validateFeatureAvailabilityTestScript
+import software.aws.toolkits.jetbrains.uitests.docTests.scripts.createReadmeScripts.createReadmeSubFolderPostFolderChangeTestScript
+import software.aws.toolkits.jetbrains.uitests.docTests.scripts.createReadmeScripts.createReadmeSubFolderPreFolderChangeTestScript
 import software.aws.toolkits.jetbrains.uitests.executePuppeteerScript
 import software.aws.toolkits.jetbrains.uitests.setupTestEnvironment
 import software.aws.toolkits.jetbrains.uitests.useExistingConnectionForTest
+import java.awt.event.KeyEvent
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
 
-class CreateReadmeTest {
+class CreateReadmeWorkspacesTest {
     init {
         di = DI {
             extend(di)
@@ -60,196 +58,7 @@ class CreateReadmeTest {
     }
 
     @Test
-    fun `Validate that the qdoc feature can be invoked`() {
-        val testCase = TestCase(
-            IdeProductProvider.IC,
-            LocalProjectInfo(
-                Paths.get("tstData", "qdoc", "createFlow")
-            )
-        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
-
-        // inject connection
-        useExistingConnectionForTest()
-
-        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
-            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
-                pluginConfigurator.installPluginFromPath(
-                    Path.of(path)
-                )
-            }
-
-            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
-            updateGeneralSettings()
-        }.runIdeWithDriver()
-            .useDriverAndCloseIde {
-                waitForProjectOpen()
-                // required wait time for the system to be fully ready
-                Thread.sleep(30000)
-
-                val result = executePuppeteerScript(validateFeatureAvailabilityTestScript)
-                assertThat(result)
-                    .contains("Test Successful")
-                    .doesNotContain("Error: Test Failed")
-            }
-    }
-
-    @Test
-    fun `You are prompted to confirm selected folder, change folder, or cancel back to choosing CREATE or UPDATE`() {
-        val testCase = TestCase(
-            IdeProductProvider.IC,
-            LocalProjectInfo(
-                Paths.get("tstData", "qdoc", "createFlow")
-            )
-        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
-
-        // inject connection
-        useExistingConnectionForTest()
-
-        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
-            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
-                pluginConfigurator.installPluginFromPath(
-                    Path.of(path)
-                )
-            }
-
-            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
-            updateGeneralSettings()
-        }.runIdeWithDriver()
-            .useDriverAndCloseIde {
-                waitForProjectOpen()
-                // required wait time for the system to be fully ready
-                Thread.sleep(30000)
-
-                val result = executePuppeteerScript(createReadmePromptedToConfirmFolderTestScript)
-                assertThat(result)
-                    .contains("Test Successful")
-                    .doesNotContain("Error: Test Failed")
-            }
-    }
-
-    @Test
-    fun `Make changes button brings you to UPDATE with specific changes flow`() {
-        val testCase = TestCase(
-            IdeProductProvider.IC,
-            LocalProjectInfo(
-                Paths.get("tstData", "qdoc", "createFlow")
-            )
-        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
-
-        // inject connection
-        useExistingConnectionForTest()
-
-        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
-            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
-                pluginConfigurator.installPluginFromPath(
-                    Path.of(path)
-                )
-            }
-
-            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
-            updateGeneralSettings()
-        }.runIdeWithDriver()
-            .useDriverAndCloseIde {
-                waitForProjectOpen()
-                // required wait time for the system to be fully ready
-                Thread.sleep(30000)
-
-                val result = executePuppeteerScript(makeChangesFlowTestScript)
-                assertThat(result)
-                    .contains("Test Successful")
-                    .doesNotContain("Error: Test Failed")
-            }
-    }
-
-    @Test
-    fun `Accept button saves the ReadMe in the appropriate folder`() {
-        val testCase = TestCase(
-            IdeProductProvider.IC,
-            LocalProjectInfo(
-                Paths.get("tstData", "qdoc", "createFlow")
-            )
-        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
-
-        // inject connection
-        useExistingConnectionForTest()
-
-        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
-            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
-                pluginConfigurator.installPluginFromPath(
-                    Path.of(path)
-                )
-            }
-
-            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
-            updateGeneralSettings()
-        }.runIdeWithDriver()
-            .useDriverAndCloseIde {
-                waitForProjectOpen()
-                // required wait time for the system to be fully ready
-                Thread.sleep(30000)
-
-                val readmePath = Paths.get("tstData", "qdoc", "createFlow", "README.md")
-                val readme = File(readmePath.toUri())
-                assertThat(readme).doesNotExist()
-
-                val result = executePuppeteerScript(acceptReadmeTestScript)
-                assertThat(result).doesNotContain("Error: Test Failed")
-
-                val newReadmePath = Paths.get("tstData", "qdoc", "createFlow", "README.md")
-                val newReadme = File(newReadmePath.toUri())
-                assertThat(newReadme).exists()
-                    .content()
-                    .contains(
-                        "REST",
-                        "API"
-                    )
-            }
-    }
-
-    @Test
-    fun `Reject button discards the changes`() {
-        val testCase = TestCase(
-            IdeProductProvider.IC,
-            LocalProjectInfo(
-                Paths.get("tstData", "qdoc", "createFlow")
-            )
-        ).withVersion(System.getProperty("org.gradle.project.ideProfileName"))
-
-        // inject connection
-        useExistingConnectionForTest()
-
-        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
-            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
-                pluginConfigurator.installPluginFromPath(
-                    Path.of(path)
-                )
-            }
-
-            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
-            updateGeneralSettings()
-        }.runIdeWithDriver()
-            .useDriverAndCloseIde {
-                waitForProjectOpen()
-                // required wait time for the system to be fully ready
-                Thread.sleep(30000)
-
-                val readmePath = Paths.get("tstData", "qdoc", "createFlow", "README.md")
-                val readme = File(readmePath.toUri())
-                assertThat(readme).doesNotExist()
-
-                val result = executePuppeteerScript(rejectReadmeTestScript)
-                assertThat(result)
-                    .contains("Test Successful")
-                    .doesNotContain("Error: Test Failed")
-
-                val newReadmePath = Paths.get("tstData", "qdoc", "createFlow", "README.md")
-                val newReadme = File(newReadmePath.toUri())
-                assertThat(newReadme).doesNotExist()
-            }
-    }
-
-    @Test
-    fun `New Readme opens in diff viewer`() {
+    fun `Create readme with single-root workspace, root folder returns a readme`() {
         val testCase = TestCase(
             IdeProductProvider.IC,
             LocalProjectInfo(
@@ -279,12 +88,117 @@ class CreateReadmeTest {
                 val readme = File(readmePath.toUri())
                 assertThat(readme).doesNotExist()
 
-                val result = executePuppeteerScript(newReadmeDiffViewerTestScript)
+                val result = executePuppeteerScript(acceptReadmeTestScript)
                 assertThat(result)
                     .doesNotContain("Error: Test Failed")
 
-                val panel = this.ui.x("//div[contains(@class, 'SimpleDiffPanel')]")
-                assertThat(panel.present()).isTrue()
+                val newReadmePath = Paths.get("tstData", "qdoc", "createFlow", "README.md")
+                val newReadme = File(newReadmePath.toUri())
+                assertThat(newReadme)
+                    .exists()
+                    .content()
+                    .contains("REST", "API")
+            }
+    }
+
+    @Test
+    fun `Create readme with single-root workspace, in a subfolder returns a readme`() {
+        val testCase = TestCase(
+            IdeProductProvider.IC,
+            LocalProjectInfo(
+                Paths.get("tstData", "qdoc", "createFlow")
+            )
+        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+
+        // inject connection
+        useExistingConnectionForTest()
+
+        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
+            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
+                pluginConfigurator.installPluginFromPath(
+                    Path.of(path)
+                )
+            }
+
+            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
+            updateGeneralSettings()
+        }.runIdeWithDriver()
+            .useDriverAndCloseIde {
+                waitForProjectOpen()
+                // required wait time for the system to be fully ready
+                Thread.sleep(30000)
+
+                val readmePath = Paths.get("tstData", "qdoc", "createFlow", "src", "README.md")
+                val readme = File(readmePath.toUri())
+                assertThat(readme)
+                    .doesNotExist()
+
+                val result = executePuppeteerScript(createReadmeSubFolderPreFolderChangeTestScript)
+                // Using keyboard press to select a subfolder based on a windows/linux folder selector
+                // right to move active cursor to the end
+                // enter src as the subfolder name (subfolder name tstData/qdoc/createFlow/src)
+                // enter to confirm selected subfolder
+                this.ui.robot.pressAndReleaseKey(KeyEvent.VK_RIGHT)
+                this.ui.robot.enterText("\\/src")
+                this.ui.robot.pressAndReleaseKey(KeyEvent.VK_ENTER)
+                val result2 = executePuppeteerScript(createReadmeSubFolderPostFolderChangeTestScript)
+
+                assertThat(result)
+                    .doesNotContain("Error: Test Failed")
+                assertThat(result2)
+                    .doesNotContain("Error: Test Failed")
+
+                val newReadmePath = Paths.get("tstData", "qdoc", "createFlow", "src", "README.md")
+                val newReadme = File(newReadmePath.toUri())
+                assertThat(newReadme)
+                    .exists()
+            }
+    }
+
+    @Test
+    fun `Create readme with multi-root workspace returns a readme`() {
+        val testCase = TestCase(
+            IdeProductProvider.IC,
+            LocalProjectInfo(
+                Paths.get("tstData", "qdoc")
+            )
+        ).useRelease(System.getProperty("org.gradle.project.ideProfileName"))
+
+        // inject connection
+        useExistingConnectionForTest()
+
+        Starter.newContext(CurrentTestMethod.hyphenateWithClass(), testCase).apply {
+            System.getProperty("ui.test.plugins").split(File.pathSeparator).forEach { path ->
+                pluginConfigurator.installPluginFromPath(
+                    Path.of(path)
+                )
+            }
+
+            copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
+            updateGeneralSettings()
+        }.runIdeWithDriver()
+            .useDriverAndCloseIde {
+                waitForProjectOpen()
+                // required wait time for the system to be fully ready
+                Thread.sleep(30000)
+
+                val readmePath = Paths.get("tstData", "qdoc", "README.md")
+                val readme = File(readmePath.toUri())
+                assertThat(readme).doesNotExist()
+
+                val result = executePuppeteerScript(acceptReadmeTestScript)
+                assertThat(result)
+                    .doesNotContain("Error: Test Failed")
+
+                val newReadmePath = Paths.get("tstData", "qdoc", "README.md")
+                val newReadme = File(newReadmePath.toUri())
+                assertThat(newReadme)
+                    .exists()
+                    .content()
+                    .contains(
+                        "REST",
+                        "API"
+                    )
             }
     }
 
