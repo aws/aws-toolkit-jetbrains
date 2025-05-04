@@ -5,9 +5,5 @@ codemodernizer/ @aws/elastic-gumby
 codetransform/ @aws/elastic-gumby
 codewhisperer/ @aws/codewhisperer-team
 
-mynah-ui/ @aws/flare
-mynah-ui/package.json @aws/flare @aws/elastic-gumby @aws/earlybird @aws/codewhisperer-team
-mynah-ui/package-lock.json @aws/flare @aws/elastic-gumby @aws/earlybird @aws/codewhisperer-team
-
 # nested within chat/, so needs to be after to take precedence
 amazonqFeatureDev/ @aws/earlybird

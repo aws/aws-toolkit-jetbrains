@@ -8,7 +8,6 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
-import org.cef.CefApp
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
@@ -36,13 +35,6 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
         highlightCommand: HighlightCommand?,
         activeProfile: QRegionProfile?,
     ) {
-        // register the scheme handler to route http://mynah/ URIs to the resources/assets directory on classpath
-        CefApp.getInstance()
-            .registerSchemeHandlerFactory(
-                "http",
-                "mynah",
-                AssetResourceHandler.AssetResourceHandlerFactory(),
-            )
         AmazonQLspService.getInstance(project).addLspInitializeMessageListener {
             loadWebView(
                 isCodeTransformAvailable,
