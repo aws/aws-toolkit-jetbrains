@@ -120,7 +120,7 @@ fun truncateLineByLine(input: String, l: Int): String {
     val shouldAddNewLineBack = input.last() == '\n'
     var lines = input.trim().split("\n")
     var curLen = input.length
-    while (curLen > maxLength) {
+    while (curLen > maxLength && lines.isNotEmpty()) {
         val last = lines.last()
         lines = lines.dropLast(1)
         curLen -= last.length + 1
