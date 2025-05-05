@@ -1,0 +1,20 @@
+{
+  "date" : "2025-04-23",
+  "version" : "3.68",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Amazon Q: Show visual indicator in status bar if profile selection is needed to continue with Q Inline / Q Chat"
+  }, {
+    "type" : "feature",
+    "description" : "Amazon Q /test: Remove unsupported message for non-java python languages"
+  }, {
+    "type" : "bugfix",
+    "description" : "/dev: Fix prompt to enable devfile build not triggering when devfile is present."
+  }, {
+    "type" : "bugfix",
+    "description" : "/review disable auto scan by default"
+  }, {
+    "type" : "bugfix",
+    "description" : "/review: disabled highlighter for ignored issues"
+  } ]
+}
