@@ -47,7 +47,6 @@ class ChatCommunicationManager {
         val encryptedPartialChatResult = getObject(params, String::class.java)
         if (encryptedPartialChatResult != null) {
             val partialChatResult = AmazonQLspService.getInstance(project).encryptionManager.decrypt(encryptedPartialChatResult)
-
             val uiMessage = convertToJsonToSendToChat(
                 command = SEND_CHAT_COMMAND_PROMPT,
                 tabId = tabId,

@@ -30,8 +30,11 @@ import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializ
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
+import org.json.JSONObject
+import java.util.UUID
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager.Companion.convertToJsonToSendToChat
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickParams
@@ -428,7 +431,28 @@ class BrowserConnector(
             }
             STOP_CHAT_RESPONSE -> {
                 val stopResponseRequest = serializer.deserializeChatMessages<StopResponseMessage>(node)
+                if (inflightRequestByTabId[stopResponseRequest.params.tabId] == null) {
+                    return
+                }
                 cancelInflightRequests(stopResponseRequest.params.tabId)
+                chatCommunicationManager.removePartialChatMessage(stopResponseRequest.params.tabId)
+
+                val paramsJson = JSONObject().apply {
+                    put("title", "You stopped your current work, please provide additional examples or ask another question.")
+                    put("additionalMessages", arrayOf<String>())
+                    put("messageId", UUID.randomUUID().toString())
+                    put("buttons", arrayOf<String>())
+                    put("codeReference", arrayOf<String>())
+                    put("body", "")
+                }
+
+                val uiMessage = convertToJsonToSendToChat(
+                    command = SEND_CHAT_COMMAND_PROMPT,
+                    tabId = stopResponseRequest.params.tabId,
+                    params = paramsJson.toString(),
+                    isPartialResult = false
+                )
+                browser.postChat(uiMessage)
             }
         }
     }
