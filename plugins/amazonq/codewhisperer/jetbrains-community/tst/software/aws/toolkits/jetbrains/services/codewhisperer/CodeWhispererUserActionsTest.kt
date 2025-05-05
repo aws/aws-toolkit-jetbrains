@@ -27,7 +27,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.javaFileName
-import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonFileName
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonTestLeftContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.popup.listeners.CodeWhispererScrollListener
@@ -100,18 +99,6 @@ class CodeWhispererUserActionsTest : CodeWhispererTestBase() {
     }
 
     @Test
-    fun `test hitting enter after non-whitespace characters should trigger CodeWhisperer`() {
-        testHittingEnterAfterWhitespaceCharsShouldTriggerCodeWhisperer(pythonTestLeftContext, 1)
-    }
-
-    @Test
-    fun `test hitting enter after whitespace characters should trigger CodeWhisperer`() {
-        testHittingEnterAfterWhitespaceCharsShouldTriggerCodeWhisperer("$pythonTestLeftContext ", 1)
-        testHittingEnterAfterWhitespaceCharsShouldTriggerCodeWhisperer("$pythonTestLeftContext\t", 2)
-        testHittingEnterAfterWhitespaceCharsShouldTriggerCodeWhisperer("$pythonTestLeftContext\n", 3)
-    }
-
-    @Test
     fun `test hitting enter inside braces in Java file should auto-trigger CodeWhisperer and keep the formatting correct`() {
         val testLeftContext = "public class Test {\n    public static void main() {"
         val testRightContext = "}\n}"
@@ -142,48 +129,6 @@ class CodeWhispererUserActionsTest : CodeWhispererTestBase() {
             val listener = CodeWhispererScrollListener(states)
             listener.visibleAreaChanged(event)
             verify(popupManagerSpy, times(2)).showPopup(any(), any(), any(), any())
-        }
-    }
-
-    @Test
-    fun `test special characters should not trigger CodeWhisperer for user group when there is immediate right context`() {
-        testInputSpecialCharWithRightContext("add", false)
-    }
-
-    @Test
-    fun `test special characters should trigger CodeWhisperer for user group when it is not immediate or is single }`() {
-        testInputSpecialCharWithRightContext("}", true)
-        testInputSpecialCharWithRightContext(")", true)
-        testInputSpecialCharWithRightContext(" add", true)
-        testInputSpecialCharWithRightContext("\nadd", true)
-    }
-
-    private fun testInputSpecialCharWithRightContext(rightContext: String, shouldtrigger: Boolean) {
-        CodeWhispererExplorerActionManager.getInstance().setAutoEnabled(true)
-        setFileContext(pythonFileName, "def", rightContext)
-        projectRule.fixture.type('{')
-        if (shouldtrigger) {
-            val popupCaptor = argumentCaptor<JBPopup>()
-            verify(popupManagerSpy, timeout(5000).atLeastOnce())
-                .showPopup(any(), any(), popupCaptor.capture(), any())
-            runInEdtAndWait {
-                popupManagerSpy.closePopup(popupCaptor.lastValue)
-            }
-        } else {
-            verify(popupManagerSpy, times(0))
-                .showPopup(any(), any(), any(), any())
-        }
-    }
-
-    private fun testHittingEnterAfterWhitespaceCharsShouldTriggerCodeWhisperer(prompt: String, times: Int) {
-        CodeWhispererExplorerActionManager.getInstance().setAutoEnabled(true)
-        setFileContext(pythonFileName, prompt, "")
-        projectRule.fixture.type('\n')
-        val popupCaptor = argumentCaptor<JBPopup>()
-        verify(popupManagerSpy, timeout(5000).atLeast(times))
-            .showPopup(any(), any(), popupCaptor.capture(), any())
-        runInEdtAndWait {
-            popupManagerSpy.closePopup(popupCaptor.lastValue)
         }
     }
 }

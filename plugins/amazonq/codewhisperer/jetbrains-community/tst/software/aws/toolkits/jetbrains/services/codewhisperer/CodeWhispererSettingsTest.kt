@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.analysis.problemsView.toolWindow.ProblemsView
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.wm.RegisterToolWindowTask
 import com.intellij.openapi.wm.ToolWindow
@@ -22,14 +21,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.never
-import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.core.ToolWindowHeadlessManagerImpl
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExploreActionState
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererEnabled
-import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
 import software.aws.toolkits.jetbrains.services.codewhisperer.status.CodeWhispererStatusBarWidgetFactory
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceToolWindowFactory
 import software.aws.toolkits.jetbrains.settings.CodeWhispererConfiguration
@@ -39,7 +36,6 @@ import kotlin.test.fail
 
 class CodeWhispererSettingsTest : CodeWhispererTestBase() {
 
-    private lateinit var codewhispererServiceSpy: CodeWhispererService
     private lateinit var toolWindowHeadlessManager: ToolWindowHeadlessManagerImpl
 
     @get:Rule
@@ -48,9 +44,6 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
     @Before
     override fun setUp() {
         super.setUp()
-        codewhispererServiceSpy = spy(codewhispererService)
-        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
-
         // Create a mock ToolWindowManager with working implementation of setAvailable() and isAvailable()
         toolWindowHeadlessManager = object : ToolWindowHeadlessManagerImpl(projectRule.project) {
             private val myToolWindows: MutableMap<String, ToolWindow> = HashMap()
@@ -91,7 +84,7 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
         whenever(stateManager.checkActiveCodeWhispererConnectionType(projectRule.project)).thenReturn(CodeWhispererLoginType.Logout)
         assertThat(isCodeWhispererEnabled(projectRule.project)).isFalse
         invokeCodeWhispererService()
-        verify(codewhispererServiceSpy, never()).showRecommendationsInPopup(any(), any(), any())
+        verify(codewhispererService, never()).showRecommendationsInPopup(any(), any(), any())
     }
 
     @Test
@@ -100,7 +93,7 @@ class CodeWhispererSettingsTest : CodeWhispererTestBase() {
         assertThat(stateManager.isAutoEnabled()).isFalse
         runInEdtAndWait {
             projectRule.fixture.type(':')
-            verify(codewhispererServiceSpy, never()).showRecommendationsInPopup(any(), any(), any())
+            verify(codewhispererService, never()).showRecommendationsInPopup(any(), any(), any())
         }
     }
 

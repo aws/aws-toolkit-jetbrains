@@ -21,7 +21,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
-import software.amazon.awssdk.services.codewhispererruntime.model.Completion
 import software.amazon.awssdk.services.codewhispererruntime.model.OptOutPreference
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -39,11 +38,11 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnecti
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnectionType
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionItem
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererManager.Companion.taskTypeToFilename
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.Chunk
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.CodeWhispererService
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererCodeCoverageTracker.Companion.levenshteinChecker
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.isTelemetryEnabled
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NUMBER_OF_CHUNK_TO_FETCH
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CrossFile.NUMBER_OF_LINE_IN_CHUNK
@@ -180,8 +179,8 @@ fun VirtualFile.toCodeChunk(path: String): Sequence<Chunk> = sequence {
 fun VirtualFile.isWithin(ancestor: VirtualFile): Boolean = VfsUtilCore.isAncestor(ancestor, this, false)
 
 object CodeWhispererUtil {
-    fun getCompletionType(completion: Completion): CodewhispererCompletionType {
-        val content = completion.content()
+    fun getCompletionType(completion: InlineCompletionItem): CodewhispererCompletionType {
+        val content = completion.insertText
         val nonBlankLines = content.split("\n").count { it.isNotBlank() }
 
         return when {
@@ -334,19 +333,6 @@ object CodeWhispererUtil {
             }
         }
     }
-
-    // With edit distance, complicate usermodification can be considered as simple edit(add, delete, replace),
-    // and thus the unmodified part of recommendation length can be deducted/approximated
-    // ex. (modified > original): originalRecom: foo -> modifiedRecom: fobarbarbaro, distance = 9, delta = 12 - 9 = 3
-    // ex. (modified == original): originalRecom: helloworld -> modifiedRecom: HelloWorld, distance = 2, delta = 10 - 2 = 8
-    // ex. (modified < original): originalRecom: CodeWhisperer -> modifiedRecom: CODE, distance = 12, delta = 13 - 12 = 1
-    fun getUnmodifiedAcceptedCharsCount(originalRecommendation: String, modifiedRecommendation: String): Int {
-        val editDistance = getEditDistance(modifiedRecommendation, originalRecommendation).toInt()
-        return maxOf(originalRecommendation.length, modifiedRecommendation.length) - editDistance
-    }
-
-    private fun getEditDistance(modifiedString: String, originalString: String): Double =
-        levenshteinChecker.distance(modifiedString, originalString)
 
     fun setIntelliSensePopupAlpha(editor: Editor, alpha: Float) {
         ComponentUtil.getWindow(LookupManager.getActiveLookup(editor)?.component)?.let {

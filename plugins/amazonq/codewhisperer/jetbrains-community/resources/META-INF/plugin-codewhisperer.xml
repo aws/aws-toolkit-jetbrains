@@ -58,7 +58,6 @@
         />
 
         <typedHandler implementation="software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererTypedHandler"/>
-        <editorFactoryListener implementation="software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorListener"/>
         <editorActionHandler action="EditorEnter" implementationClass="software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEnterHandler"
                              order="first, before editorEnter"/>
         <actionPromoter order="last" implementation="software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererActionPromoter"/>
