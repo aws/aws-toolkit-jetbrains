@@ -11,15 +11,15 @@ data class AuthFollowUpClickNotification(
 data class AuthFollowUpClickedParams(
     val tabId: String,
     val messageId: String,
-    val authFollowUpType: String,
+    val authFollowupType: String,
 ) {
     companion object {
-        fun create(tabId: String, messageId: String, authType: AuthFollowUpType): AuthFollowUpClickedParams =
+        fun create(tabId: String, messageId: String, authType: AuthFollowupType): AuthFollowUpClickedParams =
             AuthFollowUpClickedParams(tabId, messageId, authType.value)
     }
 }
 
-enum class AuthFollowUpType(val value: String) {
+enum class AuthFollowupType(val value: String) {
     FULL_AUTH("full-auth"),
     RE_AUTH("re-auth"),
     MISSING_SCOPES("missing_scopes"),

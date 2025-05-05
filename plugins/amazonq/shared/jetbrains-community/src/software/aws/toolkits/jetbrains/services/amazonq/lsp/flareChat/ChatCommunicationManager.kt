@@ -19,7 +19,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerCon
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ProgressNotificationUtils.getObject
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthFollowUpClickedParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthFollowUpType
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthFollowupType
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
@@ -69,17 +69,17 @@ class ChatCommunicationManager {
     }
 
     fun handleAuthFollowUpClicked(project: Project, params: AuthFollowUpClickedParams) {
-        val incomingType = params.authFollowUpType
+        val incomingType = params.authFollowupType
         val connectionManager = ToolkitConnectionManager.getInstance(project)
         try {
             when (incomingType) {
-                AuthFollowUpType.RE_AUTH.value, AuthFollowUpType.MISSING_SCOPES.value -> {
+                AuthFollowupType.RE_AUTH.value, AuthFollowupType.MISSING_SCOPES.value -> {
                     connectionManager.activeConnectionForFeature(QConnection.getInstance())?.let {
                         reauthConnectionIfNeeded(project, it, isReAuth = true)
                     }
                     return
                 }
-                AuthFollowUpType.FULL_AUTH.value, AuthFollowUpType.USE_SUPPORTED_AUTH.value -> {
+                AuthFollowupType.FULL_AUTH.value, AuthFollowupType.USE_SUPPORTED_AUTH.value -> {
                     // Logout by deleting token credentials
                     val validConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
                     val connection = validConnection.activeConnectionBearer
@@ -92,7 +92,6 @@ class ChatCommunicationManager {
                 }
                 else -> {
                     LOG.warn { "Unknown auth follow up type: $incomingType" }
-                    throw IllegalStateException("Error occurred while attempting to handle auth follow up: Unknown AuthFollowUpType $incomingType")
                 }
             }
         } catch (ex: Exception) {
