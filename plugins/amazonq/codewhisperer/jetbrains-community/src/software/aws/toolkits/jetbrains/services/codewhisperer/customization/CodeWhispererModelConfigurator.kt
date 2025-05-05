@@ -22,6 +22,7 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.calculateIfIamIdentityCenterConnection
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileSwitchIntent
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
@@ -213,6 +214,18 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
                 }
 
                 LOG.debug { "Switch from customization $oldCus to $newCustomization" }
+
+                // Switch profile if it doesn't match the customization's profile.
+                // Customizations are profile-scoped and must be used under the correct context.
+                newCustomization?.profile?.let { p ->
+                    if (p.arn != QRegionProfileManager.getInstance().activeProfile(project)?.arn) {
+                        QRegionProfileManager.getInstance().switchProfile(
+                            project,
+                            p,
+                            QProfileSwitchIntent.Customization
+                        )
+                    }
+                }
 
                 CodeWhispererCustomizationListener.notifyCustomUiUpdate()
             }

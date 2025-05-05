@@ -26,9 +26,7 @@ import software.amazon.awssdk.arns.Arn
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileSwitchIntent
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.Q_CUSTOM_LEARN_MORE_URI
 import software.aws.toolkits.jetbrains.ui.AsyncComboBox
 import software.aws.toolkits.jetbrains.utils.notifyInfo
@@ -109,15 +107,6 @@ class CodeWhispererCustomizationDialog(
             RadioButtonOption.Customization -> run {
                 CodeWhispererModelConfigurator.getInstance().switchCustomization(project, modal.selectedCustomization?.customization)
                 notifyCustomizationIsSelected(project, modal.selectedCustomization)
-                // Switch profile if it doesn't match the customization's profile.
-                // Customizations are profile-scoped and must be used under the correct context.
-                if (modal.selectedCustomization?.customization?.profile?.arn != QRegionProfileManager.getInstance().activeProfile(project)?.arn) {
-                    QRegionProfileManager.getInstance().switchProfile(
-                        project,
-                        modal.selectedCustomization?.customization?.profile,
-                        QProfileSwitchIntent.Customization
-                    )
-                }
             }
         }
 
@@ -191,14 +180,12 @@ class CodeWhispererCustomizationDialog(
                         proposeModelUpdate { model ->
                             val activeCustomization = CodeWhispererModelConfigurator.getInstance().activeCustomization(project)
                             val unsorted = myCustomizations ?: CodeWhispererModelConfigurator.getInstance().listCustomizations(project).orEmpty()
-                            val activeProfile = QRegionProfileManager.getInstance().activeProfile(project)
-                            // Group customizations by profile name (active profile first, then alphabetical), with the active customization on top
-                            val sorted = unsorted.sortedWith(
-                                compareBy<CustomizationUiItem> { it.customization.profile?.profileName != activeProfile?.profileName }
-                                    .thenBy { it.customization.profile?.profileName.orEmpty() }
-                                    .thenBy { it.customization.name }
-                            )
-                                .let { list -> activeCustomization?.let { list.putPickedUpFront(setOf(it)) } ?: list }
+
+                            val sorted = activeCustomization?.let {
+                                unsorted.putPickedUpFront(setOf(it))
+                            } ?: run {
+                                unsorted.sortedBy { it.customization.name }
+                            }
 
                             if (
                                 sorted.isNotEmpty() &&
