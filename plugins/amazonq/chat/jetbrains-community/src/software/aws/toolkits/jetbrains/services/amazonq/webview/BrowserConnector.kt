@@ -9,6 +9,7 @@ import com.intellij.ide.BrowserUtil
 import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.project.Project
 import com.intellij.ui.jcef.JBCefJSQuery.Response
+import fleet.multiplatform.shims.ConcurrentHashMap
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.coroutineScope
@@ -18,7 +19,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
 import org.eclipse.lsp4j.Position
@@ -90,9 +90,11 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Promp
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.QuickChatActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.STOP_CHAT_RESPONSE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.StopResponseMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventParams
@@ -114,6 +116,7 @@ class BrowserConnector(
 ) {
     var uiReady = CompletableDeferred<Boolean>()
     private val chatCommunicationManager = ChatCommunicationManager.getInstance(project)
+    private val inflightRequestByTabId = ConcurrentHashMap<String, CompletableFuture<String>>() // tab id -> cancellation token
 
     suspend fun connect(
         browser: Browser,
@@ -245,6 +248,10 @@ class BrowserConnector(
                     encryptionManager = this.encryptionManager
                     encryptionManager?.encrypt(chatParams)?.let { EncryptedChatParams(it, partialResultToken) }?.let { server.sendChatPrompt(it) }
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
+
+                // We assume there is only one outgoing request per tab because the input is
+                // blocked when there is an outgoing request
+                inflightRequestByTabId[tabId] = result
                 showResult(result, partialResultToken, tabId, encryptionManager, browser)
             }
             CHAT_QUICK_ACTION -> {
@@ -261,6 +268,10 @@ class BrowserConnector(
                         server.sendQuickAction(it)
                     }
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
+
+                // We assume there is only one outgoing request per tab because the input is
+                // blocked when there is an outgoing request
+                inflightRequestByTabId[tabId] = result
 
                 showResult(result, partialResultToken, tabId, encryptionManager, browser)
             }
@@ -318,6 +329,7 @@ class BrowserConnector(
             CHAT_TAB_REMOVE -> {
                 handleChatNotification<TabEventRequest, TabEventParams>(node) { server, params ->
                     chatCommunicationManager.removePartialChatMessage(params.tabId)
+                    cancelInflightRequests(params.tabId)
                     server.tabRemove(params)
                 }
             }
@@ -414,6 +426,10 @@ class BrowserConnector(
                     server.createPrompt(params)
                 }
             }
+            STOP_CHAT_RESPONSE -> {
+                val stopResponseRequest = serializer.deserializeChatMessages<StopResponseMessage>(node)
+                cancelInflightRequests(stopResponseRequest.params.tabId)
+            }
         }
     }
 
@@ -433,6 +449,14 @@ class BrowserConnector(
                 isPartialResult = false
             )
             browser.postChat(messageToChat)
+            inflightRequestByTabId.remove(tabId)
+        }
+    }
+
+    private fun cancelInflightRequests(tabId: String) {
+        inflightRequestByTabId[tabId]?.let { request ->
+            request.cancel(true)
+            inflightRequestByTabId.remove(tabId)
         }
     }
 
