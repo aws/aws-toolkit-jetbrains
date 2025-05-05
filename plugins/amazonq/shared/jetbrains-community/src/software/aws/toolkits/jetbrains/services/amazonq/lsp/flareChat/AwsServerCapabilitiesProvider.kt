@@ -57,5 +57,5 @@ data class QuickActionsCommandGroups(
 
 data class Command(
     val command: String,
-    val description: String,
+    val description: String?,
 )
