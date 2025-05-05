@@ -151,7 +151,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             formatMappings[format]?.let { filters.add(it) }
         }
         val defaultUri = params.defaultUri ?: "export-chat.md"
-        val saveAtUri = defaultUri.substring(defaultUri.lastIndexOf("/"))
+        val saveAtUri = defaultUri.substring(defaultUri.lastIndexOf("/") + 1)
         return CompletableFuture.supplyAsync(
             {
                 val descriptor = FileSaverDescriptor("Export", "Choose a location to export").apply {
