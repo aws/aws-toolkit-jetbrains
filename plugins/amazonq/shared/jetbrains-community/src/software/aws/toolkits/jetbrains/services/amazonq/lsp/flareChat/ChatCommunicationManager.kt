@@ -20,8 +20,8 @@ import java.util.concurrent.ConcurrentHashMap
 @Service(Service.Level.PROJECT)
 class ChatCommunicationManager {
     private val chatPartialResultMap = ConcurrentHashMap<String, String>()
-    private fun getPartialChatMessage(partialResultToken: String): String =
-        chatPartialResultMap.getValue(partialResultToken)
+    private fun getPartialChatMessage(partialResultToken: String): String? =
+        chatPartialResultMap.getOrDefault(partialResultToken, null)
 
     fun addPartialChatMessage(tabId: String): String {
         val partialResultToken: String = UUID.randomUUID().toString()
@@ -35,7 +35,7 @@ class ChatCommunicationManager {
     fun handlePartialResultProgressNotification(project: Project, params: ProgressParams) {
         val token = ProgressNotificationUtils.getToken(params)
         val tabId = getPartialChatMessage(token)
-        if (tabId == null || tabId.isEmpty()) {
+        if (tabId.isNullOrEmpty()) {
             return
         }
         if (params.value.isLeft || params.value.right == null) {
