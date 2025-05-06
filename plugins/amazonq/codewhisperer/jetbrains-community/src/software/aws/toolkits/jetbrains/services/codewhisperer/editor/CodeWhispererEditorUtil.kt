@@ -95,17 +95,6 @@ object CodeWhispererEditorUtil {
         )
     }
 
-    fun shouldSkipInvokingBasedOnRightContext(editor: Editor): Boolean {
-        val caretContext = runReadAction { extractCaretContext(editor) }
-        val rightContextLines = caretContext.rightFileContext.split(Regex("\r?\n"))
-        val rightContextCurrentLine = if (rightContextLines.isEmpty()) "" else rightContextLines[0]
-
-        return rightContextCurrentLine.isNotEmpty() &&
-            !rightContextCurrentLine.startsWith(" ") &&
-            rightContextCurrentLine.trim() != ("}") &&
-            rightContextCurrentLine.trim() != (")")
-    }
-
     /**
      * Check if left context contains keywords or file name follow config json file naming pattern
      */

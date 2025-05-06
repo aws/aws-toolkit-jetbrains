@@ -11,8 +11,6 @@ class CodeWhispererPowershell private constructor() : CodeWhispererProgrammingLa
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Powershell
 
-    override fun isCodeCompletionSupported(): Boolean = true
-
     companion object {
         // TODO: confirm with service team language id
         const val ID = "powershell"

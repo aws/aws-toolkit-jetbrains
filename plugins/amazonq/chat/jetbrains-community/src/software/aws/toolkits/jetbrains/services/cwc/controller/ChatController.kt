@@ -19,7 +19,6 @@ import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.options.ShowSettingsUtil
-import com.intellij.psi.PsiDocumentManager
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
@@ -45,9 +44,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPag
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
 import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererUserModificationTracker
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.cwc.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
@@ -60,7 +56,6 @@ import software.aws.toolkits.jetbrains.services.cwc.commands.EditorContextComman
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.StaticPrompt
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.StaticTextResponse
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.messenger.ChatPromptHandler
-import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.InsertedCodeModificationEntry
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.TelemetryHelper
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.userIntent.UserIntentRecognizer
@@ -79,7 +74,6 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.OnboardingPageInter
 import software.aws.toolkits.jetbrains.services.cwc.messages.QuickActionMessage
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
 import software.aws.toolkits.telemetry.CwsprChatCommandType
-import java.time.Instant
 import java.util.UUID
 
 data class TestCommandMessage(
@@ -191,7 +185,6 @@ class ChatController private constructor(
     }
 
     override suspend fun processInsertCodeAtCursorPosition(message: IncomingCwcMessage.InsertCodeAtCursorPosition) {
-        broadcastQEvent(QFeatureEvent.STARTS_EDITING)
         withContext(EDT) {
             val editor: Editor = FileEditorManager.getInstance(context.project).selectedTextEditor ?: return@withContext
 
@@ -207,23 +200,10 @@ class ChatController private constructor(
                     editor.document.insertString(offset, message.code)
 
                     ReferenceLogController.addReferenceLog(message.code, message.codeReference, editor, context.project, null)
-
-                    CodeWhispererUserModificationTracker.getInstance(context.project).enqueue(
-                        InsertedCodeModificationEntry(
-                            telemetryHelper.getConversationId(message.tabId).orEmpty(),
-                            message.messageId,
-                            Instant.now(),
-                            PsiDocumentManager.getInstance(context.project).getPsiFile(editor.document)?.virtualFile,
-                            editor.document.createRangeMarker(caret.selectionStart, caret.selectionEnd, true),
-                            message.code,
-                        ),
-                    )
                 }
             }
         }
         telemetryHelper.recordInteractWithMessage(message)
-
-        broadcastQEvent(QFeatureEvent.FINISHES_EDITING)
     }
 
     override suspend fun processStopResponseMessage(message: IncomingCwcMessage.StopResponse) {
@@ -417,7 +397,6 @@ class ChatController private constructor(
         sessionInfo.history.add(requestData)
         telemetryHelper.recordEnterFocusConversation(tabId)
         telemetryHelper.recordStartConversation(tabId, requestData)
-        broadcastQEvent(QFeatureEvent.INVOCATION)
         // Send the request to the API and publish the responses back to the UI.
         // This is launched in a scope attached to the sessionInfo so that the Job can be cancelled on a per-session basis.
         ChatPromptHandler(telemetryHelper).handle(tabId, triggerId, requestData, sessionInfo, shouldAddIndexInProgressMessage)

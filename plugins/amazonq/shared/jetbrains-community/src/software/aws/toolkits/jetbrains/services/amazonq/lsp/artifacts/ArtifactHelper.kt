@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
+import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.util.io.createDirectories
@@ -17,16 +18,14 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.saveFileFromUrl
 import software.aws.toolkits.resources.AwsCoreBundle
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 
-class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH, private val maxDownloadAttempts: Int = MAX_DOWNLOAD_ATTEMPTS) {
-
-    companion object {
-        private val DEFAULT_ARTIFACT_PATH = getToolkitsCommonCacheRoot().resolve("aws").resolve("toolkits").resolve("language-servers")
-        private val logger = getLogger<ArtifactHelper>()
-        private const val MAX_DOWNLOAD_ATTEMPTS = 3
-    }
+class ArtifactHelper internal constructor(
+    private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
+    private val maxDownloadAttempts: Int = MAX_DOWNLOAD_ATTEMPTS,
+) {
     private val currentAttempt = AtomicInteger(0)
 
     fun removeDelistedVersions(delistedVersions: List<Version>) {
@@ -78,16 +77,6 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
             .sortedByDescending { (_, semVer) -> semVer }
     }
 
-    fun getLatestLocalLspArtifact(): Path {
-        val localFolders = getSubFolders(lspArtifactsPath)
-        return localFolders.map { localFolder ->
-            localFolder to SemVer.parseFromText(localFolder.fileName.toString())
-        }
-            .sortedByDescending { (_, semVer) -> semVer }
-            .first()
-            .first
-    }
-
     fun getExistingLspArtifacts(versions: List<Version>, target: VersionTarget?): Boolean {
         if (versions.isEmpty() || target?.contents == null) return false
 
@@ -113,7 +102,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
     }
 
     suspend fun tryDownloadLspArtifacts(project: Project, versions: List<Version>, target: VersionTarget?): Path? {
-        val temporaryDownloadPath = lspArtifactsPath.resolve("temp")
+        val temporaryDownloadPath = Files.createTempDirectory("lsp-dl")
         val downloadPath = lspArtifactsPath.resolve(versions.first().serverVersion.toString())
 
         while (currentAttempt.get() < maxDownloadAttempts) {
@@ -187,7 +176,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
         try {
             if (!filePath.exists()) {
                 logger.info { "Downloading file: ${filePath.fileName}" }
-                saveFileFromUrl(url, filePath)
+                saveFileFromUrl(url, filePath, ProgressManager.getInstance().progressIndicator)
             }
             if (!validateFileHash(filePath, expectedHash)) {
                 logger.warn { "Hash mismatch for ${filePath.fileName}, re-downloading" }
@@ -220,5 +209,11 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
             logger.error { errorMessage }
             throw LspException(errorMessage, LspException.ErrorCode.DOWNLOAD_FAILED)
         }
+    }
+
+    companion object {
+        private val DEFAULT_ARTIFACT_PATH = getToolkitsCommonCacheRoot().resolve("aws").resolve("toolkits").resolve("language-servers")
+        private val logger = getLogger<ArtifactHelper>()
+        private const val MAX_DOWNLOAD_ATTEMPTS = 3
     }
 }

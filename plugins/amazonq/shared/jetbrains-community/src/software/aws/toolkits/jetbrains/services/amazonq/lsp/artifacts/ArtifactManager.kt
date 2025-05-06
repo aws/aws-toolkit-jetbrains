@@ -3,20 +3,31 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
+import com.intellij.serviceContainer.NonInjectable
 import com.intellij.util.text.SemVer
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import java.nio.file.Path
 
-class ArtifactManager(
-    private val project: Project,
-    private val manifestFetcher: ManifestFetcher = ManifestFetcher(),
-    private val artifactHelper: ArtifactHelper = ArtifactHelper(),
-    manifestRange: SupportedManifestVersionRange?,
-) {
+@Service
+class ArtifactManager @NonInjectable internal constructor(private val manifestFetcher: ManifestFetcher, private val artifactHelper: ArtifactHelper) {
+    constructor() : this(
+        ManifestFetcher(),
+        ArtifactHelper()
+    )
+
+    // we currently cannot handle the versions swithing in the middle of a user's session
+    private val mutex = Mutex()
+    private var artifactDeferred: Deferred<Path>? = null
 
     data class SupportedManifestVersionRange(
         val startVersion: SemVer,
@@ -27,45 +38,55 @@ class ArtifactManager(
         val inRangeVersions: List<Version>,
     )
 
-    private val manifestVersionRanges: SupportedManifestVersionRange = manifestRange ?: DEFAULT_VERSION_RANGE
-
     companion object {
         private val DEFAULT_VERSION_RANGE = SupportedManifestVersionRange(
-            startVersion = SemVer("0.0.0", 0, 0, 0),
+            startVersion = SemVer("1.0.0", 1, 0, 0),
             endVersion = SemVer("2.0.0", 2, 0, 0)
         )
         private val logger = getLogger<ArtifactManager>()
     }
 
-    suspend fun fetchArtifact(): Path {
-        val manifest = manifestFetcher.fetch() ?: throw LspException(
-            "Language Support is not available, as manifest is missing.",
-            LspException.ErrorCode.MANIFEST_FETCH_FAILED
-        )
-        val lspVersions = getLSPVersionsFromManifestWithSpecifiedRange(manifest)
+    suspend fun fetchArtifact(project: Project): Path {
+        mutex.withLock { artifactDeferred }?.let {
+            return it.await()
+        }
 
-        this.artifactHelper.removeDelistedVersions(lspVersions.deListedVersions)
+        return mutex.withLock {
+            coroutineScope {
+                async {
+                    val manifest = manifestFetcher.fetch() ?: throw LspException(
+                        "Language Support is not available, as manifest is missing.",
+                        LspException.ErrorCode.MANIFEST_FETCH_FAILED
+                    )
+                    val lspVersions = getLSPVersionsFromManifestWithSpecifiedRange(manifest)
 
-        if (lspVersions.inRangeVersions.isEmpty()) {
-            // No versions are found which are in the given range. Fallback to local lsp artifacts.
-            val localLspArtifacts = this.artifactHelper.getAllLocalLspArtifactsWithinManifestRange(manifestVersionRanges)
-            if (localLspArtifacts.isNotEmpty()) {
-                return localLspArtifacts.first().first
+                    artifactHelper.removeDelistedVersions(lspVersions.deListedVersions)
+
+                    if (lspVersions.inRangeVersions.isEmpty()) {
+                        // No versions are found which are in the given range. Fallback to local lsp artifacts.
+                        val localLspArtifacts = artifactHelper.getAllLocalLspArtifactsWithinManifestRange(DEFAULT_VERSION_RANGE)
+                        if (localLspArtifacts.isNotEmpty()) {
+                            return@async localLspArtifacts.first().first
+                        }
+                        throw LspException("Language server versions not found in manifest.", LspException.ErrorCode.NO_COMPATIBLE_LSP_VERSION)
+                    }
+
+                    // If there is an LSP Manifest with the same version
+                    val target = getTargetFromLspManifest(lspVersions.inRangeVersions)
+                    // Get Local LSP files and check if we can re-use existing LSP Artifacts
+                    val artifactPath: Path = if (artifactHelper.getExistingLspArtifacts(lspVersions.inRangeVersions, target)) {
+                        artifactHelper.getAllLocalLspArtifactsWithinManifestRange(DEFAULT_VERSION_RANGE).first().first
+                    } else {
+                        artifactHelper.tryDownloadLspArtifacts(project, lspVersions.inRangeVersions, target)
+                            ?: throw LspException("Failed to download LSP artifacts", LspException.ErrorCode.DOWNLOAD_FAILED)
+                    }
+                    artifactHelper.deleteOlderLspArtifacts(DEFAULT_VERSION_RANGE)
+                    return@async artifactPath
+                }
+            }.also {
+                artifactDeferred = it
             }
-            throw LspException("Language server versions not found in manifest.", LspException.ErrorCode.NO_COMPATIBLE_LSP_VERSION)
-        }
-
-        // If there is an LSP Manifest with the same version
-        val target = getTargetFromLspManifest(lspVersions.inRangeVersions)
-        // Get Local LSP files and check if we can re-use existing LSP Artifacts
-        val artifactPath: Path = if (this.artifactHelper.getExistingLspArtifacts(lspVersions.inRangeVersions, target)) {
-            this.artifactHelper.getAllLocalLspArtifactsWithinManifestRange(manifestVersionRanges).first().first
-        } else {
-            this.artifactHelper.tryDownloadLspArtifacts(project, lspVersions.inRangeVersions, target)
-                ?: throw LspException("Failed to download LSP artifacts", LspException.ErrorCode.DOWNLOAD_FAILED)
-        }
-        this.artifactHelper.deleteOlderLspArtifacts(manifestVersionRanges)
-        return artifactPath
+        }.await()
     }
 
     @VisibleForTesting
@@ -77,7 +98,7 @@ class ArtifactManager(
                 SemVer.parseFromText(serverVersion)?.let { semVer ->
                     when {
                         version.isDelisted != false -> Pair(version, true) // Is deListed
-                        semVer in manifestVersionRanges.startVersion..manifestVersionRanges.endVersion -> Pair(version, false) // Is in range
+                        semVer in DEFAULT_VERSION_RANGE.let { it.startVersion..it.endVersion } -> Pair(version, false) // Is in range
                         else -> null
                     }
                 }

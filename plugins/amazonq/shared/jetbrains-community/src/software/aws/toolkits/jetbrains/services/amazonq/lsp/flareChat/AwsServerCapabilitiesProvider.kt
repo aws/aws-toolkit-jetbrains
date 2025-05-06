@@ -30,7 +30,9 @@ class AwsServerCapabilitiesProvider {
                         )
                     )
                 )
-            )
+            ),
+            history = true,
+            export = true
         )
     }
 }
@@ -41,6 +43,8 @@ data class AwsServerCapabilities(
 
 data class ChatOptions(
     val quickActions: QuickActions,
+    val history: Boolean,
+    val export: Boolean,
 )
 
 data class QuickActions(
@@ -53,5 +57,5 @@ data class QuickActionsCommandGroups(
 
 data class Command(
     val command: String,
-    val description: String,
+    val description: String?,
 )

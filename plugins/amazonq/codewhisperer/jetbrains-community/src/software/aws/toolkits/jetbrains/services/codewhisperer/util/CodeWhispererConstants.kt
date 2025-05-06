@@ -19,18 +19,13 @@ object CodeWhispererConstants {
     const val CHARACTERS_LIMIT = 10240
     const val BEGINNING_OF_FILE = 0
     const val FILENAME_CHARS_LIMIT = 1024
-    const val INVOCATION_KEY_INTERVAL_THRESHOLD = 15
     val SPECIAL_CHARACTERS_LIST = listOf("{", "[", "(", ":")
     val PAIRED_BRACKETS = mapOf('{' to '}', '(' to ')', '[' to ']', '<' to '>')
     val PAIRED_QUOTES = setOf('"', '\'', '`')
-    const val INVOCATION_TIME_INTERVAL_THRESHOLD = 2
     const val LEFT_CONTEXT_ON_CURRENT_LINE = 50
     const val POPUP_INFO_TEXT_SIZE = 11f
     const val POPUP_BUTTON_TEXT_SIZE = 12f
-    const val POPUP_DELAY: Long = 250
     const val POPUP_DELAY_CHECK_INTERVAL: Long = 25
-    const val IDLE_TIME_CHECK_INTERVAL: Long = 25
-    const val SUPPLEMETAL_CONTEXT_BUFFER = 10L
 
     val AWSTemplateKeyWordsRegex = Regex("(AWSTemplateFormatVersion|Resources|AWS::|Description)")
     val AWSTemplateCaseInsensitiveKeyWordsRegex = Regex("(cloudformation|cfn|template|description)")
@@ -49,10 +44,6 @@ object CodeWhispererConstants {
         "vcpkg.json"
     )
 
-    // TODO: this is currently set to 2050 to account for the server side 0.5 TPS and and extra 50 ms buffer to
-    // avoid ThrottlingException as much as possible.
-    const val INVOCATION_INTERVAL: Long = 2050
-
     val runScanKey = DataKey.create<Boolean>("amazonq.codescan.run")
     val scanResultsKey = DataKey.create<CodeScanResponse>("amazonq.codescan.result")
     val scanScopeKey = DataKey.create<CodeAnalysisScope>("amazonq.codescan.scope")
@@ -67,7 +58,7 @@ object CodeWhispererConstants {
     // Code scan feature constants
     val ISSUE_HIGHLIGHT_TEXT_ATTRIBUTES = TextAttributes(null, null, JBColor.YELLOW, EffectType.WAVE_UNDERSCORE, Font.PLAIN)
     const val CODE_SCAN_ISSUE_TITLE_MAX_LENGTH = 60
-    const val DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS: Long = 60 * 10 // 10 minutes
+    const val DEFAULT_CODE_SCAN_TIMEOUT_IN_SECONDS: Long = 60 * 15 // 15 minutes
     const val DEFAULT_PAYLOAD_LIMIT_IN_BYTES: Long = 1 * 1024 * 1024 * 1024 // 1GB
     const val CODE_SCAN_POLLING_INTERVAL_IN_SECONDS: Long = 1
     const val FILE_SCAN_INITIAL_POLLING_INTERVAL_IN_SECONDS: Long = 10
@@ -155,17 +146,8 @@ object CodeWhispererConstants {
     }
 
     object CrossFile {
-        const val CHUNK_SIZE = 60
         const val NUMBER_OF_LINE_IN_CHUNK = 50
         const val NUMBER_OF_CHUNK_TO_FETCH = 3
-        const val MAX_TOTAL_LENGTH = 20480
-        const val MAX_LENGTH_PER_CHUNK = 10240
-        const val MAX_CONTEXT_COUNT = 5
-    }
-
-    object Utg {
-        const val UTG_SEGMENT_SIZE = 10200
-        const val UTG_PREFIX = "UTG\n"
     }
 
     object TryExampleFileContent {

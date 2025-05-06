@@ -116,6 +116,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
     ): String {
         val quickActionConfig = generateQuickActionConfig()
         val postMessageToJavaJsCode = receiveMessageQuery.inject("JSON.stringify(message)")
+        // language=HTML
         val jsScripts = """
             <script type="text/javascript" src="$webUri" defer onload="init()"></script>
             <script type="text/javascript">
@@ -127,6 +128,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                             }
                         }, 
                         {
+                        agenticMode: true,
                         quickActionCommands: $quickActionConfig,
                         disclaimerAcknowledged: ${MeetQSettings.getInstance().disclaimerAcknowledged},
                         pairProgrammingAcknowledged: ${!MeetQSettings.getInstance().amazonQChatPairProgramming}
