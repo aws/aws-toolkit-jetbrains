@@ -270,7 +270,8 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     }
 
     override fun openFileDiff(params: OpenFileDiffParams): CompletableFuture<Unit> =
-        CompletableFuture.supplyAsync({
+        CompletableFuture.supplyAsync(
+            {
                 try {
                     val contentFactory = DiffContentFactory.getInstance()
                     val fileName = Paths.get(params.originalFileUri).fileName.toString()
