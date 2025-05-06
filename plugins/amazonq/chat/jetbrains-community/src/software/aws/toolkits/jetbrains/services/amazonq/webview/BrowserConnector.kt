@@ -442,7 +442,7 @@ class BrowserConnector(
                         } catch (e: Exception) {
                             LOG.error { "Failed to perform chat tab bar action $e" }
                             params.tabId?.let {
-                                chatCommunicationManager.sendErrorToUi(it, e, null)
+                                browser.postChat(chatCommunicationManager.getErrorUiMessage(it, e, null))
                             }
                         }
                     }
@@ -500,11 +500,14 @@ class BrowserConnector(
                     encryptionManager?.decrypt(value).orEmpty(),
                     isPartialResult = false
                 )
+                if (messageToChat.contains("abc")) {
+                    throw Exception("abc err")
+                }
                 browser.postChat(messageToChat)
                 chatCommunicationManager.removeInflightRequestForTab(tabId)
             } catch (e: Exception) {
                 LOG.error { "Failed to send chat message $e" }
-                chatCommunicationManager.sendErrorToUi(tabId, e, partialResultToken)
+                browser.postChat(chatCommunicationManager.getErrorUiMessage(tabId, e, partialResultToken))
             }
 
         }

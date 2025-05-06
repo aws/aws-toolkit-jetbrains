@@ -73,27 +73,24 @@ class ChatCommunicationManager {
         }
     }
 
-    fun sendErrorToUi(tabId: String, exception: Exception, token: String?) {
+    fun getErrorUiMessage(tabId: String, exception: Exception, token: String?): String {
         token?.let {
             removePartialChatMessage(it)
         }
         val errorTitle = "An error occurred while processing your request."
         val errorMessage = "Details: ${exception.message}"
-        val errorParams = Gson().toJsonTree(ErrorParams(tabId, null, errorMessage, errorTitle))
-        sendErrorMessageToChatUi(CHAT_ERROR_PARAMS, tabId, errorParams, false)
-    }
-
-    private fun sendErrorMessageToChatUi(command: String, tabId: String, partialChatResult: JsonElement, isPartialResult: Boolean) {
+        val errorParams = Gson().toJson(ErrorParams(tabId, null, errorMessage, errorTitle)).toString()
         val uiMessage =  """
                 {
-                "command":"$command",
+                "command":"$CHAT_ERROR_PARAMS",
                 "tabId": "$tabId",
-                "params": $partialChatResult,
-                "isPartialResult": $isPartialResult
+                "params": "$errorParams",
+                "isPartialResult": "true"
                 }
             """.trimIndent()
-        AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+        return uiMessage
     }
+
 
     companion object {
         fun getInstance(project: Project) = project.service<ChatCommunicationManager>()
