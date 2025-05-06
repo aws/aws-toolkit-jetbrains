@@ -74,7 +74,6 @@ dependencies {
 
         // FIX_WHEN_MIN_IS_251: https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1774
         when (providers.gradleProperty("ideProfileName").get()) {
-            "2023.3", "2024.1" -> {}
             "2024.2", "2024.3", "2025.1" -> {
                 bundledModule("intellij.rider")
             }
@@ -326,6 +325,11 @@ intellijPlatform {
 }
 
 tasks.withType<PrepareSandboxTask>().configureEach {
+    // com.jetbrains.rd.platform.diagnostics.BackendException:
+    // There is more than one package with the same ID JetBrains.Platform.UIInteractive.Common in the current deployed packages list.
+    // An item with the same key has already been added. Key: JetBrains.Platform.UIInteractive.Common
+    disabledPlugins.add("com.jetbrains.dotTrace.dotMemory")
+
     dependsOn(resharperDllsDir)
 
     intoChild(intellijPlatform.projectName.map { "$it/dotnet" })
@@ -370,13 +374,21 @@ tasks.integrationTest {
     include("**/*Test.class")
 }
 
+// https://youtrack.jetbrains.com/issue/IJPL-180442
+tasks.withType<Test>().configureEach {
+    classpath -= classpath.filter {
+        (it.name.startsWith("localization-") && it.name.endsWith(".jar")) ||
+            it.name == "cwm-plugin.jar"
+    }
+}
+
 // fix implicit dependency on generated source
 tasks.withType<DetektCreateBaselineTask>().configureEach {
     dependsOn(generateModels)
 }
 
 configurations.all {
-    if (name.contains("detekt")) {
+    if (name.contains("detekt") || name.contains("kotlinCompiler") || name.contains("rdGen")) {
         return@all
     }
 

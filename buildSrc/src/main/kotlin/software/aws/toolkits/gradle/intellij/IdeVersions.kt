@@ -27,83 +27,7 @@ object IdeVersions {
 
     private val ideProfiles = listOf(
         Profile(
-            name = "2023.3",
-            community = ProductProfile(
-                sdkVersion = "2023.3",
-                bundledPlugins = commonPlugins + listOf(
-                    "com.intellij.java",
-                    "com.intellij.gradle",
-                    "org.jetbrains.idea.maven",
-                ),
-                marketplacePlugins = listOf(
-                    "PythonCore:233.11799.241",
-                    "Docker:233.11799.244"
-                )
-            ),
-            ultimate = ProductProfile(
-                sdkVersion = "2023.3",
-                bundledPlugins = commonPlugins + listOf(
-                    "JavaScript",
-                    "JavaScriptDebugger",
-                    "com.intellij.database",
-                    "com.jetbrains.codeWithMe",
-                ),
-                marketplacePlugins = listOf(
-                    "Pythonid:233.11799.241",
-                    "org.jetbrains.plugins.go:233.11799.196",
-                )
-            ),
-            rider = RiderProfile(
-                sdkVersion = "2023.3",
-                bundledPlugins = commonPlugins,
-                netFrameworkTarget = "net472",
-                rdGenVersion = "2023.3.2",
-                nugetVersion = "2023.3.0"
-            )
-        ),
-        Profile(
-            name = "2024.1",
-            community = ProductProfile(
-                sdkVersion = "2024.1",
-                bundledPlugins = commonPlugins + listOf(
-                    "com.intellij.java",
-                    "com.intellij.gradle",
-                    "org.jetbrains.idea.maven",
-                ),
-                marketplacePlugins = listOf(
-                    "org.toml.lang:241.14494.150",
-                    "PythonCore:241.14494.240",
-                    "Docker:241.14494.251"
-                )
-            ),
-            ultimate = ProductProfile(
-                sdkVersion = "2024.1",
-                bundledPlugins = commonPlugins + listOf(
-                    "JavaScript",
-                    "JavaScriptDebugger",
-                    "com.intellij.database",
-                    "com.jetbrains.codeWithMe",
-                ),
-                marketplacePlugins = listOf(
-                    "org.toml.lang:241.14494.150",
-                    "Pythonid:241.14494.314",
-                    "org.jetbrains.plugins.go:241.14494.240",
-                )
-            ),
-            rider = RiderProfile(
-                sdkVersion = "2024.1",
-                bundledPlugins = commonPlugins,
-                netFrameworkTarget = "net472",
-                rdGenVersion = "2024.1.1",
-                nugetVersion = "2024.1.0"
-            )
-        ),
-        Profile(
             name = "2024.2",
-            gateway = ProductProfile(
-                sdkVersion = "242.23726-EAP-CANDIDATE-SNAPSHOT",
-                bundledPlugins = listOf("org.jetbrains.plugins.terminal")
-            ),
             community = ProductProfile(
                 sdkVersion = "2024.2",
                 bundledPlugins = commonPlugins + listOf(
@@ -127,7 +51,7 @@ object IdeVersions {
                 ),
                 marketplacePlugins = listOf(
                     "org.toml.lang:242.20224.155",
-                    "Pythonid:242.20224.300",
+                    "PythonCore:242.20224.300",
                     "org.jetbrains.plugins.go:242.20224.300",
                 )
             ),
@@ -141,10 +65,6 @@ object IdeVersions {
         ),
         Profile(
             name = "2024.3",
-            gateway = ProductProfile(
-                sdkVersion = "243.21565.196-CUSTOM-SNAPSHOT",
-                bundledPlugins = listOf("org.jetbrains.plugins.terminal")
-            ),
             community = ProductProfile(
                 sdkVersion = "2024.3",
                 bundledPlugins = commonPlugins + listOf(
@@ -183,24 +103,23 @@ object IdeVersions {
         Profile(
             name = "2025.1",
             gateway = ProductProfile(
-                sdkVersion = "251.14649-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "251.23774.441-CUSTOM-SNAPSHOT",
                 bundledPlugins = listOf("org.jetbrains.plugins.terminal")
             ),
             community = ProductProfile(
-                sdkVersion = "251.14649-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "2025.1",
                 bundledPlugins = commonPlugins + listOf(
                     "com.intellij.java",
                     "com.intellij.gradle",
                     "org.jetbrains.idea.maven",
                 ),
                 marketplacePlugins = listOf(
-                    "org.toml.lang:251.14649.45",
-                    "PythonCore:251.14649.49",
-                    "Docker:251.14649.49"
+                    "PythonCore:251.23774.460",
+                    "Docker:251.23774.466"
                 )
             ),
             ultimate = ProductProfile(
-                sdkVersion = "251.14649-EAP-CANDIDATE-SNAPSHOT",
+                sdkVersion = "2025.1",
                 bundledPlugins = commonPlugins + listOf(
                     "JavaScript",
                     "JavaScriptDebugger",
@@ -208,17 +127,16 @@ object IdeVersions {
                     "com.jetbrains.codeWithMe",
                 ),
                 marketplacePlugins = listOf(
-                    "org.toml.lang:251.14649.45",
-                    "Pythonid:251.14649.49",
-                    "org.jetbrains.plugins.go:251.14649.49",
+                    "Pythonid:251.23774.460",
+                    "org.jetbrains.plugins.go:251.23774.435",
                 )
             ),
             rider = RiderProfile(
-                sdkVersion = "2025.1-EAP1-SNAPSHOT",
+                sdkVersion = "2025.1",
                 bundledPlugins = commonPlugins,
                 netFrameworkTarget = "net472",
-                rdGenVersion = "2024.3.1",
-                nugetVersion = " 2025.1.0-eap01"
+                rdGenVersion = "2025.1.1",
+                nugetVersion = " 2025.1.0"
             )
         ),
     ).associateBy { it.name }

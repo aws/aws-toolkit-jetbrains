@@ -4,13 +4,13 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.importadder
 
 import com.intellij.lang.ecmascript6.psi.ES6ImportDeclaration
-import com.intellij.lang.javascript.JavascriptLanguage
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.testFramework.runInEdtAndWait
+import compat.com.intellij.lang.javascript.JavascriptLanguage
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import software.aws.toolkits.jetbrains.utils.rules.NodeJsCodeInsightTestFixtureRule
@@ -242,7 +242,7 @@ class CodeWhispererJSImportAdderTest : CodeWhispererImportAdderTestBase(
     private fun createImport(statement: String): PsiElement =
         runInEdtAndGet {
             val fileFactory = PsiFileFactory.getInstance(projectRule.project)
-            val dummyFile = fileFactory.createFileFromText("dummy.js", JavascriptLanguage.INSTANCE, statement)
+            val dummyFile = fileFactory.createFileFromText("dummy.js", JavascriptLanguage, statement)
             val importDeclarations = PsiTreeUtil.getChildrenOfType(dummyFile, ES6ImportDeclaration::class.java)
             importDeclarations?.first() ?: fail()
         }

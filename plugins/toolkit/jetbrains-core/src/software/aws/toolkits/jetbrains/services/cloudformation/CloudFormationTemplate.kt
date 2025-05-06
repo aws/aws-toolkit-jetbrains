@@ -40,7 +40,7 @@ interface CloudFormationTemplate {
         }
 
         private fun isYaml(templateFile: VirtualFile): Boolean = templateFile.fileType == YAMLFileType.YML ||
-            templateFile.extension?.toLowerCase() in YAML_EXTENSIONS
+            templateFile.extension?.lowercase() in YAML_EXTENSIONS
 
         private val YAML_EXTENSIONS = setOf("yaml", "yml")
     }

@@ -83,7 +83,7 @@ class CodeWhispererConfigurable(private val project: Project) :
             }
         }
 
-        group(message("aws.settings.codewhisperer.group.inline_suggestions")) {
+        group(message("aws.settings.codewhisperer.group.general")) {
             row {
                 checkBox(message("aws.settings.codewhisperer.include_code_with_reference")).apply {
                     connect.subscribe(
@@ -103,7 +103,9 @@ class CodeWhispererConfigurable(private val project: Project) :
                     }.enabled(false)
                 }
             }
+        }
 
+        group(message("aws.settings.codewhisperer.group.inline_suggestions")) {
             row {
                 checkBox(message("aws.settings.codewhisperer.automatic_import_adder")).apply {
                     connect.subscribe(
@@ -137,6 +139,20 @@ class CodeWhispererConfigurable(private val project: Project) :
 
         group(message("aws.settings.codewhisperer.group.q_chat")) {
             row {
+                checkBox(message("aws.settings.codewhisperer.workspace_context")).apply {
+                    connect.subscribe(
+                        ToolkitConnectionManagerListener.TOPIC,
+                        object : ToolkitConnectionManagerListener {
+                            override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
+                                enabled(isCodeWhispererEnabled(project))
+                            }
+                        }
+                    )
+                    enabled(invoke)
+                    bindSelected(codeWhispererSettings::isWorkspaceContextEnabled, codeWhispererSettings::toggleWorkspaceContextEnabled)
+                }.comment(message("aws.settings.codewhisperer.workspace_context.tooltip"))
+            }.visible(false)
+            row {
                 checkBox(message("aws.settings.codewhisperer.project_context")).apply {
                     connect.subscribe(
                         ToolkitConnectionManagerListener.TOPIC,
@@ -153,7 +169,7 @@ class CodeWhispererConfigurable(private val project: Project) :
 
             row(message("aws.settings.codewhisperer.project_context_index_thread")) {
                 intTextField(
-                    range = IntRange(0, 50)
+                    range = CodeWhispererSettings.CONTEXT_INDEX_THREADS
                 ).bindIntText(codeWhispererSettings::getProjectContextIndexThreadCount, codeWhispererSettings::setProjectContextIndexThreadCount)
                     .apply {
                         connect.subscribe(
@@ -170,7 +186,7 @@ class CodeWhispererConfigurable(private val project: Project) :
 
             row(message("aws.settings.codewhisperer.project_context_index_max_size")) {
                 intTextField(
-                    range = IntRange(1, 4096)
+                    range = CodeWhispererSettings.CONTEXT_INDEX_SIZE
                 ).bindIntText(codeWhispererSettings::getProjectContextIndexMaxSize, codeWhispererSettings::setProjectContextIndexMaxSize)
                     .apply {
                         connect.subscribe(

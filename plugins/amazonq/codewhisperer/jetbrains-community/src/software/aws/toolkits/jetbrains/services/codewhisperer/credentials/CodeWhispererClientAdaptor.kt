@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.credentials
 
-import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.text.nullize
@@ -39,15 +37,9 @@ import software.amazon.awssdk.services.codewhispererruntime.model.TargetCode
 import software.amazon.awssdk.services.codewhispererruntime.model.UserIntent
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
-import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.AwsClientManager
-import software.aws.toolkits.jetbrains.core.awsClient
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
-import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
+import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContextNew
@@ -56,14 +48,21 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestCon
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.DiagnosticDifferences
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDiagnosticDifferences
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDocumentDiagnostics
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 
 // As the connection is project-level, we need to make this project-level too
-@Deprecated("Methods can throw a NullPointerException if callee does not check if connection is valid")
-interface CodeWhispererClientAdaptor : Disposable {
+@Deprecated(
+    "It was needed as we were supporting two service models (sigv4 & bearer), " +
+        "it's no longer the case as we remove sigv4 support, should use AwsClientManager.getClient() directly"
+)
+interface CodeWhispererClientAdaptor {
     val project: Project
 
     fun generateCompletionsPaginator(
@@ -262,31 +261,7 @@ interface CodeWhispererClientAdaptor : Disposable {
 }
 
 open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeWhispererClientAdaptor {
-    @Volatile
-    private var myBearerClient: CodeWhispererRuntimeClient? = null
-
-    init {
-        initClientUpdateListener()
-    }
-
-    private fun initClientUpdateListener() {
-        ApplicationManager.getApplication().messageBus.connect(this).subscribe(
-            ToolkitConnectionManagerListener.TOPIC,
-            object : ToolkitConnectionManagerListener {
-                override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
-                    if (newConnection is AwsBearerTokenConnection) {
-                        myBearerClient = getBearerClient(newConnection.getConnectionSettings().providerId)
-                    }
-                }
-            }
-        )
-    }
-
-    private fun bearerClient(): CodeWhispererRuntimeClient {
-        if (myBearerClient != null) return myBearerClient as CodeWhispererRuntimeClient
-        myBearerClient = getBearerClient()
-        return myBearerClient as CodeWhispererRuntimeClient
-    }
+    fun bearerClient() = QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project)
 
     override fun generateCompletionsPaginator(firstRequest: GenerateCompletionsRequest) = sequence<GenerateCompletionsResponse> {
         var nextToken: String? = firstRequest.nextToken()
@@ -313,7 +288,9 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
 
     // DO NOT directly use this method to fetch customizations, use wrapper [CodeWhispererModelConfigurator.listCustomization()] instead
     override fun listAvailableCustomizations(): List<CodeWhispererCustomization> =
-        bearerClient().listAvailableCustomizationsPaginator(ListAvailableCustomizationsRequest.builder().build())
+        bearerClient().listAvailableCustomizationsPaginator(
+            ListAvailableCustomizationsRequest.builder().profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn).build()
+        )
             .stream()
             .toList()
             .flatMap { resp ->
@@ -336,6 +313,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             builder.uploadId(uploadId)
             builder.targetCodeList(targetCode)
             builder.userInput(userInput)
+            builder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
             // TODO: client token
         }
 
@@ -343,6 +321,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         bearerClient().getTestGeneration { builder ->
             builder.testGenerationJobId(jobId)
             builder.testGenerationJobGroupName(jobGroupName)
+            builder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
         }
 
     override fun sendUserTriggerDecisionTelemetry(
@@ -366,7 +345,17 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         ) {
             e2eLatency = 0.0
         }
-
+        var diffDiagnostics = DiagnosticDifferences(
+            added = emptyList(),
+            removed = emptyList()
+        )
+        if (suggestionState == CodewhispererSuggestionState.Accept && isInternalUser(getStartUrl(project))) {
+            val oldDiagnostics = requestContext.diagnostics.orEmpty()
+            // wait for the IDE itself to update its diagnostics for current file
+            Thread.sleep(500)
+            val newDiagnostics = getDocumentDiagnostics(requestContext.editor.document, project)
+            diffDiagnostics = getDiagnosticDifferences(oldDiagnostics, newDiagnostics)
+        }
         return bearerClient().sendTelemetryEvent { requestBuilder ->
             requestBuilder.telemetryEvent { telemetryEventBuilder ->
                 telemetryEventBuilder.userTriggerDecisionEvent {
@@ -384,10 +373,13 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     it.customizationArn(requestContext.customizationArn.nullize(nullizeSpaces = true))
                     it.numberOfRecommendations(numberOfRecommendations)
                     it.acceptedCharacterCount(acceptedCharCount)
+                    it.addedIdeDiagnostics(diffDiagnostics.added)
+                    it.removedIdeDiagnostics(diffDiagnostics.removed)
                 }
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
             requestBuilder.userContext(codeWhispererUserContext())
+            requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
         }
     }
 
@@ -434,6 +426,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
             requestBuilder.userContext(codeWhispererUserContext())
+            requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
         }
     }
 
@@ -460,6 +453,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendUserModificationTelemetry(
@@ -487,6 +481,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendCodeScanTelemetry(
@@ -506,6 +501,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendCodeScanSucceededTelemetry(
@@ -528,6 +524,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendCodeScanFailedTelemetry(
@@ -547,6 +544,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendCodeFixGenerationTelemetry(
@@ -573,6 +571,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendCodeFixAcceptanceTelemetry(
@@ -599,6 +598,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendCodeScanRemediationTelemetry(
@@ -630,6 +630,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendTestGenerationEvent(
@@ -663,10 +664,12 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun listFeatureEvaluations(): ListFeatureEvaluationsResponse = bearerClient().listFeatureEvaluations {
         it.userContext(codeWhispererUserContext())
+        it.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendMetricDataTelemetry(eventName: String, metadata: Map<String, Any?>): SendTelemetryEventResponse =
@@ -681,6 +684,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
             requestBuilder.userContext(codeWhispererUserContext())
+            requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
         }
 
     override fun sendChatAddMessageTelemetry(
@@ -719,6 +723,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendChatInteractWithMessageTelemetry(
@@ -748,6 +753,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
             requestBuilder.userContext(codeWhispererUserContext())
+            requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
         }
 
     override fun sendChatUserModificationTelemetry(
@@ -772,6 +778,7 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     override fun sendInlineChatTelemetry(
@@ -807,41 +814,12 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         }
         requestBuilder.optOutPreference(getTelemetryOptOutPreference())
         requestBuilder.userContext(codeWhispererUserContext())
-    }
-
-    override fun dispose() {
-        myBearerClient?.close()
-    }
-
-    /**
-     * Every different SSO/AWS Builder ID connection requires a new client which has its corresponding bearer token provider,
-     * thus we have to create them dynamically.
-     * Invalidate and recycle the old client first, and create a new client with the new connection.
-     * This makes sure when we invoke CW, we always use the up-to-date connection.
-     * In case this fails to close the client, myBearerClient is already set to null thus next time when we invoke CW,
-     * it will go through this again which should get the current up-to-date connection. This stale client would be
-     * unused and stay in memory for a while until eventually closed by ToolkitClientManager.
-     */
-    open fun getBearerClient(oldProviderIdToRemove: String = ""): CodeWhispererRuntimeClient? {
-        myBearerClient = null
-
-        val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeWhispererConnection.getInstance())
-        connection as? AwsBearerTokenConnection ?: run {
-            LOG.warn { "$connection is not a bearer token connection" }
-            return null
-        }
-
-        return AwsClientManager.getInstance().getClient<CodeWhispererRuntimeClient>(connection.getConnectionSettings())
+        requestBuilder.profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
     }
 
     companion object {
         private val LOG = getLogger<CodeWhispererClientAdaptorImpl>()
     }
-}
-
-class MockCodeWhispererClientAdaptor(override val project: Project) : CodeWhispererClientAdaptorImpl(project) {
-    override fun getBearerClient(oldProviderIdToRemove: String): CodeWhispererRuntimeClient = project.awsClient()
-    override fun dispose() {}
 }
 
 private fun CodewhispererSuggestionState.toCodeWhispererSdkType() = when {
