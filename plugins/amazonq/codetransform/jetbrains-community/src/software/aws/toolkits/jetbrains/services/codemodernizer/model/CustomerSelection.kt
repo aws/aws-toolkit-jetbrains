@@ -15,5 +15,7 @@ data class CustomerSelection(
     val targetVendor: String? = null,
     val sourceServerName: String? = null,
     val sqlMetadataZip: File? = null,
-    // note: schema and customBuildCommand are passed in to CodeModernizerSessionContext separately, *after* CodeModernizerSession is created
+    // note: schema / customBuildCommand / customDependencyVersionsFile / targetJdkName / originalUploadZipPath
+    // are passed in to CodeModernizerSessionContext separately,
+    // *after* CodeModernizerSession is created
 )
