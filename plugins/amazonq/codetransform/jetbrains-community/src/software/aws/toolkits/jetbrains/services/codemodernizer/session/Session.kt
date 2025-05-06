@@ -3,9 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.session
 
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformConversationState
+
 data class Session(
     val tabId: String,
 ) {
     var isAuthenticating: Boolean = false
     var authNeededNotified: Boolean = false
+    var conversationState: CodeTransformConversationState = CodeTransformConversationState.IDLE
 }
