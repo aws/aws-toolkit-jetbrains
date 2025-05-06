@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
@@ -90,6 +91,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Promp
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.QuickChatActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_ERROR_MESSAGE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickParams
@@ -270,14 +272,21 @@ class BrowserConnector(
                     server.listConversations(requestFromUi.params)
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
 
-                result.whenComplete { response, _ ->
-                    val uiMessage = """
+                result.whenComplete { response, error ->
+                    try {
+                        if (error != null) {
+                            throw error
+                        }
+                        val uiMessage = """
                         {
                             "command": "$CHAT_LIST_CONVERSATIONS",
                             "params": ${Gson().toJson(response)}
                         }
                     """.trimIndent()
-                    browser.postChat(uiMessage)
+                        browser.postChat(uiMessage)
+                    } catch (e: Exception) {
+                        LOG.error { "Failed to perform list conversation $e" }
+                    }
                 }
             }
             CHAT_CONVERSATION_CLICK -> {
@@ -286,14 +295,21 @@ class BrowserConnector(
                     server.conversationClick(requestFromUi.params)
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
 
-                result.whenComplete { response, _ ->
-                    val uiMessage = """
+                result.whenComplete { response, error ->
+                    try {
+                        if (error != null) {
+                            throw error
+                        }
+                        val uiMessage = """
                         {
                             "command": "$CHAT_CONVERSATION_CLICK",
                             "params": ${Gson().toJson(response)}
                         }
                     """.trimIndent()
-                    browser.postChat(uiMessage)
+                        browser.postChat(uiMessage)
+                    } catch (e: Exception) {
+                        LOG.error { "Failed to perform conversation click $e" }
+                    }
                 }
             }
             CHAT_FEEDBACK -> {
@@ -403,8 +419,26 @@ class BrowserConnector(
                         server, params ->
                     val result = server.tabBarActions(params)
                     result.whenComplete { params1, error ->
-                        val res = ChatCommunicationManager.convertNotificationToJsonForChat(CHAT_TAB_BAR_ACTIONS, params1)
-                        browser.postChat(res)
+                        try {
+                            if (error != null) {
+                                throw error
+                            }
+                            val res = ChatCommunicationManager.convertNotificationToJsonForChat(CHAT_TAB_BAR_ACTIONS, params1)
+                            browser.postChat(res)
+                        } catch (e: Exception) {
+                            LOG.error { "Failed to perform chat tab bar action $e" }
+                            if (params.tabId != null) {
+                                browser.postChat(
+                                    ChatCommunicationManager.convertToJsonToSendToChat(
+                                        CHAT_ERROR_MESSAGE,
+                                        params.tabId.toString(),
+                                        "",
+                                        isPartialResult = false
+                                    )
+                                )
+                            }
+
+                        }
                     }
                 }
             }
@@ -437,9 +471,17 @@ class BrowserConnector(
                     isPartialResult = false
                 )
                 browser.postChat(messageToChat)
-
             } catch (e: Exception) {
-
+                LOG.error { "Failed to send chat message $e" }
+                chatCommunicationManager.removePartialChatMessage(partialResultToken)
+                browser.postChat(
+                    ChatCommunicationManager.convertToJsonToSendToChat(
+                        CHAT_ERROR_MESSAGE,
+                        tabId,
+                        encryptionManager?.decrypt(value).orEmpty(),
+                        isPartialResult = false
+                    )
+                )
             }
         }
     }
