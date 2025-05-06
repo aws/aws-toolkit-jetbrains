@@ -3,16 +3,12 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.util
 
-import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.ide.BrowserUtil
-import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.impl.DocumentMarkupModel
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
@@ -25,10 +21,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
-import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
 import software.amazon.awssdk.services.codewhispererruntime.model.OptOutPreference
-import software.amazon.awssdk.services.codewhispererruntime.model.Position
-import software.amazon.awssdk.services.codewhispererruntime.model.Range
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
@@ -353,89 +346,4 @@ object CodeWhispererUtil {
 
 enum class CaretMovement {
     NO_CHANGE, MOVE_FORWARD, MOVE_BACKWARD
-}
-
-fun getDiagnosticsType(message: String): String {
-    val lowercaseMessage = message.lowercase()
-
-    val diagnosticPatterns = mapOf(
-        "TYPE_ERROR" to listOf("type", "cast"),
-        "SYNTAX_ERROR" to listOf("expected", "indent", "syntax"),
-        "REFERENCE_ERROR" to listOf("undefined", "not defined", "undeclared", "reference", "symbol"),
-        "BEST_PRACTICE" to listOf("deprecated", "unused", "uninitialized", "not initialized"),
-        "SECURITY" to listOf("security", "vulnerability")
-    )
-
-    return diagnosticPatterns
-        .entries
-        .firstOrNull { (_, keywords) ->
-            keywords.any { lowercaseMessage.contains(it) }
-        }
-        ?.key ?: "OTHER"
-}
-
-fun convertSeverity(severity: HighlightSeverity): String = when {
-    severity == HighlightSeverity.ERROR -> "ERROR"
-    severity == HighlightSeverity.WARNING ||
-        severity == HighlightSeverity.WEAK_WARNING -> "WARNING"
-    severity == HighlightSeverity.INFORMATION -> "INFORMATION"
-    severity.toString().contains("TEXT", ignoreCase = true) -> "HINT"
-    severity == HighlightSeverity.INFO -> "INFORMATION"
-    // For severities that might indicate performance issues
-    severity.toString().contains("PERFORMANCE", ignoreCase = true) -> "WARNING"
-    // For deprecation warnings
-    severity.toString().contains("DEPRECATED", ignoreCase = true) -> "WARNING"
-    // Default case
-    else -> "INFORMATION"
-}
-
-fun getDocumentDiagnostics(document: Document, project: Project): List<IdeDiagnostic> = runCatching {
-    DocumentMarkupModel.forDocument(document, project, true)
-        .allHighlighters
-        .mapNotNull { it.errorStripeTooltip as? HighlightInfo }
-        .filter { !it.description.isNullOrEmpty() }
-        .map { info ->
-            val startLine = document.getLineNumber(info.startOffset)
-            val endLine = document.getLineNumber(info.endOffset)
-
-            IdeDiagnostic.builder()
-                .ideDiagnosticType(getDiagnosticsType(info.description))
-                .severity(convertSeverity(info.severity))
-                .source(info.inspectionToolId)
-                .range(
-                    Range.builder()
-                        .start(
-                            Position.builder()
-                                .line(startLine)
-                                .character(document.getLineStartOffset(startLine))
-                                .build()
-                        )
-                        .end(
-                            Position.builder()
-                                .line(endLine)
-                                .character(document.getLineStartOffset(endLine))
-                                .build()
-                        )
-                        .build()
-                )
-                .build()
-        }
-}.getOrElse { e ->
-    getLogger<CodeWhispererUtil>().warn { "Failed to get document diagnostics ${e.message}" }
-    emptyList()
-}
-
-data class DiagnosticDifferences(
-    val added: List<IdeDiagnostic>,
-    val removed: List<IdeDiagnostic>,
-)
-
-fun serializeDiagnostics(diagnostic: IdeDiagnostic): String = "${diagnostic.source()}-${diagnostic.severity()}-${diagnostic.ideDiagnosticType()}"
-
-fun getDiagnosticDifferences(oldDiagnostic: List<IdeDiagnostic>, newDiagnostic: List<IdeDiagnostic>): DiagnosticDifferences {
-    val oldSet = oldDiagnostic.map { i -> serializeDiagnostics(i) }.toSet()
-    val newSet = newDiagnostic.map { i -> serializeDiagnostics(i) }.toSet()
-    val added = newDiagnostic.filter { i -> !oldSet.contains(serializeDiagnostics(i)) }.distinctBy { serializeDiagnostics(it) }
-    val removed = oldDiagnostic.filter { i -> !newSet.contains(serializeDiagnostics(i)) }.distinctBy { serializeDiagnostics(it) }
-    return DiagnosticDifferences(added, removed)
 }

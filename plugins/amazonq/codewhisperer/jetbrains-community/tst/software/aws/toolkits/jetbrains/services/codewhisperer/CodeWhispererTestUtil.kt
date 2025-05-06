@@ -163,7 +163,6 @@ fun aRequestContext(
         ),
         customizationArn = null,
         workspaceId = null,
-        diagnostics = emptyList(),
     )
 }
 
