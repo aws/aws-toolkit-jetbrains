@@ -560,6 +560,33 @@ class CodeWhispererModelConfiguratorTest {
     }
 
     @Test
+    fun `backward compatibility - should still be deseriealizable where profile field is not present`() {
+        val xml = xmlElement(
+            """
+                <component name="codewhispererCustomizationStates">
+                        <option name="connectionIdToActiveCustomizationArn">
+                            <map>
+                                <entry key="sso-session:foo">
+                                    <value>
+                                        <CodeWhispererCustomization>
+                                            <option name="arn" value="arn:foo" />
+                                            <option name="name" value="Customization-foo" />
+                                            <option name="description" value="Foo foo foo foo" />
+                                        </CodeWhispererCustomization>
+                                    </value>
+                                </entry>
+                            </map>
+                        </option>
+                    </component>
+            """.trimIndent()
+        )
+
+        val actual = XmlSerializer.deserialize(xml, CodeWhispererCustomizationState::class.java)
+        val cnt = actual.connectionIdToActiveCustomizationArn.size
+        assertThat(cnt).isEqualTo(1)
+    }
+
+    @Test
     fun `deserialize users choosing default customization`() {
         val element = xmlElement(
             """
