@@ -118,6 +118,13 @@ class BrowserConnector(
             .onEach { json ->
                 val node = serializer.toNode(json)
                 when (node.command) {
+                    // this is sent when the named agents UI is ready
+                    "ui-is-ready" -> {
+                        uiReady.complete(true)
+                        RunOnceUtil.runOnceForApp("AmazonQ-UI-Ready") {
+                            MeetQSettings.getInstance().reinvent2024OnboardingCount += 1
+                        }
+                    }
                     CHAT_DISCLAIMER_ACKNOWLEDGED -> {
                         MeetQSettings.getInstance().disclaimerAcknowledged = true
                     }
@@ -146,13 +153,14 @@ class BrowserConnector(
                 }
 
                 val tabType = node.tabType
-                if (tabType == null) {
+                if (tabType == null || tabType == "cwc") {
                     handleFlareChatMessages(browser, node)
-                }
-                connections.filter { connection -> connection.app.tabTypes.contains(tabType) }.forEach { connection ->
-                    launch {
-                        val message = serializer.deserialize(node, connection.messageTypeRegistry)
-                        connection.messagesFromUiToApp.publish(message)
+                } else {
+                    connections.filter { connection -> connection.app.tabTypes.contains(tabType) }.forEach { connection ->
+                        launch {
+                            val message = serializer.deserialize(node, connection.messageTypeRegistry)
+                            connection.messagesFromUiToApp.publish(message)
+                        }
                     }
                 }
             }
@@ -172,7 +180,7 @@ class BrowserConnector(
         // Send inbound messages to the browser
         val inboundMessages = connections.map { it.messagesFromAppToUi.flow }.merge()
         inboundMessages
-            .onEach { browser.post(serializer.serialize(it)) }
+            .onEach { browser.postChat(serializer.serialize(it)) }
             .launchIn(this)
     }
 
