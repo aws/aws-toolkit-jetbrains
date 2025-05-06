@@ -58,7 +58,7 @@ data class QuickActionsCommandGroups(
 
 open class QuickActionCommand(
     open val command: String,
-    open val description: String,
+    open val description: String?,
     open val placeholder: String? = null,
     open val icon: IconType? = null,
 )
@@ -69,7 +69,7 @@ data class ContextCommand(
     val label: String?,
     val children: ContextCommandGroup?,
     override val command: String,
-    override val description: String,
+    override val description: String?,
     override val placeholder: String? = null,
     override val icon: IconType? = null,
 ) : QuickActionCommand(
