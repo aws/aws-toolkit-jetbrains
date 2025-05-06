@@ -91,7 +91,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Promp
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.QuickChatActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_ERROR_PARAMS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.STOP_CHAT_RESPONSE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickNotification
@@ -212,8 +211,6 @@ class BrowserConnector(
         }
     }
 
-
-
     private fun handleFlareChatMessages(browser: Browser, node: JsonNode) {
         when (node.command) {
             SEND_CHAT_COMMAND_PROMPT -> {
@@ -285,21 +282,14 @@ class BrowserConnector(
                     server.listConversations(requestFromUi.params)
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
 
-                result.whenComplete { response, error ->
-                    try {
-                        if (error != null) {
-                            throw error
-                        }
-                        val uiMessage = """
+                result.whenComplete { response, _ ->
+                    val uiMessage = """
                         {
                             "command": "$CHAT_LIST_CONVERSATIONS",
                             "params": ${Gson().toJson(response)}
                         }
                     """.trimIndent()
-                        browser.postChat(uiMessage)
-                    } catch (e: Exception) {
-                        LOG.error { "Failed to perform list conversation $e" }
-                    }
+                    browser.postChat(uiMessage)
                 }
             }
             CHAT_CONVERSATION_CLICK -> {
@@ -308,21 +298,14 @@ class BrowserConnector(
                     server.conversationClick(requestFromUi.params)
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
 
-                result.whenComplete { response, error ->
-                    try {
-                        if (error != null) {
-                            throw error
-                        }
-                        val uiMessage = """
+                result.whenComplete { response, _ ->
+                    val uiMessage = """
                         {
                             "command": "$CHAT_CONVERSATION_CLICK",
                             "params": ${Gson().toJson(response)}
                         }
                     """.trimIndent()
-                        browser.postChat(uiMessage)
-                    } catch (e: Exception) {
-                        LOG.error { "Failed to perform conversation click $e" }
-                    }
+                    browser.postChat(uiMessage)
                 }
             }
             CHAT_FEEDBACK -> {
@@ -506,10 +489,8 @@ class BrowserConnector(
                 LOG.error { "Failed to send chat message $e" }
                 browser.postChat(chatCommunicationManager.getErrorUiMessage(tabId, e, partialResultToken))
             }
-
         }
     }
-
 
     private fun cancelInflightRequests(tabId: String) {
         chatCommunicationManager.getInflightRequestForTab(tabId)?.let { request ->

@@ -4,18 +4,17 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat
 
 import com.google.gson.Gson
-import com.google.gson.JsonElement
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.eclipse.lsp4j.ProgressParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ProgressNotificationUtils.getObject
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_ERROR_PARAMS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ErrorParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_ERROR_PARAMS
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -81,17 +80,16 @@ class ChatCommunicationManager {
         val errorMessage = "Details: ${exception.message}"
         val errorParams = Gson().toJson(ErrorParams(tabId, null, errorMessage, errorTitle)).toString()
         val isPartialResult = false
-        val uiMessage =  """
+        val uiMessage = """
                 {
                 "command":"$CHAT_ERROR_PARAMS",
                 "tabId": "$tabId",
                 "params": $errorParams,
                 "isPartialResult": $isPartialResult
                 }
-            """.trimIndent()
+        """.trimIndent()
         return uiMessage
     }
-
 
     companion object {
         fun getInstance(project: Project) = project.service<ChatCommunicationManager>()
