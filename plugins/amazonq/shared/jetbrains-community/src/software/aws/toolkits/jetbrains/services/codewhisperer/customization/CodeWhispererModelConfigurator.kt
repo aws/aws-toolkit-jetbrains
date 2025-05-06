@@ -119,7 +119,6 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
                 )
             }
 
-
     @RequiresBackgroundThread
     override fun listCustomizations(project: Project, passive: Boolean): List<CustomizationUiItem>? =
         calculateIfIamIdentityCenterConnection(project) {
