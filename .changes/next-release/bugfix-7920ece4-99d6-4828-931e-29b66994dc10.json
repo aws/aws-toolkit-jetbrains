@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "/dev: Fix missing Amazon Q feature dev auto build setting."
+}
