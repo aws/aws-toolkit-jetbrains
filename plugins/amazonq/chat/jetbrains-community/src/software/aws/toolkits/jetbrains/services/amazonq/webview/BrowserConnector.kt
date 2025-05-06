@@ -9,7 +9,6 @@ import com.intellij.ide.BrowserUtil
 import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.project.Project
 import com.intellij.ui.jcef.JBCefJSQuery.Response
-import fleet.multiplatform.shims.ConcurrentHashMap
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.coroutineScope
@@ -119,7 +118,6 @@ class BrowserConnector(
 ) {
     var uiReady = CompletableDeferred<Boolean>()
     private val chatCommunicationManager = ChatCommunicationManager.getInstance(project)
-    private val inflightRequestByTabId = ConcurrentHashMap<String, CompletableFuture<String>>() // tab id -> cancellation token
 
     suspend fun connect(
         browser: Browser,
@@ -254,7 +252,7 @@ class BrowserConnector(
 
                 // We assume there is only one outgoing request per tab because the input is
                 // blocked when there is an outgoing request
-                inflightRequestByTabId[tabId] = result
+                chatCommunicationManager.setInflightRequestForTab(tabId, result)
                 showResult(result, partialResultToken, tabId, encryptionManager, browser)
             }
             CHAT_QUICK_ACTION -> {
@@ -274,7 +272,7 @@ class BrowserConnector(
 
                 // We assume there is only one outgoing request per tab because the input is
                 // blocked when there is an outgoing request
-                inflightRequestByTabId[tabId] = result
+                chatCommunicationManager.setInflightRequestForTab(tabId, result)
 
                 showResult(result, partialResultToken, tabId, encryptionManager, browser)
             }
@@ -431,7 +429,7 @@ class BrowserConnector(
             }
             STOP_CHAT_RESPONSE -> {
                 val stopResponseRequest = serializer.deserializeChatMessages<StopResponseMessage>(node)
-                if (inflightRequestByTabId[stopResponseRequest.params.tabId] == null) {
+                if (!chatCommunicationManager.hasInflightRequest(stopResponseRequest.params.tabId)) {
                     return
                 }
                 cancelInflightRequests(stopResponseRequest.params.tabId)
@@ -473,14 +471,14 @@ class BrowserConnector(
                 isPartialResult = false
             )
             browser.postChat(messageToChat)
-            inflightRequestByTabId.remove(tabId)
+            chatCommunicationManager.removeInflightRequestForTab(tabId)
         }
     }
 
     private fun cancelInflightRequests(tabId: String) {
-        inflightRequestByTabId[tabId]?.let { request ->
+        chatCommunicationManager.getInflightRequestForTab(tabId)?.let { request ->
             request.cancel(true)
-            inflightRequestByTabId.remove(tabId)
+            chatCommunicationManager.removeInflightRequestForTab(tabId)
         }
     }
 

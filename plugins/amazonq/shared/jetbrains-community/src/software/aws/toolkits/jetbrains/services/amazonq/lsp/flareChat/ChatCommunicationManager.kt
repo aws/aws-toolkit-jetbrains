@@ -7,6 +7,7 @@ import com.google.gson.Gson
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import fleet.multiplatform.shims.ConcurrentHashMap
 import org.eclipse.lsp4j.ProgressParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ProgressNotificationUtils.getObject
@@ -22,6 +23,23 @@ class ChatCommunicationManager {
     private val chatPartialResultMap = ConcurrentHashMap<String, String>()
     private fun getPartialChatMessage(partialResultToken: String): String? =
         chatPartialResultMap.getOrDefault(partialResultToken, null)
+
+    private val inflightRequestByTabId = ConcurrentHashMap<String, CompletableFuture<String>>()
+
+    fun setInflightRequestForTab(tabId: String, result: CompletableFuture<String>) {
+        inflightRequestByTabId[tabId] = result
+    }
+    fun removeInflightRequestForTab(tabId: String) {
+        inflightRequestByTabId.remove(tabId)
+    }
+
+    fun getInflightRequestForTab(tabId: String): CompletableFuture<String>? {
+        return inflightRequestByTabId[tabId]
+    }
+
+    fun hasInflightRequest(tabId: String): Boolean {
+        return inflightRequestByTabId.containsKey(tabId)
+    }
 
     fun addPartialChatMessage(tabId: String): String {
         val partialResultToken: String = UUID.randomUUID().toString()
