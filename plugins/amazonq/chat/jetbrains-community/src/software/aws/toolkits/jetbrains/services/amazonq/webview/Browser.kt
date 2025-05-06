@@ -117,6 +117,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
         val postMessageToJavaJsCode = receiveMessageQuery.inject("JSON.stringify(message)")
         val connectorAdapterPath = "http://mynah/js/connectorAdapter.js"
         generateQuickActionConfig()
+        // language=HTML
         val jsScripts = """
             <script type="text/javascript" src="$connectorAdapterPath"></script>
             <script type="text/javascript" src="$webUri" defer onload="init()"></script>

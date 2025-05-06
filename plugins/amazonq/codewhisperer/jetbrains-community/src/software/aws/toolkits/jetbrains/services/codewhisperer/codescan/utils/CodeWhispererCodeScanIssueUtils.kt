@@ -28,6 +28,8 @@ import software.aws.toolkits.core.utils.convertMarkdownToHTML
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.ToolkitPlaces
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReference
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReferencePosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanHighlightingFilesPanel
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanIssue
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
@@ -38,8 +40,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.programmingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.toolwindow.CodeWhispererCodeReferenceManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_ISSUE_TITLE_MAX_LENGTH
@@ -338,7 +338,6 @@ fun applySuggestedFix(project: Project, issue: CodeWhispererCodeScanIssue) {
     try {
         val manager = CodeWhispererCodeReferenceManager.getInstance(issue.project)
         WriteCommandAction.runWriteCommandAction(issue.project) {
-            broadcastQEvent(QFeatureEvent.STARTS_EDITING)
             val document = FileDocumentManager.getInstance().getDocument(issue.file) ?: return@runWriteCommandAction
 
             val documentContent = document.text
@@ -349,9 +348,22 @@ fun applySuggestedFix(project: Project, issue: CodeWhispererCodeScanIssue) {
                 LOG.debug { "Applied fix with reference: $reference" }
                 val originalContent = updatedContent.substring(reference.recommendationContentSpan().start(), reference.recommendationContentSpan().end())
                 LOG.debug { "Original content from reference span: $originalContent" }
-                manager.addReferenceLogPanelEntry(reference = reference, null, null, originalContent.split("\n"))
+                // TODO flare: hook codescan references with flare correctly, this is only a compile error fix which is not tested
+                manager.addReferenceLogPanelEntry(
+                    reference = InlineCompletionReference(
+                        referenceName = reference.repository(),
+                        referenceUrl = reference.url(),
+                        licenseName = reference.licenseName(),
+                        position = InlineCompletionReferencePosition(
+                            startCharacter = reference.recommendationContentSpan().start(),
+                            endCharacter = reference.recommendationContentSpan().end(),
+                        ),
+                    ),
+                    null,
+                    null,
+                    originalContent.split("\n")
+                )
             }
-            broadcastQEvent(QFeatureEvent.FINISHES_EDITING)
         }
         if (issue.suggestedFixes[0].references.isNotEmpty()) {
             manager.toolWindow?.show()

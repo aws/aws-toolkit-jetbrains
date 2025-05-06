@@ -11,8 +11,6 @@ class CodeWhispererPhp private constructor() : CodeWhispererProgrammingLanguage(
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Php
 
-    override fun isCodeCompletionSupported(): Boolean = true
-
     override fun isAutoFileScanSupported(): Boolean = true
 
     companion object {

@@ -7,6 +7,7 @@ import com.intellij.idea.AppMode
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.components.JBLoadingPanel
@@ -19,11 +20,12 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.jcef.JBCefApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageTypeRegistry
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactHelper
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessageConnector
@@ -105,7 +107,7 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
             wrapper.setContent(loadingPanel)
 
             ApplicationManager.getApplication().executeOnPooledThread {
-                val webUri = ArtifactHelper().getLatestLocalLspArtifact().resolve("amazonq-ui.js").toUri()
+                val webUri = runBlocking { service<ArtifactManager>().fetchArtifact(project).resolve("amazonq-ui.js").toUri() }
                 loadingPanel.stopLoading()
                 runInEdt {
                     browser.complete(

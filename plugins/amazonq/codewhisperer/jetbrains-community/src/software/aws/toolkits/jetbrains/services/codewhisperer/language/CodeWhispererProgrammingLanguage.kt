@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.language
 
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileCrawler
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.NoOpFileCrawler
 import software.aws.toolkits.telemetry.CodewhispererLanguage
 
 /**
@@ -18,19 +16,10 @@ import software.aws.toolkits.telemetry.CodewhispererLanguage
  */
 abstract class CodeWhispererProgrammingLanguage {
     abstract val languageId: String
-    open val fileCrawler: FileCrawler = NoOpFileCrawler()
 
     abstract fun toTelemetryType(): CodewhispererLanguage
 
-    open fun isCodeCompletionSupported(): Boolean = false
-
     open fun isAutoFileScanSupported(): Boolean = false
-
-    open fun isImportAdderSupported(): Boolean = false
-
-    open fun isSupplementalContextSupported(): Boolean = false
-
-    open fun isUTGSupported(): Boolean = false
 
     open fun toCodeWhispererRuntimeLanguage(): CodeWhispererProgrammingLanguage = this
 

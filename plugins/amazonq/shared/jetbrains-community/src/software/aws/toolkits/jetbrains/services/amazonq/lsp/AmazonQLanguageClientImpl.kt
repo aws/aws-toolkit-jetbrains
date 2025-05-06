@@ -28,6 +28,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatUpdateParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
@@ -120,9 +121,27 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             }
         }
 
-    override fun openTab(params: OpenTabParams): CompletableFuture<OpenTabResult> =
-        // TODO implement chat history, this is here to unblock chat functionality
-        CompletableFuture.completedFuture(OpenTabResult(""))
+    override fun openTab(params: OpenTabParams): CompletableFuture<OpenTabResult> {
+        val requestId = UUID.randomUUID().toString()
+        val result = CompletableFuture<OpenTabResult>()
+        ChatCommunicationManager.pendingTabRequests[requestId] = result
+
+        val uiMessage = """
+                {
+                "command": "$CHAT_OPEN_TAB",
+                "params": ${Gson().toJson(params)},
+                "requestId": "$requestId"
+                }
+        """.trimIndent()
+        AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+
+        result.orTimeout(30000, TimeUnit.MILLISECONDS)
+            .whenComplete { _, error ->
+                ChatCommunicationManager.pendingTabRequests.remove(requestId)
+            }
+
+        return result
+    }
 
     override fun showSaveFileDialog(params: ShowSaveFileDialogParams): CompletableFuture<ShowSaveFileDialogResult> {
         val filters = mutableListOf<String>()
@@ -132,7 +151,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             formatMappings[format]?.let { filters.add(it) }
         }
         val defaultUri = params.defaultUri ?: "export-chat.md"
-        val saveAtUri = defaultUri.substring(defaultUri.lastIndexOf("/"))
+        val saveAtUri = defaultUri.substring(defaultUri.lastIndexOf("/") + 1)
         return CompletableFuture.supplyAsync(
             {
                 val descriptor = FileSaverDescriptor("Export", "Choose a location to export").apply {

@@ -79,8 +79,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Delete
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.NewFileZipInfo
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.SessionStatePhase
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.CancellationTokenSource
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.resources.message
 import java.util.UUID
 
@@ -768,7 +766,6 @@ class DocController(
                 else -> emptyList()
             }
             sendDocGenerationTelemetry(filePaths, session, docGenerationTask)
-            broadcastQEvent(QFeatureEvent.INVOCATION)
 
             if (filePaths.isNotEmpty()) {
                 processOpenDiff(

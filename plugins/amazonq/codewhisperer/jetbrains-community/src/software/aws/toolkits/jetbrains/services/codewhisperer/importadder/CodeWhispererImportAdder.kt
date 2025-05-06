@@ -8,10 +8,10 @@ import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
-import software.amazon.awssdk.services.codewhispererruntime.model.Import
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionImports
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContextNew
@@ -24,29 +24,29 @@ abstract class CodeWhispererImportAdder {
     abstract val dummyFileName: String
 
     fun insertImportStatements(states: InvocationContext, sessionContext: SessionContext) {
-        val imports = states.recommendationContext.details[sessionContext.selectedIndex]
-            .recommendation.mostRelevantMissingImports()
-        LOG.info { "Adding ${imports.size} imports for completions, sessionId: ${states.responseContext.sessionId}" }
-        imports.forEach {
+        val completion = states.recommendationContext.details[sessionContext.selectedIndex].completion
+        val imports = completion.mostRelevantMissingImports
+        LOG.info { "Adding ${imports?.size ?: 0} imports for completions, sessionId: ${states.responseContext.sessionId}" }
+        imports?.forEach {
             insertImportStatement(states, it)
         }
     }
 
     fun insertImportStatements(states: InvocationContextNew, previews: List<PreviewContext>, sessionContext: SessionContextNew) {
-        val imports = previews[sessionContext.selectedIndex].detail.recommendation.mostRelevantMissingImports()
-        LOG.info { "Adding ${imports.size} imports for completions, sessionId: ${states.responseContext.sessionId}" }
-        imports.forEach {
+        val imports = previews[sessionContext.selectedIndex].detail.completion.mostRelevantMissingImports
+        LOG.info { "Adding ${imports?.size ?: 0} imports for completions, sessionId: ${states.responseContext.sessionId}" }
+        imports?.forEach {
             insertImportStatement(states, it)
         }
     }
 
-    private fun insertImportStatement(states: InvocationContext, import: Import) {
+    private fun insertImportStatement(states: InvocationContext, import: InlineCompletionImports) {
         val project = states.requestContext.project
         val editor = states.requestContext.editor
         val document = editor.document
         val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document) ?: return
 
-        val statement = import.statement()
+        val statement = import.statement
         LOG.info { "Import statement to be added: $statement" }
         val newImport = createNewImportPsiElement(psiFile, statement)
         if (newImport == null) {
@@ -72,13 +72,13 @@ abstract class CodeWhispererImportAdder {
         LOG.info { "Added import: $added" }
     }
 
-    private fun insertImportStatement(states: InvocationContextNew, import: Import) {
+    private fun insertImportStatement(states: InvocationContextNew, import: InlineCompletionImports) {
         val project = states.requestContext.project
         val editor = states.requestContext.editor
         val document = editor.document
         val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document) ?: return
 
-        val statement = import.statement()
+        val statement = import.statement
         LOG.info { "Import statement to be added: $statement" }
         val newImport = createNewImportPsiElement(psiFile, statement)
         if (newImport == null) {

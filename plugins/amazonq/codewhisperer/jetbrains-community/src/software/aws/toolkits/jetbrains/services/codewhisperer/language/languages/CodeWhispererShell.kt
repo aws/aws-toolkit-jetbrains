@@ -11,8 +11,6 @@ class CodeWhispererShell private constructor() : CodeWhispererProgrammingLanguag
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Shell
 
-    override fun isCodeCompletionSupported(): Boolean = true
-
     override fun lineCommentPrefix(): String = "#"
 
     override fun blockCommentPrefix(): String = ": '"
