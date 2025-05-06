@@ -239,6 +239,7 @@ class BrowserConnector(
                     chatPrompt,
                     textDocumentIdentifier,
                     cursorState,
+                    context = requestFromUi.params.context
                 )
 
                 val tabId = requestFromUi.params.tabId
