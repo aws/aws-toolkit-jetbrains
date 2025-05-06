@@ -37,6 +37,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.TargetCode
 import software.amazon.awssdk.services.codewhispererruntime.model.UserIntent
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.codeWhispererUserContext
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
@@ -47,6 +48,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.service.RequestCon
 import software.aws.toolkits.jetbrains.services.codewhisperer.service.ResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.DiagnosticDifferences
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDiagnosticDifferences
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDocumentDiagnostics
+import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
 import software.aws.toolkits.telemetry.CodewhispererCompletionType
 import software.aws.toolkits.telemetry.CodewhispererSuggestionState
 import java.time.Instant
@@ -340,7 +345,17 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
         ) {
             e2eLatency = 0.0
         }
-
+        var diffDiagnostics = DiagnosticDifferences(
+            added = emptyList(),
+            removed = emptyList()
+        )
+        if (suggestionState == CodewhispererSuggestionState.Accept && isInternalUser(getStartUrl(project))) {
+            val oldDiagnostics = requestContext.diagnostics.orEmpty()
+            // wait for the IDE itself to update its diagnostics for current file
+            Thread.sleep(500)
+            val newDiagnostics = getDocumentDiagnostics(requestContext.editor.document, project)
+            diffDiagnostics = getDiagnosticDifferences(oldDiagnostics, newDiagnostics)
+        }
         return bearerClient().sendTelemetryEvent { requestBuilder ->
             requestBuilder.telemetryEvent { telemetryEventBuilder ->
                 telemetryEventBuilder.userTriggerDecisionEvent {
@@ -358,6 +373,8 @@ open class CodeWhispererClientAdaptorImpl(override val project: Project) : CodeW
                     it.customizationArn(requestContext.customizationArn.nullize(nullizeSpaces = true))
                     it.numberOfRecommendations(numberOfRecommendations)
                     it.acceptedCharacterCount(acceptedCharCount)
+                    it.addedIdeDiagnostics(diffDiagnostics.added)
+                    it.removedIdeDiagnostics(diffDiagnostics.removed)
                 }
             }
             requestBuilder.optOutPreference(getTelemetryOptOutPreference())
