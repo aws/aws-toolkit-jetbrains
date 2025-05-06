@@ -72,7 +72,7 @@ class BuildProgressStepDetailsPanel : JPanel(BorderLayout()) {
                 it.description
             } else {
                 if (it.status == BuildStepStatus.DONE) {
-                    message("codemodernizer.migration_plan.substeps.description_succeed")
+                    message("codemodernizer.migration_plan.substeps.description_completed")
                 } else if (it.status == BuildStepStatus.ERROR) {
                     message("codemodernizer.migration_plan.substeps.description_failed")
                 } else {

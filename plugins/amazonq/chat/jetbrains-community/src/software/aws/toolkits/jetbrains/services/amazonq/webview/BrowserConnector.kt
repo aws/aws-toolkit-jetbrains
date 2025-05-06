@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
 import org.eclipse.lsp4j.Position
@@ -33,6 +32,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager.Companion.convertToJsonToSendToChat
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickParams
@@ -62,6 +62,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatN
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatReadyNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatUiMessageParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ConversationClickRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyCodeToClipboardNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyCodeToClipboardParams
@@ -92,9 +93,11 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Promp
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.QuickChatActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_ERROR_MESSAGE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.STOP_CHAT_RESPONSE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.StopResponseMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventParams
@@ -104,6 +107,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.AmazonQTheme
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.ThemeBrowserAdapter
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
+import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Telemetry
 import java.util.concurrent.CompletableFuture
@@ -247,6 +251,10 @@ class BrowserConnector(
                     encryptionManager = this.encryptionManager
                     encryptionManager?.encrypt(chatParams)?.let { EncryptedChatParams(it, partialResultToken) }?.let { server.sendChatPrompt(it) }
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
+
+                // We assume there is only one outgoing request per tab because the input is
+                // blocked when there is an outgoing request
+                chatCommunicationManager.setInflightRequestForTab(tabId, result)
                 showResult(result, partialResultToken, tabId, encryptionManager, browser)
             }
             CHAT_QUICK_ACTION -> {
@@ -263,6 +271,10 @@ class BrowserConnector(
                         server.sendQuickAction(it)
                     }
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
+
+                // We assume there is only one outgoing request per tab because the input is
+                // blocked when there is an outgoing request
+                chatCommunicationManager.setInflightRequestForTab(tabId, result)
 
                 showResult(result, partialResultToken, tabId, encryptionManager, browser)
             }
@@ -334,6 +346,7 @@ class BrowserConnector(
             CHAT_TAB_REMOVE -> {
                 handleChatNotification<TabEventRequest, TabEventParams>(node) { server, params ->
                     chatCommunicationManager.removePartialChatMessage(params.tabId)
+                    cancelInflightRequests(params.tabId)
                     server.tabRemove(params)
                 }
             }
@@ -448,6 +461,30 @@ class BrowserConnector(
                     server.createPrompt(params)
                 }
             }
+            STOP_CHAT_RESPONSE -> {
+                val stopResponseRequest = serializer.deserializeChatMessages<StopResponseMessage>(node)
+                if (!chatCommunicationManager.hasInflightRequest(stopResponseRequest.params.tabId)) {
+                    return
+                }
+                cancelInflightRequests(stopResponseRequest.params.tabId)
+                chatCommunicationManager.removePartialChatMessage(stopResponseRequest.params.tabId)
+
+                val paramsJson = Gson().toJson(
+                    // https://github.com/aws/language-servers/blob/1c0d88806087125b6fc561f610cc15e98127c6bf/server/aws-lsp-codewhisperer/src/language-server/agenticChat/agenticChatController.ts#L403
+                    ChatUiMessageParams(
+                        title = AwsCoreBundle.message("amazonqChat.stopChatResponse"),
+                        body = ""
+                    )
+                )
+
+                val uiMessage = convertToJsonToSendToChat(
+                    command = SEND_CHAT_COMMAND_PROMPT,
+                    tabId = stopResponseRequest.params.tabId,
+                    params = paramsJson.toString(),
+                    isPartialResult = false
+                )
+                browser.postChat(uiMessage)
+            }
         }
     }
 
@@ -471,6 +508,7 @@ class BrowserConnector(
                     isPartialResult = false
                 )
                 browser.postChat(messageToChat)
+                chatCommunicationManager.removeInflightRequestForTab(tabId)
             } catch (e: Exception) {
                 LOG.error { "Failed to send chat message $e" }
                 chatCommunicationManager.removePartialChatMessage(partialResultToken)
@@ -483,6 +521,14 @@ class BrowserConnector(
                     )
                 )
             }
+
+        }
+    }
+
+    private fun cancelInflightRequests(tabId: String) {
+        chatCommunicationManager.getInflightRequestForTab(tabId)?.let { request ->
+            request.cancel(true)
+            chatCommunicationManager.removeInflightRequestForTab(tabId)
         }
     }
 
