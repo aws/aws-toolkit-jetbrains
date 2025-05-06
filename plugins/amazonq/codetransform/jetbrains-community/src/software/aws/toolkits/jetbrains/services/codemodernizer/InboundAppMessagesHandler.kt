@@ -11,11 +11,15 @@ interface InboundAppMessagesHandler {
 
     suspend fun processCodeTransformCancelAction(message: IncomingCodeTransformMessage.CodeTransformCancel)
 
+    suspend fun processCodeTransformContinueAction(message: IncomingCodeTransformMessage.CodeTransformContinue)
+
     suspend fun processCodeTransformStartAction(message: IncomingCodeTransformMessage.CodeTransformStart)
 
     suspend fun processCodeTransformSelectSQLMetadataAction(message: IncomingCodeTransformMessage.CodeTransformSelectSQLMetadata)
 
     suspend fun processCodeTransformSelectSQLModuleSchemaAction(message: IncomingCodeTransformMessage.CodeTransformSelectSQLModuleSchema)
+
+    suspend fun processCodeTransformCustomDependencyVersions(message: IncomingCodeTransformMessage.CodeTransformConfirmCustomDependencyVersions)
 
     suspend fun processCodeTransformStopAction(tabId: String)
 
