@@ -4,6 +4,9 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
 import com.google.gson.Gson
+import com.intellij.diff.DiffContentFactory
+import com.intellij.diff.DiffManager
+import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserFactory
@@ -34,6 +37,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatU
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenFileDiffParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
@@ -42,6 +46,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credential
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
+import software.aws.toolkits.resources.message
+import java.io.File
+import java.nio.file.Paths
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -261,6 +268,45 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
         return CompletableFuture.completedFuture(Unit)
     }
+
+    override fun openFileDiff(params: OpenFileDiffParams): CompletableFuture<Unit> =
+        CompletableFuture.supplyAsync({
+            ApplicationManager.getApplication().invokeLater {
+                try {
+                    val contentFactory = DiffContentFactory.getInstance()
+                    val fileName = Paths.get(params.originalFileUri).fileName.toString()
+
+                    val originalContent = params.originalFileContent ?: run {
+                        val file = File(params.originalFileUri)
+                        if (file.exists()) file.readText() else ""
+                    }
+                    val (leftContent, rightContent) = when {
+                        params.isDeleted -> {
+                            // For deleted files, show original on left, empty on right
+                            contentFactory.create(originalContent) to
+                                contentFactory.createEmpty()
+                        }
+                        else -> {
+                            // For new or modified files
+                            val newContent = params.fileContent.orEmpty()
+                            contentFactory.create(originalContent) to
+                                contentFactory.create(newContent)
+                        }
+                    }
+                    val diffRequest = SimpleDiffRequest(
+                        "$fileName ${message("aws.q.lsp.client.diff_message")}",
+                        leftContent,
+                        rightContent,
+                        "Original",
+                        if (params.isDeleted) "Deleted" else "Modified"
+                    )
+                    DiffManager.getInstance().showDiff(project, diffRequest)
+                } catch (e: Exception) {
+                    LOG.warn { "Failed to open file diff: ${e.message}" }
+                }
+            }
+            Unit
+        })
 
     companion object {
         private val LOG = getLogger<AmazonQLanguageClientImpl>()
