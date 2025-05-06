@@ -22,7 +22,6 @@ import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
-import org.json.JSONObject
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
@@ -62,6 +61,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatN
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatReadyNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatUiMessageParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ConversationClickRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyCodeToClipboardNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyCodeToClipboardParams
@@ -107,7 +107,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.ThemeBrows
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Telemetry
-import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.function.Function
 
@@ -435,14 +434,13 @@ class BrowserConnector(
                 cancelInflightRequests(stopResponseRequest.params.tabId)
                 chatCommunicationManager.removePartialChatMessage(stopResponseRequest.params.tabId)
 
-                val paramsJson = JSONObject().apply {
-                    put("title", "You stopped your current work, please provide additional examples or ask another question.")
-                    put("additionalMessages", arrayOf<String>())
-                    put("messageId", UUID.randomUUID().toString())
-                    put("buttons", arrayOf<String>())
-                    put("codeReference", arrayOf<String>())
-                    put("body", "")
-                }
+                val paramsJson = Gson().toJson(
+                    // https://github.com/aws/language-servers/blob/1c0d88806087125b6fc561f610cc15e98127c6bf/server/aws-lsp-codewhisperer/src/language-server/agenticChat/agenticChatController.ts#L403
+                    ChatUiMessageParams(
+                        title = "You stopped your current work, please provide additional examples or ask another question.",
+                        body = ""
+                    )
+                )
 
                 val uiMessage = convertToJsonToSendToChat(
                     command = SEND_CHAT_COMMAND_PROMPT,
