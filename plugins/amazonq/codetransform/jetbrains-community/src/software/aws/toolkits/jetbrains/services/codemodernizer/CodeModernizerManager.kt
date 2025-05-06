@@ -900,7 +900,7 @@ class CodeModernizerManager(private val project: Project) : PersistentStateCompo
                 // Add delay between upload complete and trying to resume
                 delay(500)
 
-                codeTransformationSession?.resumeTransformFromHil()
+                codeTransformationSession?.resumeTransformation()
             } else {
                 throw CodeModernizerException("Cannot create dependency zip for HIL")
             }

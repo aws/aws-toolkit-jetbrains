@@ -18,7 +18,7 @@
         <projectService serviceImplementation="software.aws.toolkits.jetbrains.services.codemodernizer.panels.managers.CodeModernizerBottomWindowPanelManager"/>
         <toolWindow id="aws.codewhisperer.codetransform" anchor="bottom" doNotActivateOnStart="true" canCloseContents="false"
                     factoryClass="software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeModernizerBottomToolWindowFactory"
-                    icon="AllIcons.Actions.Preview"/>
+                    icon="AllIcons.Actions.Properties"/>
         <fileEditorProvider implementation="software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModernizerPlanEditorProvider"/>
     </extensions>
 

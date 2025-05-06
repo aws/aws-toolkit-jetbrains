@@ -313,7 +313,6 @@ open class CodeWhispererCodeModernizerTestBase(
         )
 
         testSessionSpy = spy(CodeModernizerSession(testSessionContextSpy, 0, 0))
-        doNothing().whenever(testSessionSpy).deleteUploadArtifact(any())
         doReturn(Job()).whenever(codeModernizerManagerSpy).launchModernizationJob(any(), any())
         testCodeModernizerArtifact =
             spy(
