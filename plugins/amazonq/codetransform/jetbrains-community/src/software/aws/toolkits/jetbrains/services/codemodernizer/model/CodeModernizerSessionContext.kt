@@ -17,7 +17,6 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.putNextEntry
-import software.aws.toolkits.jetbrains.services.codemodernizer.EXPLAINABILITY_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_DEPENDENCIES_ROOT_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_MANIFEST_FILE_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.TransformMavenRunner
@@ -46,9 +45,11 @@ const val MANIFEST_PATH = "manifest.json"
 const val ZIP_SOURCES_PATH = "sources"
 const val ZIP_DEPENDENCIES_PATH = "dependencies"
 const val BUILD_LOG_PATH = "build-logs.txt"
+const val CUSTOM_DEPENDENCY_VERSIONS_FILE_PATH = "custom-upgrades.yaml"
 const val UPLOAD_ZIP_MANIFEST_VERSION = "1.0"
 const val HIL_1P_UPGRADE_CAPABILITY = "HIL_1pDependency_VersionUpgrade"
 const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
+const val CLIENT_SIDE_BUILD = "CLIENT_SIDE_BUILD"
 const val MAVEN_CONFIGURATION_FILE_NAME = "pom.xml"
 const val MAVEN_BUILD_RUN_UNIT_TESTS = "clean test"
 const val MAVEN_BUILD_SKIP_UNIT_TESTS = "clean test-compile"
@@ -67,13 +68,16 @@ data class CodeModernizerSessionContext(
     var configurationFile: VirtualFile? = null, // used to ZIP module
     val sourceJavaVersion: JavaSdkVersion, // always needed for startJob API
     val targetJavaVersion: JavaSdkVersion, // 17 or 21
-    var transformCapabilities: List<String> = listOf(EXPLAINABILITY_V1),
+    var transformCapabilities: List<String> = listOf(),
     var customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS, // run unit tests by default
     val sourceVendor: String = ORACLE_DB, // only one supported
     val targetVendor: String? = null,
     val sourceServerName: String? = null,
     var schema: String? = null,
     val sqlMetadataZip: File? = null,
+    var customDependencyVersionsFile: VirtualFile? = null,
+    var targetJdkName: String? = null,
+    var originalUploadZipPath: Path? = null,
 ) : Disposable {
     private val mapper = jacksonObjectMapper()
     private val ignoredDependencyFileExtensions = setOf(INVALID_SUFFIX_SHA, INVALID_SUFFIX_REPOSITORIES)
@@ -268,7 +272,15 @@ data class CodeModernizerSessionContext(
 
                     LOG.info { "Dependency files size = ${dependencyFiles.sumOf { it.length().toInt() }}" }
 
-                    // 3) Sources
+                    // 3) Custom YAML file
+                    // TODO: where to put this? VS Code puts it in custom-upgrades/dependency-versions.yaml; here we put it at the root
+                    if (customDependencyVersionsFile != null) {
+                        customDependencyVersionsFile?.inputStream?.use {
+                            zip.putNextEntry(Path(CUSTOM_DEPENDENCY_VERSIONS_FILE_PATH).toString(), it)
+                        }
+                    }
+
+                    // 4) Sources
                     files?.forEach { file ->
                         val relativePath = File(file.path).relativeTo(sourceFolder)
                         val paddedPath = zipSources.resolve(relativePath)
@@ -289,7 +301,7 @@ data class CodeModernizerSessionContext(
 
                     LOG.info { "Source code files size = ${files?.sumOf { it.length.toInt() }}" }
 
-                    // 4) Build Log
+                    // 5) Initial Maven copy-deps / install build log
                     buildLogBuilder.toString().byteInputStream().use {
                         zip.putNextEntry(Path(BUILD_LOG_PATH).toString(), it)
                     }

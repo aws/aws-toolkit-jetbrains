@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Do not always show 'Amazon Q Code Issues' tab when switching to the 'Problems' tool window"
+}
