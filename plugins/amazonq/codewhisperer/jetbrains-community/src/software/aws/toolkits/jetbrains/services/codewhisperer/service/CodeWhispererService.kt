@@ -30,6 +30,7 @@ import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.jsonrpc.JsonRpcException
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import software.amazon.awssdk.core.exception.SdkServiceException
+import software.amazon.awssdk.services.codewhispererruntime.model.IdeDiagnostic
 import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
@@ -71,6 +72,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.notifyErrorCodeWhispererUsageLimit
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.promptReAuth
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDocumentDiagnostics
 import software.aws.toolkits.jetbrains.utils.isInjectedText
 import software.aws.toolkits.jetbrains.utils.isQExpired
 import software.aws.toolkits.resources.message
@@ -469,6 +471,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         } catch (e: Exception) {
             LOG.warn { "Cannot get workspaceId from LSP'$e'" }
         }
+        val diagnostics = getDocumentDiagnostics(editor.document, project)
         return RequestContext(
             project,
             editor,
@@ -479,6 +482,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             latencyContext,
             customizationArn,
             workspaceId,
+            diagnostics
         )
     }
 
@@ -631,6 +635,7 @@ data class RequestContext(
     val latencyContext: LatencyContext,
     val customizationArn: String?,
     val workspaceId: String?,
+    val diagnostics: List<IdeDiagnostic>?,
 )
 
 data class ResponseContext(
