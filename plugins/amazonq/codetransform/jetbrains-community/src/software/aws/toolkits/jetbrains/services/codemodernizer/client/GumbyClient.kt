@@ -61,12 +61,13 @@ class GumbyClient(private val project: Project) {
     private val amazonQStreamingClient
         get() = AmazonQStreamingClient.getInstance(project)
 
-    fun createGumbyUploadUrl(sha256Checksum: String): CreateUploadUrlResponse {
+    fun createGumbyUploadUrl(sha256Checksum: String, context: UploadContext? = null): CreateUploadUrlResponse {
         val request = CreateUploadUrlRequest.builder()
             .contentChecksumType(ContentChecksumType.SHA_256)
             .contentChecksum(sha256Checksum)
             .uploadIntent(UploadIntent.TRANSFORMATION)
             .profileArn(QRegionProfileManager.getInstance().activeProfile(project)?.arn)
+            .uploadContext(context)
             .build()
         return callApi({ bearerClient().createUploadUrl(request) }, apiName = "CreateUploadUrl")
     }
@@ -164,12 +165,12 @@ class GumbyClient(private val project: Project) {
 
     suspend fun downloadExportResultArchive(
         jobId: JobId,
-        hilDownloadArtifactId: String? = null,
+        downloadArtifactId: String? = null,
         downloadArtifactType: TransformationDownloadArtifactType? = TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS,
     ): MutableList<ByteArray> = amazonQStreamingClient.exportResultArchive(
         jobId.id,
         ExportIntent.TRANSFORMATION,
-        if (hilDownloadArtifactId == null) {
+        if (downloadArtifactId == null) {
             null
         } else {
             ExportContext
@@ -177,14 +178,14 @@ class GumbyClient(private val project: Project) {
                 .transformationExportContext(
                     TransformationExportContext
                         .builder()
-                        .downloadArtifactId(hilDownloadArtifactId)
+                        .downloadArtifactId(downloadArtifactId)
                         .downloadArtifactType(downloadArtifactType.toString())
                         .build()
                 )
                 .build()
         },
         { e ->
-            LOG.error(e) { "ExportResultArchive failed: ${e.message}" }
+            LOG.error(e) { "ExportResultArchive on job ${jobId.id} and artifact $downloadArtifactId failed: ${e.message}" }
         },
         { startTime ->
             LOG.info { "ExportResultArchive latency: ${calculateTotalLatency(startTime, Instant.now())}" }

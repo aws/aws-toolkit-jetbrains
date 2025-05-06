@@ -3,16 +3,22 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.readText
+import kotlinx.coroutines.withContext
 import software.aws.toolkits.core.utils.createParentDirectories
+import software.aws.toolkits.core.utils.createTemporaryZipFile
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
+import software.aws.toolkits.core.utils.putNextEntry
+import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.services.codemodernizer.CodeModernizerManager.Companion.LOG
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_ARTIFACT_DIR_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_ARTIFACT_POMFOLDER_DIR_NAME
@@ -35,6 +41,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.content
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.FileOutputStream
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
@@ -58,6 +65,27 @@ fun filterOnlyParentFiles(filePaths: Set<VirtualFile>): List<VirtualFile> {
         }
     }
     return shortestRoots.toList()
+}
+
+fun createClientSideBuildUploadZip(exitCode: Int?, stdout: String): File {
+    val mapper = jacksonObjectMapper()
+    val outputFile = createTemporaryZipFile { zip ->
+        val manifest = mapOf(
+            "capability" to "CLIENT_SIDE_BUILD",
+            "exitCode" to exitCode,
+            "commandLogFileName" to "build-output.log"
+        )
+        mapper.writeValueAsString(manifest)
+            .byteInputStream()
+            .use { inputStream ->
+                zip.putNextEntry(Path("manifest.json").toString(), inputStream)
+            }
+
+        stdout.byteInputStream().use { inputStream ->
+            zip.putNextEntry(Path("build-output.log").toString(), inputStream)
+        }
+    }
+    return outputFile.toFile()
 }
 
 /**
@@ -113,7 +141,7 @@ fun parseBuildFile(buildFile: VirtualFile?): String? {
 /**
  * Unzips a zip into a dir. Returns the true when successfully unzips the file pointed to by [zipFilePath] to [destDir]
  */
-fun unzipFile(zipFilePath: Path, destDir: Path, isSqlMetadata: Boolean = false): Boolean {
+fun unzipFile(zipFilePath: Path, destDir: Path, isSqlMetadata: Boolean = false, extractOnlySources: Boolean = false): Boolean {
     if (!zipFilePath.exists()) return false
     val zipFile = ZipFile(zipFilePath.toFile())
     zipFile.use { file ->
@@ -121,6 +149,12 @@ fun unzipFile(zipFilePath: Path, destDir: Path, isSqlMetadata: Boolean = false):
             .filterNot { it.isDirectory }
             .map { zipEntry ->
                 var fileName = zipEntry.name
+                if (extractOnlySources) {
+                    // used to copy just the source code for client-side build
+                    if (!fileName.startsWith("sources")) {
+                        return@map
+                    }
+                }
                 if (isSqlMetadata) {
                     // when manually compressing ZIP files, the files get unzipped under a subdirectory where we extract them to,
                     // this change puts the files directly under the root of the target directory, which is what we want
@@ -136,10 +170,46 @@ fun unzipFile(zipFilePath: Path, destDir: Path, isSqlMetadata: Boolean = false):
     return true
 }
 
+suspend fun zipToPath(byteArrayList: List<ByteArray>, outputDirPath: Path? = null): Pair<Path, Int> {
+    val zipFilePath = withContext(getCoroutineBgContext()) {
+        if (outputDirPath == null) {
+            Files.createTempFile(null, ".zip")
+        } else {
+            Files.createTempFile(outputDirPath, null, ".zip")
+        }
+    }
+    var totalDownloadBytes = 0
+    withContext(getCoroutineBgContext()) {
+        Files.newOutputStream(zipFilePath).use {
+            for (bytes in byteArrayList) {
+                it.write(bytes)
+                totalDownloadBytes += bytes.size
+            }
+        }
+    }
+    return zipFilePath to totalDownloadBytes
+}
+
 fun parseXmlDependenciesReport(pathToXmlDependency: Path): DependencyUpdatesReport {
     val reportFile = pathToXmlDependency.toFile()
     val report = XML_MAPPER.readValue(reportFile, DependencyUpdatesReport::class.java)
     return report
+}
+
+fun validateCustomVersionsFile(file: VirtualFile): Boolean {
+    if (!file.name.lowercase().endsWith(".yaml")) {
+        getLogger<CodeTransformChatController>().error { "Custom versions file is not a YAML file: ${file.name}" }
+        return false
+    }
+    val fileContents = file.readText()
+    val requiredKeys = listOf("dependencyManagement:", "identifier:", "targetVersion:")
+    for (key in requiredKeys) {
+        if (!fileContents.contains(key)) {
+            getLogger<CodeTransformChatController>().error { "Missing yaml key: $key" }
+            return false
+        }
+    }
+    return true
 }
 
 fun validateSctMetadata(sctFile: File?): SqlMetadataValidationResult {
