@@ -81,7 +81,25 @@ async function testNavigation() {
                 const button = document.querySelector('button[action-id="codetransform-input-confirm-one-or-multiple-diffs"]')
                 button.click()
             })
-              
+/*
+            const selectCustomVersionsForm = await page.waitForSelector('button[action-id="codetransform-input-confirm-custom-dependency-versions"]', {
+                timeout: 5000
+            })
+            console.log('Custom dependency versions file form appeared:', selectCustomVersionsForm !== null)
+
+            await page.evaluate(() => {
+                const button = document.querySelector('button[action-id="codetransform-input-continue"]')
+                button.click()
+            })
+
+            await page.type('.mynah-chat-prompt-input', 'dummy-target-jdk-name-here')
+            await page.keyboard.press('Enter')
+
+            const errorMessage = await page.waitForSelector('text/I could not find "dummy-target-jdk-name-here" in File > Project Structure > Platform Settings > SDKs.', {
+                timeout: 5000
+            })
+*/
+            // TODO: delete errorMessage below, and uncomment the above when releasing CSB
             const errorMessage = await page.waitForSelector('text/Sorry, I couldn\'t run the Maven clean install command', {
                 timeout: 5000
             })
@@ -149,6 +167,9 @@ class TransformChatTest {
                     "Skip tests form appeared: true",
                     "One or multiple diffs form appeared: true",
                     "couldn't run the Maven clean install command"
+                    // TODO: delete line above, and uncomment lines below when releasing CSB
+                    // "I could not find \"dummy-target-jdk-name-here\"",
+                    // "Custom dependency versions file form appeared: true",
                 )
             }
     }
