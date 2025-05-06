@@ -44,7 +44,6 @@ class CodeWhispererProjectStartupSettingsListener(private val project: Project) 
         if (toolWindow.id != ProblemsView.ID) return
         if (!isCodeWhispererEnabled(project)) return
         CodeWhispererCodeScanManager.getInstance(project).buildCodeScanUI()
-        CodeWhispererCodeScanManager.getInstance(project).showCodeScanUI()
     }
 
     override fun activeConnectionChanged(newConnection: ToolkitConnection?) {
