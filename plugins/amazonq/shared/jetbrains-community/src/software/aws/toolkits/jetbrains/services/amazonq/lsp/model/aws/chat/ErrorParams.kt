@@ -6,7 +6,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 import org.eclipse.lsp4j.TextDocumentIdentifier
 
 data class ErrorParams(
-    val tabID: String,
+    val tabId: String,
     val triggerType: String?,
     val message: String,
     val title: String

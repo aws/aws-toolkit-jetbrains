@@ -500,9 +500,6 @@ class BrowserConnector(
                     encryptionManager?.decrypt(value).orEmpty(),
                     isPartialResult = false
                 )
-                if (messageToChat.contains("abc")) {
-                    throw Exception("abc err")
-                }
                 browser.postChat(messageToChat)
                 chatCommunicationManager.removeInflightRequestForTab(tabId)
             } catch (e: Exception) {
