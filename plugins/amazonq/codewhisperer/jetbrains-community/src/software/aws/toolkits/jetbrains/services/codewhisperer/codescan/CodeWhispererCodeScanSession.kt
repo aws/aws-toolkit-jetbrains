@@ -40,6 +40,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWh
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CodeScanResponseContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CreateUploadUrlServiceInvocationContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererTelemetryService
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.CODE_SCAN_POLLING_INTERVAL_IN_SECONDS
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.FILE_SCANS_THROTTLING_MESSAGE
@@ -220,6 +221,11 @@ class CodeWhispererCodeScanSession(val sessionContext: CodeScanSessionContext) {
             }
             currentCoroutineContext.ensureActive()
             val issues = mapToCodeScanIssues(documents, sessionContext.project, jobId).filter { it.isVisible }
+            issues.forEach { issue ->
+                if (!issue.autoDetected) {
+                    CodeWhispererTelemetryService.getInstance().sendCodeScanIssueDetected(issue)
+                }
+            }
             codeScanResponseContext = codeScanResponseContext.copy(codeScanTotalIssues = issues.count())
             codeScanResponseContext = codeScanResponseContext.copy(codeScanIssuesWithFixes = issues.count { it.suggestedFixes.isNotEmpty() })
             codeScanResponseContext = codeScanResponseContext.copy(reason = "Succeeded")
