@@ -271,7 +271,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
     override fun openFileDiff(params: OpenFileDiffParams): CompletableFuture<Unit> =
         CompletableFuture.supplyAsync({
-            ApplicationManager.getApplication().invokeLater {
                 try {
                     val contentFactory = DiffContentFactory.getInstance()
                     val fileName = Paths.get(params.originalFileUri).fileName.toString()
@@ -304,9 +303,9 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 } catch (e: Exception) {
                     LOG.warn { "Failed to open file diff: ${e.message}" }
                 }
-            }
-            Unit
-        })
+            },
+            ApplicationManager.getApplication()::invokeLater
+        )
 
     companion object {
         private val LOG = getLogger<AmazonQLanguageClientImpl>()
