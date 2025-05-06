@@ -20,8 +20,21 @@ import java.util.concurrent.ConcurrentHashMap
 @Service(Service.Level.PROJECT)
 class ChatCommunicationManager {
     private val chatPartialResultMap = ConcurrentHashMap<String, String>()
-    private fun getPartialChatMessage(partialResultToken: String): String =
-        chatPartialResultMap.getValue(partialResultToken)
+    private fun getPartialChatMessage(partialResultToken: String): String? =
+        chatPartialResultMap.getOrDefault(partialResultToken, null)
+
+    private val inflightRequestByTabId = ConcurrentHashMap<String, CompletableFuture<String>>()
+
+    fun setInflightRequestForTab(tabId: String, result: CompletableFuture<String>) {
+        inflightRequestByTabId[tabId] = result
+    }
+    fun removeInflightRequestForTab(tabId: String) {
+        inflightRequestByTabId.remove(tabId)
+    }
+
+    fun getInflightRequestForTab(tabId: String): CompletableFuture<String>? = inflightRequestByTabId[tabId]
+
+    fun hasInflightRequest(tabId: String): Boolean = inflightRequestByTabId.containsKey(tabId)
 
     fun addPartialChatMessage(tabId: String): String {
         val partialResultToken: String = UUID.randomUUID().toString()
@@ -35,7 +48,7 @@ class ChatCommunicationManager {
     fun handlePartialResultProgressNotification(project: Project, params: ProgressParams) {
         val token = ProgressNotificationUtils.getToken(params)
         val tabId = getPartialChatMessage(token)
-        if (tabId == null || tabId.isEmpty()) {
+        if (tabId.isNullOrEmpty()) {
             return
         }
         if (params.value.isLeft || params.value.right == null) {
@@ -47,7 +60,6 @@ class ChatCommunicationManager {
         val encryptedPartialChatResult = getObject(params, String::class.java)
         if (encryptedPartialChatResult != null) {
             val partialChatResult = AmazonQLspService.getInstance(project).encryptionManager.decrypt(encryptedPartialChatResult)
-
             val uiMessage = convertToJsonToSendToChat(
                 command = SEND_CHAT_COMMAND_PROMPT,
                 tabId = tabId,
