@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.codemodernizer
+
+import com.intellij.testFramework.LightVirtualFile
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockkStatic
@@ -9,6 +11,7 @@ import io.mockk.runs
 import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
+import org.jetbrains.yaml.YAMLFileType
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
@@ -17,20 +20,27 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.codewhispererruntime.model.AccessDeniedException
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationDownloadArtifact
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdate
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
+import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.createClientSideBuildUploadZip
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getBillingText
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getClientInstructionArtifactId
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getTableMapping
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseBuildFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.refreshToken
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateCustomVersionsFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
 import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.jetbrains.utils.rules.addFileToModule
 import software.aws.toolkits.resources.message
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.zip.ZipFile
 import kotlin.io.path.createTempFile
 
 class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase() {
@@ -219,6 +229,83 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
     }
 
     @Test
+    fun `getClientInstructionArtifactId extracts artifact ID from transformation plan`() {
+        val step1 = TransformationStep.builder()
+            .name("name of step 1")
+            .description("description of step 1")
+            .build()
+        val step2 = TransformationStep.builder()
+            .name("name of step 2")
+            .description("description of step 2")
+            .build()
+        val step3 = TransformationStep.builder()
+            .name("name of step 3")
+            .description("description of step 3")
+            .progressUpdates(
+                TransformationProgressUpdate.builder()
+                    .name("Requesting client-side build")
+                    .status("AWAITING_CLIENT_ACTION")
+                    .downloadArtifacts(
+                        TransformationDownloadArtifact.builder()
+                            .downloadArtifactId("id-123")
+                            .build()
+                    )
+                    .build()
+            )
+            .build()
+        val plan = TransformationPlan.builder()
+            .transformationSteps(listOf(step1, step2, step3))
+            .build()
+
+        val actual = getClientInstructionArtifactId(plan)
+        assertThat(actual).isEqualTo("id-123")
+    }
+
+    @Test
+    fun `getClientInstructionArtifactId returns null when no download artifacts present`() {
+        val step1 = TransformationStep.builder()
+            .name("name of step 1")
+            .description("description of step 1")
+            .build()
+        val step2 = TransformationStep.builder()
+            .name("name of step 2")
+            .description("description of step 2")
+            .progressUpdates(
+                TransformationProgressUpdate.builder()
+                    .name("NOT requesting client-side build")
+                    .status("NOT awaiting_client_action")
+                    .build()
+            )
+            .build()
+        val plan = TransformationPlan.builder()
+            .transformationSteps(listOf(step1, step2))
+            .build()
+
+        val actual = getClientInstructionArtifactId(plan)
+        assertThat(actual).isNull()
+    }
+
+    @Test
+    fun `createClientSideBuildUploadZip creates zip with manifest and build output`() {
+        val exitCode = 0
+        val stdout = "Build completed successfully"
+        val zipFile = createClientSideBuildUploadZip(exitCode, stdout)
+        ZipFile(zipFile).use { zip ->
+            val manifestEntry = zip.getEntry("manifest.json")
+            assertThat(manifestEntry).isNotNull
+            val manifestContent = zip.getInputStream(manifestEntry).bufferedReader().use { it.readText() }
+            assertThat(manifestContent).contains("\"capability\":\"CLIENT_SIDE_BUILD\"")
+            assertThat(manifestContent).contains("\"exitCode\":0")
+            assertThat(manifestContent).contains("\"commandLogFileName\":\"build-output.log\"")
+            val logEntry = zip.getEntry("build-output.log")
+            assertThat(logEntry).isNotNull
+            val logContent = zip.getInputStream(logEntry).bufferedReader().use { it.readText() }
+            assertThat(logContent).isEqualTo("Build completed successfully")
+        }
+        zipFile.delete()
+    }
+
+    @Test
     fun `parseBuildFile can detect absolute paths in build file`() {
         val module = projectRule.module
         val fileText = "<project><properties><path>system/name/here</path></properties></project>"
@@ -238,6 +325,69 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
             "Amazon Q Developer pricing</a>.</p>"
         val actual = getBillingText(376)
         assertThat(expected).isEqualTo(actual)
+    }
+
+    @Test
+    fun `WHEN validateCustomVersionsFile on fully valid yaml file THEN passes validation`() {
+        val sampleFileContents = """name: "custom-dependency-management"
+description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
+dependencyManagement:
+  dependencies:
+    - identifier: "com.example:library1"
+        targetVersion: "2.1.0"
+        versionProperty: "library1.version"
+        originType: "FIRST_PARTY"
+  plugins:
+    - identifier: "com.example.plugin"
+        targetVersion: "1.2.0"
+        versionProperty: "plugin.version"
+        """.trimIndent()
+
+        val virtualFile = LightVirtualFile("test-valid.yaml", YAMLFileType.YML, sampleFileContents)
+        val isValidFile = validateCustomVersionsFile(virtualFile)
+        assertThat(isValidFile).isTrue()
+    }
+
+    @Test
+    fun `WHEN validateCustomVersionsFile on invalid yaml file THEN fails validation`() {
+        val sampleFileContents = """name: "custom-dependency-management"
+description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
+invalidKey:
+  dependencies:
+    - identifier: "com.example:library1"
+        targetVersion: "2.1.0"
+        versionProperty: "library1.version"
+        originType: "FIRST_PARTY"
+  plugins:
+    - identifier: "com.example.plugin"
+        targetVersion: "1.2.0"
+        versionProperty: "plugin.version"
+        """.trimIndent()
+
+        val virtualFile = LightVirtualFile("test-invalid.yaml", YAMLFileType.YML, sampleFileContents)
+        val isValidFile = validateCustomVersionsFile(virtualFile)
+        assertThat(isValidFile).isFalse()
+    }
+
+    @Test
+    fun `WHEN validateCustomVersionsFile on non-yaml file THEN fails validation`() {
+        val sampleFileContents = """name: "custom-dependency-management"
+description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
+dependencyManagement:
+  dependencies:
+    - identifier: "com.example:library1"
+        targetVersion: "2.1.0"
+        versionProperty: "library1.version"
+        originType: "FIRST_PARTY"
+  plugins:
+    - identifier: "com.example.plugin"
+        targetVersion: "1.2.0"
+        versionProperty: "plugin.version"
+        """.trimIndent()
+
+        val virtualFile = LightVirtualFile("test-invalid-file-type.txt", sampleFileContents)
+        val isValidFile = validateCustomVersionsFile(virtualFile)
+        assertThat(isValidFile).isFalse()
     }
 
     @Test
