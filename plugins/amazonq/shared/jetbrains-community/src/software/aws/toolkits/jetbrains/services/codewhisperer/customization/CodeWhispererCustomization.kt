@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package software.aws.toolkits.jetbrains.services.codewhisperer.customization
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 
 data class CodeWhispererCustomization(
     @JvmField
@@ -12,4 +13,7 @@ data class CodeWhispererCustomization(
 
     @JvmField
     var description: String? = null,
+
+    @JvmField
+    var profile: QRegionProfile? = null,
 )
