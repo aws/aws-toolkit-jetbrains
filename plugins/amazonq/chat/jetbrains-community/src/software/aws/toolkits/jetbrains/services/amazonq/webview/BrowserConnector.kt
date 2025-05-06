@@ -32,7 +32,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager.Companion.convertToJsonToSendToChat
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickParams
@@ -445,7 +444,7 @@ class BrowserConnector(
                                     ChatCommunicationManager.convertToJsonToSendToChat(
                                         CHAT_ERROR_MESSAGE,
                                         params.tabId.toString(),
-                                        "",
+                                        getErrorUiMessage(e),
                                         isPartialResult = false
                                     )
                                 )
@@ -477,7 +476,7 @@ class BrowserConnector(
                     )
                 )
 
-                val uiMessage = convertToJsonToSendToChat(
+                val uiMessage = ChatCommunicationManager.convertToJsonToSendToChat(
                     command = SEND_CHAT_COMMAND_PROMPT,
                     tabId = stopResponseRequest.params.tabId,
                     params = paramsJson.toString(),
@@ -516,7 +515,7 @@ class BrowserConnector(
                     ChatCommunicationManager.convertToJsonToSendToChat(
                         CHAT_ERROR_MESSAGE,
                         tabId,
-                        encryptionManager?.decrypt(value).orEmpty(),
+                        getErrorUiMessage(e),
                         isPartialResult = false
                     )
                 )
@@ -524,6 +523,12 @@ class BrowserConnector(
 
         }
     }
+
+    private fun getErrorUiMessage(e: Exception) = Gson().toJson(
+        ChatUiMessageParams(
+            title = "An error occurred while processing your request.",
+            body = "Details: ${e.message}"
+        )).toString()
 
     private fun cancelInflightRequests(tabId: String) {
         chatCommunicationManager.getInflightRequestForTab(tabId)?.let { request ->
