@@ -105,7 +105,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.AmazonQTheme
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.ThemeBrowserAdapter
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
-import software.aws.toolkits.resources.message
+import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Telemetry
 import java.util.concurrent.CompletableFuture
@@ -438,7 +438,7 @@ class BrowserConnector(
                 val paramsJson = Gson().toJson(
                     // https://github.com/aws/language-servers/blob/1c0d88806087125b6fc561f610cc15e98127c6bf/server/aws-lsp-codewhisperer/src/language-server/agenticChat/agenticChatController.ts#L403
                     ChatUiMessageParams(
-                        title = message("amazonqChat.stopChatResponse"),
+                        title = AwsCoreBundle.message("amazonqChat.stopChatResponse"),
                         body = ""
                     )
                 )
