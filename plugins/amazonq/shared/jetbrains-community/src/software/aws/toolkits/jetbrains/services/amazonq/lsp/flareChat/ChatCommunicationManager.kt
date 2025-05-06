@@ -4,15 +4,18 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat
 
 import com.google.gson.Gson
+import com.google.gson.JsonElement
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.eclipse.lsp4j.ProgressParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ProgressNotificationUtils.getObject
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ErrorParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_ERROR_PARAMS
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -70,6 +73,28 @@ class ChatCommunicationManager {
         }
     }
 
+    fun sendErrorToUi(tabId: String, exception: Exception, token: String?) {
+        token?.let {
+            removePartialChatMessage(it)
+        }
+        val errorTitle = "An error occurred while processing your request."
+        val errorMessage = "Details: ${exception.message}"
+        val errorParams = Gson().toJsonTree(ErrorParams(tabId, null, errorMessage, errorTitle))
+        sendErrorMessageToChatUi(CHAT_ERROR_PARAMS, tabId, errorParams, false)
+    }
+
+    private fun sendErrorMessageToChatUi(command: String, tabId: String, partialChatResult: JsonElement, isPartialResult: Boolean) {
+        val uiMessage =  """
+                {
+                "command":"$command",
+                "tabId": "$tabId",
+                "params": $partialChatResult,
+                "isPartialResult": $isPartialResult
+                }
+            """.trimIndent()
+        AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+    }
+
     companion object {
         fun getInstance(project: Project) = project.service<ChatCommunicationManager>()
 
@@ -77,6 +102,13 @@ class ChatCommunicationManager {
         fun completeSerializedChatResponse(requestId: String, content: String) {
             pendingSerializedChatRequests.remove(requestId)?.complete(GetSerializedChatResult((content)))
         }
+        fun getErrorUiMessage(tabId: String, e: Exception): String = Gson().toJson(
+            ErrorParams(
+                title = "An error occurred while processing your request.",
+                message = "Details: ${e.message}",
+                tabID = tabId,
+                triggerType = TODO(),
+            )).toString()
 
         fun convertToJsonToSendToChat(command: String, tabId: String, params: String, isPartialResult: Boolean): String =
             """

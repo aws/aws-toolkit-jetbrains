@@ -91,7 +91,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Promp
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.QuickChatActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_ERROR_MESSAGE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_ERROR_PARAMS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.STOP_CHAT_RESPONSE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickNotification
@@ -211,6 +211,8 @@ class BrowserConnector(
             browser.receiveMessageQuery.removeHandler(handler)
         }
     }
+
+
 
     private fun handleFlareChatMessages(browser: Browser, node: JsonNode) {
         when (node.command) {
@@ -439,17 +441,9 @@ class BrowserConnector(
                             browser.postChat(res)
                         } catch (e: Exception) {
                             LOG.error { "Failed to perform chat tab bar action $e" }
-                            if (params.tabId != null) {
-                                browser.postChat(
-                                    ChatCommunicationManager.convertToJsonToSendToChat(
-                                        CHAT_ERROR_MESSAGE,
-                                        params.tabId.toString(),
-                                        getErrorUiMessage(e),
-                                        isPartialResult = false
-                                    )
-                                )
+                            params.tabId?.let {
+                                chatCommunicationManager.sendErrorToUi(it, e, null)
                             }
-
                         }
                     }
                 }
@@ -510,25 +504,12 @@ class BrowserConnector(
                 chatCommunicationManager.removeInflightRequestForTab(tabId)
             } catch (e: Exception) {
                 LOG.error { "Failed to send chat message $e" }
-                chatCommunicationManager.removePartialChatMessage(partialResultToken)
-                browser.postChat(
-                    ChatCommunicationManager.convertToJsonToSendToChat(
-                        CHAT_ERROR_MESSAGE,
-                        tabId,
-                        getErrorUiMessage(e),
-                        isPartialResult = false
-                    )
-                )
+                chatCommunicationManager.sendErrorToUi(tabId, e, partialResultToken)
             }
 
         }
     }
 
-    private fun getErrorUiMessage(e: Exception) = Gson().toJson(
-        ChatUiMessageParams(
-            title = "An error occurred while processing your request.",
-            body = "Details: ${e.message}"
-        )).toString()
 
     private fun cancelInflightRequests(tabId: String) {
         chatCommunicationManager.getInflightRequestForTab(tabId)?.let { request ->
