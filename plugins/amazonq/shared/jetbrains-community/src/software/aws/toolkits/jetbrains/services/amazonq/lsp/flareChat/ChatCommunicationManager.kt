@@ -80,12 +80,13 @@ class ChatCommunicationManager {
         val errorTitle = "An error occurred while processing your request."
         val errorMessage = "Details: ${exception.message}"
         val errorParams = Gson().toJson(ErrorParams(tabId, null, errorMessage, errorTitle)).toString()
+        val isPartialResult = false
         val uiMessage =  """
                 {
                 "command":"$CHAT_ERROR_PARAMS",
                 "tabId": "$tabId",
-                "params": "$errorParams",
-                "isPartialResult": "true"
+                "params": $errorParams,
+                "isPartialResult": $isPartialResult
                 }
             """.trimIndent()
         return uiMessage
@@ -99,13 +100,6 @@ class ChatCommunicationManager {
         fun completeSerializedChatResponse(requestId: String, content: String) {
             pendingSerializedChatRequests.remove(requestId)?.complete(GetSerializedChatResult((content)))
         }
-        fun getErrorUiMessage(tabId: String, e: Exception): String = Gson().toJson(
-            ErrorParams(
-                title = "An error occurred while processing your request.",
-                message = "Details: ${e.message}",
-                tabID = tabId,
-                triggerType = TODO(),
-            )).toString()
 
         fun convertToJsonToSendToChat(command: String, tabId: String, params: String, isPartialResult: Boolean): String =
             """
