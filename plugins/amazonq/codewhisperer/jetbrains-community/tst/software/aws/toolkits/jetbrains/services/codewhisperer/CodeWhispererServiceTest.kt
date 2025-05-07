@@ -215,6 +215,7 @@ class CodeWhispererServiceTest {
                 customizationArn = "fake-arn",
                 profileArn = "fake-arn",
                 workspaceId = null,
+                diagnostics = emptyList()
             )
         )
 
