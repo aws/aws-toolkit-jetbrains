@@ -11,6 +11,8 @@ class TransformRunnable : Runnable {
         exitCode = i
     }
 
+    fun getExitCode(): Int? = exitCode
+
     override fun run() {
         // do nothing
     }

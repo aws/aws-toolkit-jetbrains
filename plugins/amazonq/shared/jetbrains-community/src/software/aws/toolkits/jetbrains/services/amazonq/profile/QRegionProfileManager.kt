@@ -82,8 +82,9 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
         // succeeded in listing profiles, but none match selected
         // profiles should be null if access denied or connection is not IdC
         if (profiles == null || profiles.none { it.arn == selected.arn }) {
-            invalidateProfile(selected.arn)
+            // Note that order matters, should switch to null first then invalidateProfile
             switchProfile(project, null, intent = QProfileSwitchIntent.Reload)
+            invalidateProfile(selected.arn)
             Telemetry.amazonq.profileState.use { span ->
                 span.source(QProfileSwitchIntent.Reload.value)
                     .amazonQProfileRegion(selected.region)
@@ -164,7 +165,7 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
     }
 
     private fun invalidateProfile(arn: String) {
-        val updated = connectionIdToActiveProfile.filterValues { it.arn != arn }
+        val updated = connectionIdToActiveProfile.filterValues { it != null && it.arn != arn }
         connectionIdToActiveProfile.clear()
         connectionIdToActiveProfile.putAll(updated)
     }
@@ -180,27 +181,25 @@ class QRegionProfileManager : PersistentStateComponent<QProfileState>, Disposabl
         (connectionIdToProfileCount[conn.id] ?: 0) > 1
     } ?: false
 
-    fun getQClientSettings(project: Project): TokenConnectionSettings {
+    fun getQClientSettings(project: Project, profile: QRegionProfile?): TokenConnectionSettings {
         val conn = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(QConnection.getInstance())
         if (conn !is AwsBearerTokenConnection) {
             error("not a bearer connection")
         }
 
         val settings = conn.getConnectionSettings()
-        val awsRegion = AwsRegionProvider.getInstance()[QEndpoints.Q_DEFAULT_SERVICE_CONFIG.REGION] ?: error("unknown region from Q default service config")
+        val defaultRegion = AwsRegionProvider.getInstance()[QDefaultServiceConfig.REGION] ?: error("unknown region from Q default service config")
+        val regionId = profile?.region ?: activeProfile(project)?.region
+        val awsRegion = regionId?.let { AwsRegionProvider.getInstance()[it] } ?: defaultRegion
 
-        // TODO: different window should be able to select different profile
-        return activeProfile(project)?.let { profile ->
-            AwsRegionProvider.getInstance()[profile.region]?.let { region ->
-                settings.withRegion(region)
-            }
-        } ?: settings.withRegion(awsRegion)
+        return settings.withRegion(awsRegion)
     }
 
-    inline fun <reified T : SdkClient> getQClient(project: Project): T = getQClient(project, T::class)
+    inline fun <reified T : SdkClient> getQClient(project: Project): T = getQClient(project, null, T::class)
+    inline fun <reified T : SdkClient> getQClient(project: Project, profile: QRegionProfile): T = getQClient(project, profile, T::class)
 
-    fun <T : SdkClient> getQClient(project: Project, sdkClass: KClass<T>): T {
-        val settings = getQClientSettings(project)
+    fun <T : SdkClient> getQClient(project: Project, profile: QRegionProfile?, sdkClass: KClass<T>): T {
+        val settings = getQClientSettings(project, profile)
         val client = AwsClientManager.getInstance().getClient(sdkClass, settings)
         return client
     }
