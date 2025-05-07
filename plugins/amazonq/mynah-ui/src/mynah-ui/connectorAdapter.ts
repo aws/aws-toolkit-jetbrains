@@ -29,6 +29,8 @@ export const initiateAdapter = (showWelcomePage: boolean,
     return new HybridChatAdapter(showWelcomePage, disclaimerAcknowledged, isFeatureDevEnabled, isCodeTransformEnabled, isDocEnabled, isCodeScanEnabled, isCodeTestEnabled, ideApiPostMessage, profileName)
 }
 
+
+// Ref: https://github.com/aws/aws-toolkit-vscode/blob/e9ea8082ffe0b9968a873437407d0b6b31b9e1a5/packages/core/src/amazonq/webview/ui/connectorAdapter.ts#L14
 export class HybridChatAdapter implements ChatClientAdapter {
     private uiHandler?: WebviewUIHandler
 

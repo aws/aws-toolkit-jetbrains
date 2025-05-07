@@ -372,6 +372,7 @@ private handleDocCommand(chatPrompt: ChatPrompt, tabID: string, taskName: string
         }
     }
 
+    // Ref: https://github.com/aws/aws-toolkit-vscode/blob/e9ea8082ffe0b9968a873437407d0b6b31b9e1a5/packages/core/src/amazonq/webview/ui/quickActions/handler.ts#L345
     private addTab(affectedTabId: string | undefined) {
         if (!affectedTabId || !this.mynahUI) {
             return

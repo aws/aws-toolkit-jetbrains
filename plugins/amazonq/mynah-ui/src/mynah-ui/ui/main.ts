@@ -33,7 +33,7 @@ import {createClickTelemetry, createOpenAgentTelemetry} from "./telemetry/action
 import {disclaimerAcknowledgeButtonId, disclaimerCard} from "./texts/disclaimer";
 
 
-
+// Ref: https://github.com/aws/aws-toolkit-vscode/blob/e9ea8082ffe0b9968a873437407d0b6b31b9e1a5/packages/core/src/amazonq/webview/ui/main.ts
 export const createMynahUI = (
     ideApi: any,
     showWelcomePage: boolean,
