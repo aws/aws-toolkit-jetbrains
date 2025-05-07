@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
 data class ChatMessage(
-    val type: MessageType? = MessageType.ANSWER,
+    val type: String? = MessageType.ANSWER.value,
     val header: MessageHeader? = null,
     val buttons: List<Button>? = null,
     val body: String? = null,
