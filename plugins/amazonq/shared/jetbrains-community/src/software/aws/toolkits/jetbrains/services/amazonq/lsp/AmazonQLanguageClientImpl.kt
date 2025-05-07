@@ -279,9 +279,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             {
                 var tempPath: java.nio.file.Path? = null
                 try {
-                    val contentFactory = DiffContentFactory.getInstance()
                     val fileName = Paths.get(params.originalFileUri).fileName.toString()
-
                     // Create a temporary virtual file for syntax highlighting
                     val fileExtension = fileName.substringAfterLast('.', "")
                     tempPath = Files.createTempFile(null, ".$fileExtension")
@@ -292,28 +290,39 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                         if (file.exists()) file.readText() else ""
                     }
 
+                    val contentFactory = DiffContentFactory.getInstance()
+                    var isNewFile = false
                     val (leftContent, rightContent) = when {
                         params.isDeleted -> {
-                            // For deleted files, show original on left, empty on right
-                            contentFactory.create(originalContent, virtualFile) to
+                            contentFactory.create(project, originalContent, virtualFile) to
                                 contentFactory.createEmpty()
                         }
                         else -> {
-                            // For new or modified files
                             val newContent = params.fileContent.orEmpty()
-                            contentFactory.create(originalContent, virtualFile) to
-                                contentFactory.create(newContent, virtualFile)
+                            isNewFile = newContent == originalContent
+                            when {
+                                isNewFile -> {
+                                    contentFactory.createEmpty() to
+                                        contentFactory.create(project, newContent, virtualFile)
+                                }
+                                else -> {
+                                    contentFactory.create(project, originalContent, virtualFile) to
+                                        contentFactory.create(project, newContent, virtualFile)
+                                }
+                            }
                         }
                     }
-
                     val diffRequest = SimpleDiffRequest(
                         "$fileName ${message("aws.q.lsp.client.diff_message")}",
                         leftContent,
                         rightContent,
                         "Original",
-                        if (params.isDeleted) "Deleted" else "Modified"
+                        when {
+                            params.isDeleted -> "Deleted"
+                            isNewFile -> "Created"
+                            else -> "Modified"
+                        }
                     )
-
                     (DiffManager.getInstance() as DiffManagerEx).showDiffBuiltin(project, diffRequest)
                 } catch (e: Exception) {
                     LOG.warn { "Failed to open file diff: ${e.message}" }
