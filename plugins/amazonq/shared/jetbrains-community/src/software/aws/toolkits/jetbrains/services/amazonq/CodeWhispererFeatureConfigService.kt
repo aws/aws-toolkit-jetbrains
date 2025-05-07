@@ -1,8 +1,10 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+@file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.amazonq
 
+import com.google.gson.Gson
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -17,7 +19,6 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.utils.isQExpired
-import com.google.gson.Gson
 @Service
 class CodeWhispererFeatureConfigService {
     private val featureConfigs = mutableMapOf<String, FeatureContext>()
