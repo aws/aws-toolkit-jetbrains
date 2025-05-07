@@ -17,7 +17,7 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.utils.isQExpired
-
+import com.google.gson.Gson
 @Service
 class CodeWhispererFeatureConfigService {
     private val featureConfigs = mutableMapOf<String, FeatureContext>()
@@ -81,6 +81,17 @@ class CodeWhispererFeatureConfigService {
     fun getInlineCompletion(): Boolean = getFeatureValueForKey(INLINE_COMPLETION).stringValue() == "TREATMENT"
 
     fun getChatWSContext(): Boolean = getFeatureValueForKey(CHAT_WS_CONTEXT).stringValue() == "TREATMENT"
+
+    // convert into mynahUI parsable string
+    // format: '[["key1", {"name":"Feature1","variation":"A","value":true}]]'
+    fun getFeatureConfigJsonString(): String {
+        val jsonString = featureConfigs.entries.map { (key, value) ->
+            "[\"$key\",${Gson().toJson(value)}]"
+        }
+        return """
+            '$jsonString'
+        """.trimIndent()
+    }
 
     // Get the feature value for the given key.
     // In case of a misconfiguration, it will return a default feature value of Boolean false.
