@@ -5,8 +5,8 @@ package software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes
 
 import com.intellij.ide.projectView.PresentationData
 import com.intellij.ide.util.treeView.AbstractTreeNode
-import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.project.Project
 import com.intellij.ui.SimpleTextAttributes
 import software.aws.toolkits.jetbrains.ToolkitPlaces
@@ -28,8 +28,8 @@ class CawsRootNode(private val nodeProject: Project) : AbstractTreeNode<String>(
             is ActiveConnection.ValidBearer -> CAWS_SIGNED_IN_ACTION_GROUP
             else -> CAWS_EXPIRED_TOKEN_ACTION_GROUP
         }
-        val actions = ActionManager.getInstance().getAction(groupId) as ActionGroup
-        return actions.getChildren(null).mapNotNull {
+        val actions = ActionManager.getInstance().getAction(groupId) as DefaultActionGroup
+        return actions.getChildren(ActionManager.getInstance()).mapNotNull {
             if (it is OpenWorkspaceInGateway && isRunningOnRemoteBackend()) {
                 return@mapNotNull null
             }
