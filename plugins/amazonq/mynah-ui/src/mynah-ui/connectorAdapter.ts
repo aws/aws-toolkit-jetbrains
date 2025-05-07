@@ -8,6 +8,7 @@ import { WebviewUIHandler } from './ui/main'
 import { TabDataGenerator } from './ui/tabs/generator'
 import { ChatClientAdapter, ChatEventHandler } from '@aws/chat-client'
 import { FqnExtractor } from "./fqn/extractor";
+import {FeatureContext} from "./ui/types";
 
 export * from "./ui/main";
 
@@ -25,8 +26,9 @@ export const initiateAdapter = (showWelcomePage: boolean,
                              isCodeScanEnabled: boolean,
                              isCodeTestEnabled: boolean,
                              ideApiPostMessage: (message: any) => void,
-                             profileName?: string) : HybridChatAdapter => {
-    return new HybridChatAdapter(showWelcomePage, disclaimerAcknowledged, isFeatureDevEnabled, isCodeTransformEnabled, isDocEnabled, isCodeScanEnabled, isCodeTestEnabled, ideApiPostMessage, profileName)
+                             featureConfigsSerialized: [string, FeatureContext][],
+                             profileName?: string,) : HybridChatAdapter => {
+    return new HybridChatAdapter(showWelcomePage, disclaimerAcknowledged, isFeatureDevEnabled, isCodeTransformEnabled, isDocEnabled, isCodeScanEnabled, isCodeTestEnabled, ideApiPostMessage, featureConfigsSerialized, profileName)
 }
 
 
@@ -37,7 +39,6 @@ export class HybridChatAdapter implements ChatClientAdapter {
     private mynahUIRef?: { mynahUI: MynahUI}
 
     constructor(
-
         private showWelcomePage: boolean,
         private disclaimerAcknowledged: boolean,
         private isFeatureDevEnabled: boolean,
@@ -46,8 +47,8 @@ export class HybridChatAdapter implements ChatClientAdapter {
         private isCodeScanEnabled: boolean,
         private isCodeTestEnabled: boolean,
         private ideApiPostMessage: (message: any) => void,
+        private featureConfigsSerialized: [string, FeatureContext][],
         private profileName?: string,
-
     ) {}
 
     /**
@@ -69,6 +70,7 @@ export class HybridChatAdapter implements ChatClientAdapter {
             isCodeTestEnabled: this.isCodeTestEnabled,
             profileName: this.profileName,
             hybridChat: true,
+            featureConfigsSerialized: this.featureConfigsSerialized,
         })
 
         return this.uiHandler.mynahUIProps

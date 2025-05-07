@@ -31,42 +31,11 @@ import {welcomeScreenTabData} from "./walkthrough/welcome";
 import { agentWalkthroughDataModel } from './walkthrough/agent'
 import {createClickTelemetry, createOpenAgentTelemetry} from "./telemetry/actions";
 import {disclaimerAcknowledgeButtonId, disclaimerCard} from "./texts/disclaimer";
+import {FeatureContext, tryNewMap} from "./types";
+
 
 
 // Ref: https://github.com/aws/aws-toolkit-vscode/blob/e9ea8082ffe0b9968a873437407d0b6b31b9e1a5/packages/core/src/amazonq/webview/ui/main.ts
-export const createMynahUI = (
-    ideApi: any,
-    showWelcomePage: boolean,
-    disclaimerAcknowledged: boolean,
-    isFeatureDevEnabled: boolean,
-    isCodeTransformEnabled: boolean,
-    isDocEnabled: boolean,
-    isCodeScanEnabled: boolean,
-    isCodeTestEnabled: boolean,
-    highlightCommand?: QuickActionCommand,
-    profileName?: string,
-
-) => {
-    const handler = new WebviewUIHandler({
-        postMessage: ideApi.postMessage,
-        mynahUIRef: { mynahUI: undefined },
-        showWelcomePage,
-        disclaimerAcknowledged,
-        isFeatureDevEnabled,
-        isCodeTransformEnabled,
-        isDocEnabled,
-        isCodeScanEnabled,
-        isCodeTestEnabled,
-        highlightCommand,
-        profileName,
-        hybridChat: false,
-    })
-
-    return {
-        mynahUI: handler.mynahUI,
-        messageReceiver: handler.connector?.handleMessageReceive,
-    }
-}
 
 export class WebviewUIHandler {
     postMessage: any
@@ -81,6 +50,7 @@ export class WebviewUIHandler {
     profileName?: string
     responseMetadata: Map<string, string[]>
     tabsStorage: TabsStorage
+    featureConfigs?: Map<string, FeatureContext>
 
     mynahUIProps: MynahUIProps
     connector?: Connector
@@ -90,7 +60,6 @@ export class WebviewUIHandler {
     textMessageHandler?: TextMessageHandler
     messageController?: MessageController
 
-    savedContextCommands: MynahUIDataModel['contextCommands']
     disclaimerCardActive : boolean
 
 
@@ -98,6 +67,7 @@ export class WebviewUIHandler {
     constructor({
                     postMessage,
                     mynahUIRef,
+                    featureConfigsSerialized,
                     showWelcomePage,
                     disclaimerAcknowledged,
                     isFeatureDevEnabled,
@@ -112,6 +82,7 @@ export class WebviewUIHandler {
                 } : {
         postMessage: any
         mynahUIRef: { mynahUI: MynahUI | undefined }
+        featureConfigsSerialized: [string, FeatureContext][]
         showWelcomePage: boolean,
         disclaimerAcknowledged: boolean,
         isFeatureDevEnabled: boolean
@@ -127,6 +98,7 @@ export class WebviewUIHandler {
     }) {
         this.postMessage = postMessage
         this.mynahUIRef = mynahUIRef
+        this.featureConfigs = tryNewMap(featureConfigsSerialized)
         this.showWelcomePage = showWelcomePage;
         this.disclaimerAcknowledged = disclaimerAcknowledged
         this.isFeatureDevEnabled = isFeatureDevEnabled
@@ -206,6 +178,8 @@ export class WebviewUIHandler {
                     profileName
                 })
 
+                this.featureConfigs = tryNewMap(featureConfigsSerialized)
+
                 // Set the new defaults for the quick action commands in all tabs now that isFeatureDevEnabled and isCodeTransformEnabled were enabled/disabled
                 for (const tab of this.tabsStorage.getTabs()) {
                     this.mynahUI?.updateStore(tab.id, {
@@ -238,7 +212,17 @@ export class WebviewUIHandler {
             onCWCOnboardingPageInteractionMessage: (message: ChatItem): string | undefined => {
                 return this.messageController?.sendMessageToTab(message, 'cwc')
             },
+            onQuickHandlerCommand: (tabID: string, command?: string, eventId?: string) => {
+                this.tabsStorage.updateTabLastCommand(tabID, command)
+                if (command === 'aws.awsq.transform') {
+                    this.quickActionHandler?.handleCommand({ command: '/transform' }, tabID, eventId)
+                } else if (command === 'aws.awsq.clearchat') {
+                    this.quickActionHandler?.handleCommand({ command: '/clear' }, tabID)
+                }
+            },
             onCWCContextCommandMessage: (message: ChatItem, command?: string): string | undefined => {
+                const selectedTab = this.tabsStorage.getSelectedTab()
+                this.tabsStorage.updateTabLastCommand(selectedTab?.id || '', command || '')
                 if (command === 'aws.amazonq.sendToPrompt') {
                     return this.messageController?.sendSelectedCodeToTab(message)
                 } else {
@@ -398,7 +382,7 @@ export class WebviewUIHandler {
                     } as ChatItem)
                 }
             },
-            onChatAnswerReceived: (tabID: string, item: CWCChatItem) => {
+            onChatAnswerReceived: (tabID: string, item: CWCChatItem, messageData: any) => {
                 if (item.type === ChatItemType.ANSWER_PART || item.type === ChatItemType.CODE_RESULT) {
                     this.mynahUI?.updateLastChatAnswer(tabID, {
                         ...(item.messageId !== undefined ? { messageId: item.messageId } : {}),
@@ -417,8 +401,12 @@ export class WebviewUIHandler {
                     return
                 }
 
-                if (item.body !== undefined || item.relatedContent !== undefined || item.followUp !== undefined) {
-                    this.mynahUI?.addChatItem(tabID, item)
+                if (item.body !== undefined || item.relatedContent !== undefined || item.followUp !== undefined || item.formItems !== undefined || item.buttons !== undefined) {
+                    this.mynahUI?.addChatItem(tabID, {
+                        ...item,
+                        messageId: item.messageId,
+                        codeBlockActions: this.getCodeBlockActions(messageData),
+                    })
                 }
 
                 if (
@@ -543,7 +531,7 @@ export class WebviewUIHandler {
                 this.tabsStorage.updateTabTypeFromUnknown(newTabID, tabType)
                 this.connector?.onKnownTabOpen(newTabID)
                 this.connector?.onUpdateTabType(newTabID)
-
+                this.featureConfigs = tryNewMap(featureConfigsSerialized)
                 this.mynahUI?.updateStore(newTabID, this.tabDataGenerator!.getTabData(tabType, true))
             },
             onStartNewTransform: (tabID: string) => {
@@ -902,6 +890,43 @@ export class WebviewUIHandler {
             hybridChat
         })
 
+    }
+
+    private getCodeBlockActions(messageData: any) {
+        // Show ViewDiff and AcceptDiff for allowedCommands in CWC
+        const isEnabled = this.featureConfigs?.get('ViewDiffInChat')?.variation === 'TREATMENT'
+        const tab = this.tabsStorage.getTab(messageData?.tabID || '')
+        const allowedCommands = [
+            'aws.amazonq.refactorCode',
+            'aws.amazonq.fixCode',
+            'aws.amazonq.optimizeCode',
+            'aws.amazonq.sendToPrompt',
+        ]
+        if (isEnabled && tab?.type === 'cwc' && allowedCommands.includes(tab.lastCommand || '')) {
+            return {
+                'insert-to-cursor': undefined,
+                accept_diff: {
+                    id: 'accept_diff',
+                    label: 'Apply Diff',
+                    icon: MynahIcons.OK_CIRCLED,
+                    data: messageData,
+                },
+                view_diff: {
+                    id: 'view_diff',
+                    label: 'View Diff',
+                    icon: MynahIcons.EYE,
+                    data: messageData,
+                },
+            }
+        }
+        // Show only "Copy" option for codeblocks in Q Test Tab
+        if (tab?.type === 'testgen') {
+            return {
+                'insert-to-cursor': undefined,
+            }
+        }
+        // Default will show "Copy" and "Insert at cursor" for codeblocks
+        return {}
     }
     get mynahUI(): MynahUI | undefined {
         return this.mynahUIRef.mynahUI
