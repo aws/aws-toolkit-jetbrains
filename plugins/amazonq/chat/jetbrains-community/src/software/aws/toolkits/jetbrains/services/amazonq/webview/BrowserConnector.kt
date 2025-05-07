@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
+import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
@@ -31,7 +32,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager.Companion.convertToJsonToSendToChat
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickParams
@@ -424,8 +424,18 @@ class BrowserConnector(
                         server, params ->
                     val result = server.tabBarActions(params)
                     result.whenComplete { params1, error ->
-                        val res = ChatCommunicationManager.convertNotificationToJsonForChat(CHAT_TAB_BAR_ACTIONS, params1)
-                        browser.postChat(res)
+                        try {
+                            if (error != null) {
+                                throw error
+                            }
+                            val res = ChatCommunicationManager.convertNotificationToJsonForChat(CHAT_TAB_BAR_ACTIONS, params1)
+                            browser.postChat(res)
+                        } catch (e: Exception) {
+                            LOG.error { "Failed to perform chat tab bar action $e" }
+                            params.tabId?.let {
+                                browser.postChat(chatCommunicationManager.getErrorUiMessage(it, e, null))
+                            }
+                        }
                     }
                 }
             }
@@ -451,7 +461,7 @@ class BrowserConnector(
                     )
                 )
 
-                val uiMessage = convertToJsonToSendToChat(
+                val uiMessage = ChatCommunicationManager.convertToJsonToSendToChat(
                     command = SEND_CHAT_COMMAND_PROMPT,
                     tabId = stopResponseRequest.params.tabId,
                     params = paramsJson.toString(),
@@ -470,15 +480,23 @@ class BrowserConnector(
         browser: Browser,
     ) {
         result.whenComplete { value, error ->
-            chatCommunicationManager.removePartialChatMessage(partialResultToken)
-            val messageToChat = ChatCommunicationManager.convertToJsonToSendToChat(
-                SEND_CHAT_COMMAND_PROMPT,
-                tabId,
-                encryptionManager?.decrypt(value).orEmpty(),
-                isPartialResult = false
-            )
-            browser.postChat(messageToChat)
-            chatCommunicationManager.removeInflightRequestForTab(tabId)
+            try {
+                if (error != null) {
+                    throw error
+                }
+                chatCommunicationManager.removePartialChatMessage(partialResultToken)
+                val messageToChat = ChatCommunicationManager.convertToJsonToSendToChat(
+                    SEND_CHAT_COMMAND_PROMPT,
+                    tabId,
+                    encryptionManager?.decrypt(value).orEmpty(),
+                    isPartialResult = false
+                )
+                browser.postChat(messageToChat)
+                chatCommunicationManager.removeInflightRequestForTab(tabId)
+            } catch (e: Exception) {
+                LOG.error { "Failed to send chat message $e" }
+                browser.postChat(chatCommunicationManager.getErrorUiMessage(tabId, e, partialResultToken))
+            }
         }
     }
 

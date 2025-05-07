@@ -10,6 +10,8 @@ import com.intellij.openapi.project.Project
 import org.eclipse.lsp4j.ProgressParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ProgressNotificationUtils.getObject
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_ERROR_PARAMS
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ErrorParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
@@ -68,6 +70,25 @@ class ChatCommunicationManager {
             )
             AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
         }
+    }
+
+    fun getErrorUiMessage(tabId: String, exception: Exception, token: String?): String {
+        token?.let {
+            removePartialChatMessage(it)
+        }
+        val errorTitle = "An error occurred while processing your request."
+        val errorMessage = "Details: ${exception.message}"
+        val errorParams = Gson().toJson(ErrorParams(tabId, null, errorMessage, errorTitle)).toString()
+        val isPartialResult = false
+        val uiMessage = """
+                {
+                "command":"$CHAT_ERROR_PARAMS",
+                "tabId": "$tabId",
+                "params": $errorParams,
+                "isPartialResult": $isPartialResult
+                }
+        """.trimIndent()
+        return uiMessage
     }
 
     companion object {
