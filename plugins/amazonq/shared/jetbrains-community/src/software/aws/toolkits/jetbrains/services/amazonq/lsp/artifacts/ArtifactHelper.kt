@@ -20,12 +20,16 @@ import software.aws.toolkits.jetbrains.core.saveFileFromUrl
 import software.aws.toolkits.resources.AwsCoreBundle
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicInteger
 
-class ArtifactHelper internal constructor(
-    private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
-    private val maxDownloadAttempts: Int = MAX_DOWNLOAD_ATTEMPTS,
-) {
+class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH, private val maxDownloadAttempts: Int = MAX_DOWNLOAD_ATTEMPTS) {
+
+    companion object {
+        private val DEFAULT_ARTIFACT_PATH = getToolkitsCommonCacheRoot().resolve(Paths.get("aws", "toolkits", "language-servers", "AmazonQ"))
+        private val logger = getLogger<ArtifactHelper>()
+        private const val MAX_DOWNLOAD_ATTEMPTS = 3
+    }
     private val currentAttempt = AtomicInteger(0)
 
     fun removeDelistedVersions(delistedVersions: List<Version>) {
@@ -209,11 +213,5 @@ class ArtifactHelper internal constructor(
             logger.error { errorMessage }
             throw LspException(errorMessage, LspException.ErrorCode.DOWNLOAD_FAILED)
         }
-    }
-
-    companion object {
-        private val DEFAULT_ARTIFACT_PATH = getToolkitsCommonCacheRoot().resolve("aws").resolve("toolkits").resolve("language-servers")
-        private val logger = getLogger<ArtifactHelper>()
-        private const val MAX_DOWNLOAD_ATTEMPTS = 3
     }
 }
