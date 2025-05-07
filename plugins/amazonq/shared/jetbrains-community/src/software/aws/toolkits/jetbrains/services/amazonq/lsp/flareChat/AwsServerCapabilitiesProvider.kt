@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.IconType
 
 @Service(Service.Level.PROJECT)
 class AwsServerCapabilitiesProvider {
@@ -25,8 +26,8 @@ class AwsServerCapabilitiesProvider {
                 listOf(
                     QuickActionsCommandGroups(
                         listOf(
-                            Command("/help", "Learn more about Amazon Q then"),
-                            Command("/clear", "Clear this session")
+                            QuickActionCommand("/help", "Learn more about Amazon Q then"),
+                            QuickActionCommand("/clear", "Clear this session")
                         )
                     )
                 )
@@ -52,10 +53,33 @@ data class QuickActions(
 )
 
 data class QuickActionsCommandGroups(
-    val commands: List<Command>,
+    val commands: List<QuickActionCommand>,
 )
 
-data class Command(
-    val command: String,
-    val description: String?,
+open class QuickActionCommand(
+    open val command: String,
+    open val description: String?,
+    open val placeholder: String? = null,
+    open val icon: IconType? = null,
+)
+
+data class ContextCommand(
+    val id: String?,
+    val route: List<String>?,
+    val label: String?,
+    val children: ContextCommandGroup?,
+    override val command: String,
+    override val description: String?,
+    override val placeholder: String? = null,
+    override val icon: IconType? = null,
+) : QuickActionCommand(
+    command = command,
+    description = description,
+    placeholder = placeholder,
+    icon = icon
+)
+
+data class ContextCommandGroup(
+    val groupName: String?,
+    val commands: List<ContextCommand>,
 )

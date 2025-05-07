@@ -19,9 +19,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.io.TempDir
-import org.mockito.kotlin.mock
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager.SupportedManifestVersionRange
-import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 import java.nio.file.Path
 
 @ExtendWith(ApplicationExtension::class)
@@ -31,16 +29,14 @@ class ArtifactHelperTest {
 
     private lateinit var artifactHelper: ArtifactHelper
     private lateinit var manifestVersionRanges: SupportedManifestVersionRange
-    private lateinit var mockManifestManager: ManifestManager
-    private lateinit var contents: List<ManifestManager.TargetContent>
+    private lateinit var contents: List<TargetContent>
     private lateinit var mockProject: Project
 
     @BeforeEach
     fun setUp() {
         artifactHelper = ArtifactHelper(tempDir, 3)
-        mockManifestManager = mock()
         contents = listOf(
-            ManifestManager.TargetContent(
+            TargetContent(
                 filename = "server.zip",
                 hashes = listOf("sha384:1234")
             )
@@ -57,7 +53,7 @@ class ArtifactHelperTest {
         val version2Dir = tempDir.resolve("2.0.0").apply { toFile().mkdirs() }
 
         val delistedVersions = listOf(
-            ManifestManager.Version(serverVersion = "1.0.0")
+            Version(serverVersion = "1.0.0")
         )
 
         artifactHelper.removeDelistedVersions(delistedVersions)
@@ -125,10 +121,10 @@ class ArtifactHelperTest {
         serverZipPath.toFile().createNewFile()
 
         val versions = listOf(
-            ManifestManager.Version(serverVersion = "1.0.0")
+            Version(serverVersion = "1.0.0")
         )
 
-        val target = ManifestManager.VersionTarget(contents = contents)
+        val target = VersionTarget(contents = contents)
 
         mockkStatic("software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.LspUtilsKt")
         every { generateSHA384Hash(any()) } returns "1234"
@@ -149,10 +145,10 @@ class ArtifactHelperTest {
         serverZipPath.toFile().createNewFile()
 
         val versions = listOf(
-            ManifestManager.Version(serverVersion = "1.0.0")
+            Version(serverVersion = "1.0.0")
         )
 
-        val target = ManifestManager.VersionTarget(contents = contents)
+        val target = VersionTarget(contents = contents)
 
         mockkStatic("software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.LspUtilsKt")
         every { generateSHA384Hash(any()) } returns "1235"
@@ -165,14 +161,14 @@ class ArtifactHelperTest {
 
     @Test
     fun `getExistingLspArtifacts should return false if versions are empty`() {
-        val versions = emptyList<ManifestManager.Version>()
+        val versions = emptyList<Version>()
         assertThat(artifactHelper.getExistingLspArtifacts(versions, null)).isFalse()
     }
 
     @Test
     fun `getExistingLspArtifacts should return false if target does not have contents`() {
         val versions = listOf(
-            ManifestManager.Version(serverVersion = "1.0.0")
+            Version(serverVersion = "1.0.0")
         )
         assertThat(artifactHelper.getExistingLspArtifacts(versions, null)).isFalse()
     }
@@ -180,21 +176,21 @@ class ArtifactHelperTest {
     @Test
     fun `getExistingLspArtifacts should return false if Lsp path does not exist`() {
         val versions = listOf(
-            ManifestManager.Version(serverVersion = "1.0.0")
+            Version(serverVersion = "1.0.0")
         )
         assertThat(artifactHelper.getExistingLspArtifacts(versions, null)).isFalse()
     }
 
     @Test
     fun `tryDownloadLspArtifacts should not download artifacts if target does not have contents`() {
-        val versions = listOf(ManifestManager.Version(serverVersion = "2.0.0"))
+        val versions = listOf(Version(serverVersion = "2.0.0"))
         assertThat(runBlocking { artifactHelper.tryDownloadLspArtifacts(mockProject, versions, null) }).isEqualTo(null)
         assertThat(tempDir.resolve("2.0.0").toFile().exists()).isFalse()
     }
 
     @Test
     fun `tryDownloadLspArtifacts should throw error if failed to download`() {
-        val versions = listOf(ManifestManager.Version(serverVersion = "1.0.0"))
+        val versions = listOf(Version(serverVersion = "1.0.0"))
 
         val spyArtifactHelper = spyk(artifactHelper)
         every { spyArtifactHelper.downloadLspArtifacts(any(), any()) } returns false
@@ -204,8 +200,8 @@ class ArtifactHelperTest {
 
     @Test
     fun `tryDownloadLspArtifacts should throw error after attempts are exhausted`() {
-        val versions = listOf(ManifestManager.Version(serverVersion = "1.0.0"))
-        val target = ManifestManager.VersionTarget(contents = contents)
+        val versions = listOf(Version(serverVersion = "1.0.0"))
+        val target = VersionTarget(contents = contents)
         val spyArtifactHelper = spyk(artifactHelper)
 
         every { spyArtifactHelper.downloadLspArtifacts(any(), any()) } returns true

@@ -114,13 +114,33 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
         highlightCommand: HighlightCommand?,
         activeProfile: QRegionProfile?,
     ): String {
-        val quickActionConfig = generateQuickActionConfig()
         val postMessageToJavaJsCode = receiveMessageQuery.inject("JSON.stringify(message)")
+        val connectorAdapterPath = "http://mynah/js/connectorAdapter.js"
+        generateQuickActionConfig()
         // language=HTML
         val jsScripts = """
+            <script type="text/javascript" src="$connectorAdapterPath"></script>
             <script type="text/javascript" src="$webUri" defer onload="init()"></script>
+            
             <script type="text/javascript">
+            
                 const init = () => {
+                    const hybridChatConnector = connectorAdapter.initiateAdapter(
+                     ${MeetQSettings.getInstance().reinvent2024OnboardingCount < MAX_ONBOARDING_PAGE_COUNT},
+                     ${MeetQSettings.getInstance().disclaimerAcknowledged},
+                     $isFeatureDevAvailable,
+                     $isCodeTransformAvailable,
+                     $isDocAvailable,
+                     $isCodeScanAvailable,
+                     $isCodeTestAvailable,
+                     {
+                            postMessage: message => {
+                                $postMessageToJavaJsCode
+                            }
+                        },
+                    
+                     "${activeProfile?.profileName.orEmpty()}")
+                    const commands = [hybridChatConnector.initialQuickActions[0], hybridChatConnector.initialQuickActions[1]]
                     amazonQChat.createChat(
                         {
                             postMessage: message => {
@@ -129,11 +149,11 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                         }, 
                         {
                         agenticMode: true,
-                        quickActionCommands: $quickActionConfig,
+                        quickActionCommands: commands,
                         disclaimerAcknowledged: ${MeetQSettings.getInstance().disclaimerAcknowledged},
                         pairProgrammingAcknowledged: ${!MeetQSettings.getInstance().amazonQChatPairProgramming}
                         },
-                        null,
+                        hybridChatConnector,
                         {}
                      
                     );

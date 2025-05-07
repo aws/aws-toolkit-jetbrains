@@ -23,10 +23,10 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.calculateIfIamIdentityCenterConnection
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QProfileSwitchIntent
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.CustomizationConstants
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
@@ -90,13 +90,12 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
             QRegionProfileSelectedListener.TOPIC,
             object : QRegionProfileSelectedListener {
                 override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
-                    pluginAwareExecuteOnPooledThread {
-                        CodeWhispererModelConfigurator.getInstance().listCustomizations(project, passive = true)
-                    }
+                    switchCustomization(project, null)
                 }
             }
         )
     }
+
     override fun showConfigDialog(project: Project) {
         runInEdt {
             calculateIfIamIdentityCenterConnection(project) {
@@ -106,49 +105,39 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
         }
     }
 
-    /**
-     * DO NOT directly use this method to fetch customizations, use wrapper [listCustomizations] instead
-     */
-    private fun listAvailableCustomizations(project: Project): List<CodeWhispererCustomization> =
-        QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project)
-            .listAvailableCustomizationsPaginator {}
-            .flatMap { resp ->
-                LOG.debug {
-                    "listAvailableCustomizations: requestId: ${resp.responseMetadata().requestId()}, customizations: ${
-                        resp.customizations().map { it.name() }
-                    }"
-                }
-                resp.customizations().map {
-                    CodeWhispererCustomization(
-                        arn = it.arn(),
-                        name = it.name(),
-                        description = it.description()
-                    )
-                }
+    // DO NOT directly use this method to fetch customizations, use wrapper [CodeWhispererModelConfigurator.listCustomization()] instead
+    private fun listCustomizationsForProfile(project: Project, profile: QRegionProfile): List<CodeWhispererCustomization> =
+        QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project, profile)
+            .listAvailableCustomizationsPaginator { it.profileArn(profile.arn) }.customizations().map { originalCustom ->
+                CodeWhispererCustomization(
+                    arn = originalCustom.arn(),
+                    name = originalCustom.name(),
+                    description = originalCustom.description(),
+                    profile = profile
+                )
             }
 
     @RequiresBackgroundThread
     override fun listCustomizations(project: Project, passive: Boolean): List<CustomizationUiItem>? =
         calculateIfIamIdentityCenterConnection(project) {
-            // 1. invoke API and get result
-            val listAvailableCustomizationsResult = try {
-                listAvailableCustomizations(project)
-            } catch (e: Exception) {
-                val requestId = (e as? CodeWhispererRuntimeException)?.requestId()
-                val logMessage = if (CustomizationConstants.noAccessToCustomizationExceptionPredicate(e)) {
-                    // TODO: not required for non GP users
-                    "ListAvailableCustomizations: connection ${it.id} is not allowlisted, requestId: ${requestId.orEmpty()}"
-                } else {
-                    "ListAvailableCustomizations: failed due to unknown error ${e.message}, requestId: ${requestId.orEmpty()}"
-                }
+            // 1. fetch all profiles, invoke fetch customizations API and get result for each profile and aggregate all the results
+            val profiles = QRegionProfileManager.getInstance().listRegionProfiles(project)
+                ?: error("Attempted to fetch profiles while there does not exist")
 
-                LOG.debug { logMessage }
-                null
+            val customizations = profiles.flatMap { profile ->
+                runCatching {
+                    listCustomizationsForProfile(project, profile)
+                }.onFailure { e ->
+                    val requestId = (e as? CodeWhispererRuntimeException)?.requestId()
+                    val logMessage = "ListAvailableCustomizations: failed due to unknown error ${e.message}, " +
+                        "requestId: ${requestId.orEmpty()}, profileName: ${profile.profileName}"
+                    LOG.debug { logMessage }
+                }.getOrDefault(emptyList())
             }
 
             // 2. get diff
             val previousCustomizationsShapshot = connectionToCustomizationsShownLastTime.getOrElse(it.id) { emptyList() }
-            val diff = listAvailableCustomizationsResult?.filterNot { customization -> previousCustomizationsShapshot.contains(customization.arn) }?.toSet()
+            val diff = customizations.filterNot { customization -> previousCustomizationsShapshot.contains(customization.arn) }.toSet()
 
             // 3 if passive,
             //   (1) update allowlisting
@@ -157,42 +146,45 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
             //   if not passive,
             //   (1) update the customization list snapshot (seen by users last time) if it will be displayed
             if (passive) {
-                connectionIdToIsAllowlisted[it.id] = listAvailableCustomizationsResult != null
-                if (diff?.isNotEmpty() == true && !hasShownNewCustomizationNotification.getAndSet(true)) {
+                connectionIdToIsAllowlisted[it.id] = customizations.isNotEmpty()
+                if (diff.isNotEmpty() && !hasShownNewCustomizationNotification.getAndSet(true)) {
                     notifyNewCustomization(project)
                 }
             } else {
-                listAvailableCustomizationsResult?.let { customizations ->
-                    connectionToCustomizationsShownLastTime[it.id] = customizations.map { customization -> customization.arn }.toMutableList()
-                }
+                connectionToCustomizationsShownLastTime[it.id] = customizations.map { customization -> customization.arn }.toMutableList()
             }
 
             // 4. invalidate selected customization if
             //    (1) the API call failed
             //    (2) the selected customization is not in the resultset of API call
+            //    (3) the existing q region profile associated with the selected customization does not match the currently active profile
             activeCustomization(project)?.let { activeCustom ->
-                if (listAvailableCustomizationsResult == null) {
+                if (customizations.isEmpty()) {
                     invalidateSelectedAndNotify(project)
-                } else if (!listAvailableCustomizationsResult.any { latestCustom -> latestCustom.arn == activeCustom.arn }) {
+                } else if (customizations.none { latestCustom -> latestCustom.arn == activeCustom.arn }) {
                     invalidateSelectedAndNotify(project)
+                } else {
+                    // for backward compatibility, previous schema didn't have profile arn, so backfill profile here if it's null
+                    if (activeCustom.profile == null) {
+                        customizations.find { c -> c.arn == activeCustom.arn }?.profile?.let { p ->
+                            activeCustom.profile = p
+                        }
+                    }
+
+                    if (activeCustom.profile != null && activeCustom.profile != QRegionProfileManager.getInstance().activeProfile(project)) {
+                        invalidateSelectedAndNotify(project)
+                    }
                 }
             }
 
             // 5. transform result to UI items and return
-            val customizationUiItems = if (diff != null) {
-                listAvailableCustomizationsResult.let { customizations ->
-                    val nameToCount = customizations.groupingBy { customization -> customization.name }.eachCount()
-
-                    customizations.map { customization ->
-                        CustomizationUiItem(
-                            customization,
-                            isNew = diff.contains(customization),
-                            shouldPrefixAccountId = (nameToCount[customization.name] ?: 0) > 1
-                        )
-                    }
-                }
-            } else {
-                null
+            val nameToCount = customizations.groupingBy { customization -> customization.name }.eachCount()
+            val customizationUiItems = customizations.map { customization ->
+                CustomizationUiItem(
+                    customization,
+                    isNew = diff.contains(customization),
+                    shouldPrefixAccountId = (nameToCount[customization.name] ?: 0) > 1
+                )
             }
             connectionToCustomizationUiItems[it.id] = customizationUiItems
 
@@ -233,6 +225,18 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
                 }
 
                 LOG.debug { "Switch from customization $oldCus to $newCustomization" }
+
+                // Switch profile if it doesn't match the customization's profile.
+                // Customizations are profile-scoped and must be used under the correct context.
+                newCustomization?.profile?.let { p ->
+                    if (p.arn != QRegionProfileManager.getInstance().activeProfile(project)?.arn) {
+                        QRegionProfileManager.getInstance().switchProfile(
+                            project,
+                            p,
+                            QProfileSwitchIntent.Customization
+                        )
+                    }
+                }
 
                 CodeWhispererCustomizationListener.notifyCustomUiUpdate()
             }

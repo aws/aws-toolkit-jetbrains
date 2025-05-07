@@ -15,7 +15,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.mock
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
-import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererJava
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.DefaultCodeWhispererFileContextProvider
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.FileContextProvider
@@ -34,7 +33,6 @@ class CodeWhispererFileContextProviderTest {
 
     // dependencies
     lateinit var featureConfigService: CodeWhispererFeatureConfigService
-    lateinit var mockProjectContext: ProjectContextController
 
     lateinit var fixture: JavaCodeInsightTestFixture
     lateinit var project: Project
@@ -53,9 +51,6 @@ class CodeWhispererFileContextProviderTest {
                 featureConfigService,
                 disposableRule.disposable
             )
-
-        mockProjectContext = mock()
-        project.replaceService(ProjectContextController::class.java, mockProjectContext, disposableRule.disposable)
     }
 
     @Test

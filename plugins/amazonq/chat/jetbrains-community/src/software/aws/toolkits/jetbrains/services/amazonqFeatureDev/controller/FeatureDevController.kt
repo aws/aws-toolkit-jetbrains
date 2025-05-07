@@ -540,7 +540,8 @@ class FeatureDevController(
     }
 
     private suspend fun handleDevCommandUserSetting(tabId: String, value: Boolean) {
-        CodeWhispererSettings.getInstance().toggleAutoBuildFeature(context.project.basePath, value)
+        val session = getSessionInfo(tabId)
+        CodeWhispererSettings.getInstance().toggleAutoBuildFeature(session.context.workspaceRoot.path, value)
         messenger.sendAnswer(
             tabId = tabId,
             message = message("amazonqFeatureDev.chat_message.setting_updated"),
