@@ -11,11 +11,8 @@ import org.eclipse.lsp4j.ProgressParams
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
-import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
-import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ProgressNotificationUtils.getObject
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthFollowUpClickedParams
@@ -23,6 +20,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthF
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -72,22 +71,19 @@ class ChatCommunicationManager {
         val incomingType = params.authFollowupType
         val connectionManager = ToolkitConnectionManager.getInstance(project)
         try {
+            connectionManager.activeConnectionForFeature(QConnection.getInstance())?.let {
+                reauthConnectionIfNeeded(project, it, isReAuth = true)
+            }
             when (incomingType) {
-                AuthFollowupType.RE_AUTH.value, AuthFollowupType.MISSING_SCOPES.value -> {
-                    connectionManager.activeConnectionForFeature(QConnection.getInstance())?.let {
-                        reauthConnectionIfNeeded(project, it, isReAuth = true)
-                    }
+                AuthFollowupType.USE_SUPPORTED_AUTH.value -> {
+                    project.messageBus.syncPublisher(QRegionProfileSelectedListener.TOPIC)
+                        .onProfileSelected(project, QRegionProfileManager.getInstance().activeProfile(project))
                     return
                 }
-                AuthFollowupType.FULL_AUTH.value, AuthFollowupType.USE_SUPPORTED_AUTH.value -> {
-                    // Logout by deleting token credentials
-                    val validConnection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.Q)
-                    val connection = validConnection.activeConnectionBearer
-                    if (connection != null) {
-                        logoutFromSsoConnection(project, connection)
-                    } else {
-                        LOG.warn { "No valid connection found for logout" }
-                    }
+                AuthFollowupType.RE_AUTH.value,
+                AuthFollowupType.MISSING_SCOPES.value,
+                AuthFollowupType.FULL_AUTH.value,
+                -> {
                     return
                 }
                 else -> {
