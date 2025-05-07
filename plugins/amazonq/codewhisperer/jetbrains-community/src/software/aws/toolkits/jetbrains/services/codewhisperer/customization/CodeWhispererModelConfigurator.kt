@@ -90,9 +90,7 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
             QRegionProfileSelectedListener.TOPIC,
             object : QRegionProfileSelectedListener {
                 override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
-                    pluginAwareExecuteOnPooledThread {
-                        CodeWhispererModelConfigurator.getInstance().listCustomizations(project, passive = true)
-                    }
+                    switchCustomization(project, null)
                 }
             }
         )
