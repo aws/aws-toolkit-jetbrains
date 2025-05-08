@@ -283,13 +283,13 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                     // Create a temporary virtual file for syntax highlighting
                     val fileExtension = fileName.substringAfterLast('.', "")
                     tempPath = Files.createTempFile(null, ".$fileExtension")
-                    val file = tempPath.toFile()
-                    file.setReadOnly()
-                    val virtualFile = file.toVirtualFile()
+                    val virtualFile = tempPath.toFile()
+                        .also { it.setReadOnly() }
+                        .toVirtualFile()
 
                     val originalContent = params.originalFileContent ?: run {
-                        val file = File(params.originalFileUri)
-                        if (file.exists()) file.readText() else ""
+                        val sourceFile = File(params.originalFileUri)
+                        if (sourceFile.exists()) sourceFile.readText() else ""
                     }
 
                     val contentFactory = DiffContentFactory.getInstance()
