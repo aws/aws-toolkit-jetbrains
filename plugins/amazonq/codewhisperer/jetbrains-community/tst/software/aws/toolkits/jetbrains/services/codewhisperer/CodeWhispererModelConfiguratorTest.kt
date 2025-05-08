@@ -615,7 +615,7 @@ class CodeWhispererModelConfiguratorTest {
     }
 
     @Test
-    fun `should switch to default customization on profile changed`() {
+    fun `profile switch should keep using existing customization if new list still contains that arn`() {
         val ssoConn = spy(LegacyManagedBearerSsoConnection(region = "us-east-1", startUrl = "url 1", scopes = Q_SCOPES))
         ToolkitConnectionManager.getInstance(projectRule.project).switchConnection(ssoConn)
         val oldCustomization = CodeWhispererCustomization("oldArn", "oldName", "oldDescription")
@@ -632,7 +632,7 @@ class CodeWhispererModelConfiguratorTest {
             .syncPublisher(QRegionProfileSelectedListener.TOPIC)
             .onProfileSelected(projectRule.project, null)
 
-        assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(null)
+        assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(oldCustomization)
     }
 
     @Test
