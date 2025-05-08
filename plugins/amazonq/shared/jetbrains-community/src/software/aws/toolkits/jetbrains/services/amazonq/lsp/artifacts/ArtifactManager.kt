@@ -71,13 +71,15 @@ class ArtifactManager @NonInjectable internal constructor(private val manifestFe
                         throw LspException("Language server versions not found in manifest.", LspException.ErrorCode.NO_COMPATIBLE_LSP_VERSION)
                     }
 
+                    val targetVersion = lspVersions.inRangeVersions.first()
+
                     // If there is an LSP Manifest with the same version
-                    val target = getTargetFromLspManifest(lspVersions.inRangeVersions)
+                    val target = getTargetFromLspManifest(targetVersion)
                     // Get Local LSP files and check if we can re-use existing LSP Artifacts
-                    val artifactPath: Path = if (artifactHelper.getExistingLspArtifacts(lspVersions.inRangeVersions, target)) {
+                    val artifactPath: Path = if (artifactHelper.getExistingLspArtifacts(targetVersion, target)) {
                         artifactHelper.getAllLocalLspArtifactsWithinManifestRange(DEFAULT_VERSION_RANGE).first().first
                     } else {
-                        artifactHelper.tryDownloadLspArtifacts(project, lspVersions.inRangeVersions, target)
+                        artifactHelper.tryDownloadLspArtifacts(project, targetVersion, target)
                             ?: throw LspException("Failed to download LSP artifacts", LspException.ErrorCode.DOWNLOAD_FAILED)
                     }
                     artifactHelper.deleteOlderLspArtifacts(DEFAULT_VERSION_RANGE)
@@ -111,18 +113,18 @@ class ArtifactManager @NonInjectable internal constructor(private val manifestFe
         )
     }
 
-    private fun getTargetFromLspManifest(versions: List<Version>): VersionTarget {
+    private fun getTargetFromLspManifest(targetVersion: Version): VersionTarget {
         val currentOS = getCurrentOS()
         val currentArchitecture = getCurrentArchitecture()
 
-        val currentTarget = versions.first().targets?.find { target ->
+        val currentTarget = targetVersion.targets?.find { target ->
             target.platform == currentOS && target.arch == currentArchitecture
         }
         if (currentTarget == null) {
             logger.error { "Failed to obtain target for $currentOS and $currentArchitecture" }
-            throw LspException("Target not found in the current Version: ${versions.first().serverVersion}", LspException.ErrorCode.TARGET_NOT_FOUND)
+            throw LspException("Target not found in the current Version: ${targetVersion.serverVersion}", LspException.ErrorCode.TARGET_NOT_FOUND)
         }
-        logger.info { "Target found in the current Version: ${versions.first().serverVersion}" }
+        logger.info { "Target found in the current Version: ${targetVersion.serverVersion}" }
         return currentTarget
     }
 }

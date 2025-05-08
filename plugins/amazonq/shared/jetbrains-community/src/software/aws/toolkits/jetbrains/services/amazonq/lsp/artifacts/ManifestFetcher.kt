@@ -155,6 +155,8 @@ data class Version(
     val isDelisted: Boolean? = null,
     @JsonProperty("targets")
     val targets: List<VersionTarget>? = emptyList(),
+    @JsonProperty("thirdPartyLicenses")
+    val thirdPartyLicenses: String? = null,
 )
 
 data class Manifest(
