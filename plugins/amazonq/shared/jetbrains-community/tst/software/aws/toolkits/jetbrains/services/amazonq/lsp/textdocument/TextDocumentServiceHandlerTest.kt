@@ -12,6 +12,8 @@ import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.openapi.vfs.writeText
 import com.intellij.testFramework.DisposableRule
+import com.intellij.testFramework.fixtures.CodeInsightTestFixture
+import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.replaceService
 import io.mockk.every
 import io.mockk.mockk
@@ -48,7 +50,18 @@ class TextDocumentServiceHandlerTest {
     private lateinit var sut: TextDocumentServiceHandler
 
     @get:Rule
-    val projectRule = CodeInsightTestFixtureRule()
+    val projectRule = object : CodeInsightTestFixtureRule() {
+        override fun createTestFixture(): CodeInsightTestFixture {
+            val fixtureFactory = IdeaTestFixtureFactory.getFixtureFactory()
+            val fixtureBuilder = fixtureFactory.createLightFixtureBuilder(testDescription, testName)
+            val newFixture = fixtureFactory
+                .createCodeInsightFixture(fixtureBuilder.fixture, fixtureFactory.createTempDirTestFixture())
+            newFixture.setUp()
+            newFixture.testDataPath = testDataPath
+
+            return newFixture
+        }
+    }
 
     @get:Rule
     val disposableRule = DisposableRule()
