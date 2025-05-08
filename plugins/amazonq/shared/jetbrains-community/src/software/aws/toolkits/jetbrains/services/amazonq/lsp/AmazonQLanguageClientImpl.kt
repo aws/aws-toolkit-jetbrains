@@ -33,7 +33,9 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatUpdateParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
@@ -339,6 +341,19 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             },
             ApplicationManager.getApplication()::invokeLater
         )
+
+    override fun sendContextCommands(params: LSPAny): CompletableFuture<Unit> {
+        val showContextCommands = """
+            {
+            "command":"$CHAT_SEND_CONTEXT_COMMANDS",
+            "params": ${Gson().toJson(params)}
+            }
+        """.trimIndent()
+
+        AsyncChatUiListener.notifyPartialMessageUpdate(showContextCommands)
+
+        return CompletableFuture.completedFuture(Unit)
+    }
 
     companion object {
         private val LOG = getLogger<AmazonQLanguageClientImpl>()

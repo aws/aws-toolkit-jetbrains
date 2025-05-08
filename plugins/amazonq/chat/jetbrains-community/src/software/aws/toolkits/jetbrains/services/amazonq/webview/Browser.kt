@@ -69,12 +69,6 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
             .executeJavaScript("window.postMessage($message)", jcefBrowser.cefBrowser.url, 0)
     }
 
-    // TODO: Remove this once chat has been integrated with agents
-    fun post(message: String) =
-        jcefBrowser
-            .cefBrowser
-            .executeJavaScript("window.postMessage(JSON.stringify($message))", jcefBrowser.cefBrowser.url, 0)
-
     // Load the chat web app into the jcefBrowser
     private fun loadWebView(
         isCodeTransformAvailable: Boolean,
@@ -118,10 +112,11 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
         val postMessageToJavaJsCode = receiveMessageQuery.inject("JSON.stringify(message)")
         val connectorAdapterPath = "http://mynah/js/connectorAdapter.js"
         generateQuickActionConfig()
+        // https://github.com/highlightjs/highlight.js/issues/1387
         // language=HTML
         val jsScripts = """
-            <script type="text/javascript" src="$connectorAdapterPath"></script>
-            <script type="text/javascript" src="$webUri" defer onload="init()"></script>
+            <script type="text/javascript" charset="UTF-8" src="$connectorAdapterPath"></script>
+            <script type="text/javascript" charset="UTF-8" src="$webUri" defer onload="init()"></script>
             
             <script type="text/javascript">
             
@@ -155,8 +150,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                         pairProgrammingAcknowledged: ${!MeetQSettings.getInstance().amazonQChatPairProgramming}
                         },
                         hybridChatConnector,
-                        ${CodeWhispererFeatureConfigService.getInstance().getFeatureConfigJsonString()}
-                     
+                        ${CodeWhispererFeatureConfigService.getInstance().getFeatureConfigJsonString()}                     
                     );
                 }
             </script>        
