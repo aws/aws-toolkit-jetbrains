@@ -378,7 +378,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         }
 
         // invokeOnCompletion results in weird lock/timeout error
-        initializeResult.asCompletableFuture().handleAsync { r, ex ->
+        initializeResult.asCompletableFuture().handleAsync { lspInitResult, ex ->
             if (ex != null) {
                 return@handleAsync
             }
@@ -386,7 +386,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             this@AmazonQServerInstance.apply {
                 DefaultAuthCredentialsService(project, encryptionManager, this)
                 TextDocumentServiceHandler(project, this)
-                WorkspaceServiceHandler(project, this)
+                WorkspaceServiceHandler(project, lspInitResult, this)
                 DefaultModuleDependenciesService(project, this)
             }
         }

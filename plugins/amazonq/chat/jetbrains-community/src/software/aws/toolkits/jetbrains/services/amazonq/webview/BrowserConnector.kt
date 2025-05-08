@@ -8,6 +8,7 @@ import com.google.gson.Gson
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.ui.jcef.JBCefJSQuery.Response
@@ -22,8 +23,7 @@ import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
-import org.eclipse.lsp4j.Position
-import org.eclipse.lsp4j.Range
+import org.eclipse.lsp4j.TextDocumentIdentifier
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -35,7 +35,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryp
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AUTH_FOLLOW_UP_CLICKED
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthFollowUpClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickNotification
@@ -72,7 +71,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyC
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyCodeToClipboardParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CreatePromptNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CreatePromptParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorState
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FeedbackNotification
@@ -108,6 +106,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBa
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventRequest
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
 import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.AmazonQTheme
@@ -237,19 +237,9 @@ class BrowserConnector(
                     requestFromUi.params.prompt.escapedPrompt,
                     node.command
                 )
-                val textDocumentIdentifier = getTextDocumentIdentifier(project)
-                val cursorState = CursorState(
-                    Range(
-                        Position(
-                            0,
-                            0
-                        ),
-                        Position(
-                            1,
-                            1
-                        )
-                    )
-                )
+                val editor = FileEditorManager.getInstance(project).selectedTextEditor
+                val textDocumentIdentifier = editor?.let { TextDocumentIdentifier(toUriString(it.virtualFile)) }
+                val cursorState = editor?.let { LspEditorUtil.getCursorState(it) }
 
                 val chatParams = ChatParams(
                     requestFromUi.params.tabId,

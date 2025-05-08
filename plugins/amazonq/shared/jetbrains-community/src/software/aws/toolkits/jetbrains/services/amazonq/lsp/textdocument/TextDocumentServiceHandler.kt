@@ -27,7 +27,7 @@ import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.TextDocumentItem
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil.toUriString
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class TextDocumentServiceHandler(
