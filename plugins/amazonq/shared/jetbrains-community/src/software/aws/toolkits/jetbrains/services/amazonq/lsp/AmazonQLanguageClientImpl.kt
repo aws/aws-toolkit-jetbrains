@@ -33,6 +33,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatU
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatUpdateParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
@@ -312,7 +313,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     override fun sendContextCommands(params: LSPAny): CompletableFuture<Unit> {
         val showContextCommands = """
             {
-            "command":"aws/chat/sendContextCommands",
+            "command":"$CHAT_SEND_CONTEXT_COMMANDS",
             "params": ${Gson().toJson(params)}
             }
         """.trimIndent()
