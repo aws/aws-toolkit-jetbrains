@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.google.gson.Gson
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.util.RunOnceUtil
+import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.ui.jcef.JBCefJSQuery.Response
 import kotlinx.coroutines.CompletableDeferred
@@ -34,6 +36,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerC
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AUTH_FOLLOW_UP_CLICKED
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthFollowUpClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickResult
@@ -86,6 +90,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Inser
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ListConversationsRequest
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_SETTINGS
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_WORKSPACE_SETTINGS_KEY
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenSettingsNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResponse
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PROMPT_INPUT_OPTIONS_CHANGE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeNotification
@@ -105,6 +112,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.util.command
 import software.aws.toolkits.jetbrains.services.amazonq.util.tabType
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.AmazonQTheme
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.ThemeBrowserAdapter
+import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.MetricResult
@@ -409,6 +417,13 @@ class BrowserConnector(
                     }
                 }
             }
+            AUTH_FOLLOW_UP_CLICKED -> {
+                val message = serializer.deserializeChatMessages<AuthFollowUpClickNotification>(node)
+                chatCommunicationManager.handleAuthFollowUpClicked(
+                    project,
+                    message.params
+                )
+            }
             CHAT_COPY_CODE_TO_CLIPBOARD -> {
                 handleChatNotification<CopyCodeToClipboardNotification, CopyCodeToClipboardParams>(node) { server, params ->
                     server.copyCodeToClipboard(params)
@@ -477,6 +492,13 @@ class BrowserConnector(
                     isPartialResult = false
                 )
                 browser.postChat(uiMessage)
+            }
+            OPEN_SETTINGS -> {
+                val openSettingsNotification = serializer.deserializeChatMessages<OpenSettingsNotification>(node)
+                if (openSettingsNotification.params.settingKey != OPEN_WORKSPACE_SETTINGS_KEY) return
+                runInEdt {
+                    ShowSettingsUtil.getInstance().showSettingsDialog(browser.project, CodeWhispererConfigurable::class.java)
+                }
             }
         }
     }

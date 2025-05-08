@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
+import com.fasterxml.jackson.annotation.JsonProperty
+
 data class ChatMessage(
     val type: MessageType? = MessageType.ANSWER,
     val header: MessageHeader? = null,
@@ -68,19 +70,33 @@ data class Changes(
 )
 
 enum class IconType {
+    @JsonProperty("file")
     FILE,
+
+    @JsonProperty("folder")
     FOLDER,
+
+    @JsonProperty("code-block")
     CODE_BLOCK,
+
+    @JsonProperty("list-add")
     LIST_ADD,
+
+    @JsonProperty("magic")
     MAGIC,
+
+    @JsonProperty("help")
     HELP,
+
+    @JsonProperty("trash")
     TRASH,
+
+    @JsonProperty("search")
     SEARCH,
+
+    @JsonProperty("calendar")
     CALENDAR,
     ;
-
-    val value: String
-        get() = name.lowercase().replace('_', '-')
 
     companion object {
         private val stringToEnum: Map<String, IconType> = entries.associateBy { it.name.lowercase() }
@@ -90,38 +106,55 @@ enum class IconType {
 }
 
 enum class Status {
+    @JsonProperty("info")
     INFO,
-    SUCCESS,
-    WARNING,
-    ERROR,
-    ;
 
-    val value: String
-        get() = name.lowercase()
+    @JsonProperty("success")
+    SUCCESS,
+
+    @JsonProperty("warning")
+    WARNING,
+
+    @JsonProperty("error")
+    ERROR,
 }
 
 enum class ButtonStatus {
+    @JsonProperty("main")
     MAIN,
-    PRIMARY,
-    CLEAR,
-    INFO,
-    SUCCESS,
-    WARNING,
-    ERROR,
-    ;
 
-    val value: String
-        get() = name.lowercase()
+    @JsonProperty("primary")
+    PRIMARY,
+
+    @JsonProperty("clear")
+    CLEAR,
+
+    @JsonProperty("info")
+    INFO,
+
+    @JsonProperty("success")
+    SUCCESS,
+
+    @JsonProperty("warning")
+    WARNING,
+
+    @JsonProperty("error")
+    ERROR,
 }
 
 enum class MessageType {
+    @JsonProperty("answer")
     ANSWER,
-    PROMPT,
-    SYSTEM_PROMPT,
-    DIRECTIVE,
-    TOOL,
-    ;
 
-    val value: String
-        get() = name.lowercase().replace('_', '-')
+    @JsonProperty("prompt")
+    PROMPT,
+
+    @JsonProperty("system-prompt")
+    SYSTEM_PROMPT,
+
+    @JsonProperty("directive")
+    DIRECTIVE,
+
+    @JsonProperty("tool")
+    TOOL,
 }

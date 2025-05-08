@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
+const val AUTH_FOLLOW_UP_CLICKED = "authFollowUpClicked"
 const val CHAT_BUTTON_CLICK = "aws/chat/buttonClick"
 const val CHAT_CONVERSATION_CLICK = "aws/chat/conversationClick"
 const val CHAT_COPY_CODE_TO_CLIPBOARD = "copyToClipboard"
@@ -33,6 +34,7 @@ const val CHAT_TAB_REMOVE = "aws/chat/tabRemove"
 const val GET_SERIALIZED_CHAT_REQUEST_METHOD = "aws/chat/getSerializedChat"
 
 const val OPEN_FILE_DIFF = "aws/openFileDiff"
+const val OPEN_SETTINGS = "openSettings"
 
 const val PROMPT_INPUT_OPTIONS_CHANGE = "aws/chat/promptInputOptionChange"
 

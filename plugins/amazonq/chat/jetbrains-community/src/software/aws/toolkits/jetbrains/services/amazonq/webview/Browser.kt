@@ -1,6 +1,5 @@
 // Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-
 @file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.amazonq.webview
 
@@ -11,6 +10,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
@@ -74,12 +74,6 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
             .executeJavaScript("window.postMessage($message)", jcefBrowser.cefBrowser.url, 0)
     }
 
-    // TODO: Remove this once chat has been integrated with agents
-    fun post(message: String) =
-        jcefBrowser
-            .cefBrowser
-            .executeJavaScript("window.postMessage(JSON.stringify($message))", jcefBrowser.cefBrowser.url, 0)
-
     // Load the chat web app into the jcefBrowser
     private fun loadWebView(
         isCodeTransformAvailable: Boolean,
@@ -123,10 +117,11 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
         val postMessageToJavaJsCode = receiveMessageQuery.inject("JSON.stringify(message)")
         val connectorAdapterPath = "http://mynah/js/connectorAdapter.js"
         generateQuickActionConfig()
+        // https://github.com/highlightjs/highlight.js/issues/1387
         // language=HTML
         val jsScripts = """
-            <script type="text/javascript" src="$connectorAdapterPath"></script>
-            <script type="text/javascript" src="$webUri" defer onload="init()"></script>
+            <script type="text/javascript" charset="UTF-8" src="$connectorAdapterPath"></script>
+            <script type="text/javascript" charset="UTF-8" src="$webUri" defer onload="init()"></script>
             
             <script type="text/javascript">
             
@@ -160,8 +155,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                         pairProgrammingAcknowledged: ${!MeetQSettings.getInstance().amazonQChatPairProgramming}
                         },
                         hybridChatConnector,
-                        {}
-                     
+                        ${CodeWhispererFeatureConfigService.getInstance().getFeatureConfigJsonString()}                     
                     );
                 }
             </script>        

@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
+import com.intellij.diff.DiffManagerEx
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
@@ -12,6 +13,7 @@ import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFileManager
 import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
 import org.eclipse.lsp4j.ConfigurationParams
@@ -51,6 +53,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.customization.Code
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.resources.message
 import java.io.File
+import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
@@ -269,28 +272,46 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         return CompletableFuture.completedFuture(Unit)
     }
 
+    private fun File.toVirtualFile() = LocalFileSystem.getInstance().findFileByIoFile(this)
+
     override fun openFileDiff(params: OpenFileDiffParams): CompletableFuture<Unit> =
         CompletableFuture.supplyAsync(
             {
+                var tempPath: java.nio.file.Path? = null
                 try {
-                    val contentFactory = DiffContentFactory.getInstance()
                     val fileName = Paths.get(params.originalFileUri).fileName.toString()
+                    // Create a temporary virtual file for syntax highlighting
+                    val fileExtension = fileName.substringAfterLast('.', "")
+                    tempPath = Files.createTempFile(null, ".$fileExtension")
+                    val virtualFile = tempPath.toFile()
+                        .also { it.setReadOnly() }
+                        .toVirtualFile()
 
                     val originalContent = params.originalFileContent ?: run {
-                        val file = File(params.originalFileUri)
-                        if (file.exists()) file.readText() else ""
+                        val sourceFile = File(params.originalFileUri)
+                        if (sourceFile.exists()) sourceFile.readText() else ""
                     }
+
+                    val contentFactory = DiffContentFactory.getInstance()
+                    var isNewFile = false
                     val (leftContent, rightContent) = when {
                         params.isDeleted -> {
-                            // For deleted files, show original on left, empty on right
-                            contentFactory.create(originalContent) to
+                            contentFactory.create(project, originalContent, virtualFile) to
                                 contentFactory.createEmpty()
                         }
                         else -> {
-                            // For new or modified files
                             val newContent = params.fileContent.orEmpty()
-                            contentFactory.create(originalContent) to
-                                contentFactory.create(newContent)
+                            isNewFile = newContent == originalContent
+                            when {
+                                isNewFile -> {
+                                    contentFactory.createEmpty() to
+                                        contentFactory.create(project, newContent, virtualFile)
+                                }
+                                else -> {
+                                    contentFactory.create(project, originalContent, virtualFile) to
+                                        contentFactory.create(project, newContent, virtualFile)
+                                }
+                            }
                         }
                     }
                     val diffRequest = SimpleDiffRequest(
@@ -298,11 +319,22 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                         leftContent,
                         rightContent,
                         "Original",
-                        if (params.isDeleted) "Deleted" else "Modified"
+                        when {
+                            params.isDeleted -> "Deleted"
+                            isNewFile -> "Created"
+                            else -> "Modified"
+                        }
                     )
-                    DiffManager.getInstance().showDiff(project, diffRequest)
+                    (DiffManager.getInstance() as DiffManagerEx).showDiffBuiltin(project, diffRequest)
                 } catch (e: Exception) {
                     LOG.warn { "Failed to open file diff: ${e.message}" }
+                } finally {
+                    // Clean up the temporary file
+                    try {
+                        tempPath?.let { Files.deleteIfExists(it) }
+                    } catch (e: Exception) {
+                        LOG.warn { "Failed to delete temporary file: ${e.message}" }
+                    }
                 }
             },
             ApplicationManager.getApplication()::invokeLater
