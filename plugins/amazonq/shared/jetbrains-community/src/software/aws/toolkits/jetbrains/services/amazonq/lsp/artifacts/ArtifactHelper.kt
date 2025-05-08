@@ -17,19 +17,22 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.saveFileFromUrl
-import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 import software.aws.toolkits.resources.AwsCoreBundle
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicInteger
 
-class ArtifactHelper internal constructor(
-    private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
-    private val maxDownloadAttempts: Int = MAX_DOWNLOAD_ATTEMPTS,
-) {
+class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH, private val maxDownloadAttempts: Int = MAX_DOWNLOAD_ATTEMPTS) {
+
+    companion object {
+        private val DEFAULT_ARTIFACT_PATH = getToolkitsCommonCacheRoot().resolve(Paths.get("aws", "toolkits", "language-servers", "AmazonQ-JetBrains-temp"))
+        private val logger = getLogger<ArtifactHelper>()
+        private const val MAX_DOWNLOAD_ATTEMPTS = 3
+    }
     private val currentAttempt = AtomicInteger(0)
 
-    fun removeDelistedVersions(delistedVersions: List<ManifestManager.Version>) {
+    fun removeDelistedVersions(delistedVersions: List<Version>) {
         val localFolders = getSubFolders(lspArtifactsPath)
 
         delistedVersions.forEach { delistedVersion ->
@@ -78,10 +81,10 @@ class ArtifactHelper internal constructor(
             .sortedByDescending { (_, semVer) -> semVer }
     }
 
-    fun getExistingLspArtifacts(versions: List<ManifestManager.Version>, target: ManifestManager.VersionTarget?): Boolean {
-        if (versions.isEmpty() || target?.contents == null) return false
+    fun getExistingLspArtifacts(targetVersion: Version, target: VersionTarget): Boolean {
+        if (target.contents == null) return false
 
-        val localLSPPath = lspArtifactsPath.resolve(versions.first().serverVersion.toString())
+        val localLSPPath = lspArtifactsPath.resolve(targetVersion.serverVersion.toString())
         if (!localLSPPath.exists()) return false
 
         val hasInvalidFiles = target.contents.any { content ->
@@ -102,9 +105,9 @@ class ArtifactHelper internal constructor(
         return !hasInvalidFiles
     }
 
-    suspend fun tryDownloadLspArtifacts(project: Project, versions: List<ManifestManager.Version>, target: ManifestManager.VersionTarget?): Path? {
+    suspend fun tryDownloadLspArtifacts(project: Project, targetVersion: Version, target: VersionTarget): Path? {
         val temporaryDownloadPath = Files.createTempDirectory("lsp-dl")
-        val downloadPath = lspArtifactsPath.resolve(versions.first().serverVersion.toString())
+        val downloadPath = lspArtifactsPath.resolve(targetVersion.serverVersion.toString())
 
         while (currentAttempt.get() < maxDownloadAttempts) {
             currentAttempt.incrementAndGet()
@@ -116,12 +119,18 @@ class ArtifactHelper internal constructor(
                     AwsCoreBundle.message("amazonqFeatureDev.placeholder.downloading_and_extracting_lsp_artifacts"),
                     cancellable = true
                 ) {
-                    if (downloadLspArtifacts(temporaryDownloadPath, target) && target != null && !target.contents.isNullOrEmpty()) {
+                    if (downloadLspArtifacts(temporaryDownloadPath, target) && !target.contents.isNullOrEmpty()) {
                         moveFilesFromSourceToDestination(temporaryDownloadPath, downloadPath)
                         target.contents
                             .mapNotNull { it.filename }
                             .forEach { filename -> extractZipFile(downloadPath.resolve(filename), downloadPath) }
                         logger.info { "Successfully downloaded and moved LSP artifacts to $downloadPath" }
+
+                        val thirdPartyLicenses = targetVersion.thirdPartyLicenses
+                        logger.info {
+                            "Installing Amazon Q Language Server v${targetVersion.serverVersion} to: $downloadPath. " +
+                                if (thirdPartyLicenses == null) "" else "Attribution notice can be found at $thirdPartyLicenses"
+                        }
 
                         return@withBackgroundProgress downloadPath
                     }
@@ -145,7 +154,7 @@ class ArtifactHelper internal constructor(
     }
 
     @VisibleForTesting
-    internal fun downloadLspArtifacts(downloadPath: Path, target: ManifestManager.VersionTarget?): Boolean {
+    internal fun downloadLspArtifacts(downloadPath: Path, target: VersionTarget?): Boolean {
         if (target == null || target.contents.isNullOrEmpty()) {
             logger.warn { "No target contents available for download" }
             return false
@@ -199,7 +208,7 @@ class ArtifactHelper internal constructor(
         return "sha384:$contentHash" == expectedHash
     }
 
-    private fun validateDownloadedFiles(downloadPath: Path, contents: List<ManifestManager.TargetContent>) {
+    private fun validateDownloadedFiles(downloadPath: Path, contents: List<TargetContent>) {
         val missingFiles = contents
             .mapNotNull { it.filename }
             .filter { filename ->
@@ -210,11 +219,5 @@ class ArtifactHelper internal constructor(
             logger.error { errorMessage }
             throw LspException(errorMessage, LspException.ErrorCode.DOWNLOAD_FAILED)
         }
-    }
-
-    companion object {
-        private val DEFAULT_ARTIFACT_PATH = getToolkitsCommonCacheRoot().resolve("aws").resolve("toolkits").resolve("language-servers")
-        private val logger = getLogger<ArtifactHelper>()
-        private const val MAX_DOWNLOAD_ATTEMPTS = 3
     }
 }

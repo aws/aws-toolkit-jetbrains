@@ -16,7 +16,6 @@ import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
-import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 import java.nio.file.Path
 
 @Service
@@ -35,13 +34,13 @@ class ArtifactManager @NonInjectable internal constructor(private val manifestFe
         val endVersion: SemVer,
     )
     data class LSPVersions(
-        val deListedVersions: List<ManifestManager.Version>,
-        val inRangeVersions: List<ManifestManager.Version>,
+        val deListedVersions: List<Version>,
+        val inRangeVersions: List<Version>,
     )
 
     companion object {
         private val DEFAULT_VERSION_RANGE = SupportedManifestVersionRange(
-            startVersion = SemVer("0.0.0", 0, 0, 0),
+            startVersion = SemVer("1.0.0", 1, 0, 0),
             endVersion = SemVer("2.0.0", 2, 0, 0)
         )
         private val logger = getLogger<ArtifactManager>()
@@ -72,13 +71,15 @@ class ArtifactManager @NonInjectable internal constructor(private val manifestFe
                         throw LspException("Language server versions not found in manifest.", LspException.ErrorCode.NO_COMPATIBLE_LSP_VERSION)
                     }
 
+                    val targetVersion = lspVersions.inRangeVersions.first()
+
                     // If there is an LSP Manifest with the same version
-                    val target = getTargetFromLspManifest(lspVersions.inRangeVersions)
+                    val target = getTargetFromLspManifest(targetVersion)
                     // Get Local LSP files and check if we can re-use existing LSP Artifacts
-                    val artifactPath: Path = if (artifactHelper.getExistingLspArtifacts(lspVersions.inRangeVersions, target)) {
+                    val artifactPath: Path = if (artifactHelper.getExistingLspArtifacts(targetVersion, target)) {
                         artifactHelper.getAllLocalLspArtifactsWithinManifestRange(DEFAULT_VERSION_RANGE).first().first
                     } else {
-                        artifactHelper.tryDownloadLspArtifacts(project, lspVersions.inRangeVersions, target)
+                        artifactHelper.tryDownloadLspArtifacts(project, targetVersion, target)
                             ?: throw LspException("Failed to download LSP artifacts", LspException.ErrorCode.DOWNLOAD_FAILED)
                     }
                     artifactHelper.deleteOlderLspArtifacts(DEFAULT_VERSION_RANGE)
@@ -91,7 +92,7 @@ class ArtifactManager @NonInjectable internal constructor(private val manifestFe
     }
 
     @VisibleForTesting
-    internal fun getLSPVersionsFromManifestWithSpecifiedRange(manifest: ManifestManager.Manifest): LSPVersions {
+    internal fun getLSPVersionsFromManifestWithSpecifiedRange(manifest: Manifest): LSPVersions {
         if (manifest.versions.isNullOrEmpty()) return LSPVersions(emptyList(), emptyList())
 
         val (deListed, inRange) = manifest.versions.mapNotNull { version ->
@@ -112,18 +113,18 @@ class ArtifactManager @NonInjectable internal constructor(private val manifestFe
         )
     }
 
-    private fun getTargetFromLspManifest(versions: List<ManifestManager.Version>): ManifestManager.VersionTarget {
+    private fun getTargetFromLspManifest(targetVersion: Version): VersionTarget {
         val currentOS = getCurrentOS()
         val currentArchitecture = getCurrentArchitecture()
 
-        val currentTarget = versions.first().targets?.find { target ->
+        val currentTarget = targetVersion.targets?.find { target ->
             target.platform == currentOS && target.arch == currentArchitecture
         }
         if (currentTarget == null) {
             logger.error { "Failed to obtain target for $currentOS and $currentArchitecture" }
-            throw LspException("Target not found in the current Version: ${versions.first().serverVersion}", LspException.ErrorCode.TARGET_NOT_FOUND)
+            throw LspException("Target not found in the current Version: ${targetVersion.serverVersion}", LspException.ErrorCode.TARGET_NOT_FOUND)
         }
-        logger.info { "Target found in the current Version: ${versions.first().serverVersion}" }
+        logger.info { "Target found in the current Version: ${targetVersion.serverVersion}" }
         return currentTarget
     }
 }

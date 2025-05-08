@@ -6,11 +6,15 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.LanguageClient
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatUpdateParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_FILE_DIFF
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenFileDiffParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SHOW_SAVE_FILE_DIALOG_REQUEST_METHOD
@@ -38,4 +42,10 @@ interface AmazonQLanguageClient : LanguageClient {
 
     @JsonNotification(CHAT_SEND_UPDATE)
     fun sendChatUpdate(params: ChatUpdateParams): CompletableFuture<Unit>
+
+    @JsonNotification(OPEN_FILE_DIFF)
+    fun openFileDiff(params: OpenFileDiffParams): CompletableFuture<Unit>
+
+    @JsonNotification(CHAT_SEND_CONTEXT_COMMANDS)
+    fun sendContextCommands(params: LSPAny): CompletableFuture<Unit>
 }

@@ -1,8 +1,10 @@
 // Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+@file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.amazonq
 
+import com.google.gson.Gson
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -15,8 +17,8 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
+import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.utils.isQExpired
-
 @Service
 class CodeWhispererFeatureConfigService {
     private val featureConfigs = mutableMapOf<String, FeatureContext>()
@@ -81,6 +83,17 @@ class CodeWhispererFeatureConfigService {
 
     fun getChatWSContext(): Boolean = getFeatureValueForKey(CHAT_WS_CONTEXT).stringValue() == "TREATMENT"
 
+    // convert into mynahUI parsable string
+    // format: '[["key1", {"name":"Feature1","variation":"A","value":true}]]'
+    fun getFeatureConfigJsonString(): String {
+        val jsonString = featureConfigs.entries.map { (key, value) ->
+            "[\"$key\",${Gson().toJson(value)}]"
+        }
+        return """
+            '$jsonString'
+        """.trimIndent()
+    }
+
     // Get the feature value for the given key.
     // In case of a misconfiguration, it will return a default feature value of Boolean false.
     private fun getFeatureValueForKey(name: String): FeatureValue =
@@ -103,37 +116,49 @@ class CodeWhispererFeatureConfigService {
         }
     }
 
-    fun validateCustomizationOverride(project: Project, customization: FeatureContext) {
-        val customizationArnOverride = customization.value.stringValue()
-        val connection = connection(project) ?: return
-        if (customizationArnOverride != null) {
-            // Double check if server-side wrongly returns a customizationArn to BID users
-            calculateIfBIDConnection(project) {
-                featureConfigs.remove(CUSTOMIZATION_ARN_OVERRIDE_NAME)
-            }
-            val availableCustomizations =
-                calculateIfIamIdentityCenterConnection(project) {
-                    try {
-                        QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project)
-                            .listAvailableCustomizationsPaginator {}
-                            .flatMap { resp ->
-                                resp.customizations().map {
-                                    it.arn()
-                                }
-                            }
-                    } catch (e: Exception) {
-                        LOG.debug(e) { "Failed to list available customizations" }
-                        null
-                    }
-                }
+    fun validateCustomizationOverride(project: Project, featOverrideContext: FeatureContext): CodeWhispererCustomization? {
+        val customizationArnOverride = featOverrideContext.value.stringValue()
+        connection(project) ?: return null
+        customizationArnOverride ?: return null
 
-            // If customizationArn from A/B is not available in listAvailableCustomizations response, don't use this value
-            if (availableCustomizations?.contains(customizationArnOverride) == false) {
-                LOG.debug {
-                    "Customization arn $customizationArnOverride not available in listAvailableCustomizations, not using"
+        // Double check if server-side wrongly returns a customizationArn to BID users
+        calculateIfBIDConnection(project) {
+            featureConfigs.remove(CUSTOMIZATION_ARN_OVERRIDE_NAME)
+        }
+        val availableCustomizations =
+            calculateIfIamIdentityCenterConnection(project) {
+                try {
+                    val profiles = QRegionProfileManager.getInstance().listRegionProfiles(project)
+                        ?: error("Attempted to fetch profiles while there does not exist")
+
+                    val customs = profiles.flatMap { profile ->
+                        QRegionProfileManager.getInstance().getQClient<CodeWhispererRuntimeClient>(project)
+                            .listAvailableCustomizations { it.profileArn(profile.arn) }.customizations().map { originalCustom ->
+                                CodeWhispererCustomization(
+                                    arn = originalCustom.arn(),
+                                    name = originalCustom.name(),
+                                    description = originalCustom.description(),
+                                    profile = profile
+                                )
+                            }
+                    }
+
+                    customs
+                } catch (e: Exception) {
+                    LOG.debug(e) { "encountered error while validating customization override" }
+                    null
                 }
-                featureConfigs.remove(CUSTOMIZATION_ARN_OVERRIDE_NAME)
             }
+
+        val isValidOverride = availableCustomizations != null && availableCustomizations.any { it.arn == customizationArnOverride }
+
+        // If customizationArn from A/B is not available in listAvailableCustomizations response, don't use this value
+        return if (!isValidOverride) {
+            LOG.debug { "Customization arn $customizationArnOverride not available in listAvailableCustomizations, not using" }
+            featureConfigs.remove(CUSTOMIZATION_ARN_OVERRIDE_NAME)
+            null
+        } else {
+            availableCustomizations?.find { it.arn == customizationArnOverride }
         }
     }
 

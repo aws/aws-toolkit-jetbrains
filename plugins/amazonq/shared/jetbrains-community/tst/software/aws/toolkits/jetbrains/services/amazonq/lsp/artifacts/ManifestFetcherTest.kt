@@ -20,7 +20,6 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import software.aws.toolkits.jetbrains.core.getTextFromUrl
-import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -28,14 +27,12 @@ import java.nio.file.Paths
 class ManifestFetcherTest {
 
     private lateinit var manifestFetcher: ManifestFetcher
-    private lateinit var manifest: ManifestManager.Manifest
-    private lateinit var manifestManager: ManifestManager
+    private lateinit var manifest: Manifest
 
     @BeforeEach
     fun setup() {
         manifestFetcher = spy(ManifestFetcher())
-        manifestManager = spy(ManifestManager())
-        manifest = ManifestManager.Manifest()
+        manifest = Manifest()
     }
 
     @Test
@@ -75,7 +72,7 @@ class ManifestFetcherTest {
 
     @Test
     fun `fetchManifestFromRemote should return manifest and update manifest`() {
-        val validManifest = ManifestManager.Manifest(manifestSchemaVersion = "1.0")
+        val validManifest = Manifest(manifestSchemaVersion = "1.0")
         mockkStatic("software.aws.toolkits.jetbrains.core.HttpUtilsKt")
 
         every { getTextFromUrl(any()) } returns "{ \"manifestSchemaVersion\": \"1.0\" }"

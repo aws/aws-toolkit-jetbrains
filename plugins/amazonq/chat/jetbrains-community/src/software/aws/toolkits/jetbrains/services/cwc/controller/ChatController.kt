@@ -42,7 +42,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
-import software.aws.toolkits.jetbrains.services.amazonq.project.ProjectContextController
 import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
 import software.aws.toolkits.jetbrains.services.cwc.InboundAppMessagesHandler
@@ -72,10 +71,8 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.FocusType
 import software.aws.toolkits.jetbrains.services.cwc.messages.FollowUp
 import software.aws.toolkits.jetbrains.services.cwc.messages.IncomingCwcMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.OnboardingPageInteractionMessage
-import software.aws.toolkits.jetbrains.services.cwc.messages.OpenSettingsMessage
 import software.aws.toolkits.jetbrains.services.cwc.messages.QuickActionMessage
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
-import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.telemetry.CwsprChatCommandType
 import java.util.UUID
 
@@ -127,24 +124,11 @@ class ChatController private constructor(
     }
 
     override suspend fun processPromptChatMessage(message: IncomingCwcMessage.ChatPrompt) {
-        var prompt = message.chatMessage
-        var queryResult: List<RelevantDocument> = emptyList()
+        val prompt = message.chatMessage
+        val queryResult: List<RelevantDocument> = emptyList()
         val triggerId = UUID.randomUUID().toString()
-        var shouldAddIndexInProgressMessage: Boolean = false
-        var shouldUseWorkspaceContext: Boolean = false
-
-        if (prompt.contains("@workspace")) {
-            if (CodeWhispererSettings.getInstance().isProjectContextEnabled()) {
-                shouldUseWorkspaceContext = true
-                prompt = prompt.replace("@workspace", "")
-                val projectContextController = ProjectContextController.getInstance(context.project)
-                queryResult = projectContextController.queryChat(prompt, timeout = null)
-                if (!projectContextController.getProjectContextIndexComplete()) shouldAddIndexInProgressMessage = true
-                logger.info { "project context relevant document count: ${queryResult.size}" }
-            } else {
-                sendOpenSettingsMessage(message.tabId)
-            }
-        }
+        val shouldAddIndexInProgressMessage = false
+        val shouldUseWorkspaceContext = false
 
         handleChat(
             tabId = message.tabId,
@@ -463,13 +447,6 @@ class ChatController private constructor(
         val message = QuickActionMessage(
             triggerId = triggerId,
             message = prompt.message,
-        )
-        messagePublisher.publish(message)
-    }
-
-    private suspend fun sendOpenSettingsMessage(tabId: String) {
-        val message = OpenSettingsMessage(
-            tabId = tabId
         )
         messagePublisher.publish(message)
     }

@@ -4,12 +4,17 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
 import com.google.gson.Gson
+import com.intellij.diff.DiffContentFactory
+import com.intellij.diff.DiffManager
+import com.intellij.diff.DiffManagerEx
+import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFileManager
 import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
 import org.eclipse.lsp4j.ConfigurationParams
@@ -28,12 +33,15 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatUpdateParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenFileDiffParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
@@ -42,6 +50,10 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credential
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
+import software.aws.toolkits.resources.message
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -151,7 +163,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             formatMappings[format]?.let { filters.add(it) }
         }
         val defaultUri = params.defaultUri ?: "export-chat.md"
-        val saveAtUri = defaultUri.substring(defaultUri.lastIndexOf("/"))
+        val saveAtUri = defaultUri.substring(defaultUri.lastIndexOf("/") + 1)
         return CompletableFuture.supplyAsync(
             {
                 val descriptor = FileSaverDescriptor("Export", "Choose a location to export").apply {
@@ -258,6 +270,87 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         """.trimIndent()
 
         AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+
+        return CompletableFuture.completedFuture(Unit)
+    }
+
+    private fun File.toVirtualFile() = LocalFileSystem.getInstance().findFileByIoFile(this)
+
+    override fun openFileDiff(params: OpenFileDiffParams): CompletableFuture<Unit> =
+        CompletableFuture.supplyAsync(
+            {
+                var tempPath: java.nio.file.Path? = null
+                try {
+                    val fileName = Paths.get(params.originalFileUri).fileName.toString()
+                    // Create a temporary virtual file for syntax highlighting
+                    val fileExtension = fileName.substringAfterLast('.', "")
+                    tempPath = Files.createTempFile(null, ".$fileExtension")
+                    val virtualFile = tempPath.toFile()
+                        .also { it.setReadOnly() }
+                        .toVirtualFile()
+
+                    val originalContent = params.originalFileContent ?: run {
+                        val sourceFile = File(params.originalFileUri)
+                        if (sourceFile.exists()) sourceFile.readText() else ""
+                    }
+
+                    val contentFactory = DiffContentFactory.getInstance()
+                    var isNewFile = false
+                    val (leftContent, rightContent) = when {
+                        params.isDeleted -> {
+                            contentFactory.create(project, originalContent, virtualFile) to
+                                contentFactory.createEmpty()
+                        }
+                        else -> {
+                            val newContent = params.fileContent.orEmpty()
+                            isNewFile = newContent == originalContent
+                            when {
+                                isNewFile -> {
+                                    contentFactory.createEmpty() to
+                                        contentFactory.create(project, newContent, virtualFile)
+                                }
+                                else -> {
+                                    contentFactory.create(project, originalContent, virtualFile) to
+                                        contentFactory.create(project, newContent, virtualFile)
+                                }
+                            }
+                        }
+                    }
+                    val diffRequest = SimpleDiffRequest(
+                        "$fileName ${message("aws.q.lsp.client.diff_message")}",
+                        leftContent,
+                        rightContent,
+                        "Original",
+                        when {
+                            params.isDeleted -> "Deleted"
+                            isNewFile -> "Created"
+                            else -> "Modified"
+                        }
+                    )
+                    (DiffManager.getInstance() as DiffManagerEx).showDiffBuiltin(project, diffRequest)
+                } catch (e: Exception) {
+                    LOG.warn { "Failed to open file diff: ${e.message}" }
+                } finally {
+                    // Clean up the temporary file
+                    try {
+                        tempPath?.let { Files.deleteIfExists(it) }
+                    } catch (e: Exception) {
+                        LOG.warn { "Failed to delete temporary file: ${e.message}" }
+                    }
+                }
+            },
+            ApplicationManager.getApplication()::invokeLater
+        )
+
+    override fun sendContextCommands(params: LSPAny): CompletableFuture<Unit> {
+        val showContextCommands = """
+            {
+            "command":"$CHAT_SEND_CONTEXT_COMMANDS",
+            "params": ${Gson().toJson(params)}
+            }
+        """.trimIndent()
+
+        AsyncChatUiListener.notifyPartialMessageUpdate(showContextCommands)
 
         return CompletableFuture.completedFuture(Unit)
     }
