@@ -6,5 +6,5 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat
 data class FlareUiMessage(
     val command: String,
     val params: Any,
-    val requestId: String? = null
+    val requestId: String? = null,
 )

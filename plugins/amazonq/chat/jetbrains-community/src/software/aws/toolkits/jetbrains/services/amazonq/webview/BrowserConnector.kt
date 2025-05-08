@@ -326,6 +326,7 @@ class BrowserConnector(
             CHAT_READY -> {
                 handleChatNotification<ChatReadyNotification, Unit>(node) { server, _ ->
                     uiReady.complete(true)
+                    chatCommunicationManager.setUiReady(true)
                     RunOnceUtil.runOnceForApp("AmazonQ-UI-Ready") {
                         MeetQSettings.getInstance().reinvent2024OnboardingCount += 1
                     }
