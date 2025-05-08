@@ -434,7 +434,7 @@ class BrowserConnector(
                             browser.postChat(
                                 FlareUiMessage(
                                     command = CHAT_TAB_BAR_ACTIONS,
-                                    params = actions ?: "{}"
+                                    params = actions ?: emptyMap<Any, Any>()
                                 )
                             )
                         } catch (e: Exception) {
