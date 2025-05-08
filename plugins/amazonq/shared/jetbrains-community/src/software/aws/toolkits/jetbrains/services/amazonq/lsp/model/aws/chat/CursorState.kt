@@ -3,8 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
-import org.eclipse.lsp4j.Range
 import org.eclipse.lsp4j.Position
+import org.eclipse.lsp4j.Range
 
 sealed interface CursorState
 
