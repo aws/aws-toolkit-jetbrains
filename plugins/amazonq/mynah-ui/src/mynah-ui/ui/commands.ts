@@ -62,7 +62,7 @@ type MessageCommand =
     | 'codescan_open_issues'
     | 'generate-test'
     | 'start-test-gen'
-    | 'open-user-guide'
+    | 'open-link'
     | 'send-telemetry'
     | 'doc_stop_generate'
     | 'updatePromptProgress'
