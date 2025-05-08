@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.LanguageClient
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatUpdateParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
@@ -43,4 +44,7 @@ interface AmazonQLanguageClient : LanguageClient {
 
     @JsonNotification(OPEN_FILE_DIFF)
     fun openFileDiff(params: OpenFileDiffParams): CompletableFuture<Unit>
+
+    @JsonNotification("aws/chat/sendContextCommands")
+    fun sendContextCommands(params: LSPAny): CompletableFuture<Unit>
 }

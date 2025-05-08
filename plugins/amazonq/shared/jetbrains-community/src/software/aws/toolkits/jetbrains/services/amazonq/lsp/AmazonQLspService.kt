@@ -282,22 +282,11 @@ private class AmazonQServerInstance(private val project: Project, private val cs
 
         launcher = LSPLauncher.Builder<AmazonQLanguageServer>()
             .wrapMessages { consumer ->
-                MessageConsumer {
-                        message ->
+                MessageConsumer { message ->
                     if (message is ResponseMessage && message.result is AwsExtendedInitializeResult) {
                         val result = message.result as AwsExtendedInitializeResult
                         AwsServerCapabilitiesProvider.getInstance(project).setAwsServerCapabilities(result.getAwsServerCapabilities())
                         AmazonQLspService.getInstance(project).notifyInitializeMessageReceived()
-                    }
-                    if (message is NotificationMessage && message.method == "aws/chat/sendContextCommands") {
-                        val showContextCommands = """
-                {
-                "command":"aws/chat/sendContextCommands",
-                "params": ${Gson().toJson(message.params)}
-                }
-                        """.trimIndent()
-
-                        AsyncChatUiListener.notifyPartialMessageUpdate(showContextCommands)
                     }
                     consumer?.consume(message)
                 }
