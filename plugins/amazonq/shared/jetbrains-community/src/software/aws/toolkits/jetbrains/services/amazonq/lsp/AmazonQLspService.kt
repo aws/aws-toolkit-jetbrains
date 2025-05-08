@@ -3,7 +3,6 @@
 @file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
-import com.google.gson.Gson
 import com.google.gson.ToNumberPolicy
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.impl.ExecutionManagerImpl
@@ -44,7 +43,6 @@ import org.eclipse.lsp4j.WorkspaceClientCapabilities
 import org.eclipse.lsp4j.jsonrpc.Launcher
 import org.eclipse.lsp4j.jsonrpc.Launcher.Builder
 import org.eclipse.lsp4j.jsonrpc.MessageConsumer
-import org.eclipse.lsp4j.jsonrpc.messages.NotificationMessage
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.slf4j.event.Level
@@ -57,7 +55,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.auth.DefaultAuthCred
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.DefaultModuleDependenciesService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AmazonQLspTypeAdapterFactory
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsExtendedInitializeResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.createExtendedClientMetadata
