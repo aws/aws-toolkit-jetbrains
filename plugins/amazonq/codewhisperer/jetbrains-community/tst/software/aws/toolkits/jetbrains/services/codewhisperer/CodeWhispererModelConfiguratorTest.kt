@@ -632,7 +632,7 @@ class CodeWhispererModelConfiguratorTest {
             .syncPublisher(QRegionProfileSelectedListener.TOPIC)
             .onProfileSelected(projectRule.project, null)
 
-        assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(null)
+        assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(oldCustomization)
     }
 
     @Test
