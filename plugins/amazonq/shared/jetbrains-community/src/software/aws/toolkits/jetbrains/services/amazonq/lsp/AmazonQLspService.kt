@@ -20,8 +20,8 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.io.await
+import com.intellij.util.net.HttpConfigurable
 import com.intellij.util.net.JdkProxyProvider
-import com.intellij.util.net.ProxyAuthentication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.TimeoutCancellationException
@@ -58,7 +58,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.createExtended
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument.TextDocumentServiceHandler
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.workspace.WorkspaceServiceHandler
-import software.aws.toolkits.jetbrains.services.amazonq.profile.QEndpoints
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QDefaultServiceConfig
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.jetbrains.settings.LspSettings
 import java.io.IOException
@@ -259,10 +259,10 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         // will cause slow service init, but maybe fine for now. will not block UI since fetch/extract will be under background progress
         val artifact = runBlocking { ArtifactManager(project, manifestRange = null).fetchArtifact() }.toAbsolutePath()
 
-        // more slowness
+        // more network calls
         // make assumption that all requests will resolve to the same CA
         // also terrible assumption that default endpoint is reachable
-        val qUri = URI(QEndpoints.Q_DEFAULT_SERVICE_CONFIG.ENDPOINT)
+        val qUri = URI(QDefaultServiceConfig.ENDPOINT)
         val rtsTrustChain = TrustChainUtil.getTrustChain(qUri)
         val extraCaCerts = Files.createTempFile("q-extra-ca", ".pem").apply {
             writeText(
@@ -290,9 +290,9 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                         put(
                             "HTTPS_PROXY",
                             URIBuilder("http://${address.hostName}:${address.port}").apply {
-                                val login = ProxyAuthentication.getInstance().getKnownAuthentication(address.hostName, address.port)
+                                val login = HttpConfigurable.getInstance().proxyLogin
                                 if (login != null) {
-                                    setUserInfo(login.userName, login.getPasswordAsString())
+                                    setUserInfo(login, HttpConfigurable.getInstance().plainProxyPassword)
                                 }
                             }.build().toASCIIString()
                         )
