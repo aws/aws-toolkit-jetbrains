@@ -270,8 +270,6 @@ class TelemetryHelper(private val project: Project, private val sessionStorage: 
                     acceptedCharacterCount(message.code.length)
                     acceptedLineCount(message.code.lines().size)
                     hasProjectLevelContext(getMessageHasProjectContext(message.messageId))
-                    addedIdeDiagnostics(message.diagnosticsDifferences?.added)
-                    removedIdeDiagnostics(message.diagnosticsDifferences?.removed)
                 }.build()
             }
 

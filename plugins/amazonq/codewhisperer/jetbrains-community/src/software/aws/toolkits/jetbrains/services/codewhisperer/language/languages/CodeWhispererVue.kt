@@ -11,8 +11,6 @@ class CodeWhispererVue private constructor() : CodeWhispererProgrammingLanguage(
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Vue
 
-    override fun isCodeCompletionSupported(): Boolean = true
-
     companion object {
         // TODO: confirm with service team language id
         const val ID = "vue"

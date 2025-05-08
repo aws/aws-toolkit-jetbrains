@@ -10,9 +10,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
-import com.intellij.openapi.project.ProjectManager
 import com.intellij.util.xmlb.annotations.Property
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.resources.AmazonQBundle
 
@@ -23,13 +21,6 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
 
     fun toggleIncludeCodeWithReference(value: Boolean) {
         state.value[CodeWhispererConfigurationType.IsIncludeCodeWithReference] = value
-        ProjectManager.getInstance().openProjects.forEach {
-            if (it.isDisposed) {
-                return@forEach
-            }
-
-            AmazonQLspService.didChangeConfiguration(it)
-        }
     }
 
     fun isIncludeCodeWithReference() = state.value.getOrDefault(
@@ -58,13 +49,6 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
 
     fun toggleMetricOptIn(value: Boolean) {
         state.value[CodeWhispererConfigurationType.OptInSendingMetric] = value
-        ProjectManager.getInstance().openProjects.forEach {
-            if (it.isDisposed) {
-                return@forEach
-            }
-
-            AmazonQLspService.didChangeConfiguration(it)
-        }
     }
 
     fun isMetricOptIn() = state.value.getOrDefault(
@@ -93,12 +77,6 @@ class CodeWhispererSettings : PersistentStateComponent<CodeWhispererConfiguratio
 
     fun toggleWorkspaceContextEnabled(value: Boolean) {
         state.value[CodeWhispererConfigurationType.IsWorkspaceContextEnabled] = value
-        ProjectManager.getInstance().openProjects.forEach {
-            if (it.isDisposed) {
-                return@forEach
-            }
-            AmazonQLspService.didChangeConfiguration(it)
-        }
     }
 
     fun isWorkspaceContextEnabled() = state.value.getOrDefault(CodeWhispererConfigurationType.IsWorkspaceContextEnabled, true)
