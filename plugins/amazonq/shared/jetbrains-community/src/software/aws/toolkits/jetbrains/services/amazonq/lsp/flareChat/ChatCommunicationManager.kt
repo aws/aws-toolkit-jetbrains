@@ -8,7 +8,8 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.eclipse.lsp4j.ProgressParams
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -31,7 +32,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
 @Service(Service.Level.PROJECT)
-class ChatCommunicationManager {
+class ChatCommunicationManager(private val cs: CoroutineScope) {
     val uiReady = CompletableDeferred<Boolean>()
     private val chatPartialResultMap = ConcurrentHashMap<String, String>()
     private val inflightRequestByTabId = ConcurrentHashMap<String, CompletableFuture<String>>()
@@ -42,13 +43,12 @@ class ChatCommunicationManager {
         uiReady.complete(true)
     }
 
-    fun notifyUi(uiMessage: FlareUiMessage): CompletableFuture<Unit> =
-        CompletableFuture.runAsync {
-            runBlocking {
-                uiReady.await()
-                AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
-            }
-        }.thenApply { Unit }
+    fun notifyUi(uiMessage: FlareUiMessage) {
+        cs.launch {
+            uiReady.await()
+            AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+        }
+    }
 
     fun setInflightRequestForTab(tabId: String, result: CompletableFuture<String>) {
         inflightRequestByTabId[tabId] = result
