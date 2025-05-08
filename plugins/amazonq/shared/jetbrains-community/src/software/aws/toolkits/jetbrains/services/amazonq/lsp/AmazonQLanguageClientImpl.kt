@@ -34,6 +34,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommun
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatUpdateParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
@@ -133,9 +134,10 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     override fun openTab(params: OpenTabParams): CompletableFuture<OpenTabResult> {
         val requestId = UUID.randomUUID().toString()
         val result = CompletableFuture<OpenTabResult>()
-        ChatCommunicationManager.pendingTabRequests[requestId] = result
+        val chatManager = ChatCommunicationManager.getInstance(project)
+        chatManager.addTabOpenRequest(requestId, result)
 
-        AsyncChatUiListener.notifyPartialMessageUpdate(
+        chatManager.notifyUi(
             FlareUiMessage(
                 command = CHAT_OPEN_TAB,
                 params = params,
@@ -145,7 +147,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
         result.orTimeout(30000, TimeUnit.MILLISECONDS)
             .whenComplete { _, error ->
-                ChatCommunicationManager.pendingTabRequests.remove(requestId)
+                chatManager.removeTabOpenRequest(requestId)
             }
 
         return result
@@ -184,10 +186,10 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     override fun getSerializedChat(params: GetSerializedChatParams): CompletableFuture<GetSerializedChatResult> {
         val requestId = UUID.randomUUID().toString()
         val result = CompletableFuture<GetSerializedChatResult>()
+        val chatManager = ChatCommunicationManager.getInstance(project)
+        chatManager.addSerializedChatRequest(requestId, result)
 
-        ChatCommunicationManager.pendingSerializedChatRequests[requestId] = result
-
-        AsyncChatUiListener.notifyPartialMessageUpdate(
+        chatManager.notifyUi(
             FlareUiMessage(
                 command = GET_SERIALIZED_CHAT_REQUEST_METHOD,
                 params = params,
@@ -197,7 +199,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
         result.orTimeout(30000, TimeUnit.MILLISECONDS)
             .whenComplete { _, error ->
-                ChatCommunicationManager.pendingSerializedChatRequests.remove(requestId)
+                chatManager.removeSerializedChatRequest(requestId)
             }
 
         return result
@@ -307,7 +309,13 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         )
 
     override fun sendContextCommands(params: LSPAny): CompletableFuture<Unit> {
-        ChatCommunicationManager.getInstance(project).queueContextCommands(params)
+        val chatManager = ChatCommunicationManager.getInstance(project)
+        chatManager.notifyUi(
+            FlareUiMessage(
+                command = CHAT_SEND_CONTEXT_COMMANDS,
+                params = params ?: error("received empty payload for $CHAT_SEND_CONTEXT_COMMANDS"),
+            )
+        )
         return CompletableFuture.completedFuture(Unit)
     }
 

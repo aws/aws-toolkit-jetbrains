@@ -7,12 +7,12 @@ import com.google.gson.Gson
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.runBlocking
 import org.eclipse.lsp4j.ProgressParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ProgressNotificationUtils.getObject
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_ERROR_PARAMS
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ErrorParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
@@ -20,18 +20,26 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentLinkedQueue
 
 @Service(Service.Level.PROJECT)
 class ChatCommunicationManager {
-    private val contextCommandsQueue = ConcurrentLinkedQueue<LSPAny>()
-    private var uiReady = false
+    val uiReady = CompletableDeferred<Boolean>()
     private val chatPartialResultMap = ConcurrentHashMap<String, String>()
-
-    private fun getPartialChatMessage(partialResultToken: String): String? =
-        chatPartialResultMap.getOrDefault(partialResultToken, null)
-
     private val inflightRequestByTabId = ConcurrentHashMap<String, CompletableFuture<String>>()
+    private val pendingSerializedChatRequests = ConcurrentHashMap<String, CompletableFuture<GetSerializedChatResult>>()
+    private val pendingTabRequests = ConcurrentHashMap<String, CompletableFuture<OpenTabResult>>()
+
+    fun setUiReady() {
+        uiReady.complete(true)
+    }
+
+    fun notifyUi(uiMessage: FlareUiMessage): CompletableFuture<Unit> =
+        CompletableFuture.runAsync {
+            runBlocking {
+                uiReady.await()
+                AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+            }
+        }.thenApply { Unit }
 
     fun setInflightRequestForTab(tabId: String, result: CompletableFuture<String>) {
         inflightRequestByTabId[tabId] = result
@@ -50,37 +58,34 @@ class ChatCommunicationManager {
         return partialResultToken
     }
 
+    private fun getPartialChatMessage(partialResultToken: String): String? =
+        chatPartialResultMap.getOrDefault(partialResultToken, null)
+
     fun removePartialChatMessage(partialResultToken: String) =
         chatPartialResultMap.remove(partialResultToken)
 
-    fun setUiReady(ready: Boolean) {
-        uiReady = ready
-        if (ready) {
-            sendQueuedContextCommands()
-        }
+    fun addSerializedChatRequest(requestId: String, result: CompletableFuture<GetSerializedChatResult>) {
+        pendingSerializedChatRequests[requestId] = result
     }
 
-    fun queueContextCommands(params: LSPAny) {
-        if (uiReady) {
-            sendContextCommandsToUi(params)
-        } else {
-            contextCommandsQueue.offer(params)
-        }
+    fun completeSerializedChatResponse(requestId: String, content: String) {
+        pendingSerializedChatRequests.remove(requestId)?.complete(GetSerializedChatResult((content)))
     }
 
-    private fun sendQueuedContextCommands() {
-        while (contextCommandsQueue.isNotEmpty()) {
-            sendContextCommandsToUi(contextCommandsQueue.poll())
-        }
+    fun removeSerializedChatRequest(requestId: String) {
+        pendingSerializedChatRequests.remove(requestId)
     }
 
-    private fun sendContextCommandsToUi(params: LSPAny) {
-        AsyncChatUiListener.notifyPartialMessageUpdate(
-            FlareUiMessage(
-                command = CHAT_SEND_CONTEXT_COMMANDS,
-                params = params ?: error("received empty payload for $CHAT_SEND_CONTEXT_COMMANDS"),
-            )
-        )
+    fun addTabOpenRequest(requestId: String, result: CompletableFuture<OpenTabResult>) {
+        pendingTabRequests[requestId] = result
+    }
+
+    fun completeTabOpen(requestId: String, tabId: String) {
+        pendingTabRequests.remove(requestId)?.complete(OpenTabResult(tabId))
+    }
+
+    fun removeTabOpenRequest(requestId: String) {
+        pendingTabRequests.remove(requestId)
     }
 
     fun handlePartialResultProgressNotification(project: Project, params: ProgressParams) {
@@ -139,15 +144,5 @@ class ChatCommunicationManager {
                 "isPartialResult": $isPartialResult
                 }
             """.trimIndent()
-
-        val pendingSerializedChatRequests = ConcurrentHashMap<String, CompletableFuture<GetSerializedChatResult>>()
-        fun completeSerializedChatResponse(requestId: String, content: String) {
-            pendingSerializedChatRequests.remove(requestId)?.complete(GetSerializedChatResult((content)))
-        }
-
-        val pendingTabRequests = ConcurrentHashMap<String, CompletableFuture<OpenTabResult>>()
-        fun completeTabOpen(requestId: String, tabId: String) {
-            pendingTabRequests.remove(requestId)?.complete(OpenTabResult(tabId))
-        }
     }
 }

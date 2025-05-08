@@ -132,6 +132,7 @@ class BrowserConnector(
                     // this is sent when the named agents UI is ready
                     "ui-is-ready" -> {
                         uiReady.complete(true)
+                        chatCommunicationManager.setUiReady()
                         RunOnceUtil.runOnceForApp("AmazonQ-UI-Ready") {
                             MeetQSettings.getInstance().reinvent2024OnboardingCount += 1
                         }
@@ -326,7 +327,7 @@ class BrowserConnector(
             CHAT_READY -> {
                 handleChatNotification<ChatReadyNotification, Unit>(node) { server, _ ->
                     uiReady.complete(true)
-                    chatCommunicationManager.setUiReady(true)
+                    chatCommunicationManager.setUiReady()
                     RunOnceUtil.runOnceForApp("AmazonQ-UI-Ready") {
                         MeetQSettings.getInstance().reinvent2024OnboardingCount += 1
                     }
@@ -352,7 +353,7 @@ class BrowserConnector(
             }
             CHAT_OPEN_TAB -> {
                 val response = serializer.deserializeChatMessages<OpenTabResponse>(node)
-                ChatCommunicationManager.completeTabOpen(
+                chatCommunicationManager.completeTabOpen(
                     response.requestId,
                     response.params.result.tabId
                 )
@@ -416,7 +417,7 @@ class BrowserConnector(
 
             GET_SERIALIZED_CHAT_REQUEST_METHOD -> {
                 val response = serializer.deserializeChatMessages<GetSerializedChatResponse>(node)
-                ChatCommunicationManager.completeSerializedChatResponse(
+                chatCommunicationManager.completeSerializedChatResponse(
                     response.requestId,
                     response.params.result.content
                 )
