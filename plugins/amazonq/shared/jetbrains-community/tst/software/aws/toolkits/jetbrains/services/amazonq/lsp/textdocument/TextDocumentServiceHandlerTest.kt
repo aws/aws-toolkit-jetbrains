@@ -3,10 +3,10 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument
 
-import com.intellij.openapi.application.edtWriteAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileTypes.FileType
+import com.intellij.openapi.progress.blockingContext
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
@@ -172,7 +172,7 @@ class TextDocumentServiceHandlerTest {
             projectRule.fixture.createFile("name", "").also {
                 projectRule.fixture.openFileInEditor(it)
 
-                edtWriteAction {
+                blockingContext {
                     it.writeText("changed content")
                 }
             }
