@@ -3,4 +3,6 @@
 
 package compat.com.intellij.lang.javascript
 
-val JavascriptLanguage = com.intellij.lang.javascript.JavascriptLanguage
+// inline to avoid loading this through core classpath
+inline val JavascriptLanguage
+    get() = com.intellij.lang.javascript.JavascriptLanguage

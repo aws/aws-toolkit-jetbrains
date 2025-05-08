@@ -8,13 +8,22 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.eclipse.lsp4j.ProgressParams
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
+import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
+import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ProgressNotificationUtils.getObject
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthFollowUpClickedParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthFollowupType
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_ERROR_PARAMS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ErrorParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -91,8 +100,39 @@ class ChatCommunicationManager {
         return uiMessage
     }
 
+    fun handleAuthFollowUpClicked(project: Project, params: AuthFollowUpClickedParams) {
+        val incomingType = params.authFollowupType
+        val connectionManager = ToolkitConnectionManager.getInstance(project)
+        try {
+            connectionManager.activeConnectionForFeature(QConnection.getInstance())?.let {
+                reauthConnectionIfNeeded(project, it, isReAuth = true)
+            }
+            when (incomingType) {
+                AuthFollowupType.USE_SUPPORTED_AUTH.value -> {
+                    project.messageBus.syncPublisher(QRegionProfileSelectedListener.TOPIC)
+                        .onProfileSelected(project, QRegionProfileManager.getInstance().activeProfile(project))
+                    return
+                }
+                AuthFollowupType.RE_AUTH.value,
+                AuthFollowupType.MISSING_SCOPES.value,
+                AuthFollowupType.FULL_AUTH.value,
+                -> {
+                    return
+                }
+                else -> {
+                    LOG.warn { "Unknown auth follow up type: $incomingType" }
+                }
+            }
+        } catch (ex: Exception) {
+            LOG.warn(ex) { "Failed to handle authentication when auth follow up clicked" }
+            throw ex
+        }
+    }
+
     companion object {
         fun getInstance(project: Project) = project.service<ChatCommunicationManager>()
+
+        private val LOG = getLogger<ChatCommunicationManager>()
 
         val pendingSerializedChatRequests = ConcurrentHashMap<String, CompletableFuture<GetSerializedChatResult>>()
         fun completeSerializedChatResponse(requestId: String, content: String) {

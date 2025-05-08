@@ -3,7 +3,6 @@
 @file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
-import com.google.gson.Gson
 import com.google.gson.ToNumberPolicy
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.impl.ExecutionManagerImpl
@@ -20,17 +19,18 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.SystemInfo
-import com.intellij.util.animation.consumer
 import com.intellij.util.io.await
+import com.intellij.util.net.HttpConfigurable
+import com.intellij.util.net.JdkProxyProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
+import org.apache.http.client.utils.URIBuilder
 import org.eclipse.lsp4j.ClientCapabilities
 import org.eclipse.lsp4j.ClientInfo
 import org.eclipse.lsp4j.DidChangeConfigurationParams
@@ -42,28 +42,27 @@ import org.eclipse.lsp4j.SynchronizationCapabilities
 import org.eclipse.lsp4j.TextDocumentClientCapabilities
 import org.eclipse.lsp4j.WorkspaceClientCapabilities
 import org.eclipse.lsp4j.jsonrpc.Launcher
-import org.eclipse.lsp4j.jsonrpc.Launcher.Builder
 import org.eclipse.lsp4j.jsonrpc.MessageConsumer
-import org.eclipse.lsp4j.jsonrpc.messages.NotificationMessage
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.slf4j.event.Level
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.core.utils.writeText
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.auth.DefaultAuthCredentialsService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.DefaultModuleDependenciesService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AmazonQLspTypeAdapterFactory
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsExtendedInitializeResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.createExtendedClientMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument.TextDocumentServiceHandler
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.workspace.WorkspaceServiceHandler
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QDefaultServiceConfig
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.jetbrains.settings.LspSettings
 import java.io.IOException
@@ -72,7 +71,10 @@ import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.io.PrintWriter
 import java.io.StringWriter
+import java.net.Proxy
+import java.net.URI
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 import java.util.Collections
 import java.util.concurrent.Future
 import kotlin.time.Duration.Companion.seconds
@@ -267,13 +269,49 @@ private class AmazonQServerInstance(private val project: Project, private val cs
     init {
         // will cause slow service init, but maybe fine for now. will not block UI since fetch/extract will be under background progress
         val artifact = runBlocking { service<ArtifactManager>().fetchArtifact(project) }.toAbsolutePath()
+
+        // more network calls
+        // make assumption that all requests will resolve to the same CA
+        // also terrible assumption that default endpoint is reachable
+        val qUri = URI(QDefaultServiceConfig.ENDPOINT)
+        val rtsTrustChain = TrustChainUtil.getTrustChain(qUri)
+        val extraCaCerts = Files.createTempFile("q-extra-ca", ".pem").apply {
+            writeText(
+                TrustChainUtil.certsToPem(rtsTrustChain)
+            )
+        }
+
         val node = if (SystemInfo.isWindows) "node.exe" else "node"
         val cmd = GeneralCommandLine(
             artifact.resolve(node).toString(),
             LspSettings.getInstance().getArtifactPath() ?: artifact.resolve("aws-lsp-codewhisperer.js").toString(),
             "--stdio",
             "--set-credentials-encryption-key",
+        ).withEnvironment(
+            buildMap {
+                put("NODE_EXTRA_CA_CERTS", extraCaCerts.toAbsolutePath().toString())
+
+                val proxy = JdkProxyProvider.getInstance().proxySelector.select(qUri)
+                    // log if only socks proxy available
+                    .firstOrNull { it.type() == Proxy.Type.HTTP }
+
+                if (proxy != null) {
+                    val address = proxy.address()
+                    if (address is java.net.InetSocketAddress) {
+                        put(
+                            "HTTPS_PROXY",
+                            URIBuilder("http://${address.hostName}:${address.port}").apply {
+                                val login = HttpConfigurable.getInstance().proxyLogin
+                                if (login != null) {
+                                    setUserInfo(login, HttpConfigurable.getInstance().plainProxyPassword)
+                                }
+                            }.build().toASCIIString()
+                        )
+                    }
+                }
+            }
         )
+            .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
 
         launcherHandler = KillableColoredProcessHandler.Silent(cmd)
         val inputWrapper = LSPProcessListener()
@@ -323,12 +361,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             encryptionManager.writeInitializationPayload(launcherHandler.process.outputStream)
 
             val initializeResult = try {
-                withTimeout(5.seconds) {
-                    languageServer.initialize(createInitializeParams()).await()
-                }
-            } catch (_: TimeoutCancellationException) {
-                LOG.warn { "LSP initialization timed out" }
-                null
+                languageServer.initialize(createInitializeParams()).await()
             } catch (e: Exception) {
                 LOG.warn(e) { "LSP initialization failed" }
                 null
