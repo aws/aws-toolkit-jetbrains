@@ -11,6 +11,8 @@ import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.Range
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorPosition
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorRange
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CursorState
 import java.io.File
 import java.net.URI
@@ -43,27 +45,30 @@ object LspEditorUtil {
         }
     }
 
+    /**
+     * Works but is divergent from [FocusAreaContextExtrator]
+     */
     fun getCursorState(editor: Editor): CursorState =
         runReadAction {
             val selectionModel = editor.selectionModel
-            val document = editor.document
+            if (selectionModel.hasSelection()) {
+                val selectedStartPos = editor.offsetToLogicalPosition(selectionModel.selectionStart)
+                val selectedEndPos = editor.offsetToLogicalPosition(selectionModel.selectionEnd)
 
-            // Get start position
-            val startOffset = selectionModel.selectionStart
-            val startLine = document.getLineNumber(startOffset)
-            val startColumn = startOffset - document.getLineStartOffset(startLine)
-
-            // Get end position
-            val endOffset = selectionModel.selectionEnd
-            val endLine = document.getLineNumber(endOffset)
-            val endColumn = endOffset - document.getLineStartOffset(endLine)
-
-            return@runReadAction CursorState(
-                Range(
-                    Position(startLine, startColumn),
-                    Position(endLine, endColumn)
+                return@runReadAction CursorRange(
+                    Range(
+                        Position(selectedStartPos.line, selectedStartPos.column),
+                        Position(selectedEndPos.line, selectedEndPos.column)
+                    )
                 )
-            )
+            } else {
+                return@runReadAction CursorPosition(
+                    Position(
+                        editor.caretModel.primaryCaret.logicalPosition.line,
+                        editor.caretModel.primaryCaret.logicalPosition.column
+                    )
+                )
+            }
         }
 
     private val LOG = getLogger<LspEditorUtil>()
