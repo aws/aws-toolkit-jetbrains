@@ -334,12 +334,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             encryptionManager.writeInitializationPayload(launcherHandler.process.outputStream)
 
             val initializeResult = try {
-                withTimeout(5.seconds) {
-                    languageServer.initialize(createInitializeParams()).await()
-                }
-            } catch (_: TimeoutCancellationException) {
-                LOG.warn { "LSP initialization timed out" }
-                null
+                languageServer.initialize(createInitializeParams()).await()
             } catch (e: Exception) {
                 LOG.warn(e) { "LSP initialization failed" }
                 null
