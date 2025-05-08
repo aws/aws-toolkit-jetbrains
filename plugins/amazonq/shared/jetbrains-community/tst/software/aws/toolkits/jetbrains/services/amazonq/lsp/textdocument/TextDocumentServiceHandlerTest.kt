@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument
 
 import com.intellij.openapi.application.edtWriteAction
-import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileTypes.FileType
