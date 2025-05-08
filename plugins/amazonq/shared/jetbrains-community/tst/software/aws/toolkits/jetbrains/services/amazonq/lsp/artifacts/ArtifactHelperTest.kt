@@ -120,16 +120,14 @@ class ArtifactHelperTest {
         serverZipPath.parent.toFile().mkdirs()
         serverZipPath.toFile().createNewFile()
 
-        val versions = listOf(
-            Version(serverVersion = "1.0.0")
-        )
+        val version = Version(serverVersion = "1.0.0")
 
         val target = VersionTarget(contents = contents)
 
         mockkStatic("software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.LspUtilsKt")
         every { generateSHA384Hash(any()) } returns "1234"
 
-        val result = artifactHelper.getExistingLspArtifacts(versions, target)
+        val result = artifactHelper.getExistingLspArtifacts(version, target)
 
         assertThat(result).isTrue()
         assertThat(serverZipPath.toFile().exists()).isTrue()
@@ -144,63 +142,55 @@ class ArtifactHelperTest {
         serverZipPath.parent.toFile().mkdirs()
         serverZipPath.toFile().createNewFile()
 
-        val versions = listOf(
-            Version(serverVersion = "1.0.0")
-        )
+        val version = Version(serverVersion = "1.0.0")
 
         val target = VersionTarget(contents = contents)
 
         mockkStatic("software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.LspUtilsKt")
         every { generateSHA384Hash(any()) } returns "1235"
 
-        val result = artifactHelper.getExistingLspArtifacts(versions, target)
+        val result = artifactHelper.getExistingLspArtifacts(version, target)
 
         assertThat(result).isFalse()
         assertThat(serverZipPath.toFile().exists()).isFalse()
     }
 
     @Test
-    fun `getExistingLspArtifacts should return false if versions are empty`() {
-        val versions = emptyList<Version>()
-        assertThat(artifactHelper.getExistingLspArtifacts(versions, null)).isFalse()
-    }
-
-    @Test
     fun `getExistingLspArtifacts should return false if target does not have contents`() {
-        val versions = listOf(
-            Version(serverVersion = "1.0.0")
-        )
-        assertThat(artifactHelper.getExistingLspArtifacts(versions, null)).isFalse()
+        val version = Version(serverVersion = "1.0.0")
+        val target1 = VersionTarget(contents = emptyList())
+        val target2 = VersionTarget(contents = null)
+        assertThat(artifactHelper.getExistingLspArtifacts(version, target1)).isFalse()
+        assertThat(artifactHelper.getExistingLspArtifacts(version, target2)).isFalse()
     }
 
     @Test
     fun `getExistingLspArtifacts should return false if Lsp path does not exist`() {
-        val versions = listOf(
-            Version(serverVersion = "1.0.0")
-        )
-        assertThat(artifactHelper.getExistingLspArtifacts(versions, null)).isFalse()
+        val versions = Version(serverVersion = "1.0.0")
+        val target = VersionTarget(contents = contents)
+        assertThat(artifactHelper.getExistingLspArtifacts(versions, target)).isFalse()
     }
 
     @Test
     fun `tryDownloadLspArtifacts should not download artifacts if target does not have contents`() {
-        val versions = listOf(Version(serverVersion = "2.0.0"))
-        assertThat(runBlocking { artifactHelper.tryDownloadLspArtifacts(mockProject, versions, null) }).isEqualTo(null)
+        val versions = Version(serverVersion = "2.0.0")
+        assertThat(runBlocking { artifactHelper.tryDownloadLspArtifacts(mockProject, versions, VersionTarget()) }).isEqualTo(null)
         assertThat(tempDir.resolve("2.0.0").toFile().exists()).isFalse()
     }
 
     @Test
     fun `tryDownloadLspArtifacts should throw error if failed to download`() {
-        val versions = listOf(Version(serverVersion = "1.0.0"))
+        val version = Version(serverVersion = "1.0.0")
 
         val spyArtifactHelper = spyk(artifactHelper)
         every { spyArtifactHelper.downloadLspArtifacts(any(), any()) } returns false
 
-        assertThat(runBlocking { artifactHelper.tryDownloadLspArtifacts(mockProject, versions, null) }).isEqualTo(null)
+        assertThat(runBlocking { artifactHelper.tryDownloadLspArtifacts(mockProject, version, VersionTarget(contents = contents)) }).isEqualTo(null)
     }
 
     @Test
     fun `tryDownloadLspArtifacts should throw error after attempts are exhausted`() {
-        val versions = listOf(Version(serverVersion = "1.0.0"))
+        val version = Version(serverVersion = "1.0.0")
         val target = VersionTarget(contents = contents)
         val spyArtifactHelper = spyk(artifactHelper)
 
@@ -209,7 +199,7 @@ class ArtifactHelperTest {
         every { moveFilesFromSourceToDestination(any(), any()) } just Runs
         every { extractZipFile(any(), any()) } just Runs
 
-        assertThat(runBlocking { artifactHelper.tryDownloadLspArtifacts(mockProject, versions, target) }).isEqualTo(null)
+        assertThat(runBlocking { artifactHelper.tryDownloadLspArtifacts(mockProject, version, target) }).isEqualTo(null)
     }
 
     @Test
