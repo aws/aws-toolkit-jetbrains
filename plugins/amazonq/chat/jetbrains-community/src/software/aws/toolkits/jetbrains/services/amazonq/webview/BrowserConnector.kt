@@ -32,6 +32,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.getTextDocumentIdentifier
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickParams
@@ -256,7 +257,9 @@ class BrowserConnector(
                 var encryptionManager: JwtEncryptionManager? = null
                 val result = AmazonQLspService.executeIfRunning(project) { server ->
                     encryptionManager = this.encryptionManager
-                    encryptionManager?.encrypt(chatParams)?.let { EncryptedChatParams(it, partialResultToken) }?.let { server.sendChatPrompt(it) }
+
+                    val encryptedParams = EncryptedChatParams(this.encryptionManager.encrypt(chatParams), partialResultToken)
+                    server.sendChatPrompt(encryptedParams)
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
 
                 // We assume there is only one outgoing request per tab because the input is
@@ -272,11 +275,9 @@ class BrowserConnector(
                 var encryptionManager: JwtEncryptionManager? = null
                 val result = AmazonQLspService.executeIfRunning(project) { server ->
                     encryptionManager = this.encryptionManager
-                    encryptionManager?.encrypt(quickActionParams)?.let {
-                        EncryptedQuickActionChatParams(it, partialResultToken)
-                    }?.let {
-                        server.sendQuickAction(it)
-                    }
+
+                    val encryptedParams = EncryptedQuickActionChatParams(this.encryptionManager.encrypt(quickActionParams), partialResultToken)
+                    server.sendQuickAction(encryptedParams)
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
 
                 // We assume there is only one outgoing request per tab because the input is
@@ -424,13 +425,18 @@ class BrowserConnector(
                 handleChatNotification<TabBarActionRequest, TabBarActionParams>(node) {
                         server, params ->
                     val result = server.tabBarActions(params)
-                    result.whenComplete { params1, error ->
+                    result.whenComplete { actions, error ->
                         try {
                             if (error != null) {
                                 throw error
                             }
-                            val res = ChatCommunicationManager.convertNotificationToJsonForChat(CHAT_TAB_BAR_ACTIONS, params1)
-                            browser.postChat(res)
+
+                            browser.postChat(
+                                FlareUiMessage(
+                                    command = CHAT_TAB_BAR_ACTIONS,
+                                    params = actions ?: "{}"
+                                )
+                            )
                         } catch (e: Exception) {
                             LOG.error { "Failed to perform chat tab bar action $e" }
                             params.tabId?.let {
