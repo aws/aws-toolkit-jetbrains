@@ -90,7 +90,7 @@ class DefaultCodeWhispererModelConfigurator : CodeWhispererModelConfigurator, Pe
             QRegionProfileSelectedListener.TOPIC,
             object : QRegionProfileSelectedListener {
                 override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
-                    switchCustomization(project, null)
+                   // switchCustomization(project, null)
                 }
             }
         )
