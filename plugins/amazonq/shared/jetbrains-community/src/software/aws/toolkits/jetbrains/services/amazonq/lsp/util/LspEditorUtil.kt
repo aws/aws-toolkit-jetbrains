@@ -5,8 +5,6 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.util
 
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import org.eclipse.lsp4j.Position
