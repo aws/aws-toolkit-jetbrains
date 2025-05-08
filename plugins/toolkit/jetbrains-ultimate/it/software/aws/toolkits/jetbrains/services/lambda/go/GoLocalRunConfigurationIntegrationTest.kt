@@ -240,7 +240,7 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: LambdaRuntime)
         val executeLambda = executeRunConfigurationAndWait(runConfiguration, DefaultDebugExecutor.EXECUTOR_ID)
 
         assertThat(executeLambda.exitCode).isEqualTo(0)
-        assertThat(executeLambda.stdout).contains(input.toUpperCase())
+        assertThat(executeLambda.stdout).contains(input.uppercase())
 
         assertThat(debuggerIsHit.get()).isTrue
     }
@@ -281,7 +281,7 @@ class GoLocalRunConfigurationIntegrationTest(private val runtime: LambdaRuntime)
         runtime = runtime,
         mockCredentialsId = mockId,
         input = input,
-        expectedOutput = input.toUpperCase()
+        expectedOutput = input.uppercase()
     )
 
     @Test

@@ -479,7 +479,7 @@ class FeatureDevController(
                 ),
             )
 
-            if (!session.context.checkForDevFile()) {
+            if (!session.context.hasDevFile()) {
                 followUps.add(
                     FollowUp(
                         pillText = message("amazonqFeatureDev.follow_up.generate_dev_file"),
@@ -544,7 +544,8 @@ class FeatureDevController(
     }
 
     private suspend fun handleDevCommandUserSetting(tabId: String, value: Boolean) {
-        CodeWhispererSettings.getInstance().toggleAutoBuildFeature(context.project.basePath, value)
+        val session = getSessionInfo(tabId)
+        CodeWhispererSettings.getInstance().toggleAutoBuildFeature(session.context.workspaceRoot.path, value)
         messenger.sendAnswer(
             tabId = tabId,
             message = message("amazonqFeatureDev.chat_message.setting_updated"),
@@ -741,7 +742,7 @@ class FeatureDevController(
             }
 
             val codeWhispererSettings = CodeWhispererSettings.getInstance().getAutoBuildSetting()
-            val hasDevFile = session.context.checkForDevFile()
+            val hasDevFile = session.context.hasDevFile()
             val isPromptedForAutoBuildFeature = codeWhispererSettings.containsKey(session.context.workspaceRoot.path)
 
             if (hasDevFile && !isPromptedForAutoBuildFeature) {
