@@ -1,0 +1,20 @@
+{
+  "date" : "2025-05-08",
+  "version" : "3.70",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Amazon Q: Support selecting customizations across all Q profiles with automatic profile switching for enterprise users"
+  }, {
+    "type" : "bugfix",
+    "description" : "Do not always show 'Amazon Q Code Issues' tab when switching to the 'Problems' tool window"
+  }, {
+    "type" : "bugfix",
+    "description" : "/dev: Fix missing Amazon Q feature dev auto build setting."
+  }, {
+    "type" : "bugfix",
+    "description" : "increase /review timeout"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix JavascriptLanguage not found on 2025.1+"
+  } ]
+}
