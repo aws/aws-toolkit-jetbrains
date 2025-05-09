@@ -27,6 +27,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.runBlocking
@@ -117,7 +118,7 @@ internal class LSPProcessListener : ProcessListener {
 @Service(Service.Level.PROJECT)
 class AmazonQLspService(private val project: Project, private val cs: CoroutineScope) : Disposable {
     private val _flowInstance = MutableSharedFlow<AmazonQServerInstance>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-    val instanceFlow = _flowInstance.map { it.languageServer }
+    val instanceFlow = _flowInstance.asSharedFlow().map { it.languageServer }
 
     private var instance: Deferred<AmazonQServerInstance>
     val capabilities
