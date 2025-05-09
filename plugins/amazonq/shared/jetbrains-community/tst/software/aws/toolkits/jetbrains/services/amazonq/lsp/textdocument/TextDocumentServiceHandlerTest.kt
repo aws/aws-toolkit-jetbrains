@@ -312,6 +312,11 @@ class TextDocumentServiceHandlerTest {
             return uri
         }
 
+        if (uri.startsWith("file://C:/")) {
+            val path = uri.substringAfter("file://C:/")
+            return "file:///C:/$path"
+        }
+
         val path = uri.substringAfter("file:///")
         return "file:///C:/$path"
     }
