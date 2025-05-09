@@ -391,8 +391,4 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     companion object {
         private val LOG = getLogger<AmazonQLanguageClientImpl>()
     }
-
-    companion object {
-        private val LOG = getLogger<AmazonQLanguageClientImpl>()
-    }
 }
