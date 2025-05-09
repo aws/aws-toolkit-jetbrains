@@ -5,8 +5,6 @@ package software.aws.toolkits.jetbrains.services.amazonq.toolwindow
 
 import com.intellij.idea.AppMode
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
@@ -19,12 +17,15 @@ import com.intellij.ui.dsl.builder.AlignY
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.jcef.JBCefApp
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageTypeRegistry
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
@@ -109,17 +110,21 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
             webviewContainer.add(wrapper)
             wrapper.setContent(loadingPanel)
 
-            ApplicationManager.getApplication().executeOnPooledThread {
-                val webUri = runBlocking { service<ArtifactManager>().fetchArtifact(project).resolve("amazonq-ui.js").toUri() }
-                loadingPanel.stopLoading()
-                runInEdt {
+            scope.launch {
+                val webUri = service<ArtifactManager>().fetchArtifact(project).resolve("amazonq-ui.js").toUri()
+                // wait for server to be running
+                AmazonQLspService.getInstance(project).instanceFlow.first()
+
+                withContext(EDT) {
                     browser.complete(
-                        Browser(this, webUri, project).also {
+                        Browser(this@AmazonQPanel, webUri, project).also {
                             wrapper.setContent(it.component())
 
                             initConnections()
                             connectUi(it)
                             connectApps(it)
+
+                            loadingPanel.stopLoading()
                         }
                     )
                 }

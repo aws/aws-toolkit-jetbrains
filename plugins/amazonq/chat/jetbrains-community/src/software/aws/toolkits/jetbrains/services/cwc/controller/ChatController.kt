@@ -289,28 +289,11 @@ class ChatController private constructor(
         if (message.project != context.project) {
             return
         }
-        val fileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ContextMenu)
-        val triggerId = UUID.randomUUID().toString()
-        val codeSelection = "\n```\n${fileContext.focusAreaContext?.codeSelection?.trimIndent()?.trim()}\n```\n"
 
-        if (message.command == EditorContextCommand.SendToPrompt) {
-            messagePublisher.publish(
-                EditorContextCommandMessage(
-                    message = codeSelection,
-                    command = message.command.actionId,
-                    triggerId = triggerId,
-                ),
-            )
-            return
-        }
         if (message.command == EditorContextCommand.GenerateUnitTests) {
             // Publish an event to "codetest" tab with command as "test" and type as "addAnswer"
             val messageToPublish = TestCommandMessage()
             context.messagesFromAppToUi.publish(messageToPublish)
-        } else {
-            // Create prompt
-            val prompt = "${message.command} the following part of my code for me: $codeSelection"
-            processPromptActions(prompt, message, triggerId, fileContext)
         }
     }
 

@@ -11,7 +11,6 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
@@ -46,17 +45,16 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                 "mynah",
                 AssetResourceHandler.AssetResourceHandlerFactory(),
             )
-        AmazonQLspService.getInstance(project).addLspInitializeMessageListener {
-            loadWebView(
-                isCodeTransformAvailable,
-                isFeatureDevAvailable,
-                isDocAvailable,
-                isCodeScanAvailable,
-                isCodeTestAvailable,
-                highlightCommand,
-                activeProfile
-            )
-        }
+
+        loadWebView(
+            isCodeTransformAvailable,
+            isFeatureDevAvailable,
+            isDocAvailable,
+            isCodeScanAvailable,
+            isCodeTestAvailable,
+            highlightCommand,
+            activeProfile
+        )
     }
 
     override fun dispose() {
