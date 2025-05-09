@@ -12,6 +12,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.ui.jcef.JBCefJSQuery.Response
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.coroutineScope
@@ -65,7 +66,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatN
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatReadyNotification
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatUiMessageParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ConversationClickRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyCodeToClipboardNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyCodeToClipboardParams
@@ -114,7 +114,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.AmazonQThe
 import software.aws.toolkits.jetbrains.services.amazonq.webview.theme.ThemeBrowserAdapter
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
-import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Telemetry
 import java.util.concurrent.CompletableFuture
@@ -466,22 +465,6 @@ class BrowserConnector(
                 }
                 cancelInflightRequests(stopResponseRequest.params.tabId)
                 chatCommunicationManager.removePartialChatMessage(stopResponseRequest.params.tabId)
-
-                val paramsJson = Gson().toJson(
-                    // https://github.com/aws/language-servers/blob/1c0d88806087125b6fc561f610cc15e98127c6bf/server/aws-lsp-codewhisperer/src/language-server/agenticChat/agenticChatController.ts#L403
-                    ChatUiMessageParams(
-                        title = AwsCoreBundle.message("amazonqChat.stopChatResponse"),
-                        body = ""
-                    )
-                )
-
-                val uiMessage = ChatCommunicationManager.convertToJsonToSendToChat(
-                    command = SEND_CHAT_COMMAND_PROMPT,
-                    tabId = stopResponseRequest.params.tabId,
-                    params = paramsJson.toString(),
-                    isPartialResult = false
-                )
-                browser.postChat(uiMessage)
             }
             OPEN_SETTINGS -> {
                 val openSettingsNotification = serializer.deserializeChatMessages<OpenSettingsNotification>(node)
@@ -514,6 +497,8 @@ class BrowserConnector(
                 )
                 browser.postChat(messageToChat)
                 chatCommunicationManager.removeInflightRequestForTab(tabId)
+            } catch (e: CancellationException) {
+                LOG.warn { "Cancelled chat generation" }
             } catch (e: Exception) {
                 LOG.error { "Failed to send chat message $e" }
                 browser.postChat(chatCommunicationManager.getErrorUiMessage(tabId, e, partialResultToken))
