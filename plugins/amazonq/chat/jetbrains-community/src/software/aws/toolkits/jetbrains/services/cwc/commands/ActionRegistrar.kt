@@ -3,7 +3,6 @@
 @file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.cwc.commands
 
-import com.google.gson.Gson
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow

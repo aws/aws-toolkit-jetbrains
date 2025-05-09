@@ -22,5 +22,5 @@ data class SendToPromptParams(
     val selection: String,
     val triggerType: TriggerType,
     val prompt: ChatPrompt? = null,
-    val autoSubmit: Boolean? = null
+    val autoSubmit: Boolean? = null,
 )
