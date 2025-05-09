@@ -3,8 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.webview.theme
 
-import com.intellij.openapi.editor.colors.EditorColorsManager
-import com.intellij.ui.JBColor
 import kotlinx.coroutines.CompletableDeferred
 import org.cef.browser.CefBrowser
 import java.awt.Color
