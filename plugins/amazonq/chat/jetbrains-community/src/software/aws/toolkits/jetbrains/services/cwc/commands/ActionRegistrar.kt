@@ -3,11 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.cwc.commands
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.launch
-import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
+import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GenericCommandParams
@@ -29,19 +29,21 @@ class ActionRegistrar {
             _messages.tryEmit(ContextMenuActionMessage(command, project))
         } else {
             // new agentic chat route
-            projectCoroutineScope(project).launch {
-                val contextExtractor = ActiveFileContextExtractor.create(fqnWebviewAdapter = null, project = project)
-                val fileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ContextMenu)
-                val codeSelection = "\n```\n${fileContext.focusAreaContext?.codeSelection?.trimIndent()?.trim()}\n```\n"
-                var uiMessage: FlareUiMessage? = null
-                if (command.verb != "sendToPrompt") {
-                    val params = GenericCommandParams(selection = codeSelection, triggerType = TriggerType.CONTEXT_MENU, genericCommand = command.name)
-                    uiMessage = FlareUiMessage(command = "genericCommand", params = params)
-                } else {
-                    val params = SendToPromptParams(selection = codeSelection, triggerType = TriggerType.CONTEXT_MENU)
-                    uiMessage = FlareUiMessage(command = "sendToPrompt", params = params)
+            ApplicationManager.getApplication().executeOnPooledThread {
+                runBlocking {
+                    val contextExtractor = ActiveFileContextExtractor.create(fqnWebviewAdapter = null, project = project)
+                    val fileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ContextMenu)
+                    val codeSelection = "\n```\n${fileContext.focusAreaContext?.codeSelection?.trimIndent()?.trim()}\n```\n"
+                    var uiMessage: FlareUiMessage? = null
+                    if (command.verb != "sendToPrompt") {
+                        val params = GenericCommandParams(selection = codeSelection, triggerType = TriggerType.CONTEXT_MENU, genericCommand = command.name)
+                        uiMessage = FlareUiMessage(command = "genericCommand", params = params)
+                    } else {
+                        val params = SendToPromptParams(selection = codeSelection, triggerType = TriggerType.CONTEXT_MENU)
+                        uiMessage = FlareUiMessage(command = "sendToPrompt", params = params)
+                    }
+                    AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
                 }
-                AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
             }
         }
     }
