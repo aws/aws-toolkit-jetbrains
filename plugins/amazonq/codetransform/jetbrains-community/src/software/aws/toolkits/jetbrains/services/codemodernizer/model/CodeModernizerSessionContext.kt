@@ -28,6 +28,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeMo
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactPomFolder
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilDependenciesRootDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilUploadZip
+import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.io.IOException
@@ -44,8 +45,7 @@ import kotlin.io.path.pathString
 const val MANIFEST_PATH = "manifest.json"
 const val ZIP_SOURCES_PATH = "sources"
 const val ZIP_DEPENDENCIES_PATH = "dependencies"
-const val BUILD_LOG_PATH = "build-logs.txt"
-const val CUSTOM_DEPENDENCY_VERSIONS_FILE_PATH = "custom-upgrades.yaml"
+const val CUSTOM_DEPENDENCY_VERSIONS_FILE_PATH = "dependency_upgrade.yml"
 const val UPLOAD_ZIP_MANIFEST_VERSION = "1.0"
 const val HIL_1P_UPGRADE_CAPABILITY = "HIL_1pDependency_VersionUpgrade"
 const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
@@ -111,8 +111,7 @@ data class CodeModernizerSessionContext(
 
     fun executeMavenCopyCommands(sourceFolder: File, buildLogBuilder: StringBuilder): MavenCopyCommandsResult {
         if (isDisposed) return MavenCopyCommandsResult.Cancelled
-        val shouldSkipTests = customBuildCommand == MAVEN_BUILD_SKIP_UNIT_TESTS
-        return runMavenCopyCommands(this, sourceFolder, buildLogBuilder, LOG, project, shouldSkipTests)
+        return runMavenCopyCommands(this, sourceFolder, buildLogBuilder, LOG, project)
     }
 
     private fun executeHilMavenCopyDependency(sourceFolder: File, destinationFolder: File, buildLogBuilder: StringBuilder) = runHilMavenCopyDependency(
@@ -210,7 +209,6 @@ data class CodeModernizerSessionContext(
     fun createZipWithModuleFiles(copyResult: MavenCopyCommandsResult?): ZipCreationResult {
         val root = configurationFile?.parent
         val sourceFolder = File(root?.path)
-        val buildLogBuilder = StringBuilder("Starting Build Log...\n")
         val depDirectory = if (copyResult is MavenCopyCommandsResult.Success) {
             showTransformationHub()
             copyResult.dependencyDirectory
@@ -249,6 +247,9 @@ data class CodeModernizerSessionContext(
                             )
                         )
                     }
+                    if (customDependencyVersionsFile != null) {
+                        manifest.dependencyUpgradeConfigFile = CUSTOM_DEPENDENCY_VERSIONS_FILE_PATH
+                    }
                     mapper.writeValueAsString(manifest)
                         .byteInputStream()
                         .use {
@@ -259,14 +260,13 @@ data class CodeModernizerSessionContext(
                     if (depDirectory != null) {
                         dependencyFiles.forEach { depFile ->
                             val relativePath = File(depFile.path).relativeTo(depDirectory)
-                            val paddedPath = depSources.resolve(relativePath)
-                            var paddedPathString = paddedPath.toPath().toString()
+                            var relativePathString = relativePath.toPath().toString()
                             // Convert Windows file path to work on Linux
                             if (File.separatorChar != '/') {
-                                paddedPathString = paddedPathString.replace('\\', '/')
+                                relativePathString = relativePathString.replace('\\', '/')
                             }
                             depFile.inputStream().use {
-                                zip.putNextEntry(paddedPathString, it)
+                                zip.putNextEntry(relativePathString, it)
                             }
                         }
                     }
@@ -274,10 +274,13 @@ data class CodeModernizerSessionContext(
                     LOG.info { "Dependency files size = ${dependencyFiles.sumOf { it.length().toInt() }}" }
 
                     // 3) Custom YAML file
-                    // TODO: where to put this? VS Code puts it in custom-upgrades/dependency-versions.yaml; here we put it at the root
                     if (customDependencyVersionsFile != null) {
+                        var yamlPath = "$ZIP_SOURCES_PATH/$CUSTOM_DEPENDENCY_VERSIONS_FILE_PATH"
+                        if (File.separatorChar != '/') {
+                            yamlPath = yamlPath.replace('\\', '/')
+                        }
                         customDependencyVersionsFile?.inputStream?.use {
-                            zip.putNextEntry(Path(CUSTOM_DEPENDENCY_VERSIONS_FILE_PATH).toString(), it)
+                            zip.putNextEntry(yamlPath, it)
                         }
                     }
 
@@ -286,7 +289,6 @@ data class CodeModernizerSessionContext(
                         val relativePath = File(file.path).relativeTo(sourceFolder)
                         val paddedPath = zipSources.resolve(relativePath)
                         var paddedPathString = paddedPath.toPath().toString()
-                        // Convert Windows file path to work on Linux
                         if (File.separatorChar != '/') {
                             paddedPathString = paddedPathString.replace('\\', '/')
                         }
@@ -301,12 +303,8 @@ data class CodeModernizerSessionContext(
                     }
 
                     LOG.info { "Source code files size = ${files?.sumOf { it.length.toInt() }}" }
-
-                    // 5) Initial Maven copy-deps / install build log
-                    buildLogBuilder.toString().byteInputStream().use {
-                        zip.putNextEntry(Path(BUILD_LOG_PATH).toString(), it)
-                    }
                 }.toFile()
+                notifyStickyInfo("created ZIP at", outputFile.path)
                 // depDirectory should never be null
                 if (depDirectory != null) ZipCreationResult.Succeeded(outputFile) else ZipCreationResult.Missing1P(outputFile)
             } catch (e: NoSuchFileException) {
