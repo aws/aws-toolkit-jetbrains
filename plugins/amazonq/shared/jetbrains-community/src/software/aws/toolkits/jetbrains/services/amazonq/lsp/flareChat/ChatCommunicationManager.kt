@@ -154,13 +154,5 @@ class ChatCommunicationManager {
         fun completeTabOpen(requestId: String, tabId: String) {
             pendingTabRequests.remove(requestId)?.complete(OpenTabResult(tabId))
         }
-
-        inline fun <reified T> convertNotificationToJsonForChat(command: String, params: T? = null) =
-            """
-    {
-    "command":"$command",
-    "params": ${if (params != null) Gson().toJson(params) else "{}"}
-    }
-            """.trimIndent()
     }
 }
