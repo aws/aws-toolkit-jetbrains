@@ -38,7 +38,7 @@ class FileUriUtilTest {
     @Test
     fun `test basic unix path`() {
         val virtualFile = createMockVirtualFile("/path/to/file.txt")
-        val uri = FileUriUtil.toUriString(virtualFile)
+        val uri = LspEditorUtil.toUriString(virtualFile)
         val expected = normalizeFileUri("file:///path/to/file.txt")
         assertThat(uri).isEqualTo(expected)
     }
@@ -46,7 +46,7 @@ class FileUriUtilTest {
     @Test
     fun `test unix directory path`() {
         val virtualFile = createMockVirtualFile("/path/to/directory/", mockIsDirectory = true)
-        val uri = FileUriUtil.toUriString(virtualFile)
+        val uri = LspEditorUtil.toUriString(virtualFile)
         val expected = normalizeFileUri("file:///path/to/directory")
         assertThat(uri).isEqualTo(expected)
     }
@@ -54,7 +54,7 @@ class FileUriUtilTest {
     @Test
     fun `test path with spaces`() {
         val virtualFile = createMockVirtualFile("/path/with spaces/file.txt")
-        val uri = FileUriUtil.toUriString(virtualFile)
+        val uri = LspEditorUtil.toUriString(virtualFile)
         val expected = normalizeFileUri("file:///path/with%20spaces/file.txt")
         assertThat(uri).isEqualTo(expected)
     }
@@ -62,7 +62,7 @@ class FileUriUtilTest {
     @Test
     fun `test root path`() {
         val virtualFile = createMockVirtualFile("/")
-        val uri = FileUriUtil.toUriString(virtualFile)
+        val uri = LspEditorUtil.toUriString(virtualFile)
         val expected = normalizeFileUri("file:///")
         assertThat(uri).isEqualTo(expected)
     }
@@ -70,7 +70,7 @@ class FileUriUtilTest {
     @Test
     fun `test path with multiple separators`() {
         val virtualFile = createMockVirtualFile("/path//to///file.txt")
-        val uri = FileUriUtil.toUriString(virtualFile)
+        val uri = LspEditorUtil.toUriString(virtualFile)
         val expected = normalizeFileUri("file:///path/to/file.txt")
         assertThat(uri).isEqualTo(expected)
     }
@@ -79,7 +79,7 @@ class FileUriUtilTest {
     fun `test very long path`() {
         val longPath = "/a".repeat(256) + "/file.txt"
         val virtualFile = createMockVirtualFile(longPath)
-        val uri = FileUriUtil.toUriString(virtualFile)
+        val uri = LspEditorUtil.toUriString(virtualFile)
         if (uri != null) {
             assertThat(uri.startsWith("file:///")).isTrue
             assertThat(uri.endsWith("/file.txt")).isTrue
@@ -89,7 +89,7 @@ class FileUriUtilTest {
     @Test
     fun `test relative path`() {
         val virtualFile = createMockVirtualFile("./relative/path/file.txt")
-        val uri = FileUriUtil.toUriString(virtualFile)
+        val uri = LspEditorUtil.toUriString(virtualFile)
         if (uri != null) {
             assertThat(uri.contains("file.txt")).isTrue
             assertThat(uri.startsWith("file:///")).isTrue
@@ -102,7 +102,7 @@ class FileUriUtilTest {
             "jar:file:///path/to/archive.jar!/com/example/Test.class",
             "jar"
         )
-        val result = FileUriUtil.toUriString(virtualFile)
+        val result = LspEditorUtil.toUriString(virtualFile)
         val expected = normalizeFileUri("jar:file:///path/to/archive.jar!/com/example/Test.class")
         assertThat(result).isEqualTo(expected)
     }
@@ -113,7 +113,7 @@ class FileUriUtilTest {
             "jrt://java.base/java/lang/String.class",
             "jrt"
         )
-        val result = FileUriUtil.toUriString(virtualFile)
+        val result = LspEditorUtil.toUriString(virtualFile)
         val expected = normalizeFileUri("jrt://java.base/java/lang/String.class")
         assertThat(result).isEqualTo(expected)
     }
@@ -124,7 +124,7 @@ class FileUriUtilTest {
             "invalid:url:format",
             "jar"
         )
-        val result = FileUriUtil.toUriString(virtualFile)
+        val result = LspEditorUtil.toUriString(virtualFile)
         assertThat(result).isNull()
     }
 
@@ -135,7 +135,7 @@ class FileUriUtilTest {
             "jar",
             true
         )
-        val result = FileUriUtil.toUriString(virtualFile)
+        val result = LspEditorUtil.toUriString(virtualFile)
         val expected = normalizeFileUri("jar:file:///path/to/archive.jar!/com/example")
         assertThat(result).isEqualTo(expected)
     }
@@ -147,7 +147,7 @@ class FileUriUtilTest {
             "jar",
             true
         )
-        val result = FileUriUtil.toUriString(virtualFile)
+        val result = LspEditorUtil.toUriString(virtualFile)
         assertThat(result).isNull()
     }
 }

@@ -120,8 +120,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.tryGetJdk
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.unzipFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateCustomVersionsFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSctMetadata
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
@@ -155,7 +153,6 @@ class CodeTransformChatController(
         if (objective == "language upgrade" || objective == "sql conversion") {
             telemetry.submitSelection(objective)
         }
-        broadcastQEvent(QFeatureEvent.INVOCATION)
         when (objective) {
             "language upgrade" -> this.handleLanguageUpgrade()
             "sql conversion" -> this.handleSQLConversion()

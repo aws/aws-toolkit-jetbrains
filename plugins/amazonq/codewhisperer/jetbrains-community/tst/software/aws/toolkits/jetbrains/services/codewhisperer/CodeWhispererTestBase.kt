@@ -11,6 +11,8 @@ import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.RuleChain
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
@@ -27,9 +29,6 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
-import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
-import software.amazon.awssdk.services.codewhispererruntime.model.GenerateCompletionsRequest
-import software.amazon.awssdk.services.codewhispererruntime.paginators.GenerateCompletionsIterable
 import software.amazon.awssdk.services.ssooidc.SsoOidcClient
 import software.aws.toolkits.jetbrains.core.MockClientManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.ManagedSsoProfile
@@ -37,6 +36,11 @@ import software.aws.toolkits.jetbrains.core.credentials.MockCredentialManagerRul
 import software.aws.toolkits.jetbrains.core.credentials.MockToolkitAuthManagerRule
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.WorkspaceInfo
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.codeWhispererRecommendationActionId
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonFileName
@@ -44,6 +48,7 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestU
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonTestLeftContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.testValidAccessToken
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererRecommendationAction
+import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManager
@@ -63,6 +68,7 @@ import software.aws.toolkits.jetbrains.settings.CodeWhispererConfigurationType
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.jetbrains.utils.rules.PythonCodeInsightTestFixtureRule
 import software.aws.toolkits.resources.message
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
 
 // TODO: restructure testbase, too bulky and hard to debug
@@ -77,11 +83,11 @@ open class CodeWhispererTestBase {
     @JvmField
     val ruleChain = RuleChain(projectRule, mockCredentialRule, mockClientManagerRule, authManagerRule, disposableRule)
 
-    protected lateinit var mockClient: CodeWhispererRuntimeClient
+    protected lateinit var mockLspService: AmazonQLspService
+    protected lateinit var mockLanguageServer: AmazonQLanguageServer
 
     protected lateinit var popupManagerSpy: CodeWhispererPopupManager
     protected lateinit var clientAdaptorSpy: CodeWhispererClientAdaptor
-    protected lateinit var invocationStatusSpy: CodeWhispererInvocationStatus
     internal lateinit var stateManager: CodeWhispererExplorerActionManager
     protected lateinit var recommendationManager: CodeWhispererRecommendationManager
     protected lateinit var codewhispererService: CodeWhispererService
@@ -90,26 +96,19 @@ open class CodeWhispererTestBase {
     private lateinit var originalExplorerActionState: CodeWhispererExploreActionState
     private lateinit var originalSettings: CodeWhispererConfiguration
     private lateinit var qRegionProfileManagerSpy: QRegionProfileManager
+    protected lateinit var codeScanManager: CodeWhispererCodeScanManager
 
     @Before
     open fun setUp() {
-        mockClient = mockClientManagerRule.create()
+        mockLspService = spy(AmazonQLspService.getInstance(projectRule.project))
+        mockLanguageServer = mockk()
+
+        // Mock the service methods on Project
+        projectRule.project.replaceService(AmazonQLspService::class.java, mockLspService, disposableRule.disposable)
+        mockLspInlineCompletionResponse(pythonResponse)
+
         mockClientManagerRule.create<SsoOidcClient>()
-        val requestCaptor = argumentCaptor<GenerateCompletionsRequest>()
-        mockClient.stub {
-            on {
-                mockClient.generateCompletionsPaginator(requestCaptor.capture())
-            } doAnswer {
-                GenerateCompletionsIterable(mockClient, requestCaptor.lastValue)
-            }
-        }
-        mockClient.stub {
-            on {
-                mockClient.generateCompletions(any<GenerateCompletionsRequest>())
-            } doAnswer {
-                pythonResponse
-            }
-        }
+        every { mockLanguageServer.logInlineCompletionSessionResults(any()) } returns CompletableFuture.completedFuture(Unit)
 
         popupManagerSpy = spy(CodeWhispererPopupManager.getInstance())
         popupManagerSpy.reset()
@@ -123,19 +122,17 @@ open class CodeWhispererTestBase {
         }
         ApplicationManager.getApplication().replaceService(CodeWhispererPopupManager::class.java, popupManagerSpy, disposableRule.disposable)
 
-        invocationStatusSpy = spy(CodeWhispererInvocationStatus.getInstance())
-        invocationStatusSpy.stub {
-            on {
-                hasEnoughDelayToShowCodeWhisperer()
-            } doAnswer {
-                true
-            }
-        }
-        ApplicationManager.getApplication().replaceService(CodeWhispererInvocationStatus::class.java, invocationStatusSpy, disposableRule.disposable)
-
         stateManager = spy(CodeWhispererExplorerActionManager.getInstance())
         recommendationManager = CodeWhispererRecommendationManager.getInstance()
-        codewhispererService = CodeWhispererService.getInstance()
+        codewhispererService = spy(CodeWhispererService.getInstance())
+        codewhispererService.stub {
+            onGeneric {
+                getWorkspaceIds(any())
+            } doAnswer {
+                CompletableFuture.completedFuture(LspServerConfigurations(listOf(WorkspaceInfo("file:///", "workspaceId"))))
+            }
+        }
+        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererService, disposableRule.disposable)
         editorManager = CodeWhispererEditorManager.getInstance()
         settingsManager = CodeWhispererSettings.getInstance()
 
@@ -168,6 +165,11 @@ open class CodeWhispererTestBase {
         projectRule.project.replaceService(CodeWhispererClientAdaptor::class.java, clientAdaptorSpy, disposableRule.disposable)
         ApplicationManager.getApplication().replaceService(CodeWhispererExplorerActionManager::class.java, stateManager, disposableRule.disposable)
         stateManager.setAutoEnabled(false)
+
+        codeScanManager = spy(CodeWhispererCodeScanManager.getInstance(projectRule.project))
+        doNothing().`when`(codeScanManager).buildCodeScanUI()
+        doNothing().`when`(codeScanManager).removeCodeScanUI()
+        projectRule.project.replaceService(CodeWhispererCodeScanManager::class.java, codeScanManager, disposableRule.disposable)
 
         val conn = authManagerRule.createConnection(ManagedSsoProfile("us-east-1", "url", Q_SCOPES))
         ToolkitConnectionManager.getInstance(projectRule.project).switchConnection(conn)
@@ -260,13 +262,12 @@ open class CodeWhispererTestBase {
     }
 
     fun addUserInputAfterInvocation(userInput: String) {
-        val codewhispererServiceSpy = spy(codewhispererService)
         val triggerTypeCaptor = argumentCaptor<TriggerTypeInfo>()
         val editorCaptor = argumentCaptor<Editor>()
         val projectCaptor = argumentCaptor<Project>()
         val psiFileCaptor = argumentCaptor<PsiFile>()
         val latencyContextCaptor = argumentCaptor<LatencyContext>()
-        codewhispererServiceSpy.stub {
+        codewhispererService.stub {
             onGeneric {
                 getRequestContext(
                     triggerTypeCaptor.capture(),
@@ -276,7 +277,7 @@ open class CodeWhispererTestBase {
                     latencyContextCaptor.capture()
                 )
             }.doAnswer {
-                val requestContext = codewhispererServiceSpy.getRequestContext(
+                val requestContext = codewhispererService.getRequestContext(
                     triggerTypeCaptor.firstValue,
                     editorCaptor.firstValue,
                     projectCaptor.firstValue,
@@ -287,6 +288,15 @@ open class CodeWhispererTestBase {
                 requestContext
             }.thenCallRealMethod()
         }
-        ApplicationManager.getApplication().replaceService(CodeWhispererService::class.java, codewhispererServiceSpy, disposableRule.disposable)
+    }
+
+    fun mockLspInlineCompletionResponse(response: InlineCompletionListWithReferences) {
+        mockLspService.stub {
+            onGeneric {
+                executeSync<CompletableFuture<InlineCompletionListWithReferences>>(any())
+            } doAnswer {
+                CompletableFuture.completedFuture(response)
+            }
+        }
     }
 }

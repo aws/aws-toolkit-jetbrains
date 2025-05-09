@@ -1,6 +1,6 @@
 // Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-
+@file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
 import com.google.gson.ToNumberPolicy
@@ -20,15 +20,17 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.io.await
+import com.intellij.util.net.HttpConfigurable
+import com.intellij.util.net.JdkProxyProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
+import org.apache.http.client.utils.URIBuilder
 import org.eclipse.lsp4j.ClientCapabilities
 import org.eclipse.lsp4j.ClientInfo
 import org.eclipse.lsp4j.DidChangeConfigurationParams
@@ -40,20 +42,27 @@ import org.eclipse.lsp4j.SynchronizationCapabilities
 import org.eclipse.lsp4j.TextDocumentClientCapabilities
 import org.eclipse.lsp4j.WorkspaceClientCapabilities
 import org.eclipse.lsp4j.jsonrpc.Launcher
+import org.eclipse.lsp4j.jsonrpc.MessageConsumer
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.slf4j.event.Level
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.core.utils.writeText
 import software.aws.toolkits.jetbrains.isDeveloperMode
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.auth.DefaultAuthCredentialsService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.DefaultModuleDependenciesService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AmazonQLspTypeAdapterFactory
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsExtendedInitializeResult
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.createExtendedClientMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument.TextDocumentServiceHandler
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.workspace.WorkspaceServiceHandler
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QDefaultServiceConfig
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 import software.aws.toolkits.jetbrains.settings.LspSettings
 import java.io.IOException
@@ -62,7 +71,11 @@ import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.io.PrintWriter
 import java.io.StringWriter
+import java.net.Proxy
+import java.net.URI
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.util.Collections
 import java.util.concurrent.Future
 import kotlin.time.Duration.Companion.seconds
 
@@ -101,9 +114,15 @@ internal class LSPProcessListener : ProcessListener {
 
 @Service(Service.Level.PROJECT)
 class AmazonQLspService(private val project: Project, private val cs: CoroutineScope) : Disposable {
+    private val lspInitializedMessageReceivedListener = Collections.synchronizedList(mutableListOf<AmazonQInitializeMessageReceivedListener>())
+    fun addLspInitializeMessageListener(listener: AmazonQInitializeMessageReceivedListener) = lspInitializedMessageReceivedListener.add(listener)
+    fun notifyInitializeMessageReceived() = lspInitializedMessageReceivedListener.forEach { it() }
+
     private var instance: Deferred<AmazonQServerInstance>
     val capabilities
         get() = instance.getCompleted().initializeResult.getCompleted().capabilities
+    val encryptionManager
+        get() = instance.getCompleted().encryptionManager
 
     // dont allow lsp commands if server is restarting
     private val mutex = Mutex(false)
@@ -194,7 +213,7 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
 }
 
 private class AmazonQServerInstance(private val project: Project, private val cs: CoroutineScope) : Disposable {
-    private val encryptionManager = JwtEncryptionManager()
+    val encryptionManager = JwtEncryptionManager()
 
     private val launcher: Launcher<AmazonQLanguageServer>
 
@@ -249,14 +268,50 @@ private class AmazonQServerInstance(private val project: Project, private val cs
 
     init {
         // will cause slow service init, but maybe fine for now. will not block UI since fetch/extract will be under background progress
-        val artifact = runBlocking { ArtifactManager(project, manifestRange = null).fetchArtifact() }.toAbsolutePath()
+        val artifact = runBlocking { service<ArtifactManager>().fetchArtifact(project) }.toAbsolutePath()
+
+        // more network calls
+        // make assumption that all requests will resolve to the same CA
+        // also terrible assumption that default endpoint is reachable
+        val qUri = URI(QDefaultServiceConfig.ENDPOINT)
+        val rtsTrustChain = TrustChainUtil.getTrustChain(qUri)
+        val extraCaCerts = Files.createTempFile("q-extra-ca", ".pem").apply {
+            writeText(
+                TrustChainUtil.certsToPem(rtsTrustChain)
+            )
+        }
+
         val node = if (SystemInfo.isWindows) "node.exe" else "node"
         val cmd = GeneralCommandLine(
             artifact.resolve(node).toString(),
             LspSettings.getInstance().getArtifactPath() ?: artifact.resolve("aws-lsp-codewhisperer.js").toString(),
             "--stdio",
             "--set-credentials-encryption-key",
+        ).withEnvironment(
+            buildMap {
+                put("NODE_EXTRA_CA_CERTS", extraCaCerts.toAbsolutePath().toString())
+
+                val proxy = JdkProxyProvider.getInstance().proxySelector.select(qUri)
+                    // log if only socks proxy available
+                    .firstOrNull { it.type() == Proxy.Type.HTTP }
+
+                if (proxy != null) {
+                    val address = proxy.address()
+                    if (address is java.net.InetSocketAddress) {
+                        put(
+                            "HTTPS_PROXY",
+                            URIBuilder("http://${address.hostName}:${address.port}").apply {
+                                val login = HttpConfigurable.getInstance().proxyLogin
+                                if (login != null) {
+                                    setUserInfo(login, HttpConfigurable.getInstance().plainProxyPassword)
+                                }
+                            }.build().toASCIIString()
+                        )
+                    }
+                }
+            }
         )
+            .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
 
         launcherHandler = KillableColoredProcessHandler.Silent(cmd)
         val inputWrapper = LSPProcessListener()
@@ -264,6 +319,16 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         launcherHandler.startNotify()
 
         launcher = LSPLauncher.Builder<AmazonQLanguageServer>()
+            .wrapMessages { consumer ->
+                MessageConsumer { message ->
+                    if (message is ResponseMessage && message.result is AwsExtendedInitializeResult) {
+                        val result = message.result as AwsExtendedInitializeResult
+                        AwsServerCapabilitiesProvider.getInstance(project).setAwsServerCapabilities(result.getAwsServerCapabilities())
+                        AmazonQLspService.getInstance(project).notifyInitializeMessageReceived()
+                    }
+                    consumer?.consume(message)
+                }
+            }
             .setLocalService(AmazonQLanguageClientImpl(project))
             .setRemoteInterface(AmazonQLanguageServer::class.java)
             .configureGson {
@@ -272,6 +337,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
 
                 // otherwise Gson treats all numbers as double which causes deser issues
                 it.setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+                it.registerTypeAdapterFactory(AmazonQLspTypeAdapterFactory())
             }.traceMessages(
                 PrintWriter(
                     object : StringWriter() {
@@ -295,12 +361,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             encryptionManager.writeInitializationPayload(launcherHandler.process.outputStream)
 
             val initializeResult = try {
-                withTimeout(5.seconds) {
-                    languageServer.initialize(createInitializeParams()).await()
-                }
-            } catch (_: TimeoutCancellationException) {
-                LOG.warn { "LSP initialization timed out" }
-                null
+                languageServer.initialize(createInitializeParams()).await()
             } catch (e: Exception) {
                 LOG.warn(e) { "LSP initialization failed" }
                 null
@@ -317,7 +378,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         }
 
         // invokeOnCompletion results in weird lock/timeout error
-        initializeResult.asCompletableFuture().handleAsync { r, ex ->
+        initializeResult.asCompletableFuture().handleAsync { lspInitResult, ex ->
             if (ex != null) {
                 return@handleAsync
             }
@@ -325,7 +386,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             this@AmazonQServerInstance.apply {
                 DefaultAuthCredentialsService(project, encryptionManager, this)
                 TextDocumentServiceHandler(project, this)
-                WorkspaceServiceHandler(project, this)
+                WorkspaceServiceHandler(project, lspInitResult, this)
                 DefaultModuleDependenciesService(project, this)
             }
         }
@@ -350,3 +411,5 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         private val LOG = getLogger<AmazonQServerInstance>()
     }
 }
+
+typealias AmazonQInitializeMessageReceivedListener = () -> Unit

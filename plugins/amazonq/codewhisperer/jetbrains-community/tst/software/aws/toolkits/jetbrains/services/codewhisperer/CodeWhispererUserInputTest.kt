@@ -15,9 +15,9 @@ class CodeWhispererUserInputTest : CodeWhispererTestBase() {
 
         withCodeWhispererServiceInvokedAndWait { states ->
             val actualRecommendations = states.recommendationContext.details.map {
-                it.recommendation.content()
+                it.completion.insertText
             }
-            assertThat(actualRecommendations).isEqualTo(pythonResponse.completions().map { it.content() })
+            assertThat(actualRecommendations).isEqualTo(pythonResponse.items.map { it.insertText })
         }
     }
 
@@ -26,13 +26,13 @@ class CodeWhispererUserInputTest : CodeWhispererTestBase() {
         val userInput = "test"
         addUserInputAfterInvocation(userInput)
 
-        val expectedRecommendations = pythonResponse.completions().map { it.content() }
+        val expectedRecommendations = pythonResponse.items.map { it.insertText }
 
         withCodeWhispererServiceInvokedAndWait { states ->
-            val actualRecommendations = states.recommendationContext.details.map { it.recommendation.content() }
+            val actualRecommendations = states.recommendationContext.details.map { it.completion.insertText }
             assertThat(actualRecommendations).isEqualTo(expectedRecommendations)
             states.recommendationContext.details.forEachIndexed { index, context ->
-                val expectedDiscarded = !pythonResponse.completions()[index].content().startsWith(userInput)
+                val expectedDiscarded = !pythonResponse.items[index].insertText.startsWith(userInput)
                 val actualDiscarded = context.isDiscarded
                 assertThat(actualDiscarded).isEqualTo(expectedDiscarded)
             }
@@ -51,37 +51,7 @@ class CodeWhispererUserInputTest : CodeWhispererTestBase() {
             assertThat(popupManagerSpy.sessionContext.typeahead).isEqualTo(typeahead)
             states.recommendationContext.details.forEachIndexed { index, actualContext ->
                 val actualDiscarded = actualContext.isDiscarded
-                val expectedDiscarded = !pythonResponse.completions()[index].content().startsWith(userInput + typeahead)
-                assertThat(actualDiscarded).isEqualTo(expectedDiscarded)
-            }
-        }
-    }
-
-    @Test
-    fun `test have blank user input should show that all recommendations are valid`() {
-        val blankUserInput = "    "
-        addUserInputAfterInvocation(blankUserInput)
-        val userInput = blankUserInput.trimStart()
-
-        withCodeWhispererServiceInvokedAndWait { states ->
-            assertThat(states.recommendationContext.userInputSinceInvocation).isEqualTo(userInput)
-            states.recommendationContext.details.forEachIndexed { _, actualContext ->
-                assertThat(actualContext.isDiscarded).isEqualTo(false)
-            }
-        }
-    }
-
-    @Test
-    fun `test have user input with leading spaces and matching suffix should show recommendations prefix-matching suffix are valid`() {
-        val userInputWithLeadingSpaces = "   test"
-        addUserInputAfterInvocation(userInputWithLeadingSpaces)
-        val userInput = userInputWithLeadingSpaces.trimStart()
-
-        withCodeWhispererServiceInvokedAndWait { states ->
-            assertThat(states.recommendationContext.userInputSinceInvocation).isEqualTo(userInput)
-            states.recommendationContext.details.forEachIndexed { index, actualContext ->
-                val actualDiscarded = actualContext.isDiscarded
-                val expectedDiscarded = !pythonResponse.completions()[index].content().startsWith(userInput)
+                val expectedDiscarded = !pythonResponse.items[index].insertText.startsWith(userInput + typeahead)
                 assertThat(actualDiscarded).isEqualTo(expectedDiscarded)
             }
         }

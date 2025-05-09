@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.treeToValue
 import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.messages.UnknownMessageType
@@ -19,7 +20,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.util.command
 
 class MessageSerializer @VisibleForTesting constructor() {
 
-    private val objectMapper = jacksonObjectMapper()
+    val objectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())
         .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
         .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
@@ -35,6 +36,9 @@ class MessageSerializer @VisibleForTesting constructor() {
     }
 
     fun serialize(value: Any): String = objectMapper.writeValueAsString(value)
+
+    inline fun <reified T> deserializeChatMessages(value: JsonNode): T =
+        objectMapper.treeToValue<T>(value)
 
     // Provide singleton global access
     companion object {
