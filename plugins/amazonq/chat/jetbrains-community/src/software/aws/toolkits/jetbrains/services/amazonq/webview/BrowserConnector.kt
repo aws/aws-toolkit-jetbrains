@@ -492,7 +492,6 @@ class BrowserConnector(
                 }
             }
             TELEMETRY_EVENT -> {
-                println("TELEMETRY + $node")
                 val telemetryEvent = serializer.deserializeChatMessages<FlareUiMessage>(node)
                 browser.postChat(
                     telemetryEvent
