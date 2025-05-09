@@ -142,6 +142,7 @@ enum class ButtonStatus {
     ERROR,
 }
 
+// https://github.com/aws/language-server-runtimes/blame/68319c975d29a8ba9b084c9fa780ebff75b286bb/types/chat.ts#L127
 enum class MessageType {
     @JsonProperty("answer")
     ANSWER,
