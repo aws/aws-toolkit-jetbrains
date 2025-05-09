@@ -102,11 +102,11 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendC
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.StopResponseMessage
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TELEMETRY_EVENT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventRequest
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TELEMETRY_EVENT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
