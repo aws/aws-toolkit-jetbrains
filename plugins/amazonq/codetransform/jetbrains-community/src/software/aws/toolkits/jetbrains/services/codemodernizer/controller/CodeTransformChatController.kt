@@ -76,6 +76,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTr
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildTransformStoppingChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserCancelledChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserHilSelection
+import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputCustomDependencyVersionsChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputLanguageUpgradeChatContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputOneOrMultipleDiffsChatIntroContent
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.buildUserInputOneOrMultipleDiffsFlagChatContent
@@ -92,6 +93,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.messages.Authenti
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformChatMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.CodeTransformCommandMessage
 import software.aws.toolkits.jetbrains.services.codemodernizer.messages.IncomingCodeTransformMessage
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CLIENT_SIDE_BUILD
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerJobCompletedResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformConversationState
@@ -125,6 +127,10 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcas
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.testFramework.LightVirtualFile
+import org.jetbrains.yaml.YAMLFileType
 
 class CodeTransformChatController(
     private val context: AmazonQAppInitContext,
@@ -427,23 +433,22 @@ class CodeTransformChatController(
 
     override suspend fun processCodeTransformOneOrMultipleDiffs(message: IncomingCodeTransformMessage.CodeTransformConfirmOneOrMultipleDiffs) {
         val transformCapabilities = when (message.oneOrMultipleDiffsSelection) {
-            // TODO: add CLIENT_SIDE_BUILD to both below when releasing CSB
             message("codemodernizer.chat.message.one_or_multiple_diffs_form.multiple_diffs") -> listOf(
                 EXPLAINABILITY_V1,
-                SELECTIVE_TRANSFORMATION_V1
+                SELECTIVE_TRANSFORMATION_V1,
+                CLIENT_SIDE_BUILD
             )
             else -> listOf(
                 EXPLAINABILITY_V1,
+                CLIENT_SIDE_BUILD
             )
         }
         telemetry.submitSelection(message.oneOrMultipleDiffsSelection)
         codeTransformChatHelper.addNewMessage(buildUserOneOrMultipleDiffsSelectionChatContent(message.oneOrMultipleDiffsSelection))
         codeModernizerManager.codeTransformationSession?.let {
             it.sessionContext.transformCapabilities = transformCapabilities
-            codeModernizerManager.runLocalMavenBuild(context.project, it)
         }
-        // TODO: when releasing CSB, delete "runLocalMavenBuild" line above and uncomment line below
-        // promptForCustomYamlFile()
+        promptForCustomYamlFile()
     }
 
     override suspend fun processCodeTransformCustomDependencyVersions(message: IncomingCodeTransformMessage.CodeTransformConfirmCustomDependencyVersions) {
@@ -485,14 +490,11 @@ class CodeTransformChatController(
         }
     }
 
-    // TODO: uncomment when releasing CSB
-/*
     private suspend fun promptForCustomYamlFile() {
         codeTransformChatHelper.addNewMessage(buildUserInputCustomDependencyVersionsChatContent())
         val sampleYAML = """
-name: "custom-dependency-management"
+name: "dependency-upgrade"
 description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
-
 dependencyManagement:
   dependencies:
     - identifier: "com.example:library1"
@@ -503,18 +505,18 @@ dependencyManagement:
       targetVersion: "3.0.0"
       originType: "THIRD_PARTY"
   plugins:
-    - identifier: "com.example.plugin"
+    - identifier: "com.example:plugin"
       targetVersion: "1.2.0"
       versionProperty: "plugin.version"  # Optional
         """.trimIndent()
 
-        val virtualFile = LightVirtualFile("sample-dependency-management.yaml", YAMLFileType.YML, sampleYAML)
+        val virtualFile = LightVirtualFile("sample-dependency-upgrade.yaml", YAMLFileType.YML, sampleYAML)
         virtualFile.isWritable = true
         ApplicationManager.getApplication().invokeLater {
             FileEditorManager.getInstance(context.project).openFile(virtualFile, true)
         }
     }
-*/
+
     override suspend fun processCodeTransformContinueAction(message: IncomingCodeTransformMessage.CodeTransformContinue) {
         codeTransformChatHelper.addNewMessage(buildContinueTransformationChatContent())
         promptForTargetJdkName(message.tabId)
