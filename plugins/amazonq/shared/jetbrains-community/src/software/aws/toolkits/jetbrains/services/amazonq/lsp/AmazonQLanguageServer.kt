@@ -52,6 +52,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PROMP
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TELEMETRY_EVENT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventParams
@@ -149,4 +150,7 @@ interface AmazonQLanguageServer : LanguageServer {
 
     @JsonNotification(CHAT_CREATE_PROMPT)
     fun createPrompt(params: CreatePromptParams): CompletableFuture<Unit>
+
+    @JsonNotification(TELEMETRY_EVENT)
+    fun sendTelemetry(params: Any): CompletableFuture<Unit>
 }

@@ -102,10 +102,13 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendC
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.StopResponseMessage
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TELEMETRY_EVENT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventRequest
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TelemetryEventNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TelemetryEventParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
@@ -471,6 +474,11 @@ class BrowserConnector(
                 if (openSettingsNotification.params.settingKey != OPEN_WORKSPACE_SETTINGS_KEY) return
                 runInEdt {
                     ShowSettingsUtil.getInstance().showSettingsDialog(browser.project, CodeWhispererConfigurable::class.java)
+                }
+            }
+            TELEMETRY_EVENT -> {
+                handleChatNotification<TelemetryEventNotification, TelemetryEventParams>(node) { server, params ->
+                    server.sendTelemetry(params)
                 }
             }
         }
