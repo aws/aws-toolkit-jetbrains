@@ -113,11 +113,9 @@ class EditorThemeAdapter {
                 warning = themeColor("Component.warningFocusColor", default = 0xE2A53A),
                 error = themeColor("ProgressBar.failedColor", default = 0xD64F4F, darkDefault = 0xE74848),
 
-                cardBackground = cardBackground,
-
                 editorFont = currentScheme.getFont(EditorFontType.PLAIN),
-                editorBackground = chatBackground,
-                editorForeground = text,
+                editorBackground = currentScheme.defaultBackground,
+                editorForeground = currentScheme.defaultForeground,
                 editorVariable = currentScheme.foregroundColor(DefaultLanguageHighlighterColors.LOCAL_VARIABLE),
                 editorOperator = currentScheme.foregroundColor(DefaultLanguageHighlighterColors.OPERATION_SIGN),
                 editorFunction = currentScheme.foregroundColor(DefaultLanguageHighlighterColors.FUNCTION_DECLARATION),
@@ -125,6 +123,7 @@ class EditorThemeAdapter {
                 editorKeyword = currentScheme.foregroundColor(DefaultLanguageHighlighterColors.KEYWORD),
                 editorString = currentScheme.foregroundColor(DefaultLanguageHighlighterColors.STRING),
                 editorProperty = currentScheme.foregroundColor(DefaultLanguageHighlighterColors.INSTANCE_FIELD),
+                editorClassName = currentScheme.foregroundColor(DefaultLanguageHighlighterColors.CLASS_NAME),
             )
         }
 
