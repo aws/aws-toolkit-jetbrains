@@ -8,7 +8,6 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
-import kotlinx.coroutines.flow.last
 import org.cef.CefApp
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
