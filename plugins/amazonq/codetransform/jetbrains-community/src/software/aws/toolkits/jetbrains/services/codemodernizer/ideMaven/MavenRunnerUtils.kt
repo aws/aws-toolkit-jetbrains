@@ -25,7 +25,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MAVEN_BUILD_RUN_UNIT_TESTS
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenCopyCommandsResult
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.MavenDependencyReportCommandsResult
-import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.telemetry.CodeTransformBuildCommand
 import software.aws.toolkits.telemetry.Result
 import java.io.File
@@ -95,8 +94,6 @@ private fun runMavenJar(
 ): TransformRunnable {
     logBuilder.appendLine("Command Run: IntelliJ IDEA bundled Maven JAR")
     val jarPath = AwsToolkit.PLUGINS_INFO[AwsPlugin.Q]?.path?.resolve("lib/QCT-Maven.jar")
-
-    notifyStickyInfo("found jarPath", "jarPath = $jarPath")
 
     val commandList = listOf(
         "-Dmaven.ext.class.path=${jarPath}",
