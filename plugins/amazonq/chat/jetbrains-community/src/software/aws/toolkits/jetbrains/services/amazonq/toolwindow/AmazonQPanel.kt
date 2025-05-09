@@ -27,6 +27,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageTypeRegistry
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts.ArtifactManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessageConnector
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
@@ -55,8 +56,12 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
         project.messageBus.connect().subscribe(
             AsyncChatUiListener.TOPIC,
             object : AsyncChatUiListener {
-                override fun onChange(message: String) {
-                    browser.get()?.postChat(message)
+                override fun onChange(command: String) {
+                    browser.get()?.postChat(command)
+                }
+
+                override fun onChange(command: FlareUiMessage) {
+                    browser.get()?.postChat(command)
                 }
             }
         )
