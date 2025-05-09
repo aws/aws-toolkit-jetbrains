@@ -96,7 +96,7 @@ private fun runMavenJar(
     val jarPath = AwsToolkit.PLUGINS_INFO[AwsPlugin.Q]?.path?.resolve("lib/QCT-Maven.jar")
 
     val commandList = listOf(
-        "-Dmaven.ext.class.path=${jarPath}",
+        "-Dmaven.ext.class.path=$jarPath",
         "-Dcom.amazon.aws.developer.transform.jobDirectory=$destinationDir",
         "clean",
         "test-compile"
