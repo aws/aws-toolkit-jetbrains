@@ -11,12 +11,16 @@ enum class TriggerType(val value: String) {
 }
 
 data class GenericCommandParams(
+    val tabId: String? = null,
     val selection: String,
     val triggerType: TriggerType,
     val genericCommand: String,
 )
 
+// https://github.com/aws/language-server-runtimes/blob/b7c4718b9bd84e08e72b992da5d699549af9f115/chat-client-ui-types/src/uiContracts.ts#L67
 data class SendToPromptParams(
     val selection: String,
     val triggerType: TriggerType,
+    val prompt: ChatPrompt? = null,
+    val autoSubmit: Boolean? = null
 )
