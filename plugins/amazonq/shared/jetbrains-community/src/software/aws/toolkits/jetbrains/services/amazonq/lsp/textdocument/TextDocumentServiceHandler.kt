@@ -4,7 +4,10 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.textdocument
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Document
+import com.intellij.openapi.editor.event.DocumentEvent
+import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileDocumentManagerListener
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -29,10 +32,11 @@ import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class TextDocumentServiceHandler(
     private val project: Project,
-    serverInstance: Disposable,
+    private val serverInstance: Disposable,
 ) : FileDocumentManagerListener,
     FileEditorManagerListener,
-    BulkFileListener {
+    BulkFileListener,
+    DocumentListener {
 
     init {
         // didOpen & didClose events
@@ -61,18 +65,30 @@ class TextDocumentServiceHandler(
     }
 
     private fun handleFileOpened(file: VirtualFile) {
+        ApplicationManager.getApplication().runReadAction {
+            FileDocumentManager.getInstance().getDocument(file)?.addDocumentListener(
+                object : DocumentListener {
+                    override fun documentChanged(event: DocumentEvent) {
+                        realTimeEdit(event)
+                    }
+                },
+                serverInstance
+            )
+        }
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             toUriString(file)?.let { uri ->
-                languageServer.textDocumentService.didOpen(
-                    DidOpenTextDocumentParams().apply {
-                        textDocument = TextDocumentItem().apply {
-                            this.uri = uri
-                            text = file.inputStream.readAllBytes().decodeToString()
-                            languageId = file.fileType.name.lowercase()
-                            version = file.modificationStamp.toInt()
+                pluginAwareExecuteOnPooledThread {
+                    languageServer.textDocumentService.didOpen(
+                        DidOpenTextDocumentParams().apply {
+                            textDocument = TextDocumentItem().apply {
+                                this.uri = uri
+                                text = file.inputStream.readAllBytes().decodeToString()
+                                languageId = file.fileType.name.lowercase()
+                                version = file.modificationStamp.toInt()
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     }
@@ -81,14 +97,16 @@ class TextDocumentServiceHandler(
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             val file = FileDocumentManager.getInstance().getFile(document) ?: return@executeIfRunning
             toUriString(file)?.let { uri ->
-                languageServer.textDocumentService.didSave(
-                    DidSaveTextDocumentParams().apply {
-                        textDocument = TextDocumentIdentifier().apply {
-                            this.uri = uri
+                pluginAwareExecuteOnPooledThread {
+                    languageServer.textDocumentService.didSave(
+                        DidSaveTextDocumentParams().apply {
+                            textDocument = TextDocumentIdentifier().apply {
+                                this.uri = uri
+                            }
+                            text = document.text
                         }
-                        text = document.text
-                    }
-                )
+                    )
+                }
             }
         }
     }
@@ -140,5 +158,29 @@ class TextDocumentServiceHandler(
                 )
             }
         }
+    }
+
+    private fun realTimeEdit(event: DocumentEvent) {
+        AmazonQLspService.executeIfRunning(project) { languageServer ->
+            pluginAwareExecuteOnPooledThread {
+                val vFile = FileDocumentManager.getInstance().getFile(event.document) ?: return@pluginAwareExecuteOnPooledThread
+                toUriString(vFile)?.let { uri ->
+                    languageServer.textDocumentService.didChange(
+                        DidChangeTextDocumentParams().apply {
+                            textDocument = VersionedTextDocumentIdentifier().apply {
+                                this.uri = uri
+                                version = event.document.modificationStamp.toInt()
+                            }
+                            contentChanges = listOf(
+                                TextDocumentContentChangeEvent().apply {
+                                    text = event.document.text
+                                }
+                            )
+                        }
+                    )
+                }
+            }
+        }
+        // Process document changes here
     }
 }
