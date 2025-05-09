@@ -6,7 +6,8 @@ package software.aws.toolkits.jetbrains.services.cwc.commands
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
+import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GenericCommandParams
@@ -28,7 +29,7 @@ class ActionRegistrar {
             _messages.tryEmit(ContextMenuActionMessage(command, project))
         } else {
             // new agentic chat route
-            runBlocking {
+            projectCoroutineScope(project).launch {
                 val contextExtractor = ActiveFileContextExtractor.create(fqnWebviewAdapter = null, project = project)
                 val fileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ContextMenu)
                 val codeSelection = "\n```\n${fileContext.focusAreaContext?.codeSelection?.trimIndent()?.trim()}\n```\n"
