@@ -18,7 +18,6 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.jcef.JBCefApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
