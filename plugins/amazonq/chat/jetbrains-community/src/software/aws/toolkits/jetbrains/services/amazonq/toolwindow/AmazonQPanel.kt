@@ -201,6 +201,17 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
         }
     }
 
+    fun getDefaultAppInitContext() : AmazonQAppInitContext {
+
+        return AmazonQAppInitContext(
+            project = project,
+            messagesFromAppToUi = MessageConnector(),
+            messagesFromUiToApp = MessageConnector(),
+            messageTypeRegistry = MessageTypeRegistry(),
+            fqnWebviewAdapter = FqnWebviewAdapter(jcefBrowser = browser.get().jcefBrowser, browserConnector),
+        )
+    }
+
     override fun dispose() {
     }
 }

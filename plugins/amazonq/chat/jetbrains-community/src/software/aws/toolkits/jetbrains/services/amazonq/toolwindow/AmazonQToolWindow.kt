@@ -11,9 +11,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.ToolWindowManager
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.runCodeScanMessage
+import software.aws.toolkits.jetbrains.services.cwc.controller.TestCommandMessage
 
 @Service(Service.Level.PROJECT)
 class AmazonQToolWindow private constructor(
@@ -51,6 +53,14 @@ class AmazonQToolWindow private constructor(
             showChatWindow(project)
             val window = getInstance(project)
             window.chatPanel.sendMessageAppToUi(runCodeScanMessage, tabType = "codescan")
+        }
+
+        fun sendTestMessage(project: Project) {
+            runBlocking {
+                val a = getInstance(project).chatPanel.getDefaultAppInitContext()
+                val b = a.messagesFromAppToUi.publish(TestCommandMessage())
+            }
+
         }
     }
 
