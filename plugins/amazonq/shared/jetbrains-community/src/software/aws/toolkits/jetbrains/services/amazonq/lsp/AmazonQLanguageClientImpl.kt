@@ -261,7 +261,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         AsyncChatUiListener.notifyPartialMessageUpdate(
             FlareUiMessage(
                 command = CHAT_SEND_UPDATE,
-                params = params ?: error("received empty payload for $CHAT_SEND_UPDATE"),
+                params = params,
             )
         )
 
@@ -340,7 +340,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         AsyncChatUiListener.notifyPartialMessageUpdate(
             FlareUiMessage(
                 command = CHAT_SEND_CONTEXT_COMMANDS,
-                params = params ?: error("received empty payload for $CHAT_SEND_CONTEXT_COMMANDS"),
+                params = params,
             )
         )
 
