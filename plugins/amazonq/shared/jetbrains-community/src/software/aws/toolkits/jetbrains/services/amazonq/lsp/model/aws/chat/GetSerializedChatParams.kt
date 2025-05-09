@@ -3,23 +3,20 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
+import com.fasterxml.jackson.annotation.JsonValue
+import com.google.gson.annotations.JsonAdapter
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.EnumJsonValueAdapter
+
 data class GetSerializedChatParams(
     val tabId: String,
     val format: String,
-) {
-    companion object {
-        fun create(tabId: String, format: SerializedChatFormat): GetSerializedChatParams =
-            GetSerializedChatParams(tabId, format.value)
-    }
-}
+)
 
-enum class SerializedChatFormat(val value: String) {
+@JsonAdapter(EnumJsonValueAdapter::class)
+enum class SerializedChatFormat(@JsonValue val repr: String) {
     HTML("html"),
     MARKDOWN("markdown"),
     ;
-
-    override fun toString(): String =
-        name.lowercase()
 }
 
 data class GetSerializedChatResult(

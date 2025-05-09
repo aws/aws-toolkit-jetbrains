@@ -3,7 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonValue
+import com.google.gson.annotations.JsonAdapter
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.EnumJsonValueAdapter
 
 data class ChatMessage(
     val type: MessageType? = MessageType.ANSWER,
@@ -69,93 +71,51 @@ data class Changes(
     val total: Int? = null,
 )
 
-enum class IconType {
-    @JsonProperty("file")
-    FILE,
-
-    @JsonProperty("folder")
-    FOLDER,
-
-    @JsonProperty("code-block")
-    CODE_BLOCK,
-
-    @JsonProperty("list-add")
-    LIST_ADD,
-
-    @JsonProperty("magic")
-    MAGIC,
-
-    @JsonProperty("help")
-    HELP,
-
-    @JsonProperty("trash")
-    TRASH,
-
-    @JsonProperty("search")
-    SEARCH,
-
-    @JsonProperty("calendar")
-    CALENDAR,
+@JsonAdapter(EnumJsonValueAdapter::class)
+enum class IconType(@JsonValue val repr: String) {
+    FILE("file"),
+    FOLDER("folder"),
+    CODE_BLOCK("code-block"),
+    LIST_ADD("list-add"),
+    MAGIC("magic"),
+    HELP("help"),
+    TRASH("trash"),
+    SEARCH("search"),
+    CALENDAR("calendar"),
     ;
 
-    companion object {
-        private val stringToEnum: Map<String, IconType> = entries.associateBy { it.name.lowercase() }
-
-        fun fromString(value: String): IconType = stringToEnum[value] ?: throw IllegalArgumentException("Unknown IconType: $value")
-    }
 }
 
-enum class Status {
-    @JsonProperty("info")
-    INFO,
+@JsonAdapter(EnumJsonValueAdapter::class)
+enum class Status(@JsonValue val repr: String) {
+    INFO("info"),
+    SUCCESS("success"),
+    WARNING("warning"),
+    ERROR("error"),
+    ;
 
-    @JsonProperty("success")
-    SUCCESS,
-
-    @JsonProperty("warning")
-    WARNING,
-
-    @JsonProperty("error")
-    ERROR,
 }
 
-enum class ButtonStatus {
-    @JsonProperty("main")
-    MAIN,
+@JsonAdapter(EnumJsonValueAdapter::class)
+enum class ButtonStatus(@JsonValue val repr: String) {
+    MAIN("main"),
+    PRIMARY("primary"),
+    CLEAR("clear"),
+    INFO("info"),
+    SUCCESS("success"),
+    WARNING("warning"),
+    ERROR("error"),
+    ;
 
-    @JsonProperty("primary")
-    PRIMARY,
-
-    @JsonProperty("clear")
-    CLEAR,
-
-    @JsonProperty("info")
-    INFO,
-
-    @JsonProperty("success")
-    SUCCESS,
-
-    @JsonProperty("warning")
-    WARNING,
-
-    @JsonProperty("error")
-    ERROR,
 }
 
 // https://github.com/aws/language-server-runtimes/blame/68319c975d29a8ba9b084c9fa780ebff75b286bb/types/chat.ts#L127
-enum class MessageType {
-    @JsonProperty("answer")
-    ANSWER,
-
-    @JsonProperty("prompt")
-    PROMPT,
-
-    @JsonProperty("system-prompt")
-    SYSTEM_PROMPT,
-
-    @JsonProperty("directive")
-    DIRECTIVE,
-
-    @JsonProperty("tool")
-    TOOL,
+@JsonAdapter(EnumJsonValueAdapter::class)
+enum class MessageType(@JsonValue val repr: String) {
+    ANSWER("answer"),
+    PROMPT("prompt"),
+    SYSTEM_PROMPT("system-prompt"),
+    DIRECTIVE("directive"),
+    TOOL("tool"),
+    ;
 }

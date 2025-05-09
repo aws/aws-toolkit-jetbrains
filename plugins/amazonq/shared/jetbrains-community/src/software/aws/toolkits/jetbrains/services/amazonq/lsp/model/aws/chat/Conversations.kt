@@ -3,8 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
-// Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: Apache-2.0
+import com.fasterxml.jackson.annotation.JsonValue
+import com.google.gson.annotations.JsonAdapter
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.EnumJsonValueAdapter
 
 typealias FilterValue = String
 
@@ -12,12 +13,7 @@ data class TextBasedFilterOption(
     val type: String,
     val placeholder: String?,
     val icon: IconType?,
-) {
-    companion object {
-        fun create(type: TextInputType, placeholder: String, icon: IconType): TextBasedFilterOption =
-            TextBasedFilterOption(type.value, placeholder, icon)
-    }
-}
+)
 
 data class FilterOption(
     val id: String,
@@ -61,43 +57,30 @@ data class ConversationsList(
 
 typealias ListConversationsResult = ConversationsList
 
-enum class TextInputType(val value: String) {
+@JsonAdapter(EnumJsonValueAdapter::class)
+enum class TextInputType(@JsonValue val repr: String) {
     TEXTAREA("textarea"),
     TEXTINPUT("textinput"),
     ;
-
-    override fun toString(): String =
-        name.lowercase()
 }
 
-enum class ConversationAction(val value: String) {
+@JsonAdapter(EnumJsonValueAdapter::class)
+enum class ConversationAction(@JsonValue val repr: String) {
     DELETE("delete"),
     EXPORT("markdown"),
     ;
-
-    override fun toString(): String =
-        name.lowercase()
 }
+
 data class ConversationClickParams(
     val id: String,
     val action: String?,
-) {
-    companion object {
-        fun create(id: String, action: ConversationAction): ConversationClickParams =
-            ConversationClickParams(id, action.value)
-    }
-}
+)
 
 data class ConversationClickResult(
     val id: String,
     val action: String?,
     val success: Boolean,
-) {
-    companion object {
-        fun create(id: String, action: ConversationAction, success: Boolean): ConversationClickResult =
-            ConversationClickResult(id, action.value, success)
-    }
-}
+)
 
 data class ListConversationsRequest(
     override val command: String,
