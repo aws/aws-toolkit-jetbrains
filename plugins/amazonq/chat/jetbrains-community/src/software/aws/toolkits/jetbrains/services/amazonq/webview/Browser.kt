@@ -139,7 +139,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                                 $postMessageToJavaJsCode
                             }
                         },
-                    
+                     ${CodeWhispererFeatureConfigService.getInstance().getFeatureConfigJsonString()},
                      "${activeProfile?.profileName.orEmpty()}")
                     const commands = [hybridChatConnector.initialQuickActions[0], hybridChatConnector.initialQuickActions[1]]
                     amazonQChat.createChat(
