@@ -82,6 +82,9 @@ class GuardrailsException(operation: String, desc: String?, cause: Throwable? = 
 class PromptRefusalException(operation: String, desc: String?, cause: Throwable? = null) :
     ClientException(message("amazonqFeatureDev.exception.prompt_refusal"), operation, desc, cause)
 
+class FileCreationFailedException(operation: String, desc: String?, cause: Throwable? = null) :
+    ServiceException(message("amazonqFeatureDev.exception.failed_generation"), operation, desc, cause)
+
 class ThrottlingException(operation: String, desc: String?, cause: Throwable? = null) :
     ClientException(message("amazonqFeatureDev.exception.throttling"), operation, desc, cause)
 
