@@ -77,9 +77,9 @@ import software.aws.toolkits.telemetry.CwsprChatCommandType
 import java.util.UUID
 
 data class TestCommandMessage(
-    val sender: String = "codetest",
+    val sender: String = "testChat",
     val command: String = "test",
-    val type: String = "addAnswer",
+    val type: String = "chatMessage",
 ) : AmazonQMessage
 
 class ChatController private constructor(

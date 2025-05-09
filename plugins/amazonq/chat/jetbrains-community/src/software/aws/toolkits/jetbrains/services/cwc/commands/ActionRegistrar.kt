@@ -6,7 +6,15 @@ package software.aws.toolkits.jetbrains.services.cwc.commands
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.runBlocking
+import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
+import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageTypeRegistry
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
+import software.aws.toolkits.jetbrains.services.amazonq.messages.MessageConnector
+import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindow
+import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapter
+import software.aws.toolkits.jetbrains.services.cwc.controller.TestCommandMessage
 
 // Register Editor Actions in the Editor Context Menu
 class ActionRegistrar {
@@ -15,7 +23,14 @@ class ActionRegistrar {
     val flow = _messages.asSharedFlow()
 
     fun reportMessageClick(command: EditorContextCommand, project: Project) {
-        _messages.tryEmit(ContextMenuActionMessage(command, project))
+        // language=JSON
+        AmazonQToolWindow.sendTestMessage(project)
+        //AsyncChatUiListener.notifyPartialMessageUpdate(a)
+       // _messages.tryEmit(ContextMenuActionMessage(command, project))
+//        runBlocking {
+//            MessageConnector().publish(messageToPublish)
+//        }
+
     }
 
     fun reportMessageClick(command: EditorContextCommand, issue: MutableMap<String, String>, project: Project) {
@@ -27,3 +42,10 @@ class ActionRegistrar {
         val instance = ActionRegistrar()
     }
 }
+//fun getContext(project: Project) = AmazonQAppInitContext(
+//    project,
+//    MessageConnector(),
+//    MessageConnector(),
+//    MessageTypeRegistry(),
+//    FqnWebviewAdapter(project)
+//)
