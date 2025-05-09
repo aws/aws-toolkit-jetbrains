@@ -7,6 +7,9 @@ import com.google.gson.Gson
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.eclipse.lsp4j.ProgressParams
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -29,12 +32,23 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
 @Service(Service.Level.PROJECT)
-class ChatCommunicationManager {
+class ChatCommunicationManager(private val cs: CoroutineScope) {
+    val uiReady = CompletableDeferred<Boolean>()
     private val chatPartialResultMap = ConcurrentHashMap<String, String>()
-    private fun getPartialChatMessage(partialResultToken: String): String? =
-        chatPartialResultMap.getOrDefault(partialResultToken, null)
-
     private val inflightRequestByTabId = ConcurrentHashMap<String, CompletableFuture<String>>()
+    private val pendingSerializedChatRequests = ConcurrentHashMap<String, CompletableFuture<GetSerializedChatResult>>()
+    private val pendingTabRequests = ConcurrentHashMap<String, CompletableFuture<OpenTabResult>>()
+
+    fun setUiReady() {
+        uiReady.complete(true)
+    }
+
+    fun notifyUi(uiMessage: FlareUiMessage) {
+        cs.launch {
+            uiReady.await()
+            AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
+        }
+    }
 
     fun setInflightRequestForTab(tabId: String, result: CompletableFuture<String>) {
         inflightRequestByTabId[tabId] = result
@@ -53,8 +67,35 @@ class ChatCommunicationManager {
         return partialResultToken
     }
 
+    private fun getPartialChatMessage(partialResultToken: String): String? =
+        chatPartialResultMap.getOrDefault(partialResultToken, null)
+
     fun removePartialChatMessage(partialResultToken: String) =
         chatPartialResultMap.remove(partialResultToken)
+
+    fun addSerializedChatRequest(requestId: String, result: CompletableFuture<GetSerializedChatResult>) {
+        pendingSerializedChatRequests[requestId] = result
+    }
+
+    fun completeSerializedChatResponse(requestId: String, content: String) {
+        pendingSerializedChatRequests.remove(requestId)?.complete(GetSerializedChatResult((content)))
+    }
+
+    fun removeSerializedChatRequest(requestId: String) {
+        pendingSerializedChatRequests.remove(requestId)
+    }
+
+    fun addTabOpenRequest(requestId: String, result: CompletableFuture<OpenTabResult>) {
+        pendingTabRequests[requestId] = result
+    }
+
+    fun completeTabOpen(requestId: String, tabId: String) {
+        pendingTabRequests.remove(requestId)?.complete(OpenTabResult(tabId))
+    }
+
+    fun removeTabOpenRequest(requestId: String) {
+        pendingTabRequests.remove(requestId)
+    }
 
     fun handlePartialResultProgressNotification(project: Project, params: ProgressParams) {
         val token = ProgressNotificationUtils.getToken(params)
@@ -134,11 +175,6 @@ class ChatCommunicationManager {
 
         private val LOG = getLogger<ChatCommunicationManager>()
 
-        val pendingSerializedChatRequests = ConcurrentHashMap<String, CompletableFuture<GetSerializedChatResult>>()
-        fun completeSerializedChatResponse(requestId: String, content: String) {
-            pendingSerializedChatRequests.remove(requestId)?.complete(GetSerializedChatResult((content)))
-        }
-
         fun convertToJsonToSendToChat(command: String, tabId: String, params: String, isPartialResult: Boolean): String =
             """
                 {
@@ -147,20 +183,6 @@ class ChatCommunicationManager {
                 "params": $params,
                 "isPartialResult": $isPartialResult
                 }
-            """.trimIndent()
-
-        val pendingTabRequests = ConcurrentHashMap<String, CompletableFuture<OpenTabResult>>()
-
-        fun completeTabOpen(requestId: String, tabId: String) {
-            pendingTabRequests.remove(requestId)?.complete(OpenTabResult(tabId))
-        }
-
-        inline fun <reified T> convertNotificationToJsonForChat(command: String, params: T? = null) =
-            """
-    {
-    "command":"$command",
-    "params": ${if (params != null) Gson().toJson(params) else "{}"}
-    }
             """.trimIndent()
     }
 }
