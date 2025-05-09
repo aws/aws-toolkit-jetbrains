@@ -78,6 +78,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
         if (type == Level.ERROR && messageParams.message.lineSequence().firstOrNull()?.contains("NOTE: The AWS SDK for JavaScript (v2) is in maintenance mode.") == true) {
             LOG.info { "Suppressed Flare AWS JS SDK v2 EoL error message" }
+            return
         }
 
         LOG.atLevel(type).log(messageParams.message)
