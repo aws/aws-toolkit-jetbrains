@@ -12,10 +12,10 @@ import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.openapi.vfs.writeText
 import com.intellij.testFramework.DisposableRule
+import com.intellij.testFramework.LightVirtualFile
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.replaceService
-import com.intellij.testFramework.LightVirtualFile
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
