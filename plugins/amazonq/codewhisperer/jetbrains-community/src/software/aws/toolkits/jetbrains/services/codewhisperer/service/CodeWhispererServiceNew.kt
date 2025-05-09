@@ -46,7 +46,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocume
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionTriggerKind
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionWithReferencesParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil.toUriString
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorManagerNew
 import software.aws.toolkits.jetbrains.services.codewhisperer.editor.CodeWhispererEditorUtil.getCaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
