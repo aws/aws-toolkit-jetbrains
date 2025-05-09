@@ -24,5 +24,4 @@ enum class AuthFollowupType(@JsonValue val repr: String) {
     RE_AUTH("re-auth"),
     MISSING_SCOPES("missing_scopes"),
     USE_SUPPORTED_AUTH("use-supported-auth"),
-    ;
 }

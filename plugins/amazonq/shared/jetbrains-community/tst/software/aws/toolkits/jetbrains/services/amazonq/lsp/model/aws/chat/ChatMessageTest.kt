@@ -1,6 +1,6 @@
 // Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-
+@file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -28,7 +28,6 @@ class ChatMessageTest {
 
             assertThat(Gson().fromJson(expected, IconType::class.java)).isEqualTo(it)
             assertThat(jackson.readValue<IconType>(expected)).isEqualTo(it)
-
         }
     }
 
@@ -46,24 +45,26 @@ class ChatMessageTest {
                     // jackson is more straight forward so assume that it is probably the correct repr
                     val jacksonJson = jackson.writeValueAsString(enumValue)
 
-                    yield(DynamicTest.dynamicTest("$enumFqn.${enumValue.name}") {
-                        AutoCloseableSoftAssertions().use { softly ->
-                            val jacksonRead = jackson.readValue(jacksonJson, clazz)
-                            softly.assertThat(jacksonRead)
-                                .describedAs { "Jackson roundtrip $enumFqn: expecting ${enumValue.name}" }
-                                .isEqualTo(enumValue)
+                    yield(
+                        DynamicTest.dynamicTest("$enumFqn.${enumValue.name}") {
+                            AutoCloseableSoftAssertions().use { softly ->
+                                val jacksonRead = jackson.readValue(jacksonJson, clazz)
+                                softly.assertThat(jacksonRead)
+                                    .describedAs { "Jackson roundtrip $enumFqn: expecting ${enumValue.name}" }
+                                    .isEqualTo(enumValue)
 
-                            val gsonRead = Gson().fromJson(jacksonJson, clazz)
-                            softly.assertThat(gsonRead)
-                                .describedAs { "Gson deserialize $enumFqn: expecting ${enumValue.name}" }
-                                .isEqualTo(enumValue)
+                                val gsonRead = Gson().fromJson(jacksonJson, clazz)
+                                softly.assertThat(gsonRead)
+                                    .describedAs { "Gson deserialize $enumFqn: expecting ${enumValue.name}" }
+                                    .isEqualTo(enumValue)
 
-                            val gsonWrite = Gson().toJson(enumValue)
-                            softly.assertThat(gsonWrite)
-                                .describedAs { "Gson serialize $enumFqn: expecting $jacksonJson" }
-                                .isEqualTo(jacksonJson)
+                                val gsonWrite = Gson().toJson(enumValue)
+                                softly.assertThat(gsonWrite)
+                                    .describedAs { "Gson serialize $enumFqn: expecting $jacksonJson" }
+                                    .isEqualTo(jacksonJson)
+                            }
                         }
-                    })
+                    )
                 }
             }
     }.asStream()

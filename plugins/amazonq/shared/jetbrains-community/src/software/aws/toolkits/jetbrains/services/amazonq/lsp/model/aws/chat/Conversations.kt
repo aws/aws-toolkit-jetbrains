@@ -61,14 +61,12 @@ typealias ListConversationsResult = ConversationsList
 enum class TextInputType(@JsonValue val repr: String) {
     TEXTAREA("textarea"),
     TEXTINPUT("textinput"),
-    ;
 }
 
 @JsonAdapter(EnumJsonValueAdapter::class)
 enum class ConversationAction(@JsonValue val repr: String) {
     DELETE("delete"),
     EXPORT("markdown"),
-    ;
 }
 
 data class ConversationClickParams(

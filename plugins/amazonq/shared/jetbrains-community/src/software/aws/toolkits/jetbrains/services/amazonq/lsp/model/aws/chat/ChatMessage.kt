@@ -82,8 +82,6 @@ enum class IconType(@JsonValue val repr: String) {
     TRASH("trash"),
     SEARCH("search"),
     CALENDAR("calendar"),
-    ;
-
 }
 
 @JsonAdapter(EnumJsonValueAdapter::class)
@@ -92,8 +90,6 @@ enum class Status(@JsonValue val repr: String) {
     SUCCESS("success"),
     WARNING("warning"),
     ERROR("error"),
-    ;
-
 }
 
 @JsonAdapter(EnumJsonValueAdapter::class)
@@ -105,8 +101,6 @@ enum class ButtonStatus(@JsonValue val repr: String) {
     SUCCESS("success"),
     WARNING("warning"),
     ERROR("error"),
-    ;
-
 }
 
 // https://github.com/aws/language-server-runtimes/blame/68319c975d29a8ba9b084c9fa780ebff75b286bb/types/chat.ts#L127
@@ -117,5 +111,4 @@ enum class MessageType(@JsonValue val repr: String) {
     SYSTEM_PROMPT("system-prompt"),
     DIRECTIVE("directive"),
     TOOL("tool"),
-    ;
 }

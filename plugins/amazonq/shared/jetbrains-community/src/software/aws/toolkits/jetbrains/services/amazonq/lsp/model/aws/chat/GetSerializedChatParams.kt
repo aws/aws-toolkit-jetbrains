@@ -16,7 +16,6 @@ data class GetSerializedChatParams(
 enum class SerializedChatFormat(@JsonValue val repr: String) {
     HTML("html"),
     MARKDOWN("markdown"),
-    ;
 }
 
 data class GetSerializedChatResult(

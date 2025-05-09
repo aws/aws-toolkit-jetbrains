@@ -1,6 +1,6 @@
 // Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-
+@file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model
 
 import com.fasterxml.jackson.annotation.JsonValue
@@ -15,7 +15,7 @@ import com.google.gson.reflect.TypeToken
 class EnumJsonValueAdapter : TypeAdapterFactory {
     override fun <T> create(
         gson: Gson,
-        type: TypeToken<T>
+        type: TypeToken<T>,
     ): TypeAdapter<T>? {
         val rawType = type.getRawType()
         if (!rawType.isEnum) {

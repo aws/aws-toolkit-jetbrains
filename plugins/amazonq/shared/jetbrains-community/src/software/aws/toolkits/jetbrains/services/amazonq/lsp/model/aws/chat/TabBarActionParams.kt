@@ -15,7 +15,6 @@ data class TabBarActionParams(
 @JsonAdapter(EnumJsonValueAdapter::class)
 enum class TabBarAction(@JsonValue val repr: String) {
     EXPORT("export"),
-    ;
 }
 
 data class TabBarActionResult(
