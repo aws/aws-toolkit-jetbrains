@@ -141,7 +141,7 @@ class TextDocumentServiceHandlerTest {
         verify { mockTextDocumentService.didOpen(capture(paramsSlot)) }
 
         assertThat(paramsSlot.first().textDocument).satisfiesKt {
-            assertThat(it.uri).isEqualTo("file://${normalizeFileUri(file.path)}")
+            assertThat(it.uri).isEqualTo(normalizeFileUri(file.toNioPath().toUri().toString()))
             assertThat(it.text).isEqualTo(content)
             assertThat(it.languageId).isEqualTo("plain_text")
         }
@@ -160,7 +160,7 @@ class TextDocumentServiceHandlerTest {
         verify { mockTextDocumentService.didOpen(capture(paramsSlot)) }
 
         assertThat(paramsSlot.first().textDocument).satisfiesKt {
-            assertThat(it.uri).isEqualTo("file://${normalizeFileUri(file.path)}")
+            assertThat(it.uri).isEqualTo(normalizeFileUri(file.toNioPath().toUri().toString()))
             assertThat(it.text).isEqualTo(content)
             assertThat(it.languageId).isEqualTo("plain_text")
         }
@@ -196,7 +196,7 @@ class TextDocumentServiceHandlerTest {
         verify { mockTextDocumentService.didChange(capture(paramsSlot)) }
 
         assertThat(paramsSlot.first()).satisfiesKt {
-            assertThat(it.textDocument.uri).isEqualTo("file://${normalizeFileUri(file.path)}")
+            assertThat(it.textDocument.uri).isEqualTo(normalizeFileUri(file.toNioPath().toUri().toString()))
             assertThat(it.contentChanges[0].text).isEqualTo("changed content")
         }
     }
