@@ -3,22 +3,18 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
+import com.fasterxml.jackson.annotation.JsonValue
+import com.google.gson.annotations.JsonAdapter
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.EnumJsonValueAdapter
+
 data class TabBarActionParams(
     val tabId: String?,
     val action: String,
-) {
-    companion object {
-        fun create(tabId: String?, action: TabBarAction): TabBarActionParams =
-            TabBarActionParams(tabId, action.value)
-    }
-}
+)
 
-enum class TabBarAction(val value: String) {
+@JsonAdapter(EnumJsonValueAdapter::class)
+enum class TabBarAction(@JsonValue val repr: String) {
     EXPORT("export"),
-    ;
-
-    override fun toString(): String =
-        name.lowercase()
 }
 
 data class TabBarActionResult(

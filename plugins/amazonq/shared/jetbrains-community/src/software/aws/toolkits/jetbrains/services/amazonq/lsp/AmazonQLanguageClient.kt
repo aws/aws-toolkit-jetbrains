@@ -9,13 +9,10 @@ import org.eclipse.lsp4j.services.LanguageClient
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatUpdateParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_FILE_DIFF
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenFileDiffParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SHOW_SAVE_FILE_DIALOG_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
@@ -32,16 +29,16 @@ interface AmazonQLanguageClient : LanguageClient {
     fun getConnectionMetadata(): CompletableFuture<ConnectionMetadata>
 
     @JsonRequest("aws/chat/openTab")
-    fun openTab(params: OpenTabParams): CompletableFuture<OpenTabResult>
+    fun openTab(params: LSPAny): CompletableFuture<OpenTabResult>
 
     @JsonRequest(SHOW_SAVE_FILE_DIALOG_REQUEST_METHOD)
     fun showSaveFileDialog(params: ShowSaveFileDialogParams): CompletableFuture<ShowSaveFileDialogResult>
 
     @JsonRequest(GET_SERIALIZED_CHAT_REQUEST_METHOD)
-    fun getSerializedChat(params: GetSerializedChatParams): CompletableFuture<GetSerializedChatResult>
+    fun getSerializedChat(params: LSPAny): CompletableFuture<GetSerializedChatResult>
 
     @JsonNotification(CHAT_SEND_UPDATE)
-    fun sendChatUpdate(params: ChatUpdateParams): CompletableFuture<Unit>
+    fun sendChatUpdate(params: LSPAny): CompletableFuture<Unit>
 
     @JsonNotification(OPEN_FILE_DIFF)
     fun openFileDiff(params: OpenFileDiffParams): CompletableFuture<Unit>

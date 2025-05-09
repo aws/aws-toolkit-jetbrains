@@ -149,14 +149,14 @@ class ChatCommunicationManager(private val cs: CoroutineScope) {
                 reauthConnectionIfNeeded(project, it, isReAuth = true)
             }
             when (incomingType) {
-                AuthFollowupType.USE_SUPPORTED_AUTH.value -> {
+                AuthFollowupType.USE_SUPPORTED_AUTH -> {
                     project.messageBus.syncPublisher(QRegionProfileSelectedListener.TOPIC)
                         .onProfileSelected(project, QRegionProfileManager.getInstance().activeProfile(project))
                     return
                 }
-                AuthFollowupType.RE_AUTH.value,
-                AuthFollowupType.MISSING_SCOPES.value,
-                AuthFollowupType.FULL_AUTH.value,
+                AuthFollowupType.RE_AUTH,
+                AuthFollowupType.MISSING_SCOPES,
+                AuthFollowupType.FULL_AUTH,
                 -> {
                     return
                 }

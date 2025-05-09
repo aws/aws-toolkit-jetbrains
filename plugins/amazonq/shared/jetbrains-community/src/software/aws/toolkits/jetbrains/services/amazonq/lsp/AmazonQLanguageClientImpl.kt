@@ -38,12 +38,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatUpdateParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenFileDiffParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogResult
@@ -134,7 +131,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             }
         }
 
-    override fun openTab(params: OpenTabParams): CompletableFuture<OpenTabResult> {
+    override fun openTab(params: LSPAny): CompletableFuture<OpenTabResult> {
         val requestId = UUID.randomUUID().toString()
         val result = CompletableFuture<OpenTabResult>()
         val chatManager = ChatCommunicationManager.getInstance(project)
@@ -186,7 +183,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         )
     }
 
-    override fun getSerializedChat(params: GetSerializedChatParams): CompletableFuture<GetSerializedChatResult> {
+    override fun getSerializedChat(params: LSPAny): CompletableFuture<GetSerializedChatResult> {
         val requestId = UUID.randomUUID().toString()
         val result = CompletableFuture<GetSerializedChatResult>()
         val chatManager = ChatCommunicationManager.getInstance(project)
@@ -261,7 +258,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         }
     }
 
-    override fun sendChatUpdate(params: ChatUpdateParams): CompletableFuture<Unit> {
+    override fun sendChatUpdate(params: LSPAny): CompletableFuture<Unit> {
         AsyncChatUiListener.notifyPartialMessageUpdate(
             FlareUiMessage(
                 command = CHAT_SEND_UPDATE,
@@ -345,7 +342,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         chatManager.notifyUi(
             FlareUiMessage(
                 command = CHAT_SEND_CONTEXT_COMMANDS,
-                params = params ?: error("received empty payload for $CHAT_SEND_CONTEXT_COMMANDS"),
+                params = params,
             )
         )
         return CompletableFuture.completedFuture(Unit)
