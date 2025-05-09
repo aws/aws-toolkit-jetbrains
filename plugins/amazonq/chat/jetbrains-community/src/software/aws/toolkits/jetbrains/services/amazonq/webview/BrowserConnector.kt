@@ -106,6 +106,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBa
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventRequest
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TELEMETRY_EVENT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
@@ -489,6 +490,13 @@ class BrowserConnector(
                 runInEdt {
                     ShowSettingsUtil.getInstance().showSettingsDialog(browser.project, CodeWhispererConfigurable::class.java)
                 }
+            }
+            TELEMETRY_EVENT -> {
+                println("TELEMETRY + $node")
+                val telemetryEvent = serializer.deserializeChatMessages<FlareUiMessage>(node)
+                browser.postChat(
+                    telemetryEvent
+                )
             }
         }
     }
