@@ -55,6 +55,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Sourc
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TELEMETRY_EVENT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
@@ -149,4 +150,7 @@ interface AmazonQLanguageServer : LanguageServer {
 
     @JsonNotification(CHAT_CREATE_PROMPT)
     fun createPrompt(params: CreatePromptParams): CompletableFuture<Unit>
+
+    @JsonNotification(TELEMETRY_EVENT)
+    fun sendTelemetry(params: Any): CompletableFuture<Unit>
 }

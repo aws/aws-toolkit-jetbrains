@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
 import org.eclipse.lsp4j.TextDocumentIdentifier
+import software.amazon.awssdk.services.codewhispererruntime.model.TelemetryEvent
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -107,6 +108,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBa
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventRequest
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TelemetryEventNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TelemetryEventParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
@@ -492,10 +495,9 @@ class BrowserConnector(
                 }
             }
             TELEMETRY_EVENT -> {
-                val telemetryEvent = serializer.deserializeChatMessages<FlareUiMessage>(node)
-                browser.postChat(
-                    telemetryEvent
-                )
+                handleChatNotification<TelemetryEventNotification, TelemetryEventParams>(node) { server, params ->
+                    server.sendTelemetry(params)
+                }
             }
         }
     }
