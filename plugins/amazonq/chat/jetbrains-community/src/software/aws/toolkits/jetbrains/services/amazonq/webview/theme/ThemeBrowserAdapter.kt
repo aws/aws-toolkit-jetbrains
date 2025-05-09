@@ -3,6 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.webview.theme
 
+import com.intellij.openapi.editor.colors.EditorColorsManager
+import com.intellij.ui.JBColor
 import kotlinx.coroutines.CompletableDeferred
 import org.cef.browser.CefBrowser
 import java.awt.Color
@@ -35,6 +37,7 @@ class ThemeBrowserAdapter {
         append(CssVariable.FontFamily, theme.font.toCssFontFamily())
 
         append(CssVariable.TextColorDefault, theme.defaultText)
+        append(CssVariable.TextColorAlt, theme.defaultText)
         append(CssVariable.TextColorStrong, theme.textFieldForeground)
         append(CssVariable.TextColorInput, theme.textFieldForeground)
         append(CssVariable.TextColorLink, theme.linkText)
@@ -42,7 +45,8 @@ class ThemeBrowserAdapter {
 
         append(CssVariable.Background, theme.background)
         append(CssVariable.BackgroundAlt, theme.background)
-        append(CssVariable.CardBackground, theme.cardBackground)
+        append(CssVariable.CardBackground, theme.editorBackground)
+        append(CssVariable.CardBackgroundAlt, theme.editorBackground)
         append(CssVariable.BorderDefault, theme.border)
         append(CssVariable.TabActive, theme.activeTab)
 
@@ -63,6 +67,7 @@ class ThemeBrowserAdapter {
 
         append(CssVariable.SyntaxCodeFontFamily, theme.editorFont.toCssFontFamily("monospace"))
         append(CssVariable.SyntaxCodeFontSize, theme.editorFont.toCssSize())
+        append(CssVariable.SyntaxCode, theme.editorForeground)
         append(CssVariable.SyntaxBackground, theme.editorBackground)
         append(CssVariable.SyntaxVariable, theme.editorVariable)
         append(CssVariable.SyntaxOperator, theme.editorOperator)
@@ -71,7 +76,9 @@ class ThemeBrowserAdapter {
         append(CssVariable.SyntaxAttributeValue, theme.editorKeyword)
         append(CssVariable.SyntaxAttribute, theme.editorString)
         append(CssVariable.SyntaxProperty, theme.editorProperty)
-        append(CssVariable.SyntaxCode, theme.editorForeground)
+        append(CssVariable.SyntaxKeyword, theme.editorKeyword)
+        append(CssVariable.SyntaxString, theme.editorString)
+        append(CssVariable.SyntaxClassName, theme.editorClassName)
 
         append(CssVariable.MainBackground, theme.buttonBackground)
         append(CssVariable.MainForeground, theme.buttonForeground)
