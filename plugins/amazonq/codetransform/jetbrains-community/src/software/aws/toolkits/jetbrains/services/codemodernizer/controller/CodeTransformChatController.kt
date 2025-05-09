@@ -4,17 +4,21 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.controller
 
 import com.intellij.ide.BrowserUtil
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.util.io.FileUtil.createTempDirectory
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.testFramework.LightVirtualFile
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import org.jetbrains.yaml.YAMLFileType
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.error
@@ -122,10 +126,6 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.validateSct
 import software.aws.toolkits.jetbrains.services.cwc.messages.ChatMessageType
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformPreValidationError
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.testFramework.LightVirtualFile
-import org.jetbrains.yaml.YAMLFileType
 
 class CodeTransformChatController(
     private val context: AmazonQAppInitContext,
