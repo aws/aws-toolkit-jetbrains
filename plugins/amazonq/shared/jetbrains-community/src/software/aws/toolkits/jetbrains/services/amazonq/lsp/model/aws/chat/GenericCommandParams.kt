@@ -3,8 +3,13 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
+import com.fasterxml.jackson.annotation.JsonValue
+import com.google.gson.annotations.JsonAdapter
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.EnumJsonValueAdapter
+
 // https://github.com/aws/language-server-runtimes/blob/main/chat-client-ui-types/src/uiContracts.ts#L27
-enum class TriggerType(val value: String) {
+@JsonAdapter(EnumJsonValueAdapter::class)
+enum class TriggerType(@JsonValue val repr: String) {
     HOTKEYS("hotkeys"),
     CLICK("click"),
     CONTEXT_MENU("contextMenu"),

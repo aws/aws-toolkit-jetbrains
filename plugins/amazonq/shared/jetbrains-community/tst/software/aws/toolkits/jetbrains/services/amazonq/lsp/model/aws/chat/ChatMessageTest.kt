@@ -47,6 +47,8 @@ class ChatMessageTest {
 
                     yield(
                         DynamicTest.dynamicTest("$enumFqn.${enumValue.name}") {
+                            println("$enumFqn -> $jacksonJson")
+
                             AutoCloseableSoftAssertions().use { softly ->
                                 val jacksonRead = jackson.readValue(jacksonJson, clazz)
                                 softly.assertThat(jacksonRead)
