@@ -7,7 +7,6 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.model
 data class ZipManifest(
     val sourcesRoot: String = ZIP_SOURCES_PATH,
     val dependenciesRoot: String = ZIP_DEPENDENCIES_PATH,
-    val buildLogs: String = BUILD_LOG_PATH,
     val version: String = UPLOAD_ZIP_MANIFEST_VERSION,
     val hilCapabilities: List<String> = listOf(HIL_1P_UPGRADE_CAPABILITY),
     // TODO: add CLIENT_SIDE_BUILD to transformCapabilities when releasing CSB
@@ -15,6 +14,7 @@ data class ZipManifest(
     val noInteractiveMode: Boolean = true,
     val customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS,
     val requestedConversions: RequestedConversions? = null, // only used for SQL conversions for now
+    var dependencyUpgradeConfigFile: String? = null,
 )
 
 data class RequestedConversions(
