@@ -56,9 +56,7 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
             AsyncChatUiListener.TOPIC,
             object : AsyncChatUiListener {
                 override fun onChange(message: String) {
-                    runInEdt {
-                        browser.get()?.postChat(message)
-                    }
+                    browser.get()?.postChat(message)
                 }
             }
         )

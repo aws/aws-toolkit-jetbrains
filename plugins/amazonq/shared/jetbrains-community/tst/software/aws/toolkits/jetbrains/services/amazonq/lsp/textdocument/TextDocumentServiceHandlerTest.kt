@@ -40,7 +40,7 @@ import org.junit.Rule
 import org.junit.Test
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
 import java.net.URI
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
@@ -230,8 +230,8 @@ class TextDocumentServiceHandlerTest {
         val document = mockk<Document>()
         val file = createMockVirtualFile(URI.create(""))
 
-        mockkObject(FileUriUtil) {
-            every { FileUriUtil.toUriString(file) } returns null
+        mockkObject(LspEditorUtil) {
+            every { LspEditorUtil.toUriString(file) } returns null
 
             val fileDocumentManager = mockk<FileDocumentManager> {
                 every { getFile(document) } returns file
