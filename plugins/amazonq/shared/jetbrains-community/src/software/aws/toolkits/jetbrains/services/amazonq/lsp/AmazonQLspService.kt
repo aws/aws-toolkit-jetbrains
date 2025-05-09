@@ -25,6 +25,10 @@ import com.intellij.util.net.JdkProxyProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
@@ -75,7 +79,6 @@ import java.net.Proxy
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
-import java.util.Collections
 import java.util.concurrent.Future
 import kotlin.time.Duration.Companion.seconds
 
@@ -114,9 +117,8 @@ internal class LSPProcessListener : ProcessListener {
 
 @Service(Service.Level.PROJECT)
 class AmazonQLspService(private val project: Project, private val cs: CoroutineScope) : Disposable {
-    private val lspInitializedMessageReceivedListener = Collections.synchronizedList(mutableListOf<AmazonQInitializeMessageReceivedListener>())
-    fun addLspInitializeMessageListener(listener: AmazonQInitializeMessageReceivedListener) = lspInitializedMessageReceivedListener.add(listener)
-    fun notifyInitializeMessageReceived() = lspInitializedMessageReceivedListener.forEach { it() }
+    private val _flowInstance = MutableSharedFlow<AmazonQServerInstance>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    val instanceFlow = _flowInstance.asSharedFlow().map { it.languageServer }
 
     private var instance: Deferred<AmazonQServerInstance>
     val capabilities
@@ -140,7 +142,9 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
                     // wait for handshake to complete
                     instance.initializeResult.join()
 
-                    instance
+                    instance.also {
+                        _flowInstance.emit(it)
+                    }
                 }
             } catch (e: Exception) {
                 LOG.warn(e) { "Failed to start LSP server" }
@@ -324,7 +328,6 @@ private class AmazonQServerInstance(private val project: Project, private val cs
                     if (message is ResponseMessage && message.result is AwsExtendedInitializeResult) {
                         val result = message.result as AwsExtendedInitializeResult
                         AwsServerCapabilitiesProvider.getInstance(project).setAwsServerCapabilities(result.getAwsServerCapabilities())
-                        AmazonQLspService.getInstance(project).notifyInitializeMessageReceived()
                     }
                     consumer?.consume(message)
                 }
