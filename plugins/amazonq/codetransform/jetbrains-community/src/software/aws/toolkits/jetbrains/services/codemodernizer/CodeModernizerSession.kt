@@ -176,8 +176,6 @@ class CodeModernizerSession(
             // for language upgrades, copyResult should always be Successful here, failure cases already handled
             val result = sessionContext.createZipWithModuleFiles(copyResult)
             sessionContext.originalUploadZipPath = result.payload.toPath()
-            // TODO: remove this
-            return CodeModernizerStartJobResult.CancelledMissingDependencies
 
             if (result is ZipCreationResult.Missing1P) {
                 telemetryErrorMessage = "Missing 1p dependencies"
