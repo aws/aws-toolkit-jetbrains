@@ -3,7 +3,6 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
-import com.google.gson.JsonElement
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 
 /**
@@ -11,7 +10,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
  */
 class TelemetryEventNotification(
     override val command: String = TELEMETRY_EVENT,
-    override val params: TelemetryEventParams
+    override val params: TelemetryEventParams,
 ) : ChatNotification<TelemetryEventParams>
 
 /**
@@ -20,5 +19,5 @@ class TelemetryEventNotification(
  * Example: {"triggerType":"click","tabId":"z869mz","name":"tabAdd"}
  */
 class TelemetryEventParams(
-    val value: LSPAny
+    val value: LSPAny,
 )
