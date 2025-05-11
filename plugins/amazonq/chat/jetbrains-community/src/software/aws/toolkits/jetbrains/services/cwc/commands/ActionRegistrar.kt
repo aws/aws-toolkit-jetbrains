@@ -1,30 +1,23 @@
 // Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-
+@file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.cwc.commands
 
+import com.google.gson.Gson
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.runBlocking
-
-import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
-import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageTypeRegistry
-import software.aws.toolkits.jetbrains.services.amazonq.messages.MessageConnector
-import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindow
-import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapter
-import software.aws.toolkits.jetbrains.services.cwc.controller.TestCommandMessage
-
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GenericCommandParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendToPromptParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TriggerType
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.controller.TestCommandMessage
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContextExtractor
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTriggerType
-
 
 // Register Editor Actions in the Editor Context Menu
 class ActionRegistrar {
@@ -33,19 +26,8 @@ class ActionRegistrar {
     val flow = _messages.asSharedFlow()
 
     fun reportMessageClick(command: EditorContextCommand, project: Project) {
-
-        // language=JSON
-     //   AmazonQToolWindow.sendTestMessage(project)
-        //AsyncChatUiListener.notifyPartialMessageUpdate(a)
-       // _messages.tryEmit(ContextMenuActionMessage(command, project))
-//        runBlocking {
-//            MessageConnector().publish(messageToPublish)
-//        }
-
-
         if (command == EditorContextCommand.GenerateUnitTests) {
-            // pre-existing old chat code path
-            _messages.tryEmit(ContextMenuActionMessage(command, project))
+            AsyncChatUiListener.notifyPartialMessageUpdate(Gson().toJson(TestCommandMessage()))
         } else {
             // new agentic chat route
             ApplicationManager.getApplication().executeOnPooledThread {
@@ -65,7 +47,6 @@ class ActionRegistrar {
                 }
             }
         }
-
     }
 
     fun reportMessageClick(command: EditorContextCommand, issue: MutableMap<String, String>, project: Project) {
@@ -77,10 +58,3 @@ class ActionRegistrar {
         val instance = ActionRegistrar()
     }
 }
-//fun getContext(project: Project) = AmazonQAppInitContext(
-//    project,
-//    MessageConnector(),
-//    MessageConnector(),
-//    MessageTypeRegistry(),
-//    FqnWebviewAdapter(project)
-//)

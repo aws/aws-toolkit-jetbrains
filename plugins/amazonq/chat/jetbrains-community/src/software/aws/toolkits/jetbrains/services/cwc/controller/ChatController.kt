@@ -38,7 +38,6 @@ import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
-import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteractionType
@@ -52,7 +51,6 @@ import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.TriggerTy
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.v1.ChatSessionFactoryV1
 import software.aws.toolkits.jetbrains.services.cwc.commands.CodeScanIssueActionMessage
 import software.aws.toolkits.jetbrains.services.cwc.commands.ContextMenuActionMessage
-import software.aws.toolkits.jetbrains.services.cwc.commands.EditorContextCommand
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.StaticPrompt
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.StaticTextResponse
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.messenger.ChatPromptHandler
@@ -75,12 +73,6 @@ import software.aws.toolkits.jetbrains.services.cwc.messages.QuickActionMessage
 import software.aws.toolkits.jetbrains.services.cwc.storage.ChatSessionStorage
 import software.aws.toolkits.telemetry.CwsprChatCommandType
 import java.util.UUID
-
-data class TestCommandMessage(
-    val sender: String = "testChat",
-    val command: String = "test",
-    val type: String = "chatMessage",
-) : AmazonQMessage
 
 class ChatController private constructor(
     private val context: AmazonQAppInitContext,
@@ -285,16 +277,7 @@ class ChatController private constructor(
 
     // JB specific (not in vscode)
     override suspend fun processContextMenuCommand(message: ContextMenuActionMessage) {
-        // Extract context
-        if (message.project != context.project) {
-            return
-        }
-
-        if (message.command == EditorContextCommand.GenerateUnitTests) {
-            // Publish an event to "codetest" tab with command as "test" and type as "addAnswer"
-            val messageToPublish = TestCommandMessage()
-            context.messagesFromAppToUi.publish(messageToPublish)
-        }
+        // No-op since context commands are handled elsewhere. This function will be deprecated once we remove this class
     }
 
     private suspend fun processPromptActions(

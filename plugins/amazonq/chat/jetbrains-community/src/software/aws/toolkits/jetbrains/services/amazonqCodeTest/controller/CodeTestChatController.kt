@@ -56,6 +56,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitConte
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReference
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReferencePosition
+import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.project.RelevantDocument
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.CodeWhispererUTGChatManager
@@ -109,6 +110,12 @@ import java.time.Instant
 import java.util.UUID
 import software.amazon.awssdk.services.codewhispererstreaming.model.Position as StreamingPosition
 import software.amazon.awssdk.services.codewhispererstreaming.model.Range as StreamingRange
+
+data class TestCommandMessage(
+    val sender: String = "codetest",
+    val command: String = "test",
+    val type: String = "addAnswer",
+) : AmazonQMessage
 
 class CodeTestChatController(
     private val context: AmazonQAppInitContext,

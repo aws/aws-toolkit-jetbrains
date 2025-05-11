@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.amazonq.apps
 
 import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageTypeRegistry
-import software.aws.toolkits.jetbrains.services.amazonq.messages.MessageConnector
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessageListener
 import software.aws.toolkits.jetbrains.services.amazonq.messages.MessagePublisher
 import software.aws.toolkits.jetbrains.services.amazonq.webview.FqnWebviewAdapter
@@ -20,7 +19,3 @@ data class AmazonQAppInitContext(
     val messageTypeRegistry: MessageTypeRegistry,
     val fqnWebviewAdapter: FqnWebviewAdapter,
 )
-
-
-
-
