@@ -77,16 +77,18 @@ class TextDocumentServiceHandler(
         }
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             toUriString(file)?.let { uri ->
-                languageServer.textDocumentService.didOpen(
-                    DidOpenTextDocumentParams().apply {
-                        textDocument = TextDocumentItem().apply {
-                            this.uri = uri
-                            text = file.inputStream.readAllBytes().decodeToString()
-                            languageId = file.fileType.name.lowercase()
-                            version = file.modificationStamp.toInt()
+                pluginAwareExecuteOnPooledThread {
+                    languageServer.textDocumentService.didOpen(
+                        DidOpenTextDocumentParams().apply {
+                            textDocument = TextDocumentItem().apply {
+                                this.uri = uri
+                                text = file.inputStream.readAllBytes().decodeToString()
+                                languageId = file.fileType.name.lowercase()
+                                version = file.modificationStamp.toInt()
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     }
@@ -95,14 +97,16 @@ class TextDocumentServiceHandler(
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             val file = FileDocumentManager.getInstance().getFile(document) ?: return@executeIfRunning
             toUriString(file)?.let { uri ->
-                languageServer.textDocumentService.didSave(
-                    DidSaveTextDocumentParams().apply {
-                        textDocument = TextDocumentIdentifier().apply {
-                            this.uri = uri
+                pluginAwareExecuteOnPooledThread {
+                    languageServer.textDocumentService.didSave(
+                        DidSaveTextDocumentParams().apply {
+                            textDocument = TextDocumentIdentifier().apply {
+                                this.uri = uri
+                            }
+                            text = document.text
                         }
-                        text = document.text
-                    }
-                )
+                    )
+                }
             }
         }
     }
