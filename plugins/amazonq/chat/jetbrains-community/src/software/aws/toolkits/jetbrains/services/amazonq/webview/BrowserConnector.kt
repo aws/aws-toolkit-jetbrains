@@ -108,7 +108,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBa
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TelemetryEventNotification
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TelemetryEventParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
@@ -477,7 +476,7 @@ class BrowserConnector(
                 }
             }
             TELEMETRY_EVENT -> {
-                handleChatNotification<TelemetryEventNotification, TelemetryEventParams>(node) { server, params ->
+                handleChatNotification<TelemetryEventNotification, Map<String, Any?>>(node) { server, params ->
                     server.sendTelemetry(params)
                 }
             }
