@@ -20,8 +20,10 @@ enum class CodeTransformButtonId(val id: String) {
     SelectSQLMetadata("codetransform-input-select-sql-metadata"),
     SelectSQLModuleSchema("codetransform-input-select-sql-module-schema"),
     CancelTransformation("codetransform-input-cancel"),
+    ContinueTransformation("codetransform-input-continue"),
     ConfirmSkipTests("codetransform-input-confirm-skip-tests"),
     ConfirmOneOrMultipleDiffs("codetransform-input-confirm-one-or-multiple-diffs"),
+    ConfirmCustomDependencyVersions("codetransform-input-confirm-custom-dependency-versions"),
     StopTransformation("stop_transform"),
     OpenTransformationHub("open_transformation_hub"),
     OpenMvnBuild("open_mvn_build"),
@@ -103,6 +105,10 @@ sealed interface IncomingCodeTransformMessage : CodeTransformBaseMessage {
         @JsonProperty("tabID") val tabId: String,
     ) : IncomingCodeTransformMessage
 
+    data class CodeTransformContinue(
+        @JsonProperty("tabID") val tabId: String,
+    ) : IncomingCodeTransformMessage
+
     data class CodeTransformConfirmSkipTests(
         @JsonProperty("tabID") val tabId: String,
         val skipTestsSelection: String,
@@ -111,6 +117,10 @@ sealed interface IncomingCodeTransformMessage : CodeTransformBaseMessage {
     data class CodeTransformConfirmOneOrMultipleDiffs(
         @JsonProperty("tabID") val tabId: String,
         val oneOrMultipleDiffsSelection: String,
+    ) : IncomingCodeTransformMessage
+
+    data class CodeTransformConfirmCustomDependencyVersions(
+        @JsonProperty("tabID") val tabId: String,
     ) : IncomingCodeTransformMessage
 
     data class CodeTransformOpenMvnBuild(
