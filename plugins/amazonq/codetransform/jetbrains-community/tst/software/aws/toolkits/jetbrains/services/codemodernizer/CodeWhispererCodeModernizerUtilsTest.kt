@@ -329,7 +329,7 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
 
     @Test
     fun `WHEN validateCustomVersionsFile on fully valid yaml file THEN passes validation`() {
-        val sampleFileContents = """name: "custom-dependency-management"
+        val sampleFileContents = """name: "dependency-upgrade"
 description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
 dependencyManagement:
   dependencies:
@@ -338,7 +338,7 @@ dependencyManagement:
         versionProperty: "library1.version"
         originType: "FIRST_PARTY"
   plugins:
-    - identifier: "com.example.plugin"
+    - identifier: "com.example:plugin"
         targetVersion: "1.2.0"
         versionProperty: "plugin.version"
         """.trimIndent()
@@ -350,7 +350,7 @@ dependencyManagement:
 
     @Test
     fun `WHEN validateCustomVersionsFile on invalid yaml file THEN fails validation`() {
-        val sampleFileContents = """name: "custom-dependency-management"
+        val sampleFileContents = """name: "dependency-upgrade"
 description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
 invalidKey:
   dependencies:
@@ -359,7 +359,7 @@ invalidKey:
         versionProperty: "library1.version"
         originType: "FIRST_PARTY"
   plugins:
-    - identifier: "com.example.plugin"
+    - identifier: "com.example:plugin"
         targetVersion: "1.2.0"
         versionProperty: "plugin.version"
         """.trimIndent()
@@ -371,7 +371,7 @@ invalidKey:
 
     @Test
     fun `WHEN validateCustomVersionsFile on non-yaml file THEN fails validation`() {
-        val sampleFileContents = """name: "custom-dependency-management"
+        val sampleFileContents = """name: "dependency-upgrade"
 description: "Custom dependency version management for Java migration from JDK 8/11/17 to JDK 17/21"
 dependencyManagement:
   dependencies:
@@ -380,7 +380,7 @@ dependencyManagement:
         versionProperty: "library1.version"
         originType: "FIRST_PARTY"
   plugins:
-    - identifier: "com.example.plugin"
+    - identifier: "com.example:plugin"
         targetVersion: "1.2.0"
         versionProperty: "plugin.version"
         """.trimIndent()
