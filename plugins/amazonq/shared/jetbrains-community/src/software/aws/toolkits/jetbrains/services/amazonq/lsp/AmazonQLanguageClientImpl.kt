@@ -14,6 +14,7 @@ import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFileManager
 import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
 import org.eclipse.lsp4j.ConfigurationParams
@@ -38,6 +39,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyFileParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenFileDiffParams
@@ -55,6 +58,7 @@ import java.nio.file.Paths
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
+import kotlin.io.path.Path
 
 /**
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
@@ -346,6 +350,34 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             )
         )
         return CompletableFuture.completedFuture(Unit)
+    }
+
+    override fun appendFile(params: FileParams): CompletableFuture<Unit> = refreshVfs(params.path, false)
+
+    override fun createDirectory(params: FileParams): CompletableFuture<Unit> = refreshVfs(params.path, true)
+
+    override fun removeFile(params: FileParams): CompletableFuture<Unit> = refreshVfs(params.path, true)
+
+    override fun writeFile(params: FileParams): CompletableFuture<Unit> = refreshVfs(params.path, false)
+
+    override fun copyFile(params: CopyFileParams): CompletableFuture<Unit> {
+        refreshVfs(params.oldPath, false)
+        return refreshVfs(params.newPath, false)
+    }
+
+    fun refreshVfs(path: String, isDirectory: Boolean): CompletableFuture<Unit> {
+        return try {
+            CompletableFuture.supplyAsync(
+                {
+                    VirtualFileManager.getInstance().refreshAndFindFileByNioPath(Path(path))
+                    val vfile = VirtualFileManager.getInstance().findFileByUrl(path) ?: return@supplyAsync
+                    VfsUtil.markDirtyAndRefresh(true, isDirectory, isDirectory, vfile)
+                },
+                ApplicationManager.getApplication()::invokeLater
+            )
+        } catch (e: Exception) {
+            CompletableFuture.failedFuture(e)
+        }
     }
 
     companion object {
