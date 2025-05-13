@@ -37,8 +37,6 @@ data class AmazonQTheme(
     val warning: Color,
     val error: Color,
 
-    val cardBackground: Color,
-
     val editorFont: Font,
     val editorBackground: Color,
     val editorForeground: Color,
@@ -49,5 +47,5 @@ data class AmazonQTheme(
     val editorKeyword: Color,
     val editorString: Color,
     val editorProperty: Color,
-
+    val editorClassName: Color,
 )
