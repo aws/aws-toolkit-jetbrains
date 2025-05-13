@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "/help does nothing in Q welcome page"
+}
