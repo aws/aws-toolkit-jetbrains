@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.Project
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
@@ -15,6 +16,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQApp
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import software.aws.toolkits.jetbrains.services.amazonqCodeScan.auth.isCodeScanAvailable
 import software.aws.toolkits.jetbrains.services.amazonqCodeTest.auth.isCodeTestAvailable
 import software.aws.toolkits.jetbrains.services.amazonqDoc.auth.isDocAvailable
@@ -38,9 +41,11 @@ private enum class CodeTransformMessageTypes(val type: String) {
     ChatPrompt("chat-prompt"), // for getting the transformation objective
     CodeTransformStart("codetransform-start"),
     CodeTransformSelectSQLMetadata("codetransform-select-sql-metadata"),
+    CodeTransformConfirmCustomDependencyVersions("codetransform-input-confirm-custom-dependency-versions"),
     CodeTransformSelectSQLModuleSchema("codetransform-select-sql-module-schema"),
     CodeTransformStop("codetransform-stop"),
     CodeTransformCancel("codetransform-cancel"),
+    CodeTransformContinue("codetransform-continue"),
     CodeTransformConfirmSkipTests("codetransform-confirm-skip-tests"),
     CodeTransformConfirmOneOrMultipleDiffs("codetransform-confirm-one-or-multiple-diffs"),
     CodeTransformNew("codetransform-new"),
@@ -71,9 +76,12 @@ class CodeTransformChatApp : AmazonQApp {
             CodeTransformMessageTypes.Transform.type to IncomingCodeTransformMessage.Transform::class,
             CodeTransformMessageTypes.CodeTransformStart.type to IncomingCodeTransformMessage.CodeTransformStart::class,
             CodeTransformMessageTypes.CodeTransformSelectSQLMetadata.type to IncomingCodeTransformMessage.CodeTransformSelectSQLMetadata::class,
+            CodeTransformMessageTypes.CodeTransformConfirmCustomDependencyVersions.type to
+                IncomingCodeTransformMessage.CodeTransformConfirmCustomDependencyVersions::class,
             CodeTransformMessageTypes.CodeTransformSelectSQLModuleSchema.type to IncomingCodeTransformMessage.CodeTransformSelectSQLModuleSchema::class,
             CodeTransformMessageTypes.CodeTransformStop.type to IncomingCodeTransformMessage.CodeTransformStop::class,
             CodeTransformMessageTypes.CodeTransformCancel.type to IncomingCodeTransformMessage.CodeTransformCancel::class,
+            CodeTransformMessageTypes.CodeTransformContinue.type to IncomingCodeTransformMessage.CodeTransformContinue::class,
             CodeTransformMessageTypes.ChatPrompt.type to IncomingCodeTransformMessage.ChatPrompt::class,
             CodeTransformMessageTypes.CodeTransformConfirmSkipTests.type to IncomingCodeTransformMessage.CodeTransformConfirmSkipTests::class,
             CodeTransformMessageTypes.CodeTransformConfirmOneOrMultipleDiffs.type to IncomingCodeTransformMessage.CodeTransformConfirmOneOrMultipleDiffs::class,
@@ -161,6 +169,15 @@ class CodeTransformChatApp : AmazonQApp {
                 }
             }
         )
+
+        context.project.messageBus.connect(this).subscribe(
+            QRegionProfileSelectedListener.TOPIC,
+            object : QRegionProfileSelectedListener {
+                override fun onProfileSelected(project: Project, profile: QRegionProfile?) {
+                    chatSessionStorage.deleteAllSessions()
+                }
+            }
+        )
     }
 
     private suspend fun handleMessage(message: AmazonQMessage, inboundAppMessagesHandler: InboundAppMessagesHandler) {
@@ -170,12 +187,14 @@ class CodeTransformChatApp : AmazonQApp {
             is IncomingCodeTransformMessage.CodeTransformSelectSQLMetadata -> inboundAppMessagesHandler.processCodeTransformSelectSQLMetadataAction(message)
             is IncomingCodeTransformMessage.CodeTransformSelectSQLModuleSchema ->
                 inboundAppMessagesHandler.processCodeTransformSelectSQLModuleSchemaAction(message)
-
+            is IncomingCodeTransformMessage.CodeTransformConfirmCustomDependencyVersions ->
+                inboundAppMessagesHandler.processCodeTransformCustomDependencyVersions(message)
             is IncomingCodeTransformMessage.CodeTransformCancel -> inboundAppMessagesHandler.processCodeTransformCancelAction(message)
             is IncomingCodeTransformMessage.CodeTransformStop -> inboundAppMessagesHandler.processCodeTransformStopAction(message.tabId)
             is IncomingCodeTransformMessage.ChatPrompt -> inboundAppMessagesHandler.processChatPromptMessage(message)
             is IncomingCodeTransformMessage.CodeTransformConfirmSkipTests -> inboundAppMessagesHandler.processCodeTransformConfirmSkipTests(message)
             is IncomingCodeTransformMessage.CodeTransformConfirmOneOrMultipleDiffs -> inboundAppMessagesHandler.processCodeTransformOneOrMultipleDiffs(message)
+            is IncomingCodeTransformMessage.CodeTransformContinue -> inboundAppMessagesHandler.processCodeTransformContinueAction(message)
             is IncomingCodeTransformMessage.CodeTransformNew -> inboundAppMessagesHandler.processCodeTransformNewAction(message)
             is IncomingCodeTransformMessage.CodeTransformOpenTransformHub -> inboundAppMessagesHandler.processCodeTransformOpenTransformHub(message)
             is IncomingCodeTransformMessage.CodeTransformOpenMvnBuild -> inboundAppMessagesHandler.processCodeTransformOpenMvnBuild(message)

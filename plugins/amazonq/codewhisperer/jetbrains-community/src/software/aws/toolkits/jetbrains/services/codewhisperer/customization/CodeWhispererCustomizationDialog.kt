@@ -26,6 +26,7 @@ import software.amazon.awssdk.arns.Arn
 import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.Q_CUSTOM_LEARN_MORE_URI
 import software.aws.toolkits.jetbrains.ui.AsyncComboBox
 import software.aws.toolkits.jetbrains.utils.notifyInfo
@@ -34,7 +35,7 @@ import javax.swing.JComponent
 import javax.swing.JList
 
 private val NoDataToDisplay = CustomizationUiItem(
-    CodeWhispererCustomization("", message("codewhisperer.custom.dialog.option.no_data"), ""),
+    CodeWhispererCustomization("", message("codewhisperer.custom.dialog.option.no_data"), "", QRegionProfile("", "")),
     false,
     false
 )
@@ -257,6 +258,10 @@ private object CustomizationRenderer : ColoredListCellRenderer<CustomizationUiIt
                 tryOrNull { Arn.fromString(it.customization.arn).accountId().get() }?.let { accountId ->
                     append(" ($accountId)", SimpleTextAttributes.REGULAR_ATTRIBUTES)
                 }
+            }
+
+            if (it.customization.profile?.profileName?.isNotEmpty() == true) {
+                append("  [${it.customization.profile?.profileName}]", SimpleTextAttributes.REGULAR_ATTRIBUTES)
             }
 
             if (it.isNew) {

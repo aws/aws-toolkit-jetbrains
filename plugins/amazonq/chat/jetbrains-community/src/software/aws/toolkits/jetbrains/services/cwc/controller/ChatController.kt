@@ -21,6 +21,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.psi.PsiDocumentManager
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
@@ -36,6 +37,7 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
+import software.aws.toolkits.jetbrains.core.credentials.sono.isInternalUser
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitContext
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthController
 import software.aws.toolkits.jetbrains.services.amazonq.auth.AuthNeededState
@@ -49,6 +51,8 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhisp
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.CodeWhispererUserModificationTracker
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDiagnosticDifferences
+import software.aws.toolkits.jetbrains.services.codewhisperer.util.getDocumentDiagnostics
 import software.aws.toolkits.jetbrains.services.cwc.InboundAppMessagesHandler
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.exceptions.ChatApiException
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
@@ -214,6 +218,7 @@ class ChatController private constructor(
             val caret: Caret = editor.caretModel.primaryCaret
             val offset: Int = caret.offset
 
+            val oldDiagnostics = getDocumentDiagnostics(editor.document, context.project)
             ApplicationManager.getApplication().runWriteAction {
                 WriteCommandAction.runWriteCommandAction(context.project) {
                     if (caret.hasSelection()) {
@@ -235,6 +240,12 @@ class ChatController private constructor(
                         ),
                     )
                 }
+            }
+            if (isInternalUser(getStartUrl(context.project))) {
+                // wait for the IDE itself to update its diagnostics for current file
+                delay(500)
+                val newDiagnostics = getDocumentDiagnostics(editor.document, context.project)
+                message.diagnosticsDifferences = getDiagnosticDifferences(oldDiagnostics, newDiagnostics)
             }
         }
         telemetryHelper.recordInteractWithMessage(message)
@@ -540,6 +551,10 @@ class ChatController private constructor(
         .filter { it.triggerId == triggerId }
         .map { it.tabId }
         .first()
+
+    override fun processSessionClear() {
+        chatSessionStorage.deleteAllSessions()
+    }
 
     companion object {
         private val logger = getLogger<ChatController>()

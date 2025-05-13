@@ -13,6 +13,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.EmptyPatchExce
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevOperation
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FileCreationFailedException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.GuardrailsException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PromptRefusalException
@@ -30,6 +31,7 @@ import software.aws.toolkits.telemetry.MetricResult
 import java.util.UUID
 
 private val logger = getLogger<CodeGenerationState>()
+private const val RUN_COMMAND_LOG_PATH = ".amazonq/dev/run_command.log"
 
 class CodeGenerationState(
     override val tabID: String,
@@ -211,9 +213,23 @@ private suspend fun CodeGenerationState.generateCode(
                         conversationId = config.conversationId,
                     )
 
-                val newFileInfo = registerNewFiles(newFileContents = codeGenerationStreamResult.new_file_contents)
-                val deletedFileInfo = registerDeletedFiles(deletedFiles = codeGenerationStreamResult.deleted_files)
+                val fileContents = codeGenerationStreamResult.new_file_contents.filterKeys { file ->
+                    if (file.endsWith(RUN_COMMAND_LOG_PATH)) {
+                        val contents: String = codeGenerationStreamResult.new_file_contents[file].orEmpty()
+                        val truncatedContents = if (contents.length > 10000000) {
+                            contents.substring(0, 10000000)
+                        } else {
+                            contents
+                        }
+                        logger.info(truncatedContents) { "Run command log: $truncatedContents" }
+                        false
+                    } else {
+                        true
+                    }
+                }
 
+                val newFileInfo = registerNewFiles(newFileContents = fileContents)
+                val deletedFileInfo = registerDeletedFiles(deletedFiles = codeGenerationStreamResult.deleted_files)
                 return CodeGenerationResult(
                     newFiles = newFileInfo,
                     deletedFiles = deletedFileInfo,
@@ -245,6 +261,10 @@ private suspend fun CodeGenerationState.generateCode(
                     -> throw PromptRefusalException(operation = FeatureDevOperation.GenerateCode.toString(), desc = "Prompt refusal")
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "EmptyPatch",
+                    ),
+                    -> throw FileCreationFailedException(operation = FeatureDevOperation.GenerateCode.toString(), desc = "File creation failed")
+                    codeGenerationResultState.codeGenerationStatusDetail()?.contains(
+                        "FileCreationFailed",
                     ),
                     -> {
                         if (codeGenerationResultState.codeGenerationStatusDetail().contains("NO_CHANGE_REQUIRED")) {

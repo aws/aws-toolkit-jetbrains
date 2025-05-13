@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.model
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
@@ -16,9 +17,9 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.putNextEntry
-import software.aws.toolkits.jetbrains.services.codemodernizer.EXPLAINABILITY_V1
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_DEPENDENCIES_ROOT_NAME
 import software.aws.toolkits.jetbrains.services.codemodernizer.constants.HIL_MANIFEST_FILE_NAME
+import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.TransformMavenRunner
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runDependencyReportCommands
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runHilMavenCopyDependency
 import software.aws.toolkits.jetbrains.services.codemodernizer.ideMaven.runMavenCopyCommands
@@ -44,9 +45,11 @@ const val MANIFEST_PATH = "manifest.json"
 const val ZIP_SOURCES_PATH = "sources"
 const val ZIP_DEPENDENCIES_PATH = "dependencies"
 const val BUILD_LOG_PATH = "build-logs.txt"
+const val CUSTOM_DEPENDENCY_VERSIONS_FILE_PATH = "custom-upgrades.yaml"
 const val UPLOAD_ZIP_MANIFEST_VERSION = "1.0"
 const val HIL_1P_UPGRADE_CAPABILITY = "HIL_1pDependency_VersionUpgrade"
 const val EXPLAINABILITY_V1 = "EXPLAINABILITY_V1"
+const val CLIENT_SIDE_BUILD = "CLIENT_SIDE_BUILD"
 const val MAVEN_CONFIGURATION_FILE_NAME = "pom.xml"
 const val MAVEN_BUILD_RUN_UNIT_TESTS = "clean test"
 const val MAVEN_BUILD_SKIP_UNIT_TESTS = "clean test-compile"
@@ -59,21 +62,27 @@ const val INVALID_SUFFIX_REPOSITORIES = "repositories"
 const val ORACLE_DB = "ORACLE"
 const val AURORA_DB = "AURORA_POSTGRESQL"
 const val RDS_DB = "POSTGRESQL"
+
 data class CodeModernizerSessionContext(
     val project: Project,
     var configurationFile: VirtualFile? = null, // used to ZIP module
     val sourceJavaVersion: JavaSdkVersion, // always needed for startJob API
     val targetJavaVersion: JavaSdkVersion, // 17 or 21
-    var transformCapabilities: List<String> = listOf(EXPLAINABILITY_V1),
+    var transformCapabilities: List<String> = listOf(),
     var customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS, // run unit tests by default
     val sourceVendor: String = ORACLE_DB, // only one supported
     val targetVendor: String? = null,
     val sourceServerName: String? = null,
     var schema: String? = null,
     val sqlMetadataZip: File? = null,
-) {
+    var customDependencyVersionsFile: VirtualFile? = null,
+    var targetJdkName: String? = null,
+    var originalUploadZipPath: Path? = null,
+) : Disposable {
     private val mapper = jacksonObjectMapper()
     private val ignoredDependencyFileExtensions = setOf(INVALID_SUFFIX_SHA, INVALID_SUFFIX_REPOSITORIES)
+    private var isDisposed = false
+    val mavenRunnerQueue: MutableList<TransformMavenRunner> = mutableListOf()
 
     private fun File.isMavenTargetFolder(): Boolean {
         val hasPomSibling = this.resolveSibling(MAVEN_CONFIGURATION_FILE_NAME).exists()
@@ -100,19 +109,22 @@ data class CodeModernizerSessionContext(
     }
 
     fun executeMavenCopyCommands(sourceFolder: File, buildLogBuilder: StringBuilder): MavenCopyCommandsResult {
+        if (isDisposed) return MavenCopyCommandsResult.Cancelled
         val shouldSkipTests = customBuildCommand == MAVEN_BUILD_SKIP_UNIT_TESTS
-        return runMavenCopyCommands(sourceFolder, buildLogBuilder, LOG, project, shouldSkipTests)
+        return runMavenCopyCommands(this, sourceFolder, buildLogBuilder, LOG, project, shouldSkipTests)
     }
 
     private fun executeHilMavenCopyDependency(sourceFolder: File, destinationFolder: File, buildLogBuilder: StringBuilder) = runHilMavenCopyDependency(
+        this,
         sourceFolder,
         destinationFolder,
         buildLogBuilder,
         LOG,
-        project
+        project,
     )
 
     fun copyHilDependencyUsingMaven(hilTepDirPath: Path): MavenCopyCommandsResult {
+        if (isDisposed) return MavenCopyCommandsResult.Cancelled
         val sourceFolder = File(getPathToHilArtifactPomFolder(hilTepDirPath).pathString)
         val destinationFolder = Files.createDirectories(getPathToHilDependenciesRootDir(hilTepDirPath)).toFile()
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
@@ -121,6 +133,7 @@ data class CodeModernizerSessionContext(
     }
 
     fun getDependenciesUsingMaven(): MavenCopyCommandsResult {
+        if (isDisposed) return MavenCopyCommandsResult.Cancelled
         val root = configurationFile?.parent
         val sourceFolder = File(root?.path)
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
@@ -128,14 +141,16 @@ data class CodeModernizerSessionContext(
     }
 
     fun createDependencyReportUsingMaven(hilTempPomPath: Path): MavenDependencyReportCommandsResult {
+        if (isDisposed) return MavenDependencyReportCommandsResult.Cancelled
         val sourceFolder = File(hilTempPomPath.pathString)
         val buildLogBuilder = StringBuilder("Starting Build Log...\n")
         return executeDependencyVersionReportUsingMaven(sourceFolder, buildLogBuilder)
     }
+
     private fun executeDependencyVersionReportUsingMaven(
         sourceFolder: File,
         buildLogBuilder: StringBuilder,
-    ) = runDependencyReportCommands(sourceFolder, buildLogBuilder, LOG, project)
+    ) = runDependencyReportCommands(this, sourceFolder, buildLogBuilder, LOG, project)
 
     fun createZipForHilUpload(hilTempPath: Path, manifest: CodeTransformHilDownloadManifest?, targetVersion: String): ZipCreationResult =
         runReadAction {
@@ -257,7 +272,15 @@ data class CodeModernizerSessionContext(
 
                     LOG.info { "Dependency files size = ${dependencyFiles.sumOf { it.length().toInt() }}" }
 
-                    // 3) Sources
+                    // 3) Custom YAML file
+                    // TODO: where to put this? VS Code puts it in custom-upgrades/dependency-versions.yaml; here we put it at the root
+                    if (customDependencyVersionsFile != null) {
+                        customDependencyVersionsFile?.inputStream?.use {
+                            zip.putNextEntry(Path(CUSTOM_DEPENDENCY_VERSIONS_FILE_PATH).toString(), it)
+                        }
+                    }
+
+                    // 4) Sources
                     files?.forEach { file ->
                         val relativePath = File(file.path).relativeTo(sourceFolder)
                         val paddedPath = zipSources.resolve(relativePath)
@@ -278,7 +301,7 @@ data class CodeModernizerSessionContext(
 
                     LOG.info { "Source code files size = ${files?.sumOf { it.length.toInt() }}" }
 
-                    // 4) Build Log
+                    // 5) Initial Maven copy-deps / install build log
                     buildLogBuilder.toString().byteInputStream().use {
                         zip.putNextEntry(Path(BUILD_LOG_PATH).toString(), it)
                     }
@@ -324,6 +347,13 @@ data class CodeModernizerSessionContext(
             ?: error(message("codemodernizer.toolwindow.problems_window_not_found"))
         appModernizerBottomWindow.show()
         CodeModernizerBottomWindowPanelManager.getInstance(project).setJobStartingUI()
+    }
+
+    override fun dispose() {
+        isDisposed = true
+        this.mavenRunnerQueue.forEach {
+            it.cancel()
+        }
     }
 
     companion object {

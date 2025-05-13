@@ -18,6 +18,7 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.FileUtils
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.services.amazonq.QConstants.MAX_FILE_SIZE_BYTES
+import software.aws.toolkits.jetbrains.utils.getWorkspaceDevFile
 import software.aws.toolkits.jetbrains.utils.isWorkspaceDevFile
 import software.aws.toolkits.resources.AwsCoreBundle
 import software.aws.toolkits.telemetry.AmazonqTelemetry
@@ -57,11 +58,8 @@ open class FeatureDevSessionContext(val project: Project, val maxProjectSizeByte
 
     private var _selectionRoot = workspaceRoot
 
-    // This function checks for existence of `devfile.yaml` in customer's repository, currently only `devfile.yaml` is supported for this feature.
-    fun checkForDevFile(): Boolean {
-        val devFile = File(addressableRoot.toString(), "devfile.yaml")
-        return devFile.exists()
-    }
+    fun hasDevFile(): Boolean =
+        getWorkspaceDevFile(addressableRoot) != null
 
     fun getProjectZip(isAutoBuildFeatureEnabled: Boolean?): ZipCreationResult {
         val zippedProject = runBlocking {

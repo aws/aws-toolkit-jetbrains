@@ -7,8 +7,10 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.testFramework.ApplicationRule
 import com.intellij.testFramework.DisposableRule
 import com.intellij.testFramework.ProjectRule
+import com.intellij.testFramework.registerServiceInstance
 import com.intellij.testFramework.replaceService
 import com.intellij.util.xmlb.XmlSerializer
+import migration.software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import org.assertj.core.api.Assertions.assertThat
 import org.jdom.output.XMLOutputter
 import org.junit.Before
@@ -40,10 +42,16 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.region.MockRegionProviderRule
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.FeatureContext
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
+import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomizationState
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.DefaultCodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.utils.xmlElement
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible
 
@@ -75,6 +83,8 @@ class CodeWhispererModelConfiguratorTest {
     private lateinit var sut: DefaultCodeWhispererModelConfigurator
     private lateinit var mockClient: CodeWhispererRuntimeClient
     private lateinit var abManager: CodeWhispererFeatureConfigService
+    private lateinit var mockClintAdaptor: CodeWhispererClientAdaptor
+    private lateinit var mockQRegionProfileManager: QRegionProfileManager
 
     @Before
     fun setup() {
@@ -83,7 +93,11 @@ class CodeWhispererModelConfiguratorTest {
         regionProvider.addRegion(Region.US_EAST_1)
         regionProvider.addRegion(Region.US_EAST_2)
 
-        sut = DefaultCodeWhispererModelConfigurator()
+        sut = spy(CodeWhispererModelConfigurator.getInstance() as DefaultCodeWhispererModelConfigurator).also { spyInstance ->
+            ApplicationManager.getApplication().replaceService(
+                DefaultCodeWhispererModelConfigurator::class.java, spyInstance, disposableRule.disposable
+            )
+        }
 
         (ToolkitConnectionManager.getInstance(projectRule.project) as DefaultToolkitConnectionManager).loadState(ToolkitConnectionManagerState())
         mockClient.stub {
@@ -110,6 +124,14 @@ class CodeWhispererModelConfiguratorTest {
             abManager,
             disposableRule.disposable
         )
+
+        mockClintAdaptor = mock()
+        projectRule.project.registerServiceInstance(CodeWhispererClientAdaptor::class.java, mockClintAdaptor)
+
+        mockQRegionProfileManager = mock {
+            on { listRegionProfiles(any()) }.thenReturn(listOf(QRegionProfile("fake_name", "fake_arn")))
+        }
+        ApplicationManager.getApplication().replaceService(QRegionProfileManager::class.java, mockQRegionProfileManager, disposableRule.disposable)
     }
 
     @Test
@@ -417,7 +439,10 @@ class CodeWhispererModelConfiguratorTest {
 
             this.connectionIdToActiveCustomizationArn.putAll(
                 mapOf(
-                    "fake-sso-url" to CodeWhispererCustomization(arn = "arn_2", name = "name_2", description = "description_2")
+                    "fake-sso-url" to CodeWhispererCustomization(
+                        arn = "arn_2", name = "name_2", description = "description_2",
+                        profile = QRegionProfile(profileName = "myActiveProfile", arn = "arn:aws:codewhisperer:us-west-2:123456789012:profile/myActiveProfile")
+                    )
                 )
             )
 
@@ -436,6 +461,12 @@ class CodeWhispererModelConfiguratorTest {
             "<option name=\"arn\" value=\"arn_2\" />" +
             "<option name=\"name\" value=\"name_2\" />" +
             "<option name=\"description\" value=\"description_2\" />" +
+            "<option name=\"profile\">" +
+            "<QRegionProfile>" +
+            "<option name=\"arn\" value=\"arn:aws:codewhisperer:us-west-2:123456789012:profile/myActiveProfile\" />" +
+            "<option name=\"profileName\" value=\"myActiveProfile\" />" +
+            "</QRegionProfile>" +
+            "</option>" +
             "</CodeWhispererCustomization>" +
             "</value>" +
             "</entry>" +
@@ -486,6 +517,10 @@ class CodeWhispererModelConfiguratorTest {
                               <option name="arn" value="arn_2" />
                               <option name="name" value="name_2" />
                               <option name="description" value="description_2" />
+                              <option name="profile"><QRegionProfile>
+                              <option name="profileName" value="myActiveProfile"/>
+                              <option name="arn" value="arn:aws:codewhisperer:us-west-2:123456789012:profile/myActiveProfile"/>
+                            </QRegionProfile></option>
                             </CodeWhispererCustomization>
                           </value>
                         </entry>
@@ -515,12 +550,40 @@ class CodeWhispererModelConfiguratorTest {
             CodeWhispererCustomization(
                 arn = "arn_2",
                 name = "name_2",
-                description = "description_2"
+                description = "description_2",
+                profile = QRegionProfile("myActiveProfile", "arn:aws:codewhisperer:us-west-2:123456789012:profile/myActiveProfile")
             )
         )
 
         assertThat(actual.previousAvailableCustomizations).hasSize(1)
         assertThat(actual.previousAvailableCustomizations["fake-sso-url"]).isEqualTo(listOf("arn_1", "arn_2", "arn_3"))
+    }
+
+    @Test
+    fun `backward compatibility - should still be deseriealizable where profile field is not present`() {
+        val xml = xmlElement(
+            """
+                <component name="codewhispererCustomizationStates">
+                        <option name="connectionIdToActiveCustomizationArn">
+                            <map>
+                                <entry key="sso-session:foo">
+                                    <value>
+                                        <CodeWhispererCustomization>
+                                            <option name="arn" value="arn:foo" />
+                                            <option name="name" value="Customization-foo" />
+                                            <option name="description" value="Foo foo foo foo" />
+                                        </CodeWhispererCustomization>
+                                    </value>
+                                </entry>
+                            </map>
+                        </option>
+                    </component>
+            """.trimIndent()
+        )
+
+        val actual = XmlSerializer.deserialize(xml, CodeWhispererCustomizationState::class.java)
+        val cnt = actual.connectionIdToActiveCustomizationArn.size
+        assertThat(cnt).isEqualTo(1)
     }
 
     @Test
@@ -549,5 +612,49 @@ class CodeWhispererModelConfiguratorTest {
         assertThat(actual.customizationArnOverrideV2).isNull()
         assertThat(actual.previousAvailableCustomizations).hasSize(1)
         assertThat(actual.previousAvailableCustomizations["fake-sso-url"]).isEqualTo(listOf("arn_1", "arn_2", "arn_3"))
+    }
+
+    @Test
+    fun `profile switch should keep using existing customization if new list still contains that arn`() {
+        val ssoConn = spy(LegacyManagedBearerSsoConnection(region = "us-east-1", startUrl = "url 1", scopes = Q_SCOPES))
+        ToolkitConnectionManager.getInstance(projectRule.project).switchConnection(ssoConn)
+        val oldCustomization = CodeWhispererCustomization("oldArn", "oldName", "oldDescription")
+        sut.switchCustomization(projectRule.project, oldCustomization)
+
+        assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(oldCustomization)
+
+        val fakeCustomizations = listOf(
+            CodeWhispererCustomization("oldArn", "oldName", "oldDescription")
+        )
+        mockClintAdaptor.stub { on { listAvailableCustomizations(QRegionProfile("fake_name", "fake_arn")) } doReturn fakeCustomizations }
+
+        ApplicationManager.getApplication().messageBus
+            .syncPublisher(QRegionProfileSelectedListener.TOPIC)
+            .onProfileSelected(projectRule.project, null)
+
+        assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(oldCustomization)
+    }
+
+    @Test
+    fun `profile switch should invalidate obsolete customization if it's not in the new list`() {
+        val ssoConn = spy(LegacyManagedBearerSsoConnection(region = "us-east-1", startUrl = "url 1", scopes = Q_SCOPES))
+        ToolkitConnectionManager.getInstance(projectRule.project).switchConnection(ssoConn)
+        val oldCustomization = CodeWhispererCustomization("oldArn", "oldName", "oldDescription")
+        sut.switchCustomization(projectRule.project, oldCustomization)
+        assertThat(sut.activeCustomization(projectRule.project)).isEqualTo(oldCustomization)
+        val fakeCustomizations = listOf(
+            CodeWhispererCustomization("newArn", "newName", "newDescription")
+        )
+        mockClintAdaptor.stub { on { listAvailableCustomizations(QRegionProfile("fake_name", "fake_arn")) } doReturn fakeCustomizations }
+
+        val latch = CountDownLatch(1)
+
+        ApplicationManager.getApplication().messageBus
+            .syncPublisher(QRegionProfileSelectedListener.TOPIC)
+            .onProfileSelected(projectRule.project, null)
+
+        latch.await(2, TimeUnit.SECONDS)
+
+        assertThat(sut.activeCustomization(projectRule.project)).isNull()
     }
 }

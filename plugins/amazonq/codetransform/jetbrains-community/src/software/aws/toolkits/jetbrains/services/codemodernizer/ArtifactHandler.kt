@@ -24,7 +24,6 @@ import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
-import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.NoTokenInitializedException
 import software.aws.toolkits.jetbrains.services.amazonq.CODE_TRANSFORM_TROUBLESHOOT_DOC_DOWNLOAD_ERROR_OVERVIEW
@@ -50,13 +49,13 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModerni
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilArtifactDir
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isValidCodeTransformConnection
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.openTroubleshootingGuideNotificationAction
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.zipToPath
 import software.aws.toolkits.jetbrains.utils.notifyInfo
 import software.aws.toolkits.jetbrains.utils.notifyStickyInfo
 import software.aws.toolkits.jetbrains.utils.notifyStickyWarn
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.CodeTransformArtifactType
 import java.io.File
-import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -112,32 +111,12 @@ class ArtifactHandler(
         }
     }
 
-    suspend fun unzipToPath(byteArrayList: List<ByteArray>, outputDirPath: Path? = null): Pair<Path, Int> {
-        val zipFilePath = withContext(getCoroutineBgContext()) {
-            if (outputDirPath == null) {
-                Files.createTempFile(null, ".zip")
-            } else {
-                Files.createTempFile(outputDirPath, null, ".zip")
-            }
-        }
-        var totalDownloadBytes = 0
-        withContext(getCoroutineBgContext()) {
-            Files.newOutputStream(zipFilePath).use {
-                for (bytes in byteArrayList) {
-                    it.write(bytes)
-                    totalDownloadBytes += bytes.size
-                }
-            }
-        }
-        return zipFilePath to totalDownloadBytes
-    }
-
     suspend fun downloadHilArtifact(jobId: JobId, artifactId: String, tmpDir: File): CodeTransformHilDownloadArtifact? {
         val downloadResultsResponse = clientAdaptor.downloadExportResultArchive(jobId, artifactId)
 
         return try {
             val tmpPath = tmpDir.toPath()
-            val (downloadZipFilePath, _) = unzipToPath(downloadResultsResponse, tmpPath)
+            val (downloadZipFilePath, _) = zipToPath(downloadResultsResponse, tmpPath)
             LOG.info { "Successfully converted the hil artifact download to a zip at ${downloadZipFilePath.toAbsolutePath()}." }
             CodeTransformHilDownloadArtifact.create(downloadZipFilePath, getPathToHilArtifactDir(tmpPath))
         } catch (e: Exception) {
@@ -211,7 +190,7 @@ class ArtifactHandler(
             val totalDownloadBytes: Int
             val zipPath: String
             try {
-                val result = unzipToPath(downloadResultsResponse)
+                val result = zipToPath(downloadResultsResponse)
                 path = result.first
                 totalDownloadBytes = result.second
                 zipPath = path.toAbsolutePath().toString()
@@ -528,6 +507,7 @@ class ArtifactHandler(
             TransformationDownloadArtifactType.CLIENT_INSTRUCTIONS -> CodeTransformArtifactType.ClientInstructions
             TransformationDownloadArtifactType.LOGS -> CodeTransformArtifactType.Logs
             TransformationDownloadArtifactType.UNKNOWN_TO_SDK_VERSION -> CodeTransformArtifactType.Unknown
+            TransformationDownloadArtifactType.GENERATED_CODE -> CodeTransformArtifactType.Unknown
         }
 
     companion object {
