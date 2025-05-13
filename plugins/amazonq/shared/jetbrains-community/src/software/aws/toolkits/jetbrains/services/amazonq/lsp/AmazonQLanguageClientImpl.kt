@@ -73,7 +73,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
             TelemetryService.getInstance().record(project) {
                 datum(name) {
-                    createTime(Instant.now())
                     unit(TelemetryParsingUtil.parseMetricUnit(telemetryMap["unit"]))
                     value(telemetryMap["value"] as? Double ?: 1.0)
                     passive(telemetryMap["passive"] as? Boolean ?: false)
