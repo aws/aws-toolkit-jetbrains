@@ -14,15 +14,21 @@ data class TabEventParams(
 
 data class OpenTabResponse(
     val requestId: String,
-    val command: String,
-    val params: OpenTabResponseParams,
 )
 
-data class OpenTabResponseParams(
-    val success: Boolean,
+data class OpenTabResultSuccess(
     val result: OpenTabResult,
 )
 
 data class OpenTabResult(
     val tabId: String,
+)
+
+data class OpenTabResultError(
+    val error: OpenTabResultErrorError,
+)
+
+data class OpenTabResultErrorError(
+    val type: String,
+    val message: String,
 )

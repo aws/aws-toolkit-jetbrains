@@ -40,6 +40,9 @@ class MessageSerializer @VisibleForTesting constructor() {
     inline fun <reified T> deserializeChatMessages(value: JsonNode): T =
         objectMapper.treeToValue<T>(value)
 
+    inline fun <reified T> deserializeChatMessages(value: JsonNode, clazz: Class<T>): T =
+        objectMapper.treeToValue(value, clazz)
+
     // Provide singleton global access
     companion object {
         private val instance = MessageSerializer()
