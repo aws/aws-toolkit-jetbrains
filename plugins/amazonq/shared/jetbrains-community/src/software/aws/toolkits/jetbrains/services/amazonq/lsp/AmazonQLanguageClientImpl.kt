@@ -7,7 +7,6 @@ import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
 import com.intellij.diff.DiffManagerEx
 import com.intellij.diff.requests.SimpleDiffRequest
-import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
@@ -25,8 +24,10 @@ import org.eclipse.lsp4j.PublishDiagnosticsParams
 import org.eclipse.lsp4j.ShowDocumentParams
 import org.eclipse.lsp4j.ShowDocumentResult
 import org.eclipse.lsp4j.ShowMessageRequestParams
+import org.slf4j.event.Level
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -70,11 +71,19 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
     override fun showMessage(messageParams: MessageParams) {
         val type = when (messageParams.type) {
-            MessageType.Error -> NotificationType.ERROR
-            MessageType.Warning -> NotificationType.WARNING
-            MessageType.Info, MessageType.Log -> NotificationType.INFORMATION
+            MessageType.Error -> Level.ERROR
+            MessageType.Warning -> Level.WARN
+            MessageType.Info, MessageType.Log -> Level.INFO
         }
-        println("$type: ${messageParams.message}")
+
+        if (type == Level.ERROR &&
+            messageParams.message.lineSequence().firstOrNull()?.contains("NOTE: The AWS SDK for JavaScript (v2) is in maintenance mode.") == true
+        ) {
+            LOG.info { "Suppressed Flare AWS JS SDK v2 EoL error message" }
+            return
+        }
+
+        LOG.atLevel(type).log(messageParams.message)
     }
 
     override fun showMessageRequest(requestParams: ShowMessageRequestParams): CompletableFuture<MessageActionItem?>? {

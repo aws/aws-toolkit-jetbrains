@@ -1,8 +1,9 @@
 // Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-
+@file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.cwc.commands
 
+import com.google.gson.Gson
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -15,6 +16,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.Gener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendToPromptParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TriggerType
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
+import software.aws.toolkits.jetbrains.services.amazonqCodeTest.controller.TestCommandMessage
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ActiveFileContextExtractor
 import software.aws.toolkits.jetbrains.services.cwc.editor.context.ExtractionTriggerType
 
@@ -26,8 +28,7 @@ class ActionRegistrar {
 
     fun reportMessageClick(command: EditorContextCommand, project: Project) {
         if (command == EditorContextCommand.GenerateUnitTests) {
-            // pre-existing old chat code path
-            _messages.tryEmit(ContextMenuActionMessage(command, project))
+            AsyncChatUiListener.notifyPartialMessageUpdate(Gson().toJson(TestCommandMessage()))
         } else {
             // new agentic chat route
             ApplicationManager.getApplication().executeOnPooledThread {
