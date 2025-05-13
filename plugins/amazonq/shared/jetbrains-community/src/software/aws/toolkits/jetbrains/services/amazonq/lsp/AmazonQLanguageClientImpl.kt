@@ -125,19 +125,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             val connection = ToolkitConnectionManager.getInstance(project)
                 .activeConnectionForFeature(QConnection.getInstance())
 
-            when (connection) {
-                is AwsBearerTokenConnection -> {
-                    ConnectionMetadata(
-                        SsoProfileData(connection.startUrl)
-                    )
-                }
-                else -> {
-                    // If no connection or not a bearer token connection return default builderID start url
-                    ConnectionMetadata(
-                        SsoProfileData(AmazonQLspConstants.AWS_BUILDER_ID_URL)
-                    )
-                }
-            }
+            connection?.let { ConnectionMetadata.fromConnection(it) }
         }
 
     override fun openTab(params: LSPAny): CompletableFuture<OpenTabResult> {
