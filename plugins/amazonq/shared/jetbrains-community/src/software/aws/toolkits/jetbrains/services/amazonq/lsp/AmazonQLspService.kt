@@ -191,7 +191,7 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
 
             // Check if the launcher's Future (startListening) is done
             // If it's done, that means the connection has been terminated
-            if (currentInstance.launcherFuture.isDone || true) {
+            if (currentInstance.launcherFuture.isDone) {
                 LOG.debug { "LSP server connection terminated, checking restart limits" }
                 waitForRestartSlot()
                 LOG.debug { "Restarting LSP server" }
