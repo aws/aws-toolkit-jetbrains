@@ -18,12 +18,12 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.reauthConnectionIfNeeded
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ProgressNotificationUtils.getObject
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthFollowUpClickedParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthFollowupType
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_ERROR_PARAMS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ErrorParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
@@ -37,7 +37,7 @@ class ChatCommunicationManager(private val cs: CoroutineScope) {
     private val chatPartialResultMap = ConcurrentHashMap<String, String>()
     private val inflightRequestByTabId = ConcurrentHashMap<String, CompletableFuture<String>>()
     private val pendingSerializedChatRequests = ConcurrentHashMap<String, CompletableFuture<GetSerializedChatResult>>()
-    private val pendingTabRequests = ConcurrentHashMap<String, CompletableFuture<OpenTabResult>>()
+    private val pendingTabRequests = ConcurrentHashMap<String, CompletableFuture<LSPAny>>()
 
     fun setUiReady() {
         uiReady.complete(true)
@@ -85,17 +85,12 @@ class ChatCommunicationManager(private val cs: CoroutineScope) {
         pendingSerializedChatRequests.remove(requestId)
     }
 
-    fun addTabOpenRequest(requestId: String, result: CompletableFuture<OpenTabResult>) {
+    fun addTabOpenRequest(requestId: String, result: CompletableFuture<LSPAny>) {
         pendingTabRequests[requestId] = result
     }
 
-    fun completeTabOpen(requestId: String, tabId: String) {
-        pendingTabRequests.remove(requestId)?.complete(OpenTabResult(tabId))
-    }
-
-    fun removeTabOpenRequest(requestId: String) {
+    fun removeTabOpenRequest(requestId: String) =
         pendingTabRequests.remove(requestId)
-    }
 
     fun handlePartialResultProgressNotification(project: Project, params: ProgressParams) {
         val token = ProgressNotificationUtils.getToken(params)

@@ -20,14 +20,14 @@ class ChatMessageTest {
     @Test
     fun `sanity check`() {
         val jackson = jacksonObjectMapper()
-        assertThat(IconType.CODE_BLOCK).satisfiesKt {
+        assertThat(MessageType.SYSTEM_PROMPT).satisfiesKt {
             // language=JSON
-            val expected = """"code-block""""
+            val expected = """"system-prompt""""
             assertThat(Gson().toJson(it)).isEqualTo(expected)
             assertThat(jackson.writeValueAsString(it)).isEqualTo(expected)
 
-            assertThat(Gson().fromJson(expected, IconType::class.java)).isEqualTo(it)
-            assertThat(jackson.readValue<IconType>(expected)).isEqualTo(it)
+            assertThat(Gson().fromJson(expected, MessageType::class.java)).isEqualTo(it)
+            assertThat(jackson.readValue<MessageType>(expected)).isEqualTo(it)
         }
     }
 

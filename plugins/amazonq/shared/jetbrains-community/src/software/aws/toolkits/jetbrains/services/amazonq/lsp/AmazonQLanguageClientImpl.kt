@@ -41,7 +41,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenFileDiffParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
@@ -126,9 +125,9 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             connection?.let { ConnectionMetadata.fromConnection(it) }
         }
 
-    override fun openTab(params: LSPAny): CompletableFuture<OpenTabResult> {
+    override fun openTab(params: LSPAny): CompletableFuture<LSPAny> {
         val requestId = UUID.randomUUID().toString()
-        val result = CompletableFuture<OpenTabResult>()
+        val result = CompletableFuture<LSPAny>()
         val chatManager = ChatCommunicationManager.getInstance(project)
         chatManager.addTabOpenRequest(requestId, result)
 
