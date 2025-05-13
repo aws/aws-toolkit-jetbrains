@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GenericCommandParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendToPromptParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TriggerType
@@ -48,8 +49,40 @@ class ActionRegistrar {
         }
     }
 
-    fun reportMessageClick(command: EditorContextCommand, issue: MutableMap<String, String>, project: Project) {
-        _messages.tryEmit(CodeScanIssueActionMessage(command, issue, project))
+    fun reportMessageClick(issue: MutableMap<String, String>) {
+        ApplicationManager.getApplication().executeOnPooledThread {
+            runBlocking {
+                handleCodeScanExplainCommand(issue)
+            }
+        }
+    }
+
+    private fun handleCodeScanExplainCommand(issue: MutableMap<String, String>) {
+        // https://github.com/aws/aws-toolkit-vscode/blob/master/packages/amazonq/src/lsp/chat/commands.ts#L30
+        val codeSelection = "\n```\n${issue["code"]?.trimIndent()?.trim()}\n```\n"
+
+        val prompt = "Explain the following part of my code \n\n " +
+            "Issue:    \"${issue["title"]}\" \n" +
+            "Code:    $codeSelection"
+
+        val modelPrompt = "Explain the following part of my code \n\n " +
+            "Issue:    \"${issue["title"]}\" \n" +
+            "Description:    ${issue["description"]} \n" +
+            "Code:    $codeSelection and generate code demonstrating the fix"
+
+        val params = SendToPromptParams(
+            selection = codeSelection,
+            triggerType = TriggerType.CONTEXT_MENU,
+            prompt = ChatPrompt(
+                prompt = prompt,
+                escapedPrompt = modelPrompt,
+                command = null
+            ),
+            autoSubmit = true
+        )
+
+        val uiMessage = FlareUiMessage("sendToPrompt", params)
+        AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
     }
 
     // provide singleton access
