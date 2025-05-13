@@ -25,10 +25,10 @@ data class OpenTabResult(
 )
 
 data class OpenTabResultError(
-    val error: OpenTabResultErrorError,
+    val error: OpenTabResultErrorData,
 )
 
-data class OpenTabResultErrorError(
+data class OpenTabResultErrorData(
     val type: String,
     val message: String,
 )
