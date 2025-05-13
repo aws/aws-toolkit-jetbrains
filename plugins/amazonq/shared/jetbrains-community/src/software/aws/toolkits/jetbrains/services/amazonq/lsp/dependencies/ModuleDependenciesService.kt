@@ -7,5 +7,5 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependenci
 import java.util.concurrent.CompletableFuture
 
 interface ModuleDependenciesService {
-    fun didChangeDependencyPaths(params: DidChangeDependencyPathsParams): CompletableFuture<Unit>
+    fun didChangeDependencyPaths(params: DidChangeDependencyPathsParams)
 }
