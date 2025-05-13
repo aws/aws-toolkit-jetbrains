@@ -51,6 +51,8 @@ import org.eclipse.lsp4j.TextDocumentClientCapabilities
 import org.eclipse.lsp4j.WorkspaceClientCapabilities
 import org.eclipse.lsp4j.jsonrpc.Launcher
 import org.eclipse.lsp4j.jsonrpc.MessageConsumer
+import org.eclipse.lsp4j.jsonrpc.RemoteEndpoint
+import org.eclipse.lsp4j.jsonrpc.json.JsonRpcMethod
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.slf4j.event.Level
@@ -129,11 +131,15 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
     private var instance: Deferred<AmazonQServerInstance>
     val capabilities
         get() = instance.getCompleted().initializeResult.getCompleted().capabilities
+
     val encryptionManager
         get() = instance.getCompleted().encryptionManager
     private val heartbeatJob: Job
     private val restartTimestamps = ArrayDeque<Long>()
     private val restartMutex = Mutex() // Separate mutex for restart tracking
+
+    val rawEndpoint
+        get() = instance.getCompleted().rawEndpoint
 
     // dont allow lsp commands if server is restarting
     private val mutex = Mutex(false)
@@ -144,7 +150,7 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
         var attempts = 0
         while (attempts < 3) {
             try {
-                return@async withTimeout(30.seconds) {
+                val result = withTimeout(30.seconds) {
                     val instance = AmazonQServerInstance(project, cs).also {
                         Disposer.register(this@AmazonQLspService, it)
                     }
@@ -155,6 +161,9 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
                         _flowInstance.emit(it)
                     }
                 }
+
+                // withTimeout can throw
+                return@async result
             } catch (e: Exception) {
                 LOG.warn(e) { "Failed to start LSP server" }
             }
@@ -278,8 +287,12 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
         private const val RESTART_WINDOW_MS = 3 * 60 * 1000
         fun getInstance(project: Project) = project.service<AmazonQLspService>()
 
+        @Deprecated("Easy to accidentally freeze EDT")
         fun <T> executeIfRunning(project: Project, runnable: AmazonQLspService.(AmazonQLanguageServer) -> T): T? =
             project.serviceIfCreated<AmazonQLspService>()?.executeSync(runnable)
+
+        suspend fun <T> asyncExecuteIfRunning(project: Project, runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T? =
+            project.serviceIfCreated<AmazonQLspService>()?.execute(runnable)
 
         fun didChangeConfiguration(project: Project) {
             executeIfRunning(project) {
@@ -296,6 +309,9 @@ private class AmazonQServerInstance(private val project: Project, private val cs
 
     val languageServer: AmazonQLanguageServer
         get() = launcher.remoteProxy
+
+    val rawEndpoint: RemoteEndpoint
+        get() = launcher.remoteEndpoint
 
     @Suppress("ForbiddenVoid")
     var launcherFuture: Future<Void>
@@ -396,7 +412,10 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         launcherHandler.addProcessListener(inputWrapper)
         launcherHandler.startNotify()
 
-        launcher = LSPLauncher.Builder<AmazonQLanguageServer>()
+        launcher = object : LSPLauncher.Builder<AmazonQLanguageServer>() {
+            override fun getSupportedMethods(): Map<String, JsonRpcMethod> =
+                super.getSupportedMethods() + AmazonQChatServer.supportedMethods()
+        }
             .wrapMessages { consumer ->
                 MessageConsumer { message ->
                     if (message is ResponseMessage && message.result is AwsExtendedInitializeResult) {
@@ -488,5 +507,3 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         private val LOG = getLogger<AmazonQServerInstance>()
     }
 }
-
-typealias AmazonQInitializeMessageReceivedListener = () -> Unit
