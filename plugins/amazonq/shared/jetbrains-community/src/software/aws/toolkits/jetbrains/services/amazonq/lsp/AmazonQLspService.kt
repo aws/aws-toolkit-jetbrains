@@ -167,7 +167,7 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
         // Initialize heartbeat job
         heartbeatJob = cs.launch {
             while (isActive) {
-                delay(5.seconds) // Check every 2 seconds
+                delay(5.seconds) // Check every 5 seconds
                 checkConnectionStatus()
             }
         }
