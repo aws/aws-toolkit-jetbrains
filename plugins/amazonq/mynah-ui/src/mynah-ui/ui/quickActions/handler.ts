@@ -331,7 +331,7 @@ private handleDocCommand(chatPrompt: ChatPrompt, tabID: string, taskName: string
         this.showScanInTab(affectedTabId)
     }
 
-    private handleCodeTestCommand(chatPrompt: ChatPrompt, tabID: string, eventId: string | undefined) {
+    private handleCodeTestCommand(chatPrompt: ChatPrompt, tabID: string | undefined, eventId: string | undefined) {
         if (!this.isCodeTestEnabled) {
             return
         }
@@ -343,10 +343,17 @@ private handleDocCommand(chatPrompt: ChatPrompt, tabID: string, taskName: string
             this.connector.startTestGen(testTabId, realPromptText)
             return
         }
+        /**
+         * right click -> generate test has no tab id
+         * we have to manually create one if a testgen tab
+         * wasn't previously created
+         */
+        if (!tabID) {
+            tabID = this.mynahUI?.updateStore('', {})
+        }
         const affectedTabId: string | undefined = this.addTab(tabID)
 
         // if there is no test tab, open a new one
-
         if (affectedTabId === undefined) {
             this.mynahUI?.notify({
                 content: uiComponentsTexts.noMoreTabsTooltip,
