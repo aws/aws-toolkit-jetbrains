@@ -71,18 +71,9 @@ data class Changes(
     val total: Int? = null,
 )
 
-@JsonAdapter(EnumJsonValueAdapter::class)
-enum class IconType(@JsonValue val repr: String) {
-    FILE("file"),
-    FOLDER("folder"),
-    CODE_BLOCK("code-block"),
-    LIST_ADD("list-add"),
-    MAGIC("magic"),
-    HELP("help"),
-    TRASH("trash"),
-    SEARCH("search"),
-    CALENDAR("calendar"),
-}
+// i don't want to model 70+ icon types
+// https://github.com/aws/mynah-ui/blob/38608dff905b3790d85c73e2911ec7071c8a8cdf/src/components/icon.ts#L12
+typealias IconType = String
 
 @JsonAdapter(EnumJsonValueAdapter::class)
 enum class Status(@JsonValue val repr: String) {

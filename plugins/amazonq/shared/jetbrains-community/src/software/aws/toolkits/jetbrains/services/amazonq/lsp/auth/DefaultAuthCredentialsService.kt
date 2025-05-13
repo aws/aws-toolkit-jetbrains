@@ -46,7 +46,7 @@ class DefaultAuthCredentialsService(
 
     private val scheduler: ScheduledExecutorService = AppExecutorUtil.getAppScheduledExecutorService()
     private var tokenSyncTask: ScheduledFuture<*>? = null
-    private val tokenSyncIntervalSeconds = 10L
+    private val tokenSyncIntervalSeconds = 900L
 
     init {
         project.messageBus.connect(serverInstance).apply {
