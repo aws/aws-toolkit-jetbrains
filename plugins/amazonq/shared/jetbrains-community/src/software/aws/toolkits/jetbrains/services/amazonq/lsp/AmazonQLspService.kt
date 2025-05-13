@@ -24,12 +24,16 @@ import com.intellij.util.net.HttpConfigurable
 import com.intellij.util.net.JdkProxyProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.future.asCompletableFuture
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -50,6 +54,7 @@ import org.eclipse.lsp4j.jsonrpc.MessageConsumer
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.slf4j.event.Level
+import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
@@ -125,6 +130,7 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
         get() = instance.getCompleted().initializeResult.getCompleted().capabilities
     val encryptionManager
         get() = instance.getCompleted().encryptionManager
+    private val heartbeatJob: Job
 
     // dont allow lsp commands if server is restarting
     private val mutex = Mutex(false)
@@ -157,9 +163,36 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
 
     init {
         instance = start()
+
+        // Initialize heartbeat job
+        heartbeatJob = cs.launch {
+            while (isActive) {
+                delay(5.seconds) // Check every 2 seconds
+                checkConnectionStatus()
+            }
+        }
+    }
+
+    private suspend fun checkConnectionStatus() {
+        try {
+            val currentInstance = mutex.withLock { instance }.await()
+
+            // Check if the launcher's Future (startListening) is done
+            // If it's done, that means the connection has been terminated
+            if (currentInstance.launcherFuture.isDone) {
+                LOG.debug { "LSP server connection terminated, restarting server" }
+                restart()
+            } else {
+                LOG.debug { "LSP server is currently running " }
+            }
+        } catch (e: Exception) {
+            LOG.debug(e) { "Connection status check failed, restarting LSP server" }
+            restart()
+        }
     }
 
     override fun dispose() {
+        heartbeatJob.cancel()
     }
 
     suspend fun restart() = mutex.withLock {
@@ -225,7 +258,8 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         get() = launcher.remoteProxy
 
     @Suppress("ForbiddenVoid")
-    private val launcherFuture: Future<Void>
+    var launcherFuture: Future<Void>
+        private set
     private val launcherHandler: KillableProcessHandler
     val initializeResult: Deferred<InitializeResult>
 
