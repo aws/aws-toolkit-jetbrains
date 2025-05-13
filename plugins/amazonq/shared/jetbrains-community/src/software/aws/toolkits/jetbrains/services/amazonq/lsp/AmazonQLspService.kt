@@ -205,7 +205,7 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
         return runnable(lsp)
     }
 
-    private fun<T> executeSync(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T =
+    fun<T> executeSync(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T =
         runBlocking(cs.coroutineContext) {
             execute(runnable)
         }
