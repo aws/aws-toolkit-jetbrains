@@ -428,7 +428,7 @@ class BrowserConnector(
             CHAT_PROMPT_OPTION_ACKNOWLEDGED -> {
                 val acknowledgedMessage = node.params?.get("messageId")
                 if (acknowledgedMessage?.asText() == "programmerModeCardId") {
-                    MeetQSettings.getInstance().amazonQChatPairProgramming = false
+                    MeetQSettings.getInstance().pairProgrammingAcknowledged = true
                 }
             }
 
