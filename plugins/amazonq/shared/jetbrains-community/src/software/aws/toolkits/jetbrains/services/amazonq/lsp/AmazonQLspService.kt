@@ -85,6 +85,7 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.concurrent.Future
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 // https://github.com/redhat-developer/lsp4ij/blob/main/src/main/java/com/redhat/devtools/lsp4ij/server/LSPProcessListener.java
@@ -131,6 +132,8 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
     val encryptionManager
         get() = instance.getCompleted().encryptionManager
     private val heartbeatJob: Job
+    private val restartTimestamps = ArrayDeque<Long>()
+    private val restartMutex = Mutex() // Separate mutex for restart tracking
 
     // dont allow lsp commands if server is restarting
     private val mutex = Mutex(false)
@@ -179,14 +182,18 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
 
             // Check if the launcher's Future (startListening) is done
             // If it's done, that means the connection has been terminated
-            if (currentInstance.launcherFuture.isDone) {
-                LOG.debug { "LSP server connection terminated, restarting server" }
+            if (currentInstance.launcherFuture.isDone || true) {
+                LOG.debug { "LSP server connection terminated, checking restart limits" }
+                waitForRestartSlot()
+                LOG.debug { "Restarting LSP server" }
                 restart()
             } else {
-                LOG.debug { "LSP server is currently running " }
+                LOG.debug { "LSP server is currently running" }
             }
         } catch (e: Exception) {
-            LOG.debug(e) { "Connection status check failed, restarting LSP server" }
+            LOG.debug(e) { "Connection status check failed, checking restart limits" }
+            waitForRestartSlot()
+            LOG.debug { "Restarting LSP server" }
             restart()
         }
     }
@@ -219,6 +226,37 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
         instance = start()
     }
 
+    private suspend fun waitForRestartSlot(): Unit = restartMutex.withLock {
+        val currentTime = System.currentTimeMillis()
+
+        while (restartTimestamps.isNotEmpty() &&
+            currentTime - restartTimestamps.first() > RESTART_WINDOW_MS
+        ) {
+            restartTimestamps.removeFirst()
+        }
+
+        if (restartTimestamps.size < MAX_RESTARTS) {
+            restartTimestamps.addLast(currentTime)
+            return
+        }
+
+        val oldestTimestamp = restartTimestamps.first()
+        val waitTimeMs = (oldestTimestamp + RESTART_WINDOW_MS) - currentTime
+
+        LOG.info { "Rate limit reached for LSP server restarts. Waiting ${waitTimeMs}ms for next available slot." }
+
+        restartMutex.unlock()
+        try {
+            delay(waitTimeMs.milliseconds)
+        } finally {
+            restartMutex.lock()
+        }
+
+        // After waiting, recursively call this function to check again
+        // (in case conditions changed while we were waiting)
+        waitForRestartSlot()
+    }
+
     suspend fun<T> execute(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T {
         val lsp = withTimeout(10.seconds) {
             val holder = mutex.withLock { instance }.await()
@@ -236,6 +274,8 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
 
     companion object {
         private val LOG = getLogger<AmazonQLspService>()
+        private const val MAX_RESTARTS = 5
+        private const val RESTART_WINDOW_MS = 3 * 60 * 1000
         fun getInstance(project: Project) = project.service<AmazonQLspService>()
 
         fun <T> executeIfRunning(project: Project, runnable: AmazonQLspService.(AmazonQLanguageServer) -> T): T? =
