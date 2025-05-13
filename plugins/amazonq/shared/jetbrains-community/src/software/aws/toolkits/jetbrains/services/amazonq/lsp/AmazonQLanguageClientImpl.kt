@@ -61,6 +61,8 @@ import java.util.concurrent.TimeUnit
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
  */
 class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageClient {
+    private val openFileDiffs = mutableMapOf<String, SimpleDiffRequest>()
+
     override fun telemetryEvent(`object`: Any) {
         println(`object`)
     }
@@ -285,6 +287,14 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             {
                 var tempPath: java.nio.file.Path? = null
                 try {
+                    val diffId = "${params.originalFileUri}:${params.originalFileContent.hashCode()}:${params.fileContent.hashCode()}"
+
+                    // Check if we already have an open diff for this request
+                    val existingDiff = openFileDiffs[diffId]
+                    if (existingDiff != null) {
+                        return@supplyAsync
+                    }
+
                     val fileName = Paths.get(params.originalFileUri).fileName.toString()
                     // Create a temporary virtual file for syntax highlighting
                     val fileExtension = fileName.substringAfterLast('.', "")
@@ -292,12 +302,10 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                     val virtualFile = tempPath.toFile()
                         .also { it.setReadOnly() }
                         .toVirtualFile()
-
                     val originalContent = params.originalFileContent ?: run {
                         val sourceFile = File(params.originalFileUri)
                         if (sourceFile.exists()) sourceFile.readText() else ""
                     }
-
                     val contentFactory = DiffContentFactory.getInstance()
                     var isNewFile = false
                     val (leftContent, rightContent) = when {
@@ -320,7 +328,9 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                             }
                         }
                     }
-                    val diffRequest = SimpleDiffRequest(
+
+                    // Create a tracking diff request
+                    val diffRequest = object : SimpleDiffRequest(
                         "$fileName ${message("aws.q.lsp.client.diff_message")}",
                         leftContent,
                         rightContent,
@@ -330,7 +340,19 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                             isNewFile -> "Created"
                             else -> "Modified"
                         }
-                    )
+                    ) {
+                        override fun onAssigned(isAssigned: Boolean) {
+                            super.onAssigned(isAssigned)
+                            if (isAssigned) {
+                                // Diff window opened
+                                openFileDiffs[diffId] = this
+                            } else {
+                                // Diff window closed
+                                openFileDiffs.remove(diffId)
+                            }
+                        }
+                    }
+
                     (DiffManager.getInstance() as DiffManagerEx).showDiffBuiltin(project, diffRequest)
                 } catch (e: Exception) {
                     LOG.warn { "Failed to open file diff: ${e.message}" }
