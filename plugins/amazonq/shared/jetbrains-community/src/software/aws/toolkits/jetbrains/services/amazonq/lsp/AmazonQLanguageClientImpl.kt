@@ -4,9 +4,6 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
 import com.intellij.diff.DiffContentFactory
-import com.intellij.diff.chains.SimpleDiffRequestChain
-import com.intellij.diff.editor.ChainDiffVirtualFile
-import com.intellij.diff.editor.DiffEditorTabFilesManager
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserFactory
@@ -61,7 +58,7 @@ import java.util.concurrent.TimeUnit
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
  */
 class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageClient {
-    private val openFileDiffs = mutableMapOf<String, ChainDiffVirtualFile>()
+    // No longer need to track open file diffs as we're using AmazonQDiffVirtualFile to manage this
 
     override fun telemetryEvent(`object`: Any) {
         println(`object`)
@@ -287,14 +284,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             {
                 var tempPath: java.nio.file.Path? = null
                 try {
-                    val diffId = "${params.originalFileUri}:${params.originalFileContent.hashCode()}:${params.fileContent.hashCode()}"
-
-                    val existingDiff = openFileDiffs[diffId]
-                    if (existingDiff != null) {
-                        FileEditorManager.getInstance(project).openFile(existingDiff, true)
-                        return@supplyAsync
-                    }
-
                     val fileName = Paths.get(params.originalFileUri).fileName.toString()
                     // Create a temporary virtual file for syntax highlighting
                     val fileExtension = fileName.substringAfterLast('.', "")
@@ -302,10 +291,12 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                     val virtualFile = tempPath.toFile()
                         .also { it.setReadOnly() }
                         .toVirtualFile()
+
                     val originalContent = params.originalFileContent ?: run {
                         val sourceFile = File(params.originalFileUri)
                         if (sourceFile.exists()) sourceFile.readText() else ""
                     }
+
                     val contentFactory = DiffContentFactory.getInstance()
                     var isNewFile = false
                     val (leftContent, rightContent) = when {
@@ -313,7 +304,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                             contentFactory.create(project, originalContent, virtualFile) to
                                 contentFactory.createEmpty()
                         }
-
                         else -> {
                             val newContent = params.fileContent.orEmpty()
                             isNewFile = newContent == originalContent
@@ -322,7 +312,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                                     contentFactory.createEmpty() to
                                         contentFactory.create(project, newContent, virtualFile)
                                 }
-
                                 else -> {
                                     contentFactory.create(project, originalContent, virtualFile) to
                                         contentFactory.create(project, newContent, virtualFile)
@@ -330,8 +319,9 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                             }
                         }
                     }
+                    val title = "$fileName ${message("aws.q.lsp.client.diff_message")}"
                     val diffRequest = SimpleDiffRequest(
-                        "$fileName ${message("aws.q.lsp.client.diff_message")}",
+                        title,
                         leftContent,
                         rightContent,
                         "Original",
@@ -342,10 +332,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                         }
                     )
 
-                    val diffChain = SimpleDiffRequestChain(diffRequest)
-                    val diffVirtualFile = ChainDiffVirtualFile(diffChain, fileName)
-                    DiffEditorTabFilesManager.getInstance(project).showDiffFile(diffVirtualFile, true)
-                    openFileDiffs[diffId] = diffVirtualFile
+                    AmazonQDiffVirtualFile.openDiff(project, diffRequest, title)
                 } catch (e: Exception) {
                     LOG.warn { "Failed to open file diff: ${e.message}" }
                 } finally {
