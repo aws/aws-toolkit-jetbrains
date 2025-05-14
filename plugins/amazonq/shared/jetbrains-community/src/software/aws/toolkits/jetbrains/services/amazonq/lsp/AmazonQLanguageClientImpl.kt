@@ -58,7 +58,6 @@ import java.util.concurrent.TimeUnit
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
  */
 class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageClient {
-    // No longer need to track open file diffs as we're using AmazonQDiffVirtualFile to manage this
 
     override fun telemetryEvent(`object`: Any) {
         println(`object`)
