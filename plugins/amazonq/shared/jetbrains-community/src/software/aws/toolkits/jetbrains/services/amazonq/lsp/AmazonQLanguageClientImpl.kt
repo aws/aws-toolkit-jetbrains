@@ -26,6 +26,7 @@ import org.eclipse.lsp4j.ShowDocumentParams
 import org.eclipse.lsp4j.ShowDocumentResult
 import org.eclipse.lsp4j.ShowMessageRequestParams
 import org.slf4j.event.Level
+import software.amazon.awssdk.utils.UserHomeDirectoryUtils
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -360,30 +361,36 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         return CompletableFuture.completedFuture(Unit)
     }
 
-    override fun appendFile(params: FileParams): CompletableFuture<Unit> = refreshVfs(params.path, false)
+    override fun appendFile(params: FileParams): CompletableFuture<Unit> = refreshVfs(params.path)
 
-    override fun createDirectory(params: FileParams): CompletableFuture<Unit> = refreshVfs(params.path, true)
+    override fun createDirectory(params: FileParams): CompletableFuture<Unit> = refreshVfs(params.path)
 
-    override fun removeFile(params: FileParams): CompletableFuture<Unit> = refreshVfs(params.path, true)
+    override fun removeFile(params: FileParams): CompletableFuture<Unit> = refreshVfs(params.path)
 
-    override fun writeFile(params: FileParams): CompletableFuture<Unit> = refreshVfs(params.path, false)
+    override fun writeFile(params: FileParams): CompletableFuture<Unit> = refreshVfs(params.path)
 
     override fun copyFile(params: CopyFileParams): CompletableFuture<Unit> {
-        refreshVfs(params.oldPath, false)
-        return refreshVfs(params.newPath, false)
+        refreshVfs(params.oldPath)
+        return refreshVfs(params.newPath)
     }
 
-    fun refreshVfs(path: String, isDirectory: Boolean): CompletableFuture<Unit> {
+    private fun refreshVfs(path: String): CompletableFuture<Unit> {
+        val userHomePath = Paths.get(
+            UserHomeDirectoryUtils.userHomeDirectory(),
+            ".aws",
+            "amazonq",
+            "history"
+        ).toString()
+        if (path.startsWith(userHomePath)) return CompletableFuture()
         return try {
             CompletableFuture.supplyAsync(
                 {
-                    VirtualFileManager.getInstance().refreshAndFindFileByNioPath(Path(path))
-                    val vfile = VirtualFileManager.getInstance().findFileByUrl(path) ?: return@supplyAsync
-                    VfsUtil.markDirtyAndRefresh(true, isDirectory, isDirectory, vfile)
+                    VfsUtil.markDirtyAndRefresh(false, true, true, Path(path).toFile())
                 },
                 ApplicationManager.getApplication()::invokeLater
             )
         } catch (e: Exception) {
+            LOG.warn { "Could not refresh file" }
             CompletableFuture.failedFuture(e)
         }
     }
