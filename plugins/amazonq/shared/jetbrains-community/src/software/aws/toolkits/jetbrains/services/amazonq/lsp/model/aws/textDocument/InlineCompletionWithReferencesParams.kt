@@ -3,8 +3,8 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument
 
-import org.eclipse.lsp4j.TextDocumentPositionAndWorkDoneProgressParams
+import org.eclipse.lsp4j.TextDocumentPositionAndWorkDoneProgressAndPartialResultParams
 
 data class InlineCompletionWithReferencesParams(
     var context: InlineCompletionContext,
-) : TextDocumentPositionAndWorkDoneProgressParams()
+) : TextDocumentPositionAndWorkDoneProgressAndPartialResultParams()

@@ -22,7 +22,6 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.eclipse.lsp4j.Position
@@ -36,7 +35,6 @@ import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
-import software.aws.toolkits.jetbrains.core.coroutines.disposableCoroutineScope
 import software.aws.toolkits.jetbrains.core.coroutines.getCoroutineBgContext
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -181,15 +179,9 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             }
         }
 
-        // When popup is disposed we will cancel this coroutine. The only places popup can get disposed should be
-        // from CodeWhispererPopupManager.cancelPopup() and CodeWhispererPopupManager.closePopup().
-        // It's possible and ok that coroutine will keep running until the next time we check it's state.
-        // As long as we don't show to the user extra info we are good.
-        val coroutineScope = disposableCoroutineScope(popup)
-
         var states: InvocationContext? = null
 
-        val job = coroutineScope.launch {
+        val job = cs.launch {
             try {
                 var startTime = System.nanoTime()
                 CodeWhispererInvocationStatus.getInstance().setInvocationStart()
@@ -211,13 +203,11 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     runInEdt {
                         states = processCodeWhispererUI(workerContext, states)
                     }
-                    if (!isActive) {
-                        // If job is cancelled before we do another request, don't bother making
-                        // another API call to save resources
+                    if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()) {
                         LOG.debug { "Skipping sending remaining requests on CodeWhisperer session exit" }
                         return@launch
                     }
-                } while (nextToken != null)
+                } while (nextToken != null && nextToken.left.isNotEmpty())
             } catch (e: Exception) {
                 // TODO flare: flare doesn't return exceptions
                 val sessionId = ""
@@ -302,7 +292,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             return null
         }
 
-        if (completions.partialResultToken == null) {
+        if (completions.partialResultToken?.left?.isEmpty() == true) {
             CodeWhispererInvocationStatus.getInstance().finishInvocation()
         }
 
@@ -336,7 +326,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         // If there are no recommendations at all in this session, we need to manually send the user decision event here
         // since it won't be sent automatically later
         if (!hasAtLeastOneValid) {
-            if (completions.partialResultToken == null) {
+            if (completions.partialResultToken?.left?.isEmpty() == true) {
                 LOG.debug { "None of the recommendations are valid, exiting CodeWhisperer session" }
                 CodeWhispererPopupManager.getInstance().cancelPopup(popup)
                 return null
@@ -531,7 +521,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     editor.caretModel.primaryCaret.logicalPosition.column
                 )
                 if (nextToken != null) {
-                    workDoneToken = nextToken
+                    partialResultToken = nextToken
                 }
             }
         }
