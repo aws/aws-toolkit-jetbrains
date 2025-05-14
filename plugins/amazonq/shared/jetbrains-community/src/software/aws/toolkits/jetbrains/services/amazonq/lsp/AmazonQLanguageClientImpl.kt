@@ -46,7 +46,9 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.TelemetryParsingUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
 import software.aws.toolkits.resources.message
 import java.io.File
@@ -60,8 +62,39 @@ import java.util.concurrent.TimeUnit
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
  */
 class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageClient {
+
+    private fun handleTelemetryMap(telemetryMap: Map<*, *>) {
+        try {
+            val name = telemetryMap["name"] as? String ?: return
+
+            @Suppress("UNCHECKED_CAST")
+            val data = telemetryMap["data"] as? Map<String, Any> ?: return
+
+            TelemetryService.getInstance().record(project) {
+                datum(name) {
+                    unit(TelemetryParsingUtil.parseMetricUnit(telemetryMap["unit"]))
+                    value(telemetryMap["value"] as? Double ?: 1.0)
+                    passive(telemetryMap["passive"] as? Boolean ?: false)
+
+                    telemetryMap["result"]?.let { result ->
+                        metadata("result", result.toString())
+                    }
+
+                    data.forEach { (key, value) ->
+                        metadata(key, value.toString())
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            LOG.warn(e) { "Failed to process telemetry event: $telemetryMap" }
+        }
+    }
+
     override fun telemetryEvent(`object`: Any) {
-        println(`object`)
+        when (`object`) {
+            is Map<*, *> -> handleTelemetryMap(`object`)
+            else -> LOG.warn { "Unexpected telemetry event: $`object`" }
+        }
     }
 
     override fun publishDiagnostics(diagnostics: PublishDiagnosticsParams) {
