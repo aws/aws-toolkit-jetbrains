@@ -292,7 +292,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
             return null
         }
 
-        if (completions.partialResultToken?.left?.isEmpty() == true) {
+        if (completions.partialResultToken?.left.isNullOrEmpty()) {
             CodeWhispererInvocationStatus.getInstance().finishInvocation()
         }
 
@@ -326,7 +326,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
         // If there are no recommendations at all in this session, we need to manually send the user decision event here
         // since it won't be sent automatically later
         if (!hasAtLeastOneValid) {
-            if (completions.partialResultToken?.left?.isEmpty() == true) {
+            if (completions.partialResultToken?.left.isNullOrEmpty()) {
                 LOG.debug { "None of the recommendations are valid, exiting CodeWhisperer session" }
                 CodeWhispererPopupManager.getInstance().cancelPopup(popup)
                 return null
