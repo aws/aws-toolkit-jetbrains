@@ -16,6 +16,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocume
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.javaFileName
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.javaResponse
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.javaTestContext
+import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.testNextToken
 import software.aws.toolkits.jetbrains.services.codewhisperer.actions.CodeWhispererActionPromoter
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineAcceptActionId
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererConstants.QInlineActionId.qInlineForceAcceptActionId
@@ -89,7 +90,7 @@ class CodeWhispererAcceptTest : CodeWhispererTestBase() {
                     )
                 ),
                 sessionId = "sessionId",
-                partialResultToken = null
+                partialResultToken = testNextToken
             )
         )
 
