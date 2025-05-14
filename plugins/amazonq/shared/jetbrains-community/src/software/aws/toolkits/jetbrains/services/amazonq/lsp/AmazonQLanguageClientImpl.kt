@@ -4,8 +4,6 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
 import com.intellij.diff.DiffContentFactory
-import com.intellij.diff.DiffManager
-import com.intellij.diff.DiffManagerEx
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserFactory
@@ -349,11 +347,12 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                             else -> "Modified"
                         }
                     )
-                    (DiffManager.getInstance() as DiffManagerEx).showDiffBuiltin(project, diffRequest)
+
+                    AmazonQDiffVirtualFile.openDiff(project, diffRequest)
                 } catch (e: Exception) {
                     LOG.warn { "Failed to open file diff: ${e.message}" }
                 } finally {
-                    // Clean up the temporary file
+                    // Clean up the temporary file used for syntax highlight
                     try {
                         tempPath?.let { Files.deleteIfExists(it) }
                     } catch (e: Exception) {

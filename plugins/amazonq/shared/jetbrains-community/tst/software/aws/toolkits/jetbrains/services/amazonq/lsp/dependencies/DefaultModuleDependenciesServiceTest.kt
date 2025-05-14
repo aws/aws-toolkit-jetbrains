@@ -3,14 +3,13 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.Application
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.serviceIfCreated
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootEvent
+import com.intellij.testFramework.ApplicationExtension
 import com.intellij.util.messages.MessageBus
 import com.intellij.util.messages.MessageBusConnection
 import io.mockk.every
@@ -23,6 +22,7 @@ import io.mockk.verify
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.ModuleDependencyProvider.Companion.EP_NAME
@@ -30,12 +30,12 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependenci
 import java.util.concurrent.CompletableFuture
 import java.util.function.Consumer
 
+@ExtendWith(ApplicationExtension::class)
 class DefaultModuleDependenciesServiceTest {
     private lateinit var project: Project
     private lateinit var mockLanguageServer: AmazonQLanguageServer
     private lateinit var mockModuleManager: ModuleManager
     private lateinit var sut: DefaultModuleDependenciesService
-    private lateinit var mockApplication: Application
     private lateinit var mockDependencyProvider: ModuleDependencyProvider
 
     @BeforeEach
@@ -46,11 +46,6 @@ class DefaultModuleDependenciesServiceTest {
         mockLanguageServer = mockk()
 
         every { mockLanguageServer.didChangeDependencyPaths(any()) } returns CompletableFuture<Unit>()
-
-        // Mock Application
-        mockApplication = mockk()
-        mockkStatic(ApplicationManager::class)
-        every { ApplicationManager.getApplication() } returns mockApplication
 
         // Mock message bus
         val messageBus = mockk<MessageBus>()
