@@ -318,9 +318,8 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                             }
                         }
                     }
-                    val title = "$fileName ${message("aws.q.lsp.client.diff_message")}"
                     val diffRequest = SimpleDiffRequest(
-                        title,
+                        "$fileName ${message("aws.q.lsp.client.diff_message")}",
                         leftContent,
                         rightContent,
                         "Original",
@@ -331,7 +330,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                         }
                     )
 
-                    AmazonQDiffVirtualFile.openDiff(project, diffRequest, title)
+                    AmazonQDiffVirtualFile.openDiff(project, diffRequest)
                 } catch (e: Exception) {
                     LOG.warn { "Failed to open file diff: ${e.message}" }
                 } finally {

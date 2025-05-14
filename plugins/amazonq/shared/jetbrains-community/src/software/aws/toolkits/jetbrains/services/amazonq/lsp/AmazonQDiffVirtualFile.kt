@@ -9,6 +9,7 @@ import com.intellij.diff.editor.DiffEditorTabFilesManager
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import software.aws.toolkits.resources.message
 
 /**
  * A virtual file that represents an AmazonQ diff view.
@@ -19,7 +20,7 @@ class AmazonQDiffVirtualFile(
     name: String,
 ) : ChainDiffVirtualFile(diffChain, name) {
     companion object {
-        fun openDiff(project: Project, diffRequest: SimpleDiffRequest, tabName: String) {
+        fun openDiff(project: Project, diffRequest: SimpleDiffRequest) {
             // Find any existing AmazonQ diff files
             val fileEditorManager = FileEditorManager.getInstance(project)
             val existingDiffFiles = fileEditorManager.openFiles.filterIsInstance<AmazonQDiffVirtualFile>()
@@ -29,7 +30,7 @@ class AmazonQDiffVirtualFile(
 
             // Create and open the new diff file
             val diffChain = SimpleDiffRequestChain(diffRequest)
-            val diffVirtualFile = AmazonQDiffVirtualFile(diffChain, tabName)
+            val diffVirtualFile = AmazonQDiffVirtualFile(diffChain, diffRequest.title ?: message("aws.q.lsp.client.diff_message"))
             DiffEditorTabFilesManager.getInstance(project).showDiffFile(diffVirtualFile, true)
         }
     }
