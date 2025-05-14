@@ -82,6 +82,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.STOP_CHAT_RESPONSE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.StopResponseMessage
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TELEMETRY_EVENT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
@@ -438,6 +439,9 @@ class BrowserConnector(
                 runInEdt {
                     ShowSettingsUtil.getInstance().showSettingsDialog(browser.project, CodeWhispererConfigurable::class.java)
                 }
+            }
+            TELEMETRY_EVENT -> {
+                handleChat(AmazonQChatServer.telemetryEvent, node)
             }
         }
     }
