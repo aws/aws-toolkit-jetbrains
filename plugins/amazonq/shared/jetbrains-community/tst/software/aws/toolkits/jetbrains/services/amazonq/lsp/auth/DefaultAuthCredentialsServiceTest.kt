@@ -218,7 +218,6 @@ class DefaultAuthCredentialsServiceTest {
         sut = DefaultAuthCredentialsService(project, mockEncryptionManager, mockk())
 
         val encryptedToken = "encryptedToken"
-        val decryptedToken = "decryptedToken"
         val isEncrypted = true
 
         every { mockEncryptionManager.encrypt(any()) } returns encryptedToken
