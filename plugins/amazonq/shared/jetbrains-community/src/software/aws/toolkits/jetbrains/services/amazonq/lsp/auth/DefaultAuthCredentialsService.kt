@@ -106,7 +106,11 @@ class DefaultAuthCredentialsService(
     }
 
     override fun updateTokenCredentials(connection: ToolkitConnection, encrypted: Boolean): CompletableFuture<ResponseMessage> {
-        val payload = createUpdateCredentialsPayload(connection, encrypted)
+        val payload = try {
+            createUpdateCredentialsPayload(connection, encrypted)
+        } catch (e: Exception) {
+            return CompletableFuture.failedFuture(e)
+        }
 
         return AmazonQLspService.executeIfRunning(project) { server ->
             server.updateTokenCredentials(payload)
