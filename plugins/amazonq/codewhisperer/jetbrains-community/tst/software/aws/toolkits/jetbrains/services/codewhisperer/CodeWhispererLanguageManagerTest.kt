@@ -137,7 +137,7 @@ class CodeWhispererLanguageManagerTest {
         testGetProgrammingLanguageUtil<CodeWhispererSwift>(listOf("foo"), listOf("swift"))
         testGetProgrammingLanguageUtil<CodeWhispererSystemVerilog>(listOf("foo"), listOf("sv", "svh", "vh"))
         testGetProgrammingLanguageUtil<CodeWhispererVue>(listOf("foo"), listOf("vue"))
-        testGetProgrammingLanguageUtil<CodeWhispererAbap>(listOf("foo"), listOf("abap", "adcs"))
+        testGetProgrammingLanguageUtil<CodeWhispererAbap>(listOf("foo"), listOf("abap", "acds"))
     }
 
     @Test
