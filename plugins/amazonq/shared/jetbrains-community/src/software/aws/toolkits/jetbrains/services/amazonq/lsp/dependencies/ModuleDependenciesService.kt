@@ -4,7 +4,6 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies
 
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
-import java.util.concurrent.CompletableFuture
 
 interface ModuleDependenciesService {
     fun didChangeDependencyPaths(params: DidChangeDependencyPathsParams)
