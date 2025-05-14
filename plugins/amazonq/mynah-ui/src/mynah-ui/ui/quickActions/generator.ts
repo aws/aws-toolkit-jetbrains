@@ -142,6 +142,10 @@ export class QuickActionGenerator {
                 description: "This command isn't available in /doc",
                 unavailableItems: ['/help', '/clear'],
             },
+            testgen: {
+                description: "This command isn't available",
+                unavailableItems: ['/help', '/clear'],
+            },
             welcome: {
                 description: '',
                 unavailableItems: ['/clear'],

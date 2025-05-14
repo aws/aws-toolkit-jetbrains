@@ -49,7 +49,7 @@ export interface CWCChatItem extends ChatItem {
 export interface ConnectorProps {
     sendMessageToExtension: (message: ExtensionMessage) => void
     onMessageReceived?: (tabID: string, messageData: any, needToShowAPIDocsTab: boolean) => void
-    onChatAnswerReceived?: (tabID: string, message: ChatItem) => void
+    onChatAnswerReceived?: (tabID: string, message: ChatItem, messageData?: any) => void
     onChatAnswerUpdated?: (tabID: string, message:ChatItem) => void
     onCodeTransformChatDisabled: (tabID: string) => void
     onCodeTransformMessageReceived: (
@@ -62,6 +62,7 @@ export interface ConnectorProps {
     onRunTestMessageReceived?: (tabID: string, showRunTestMessage: boolean) => void
     onWelcomeFollowUpClicked: (tabID: string, welcomeFollowUpType: WelcomeFollowupType) => void
     onAsyncEventProgress: (tabID: string, inProgress: boolean, message: string | undefined, cancelButtonWhenLoading?: boolean) => void
+    onQuickHandlerCommand: (tabID: string, command?: string, eventId?: string) => void
     onCWCContextCommandMessage: (message: ChatItem, command?: string) => string | undefined
     onCWCOnboardingPageInteractionMessage: (message: ChatItem) => string | undefined
     onOpenSettingsMessage: (tabID: string) => void
@@ -281,6 +282,8 @@ export class Connector {
             default:
                 break
         }
+        // Reset lastCommand after message is rendered.
+        this.tabsStorage.updateTabLastCommand(messageData.tabID, '')
     }
 
     onTabAdd = (tabID: string): void => {
