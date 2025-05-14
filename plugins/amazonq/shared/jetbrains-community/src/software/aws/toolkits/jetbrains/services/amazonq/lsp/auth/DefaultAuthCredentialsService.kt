@@ -26,6 +26,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credential
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayloadData
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
@@ -184,7 +185,7 @@ class DefaultAuthCredentialsService(
         val payload = UpdateConfigurationParams(
             section = "aws.q",
             settings = mapOf(
-                "profileArn" to "invalidinvalidinvalid"
+                "profileArn" to QRegionProfileManager.getInstance().activeProfile(project)?.arn
             )
         )
         return AmazonQLspService.executeIfRunning(project) { server ->

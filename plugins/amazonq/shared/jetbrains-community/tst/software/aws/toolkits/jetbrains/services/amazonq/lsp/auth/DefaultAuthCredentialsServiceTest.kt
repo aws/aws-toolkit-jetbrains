@@ -30,6 +30,8 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.InteractiveBe
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
 import software.aws.toolkits.jetbrains.utils.isQConnected
 import software.aws.toolkits.jetbrains.utils.isQExpired
@@ -112,6 +114,7 @@ class DefaultAuthCredentialsServiceTest {
         connectionId: String = "test-connection-id",
     ): AwsBearerTokenConnection = mockk {
         every { id } returns connectionId
+        every { startUrl } returns "startUrl"
         every { getConnectionSettings() } returns createMockTokenSettings(accessToken)
     }
 
@@ -192,17 +195,18 @@ class DefaultAuthCredentialsServiceTest {
 
     @Test
     fun `test updateTokenCredentials unencrypted success`() {
+        val isEncrypted = false
         sut = DefaultAuthCredentialsService(project, mockEncryptionManager, mockk())
 
-        val token = "unencryptedToken"
-        val isEncrypted = false
-
-        sut.updateTokenCredentials(token, isEncrypted)
+        sut.updateTokenCredentials(mockConnection, isEncrypted)
 
         verify(exactly = 1) {
             mockLanguageServer.updateTokenCredentials(
                 UpdateCredentialsPayload(
-                    token,
+                    "test-access-token",
+                    ConnectionMetadata(
+                        SsoProfileData("startUrl")
+                    ),
                     isEncrypted
                 )
             )
@@ -219,12 +223,15 @@ class DefaultAuthCredentialsServiceTest {
 
         every { mockEncryptionManager.encrypt(any()) } returns encryptedToken
 
-        sut.updateTokenCredentials(decryptedToken, isEncrypted)
+        sut.updateTokenCredentials(mockConnection, isEncrypted)
 
         verify(atLeast = 1) {
             mockLanguageServer.updateTokenCredentials(
                 UpdateCredentialsPayload(
                     encryptedToken,
+                    ConnectionMetadata(
+                        SsoProfileData("startUrl")
+                    ),
                     isEncrypted
                 )
             )
