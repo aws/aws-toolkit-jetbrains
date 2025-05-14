@@ -203,7 +203,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                     runInEdt {
                         states = processCodeWhispererUI(workerContext, states)
                     }
-                    if (!CodeWhispererInvocationStatus.getInstance().isDisplaySessionActive()) {
+                    if (popup.isDisposed) {
                         LOG.debug { "Skipping sending remaining requests on CodeWhisperer session exit" }
                         return@launch
                     }
