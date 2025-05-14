@@ -330,7 +330,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                             }
                         }
                     }
-                    val diffRequest = object : SimpleDiffRequest(
+                    val diffRequest = SimpleDiffRequest(
                         "$fileName ${message("aws.q.lsp.client.diff_message")}",
                         leftContent,
                         rightContent,
@@ -340,15 +340,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                             isNewFile -> "Created"
                             else -> "Modified"
                         }
-                    ) {
-                        override fun onAssigned(isAssigned: Boolean) {
-                            super.onAssigned(isAssigned)
-                            if (!isAssigned) {
-                                // remove when window closed
-                                openFileDiffs.remove(diffId)
-                            }
-                        }
-                    }
+                    )
 
                     val diffChain = SimpleDiffRequestChain(diffRequest)
                     val diffVirtualFile = ChainDiffVirtualFile(diffChain, fileName)
