@@ -83,11 +83,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.STOP_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.StopResponseMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TELEMETRY_EVENT
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionRequest
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventRequest
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TelemetryEventNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
@@ -446,9 +441,7 @@ class BrowserConnector(
                 }
             }
             TELEMETRY_EVENT -> {
-                handleChatNotification<TelemetryEventNotification, Map<String, Any?>>(node) { server, params ->
-                    server.sendTelemetry(params)
-                }
+                handleChat(AmazonQChatServer.telemetryEvent, node)
             }
         }
     }
