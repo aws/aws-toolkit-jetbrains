@@ -42,7 +42,7 @@ fun Throwable.notifyError(title: String = "", project: Project? = null, stripHtm
     )
 }
 
-private fun notify(type: NotificationType, title: String, content: String = "", project: Project? = null, notificationActions: Collection<AnAction>) {
+fun notify(type: NotificationType, title: String, content: String = "", project: Project? = null, notificationActions: Collection<AnAction>) {
     val notification = Notification(GROUP_DISPLAY_ID, title, content, type)
     notificationActions.forEach {
         notification.addAction(if (it !is NotificationAction) createNotificationExpiringAction(it) else it)
@@ -182,4 +182,4 @@ fun createShowMoreInfoDialogAction(actionName: String?, title: String?, message:
         }
     }
 
-private fun getCleanedContent(content: String, stripHtml: Boolean): String = if (stripHtml) StringUtil.stripHtml(content, true) else content
+fun getCleanedContent(content: String, stripHtml: Boolean): String = if (stripHtml) StringUtil.stripHtml(content, true) else content
