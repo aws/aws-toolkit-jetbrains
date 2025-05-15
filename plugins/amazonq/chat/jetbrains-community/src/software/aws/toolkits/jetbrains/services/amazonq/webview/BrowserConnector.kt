@@ -384,7 +384,6 @@ class BrowserConnector(
 
             CHAT_TAB_BAR_ACTIONS -> {
                 handleChat(AmazonQChatServer.tabBarActions, node) { params, invoke ->
-                    println("handling TabBarActions")
                     invoke()
                         .whenComplete { actions, error ->
                             try {
