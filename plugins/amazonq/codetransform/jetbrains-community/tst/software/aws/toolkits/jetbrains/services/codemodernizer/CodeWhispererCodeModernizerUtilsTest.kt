@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.codemodernizer
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.testFramework.LightVirtualFile
 import io.mockk.every
 import io.mockk.just
@@ -26,7 +27,10 @@ import software.amazon.awssdk.services.codewhispererruntime.model.Transformation
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact.Companion.MAPPER
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeTransformType
+import software.aws.toolkits.jetbrains.services.codemodernizer.model.PlanTable
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.combineTableRows
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.createClientSideBuildUploadZip
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getBillingText
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getClientInstructionArtifactId
@@ -224,8 +228,28 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
         val step0Update2 = TransformationProgressUpdate.builder().name("2").status("COMPLETED").description(apiChanges).build()
         val step0Update3 = TransformationProgressUpdate.builder().name("-1").status("COMPLETED").description(fileChanges).build()
         val actual = getTableMapping(listOf(step0Update0, step0Update1, step0Update2, step0Update3))
-        val expected = mapOf("0" to jobStats, "1" to depChanges, "2" to apiChanges, "-1" to fileChanges)
+        val expected = mapOf("0" to listOf(jobStats), "1" to listOf(depChanges), "2" to listOf(apiChanges), "-1" to listOf(fileChanges))
         assertThat(expected).isEqualTo(actual)
+    }
+
+    @Test
+    fun `combineTableRows combines multiple dependency tables correctly`() {
+        val table1Json = """
+        {"name":"Dependency changes", "columnNames":["dependencyName","action","currentVersion","targetVersion"],
+        "rows":[{"dependencyName":"org.springframework.boot","action":"Update","currentVersion":"2.1","targetVersion":"2.4"}]}
+    """.trimIndent()
+        val table2Json = """
+        {"name":"Dependency changes", "columnNames":["dependencyName","action","currentVersion","targetVersion"],
+        "rows":[{"dependencyName":"junit","action":"Add","currentVersion":"","targetVersion":"4.13"}]}
+    """.trimIndent()
+        val tables = listOf(
+            MAPPER.readValue<PlanTable>(table1Json),
+            MAPPER.readValue<PlanTable>(table2Json)
+        )
+        val combinedTable = combineTableRows(tables)
+        assertThat(combinedTable?.rows).hasSize(2)
+        assertThat(combinedTable?.name).isEqualTo("Dependency changes")
+        assertThat(combinedTable?.columns).hasSize(4)
     }
 
     @Test

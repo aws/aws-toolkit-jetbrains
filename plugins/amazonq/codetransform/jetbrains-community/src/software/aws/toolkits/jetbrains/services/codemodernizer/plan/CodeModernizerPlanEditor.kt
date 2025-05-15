@@ -24,6 +24,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.constants.LOC_THR
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.CodeModernizerArtifact.Companion.MAPPER
 import software.aws.toolkits.jetbrains.services.codemodernizer.model.PlanTable
 import software.aws.toolkits.jetbrains.services.codemodernizer.plan.CodeModernizerPlanEditorProvider.Companion.MIGRATION_PLAN_KEY
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.combineTableRows
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getAuthType
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getBillingText
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getLinesOfCodeSubmitted
@@ -103,10 +104,10 @@ class CodeModernizerPlanEditor(val project: Project, private val virtualFile: Vi
                         )
                     }
                     add(transformationPlanPanel(plan), CodeModernizerUIConstants.transformationPlanPlaneConstraint)
-                    // key "-1" reserved for appendix table
+                    // key "-1" reserved for appendix table; only 1 table there
                     if (APPENDIX_TABLE_KEY in tableMapping) {
                         add(
-                            tableMapping[APPENDIX_TABLE_KEY]?.let { MAPPER.readValue<PlanTable>(it) }?.let { transformationPlanAppendix(it) },
+                            tableMapping[APPENDIX_TABLE_KEY]?.get(0)?.let { MAPPER.readValue<PlanTable>(it) }?.let { transformationPlanAppendix(it) },
                             CodeModernizerUIConstants.transformationPlanPlaneConstraint,
                         )
                     }
@@ -393,10 +394,17 @@ class CodeModernizerPlanEditor(val project: Project, private val virtualFile: Vi
                 border = CodeModernizerUIConstants.DESCRIPTION_BORDER
             }
 
-        val table = tableMapping[step.id()]
+        val tables = tableMapping[step.id()]
 
-        var parsedTable = table?.let {
-            MAPPER.readValue<PlanTable>(it)
+        val parsedTables = tables?.map { table ->
+            MAPPER.readValue<PlanTable>(table)
+        }
+
+        var parsedTable: PlanTable? = if (parsedTables?.size == 1) {
+            parsedTables.first()
+        } else {
+            // for multiple tables under 1 step, the table headers are the same, so combine the rows and just show 1 combined table
+            combineTableRows(parsedTables)
         }
 
         if (parsedTable?.rows?.isEmpty() == true) {

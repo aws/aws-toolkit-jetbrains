@@ -286,18 +286,32 @@ fun findDownloadArtifactProgressUpdate(transformationSteps: List<TransformationS
         }
 
 // "name" holds the ID of the corresponding plan step (where table will go) and "description" holds the plan data
-fun getTableMapping(stepZeroProgressUpdates: List<TransformationProgressUpdate>): Map<String, String> {
-    if (stepZeroProgressUpdates.isNotEmpty()) {
-        return stepZeroProgressUpdates.associate {
-            it.name() to it.description()
-        }
-    } else {
-        error("GetPlan response missing step 0 progress updates with table data")
-    }
+fun getTableMapping(stepZeroProgressUpdates: List<TransformationProgressUpdate>): Map<String, List<String>> {
+    return stepZeroProgressUpdates.groupBy(
+        { it.name() },
+        { it.description() }
+    )
 }
 
-fun parseTableMapping(tableMapping: Map<String, String>): PlanTable? =
-    tableMapping[JOB_STATISTICS_TABLE_KEY]?.let { MAPPER.readValue<PlanTable>(it) }
+// ID of '0' reserved for job statistics table; only 1 table there
+fun parseTableMapping(tableMapping: Map<String, List<String>>): PlanTable {
+    val statsTable = tableMapping[JOB_STATISTICS_TABLE_KEY]?.get(0) ?: error("No transformation statistics table found in GetPlan response")
+    return MAPPER.readValue<PlanTable>(statsTable)
+}
+
+// columns and name are shared between all PlanTables, so just combine the rows here
+fun combineTableRows(tables: List<PlanTable>?): PlanTable? {
+    if (tables == null) {
+        return null
+    }
+    val combinedTable = PlanTable(tables.first().columns, mutableListOf(), tables.first().name)
+    tables.forEach { table ->
+        table.rows.forEach { row ->
+            combinedTable.rows.add(row)
+        }
+    }
+    return combinedTable
+}
 
 fun getBillingText(linesOfCode: Int): String {
     val estimatedCost = String.format(Locale.US, "%.2f", linesOfCode.times(BILLING_RATE))

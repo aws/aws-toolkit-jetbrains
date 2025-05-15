@@ -11,6 +11,9 @@ data class ZipManifest(
     val version: String = UPLOAD_ZIP_MANIFEST_VERSION,
     val hilCapabilities: List<String> = listOf(HIL_1P_UPGRADE_CAPABILITY),
     // TODO: add CLIENT_SIDE_BUILD to transformCapabilities when releasing CSB
+
+    // TODO: add AGENTIC_PLAN_V1 or something here
+
     val transformCapabilities: List<String> = listOf(EXPLAINABILITY_V1),
     val customBuildCommand: String = MAVEN_BUILD_RUN_UNIT_TESTS,
     val requestedConversions: RequestedConversions? = null, // only used for SQL conversions for now
