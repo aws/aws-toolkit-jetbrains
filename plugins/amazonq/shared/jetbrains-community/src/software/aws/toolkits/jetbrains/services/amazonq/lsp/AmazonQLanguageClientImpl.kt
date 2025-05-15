@@ -59,7 +59,6 @@ import java.nio.file.Paths
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
-import kotlin.io.path.Path
 
 /**
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
@@ -375,18 +374,19 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     }
 
     private fun refreshVfs(path: String) {
-        if (Path(path).startsWith(userHomePath)) return
+        val currPath = Paths.get(path)
+        if (currPath.startsWith(localHistoryPath)) return
         try {
             ApplicationManager.getApplication().invokeLater {
-                VfsUtil.markDirtyAndRefresh(false, true, true, Path(path).toFile())
+                VfsUtil.markDirtyAndRefresh(false, true, true, currPath.toFile())
             }
         } catch (e: Exception) {
-            LOG.warn { "Could not refresh file" }
+            LOG.warn(e) { "Could not refresh file" }
         }
     }
 
     companion object {
-        val userHomePath = Paths.get(
+        val localHistoryPath = Paths.get(
             UserHomeDirectoryUtils.userHomeDirectory(),
             ".aws",
             "amazonq",
