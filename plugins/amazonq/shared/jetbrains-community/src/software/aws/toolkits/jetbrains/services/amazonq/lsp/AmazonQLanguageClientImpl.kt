@@ -233,7 +233,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
                 chosenFile?.let {
                     ShowSaveFileDialogResult(chosenFile.file.path)
-                }?: throw ResponseErrorException(ResponseError(ResponseErrorCode.RequestCancelled, "Export cancelled by user", null))
+                } ?: throw ResponseErrorException(ResponseError(ResponseErrorCode.RequestCancelled, "Export cancelled by user", null))
             },
             ApplicationManager.getApplication()::invokeLater
         )
