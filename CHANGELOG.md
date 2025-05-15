@@ -1,3 +1,7 @@
+# _3.71_ (2025-05-15)
+- **(Feature)** Add inline completion support for abap language
+- **(Bug Fix)** Fix UI freezes that may occur when interacting with large files in the editor
+
 # _3.70_ (2025-05-08)
 - **(Feature)** Amazon Q: Support selecting customizations across all Q profiles with automatic profile switching for enterprise users
 - **(Bug Fix)** Do not always show 'Amazon Q Code Issues' tab when switching to the 'Problems' tool window
