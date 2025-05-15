@@ -401,7 +401,9 @@ class BrowserConnector(
                                 val cause = if (e is CompletionException) e.cause else e
 
                                 // dont post error to UI if user cancels export
-                                if (!(cause is ResponseErrorException && cause.responseError.message == "Export cancelled by user")) {
+                                if (cause is ResponseErrorException && cause.responseError.code == "ResponseErrorCode.RequestCancelled) {
+                                    return@whenComplete
+}
                                     LOG.error { "Failed to perform chat tab bar action $e" }
                                     params.tabId?.let {
                                         browser.postChat(chatCommunicationManager.getErrorUiMessage(it, e, null))
