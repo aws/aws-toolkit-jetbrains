@@ -13,6 +13,7 @@ import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFileManager
 import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
 import org.eclipse.lsp4j.ConfigurationParams
@@ -25,6 +26,7 @@ import org.eclipse.lsp4j.ShowDocumentParams
 import org.eclipse.lsp4j.ShowDocumentResult
 import org.eclipse.lsp4j.ShowMessageRequestParams
 import org.slf4j.event.Level
+import software.amazon.awssdk.utils.UserHomeDirectoryUtils
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -38,6 +40,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyFileParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenFileDiffParams
@@ -389,7 +393,38 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         return CompletableFuture.completedFuture(Unit)
     }
 
+    override fun appendFile(params: FileParams) = refreshVfs(params.path)
+
+    override fun createDirectory(params: FileParams) = refreshVfs(params.path)
+
+    override fun removeFile(params: FileParams) = refreshVfs(params.path)
+
+    override fun writeFile(params: FileParams) = refreshVfs(params.path)
+
+    override fun copyFile(params: CopyFileParams) {
+        refreshVfs(params.oldPath)
+        return refreshVfs(params.newPath)
+    }
+
+    private fun refreshVfs(path: String) {
+        val currPath = Paths.get(path)
+        if (currPath.startsWith(localHistoryPath)) return
+        try {
+            ApplicationManager.getApplication().invokeLater {
+                VfsUtil.markDirtyAndRefresh(false, true, true, currPath.toFile())
+            }
+        } catch (e: Exception) {
+            LOG.warn(e) { "Could not refresh file" }
+        }
+    }
+
     companion object {
+        val localHistoryPath = Paths.get(
+            UserHomeDirectoryUtils.userHomeDirectory(),
+            ".aws",
+            "amazonq",
+            "history"
+        )
         private val LOG = getLogger<AmazonQLanguageClientImpl>()
     }
 }

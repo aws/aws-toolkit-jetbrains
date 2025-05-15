@@ -31,6 +31,12 @@ const val CHAT_TAB_BAR_ACTIONS = "aws/chat/tabBarAction"
 const val CHAT_TAB_CHANGE = "aws/chat/tabChange"
 const val CHAT_TAB_REMOVE = "aws/chat/tabRemove"
 
+const val DID_COPY_FILE = "aws/didCopyFile"
+const val DID_WRITE_FILE = "aws/didWriteFile"
+const val DID_APPEND_FILE = "aws/didAppendFile"
+const val DID_REMOVE_FILE = "aws/didRemoveFileOrDirectory"
+const val DID_CREATE_DIRECTORY = "aws/didCreateDirectory"
+
 const val GET_SERIALIZED_CHAT_REQUEST_METHOD = "aws/chat/getSerializedChat"
 
 const val OPEN_FILE_DIFF = "aws/openFileDiff"
