@@ -27,6 +27,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
 import org.eclipse.lsp4j.TextDocumentIdentifier
+import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
@@ -94,6 +96,7 @@ import software.aws.toolkits.jetbrains.settings.MeetQSettings
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Telemetry
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionException
 import java.util.function.Function
 
 class BrowserConnector(
@@ -382,6 +385,7 @@ class BrowserConnector(
 
             CHAT_TAB_BAR_ACTIONS -> {
                 handleChat(AmazonQChatServer.tabBarActions, node) { params, invoke ->
+                    println("handling TabBarActions")
                     invoke()
                         .whenComplete { actions, error ->
                             try {
@@ -396,6 +400,12 @@ class BrowserConnector(
                                     )
                                 )
                             } catch (e: Exception) {
+                                val cause = if (e is CompletionException) e.cause else e
+
+                                // dont post error to UI if user cancels export
+                                if (cause is ResponseErrorException && cause.responseError.code == ResponseErrorCode.RequestCancelled.getValue()) {
+                                    return@whenComplete
+                                }
                                 LOG.error { "Failed to perform chat tab bar action $e" }
                                 params.tabId?.let {
                                     browser.postChat(chatCommunicationManager.getErrorUiMessage(it, e, null))

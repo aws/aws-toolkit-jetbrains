@@ -25,6 +25,9 @@ import org.eclipse.lsp4j.PublishDiagnosticsParams
 import org.eclipse.lsp4j.ShowDocumentParams
 import org.eclipse.lsp4j.ShowDocumentResult
 import org.eclipse.lsp4j.ShowMessageRequestParams
+import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseError
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode
 import org.slf4j.event.Level
 import software.amazon.awssdk.utils.UserHomeDirectoryUtils
 import software.aws.toolkits.core.utils.error
@@ -220,8 +223,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
                 chosenFile?.let {
                     ShowSaveFileDialogResult(chosenFile.file.path)
-                    // TODO: Add error state shown in chat ui instead of throwing
-                } ?: throw Error("Export failed")
+                } ?: throw ResponseErrorException(ResponseError(ResponseErrorCode.RequestCancelled, "Export cancelled by user", null))
             },
             ApplicationManager.getApplication()::invokeLater
         )
