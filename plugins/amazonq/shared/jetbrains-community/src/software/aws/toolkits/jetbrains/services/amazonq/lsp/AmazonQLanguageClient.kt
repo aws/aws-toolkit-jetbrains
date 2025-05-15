@@ -54,17 +54,17 @@ interface AmazonQLanguageClient : LanguageClient {
     fun sendContextCommands(params: LSPAny): CompletableFuture<Unit>
 
     @JsonNotification(DID_COPY_FILE)
-    fun copyFile(params: CopyFileParams): CompletableFuture<Unit>
+    fun copyFile(params: CopyFileParams)
 
     @JsonNotification(DID_WRITE_FILE)
-    fun writeFile(params: FileParams): CompletableFuture<Unit>
+    fun writeFile(params: FileParams)
 
     @JsonNotification(DID_APPEND_FILE)
-    fun appendFile(params: FileParams): CompletableFuture<Unit>
+    fun appendFile(params: FileParams)
 
     @JsonNotification(DID_REMOVE_FILE)
-    fun removeFile(params: FileParams): CompletableFuture<Unit>
+    fun removeFile(params: FileParams)
 
     @JsonNotification(DID_CREATE_DIRECTORY)
-    fun createDirectory(params: FileParams): CompletableFuture<Unit>
+    fun createDirectory(params: FileParams)
 }

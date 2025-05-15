@@ -361,41 +361,37 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         return CompletableFuture.completedFuture(Unit)
     }
 
-    override fun appendFile(params: FileParams): CompletableFuture<Unit> = refreshVfs(params.path)
+    override fun appendFile(params: FileParams) = refreshVfs(params.path)
 
-    override fun createDirectory(params: FileParams): CompletableFuture<Unit> = refreshVfs(params.path)
+    override fun createDirectory(params: FileParams) = refreshVfs(params.path)
 
-    override fun removeFile(params: FileParams): CompletableFuture<Unit> = refreshVfs(params.path)
+    override fun removeFile(params: FileParams) = refreshVfs(params.path)
 
-    override fun writeFile(params: FileParams): CompletableFuture<Unit> = refreshVfs(params.path)
+    override fun writeFile(params: FileParams) = refreshVfs(params.path)
 
-    override fun copyFile(params: CopyFileParams): CompletableFuture<Unit> {
+    override fun copyFile(params: CopyFileParams) {
         refreshVfs(params.oldPath)
         return refreshVfs(params.newPath)
     }
 
-    private fun refreshVfs(path: String): CompletableFuture<Unit> {
+    private fun refreshVfs(path: String) {
+        if (Path(path).startsWith(userHomePath)) return
+        try {
+            ApplicationManager.getApplication().invokeLater {
+                VfsUtil.markDirtyAndRefresh(false, true, true, Path(path).toFile())
+            }
+        } catch (e: Exception) {
+            LOG.warn { "Could not refresh file" }
+        }
+    }
+
+    companion object {
         val userHomePath = Paths.get(
             UserHomeDirectoryUtils.userHomeDirectory(),
             ".aws",
             "amazonq",
             "history"
-        ).toString()
-        if (path.startsWith(userHomePath)) return CompletableFuture()
-        return try {
-            CompletableFuture.supplyAsync(
-                {
-                    VfsUtil.markDirtyAndRefresh(false, true, true, Path(path).toFile())
-                },
-                ApplicationManager.getApplication()::invokeLater
-            )
-        } catch (e: Exception) {
-            LOG.warn { "Could not refresh file" }
-            CompletableFuture.failedFuture(e)
-        }
-    }
-
-    companion object {
+        )
         private val LOG = getLogger<AmazonQLanguageClientImpl>()
     }
 }
