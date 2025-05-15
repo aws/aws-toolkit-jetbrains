@@ -5,6 +5,8 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.requests.SimpleDiffRequest
+import com.intellij.ide.BrowserUtil
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
@@ -51,6 +53,8 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.TelemetryParsin
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
+import software.aws.toolkits.jetbrains.utils.getCleanedContent
+import software.aws.toolkits.jetbrains.utils.notify
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.nio.file.Files
@@ -104,19 +108,12 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
     override fun showMessage(messageParams: MessageParams) {
         val type = when (messageParams.type) {
-            MessageType.Error -> Level.ERROR
-            MessageType.Warning -> Level.WARN
-            MessageType.Info, MessageType.Log -> Level.INFO
+            MessageType.Error -> NotificationType.ERROR
+            MessageType.Warning -> NotificationType.WARNING
+            MessageType.Info, MessageType.Log -> NotificationType.INFORMATION
         }
 
-        if (type == Level.ERROR &&
-            messageParams.message.lineSequence().firstOrNull()?.contains("NOTE: The AWS SDK for JavaScript (v2) is in maintenance mode.") == true
-        ) {
-            LOG.info { "Suppressed Flare AWS JS SDK v2 EoL error message" }
-            return
-        }
-
-        LOG.atLevel(type).log(messageParams.message)
+        notify(type, message("q.window.title"), getCleanedContent(messageParams.message, true), project, emptyList())
     }
 
     override fun showMessageRequest(requestParams: ShowMessageRequestParams): CompletableFuture<MessageActionItem?>? {
@@ -126,13 +123,31 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     }
 
     override fun logMessage(message: MessageParams) {
-        showMessage(message)
+        val type = when (message.type) {
+            MessageType.Error -> Level.ERROR
+            MessageType.Warning -> Level.WARN
+            MessageType.Info, MessageType.Log -> Level.INFO
+        }
+
+        if (type == Level.ERROR &&
+            message.message.lineSequence().firstOrNull()?.contains("NOTE: The AWS SDK for JavaScript (v2) is in maintenance mode.") == true
+        ) {
+            LOG.info { "Suppressed Flare AWS JS SDK v2 EoL error message" }
+            return
+        }
+
+        LOG.atLevel(type).log(message.message)
     }
 
-    override fun showDocument(params: ShowDocumentParams?): CompletableFuture<ShowDocumentResult> {
+    override fun showDocument(params: ShowDocumentParams): CompletableFuture<ShowDocumentResult> {
         try {
-            if (params == null || params.uri.isNullOrEmpty()) {
+            if (params.uri.isNullOrEmpty()) {
                 return CompletableFuture.completedFuture(ShowDocumentResult(false))
+            }
+
+            if (params.external == true) {
+                BrowserUtil.open(params.uri)
+                return CompletableFuture.completedFuture(ShowDocumentResult(true))
             }
 
             ApplicationManager.getApplication().invokeLater {
