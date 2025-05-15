@@ -50,7 +50,7 @@ object CodeWhispererTestUtil {
     const val codeWhispererRecommendationActionId = "CodeWhispererRecommendationAction"
     const val codeWhispererCodeScanActionId = "codewhisperer.toolbar.security.scan"
     const val testValidAccessToken = "test_valid_access_token"
-    val testNextToken: Either<String, Int> = Either.forLeft("test_next_token")
+    val testNextToken: Either<String, Int> = Either.forLeft("")
     val metadata: DefaultAwsResponseMetadata = DefaultAwsResponseMetadata.create(
         mapOf(AwsHeader.AWS_REQUEST_ID to testRequestId)
     )
@@ -67,6 +67,7 @@ object CodeWhispererTestUtil {
             InlineCompletionItem("item4", "test recommendation 5"),
         ),
         sessionId = "sessionId",
+        partialResultToken = testNextToken
     )
     val javaResponse: InlineCompletionListWithReferences = InlineCompletionListWithReferences(
         items = listOf(
@@ -77,6 +78,7 @@ object CodeWhispererTestUtil {
             InlineCompletionItem("item5", "test recommendation 5"),
         ),
         sessionId = "sessionId",
+        partialResultToken = testNextToken
     )
     const val pythonFileName = "test.py"
     const val javaFileName = "test.java"
