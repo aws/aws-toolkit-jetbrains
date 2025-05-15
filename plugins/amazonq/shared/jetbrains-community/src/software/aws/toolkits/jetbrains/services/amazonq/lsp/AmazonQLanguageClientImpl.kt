@@ -31,7 +31,6 @@ import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
@@ -49,7 +48,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenF
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.TelemetryParsingUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
@@ -174,19 +172,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             val connection = ToolkitConnectionManager.getInstance(project)
                 .activeConnectionForFeature(QConnection.getInstance())
 
-            when (connection) {
-                is AwsBearerTokenConnection -> {
-                    ConnectionMetadata(
-                        SsoProfileData(connection.startUrl)
-                    )
-                }
-                else -> {
-                    // If no connection or not a bearer token connection return default builderID start url
-                    ConnectionMetadata(
-                        SsoProfileData(AmazonQLspConstants.AWS_BUILDER_ID_URL)
-                    )
-                }
-            }
+            connection?.let { ConnectionMetadata.fromConnection(it) }
         }
 
     override fun openTab(params: LSPAny): CompletableFuture<LSPAny> {

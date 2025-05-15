@@ -18,6 +18,7 @@ enum class CssVariable(
     TextColorWeak("--mynah-color-text-weak"),
     TextColorLink("--mynah-color-text-link"),
     TextColorInput("--mynah-color-text-input"),
+    TextColorDisabled("--mynah-color-text-disabled"),
 
     Background("--mynah-color-bg"),
     BackgroundAlt("--mynah-color-bg-alt"),

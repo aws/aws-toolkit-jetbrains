@@ -40,6 +40,7 @@ class ThemeBrowserAdapter {
         append(CssVariable.TextColorInput, theme.textFieldForeground)
         append(CssVariable.TextColorLink, theme.linkText)
         append(CssVariable.TextColorWeak, theme.inactiveText)
+        append(CssVariable.TextColorDisabled, theme.inactiveText)
 
         append(CssVariable.Background, theme.background)
         append(CssVariable.BackgroundAlt, theme.background)
