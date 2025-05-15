@@ -150,7 +150,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
                         agenticMode: true,
                         quickActionCommands: commands,
                         disclaimerAcknowledged: ${MeetQSettings.getInstance().disclaimerAcknowledged},
-                        pairProgrammingAcknowledged: ${!MeetQSettings.getInstance().amazonQChatPairProgramming}
+                        pairProgrammingAcknowledged: ${MeetQSettings.getInstance().pairProgrammingAcknowledged}
                         },
                         hybridChatConnector,
                         ${CodeWhispererFeatureConfigService.getInstance().getFeatureConfigJsonString()}                     

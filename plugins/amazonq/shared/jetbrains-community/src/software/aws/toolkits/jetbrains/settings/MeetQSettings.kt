@@ -38,10 +38,10 @@ class MeetQSettings : PersistentStateComponent<MeetQSettingsConfiguration> {
             state.disclaimerAcknowledged = value
         }
 
-    var amazonQChatPairProgramming: Boolean
-        get() = state.amazonQChatPairProgramming
+    var pairProgrammingAcknowledged: Boolean
+        get() = state.pairProgrammingAcknowledged
         set(value) {
-            state.amazonQChatPairProgramming = value
+            state.pairProgrammingAcknowledged = value
         }
 
     companion object {
@@ -52,5 +52,5 @@ data class MeetQSettingsConfiguration(
     var shouldDisplayPage: Boolean = true,
     var reinvent2024OnboardingCount: Int = 0,
     var disclaimerAcknowledged: Boolean = false,
-    var amazonQChatPairProgramming: Boolean = false,
+    var pairProgrammingAcknowledged: Boolean = false,
 )
