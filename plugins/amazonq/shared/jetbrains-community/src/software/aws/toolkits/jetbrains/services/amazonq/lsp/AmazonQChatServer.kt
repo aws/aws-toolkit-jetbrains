@@ -43,6 +43,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PROMP
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TELEMETRY_EVENT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventParams
 import kotlin.reflect.KProperty
@@ -200,5 +201,10 @@ object AmazonQChatServer : JsonRpcMethodProvider {
     val createPrompt = JsonRpcNotification(
         CHAT_CREATE_PROMPT,
         CreatePromptParams::class.java
+    )
+
+    val telemetryEvent = JsonRpcNotification(
+        TELEMETRY_EVENT,
+        Any::class.java
     )
 }
