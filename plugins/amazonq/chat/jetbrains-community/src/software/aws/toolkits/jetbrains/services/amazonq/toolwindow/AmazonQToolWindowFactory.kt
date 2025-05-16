@@ -91,6 +91,17 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             }
         )
 
+        project.messageBus.connect(toolWindow.disposable).subscribe(
+            QRegionProfileSelectedListener.TOPIC,
+            object : QRegionProfileSelectedListener {
+                // note we name myProject intentionally ow it will shadow the "project" provided by the IDE
+                override fun onProfileSelected(myProject: Project, profile: QRegionProfile?) {
+                    if (project.isDisposed) return
+                    prepareChatContent(project, qPanel)
+                }
+            }
+        )
+
         prepareChatContent(project, qPanel)
 
         val content = contentManager.factory.createContent(mainPanel, null, false).also {
