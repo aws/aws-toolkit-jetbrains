@@ -412,8 +412,8 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         val currPath = Paths.get(path)
         if (currPath.startsWith(localHistoryPath)) return
         try {
-            ApplicationManager.getApplication().invokeLater {
-                VfsUtil.markDirtyAndRefresh(true, true, true, currPath.toFile())
+            ApplicationManager.getApplication().executeOnPooledThread {
+                VfsUtil.markDirtyAndRefresh(false, true, true, currPath.toFile())
             }
         } catch (e: Exception) {
             LOG.warn(e) { "Could not refresh file" }
