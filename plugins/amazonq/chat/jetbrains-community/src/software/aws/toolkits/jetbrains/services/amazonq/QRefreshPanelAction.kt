@@ -11,14 +11,13 @@ import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.util.messages.Topic
 import software.aws.toolkits.jetbrains.services.amazonq.toolwindow.AmazonQToolWindow
 import software.aws.toolkits.resources.AmazonQBundle
-import software.aws.toolkits.resources.message
 import java.util.EventListener
 
 class QRefreshPanelAction : DumbAwareAction(AmazonQBundle.message("amazonq.refresh.panel"), null, AllIcons.Actions.Refresh) {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         // recreate chat browser
-        AmazonQToolWindow.getInstance(project).disposeAndRecreate()
+        AmazonQToolWindow.getInstance(project).recreatePanel()
         // recreate signin browser
         QWebviewPanel.getInstance(project).disposeAndRecreate()
         RefreshQChatPanelButtonPressedListener.notifyRefresh()
