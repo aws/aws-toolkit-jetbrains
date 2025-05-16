@@ -9,7 +9,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ContextCom
 data class ChatPrompt(
     val prompt: String,
     val escapedPrompt: String,
-    val command: String,
+    val command: String?,
 )
 
 data class SendChatPromptRequest(
