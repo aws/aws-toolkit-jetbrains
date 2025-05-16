@@ -25,6 +25,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ErrorParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileDialog
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileManager
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfileSelectedListener
 import java.util.UUID
@@ -140,19 +141,30 @@ class ChatCommunicationManager(private val cs: CoroutineScope) {
         val incomingType = params.authFollowupType
         val connectionManager = ToolkitConnectionManager.getInstance(project)
         try {
-            connectionManager.activeConnectionForFeature(QConnection.getInstance())?.let {
-                reauthConnectionIfNeeded(project, it, isReAuth = true)
-            }
+
             when (incomingType) {
                 AuthFollowupType.USE_SUPPORTED_AUTH -> {
-                    project.messageBus.syncPublisher(QRegionProfileSelectedListener.TOPIC)
-                        .onProfileSelected(project, QRegionProfileManager.getInstance().activeProfile(project))
+                    val activeProfile = QRegionProfileManager.getInstance().activeProfile(project)
+                    if(activeProfile != null) {
+                        project.messageBus.syncPublisher(QRegionProfileSelectedListener.TOPIC)
+                            .onProfileSelected(project, QRegionProfileManager.getInstance().activeProfile(project))
+                    } else {
+                       QRegionProfileDialog(
+                           project,
+                           selectedProfile = null
+                       ).show()
+                   }
+
+
                     return
                 }
                 AuthFollowupType.RE_AUTH,
                 AuthFollowupType.MISSING_SCOPES,
                 AuthFollowupType.FULL_AUTH,
                 -> {
+                    connectionManager.activeConnectionForFeature(QConnection.getInstance())?.let {
+                        reauthConnectionIfNeeded(project, it, isReAuth = true)
+                    }
                     return
                 }
                 else -> {
