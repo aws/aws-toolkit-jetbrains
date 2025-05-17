@@ -412,7 +412,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         val currPath = Paths.get(path)
         if (currPath.startsWith(localHistoryPath)) return
         try {
-            ApplicationManager.getApplication().invokeLater {
+            ApplicationManager.getApplication().executeOnPooledThread {
                 VfsUtil.markDirtyAndRefresh(false, true, true, currPath.toFile())
             }
         } catch (e: Exception) {
