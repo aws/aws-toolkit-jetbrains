@@ -17,10 +17,8 @@ import software.amazon.awssdk.services.codewhispererruntime.model.StartTransform
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationJob
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationLanguage
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationPlan
-import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdate
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationProgressUpdateStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStatus
-import software.amazon.awssdk.services.codewhispererruntime.model.TransformationStep
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationUserActionStatus
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
@@ -443,7 +441,6 @@ class CodeModernizerSession(
             // add delay to avoid the throttling error
             delay(1000)
 
-            var isTransformationPlanEditorOpened = false
             var passedBuild = false
             var passedStart = false
 
@@ -480,10 +477,9 @@ class CodeModernizerSession(
                     }
                 }
 
-                // Open the transformation plan detail panel once transformation plan is available (no plan for SQL conversions)
-                if (transformType != CodeTransformType.SQL_CONVERSION && state.transformationPlan != null && !isTransformationPlanEditorOpened) {
+                // open plan once available (N/A for SQL conversions)
+                if (transformType != CodeTransformType.SQL_CONVERSION) {
                     tryOpenTransformationPlanEditor()
-                    isTransformationPlanEditorOpened = true
                 }
                 val instant = Instant.now()
                 // Set the job start time
@@ -610,72 +606,7 @@ class CodeModernizerSession(
     }
 
     fun tryOpenTransformationPlanEditor() {
-        // var transformationPlan = getTransformationPlan()
-        // TODO: remove this mocked API response
-        val transformationPlan = TransformationPlan.builder()
-            .transformationSteps(
-                listOf(
-                    TransformationStep.builder()
-                        .id("0")
-                        .name("Supplement Info")
-                        .status("COMPLETED")
-                        .progressUpdates(
-                            listOf(
-                                TransformationProgressUpdate.builder()
-                                    .name("0")
-                                    .status("COMPLETED")
-                                    .description("{\"type\":\"STATISTICS\",\"name\":\"Plan Statistics\",\"description\":null,\"columnNames\":[\"name\",\"value\"],\"rows\":[{\"name\":\"linesOfCode\",\"value\":\"2532\"},{\"name\":\"plannedDependencyChanges\",\"value\":\"4\"},{\"name\":\"plannedDeprecatedApiChanges\",\"value\":\"0\"},{\"name\":\"plannedFileChanges\",\"value\":\"7\"}]}")
-                                    .build(),
-                                TransformationProgressUpdate.builder()
-                                    .name("1")
-                                    .status("COMPLETED")
-                                    .description("{\"type\":\"DEPENDENCIES\",\"name\":\"Dependency Changes\",\"description\":null,\"columnNames\":[\"dependencyName\",\"action\",\"currentVersion\",\"targetVersion\"],\"rows\":[{\"dependencyName\":\"junit:junit\",\"action\":\"REMOVE\",\"currentVersion\":\"4.12\",\"targetVersion\":\"-\"},{\"dependencyName\":\"org.apache.logging.log4j:log4j-slf4j-impl\",\"action\":\"ADD\",\"currentVersion\":\"-\",\"targetVersion\":\"2.x\"},{\"dependencyName\":\"org.apache.maven.plugins:maven-surefire-plugin\",\"action\":\"UPDATE\",\"currentVersion\":\"2.18.1\",\"targetVersion\":\"3.1.x\"},{\"dependencyName\":\"org.slf4j:slf4j-log4j12\",\"action\":\"REMOVE\",\"currentVersion\":\"1.8.0-beta0\",\"targetVersion\":\"-\"}]}")
-                                    .build(),
-                                TransformationProgressUpdate.builder()
-                                    .name("1")
-                                    .status("COMPLETED")
-                                    .description("{\"type\":\"DEPENDENCIES\",\"name\":\"Dependency Changes\",\"description\":null,\"columnNames\":[\"dependencyName\",\"action\",\"currentVersion\",\"targetVersion\"],\"rows\":[{\"dependencyName\":\"junit:junit\",\"action\":\"REMOVE\",\"currentVersion\":\"4.12\",\"targetVersion\":\"-\"},{\"dependencyName\":\"org.apache.logging.log4j:log4j-slf4j-impl\",\"action\":\"ADD\",\"currentVersion\":\"-\",\"targetVersion\":\"2.x\"},{\"dependencyName\":\"org.apache.maven.plugins:maven-surefire-plugin\",\"action\":\"UPDATE\",\"currentVersion\":\"2.18.1\",\"targetVersion\":\"3.1.x\"},{\"dependencyName\":\"org.slf4j:slf4j-log4j12\",\"action\":\"REMOVE\",\"currentVersion\":\"1.8.0-beta0\",\"targetVersion\":\"-\"}]}")
-                                    .build(),
-                                TransformationProgressUpdate.builder()
-                                    .name("1")
-                                    .status("COMPLETED")
-                                    .description("{\"type\":\"DEPENDENCIES\",\"name\":\"Dependency Changes\",\"description\":null,\"columnNames\":[\"dependencyName\",\"action\",\"currentVersion\",\"targetVersion\"],\"rows\":[{\"dependencyName\":\"com.squareup.okio:okio\",\"action\":\"UPDATE\",\"currentVersion\":\"4.12\",\"targetVersion\":\"-\"},{\"dependencyName\":\"org.apache.logging.log4j:log4j-slf4j-impl\",\"action\":\"ADD\",\"currentVersion\":\"-\",\"targetVersion\":\"2.x\"},{\"dependencyName\":\"org.apache.maven.plugins:maven-surefire-plugin\",\"action\":\"UPDATE\",\"currentVersion\":\"2.18.1\",\"targetVersion\":\"3.1.x\"},{\"dependencyName\":\"org.slf4j:slf4j-log4j12\",\"action\":\"REMOVE\",\"currentVersion\":\"1.8.0-beta0\",\"targetVersion\":\"-\"}]}")
-                                    .build(),
-                                TransformationProgressUpdate.builder()
-                                    .name("1")
-                                    .status("COMPLETED")
-                                    .description("{\"type\":\"DEPENDENCIES\",\"name\":\"Dependency Changes\",\"description\":null,\"columnNames\":[\"dependencyName\",\"action\",\"currentVersion\",\"targetVersion\"],\"rows\":[{\"dependencyName\":\"com.squareup.okio:okio\",\"action\":\"UPDATE\",\"currentVersion\":\"4.12\",\"targetVersion\":\"-\"},{\"dependencyName\":\"org.apache.logging.log4j:log4j-slf4j-impl\",\"action\":\"ADD\",\"currentVersion\":\"-\",\"targetVersion\":\"2.x\"},{\"dependencyName\":\"org.apache.maven.plugins:maven-surefire-plugin\",\"action\":\"UPDATE\",\"currentVersion\":\"2.18.1\",\"targetVersion\":\"3.1.x\"},{\"dependencyName\":\"org.slf4j:slf4j-log4j12\",\"action\":\"REMOVE\",\"currentVersion\":\"1.8.0-beta0\",\"targetVersion\":\"-\"}]}")
-                                    .build(),
-                                TransformationProgressUpdate.builder()
-                                    .name("1")
-                                    .status("COMPLETED")
-                                    .description("{\"type\":\"DEPENDENCIES\",\"name\":\"Dependency Changes\",\"description\":null,\"columnNames\":[\"dependencyName\",\"action\",\"currentVersion\",\"targetVersion\"],\"rows\":[{\"dependencyName\":\"com.squareup.okio:okio\",\"action\":\"UPDATE\",\"currentVersion\":\"4.12\",\"targetVersion\":\"-\"},{\"dependencyName\":\"org.apache.logging.log4j:log4j-slf4j-impl\",\"action\":\"ADD\",\"currentVersion\":\"-\",\"targetVersion\":\"2.x\"},{\"dependencyName\":\"org.apache.maven.plugins:maven-surefire-plugin\",\"action\":\"UPDATE\",\"currentVersion\":\"2.18.1\",\"targetVersion\":\"3.1.x\"},{\"dependencyName\":\"org.slf4j:slf4j-log4j12\",\"action\":\"REMOVE\",\"currentVersion\":\"1.8.0-beta0\",\"targetVersion\":\"-\"}]}")
-                                    .build(),
-                                TransformationProgressUpdate.builder()
-                                    .name("-1")
-                                    .status("COMPLETED")
-                                    .description("{\"type\":\"FILES\",\"name\":\"File Changes\",\"description\":null,\"columnNames\":[\"relativePath\",\"action\"],\"rows\":[{\"relativePath\":\"src/main/test/com/nxllxn/plantuml/java/TopLevelInterfaceTest.java\",\"action\":\"UPDATE\"},{\"relativePath\":\"src/main/test/com/nxllxn/plantuml/java/TopLevelEnumerationTest.java\",\"action\":\"UPDATE\"},{\"relativePath\":\"src/main/test/com/nxllxn/plantuml/java/TopLevelClassTest.java\",\"action\":\"UPDATE\"},{\"relativePath\":\"src/main/test/com/nxllxn/plantuml/java/TopLevelAnnotationTest.java\",\"action\":\"UPDATE\"},{\"relativePath\":\"src/main/test/com/nxllxn/plantuml/java/ParameterTest.java\",\"action\":\"UPDATE\"},{\"relativePath\":\"src/main/test/com/nxllxn/plantuml/java/MethodTest.java\",\"action\":\"UPDATE\"},{\"relativePath\":\"src/main/test/com/nxllxn/plantuml/java/FieldTest.java\",\"action\":\"UPDATE\"}]}")
-                                    .build()
-                            )
-                        )
-                        .build(),
-                    TransformationStep.builder()
-                        .id("1")
-                        .name("Step 1 - Update JDK version, dependencies and related code (David)")
-                        .description("Amazon Q will attempt to update the JDK version and change the following dependencies and related code.")
-                        .status("CREATED")
-                        .progressUpdates(emptyList())
-                        .build(),
-                    TransformationStep.builder()
-                        .id("2")
-                        .name("Step 2 - Finalize code changes")
-                        .description("Amazon Q will attempt to replace the following instances of deprecated code.")
-                        .status("CREATED")
-                        .progressUpdates(emptyList())
-                        .build()
-                )
-            )
-            .build()
+        val transformationPlan = getTransformationPlan()
         if (transformationPlan != null) {
             runInEdt {
                 CodeModernizerPlanEditorProvider.openEditor(
