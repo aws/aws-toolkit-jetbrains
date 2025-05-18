@@ -237,11 +237,11 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
         val table1Json = """
         {"name":"Dependency changes", "columnNames":["dependencyName","action","currentVersion","targetVersion"],
         "rows":[{"dependencyName":"org.springframework.boot","action":"Update","currentVersion":"2.1","targetVersion":"2.4"}]}
-    """.trimIndent()
+        """.trimIndent()
         val table2Json = """
         {"name":"Dependency changes", "columnNames":["dependencyName","action","currentVersion","targetVersion"],
         "rows":[{"dependencyName":"junit","action":"Add","currentVersion":"","targetVersion":"4.13"}]}
-    """.trimIndent()
+        """.trimIndent()
         val tables = listOf(
             MAPPER.readValue<PlanTable>(table1Json),
             MAPPER.readValue<PlanTable>(table2Json)

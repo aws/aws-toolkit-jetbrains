@@ -286,12 +286,11 @@ fun findDownloadArtifactProgressUpdate(transformationSteps: List<TransformationS
         }
 
 // "name" holds the ID of the corresponding plan step (where table will go) and "description" holds the plan data
-fun getTableMapping(stepZeroProgressUpdates: List<TransformationProgressUpdate>): Map<String, List<String>> {
-    return stepZeroProgressUpdates.groupBy(
+fun getTableMapping(stepZeroProgressUpdates: List<TransformationProgressUpdate>): Map<String, List<String>> =
+    stepZeroProgressUpdates.groupBy(
         { it.name() },
         { it.description() }
     )
-}
 
 // ID of '0' reserved for job statistics table; only 1 table there
 fun parseTableMapping(tableMapping: Map<String, List<String>>): PlanTable {
