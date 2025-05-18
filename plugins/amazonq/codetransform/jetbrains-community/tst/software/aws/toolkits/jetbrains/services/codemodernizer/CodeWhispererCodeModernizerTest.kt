@@ -142,13 +142,11 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
         doAnswer {
             mockDialog.showAndGet()
             mockDialog
-        }.whenever(handler).displayDiffUsingPatch(any(), any(), any(), any())
+        }.whenever(handler).displayDiffUsingPatch(any(), any())
         handler.displayDiff(jobId)
         verify(handler, never()).notifyUnableToApplyPatch(any())
         verify(handler, times(1)).displayDiffUsingPatch(
-            testCodeModernizerArtifact.patches[0],
-            testCodeModernizerArtifact.patches.size,
-            testCodeModernizerArtifact.description?.get(0),
+            testCodeModernizerArtifact.patch,
             jobId,
         )
     }
@@ -206,26 +204,9 @@ class CodeWhispererCodeModernizerTest : CodeWhispererCodeModernizerTestBase() {
     }
 
     @Test
-    fun `CodeModernizerArtifact can process a valid zip file with multiple diffs`() {
-        val artifact = CodeModernizerArtifact.create(multipleDiffZipPath.toAbsolutePath().toString())
-        assertEquals(4, artifact.patches.size)
-        assertEquals(validManifest, artifact.manifest)
-        assertEquals(validMetricsMultipleDiffs.linesOfCodeChanged, artifact.metrics?.linesOfCodeChanged)
-    }
-
-    @Test
     fun `can unzip a file`() {
         val tempDir = createTempDirectory()
         val result = unzipFile(exampleZipPath, tempDir)
-        assert(result)
-        assert(tempDir.resolve(validZipManifestPath).exists())
-        assert(tempDir.resolve(validZipPatchFilePath).exists())
-    }
-
-    @Test
-    fun `can unzip a file with multiple diffs`() {
-        val tempDir = createTempDirectory()
-        val result = unzipFile(multipleDiffZipPath, tempDir)
         assert(result)
         assert(tempDir.resolve(validZipManifestPath).exists())
         assert(tempDir.resolve(validZipPatchFilePath).exists())

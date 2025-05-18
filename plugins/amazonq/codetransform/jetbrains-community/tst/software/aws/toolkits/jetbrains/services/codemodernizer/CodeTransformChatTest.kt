@@ -27,15 +27,15 @@ class CodeTransformChatTest {
     }
 
     @Test
-    fun `test that transform result chat item includes view summary button and view diff button with correct label when job fully succeeded with 5 patch files`() {
+    fun `test that transform result chat item includes view summary button and view diff button with correct label when job fully succeeded with 1 patch file`() {
         val result = CodeModernizerJobCompletedResult.JobCompletedSuccessfully(JobId("dummy-job-id-123"))
-        val chatItem = buildTransformResultChatContent(result, 5)
+        val chatItem = buildTransformResultChatContent(result)
         assertThat(chatItem.message).isEqualTo(message("codemodernizer.chat.message.result.success.multiple_diffs"))
         assertThat(chatItem.buttons)
             .hasSize(2)
             .satisfiesKt { buttons ->
                 assertThat(buttons[0].id).isEqualTo(CodeTransformButtonId.ViewDiff.id)
-                assertThat(buttons[0].text).isEqualTo("View diff 1/5")
+                assertThat(buttons[0].text).isEqualTo("View diff")
                 assertThat(buttons[1].id).isEqualTo(CodeTransformButtonId.ViewSummary.id)
             }
     }
@@ -43,7 +43,7 @@ class CodeTransformChatTest {
     @Test
     fun `test that transform result chat item includes view summary button and view diff button with correct label when job partially succeeded with 1 patch file`() {
         val result = CodeModernizerJobCompletedResult.JobPartiallySucceeded(JobId("dummy-job-id-123"))
-        val chatItem = buildTransformResultChatContent(result, 1)
+        val chatItem = buildTransformResultChatContent(result)
         assertThat(chatItem.message).isEqualTo(message("codemodernizer.chat.message.result.partially_success"))
 
         assertThat(chatItem.buttons)
