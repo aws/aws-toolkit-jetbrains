@@ -77,7 +77,7 @@ class CodeModernizerPlanEditor(val project: Project, private val virtualFile: Vi
                     // comes from "name" field of each progressUpdate in step zero of plan
                     if (JOB_STATISTICS_TABLE_KEY in tableMapping) {
                         val planTable = parseTableMapping(tableMapping)
-                        val linesOfCode = planTable?.let { getLinesOfCodeSubmitted(it) }
+                        val linesOfCode = getLinesOfCodeSubmitted(planTable)
                         if (linesOfCode != null && linesOfCode > LOC_THRESHOLD && getAuthType(project) == CredentialSourceId.IamIdentityCenter) {
                             val billingText = getBillingText(linesOfCode)
                             val billingTextComponent =
@@ -99,7 +99,7 @@ class CodeModernizerPlanEditor(val project: Project, private val virtualFile: Vi
                             add(billingTextComponent, CodeModernizerUIConstants.transformationPlanPlaneConstraint)
                         }
                         add(
-                            planTable?.let { transformationPlanInfo(it) },
+                            transformationPlanInfo(planTable),
                             CodeModernizerUIConstants.transformationPlanPlaneConstraint,
                         )
                     }
