@@ -69,6 +69,7 @@ fun getSubFolders(basePath: Path): List<Path> = try {
 fun moveFilesFromSourceToDestination(sourceDir: Path, targetDir: Path) {
     try {
         Files.createDirectories(targetDir.parent)
+        // NIO move does not work when copying across mount points (i.e. /tmp is on tmpfs)
         FileUtils.moveDirectory(sourceDir.toFile(), targetDir.toFile())
     } catch (e: Exception) {
         throw IllegalStateException("Failed to move files from $sourceDir to $targetDir", e)
