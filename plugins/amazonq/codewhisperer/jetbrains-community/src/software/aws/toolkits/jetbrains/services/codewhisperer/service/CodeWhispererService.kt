@@ -860,6 +860,7 @@ class CodeWhispererService(private val cs: CoroutineScope) : Disposable {
                 .leftFileContent(fileContextInfo.caretContext.leftFileContext)
                 .rightFileContent(fileContextInfo.caretContext.rightFileContext)
                 .filename(fileContextInfo.fileRelativePath ?: fileContextInfo.filename)
+                .fileUri(fileContextInfo.fileUri)
                 .programmingLanguage(programmingLanguage)
                 .build()
             val supplementalContexts = supplementalContext?.contents?.map {
