@@ -8,9 +8,9 @@ import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.ActionLink
-import software.amazon.awssdk.services.codewhispererruntime.model.Reference
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionReference
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererLoginType
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.layout.CodeWhispererLayoutConfig.addHorizontalGlue
@@ -105,31 +105,31 @@ class CodeWhispererCodeReferenceComponents(private val project: Project) {
         text = message("codewhisperer.toolwindow.entry.suffix", path ?: "", choice, line)
     }.asCodeReferencePanelFont()
 
-    fun codeReferenceRecordPanel(ref: Reference, relativePath: String?, lineNums: String?) = JPanel(GridBagLayout()).apply {
+    fun codeReferenceRecordPanel(ref: InlineCompletionReference, relativePath: String?, lineNums: String?) = JPanel(GridBagLayout()).apply {
         background = EditorColorsManager.getInstance().globalScheme.defaultBackground
         border = BorderFactory.createEmptyBorder(5, 0, 0, 0)
         add(acceptRecommendationPrefixText, inlineLabelConstraints)
 
         // if url to source package/repo is missing, the UX remains the same as we have for now
         // if url to source package/repo is present, the url pointing to the source will be present and remove the hyperlink to SPDX
-        if (ref.url().isNullOrEmpty()) {
+        if (ref.referenceUrl.isEmpty()) {
             add(
-                licenseNameLink(ref.licenseName()).apply {
+                licenseNameLink(ref.licenseName).apply {
                     font = font.deriveFont(Font.ITALIC + Font.BOLD)
                 },
                 inlineLabelConstraints
             )
             add(JLabel(" from ").asCodeReferencePanelFont(), inlineLabelConstraints)
-            add(JLabel(ref.repository()), inlineLabelConstraints)
+            add(JLabel(ref.referenceName), inlineLabelConstraints)
         } else {
             add(
-                JLabel(ref.licenseName()).apply {
+                JLabel(ref.licenseName).apply {
                     font = font.deriveFont(Font.ITALIC + Font.BOLD)
                 },
                 inlineLabelConstraints
             )
             add(JLabel(" from ").asCodeReferencePanelFont(), inlineLabelConstraints)
-            add(repoNameLink(ref.repository(), ref.url()), inlineLabelConstraints)
+            add(repoNameLink(ref.referenceName, ref.referenceUrl), inlineLabelConstraints)
         }
 
         if (!lineNums.isNullOrEmpty()) {

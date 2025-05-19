@@ -11,8 +11,6 @@ class CodeWhispererSwift private constructor() : CodeWhispererProgrammingLanguag
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Swift
 
-    override fun isCodeCompletionSupported(): Boolean = true
-
     companion object {
         // TODO: confirm with service team language id
         const val ID = "swift"

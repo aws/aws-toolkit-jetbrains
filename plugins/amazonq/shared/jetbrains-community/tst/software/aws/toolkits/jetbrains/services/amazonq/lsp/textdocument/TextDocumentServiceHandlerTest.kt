@@ -12,6 +12,7 @@ import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.openapi.vfs.writeText
 import com.intellij.testFramework.DisposableRule
+import com.intellij.testFramework.LightVirtualFile
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.replaceService
@@ -20,6 +21,7 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.slot
+import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -36,7 +38,7 @@ import org.junit.Test
 import software.aws.toolkits.jetbrains.core.coroutines.EDT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
 import software.aws.toolkits.jetbrains.utils.rules.CodeInsightTestFixtureRule
 import software.aws.toolkits.jetbrains.utils.satisfiesKt
 import java.net.URI
@@ -206,8 +208,8 @@ class TextDocumentServiceHandlerTest {
         val document = mockk<Document>()
         val file = createMockVirtualFile(URI.create(""))
 
-        mockkObject(FileUriUtil) {
-            every { FileUriUtil.toUriString(file) } returns null
+        mockkObject(LspEditorUtil) {
+            every { LspEditorUtil.toUriString(file) } returns null
 
             val fileDocumentManager = mockk<FileDocumentManager> {
                 every { getFile(document) } returns file
@@ -288,18 +290,19 @@ class TextDocumentServiceHandlerTest {
 
         val mockFileType = mockk<FileType> {
             every { name } returns fileTypeName
+            every { isBinary } returns false
         }
 
-        return mockk<VirtualFile> {
+        return spyk<VirtualFile>(LightVirtualFile("test.java")) {
             every { url } returns uri.path
             every { toNioPath() } returns path
             every { isDirectory } returns false
             every { fileSystem } returns mockk {
                 every { protocol } returns "file"
             }
-            every { this@mockk.inputStream } returns inputStream
+            every { this@spyk.inputStream } returns inputStream
             every { fileType } returns mockFileType
-            every { this@mockk.modificationStamp } returns modificationStamp
+            every { this@spyk.modificationStamp } returns modificationStamp
         }
     }
 
