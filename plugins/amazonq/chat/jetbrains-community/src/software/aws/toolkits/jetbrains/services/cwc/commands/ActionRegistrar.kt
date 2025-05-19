@@ -11,8 +11,9 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.runBlocking
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GENERIC_COMMAND
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GenericCommandParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_TO_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendToPromptParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TriggerType
 import software.aws.toolkits.jetbrains.services.amazonq.messages.AmazonQMessage
@@ -37,53 +38,17 @@ class ActionRegistrar {
                     val fileContext = contextExtractor.extractContextForTrigger(ExtractionTriggerType.ContextMenu)
                     val codeSelection = "\n```\n${fileContext.focusAreaContext?.codeSelection?.trimIndent()?.trim()}\n```\n"
                     var uiMessage: FlareUiMessage? = null
-                    if (command.verb != "sendToPrompt") {
+                    if (command.verb != SEND_TO_PROMPT) {
                         val params = GenericCommandParams(selection = codeSelection, triggerType = TriggerType.CONTEXT_MENU, genericCommand = command.name)
-                        uiMessage = FlareUiMessage(command = "genericCommand", params = params)
+                        uiMessage = FlareUiMessage(command = GENERIC_COMMAND, params = params)
                     } else {
                         val params = SendToPromptParams(selection = codeSelection, triggerType = TriggerType.CONTEXT_MENU)
-                        uiMessage = FlareUiMessage(command = "sendToPrompt", params = params)
+                        uiMessage = FlareUiMessage(command = SEND_TO_PROMPT, params = params)
                     }
                     AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
                 }
             }
         }
-    }
-
-    fun reportMessageClick(issue: MutableMap<String, String>) {
-        ApplicationManager.getApplication().executeOnPooledThread {
-            runBlocking {
-                handleCodeScanExplainCommand(issue)
-            }
-        }
-    }
-
-    private fun handleCodeScanExplainCommand(issue: MutableMap<String, String>) {
-        // https://github.com/aws/aws-toolkit-vscode/blob/master/packages/amazonq/src/lsp/chat/commands.ts#L30
-        val codeSelection = "\n```\n${issue["code"]?.trimIndent()?.trim()}\n```\n"
-
-        val prompt = "Explain the following part of my code \n\n " +
-            "Issue:    \"${issue["title"]}\" \n" +
-            "Code:    $codeSelection"
-
-        val modelPrompt = "Explain the following part of my code \n\n " +
-            "Issue:    \"${issue["title"]}\" \n" +
-            "Description:    ${issue["description"]} \n" +
-            "Code:    $codeSelection and generate code demonstrating the fix"
-
-        val params = SendToPromptParams(
-            selection = codeSelection,
-            triggerType = TriggerType.CONTEXT_MENU,
-            prompt = ChatPrompt(
-                prompt = prompt,
-                escapedPrompt = modelPrompt,
-                command = null
-            ),
-            autoSubmit = true
-        )
-
-        val uiMessage = FlareUiMessage("sendToPrompt", params)
-        AsyncChatUiListener.notifyPartialMessageUpdate(uiMessage)
     }
 
     // provide singleton access
