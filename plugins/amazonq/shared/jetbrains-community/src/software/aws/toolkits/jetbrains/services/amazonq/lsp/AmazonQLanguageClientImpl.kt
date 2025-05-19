@@ -4,15 +4,16 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp
 
 import com.intellij.diff.DiffContentFactory
-import com.intellij.diff.DiffManager
-import com.intellij.diff.DiffManagerEx
 import com.intellij.diff.requests.SimpleDiffRequest
+import com.intellij.ide.BrowserUtil
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFileManager
 import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
 import org.eclipse.lsp4j.ConfigurationParams
@@ -24,12 +25,15 @@ import org.eclipse.lsp4j.PublishDiagnosticsParams
 import org.eclipse.lsp4j.ShowDocumentParams
 import org.eclipse.lsp4j.ShowDocumentResult
 import org.eclipse.lsp4j.ShowMessageRequestParams
+import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseError
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode
 import org.slf4j.event.Level
+import software.amazon.awssdk.utils.UserHomeDirectoryUtils
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
@@ -39,16 +43,20 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyFileParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenFileDiffParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.TelemetryParsingUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
+import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
 import software.aws.toolkits.jetbrains.settings.CodeWhispererSettings
+import software.aws.toolkits.jetbrains.utils.getCleanedContent
+import software.aws.toolkits.jetbrains.utils.notify
 import software.aws.toolkits.resources.message
 import java.io.File
 import java.nio.file.Files
@@ -61,8 +69,39 @@ import java.util.concurrent.TimeUnit
  * Concrete implementation of [AmazonQLanguageClient] to handle messages sent from server
  */
 class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageClient {
+
+    private fun handleTelemetryMap(telemetryMap: Map<*, *>) {
+        try {
+            val name = telemetryMap["name"] as? String ?: return
+
+            @Suppress("UNCHECKED_CAST")
+            val data = telemetryMap["data"] as? Map<String, Any> ?: return
+
+            TelemetryService.getInstance().record(project) {
+                datum(name) {
+                    unit(TelemetryParsingUtil.parseMetricUnit(telemetryMap["unit"]))
+                    value(telemetryMap["value"] as? Double ?: 1.0)
+                    passive(telemetryMap["passive"] as? Boolean ?: false)
+
+                    telemetryMap["result"]?.let { result ->
+                        metadata("result", result.toString())
+                    }
+
+                    data.forEach { (key, value) ->
+                        metadata(key, value.toString())
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            LOG.warn(e) { "Failed to process telemetry event: $telemetryMap" }
+        }
+    }
+
     override fun telemetryEvent(`object`: Any) {
-        println(`object`)
+        when (`object`) {
+            is Map<*, *> -> handleTelemetryMap(`object`)
+            else -> LOG.warn { "Unexpected telemetry event: $`object`" }
+        }
     }
 
     override fun publishDiagnostics(diagnostics: PublishDiagnosticsParams) {
@@ -71,19 +110,12 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
     override fun showMessage(messageParams: MessageParams) {
         val type = when (messageParams.type) {
-            MessageType.Error -> Level.ERROR
-            MessageType.Warning -> Level.WARN
-            MessageType.Info, MessageType.Log -> Level.INFO
+            MessageType.Error -> NotificationType.ERROR
+            MessageType.Warning -> NotificationType.WARNING
+            MessageType.Info, MessageType.Log -> NotificationType.INFORMATION
         }
 
-        if (type == Level.ERROR &&
-            messageParams.message.lineSequence().firstOrNull()?.contains("NOTE: The AWS SDK for JavaScript (v2) is in maintenance mode.") == true
-        ) {
-            LOG.info { "Suppressed Flare AWS JS SDK v2 EoL error message" }
-            return
-        }
-
-        LOG.atLevel(type).log(messageParams.message)
+        notify(type, message("q.window.title"), getCleanedContent(messageParams.message, true), project, emptyList())
     }
 
     override fun showMessageRequest(requestParams: ShowMessageRequestParams): CompletableFuture<MessageActionItem?>? {
@@ -93,13 +125,31 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
     }
 
     override fun logMessage(message: MessageParams) {
-        showMessage(message)
+        val type = when (message.type) {
+            MessageType.Error -> Level.ERROR
+            MessageType.Warning -> Level.WARN
+            MessageType.Info, MessageType.Log -> Level.INFO
+        }
+
+        if (type == Level.ERROR &&
+            message.message.lineSequence().firstOrNull()?.contains("NOTE: The AWS SDK for JavaScript (v2) is in maintenance mode.") == true
+        ) {
+            LOG.info { "Suppressed Flare AWS JS SDK v2 EoL error message" }
+            return
+        }
+
+        LOG.atLevel(type).log(message.message)
     }
 
-    override fun showDocument(params: ShowDocumentParams?): CompletableFuture<ShowDocumentResult> {
+    override fun showDocument(params: ShowDocumentParams): CompletableFuture<ShowDocumentResult> {
         try {
-            if (params == null || params.uri.isNullOrEmpty()) {
+            if (params.uri.isNullOrEmpty()) {
                 return CompletableFuture.completedFuture(ShowDocumentResult(false))
+            }
+
+            if (params.external == true) {
+                BrowserUtil.open(params.uri)
+                return CompletableFuture.completedFuture(ShowDocumentResult(true))
             }
 
             ApplicationManager.getApplication().invokeLater {
@@ -125,24 +175,12 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             val connection = ToolkitConnectionManager.getInstance(project)
                 .activeConnectionForFeature(QConnection.getInstance())
 
-            when (connection) {
-                is AwsBearerTokenConnection -> {
-                    ConnectionMetadata(
-                        SsoProfileData(connection.startUrl)
-                    )
-                }
-                else -> {
-                    // If no connection or not a bearer token connection return default builderID start url
-                    ConnectionMetadata(
-                        SsoProfileData(AmazonQLspConstants.AWS_BUILDER_ID_URL)
-                    )
-                }
-            }
+            connection?.let { ConnectionMetadata.fromConnection(it) }
         }
 
-    override fun openTab(params: LSPAny): CompletableFuture<OpenTabResult> {
+    override fun openTab(params: LSPAny): CompletableFuture<LSPAny> {
         val requestId = UUID.randomUUID().toString()
-        val result = CompletableFuture<OpenTabResult>()
+        val result = CompletableFuture<LSPAny>()
         val chatManager = ChatCommunicationManager.getInstance(project)
         chatManager.addTabOpenRequest(requestId, result)
 
@@ -185,8 +223,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
                 chosenFile?.let {
                     ShowSaveFileDialogResult(chosenFile.file.path)
-                    // TODO: Add error state shown in chat ui instead of throwing
-                } ?: throw Error("Export failed")
+                } ?: throw ResponseErrorException(ResponseError(ResponseErrorCode.RequestCancelled, "Export cancelled by user", null))
             },
             ApplicationManager.getApplication()::invokeLater
         )
@@ -331,11 +368,12 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                             else -> "Modified"
                         }
                     )
-                    (DiffManager.getInstance() as DiffManagerEx).showDiffBuiltin(project, diffRequest)
+
+                    AmazonQDiffVirtualFile.openDiff(project, diffRequest)
                 } catch (e: Exception) {
                     LOG.warn { "Failed to open file diff: ${e.message}" }
                 } finally {
-                    // Clean up the temporary file
+                    // Clean up the temporary file used for syntax highlight
                     try {
                         tempPath?.let { Files.deleteIfExists(it) }
                     } catch (e: Exception) {
@@ -357,7 +395,38 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         return CompletableFuture.completedFuture(Unit)
     }
 
+    override fun appendFile(params: FileParams) = refreshVfs(params.path)
+
+    override fun createDirectory(params: FileParams) = refreshVfs(params.path)
+
+    override fun removeFile(params: FileParams) = refreshVfs(params.path)
+
+    override fun writeFile(params: FileParams) = refreshVfs(params.path)
+
+    override fun copyFile(params: CopyFileParams) {
+        refreshVfs(params.oldPath)
+        return refreshVfs(params.newPath)
+    }
+
+    private fun refreshVfs(path: String) {
+        val currPath = Paths.get(path)
+        if (currPath.startsWith(localHistoryPath)) return
+        try {
+            ApplicationManager.getApplication().executeOnPooledThread {
+                VfsUtil.markDirtyAndRefresh(false, true, true, currPath.toFile())
+            }
+        } catch (e: Exception) {
+            LOG.warn(e) { "Could not refresh file" }
+        }
+    }
+
     companion object {
+        val localHistoryPath = Paths.get(
+            UserHomeDirectoryUtils.userHomeDirectory(),
+            ".aws",
+            "amazonq",
+            "history"
+        )
         private val LOG = getLogger<AmazonQLanguageClientImpl>()
     }
 }

@@ -4,6 +4,8 @@
 package software.aws.toolkits.jetbrains.services.amazonq.webview
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.module.kotlin.treeToValue
 import com.google.gson.Gson
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.util.RunOnceUtil
@@ -25,21 +27,24 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
 import org.eclipse.lsp4j.TextDocumentIdentifier
+import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.services.amazonq.apps.AppConnection
 import software.aws.toolkits.jetbrains.services.amazonq.commands.MessageSerializer
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLanguageServer
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQChatServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.JsonRpcMethod
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.JsonRpcNotification
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.JsonRpcRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.encryption.JwtEncryptionManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ChatCommunicationManager
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AUTH_FOLLOW_UP_CLICKED
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthFollowUpClickNotification
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickNotification
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ButtonClickResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_BUTTON_CLICK
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_CONVERSATION_CLICK
@@ -62,50 +67,24 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_BAR_ACTIONS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_CHANGE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_TAB_REMOVE
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatNotification
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatPrompt
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatReadyNotification
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ConversationClickRequest
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyCodeToClipboardNotification
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyCodeToClipboardParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CreatePromptNotification
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CreatePromptParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedQuickActionChatParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FeedbackNotification
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FeedbackParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileClickNotification
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileClickParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FollowUpClickNotification
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FollowUpClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResponse
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickNotification
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InfoLinkClickParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InsertToCursorPositionNotification
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.InsertToCursorPositionParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickNotification
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.LinkClickParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ListConversationsRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_SETTINGS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OPEN_WORKSPACE_SETTINGS_KEY
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenSettingsNotification
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResponse
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResult
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResultError
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenTabResultSuccess
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PROMPT_INPUT_OPTIONS_CHANGE
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeNotification
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.PromptInputOptionChangeParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.QuickChatActionRequest
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.STOP_CHAT_RESPONSE
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SendChatPromptRequest
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickNotification
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SourceLinkClickParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.StopResponseMessage
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabBarActionRequest
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TabEventRequest
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.TELEMETRY_EVENT
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
 import software.aws.toolkits.jetbrains.services.amazonq.util.command
@@ -117,6 +96,7 @@ import software.aws.toolkits.jetbrains.settings.MeetQSettings
 import software.aws.toolkits.telemetry.MetricResult
 import software.aws.toolkits.telemetry.Telemetry
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionException
 import java.util.function.Function
 
 class BrowserConnector(
@@ -232,22 +212,18 @@ class BrowserConnector(
         when (node.command) {
             SEND_CHAT_COMMAND_PROMPT -> {
                 val requestFromUi = serializer.deserializeChatMessages<SendChatPromptRequest>(node)
-                val chatPrompt = ChatPrompt(
-                    requestFromUi.params.prompt.prompt,
-                    requestFromUi.params.prompt.escapedPrompt,
-                    node.command
-                )
                 val editor = FileEditorManager.getInstance(project).selectedTextEditor
                 val textDocumentIdentifier = editor?.let { TextDocumentIdentifier(toUriString(it.virtualFile)) }
                 val cursorState = editor?.let { LspEditorUtil.getCursorState(it) }
 
-                val chatParams = ChatParams(
-                    requestFromUi.params.tabId,
-                    chatPrompt,
-                    textDocumentIdentifier,
-                    cursorState,
-                    context = requestFromUi.params.context
+                val enrichmentParams = mapOf(
+                    "textDocument" to textDocumentIdentifier,
+                    "cursorState" to cursorState,
                 )
+
+                val serializedEnrichmentParams = serializer.objectMapper.valueToTree<ObjectNode>(enrichmentParams)
+                val chatParams: ObjectNode = (node as ObjectNode)
+                    .setAll(serializedEnrichmentParams)
 
                 val tabId = requestFromUi.params.tabId
                 val partialResultToken = chatCommunicationManager.addPartialChatMessage(tabId)
@@ -256,8 +232,8 @@ class BrowserConnector(
                 val result = AmazonQLspService.executeIfRunning(project) { server ->
                     encryptionManager = this.encryptionManager
 
-                    val encryptedParams = EncryptedChatParams(this.encryptionManager.encrypt(chatParams), partialResultToken)
-                    server.sendChatPrompt(encryptedParams)
+                    val encryptedParams = EncryptedChatParams(this.encryptionManager.encrypt(chatParams.params), partialResultToken)
+                    rawEndpoint.request(SEND_CHAT_COMMAND_PROMPT, encryptedParams) as CompletableFuture<String>
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
 
                 // We assume there is only one outgoing request per tab because the input is
@@ -265,17 +241,18 @@ class BrowserConnector(
                 chatCommunicationManager.setInflightRequestForTab(tabId, result)
                 showResult(result, partialResultToken, tabId, encryptionManager, browser)
             }
+
             CHAT_QUICK_ACTION -> {
                 val requestFromUi = serializer.deserializeChatMessages<QuickChatActionRequest>(node)
                 val tabId = requestFromUi.params.tabId
-                val quickActionParams = requestFromUi.params
+                val quickActionParams = node.params ?: error("empty payload")
                 val partialResultToken = chatCommunicationManager.addPartialChatMessage(tabId)
                 var encryptionManager: JwtEncryptionManager? = null
                 val result = AmazonQLspService.executeIfRunning(project) { server ->
                     encryptionManager = this.encryptionManager
 
                     val encryptedParams = EncryptedQuickActionChatParams(this.encryptionManager.encrypt(quickActionParams), partialResultToken)
-                    server.sendQuickAction(encryptedParams)
+                    rawEndpoint.request(CHAT_QUICK_ACTION, encryptedParams) as CompletableFuture<String>
                 } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
 
                 // We assume there is only one outgoing request per tab because the input is
@@ -284,139 +261,118 @@ class BrowserConnector(
 
                 showResult(result, partialResultToken, tabId, encryptionManager, browser)
             }
+
             CHAT_LIST_CONVERSATIONS -> {
-                val requestFromUi = serializer.deserializeChatMessages<ListConversationsRequest>(node)
-                val result = AmazonQLspService.executeIfRunning(project) { server ->
-                    server.listConversations(requestFromUi.params)
-                } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
-
-                result.whenComplete { response, _ ->
-                    val uiMessage = """
-                        {
-                            "command": "$CHAT_LIST_CONVERSATIONS",
-                            "params": ${Gson().toJson(response)}
-                        }
-                    """.trimIndent()
-                    browser.postChat(uiMessage)
-                }
+                handleChat(AmazonQChatServer.listConversations, node)
+                    .whenComplete { response, _ ->
+                        browser.postChat(
+                            FlareUiMessage(
+                                command = CHAT_LIST_CONVERSATIONS,
+                                params = response
+                            )
+                        )
+                    }
             }
+
             CHAT_CONVERSATION_CLICK -> {
-                val requestFromUi = serializer.deserializeChatMessages<ConversationClickRequest>(node)
-                val result = AmazonQLspService.executeIfRunning(project) { server ->
-                    server.conversationClick(requestFromUi.params)
-                } ?: (CompletableFuture.failedFuture(IllegalStateException("LSP Server not running")))
+                handleChat(AmazonQChatServer.conversationClick, node)
+                    .whenComplete { response, _ ->
+                        browser.postChat(
+                            FlareUiMessage(
+                                command = CHAT_CONVERSATION_CLICK,
+                                params = response
+                            )
+                        )
+                    }
+            }
 
-                result.whenComplete { response, _ ->
-                    val uiMessage = """
-                        {
-                            "command": "$CHAT_CONVERSATION_CLICK",
-                            "params": ${Gson().toJson(response)}
-                        }
-                    """.trimIndent()
-                    browser.postChat(uiMessage)
-                }
-            }
             CHAT_FEEDBACK -> {
-                handleChatNotification<FeedbackNotification, FeedbackParams>(node) { server, params ->
-                    server.feedback(params)
-                }
+                handleChat(AmazonQChatServer.feedback, node)
             }
+
             CHAT_READY -> {
-                handleChatNotification<ChatReadyNotification, Unit>(node) { server, _ ->
+                handleChat(AmazonQChatServer.chatReady, node) { params, invoke ->
                     uiReady.complete(true)
                     chatCommunicationManager.setUiReady()
                     RunOnceUtil.runOnceForApp("AmazonQ-UI-Ready") {
                         MeetQSettings.getInstance().reinvent2024OnboardingCount += 1
                     }
-                    server.chatReady()
+
+                    invoke()
                 }
             }
+
             CHAT_TAB_ADD -> {
-                handleChatNotification<TabEventRequest, TabEventParams>(node) { server, params ->
-                    server.tabAdd(params)
-                }
+                handleChat(AmazonQChatServer.tabAdd, node)
             }
+
             CHAT_TAB_REMOVE -> {
-                handleChatNotification<TabEventRequest, TabEventParams>(node) { server, params ->
+                handleChat(AmazonQChatServer.tabRemove, node) { params, invoke ->
                     chatCommunicationManager.removePartialChatMessage(params.tabId)
                     cancelInflightRequests(params.tabId)
-                    server.tabRemove(params)
+
+                    invoke()
                 }
             }
+
             CHAT_TAB_CHANGE -> {
-                handleChatNotification<TabEventRequest, TabEventParams>(node) { server, params ->
-                    server.tabChange(params)
-                }
+                handleChat(AmazonQChatServer.tabChange, node)
             }
+
             CHAT_OPEN_TAB -> {
                 val response = serializer.deserializeChatMessages<OpenTabResponse>(node)
-                chatCommunicationManager.completeTabOpen(
-                    response.requestId,
-                    response.params.result.tabId
-                )
+                val future = chatCommunicationManager.removeTabOpenRequest(response.requestId) ?: return
+                try {
+                    val id = serializer.deserializeChatMessages<OpenTabResultSuccess>(node.params).result.tabId
+                    future.complete(OpenTabResult(id))
+                } catch (e: Exception) {
+                    try {
+                        val err = serializer.deserializeChatMessages<OpenTabResultError>(node.params)
+                        future.complete(err.error)
+                    } catch (_: Exception) {
+                        future.completeExceptionally(e)
+                    }
+                }
             }
+
             CHAT_INSERT_TO_CURSOR -> {
-                handleChatNotification<InsertToCursorPositionNotification, InsertToCursorPositionParams>(node) { server, params ->
-                    server.insertToCursorPosition(params)
-                }
+                handleChat(AmazonQChatServer.insertToCursorPosition, node)
             }
+
             CHAT_LINK_CLICK -> {
-                handleChatNotification<LinkClickNotification, LinkClickParams>(node) { server, params ->
-                    server.linkClick(params)
-                }
+                handleChat(AmazonQChatServer.linkClick, node)
             }
+
             CHAT_INFO_LINK_CLICK -> {
-                handleChatNotification<InfoLinkClickNotification, InfoLinkClickParams>(node) { server, params ->
-                    server.infoLinkClick(params)
-                }
+                handleChat(AmazonQChatServer.infoLinkClick, node)
             }
+
             CHAT_SOURCE_LINK_CLICK -> {
-                handleChatNotification<SourceLinkClickNotification, SourceLinkClickParams>(node) { server, params ->
-                    server.sourceLinkClick(params)
-                }
+                handleChat(AmazonQChatServer.sourceLinkClick, node)
             }
+
             CHAT_FILE_CLICK -> {
-                handleChatNotification<FileClickNotification, FileClickParams>(node) { server, params ->
-                    server.fileClick(params)
-                }
+                handleChat(AmazonQChatServer.fileClick, node)
             }
+
             PROMPT_INPUT_OPTIONS_CHANGE -> {
-                handleChatNotification<PromptInputOptionChangeNotification, PromptInputOptionChangeParams>(node) {
-                        server, params ->
-                    server.promptInputOptionsChange(params)
-                }
+                handleChat(AmazonQChatServer.promptInputOptionsChange, node)
             }
-            CHAT_PROMPT_OPTION_ACKNOWLEDGED -> {
-                val acknowledgedMessage = node.get("params").get("messageId")
-                if (acknowledgedMessage.asText() == "programmerModeCardId") {
-                    MeetQSettings.getInstance().amazonQChatPairProgramming = false
-                }
-            }
+
             CHAT_FOLLOW_UP_CLICK -> {
-                handleChatNotification<FollowUpClickNotification, FollowUpClickParams>(node) { server, params ->
-                    server.followUpClick(params)
-                }
+                handleChat(AmazonQChatServer.followUpClick, node)
             }
+
             CHAT_BUTTON_CLICK -> {
-                handleChatNotification<ButtonClickNotification, ButtonClickParams>(node) { server, params ->
-                    server.buttonClick(params)
-                }.thenApply { response ->
+                handleChat(AmazonQChatServer.buttonClick, node).thenApply { response ->
                     if (response is ButtonClickResult && !response.success) {
                         LOG.warn { "Failed to execute action associated with button with reason: ${response.failureReason}" }
                     }
                 }
             }
-            AUTH_FOLLOW_UP_CLICKED -> {
-                val message = serializer.deserializeChatMessages<AuthFollowUpClickNotification>(node)
-                chatCommunicationManager.handleAuthFollowUpClicked(
-                    project,
-                    message.params
-                )
-            }
+
             CHAT_COPY_CODE_TO_CLIPBOARD -> {
-                handleChatNotification<CopyCodeToClipboardNotification, CopyCodeToClipboardParams>(node) { server, params ->
-                    server.copyCodeToClipboard(params)
-                }
+                handleChat(AmazonQChatServer.copyCodeToClipboard, node)
             }
 
             GET_SERIALIZED_CHAT_REQUEST_METHOD -> {
@@ -428,36 +384,40 @@ class BrowserConnector(
             }
 
             CHAT_TAB_BAR_ACTIONS -> {
-                handleChatNotification<TabBarActionRequest, TabBarActionParams>(node) {
-                        server, params ->
-                    val result = server.tabBarActions(params)
-                    result.whenComplete { actions, error ->
-                        try {
-                            if (error != null) {
-                                throw error
-                            }
+                handleChat(AmazonQChatServer.tabBarActions, node) { params, invoke ->
+                    invoke()
+                        .whenComplete { actions, error ->
+                            try {
+                                if (error != null) {
+                                    throw error
+                                }
 
-                            browser.postChat(
-                                FlareUiMessage(
-                                    command = CHAT_TAB_BAR_ACTIONS,
-                                    params = actions ?: emptyMap<Any, Any>()
+                                browser.postChat(
+                                    FlareUiMessage(
+                                        command = CHAT_TAB_BAR_ACTIONS,
+                                        params = actions
+                                    )
                                 )
-                            )
-                        } catch (e: Exception) {
-                            LOG.error { "Failed to perform chat tab bar action $e" }
-                            params.tabId?.let {
-                                browser.postChat(chatCommunicationManager.getErrorUiMessage(it, e, null))
+                            } catch (e: Exception) {
+                                val cause = if (e is CompletionException) e.cause else e
+
+                                // dont post error to UI if user cancels export
+                                if (cause is ResponseErrorException && cause.responseError.code == ResponseErrorCode.RequestCancelled.getValue()) {
+                                    return@whenComplete
+                                }
+                                LOG.error { "Failed to perform chat tab bar action $e" }
+                                params.tabId?.let {
+                                    browser.postChat(chatCommunicationManager.getErrorUiMessage(it, e, null))
+                                }
                             }
                         }
-                    }
                 }
             }
+
             CHAT_CREATE_PROMPT -> {
-                handleChatNotification<CreatePromptNotification, CreatePromptParams>(node) {
-                        server, params ->
-                    server.createPrompt(params)
-                }
+                handleChat(AmazonQChatServer.createPrompt, node)
             }
+
             STOP_CHAT_RESPONSE -> {
                 val stopResponseRequest = serializer.deserializeChatMessages<StopResponseMessage>(node)
                 if (!chatCommunicationManager.hasInflightRequest(stopResponseRequest.params.tabId)) {
@@ -466,12 +426,31 @@ class BrowserConnector(
                 cancelInflightRequests(stopResponseRequest.params.tabId)
                 chatCommunicationManager.removePartialChatMessage(stopResponseRequest.params.tabId)
             }
+
+            AUTH_FOLLOW_UP_CLICKED -> {
+                val message = serializer.deserializeChatMessages<AuthFollowUpClickNotification>(node)
+                chatCommunicationManager.handleAuthFollowUpClicked(
+                    project,
+                    message.params
+                )
+            }
+
+            CHAT_PROMPT_OPTION_ACKNOWLEDGED -> {
+                val acknowledgedMessage = node.params?.get("messageId")
+                if (acknowledgedMessage?.asText() == "programmerModeCardId") {
+                    MeetQSettings.getInstance().pairProgrammingAcknowledged = true
+                }
+            }
+
             OPEN_SETTINGS -> {
                 val openSettingsNotification = serializer.deserializeChatMessages<OpenSettingsNotification>(node)
                 if (openSettingsNotification.params.settingKey != OPEN_WORKSPACE_SETTINGS_KEY) return
                 runInEdt {
                     ShowSettingsUtil.getInstance().showSettingsDialog(browser.project, CodeWhispererConfigurable::class.java)
                 }
+            }
+            TELEMETRY_EVENT -> {
+                handleChat(AmazonQChatServer.telemetryEvent, node)
             }
         }
     }
@@ -492,15 +471,15 @@ class BrowserConnector(
                 val messageToChat = ChatCommunicationManager.convertToJsonToSendToChat(
                     SEND_CHAT_COMMAND_PROMPT,
                     tabId,
-                    encryptionManager?.decrypt(value).orEmpty(),
+                    value?.let { encryptionManager?.decrypt(it) }.orEmpty(),
                     isPartialResult = false
                 )
                 browser.postChat(messageToChat)
                 chatCommunicationManager.removeInflightRequestForTab(tabId)
-            } catch (e: CancellationException) {
+            } catch (_: CancellationException) {
                 LOG.warn { "Cancelled chat generation" }
             } catch (e: Exception) {
-                LOG.error { "Failed to send chat message $e" }
+                LOG.error(e) { "Failed to send chat message" }
                 browser.postChat(chatCommunicationManager.getErrorUiMessage(tabId, e, partialResultToken))
             }
         }
@@ -513,15 +492,49 @@ class BrowserConnector(
         }
     }
 
-    private inline fun <reified T, R> handleChatNotification(
+    private inline fun <reified Request, Response> handleChat(
+        lspMethod: JsonRpcMethod<Request, Response>,
         node: JsonNode,
-        crossinline serverAction: (server: AmazonQLanguageServer, params: R) -> CompletableFuture<*>,
-    ): CompletableFuture<*> where T : ChatNotification<R> {
-        val requestFromUi = serializer.deserializeChatMessages<T>(node)
-        return AmazonQLspService.executeIfRunning(project) { server ->
-            serverAction(server, requestFromUi.params)
-        } ?: CompletableFuture.failedFuture<Unit>(IllegalStateException("LSP Server not running"))
+        crossinline serverAction: (params: Request, invokeService: () -> CompletableFuture<Response>) -> CompletableFuture<Response>,
+    ): CompletableFuture<Response> {
+        val requestFromUi = if (node.params == null) {
+            Unit as Request
+        } else {
+            serializer.deserializeChatMessages<Request>(node.params, lspMethod.params)
+        }
+
+        return AmazonQLspService.executeIfRunning(project) { _ ->
+            val invokeService = when (lspMethod) {
+                is JsonRpcNotification<Request> -> {
+                    // notify is Unit
+                    { CompletableFuture.completedFuture(rawEndpoint.notify(lspMethod.name, node.params?.let { serializer.objectMapper.treeToValue<Any>(it) })) }
+                }
+
+                is JsonRpcRequest<Request, Response> -> {
+                    {
+                        rawEndpoint.request(lspMethod.name, node.params?.let { serializer.objectMapper.treeToValue<Any>(it) }).thenApply {
+                            serializer.objectMapper.readValue(
+                                Gson().toJson(it),
+                                lspMethod.response
+                            )
+                        }
+                    }
+                }
+            } as () -> CompletableFuture<Response>
+            serverAction(requestFromUi, invokeService)
+        } ?: CompletableFuture.failedFuture<Response>(IllegalStateException("LSP Server not running"))
     }
+
+    private inline fun <reified Request, Response> handleChat(
+        lspMethod: JsonRpcMethod<Request, Response>,
+        node: JsonNode,
+    ): CompletableFuture<Response> = handleChat(
+        lspMethod,
+        node,
+    ) { _, invokeService -> invokeService() }
+
+    private val JsonNode.params
+        get() = get("params")
 
     companion object {
         private val LOG = getLogger<BrowserConnector>()

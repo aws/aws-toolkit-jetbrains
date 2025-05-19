@@ -1,0 +1,11 @@
+{
+  "date" : "2025-05-15",
+  "version" : "3.71",
+  "entries" : [ {
+    "type" : "feature",
+    "description" : "Add inline completion support for abap language"
+  }, {
+    "type" : "bugfix",
+    "description" : "Fix UI freezes that may occur when interacting with large files in the editor"
+  } ]
+}

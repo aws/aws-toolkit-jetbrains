@@ -12,6 +12,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiDocumentManager
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.CaretPosition
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.InvocationContext
 import software.aws.toolkits.jetbrains.services.codewhisperer.model.SessionContext
@@ -66,7 +67,9 @@ class CodeWhispererEditorManager {
         }
 
         // Display tab accept priority once when the first accept is made
-        if (!CodeWhispererSettings.getInstance().isTabAcceptPriorityNotificationShownOnce()) {
+        if (!CodeWhispererSettings.getInstance().isTabAcceptPriorityNotificationShownOnce() &&
+            CodeWhispererFeatureConfigService.getInstance().getNewAutoTriggerUX()
+        ) {
             notifyInfo(
                 "Amazon Q",
                 message("codewhisperer.inline.settings.tab_priority.notification.text"),
