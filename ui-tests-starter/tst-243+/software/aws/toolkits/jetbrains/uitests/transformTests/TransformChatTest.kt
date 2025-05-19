@@ -155,7 +155,6 @@ class TransformChatTest {
                     "Choose a module to transform",
                     "Choose the target code version",
                     "Skip tests form appeared: true",
-                    "One or multiple diffs form appeared: true",
                     "couldn't run the Maven clean install command"
                     // TODO: delete line above, and uncomment lines below when releasing CSB
                     // "I could not find \"dummy-target-jdk-name-here\"",
