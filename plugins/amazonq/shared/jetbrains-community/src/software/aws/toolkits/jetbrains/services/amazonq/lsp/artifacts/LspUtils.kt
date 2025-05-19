@@ -3,11 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
-import org.apache.commons.io.FileUtils
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.util.io.DigestUtil
 import com.intellij.util.system.CpuArch
+import org.apache.commons.io.FileUtils
 import software.aws.toolkits.core.utils.ZIP_PROPERTY_POSIX
 import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.exists
