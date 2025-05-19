@@ -141,20 +141,18 @@ class ChatCommunicationManager(private val cs: CoroutineScope) {
         val incomingType = params.authFollowupType
         val connectionManager = ToolkitConnectionManager.getInstance(project)
         try {
-
             when (incomingType) {
                 AuthFollowupType.USE_SUPPORTED_AUTH -> {
                     val activeProfile = QRegionProfileManager.getInstance().activeProfile(project)
-                    if(activeProfile != null) {
+                    if (activeProfile != null) {
                         project.messageBus.syncPublisher(QRegionProfileSelectedListener.TOPIC)
                             .onProfileSelected(project, QRegionProfileManager.getInstance().activeProfile(project))
                     } else {
-                       QRegionProfileDialog(
-                           project,
-                           selectedProfile = null
-                       ).show()
-                   }
-
+                        QRegionProfileDialog(
+                            project,
+                            selectedProfile = null
+                        ).show()
+                    }
 
                     return
                 }
