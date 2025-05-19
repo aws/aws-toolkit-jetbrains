@@ -260,6 +260,7 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
         // After waiting, recursively call this function to check again
         // (in case conditions changed while we were waiting)
         waitForRestartSlot()
+        restartMutex.lock()
     }
 
     suspend fun<T> execute(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T {
