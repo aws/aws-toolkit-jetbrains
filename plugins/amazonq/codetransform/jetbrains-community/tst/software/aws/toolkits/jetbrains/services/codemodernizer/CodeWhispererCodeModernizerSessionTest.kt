@@ -146,7 +146,7 @@ class CodeWhispererCodeModernizerSessionTest : CodeWhispererCodeModernizerTestBa
             root.children[0],
             JavaSdkVersion.JDK_1_8,
             JavaSdkVersion.JDK_11,
-            listOf(EXPLAINABILITY_V1, SELECTIVE_TRANSFORMATION_V1),
+            listOf(EXPLAINABILITY_V1),
             MAVEN_BUILD_SKIP_UNIT_TESTS
         )
         val mockFile = mock(File::class.java)
