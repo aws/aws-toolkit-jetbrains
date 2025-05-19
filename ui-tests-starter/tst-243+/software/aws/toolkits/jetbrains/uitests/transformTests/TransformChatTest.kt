@@ -71,16 +71,6 @@ async function testNavigation() {
                 const button = document.querySelector('button[action-id="codetransform-input-confirm-skip-tests"]')
                 button.click()
             })
-            
-            const oneOrMultipleDiffsForm = await page.waitForSelector('button[action-id="codetransform-input-confirm-one-or-multiple-diffs"]', {
-                timeout: 5000
-            })
-            console.log('One or multiple diffs form appeared:', oneOrMultipleDiffsForm !== null)
-            
-            await page.evaluate(() => {
-                const button = document.querySelector('button[action-id="codetransform-input-confirm-one-or-multiple-diffs"]')
-                button.click()
-            })
 /*
             const selectCustomVersionsForm = await page.waitForSelector('button[action-id="codetransform-input-confirm-custom-dependency-versions"]', {
                 timeout: 5000
@@ -165,7 +155,6 @@ class TransformChatTest {
                     "Choose a module to transform",
                     "Choose the target code version",
                     "Skip tests form appeared: true",
-                    "One or multiple diffs form appeared: true",
                     "couldn't run the Maven clean install command"
                     // TODO: delete line above, and uncomment lines below when releasing CSB
                     // "I could not find \"dummy-target-jdk-name-here\"",
