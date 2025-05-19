@@ -65,6 +65,7 @@ import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_REGION
 import software.aws.toolkits.jetbrains.services.amazonq.FEATURE_EVALUATION_PRODUCT_NAME
+import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.metadata
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonRequest
 import software.aws.toolkits.jetbrains.services.codewhisperer.CodeWhispererTestUtil.pythonResponseWithToken
@@ -189,13 +190,13 @@ class CodeWhispererClientAdaptorTest {
             on { client.listAvailableCustomizationsPaginator(any<ListAvailableCustomizationsRequest>()) } doReturn sdkIterable
         }
 
-        val actual = sut.listAvailableCustomizations()
+        val actual = sut.listAvailableCustomizations(QRegionProfile("fake_profile", "fake arn"))
         assertThat(actual).hasSize(3)
         assertThat(actual).isEqualTo(
             listOf(
-                CodeWhispererCustomization(name = "custom-1", arn = "arn-1"),
-                CodeWhispererCustomization(name = "custom-2", arn = "arn-2"),
-                CodeWhispererCustomization(name = "custom-3", arn = "arn-3")
+                CodeWhispererCustomization(name = "custom-1", arn = "arn-1", profile = QRegionProfile("fake_profile", "fake arn")),
+                CodeWhispererCustomization(name = "custom-2", arn = "arn-2", profile = QRegionProfile("fake_profile", "fake arn")),
+                CodeWhispererCustomization(name = "custom-3", arn = "arn-3", profile = QRegionProfile("fake_profile", "fake arn"))
             )
         )
     }
