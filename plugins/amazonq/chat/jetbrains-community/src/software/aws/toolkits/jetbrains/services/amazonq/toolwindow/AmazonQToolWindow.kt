@@ -8,6 +8,7 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.ToolWindowManager
 import kotlinx.coroutines.CoroutineScope
 import software.aws.toolkits.jetbrains.services.amazonq.onboarding.OnboardingPageInteraction
@@ -24,7 +25,8 @@ class AmazonQToolWindow private constructor(
     val component
         get() = chatPanel.component
 
-    fun recreatePanel() {
+    fun disposeAndRecreatePanel() {
+        Disposer.dispose(chatPanel)
         chatPanel = AmazonQPanel(project, scope)
     }
 

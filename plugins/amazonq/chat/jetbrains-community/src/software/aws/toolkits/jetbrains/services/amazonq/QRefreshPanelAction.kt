@@ -17,7 +17,7 @@ class QRefreshPanelAction : DumbAwareAction(AmazonQBundle.message("amazonq.refre
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         // recreate chat browser
-        AmazonQToolWindow.getInstance(project).recreatePanel()
+        AmazonQToolWindow.getInstance(project).disposeAndRecreatePanel()
         // recreate signin browser
         QWebviewPanel.getInstance(project).disposeAndRecreate()
         RefreshQChatPanelButtonPressedListener.notifyRefresh()

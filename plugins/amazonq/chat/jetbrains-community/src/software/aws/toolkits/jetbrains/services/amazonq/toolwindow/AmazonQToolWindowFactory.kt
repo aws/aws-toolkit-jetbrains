@@ -85,7 +85,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
             object : BearerTokenProviderListener {
                 override fun onChange(providerId: String, newScopes: List<String>?) {
                     if (ToolkitConnectionManager.getInstance(project).connectionStateForFeature(QConnection.getInstance()) == BearerTokenAuthState.AUTHORIZED) {
-                        AmazonQToolWindow.getInstance(project).recreatePanel()
+                        AmazonQToolWindow.getInstance(project).disposeAndRecreatePanel()
                         prepareChatContent(project, qPanel)
                     }
                 }
@@ -98,7 +98,7 @@ class AmazonQToolWindowFactory : ToolWindowFactory, DumbAware {
                 // note we name myProject intentionally ow it will shadow the "project" provided by the IDE
                 override fun onProfileSelected(myProject: Project, profile: QRegionProfile?) {
                     if (project.isDisposed) return
-                    AmazonQToolWindow.getInstance(project).recreatePanel()
+                    AmazonQToolWindow.getInstance(project).disposeAndRecreatePanel()
                     prepareChatContent(project, qPanel)
                 }
             }
