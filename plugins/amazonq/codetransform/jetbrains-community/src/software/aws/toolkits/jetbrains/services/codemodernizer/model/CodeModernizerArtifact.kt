@@ -31,8 +31,7 @@ import kotlin.io.path.walk
 open class CodeModernizerArtifact(
     val zipPath: String,
     val manifest: CodeModernizerManifest,
-    val patches: List<VirtualFile>,
-    val description: List<PatchInfo>?,
+    val patch: VirtualFile,
     val summary: TransformationSummary,
     val summaryMarkdownFile: File,
     val metrics: CodeModernizerMetrics?,
@@ -65,12 +64,11 @@ open class CodeModernizerArtifact(
                     // If not supported we can still try to use it, i.e. the versions should largely be backwards compatible
                     LOG.warn { "Unsupported manifest.json version: ${manifest.version}" }
                 }
-                val description = loadDescription(manifest)
-                val patches = extractPatches(manifest, description)
+                val patch = extractSinglePatch(manifest)
                 val summary = extractSummary(manifest)
                 val summaryMarkdownFile = getSummaryFile(manifest)
                 val metrics = loadMetrics(manifest)
-                return CodeModernizerArtifact(zipPath, manifest, patches, description, summary, summaryMarkdownFile, metrics)
+                return CodeModernizerArtifact(zipPath, manifest, patch, summary, summaryMarkdownFile, metrics)
             }
             throw RuntimeException("Could not find artifact")
         }
@@ -119,28 +117,8 @@ open class CodeModernizerArtifact(
             }
         }
 
-        private fun extractPatches(manifest: CodeModernizerManifest, description: List<PatchInfo>?): List<VirtualFile> {
-            if (description == null) {
-                return extractSinglePatch(manifest)
-            }
-            val fileSystem = LocalFileSystem.getInstance()
-            val patchesDir = tempDir.toPath().resolve(manifest.patchesRoot)
-            if (!patchesDir.isDirectory()) {
-                error("Expected root for patches was not a directory.")
-            }
-            return description.map { patchInfo ->
-                val patchFile = patchesDir.resolve(patchInfo.filename)
-                if (patchFile.toFile().exists()) {
-                    fileSystem.refreshAndFindFileByNioFile(patchFile)
-                        ?: error("Could not find patch: ${patchInfo.filename}")
-                } else {
-                    error("Patch file not found: ${patchInfo.filename}")
-                }
-            }
-        }
-
         @OptIn(ExperimentalPathApi::class)
-        private fun extractSinglePatch(manifest: CodeModernizerManifest): List<VirtualFile> {
+        private fun extractSinglePatch(manifest: CodeModernizerManifest): VirtualFile {
             val fileSystem = LocalFileSystem.getInstance()
             val patchesDir = tempDir.toPath().resolve(manifest.patchesRoot)
             if (!patchesDir.isDirectory()) {
@@ -148,24 +126,7 @@ open class CodeModernizerArtifact(
             }
             return patchesDir.walk()
                 .map { fileSystem.refreshAndFindFileByNioFile(it) ?: throw RuntimeException("Could not find diff.patch") }
-                .toList()
-        }
-
-        private fun loadDescription(manifest: CodeModernizerManifest): List<PatchInfo>? {
-            val patchesDir = tempDir.toPath().resolve(manifest.patchesRoot).toFile()
-            if (!patchesDir.isDirectory) {
-                throw RuntimeException("Expected root for patches was not a directory.")
-            }
-
-            val descriptionFile = patchesDir.listFiles()
-                ?.firstOrNull { it.name.endsWith(".json") }
-
-            if (descriptionFile == null) {
-                // No JSON description file found, return null
-                return null
-            }
-            val descriptionContent: DescriptionContent = MAPPER.readValue<DescriptionContent>(descriptionFile)
-            return descriptionContent.content
+                .toList().first()
         }
     }
 }
