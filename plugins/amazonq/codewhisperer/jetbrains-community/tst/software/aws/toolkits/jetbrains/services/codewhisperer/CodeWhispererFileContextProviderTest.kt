@@ -109,6 +109,7 @@ class CodeWhispererFileContextProviderTest {
             ),
             "Foo.java",
             CodeWhispererJava.INSTANCE,
+            "",
             ""
         )
 
@@ -128,6 +129,7 @@ class CodeWhispererFileContextProviderTest {
             ),
             "Foo.java",
             CodeWhispererJava.INSTANCE,
+            "",
             ""
         )
 
