@@ -255,11 +255,7 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
         LOG.info { "Rate limit reached for LSP server restarts. Waiting ${waitTimeMs}ms for next available slot." }
 
         restartMutex.unlock()
-        try {
-            delay(waitTimeMs.milliseconds)
-        } finally {
-            restartMutex.lock()
-        }
+        delay(waitTimeMs.milliseconds)
 
         // After waiting, recursively call this function to check again
         // (in case conditions changed while we were waiting)
