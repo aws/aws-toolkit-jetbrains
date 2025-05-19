@@ -13,6 +13,7 @@ import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFileManager
 import migration.software.aws.toolkits.jetbrains.settings.AwsSettings
 import org.eclipse.lsp4j.ConfigurationParams
@@ -24,12 +25,15 @@ import org.eclipse.lsp4j.PublishDiagnosticsParams
 import org.eclipse.lsp4j.ShowDocumentParams
 import org.eclipse.lsp4j.ShowDocumentResult
 import org.eclipse.lsp4j.ShowMessageRequestParams
+import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseError
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode
 import org.slf4j.event.Level
+import software.amazon.awssdk.utils.UserHomeDirectoryUtils
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
-import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AsyncChatUiListener
@@ -39,13 +43,14 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_OPEN_TAB
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_CONTEXT_COMMANDS
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_SEND_UPDATE
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CopyFileParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.FileParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GET_SERIALIZED_CHAT_REQUEST_METHOD
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.OpenFileDiffParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ShowSaveFileDialogResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.ConnectionMetadata
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.SsoProfileData
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.TelemetryParsingUtil
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.telemetry.TelemetryService
@@ -170,19 +175,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             val connection = ToolkitConnectionManager.getInstance(project)
                 .activeConnectionForFeature(QConnection.getInstance())
 
-            when (connection) {
-                is AwsBearerTokenConnection -> {
-                    ConnectionMetadata(
-                        SsoProfileData(connection.startUrl)
-                    )
-                }
-                else -> {
-                    // If no connection or not a bearer token connection return default builderID start url
-                    ConnectionMetadata(
-                        SsoProfileData(AmazonQLspConstants.AWS_BUILDER_ID_URL)
-                    )
-                }
-            }
+            connection?.let { ConnectionMetadata.fromConnection(it) }
         }
 
     override fun openTab(params: LSPAny): CompletableFuture<LSPAny> {
@@ -230,8 +223,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
                 chosenFile?.let {
                     ShowSaveFileDialogResult(chosenFile.file.path)
-                    // TODO: Add error state shown in chat ui instead of throwing
-                } ?: throw Error("Export failed")
+                } ?: throw ResponseErrorException(ResponseError(ResponseErrorCode.RequestCancelled, "Export cancelled by user", null))
             },
             ApplicationManager.getApplication()::invokeLater
         )
@@ -403,7 +395,38 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
         return CompletableFuture.completedFuture(Unit)
     }
 
+    override fun appendFile(params: FileParams) = refreshVfs(params.path)
+
+    override fun createDirectory(params: FileParams) = refreshVfs(params.path)
+
+    override fun removeFile(params: FileParams) = refreshVfs(params.path)
+
+    override fun writeFile(params: FileParams) = refreshVfs(params.path)
+
+    override fun copyFile(params: CopyFileParams) {
+        refreshVfs(params.oldPath)
+        return refreshVfs(params.newPath)
+    }
+
+    private fun refreshVfs(path: String) {
+        val currPath = Paths.get(path)
+        if (currPath.startsWith(localHistoryPath)) return
+        try {
+            ApplicationManager.getApplication().invokeLater {
+                VfsUtil.markDirtyAndRefresh(false, true, true, currPath.toFile())
+            }
+        } catch (e: Exception) {
+            LOG.warn(e) { "Could not refresh file" }
+        }
+    }
+
     companion object {
+        val localHistoryPath = Paths.get(
+            UserHomeDirectoryUtils.userHomeDirectory(),
+            ".aws",
+            "amazonq",
+            "history"
+        )
         private val LOG = getLogger<AmazonQLanguageClientImpl>()
     }
 }

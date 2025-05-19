@@ -353,7 +353,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             capabilities = createClientCapabilities()
             clientInfo = createClientInfo()
             workspaceFolders = createWorkspaceFolders(project)
-            initializationOptions = createExtendedClientMetadata()
+            initializationOptions = createExtendedClientMetadata(project)
         }
 
     init {
