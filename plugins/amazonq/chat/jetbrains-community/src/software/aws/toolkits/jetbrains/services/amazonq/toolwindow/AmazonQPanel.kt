@@ -111,13 +111,13 @@ class AmazonQPanel(val project: Project, private val scope: CoroutineScope) : Di
             wrapper.setContent(loadingPanel)
 
             scope.launch {
-                val webUri = service<ArtifactManager>().fetchArtifact(project).resolve("amazonq-ui.js").toUri()
+                val mynahAsset = service<ArtifactManager>().fetchArtifact(project).resolve("amazonq-ui.js")
                 // wait for server to be running
                 AmazonQLspService.getInstance(project).instanceFlow.first()
 
                 withContext(EDT) {
                     browser.complete(
-                        Browser(this@AmazonQPanel, webUri, project).also {
+                        Browser(this@AmazonQPanel, mynahAsset, project).also {
                             wrapper.setContent(it.component())
 
                             initConnections()

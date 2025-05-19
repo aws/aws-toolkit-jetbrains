@@ -9,6 +9,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
+import software.aws.toolkits.core.utils.inputStream
 import software.aws.toolkits.jetbrains.core.webview.LocalAssetJBCefRequestHandler
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
@@ -17,14 +18,14 @@ import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.util.HighlightCommand
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
 import software.aws.toolkits.jetbrains.settings.MeetQSettings
-import java.net.URI
+import java.nio.file.Path
 import java.nio.file.Paths
 
 /*
 Displays the web view for the Amazon Q tool window
  */
 
-class Browser(parent: Disposable, private val webUri: URI, val project: Project) : Disposable {
+class Browser(parent: Disposable, private val mynahAsset: Path, val project: Project) : Disposable {
 
     val jcefBrowser = createBrowser(parent)
 
@@ -127,7 +128,7 @@ class Browser(parent: Disposable, private val webUri: URI, val project: Project)
         // language=HTML
         val jsScripts = """
             <script type="text/javascript" charset="UTF-8" src="$connectorAdapterPath"></script>
-            <script type="text/javascript" charset="UTF-8" src="$webUri" defer onload="init()"></script>
+            <script type="text/javascript" charset="UTF-8" src="${ assetRequestHandler.createResource("amazon-q.js", mynahAsset.inputStream()) }" defer onload="init()"></script>
             
             <script type="text/javascript">
             
