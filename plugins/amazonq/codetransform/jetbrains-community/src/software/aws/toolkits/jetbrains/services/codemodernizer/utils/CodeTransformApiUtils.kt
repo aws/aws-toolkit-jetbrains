@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.intellij.grazie.utils.orFalse
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runWriteAction
@@ -284,6 +285,9 @@ fun findDownloadArtifactProgressUpdate(transformationSteps: List<TransformationS
             update.status().name == "AWAITING_CLIENT_ACTION" &&
                 update.downloadArtifacts()?.firstOrNull()?.downloadArtifactId() != null
         }
+
+// once dependency changes table (key of "1") available, plan is complete
+fun isPlanComplete(plan: TransformationPlan?) = plan?.transformationSteps()?.get(0)?.progressUpdates()?.any { update -> update.name() == "1" }.orFalse()
 
 // "name" holds the ID of the corresponding plan step (where table will go) and "description" holds the plan data
 fun getTableMapping(stepZeroProgressUpdates: List<TransformationProgressUpdate>): Map<String, List<String>> =

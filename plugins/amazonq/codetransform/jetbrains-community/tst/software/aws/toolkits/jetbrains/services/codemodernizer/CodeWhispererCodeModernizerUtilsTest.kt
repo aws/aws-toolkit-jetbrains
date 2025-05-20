@@ -35,6 +35,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.createClien
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getBillingText
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getClientInstructionArtifactId
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getTableMapping
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isPlanComplete
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.parseBuildFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.refreshToken
@@ -250,6 +251,41 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
         assertThat(combinedTable?.rows).hasSize(2)
         assertThat(combinedTable?.name).isEqualTo("Dependency changes")
         assertThat(combinedTable?.columns).hasSize(4)
+    }
+
+    @Test
+    fun `isPlanComplete returns true when plan has progress update with name '1'`() {
+        // Arrange
+        val plan = TransformationPlan.builder()
+            .transformationSteps(listOf(
+                TransformationStep.builder()
+                    .progressUpdates(listOf(
+                        TransformationProgressUpdate.builder()
+                            .name("1")
+                            .build()
+                    ))
+                    .build()
+            ))
+            .build()
+        val result = isPlanComplete(plan)
+        assertThat(result).isTrue()
+    }
+
+    @Test
+    fun `isPlanComplete returns false when plan has no progress update with name '1'`() {
+        val plan = TransformationPlan.builder()
+            .transformationSteps(listOf(
+                TransformationStep.builder()
+                    .progressUpdates(listOf(
+                        TransformationProgressUpdate.builder()
+                            .name("2")
+                            .build()
+                    ))
+                    .build()
+            ))
+            .build()
+        val result = isPlanComplete(plan)
+        assertThat(result).isFalse()
     }
 
     @Test
