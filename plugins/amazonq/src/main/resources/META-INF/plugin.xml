@@ -58,6 +58,8 @@
     <depends>aws.toolkit.core</depends>
     <depends>com.intellij.modules.lang</depends>
 
+    <depends optional="true" config-file="amazonq-ext-codewithme.xml">com.jetbrains.codeWithMe</depends>
+
     <depends optional="true" config-file="amazonq-ext-dart.xml">Dart</depends>
     <depends optional="true" config-file="amazonq-ext-datagrip.xml">com.intellij.database</depends>
     <depends optional="true" config-file="amazonq-ext-go.xml">org.jetbrains.plugins.go</depends>
@@ -97,7 +99,15 @@
         <extensionPoint qualifiedName="software.aws.toolkits.jetbrains.moduleDependencyProvider"
                         interface="software.aws.toolkits.jetbrains.services.amazonq.lsp.dependencies.ModuleDependencyProvider"
                         dynamic="true"/>
+
+        <extensionPoint qualifiedName="software.aws.toolkits.jetbrains.problemsViewMutator"
+                        interface="software.aws.toolkits.jetbrains.ProblemsViewMutator"
+                        dynamic="true" />
     </extensionPoints>
+
+    <extensions defaultExtensionNs="software.aws.toolkits.jetbrains">
+        <problemsViewMutator implementation="software.aws.toolkits.jetbrains.DefaultProblemsViewMutator"/>
+    </extensions>
 
     <xi:include href="/META-INF/module-amazonq.xml" />
 
