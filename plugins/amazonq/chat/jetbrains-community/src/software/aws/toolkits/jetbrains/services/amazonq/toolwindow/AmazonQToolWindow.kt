@@ -24,7 +24,6 @@ class AmazonQToolWindow private constructor(
 
     val component
         get() = chatPanel.component
-
     fun disposeAndRecreate() {
         Disposer.dispose(chatPanel)
         chatPanel = AmazonQPanel(project, scope)
