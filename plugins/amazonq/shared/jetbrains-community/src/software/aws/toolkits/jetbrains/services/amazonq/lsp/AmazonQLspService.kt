@@ -24,12 +24,16 @@ import com.intellij.util.net.HttpConfigurable
 import com.intellij.util.net.JdkProxyProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.future.asCompletableFuture
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -52,6 +56,7 @@ import org.eclipse.lsp4j.jsonrpc.json.JsonRpcMethod
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.slf4j.event.Level
+import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
@@ -128,6 +133,9 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
 
     val encryptionManager
         get() = instance.getCompleted().encryptionManager
+    private val heartbeatJob: Job
+    private val restartTimestamps = ArrayDeque<Long>()
+    private val restartMutex = Mutex() // Separate mutex for restart tracking
 
     val rawEndpoint
         get() = instance.getCompleted().rawEndpoint
@@ -166,9 +174,50 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
 
     init {
         instance = start()
+
+        // Initialize heartbeat job
+        heartbeatJob = cs.launch {
+            while (isActive) {
+                delay(5.seconds) // Check every 5 seconds
+                val shouldLoop = checkConnectionStatus()
+                if (!shouldLoop) {
+                    break
+                }
+            }
+        }
+    }
+
+    private suspend fun checkConnectionStatus(): Boolean {
+        try {
+            val currentInstance = mutex.withLock { instance }.await()
+
+            // Check if the launcher's Future (startListening) is done
+            // If it's done, that means the connection has been terminated
+            if (currentInstance.launcherFuture.isDone) {
+                LOG.debug { "LSP server connection terminated, checking restart limits" }
+                val canRestart = checkForRemainingRestartAttempts()
+                if (!canRestart) {
+                    return false
+                }
+                LOG.debug { "Restarting LSP server" }
+                restart()
+            } else {
+                LOG.debug { "LSP server is currently running" }
+            }
+        } catch (e: Exception) {
+            LOG.debug(e) { "Connection status check failed, checking restart limits" }
+            val canRestart = checkForRemainingRestartAttempts()
+            if (!canRestart) {
+                return false
+            }
+            LOG.debug { "Restarting LSP server" }
+            restart()
+        }
+        return true
     }
 
     override fun dispose() {
+        heartbeatJob.cancel()
     }
 
     suspend fun restart() = mutex.withLock {
@@ -195,6 +244,25 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
         instance = start()
     }
 
+    private suspend fun checkForRemainingRestartAttempts(): Boolean = restartMutex.withLock {
+        val currentTime = System.currentTimeMillis()
+
+        while (restartTimestamps.isNotEmpty() &&
+            currentTime - restartTimestamps.first() > RESTART_WINDOW_MS
+        ) {
+            restartTimestamps.removeFirst()
+        }
+
+        if (restartTimestamps.size < MAX_RESTARTS) {
+            restartTimestamps.addLast(currentTime)
+            return true
+        }
+
+        LOG.info { "Rate limit reached for LSP server restarts. Stop attempting to restart." }
+
+        return false
+    }
+
     suspend fun<T> execute(runnable: suspend AmazonQLspService.(AmazonQLanguageServer) -> T): T {
         val lsp = withTimeout(10.seconds) {
             val holder = mutex.withLock { instance }.await()
@@ -212,6 +280,8 @@ class AmazonQLspService(private val project: Project, private val cs: CoroutineS
 
     companion object {
         private val LOG = getLogger<AmazonQLspService>()
+        private const val MAX_RESTARTS = 5
+        private const val RESTART_WINDOW_MS = 3 * 60 * 1000
         fun getInstance(project: Project) = project.service<AmazonQLspService>()
 
         @Deprecated("Easy to accidentally freeze EDT")
@@ -241,7 +311,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
         get() = launcher.remoteEndpoint
 
     @Suppress("ForbiddenVoid")
-    private val launcherFuture: Future<Void>
+    val launcherFuture: Future<Void>
     private val launcherHandler: KillableProcessHandler
     val initializeResult: Deferred<InitializeResult>
 
@@ -283,7 +353,7 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             capabilities = createClientCapabilities()
             clientInfo = createClientInfo()
             workspaceFolders = createWorkspaceFolders(project)
-            initializationOptions = createExtendedClientMetadata()
+            initializationOptions = createExtendedClientMetadata(project)
         }
 
     init {

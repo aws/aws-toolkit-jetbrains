@@ -3,6 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model
 
+import com.intellij.openapi.project.Project
 import software.aws.toolkits.jetbrains.services.telemetry.ClientMetadata
 
 data class ExtendedClientMetadata(
@@ -12,6 +13,7 @@ data class ExtendedClientMetadata(
 data class AwsMetadata(
     val clientInfo: ClientInfoMetadata,
     val awsClientCapabilities: AwsClientCapabilities,
+    val contextConfiguration: ContextConfiguration?,
 )
 
 data class AwsClientCapabilities(
@@ -39,7 +41,11 @@ data class ExtensionMetadata(
     val version: String,
 )
 
-fun createExtendedClientMetadata(): ExtendedClientMetadata {
+data class ContextConfiguration(
+    val workspaceIdentifier: String?,
+)
+
+fun createExtendedClientMetadata(project: Project): ExtendedClientMetadata {
     val metadata = ClientMetadata.getDefault()
     return ExtendedClientMetadata(
         aws = AwsMetadata(
@@ -59,6 +65,9 @@ fun createExtendedClientMetadata(): ExtendedClientMetadata {
                 window = WindowSettings(
                     showSaveFileDialog = true
                 )
+            ),
+            contextConfiguration = ContextConfiguration(
+                workspaceIdentifier = project.getBasePath()
             )
         )
     )
