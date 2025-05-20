@@ -21,10 +21,9 @@ import software.aws.toolkits.jetbrains.settings.MeetQSettings
 import java.nio.file.Path
 import java.nio.file.Paths
 
-/*
-Displays the web view for the Amazon Q tool window
+/**
+ * Displays the web view for the Amazon Q tool window
  */
-
 class Browser(parent: Disposable, private val mynahAsset: Path, val project: Project) : Disposable {
 
     val jcefBrowser = createBrowser(parent)
@@ -123,13 +122,13 @@ class Browser(parent: Disposable, private val mynahAsset: Path, val project: Pro
     ): String {
         val postMessageToJavaJsCode = receiveMessageQuery.inject("JSON.stringify(message)")
         val connectorAdapterPath = "${LocalAssetJBCefRequestHandler.PROTOCOL}://${LocalAssetJBCefRequestHandler.AUTHORITY}/mynah/js/connectorAdapter.js"
+        val mynahResource = assetRequestHandler.createResource(mynahAsset.fileName.toString(), mynahAsset.inputStream())
         generateQuickActionConfig()
         // https://github.com/highlightjs/highlight.js/issues/1387
         // language=HTML
         val jsScripts = """
             <script type="text/javascript" charset="UTF-8" src="$connectorAdapterPath"></script>
-            <script type="text/javascript" charset="UTF-8" src="${ assetRequestHandler.createResource("amazon-q.js", mynahAsset.inputStream()) }" defer onload="init()"></script>
-            
+            <script type="text/javascript" charset="UTF-8" src="$mynahResource" defer onload="init()"></script>
             <script type="text/javascript">
             
                 const init = () => {
