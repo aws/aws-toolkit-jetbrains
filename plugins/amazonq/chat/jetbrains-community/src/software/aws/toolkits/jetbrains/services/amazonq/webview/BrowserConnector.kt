@@ -455,10 +455,26 @@ class BrowserConnector(
                 handleChat(AmazonQChatServer.telemetryEvent, node)
             }
             LIST_MCP_SERVERS_REQUEST_METHOD -> {
-                println(node)
+                handleChat(AmazonQChatServer.listMcpServers, node)
+                    .whenComplete { response, _ ->
+                        browser.postChat(
+                            FlareUiMessage(
+                                command = LIST_MCP_SERVERS_REQUEST_METHOD,
+                                params = response
+                            )
+                        )
+                    }
             }
             MCP_SERVER_CLICK_REQUEST_METHOD -> {
-                println(node)
+                handleChat(AmazonQChatServer.mcpServerClick, node)
+                    .whenComplete { response, _ ->
+                        browser.postChat(
+                            FlareUiMessage(
+                                command = MCP_SERVER_CLICK_REQUEST_METHOD,
+                                params = response
+                            )
+                        )
+                    }
             }
             else -> {
                 println(node.command)
