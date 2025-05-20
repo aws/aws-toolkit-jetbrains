@@ -95,12 +95,10 @@ class InlineChatPopupPanel(private val parentDisposable: Disposable) : JPanel() 
     override fun getPreferredSize(): Dimension = Dimension(popupWidth, popupHeight)
 
     private fun createTextField(): JTextField = JTextField().apply {
-        val editorColorsScheme = EditorColorsManager.getInstance().globalScheme
         preferredSize = Dimension(popupInputWidth, popupInputHeight)
         border = IdeBorderFactory.createRoundedBorder().apply {
             setColor(POPUP_BUTTON_BORDER)
         }
-        font = Font(editorColorsScheme.editorFontName, Font.PLAIN, editorColorsScheme.editorFontSize)
     }
 
     private fun createButton(text: String): JButton = JButton(text).apply {
