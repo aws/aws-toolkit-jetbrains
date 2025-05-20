@@ -51,6 +51,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.STATES_AFTE
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTotalLatency
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getModuleOrProjectNameForFile
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.getPathToHilDependencyReportDir
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isPlanComplete
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isValidCodeTransformConnection
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.pollTransformationStatusAndPlan
 import software.aws.toolkits.jetbrains.services.codemodernizer.utils.toTransformationLanguage
@@ -477,10 +478,12 @@ class CodeModernizerSession(
                     }
                 }
 
-                // Open the transformation plan detail panel once transformation plan is available (no plan for SQL conversions)
-                if (transformType != CodeTransformType.SQL_CONVERSION && state.transformationPlan != null && !isTransformationPlanEditorOpened) {
-                    tryOpenTransformationPlanEditor()
-                    isTransformationPlanEditorOpened = true
+                if (!isTransformationPlanEditorOpened && transformType == CodeTransformType.LANGUAGE_UPGRADE) {
+                    val isPlanComplete = isPlanComplete(state.transformationPlan)
+                    if (isPlanComplete) {
+                        tryOpenTransformationPlanEditor()
+                        isTransformationPlanEditorOpened = true
+                    }
                 }
                 val instant = Instant.now()
                 // Set the job start time
