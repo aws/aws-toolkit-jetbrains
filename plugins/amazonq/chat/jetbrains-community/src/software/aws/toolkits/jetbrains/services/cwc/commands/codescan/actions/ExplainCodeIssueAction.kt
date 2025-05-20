@@ -29,14 +29,14 @@ class ExplainCodeIssueAction : AnAction(), DumbAware {
                 // https://github.com/aws/aws-toolkit-vscode/blob/master/packages/amazonq/src/lsp/chat/commands.ts#L30
                 val codeSelection = "\n```\n${issueContext["code"]?.trimIndent()?.trim()}\n```\n"
 
-                val prompt = "Explain the following part of my code \n\n " +
+                val prompt = "Explain the issue \n\n " +
                     "Issue:    \"${issueContext["title"]}\" \n" +
                     "Code:    $codeSelection"
 
-                val modelPrompt = "Explain the following part of my code \n\n " +
+                val modelPrompt = "Explain the issue ${issueContext["title"]} \n\n " +
                     "Issue:    \"${issueContext["title"]}\" \n" +
                     "Description:    ${issueContext["description"]} \n" +
-                    "Code:    $codeSelection and generate code demonstrating the fix"
+                    "Code:    $codeSelection and generate the code demonstrating the fix"
 
                 val params = SendToPromptParams(
                     selection = codeSelection,
