@@ -47,6 +47,7 @@ data class FileContextInfo(
     val filename: String,
     val programmingLanguage: CodeWhispererProgrammingLanguage,
     val fileRelativePath: String?,
+    val fileUri: String?,
 )
 
 data class RecommendationContext(
