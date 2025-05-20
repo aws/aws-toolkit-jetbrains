@@ -3,11 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
-import com.intellij.openapi.util.registry.Registry
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.intellij.openapi.util.registry.Registry
 import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.deleteIfExists
 import software.aws.toolkits.core.utils.error
@@ -31,11 +31,10 @@ class ManifestFetcher(
 
         private val DEFAULT_MANIFEST_URL = getManifestEndpoint()
 
-        private fun getManifestEndpoint() : String {
+        private fun getManifestEndpoint(): String {
             val endpoint = Registry.get("amazon.q.flare.endpoint").asString()
             return endpoint.ifBlank { "https://aws-toolkit-language-servers.amazonaws.com/qAgenticChatServer/0/manifest.json" }
         }
-
 
         private val DEFAULT_MANIFEST_PATH: Path = getToolkitsCommonCacheRoot()
             .resolve("aws")
