@@ -38,6 +38,7 @@ const val DID_REMOVE_FILE = "aws/didRemoveFileOrDirectory"
 const val DID_CREATE_DIRECTORY = "aws/didCreateDirectory"
 
 const val GET_SERIALIZED_CHAT_REQUEST_METHOD = "aws/chat/getSerializedChat"
+const val GENERIC_COMMAND = "genericCommand"
 
 const val OPEN_FILE_DIFF = "aws/openFileDiff"
 const val OPEN_SETTINGS = "openSettings"
@@ -47,4 +48,5 @@ const val PROMPT_INPUT_OPTIONS_CHANGE = "aws/chat/promptInputOptionChange"
 const val SEND_CHAT_COMMAND_PROMPT = "aws/chat/sendChatPrompt"
 const val SHOW_SAVE_FILE_DIALOG_REQUEST_METHOD = "aws/showSaveFileDialog"
 const val STOP_CHAT_RESPONSE = "stopChatResponse"
+const val SEND_TO_PROMPT = "sendToPrompt"
 const val TELEMETRY_EVENT = "telemetry/event"
