@@ -973,8 +973,8 @@ class CodeWhispererCodeScanManager(val project: Project, private val defaultScop
         val codeScanTreeModel = CodeWhispererCodeScanTreeModel(codeScanTreeNodeRoot)
         val totalIssuesCount = codeScanTreeModel.getTotalIssuesCount()
         if (totalIssuesCount > 0) {
-            withToolWindow {
-                it.contentManager.contents.filter { it.isCodeScanView() }
+            withToolWindow { problemsWindow ->
+                problemsWindow.contentManager.contents.filter { it.isCodeScanView() }
                     .forEach {
                         it.displayName = message("codewhisperer.codescan.scan_display_with_issues", totalIssuesCount, INACTIVE_TEXT_COLOR)
                     }

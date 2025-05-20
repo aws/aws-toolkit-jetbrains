@@ -14,7 +14,6 @@ class CwmProblemsViewMutator : ProblemsViewMutator {
             host.getToolWindow(ProblemsView.ID)?.let {
                 runnable(it)
             }
-
         }
     }
 }
