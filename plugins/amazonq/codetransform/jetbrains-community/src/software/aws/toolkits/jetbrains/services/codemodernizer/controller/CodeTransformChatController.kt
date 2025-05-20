@@ -422,7 +422,6 @@ class CodeTransformChatController(
         val transformCapabilities = listOf(EXPLAINABILITY_V1, CLIENT_SIDE_BUILD, SELECTIVE_TRANSFORMATION_V2)
         codeModernizerManager.codeTransformationSession?.let {
             it.sessionContext.transformCapabilities = transformCapabilities
-            codeModernizerManager.runLocalMavenBuild(context.project, it)
         }
         promptForCustomYamlFile()
     }
