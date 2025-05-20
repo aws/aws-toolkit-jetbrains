@@ -8,7 +8,7 @@ import { ChatItem, MynahIcons } from '@aws/mynah-ui-chat'
 export const disclaimerAcknowledgeButtonId = 'amazonq-disclaimer-acknowledge-button-id'
 export const disclaimerCard: Partial<ChatItem> = {
     messageId: 'amazonq-disclaimer-card',
-    body: 'Amazon Q Developer uses generative AI. You may need to verify responses. See the [AWS Responsible AI Policy](https://aws.amazon.com/machine-learning/responsible-ai/policy/). Amazon Q Developer processes data across all US Regions. See [here](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/cross-region-inference.html) for more info. Amazon Q may retain chats to provide and maintain the service.',
+    body: 'Amazon Q Developer uses generative AI. You may need to verify responses. See the [AWS Responsible AI Policy](https://aws.amazon.com/machine-learning/responsible-ai/policy/). Amazon Q may retain chats to provide and maintain the service. For information on the AWS Regions where Amazon Q may perform inference, see [the documentation](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/cross-region-processing.html#cross-region-inference).',
     buttons: [
         {
             text: 'Acknowledge',
