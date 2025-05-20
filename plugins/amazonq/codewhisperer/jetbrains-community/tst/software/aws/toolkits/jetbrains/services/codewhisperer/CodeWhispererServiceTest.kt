@@ -75,7 +75,7 @@ class CodeWhispererServiceTest : CodeWhispererTestBase() {
                 "main.java",
                 CodeWhispererJava.INSTANCE,
                 "main.java",
-                "temp:///src/main.java"
+                file.virtualFile.url
             )
         )
     }
