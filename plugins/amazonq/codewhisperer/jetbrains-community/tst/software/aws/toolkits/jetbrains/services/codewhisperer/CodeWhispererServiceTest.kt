@@ -74,7 +74,8 @@ class CodeWhispererServiceTest : CodeWhispererTestBase() {
                 CaretContext(leftFileContext = "", rightFileContext = "public class Main {}", leftContextOnCurrentLine = ""),
                 "main.java",
                 CodeWhispererJava.INSTANCE,
-                "main.java"
+                "main.java",
+                "temp:///src/main.java"
             )
         )
     }
