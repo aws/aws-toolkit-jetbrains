@@ -10,7 +10,6 @@ import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler
 import com.intellij.openapi.editor.actionSystem.EditorActionManager
-import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.IdeBorderFactory
 import icons.AwsIcons
@@ -18,7 +17,6 @@ import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhisperer
 import software.aws.toolkits.resources.AmazonQBundle.message
 import java.awt.BorderLayout
 import java.awt.Dimension
-import java.awt.Font
 import javax.swing.BorderFactory
 import javax.swing.JButton
 import javax.swing.JLabel
