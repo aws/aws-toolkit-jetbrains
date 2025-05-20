@@ -1,13 +1,18 @@
 // Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-
+@file:Suppress("BannedImports")
 package software.aws.toolkits.jetbrains.services.amazonq.webview
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.google.gson.Gson
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.CefApp
+import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.AwsServerCapabilitiesProvider
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.FlareUiMessage
 import software.aws.toolkits.jetbrains.services.amazonq.profile.QRegionProfile
 import software.aws.toolkits.jetbrains.services.amazonq.util.HighlightCommand
 import software.aws.toolkits.jetbrains.services.amazonq.util.createBrowser
@@ -17,7 +22,8 @@ import java.net.URI
 /*
 Displays the web view for the Amazon Q tool window
  */
-class Browser(parent: Disposable, private val webUri: URI) : Disposable {
+
+class Browser(parent: Disposable, private val webUri: URI, val project: Project) : Disposable {
 
     val jcefBrowser = createBrowser(parent)
 
@@ -40,7 +46,15 @@ class Browser(parent: Disposable, private val webUri: URI) : Disposable {
                 AssetResourceHandler.AssetResourceHandlerFactory(),
             )
 
-        loadWebView(isCodeTransformAvailable, isFeatureDevAvailable, isDocAvailable, isCodeScanAvailable, isCodeTestAvailable, highlightCommand, activeProfile)
+        loadWebView(
+            isCodeTransformAvailable,
+            isFeatureDevAvailable,
+            isDocAvailable,
+            isCodeScanAvailable,
+            isCodeTestAvailable,
+            highlightCommand,
+            activeProfile
+        )
     }
 
     override fun dispose() {
@@ -49,17 +63,14 @@ class Browser(parent: Disposable, private val webUri: URI) : Disposable {
 
     fun component() = jcefBrowser.component
 
+    fun postChat(command: FlareUiMessage) = postChat(Gson().toJson(command))
+
+    @Deprecated("shouldn't need this version")
     fun postChat(message: String) {
         jcefBrowser
             .cefBrowser
             .executeJavaScript("window.postMessage($message)", jcefBrowser.cefBrowser.url, 0)
     }
-
-    // TODO: Remove this once chat has been integrated with agents
-    fun post(message: String) =
-        jcefBrowser
-            .cefBrowser
-            .executeJavaScript("window.postMessage(JSON.stringify($message))", jcefBrowser.cefBrowser.url, 0)
 
     // Load the chat web app into the jcefBrowser
     private fun loadWebView(
@@ -102,10 +113,33 @@ class Browser(parent: Disposable, private val webUri: URI) : Disposable {
         activeProfile: QRegionProfile?,
     ): String {
         val postMessageToJavaJsCode = receiveMessageQuery.inject("JSON.stringify(message)")
+        val connectorAdapterPath = "http://mynah/js/connectorAdapter.js"
+        generateQuickActionConfig()
+        // https://github.com/highlightjs/highlight.js/issues/1387
+        // language=HTML
         val jsScripts = """
-            <script type="text/javascript" src="$webUri" defer onload="init()"></script>
+            <script type="text/javascript" charset="UTF-8" src="$connectorAdapterPath"></script>
+            <script type="text/javascript" charset="UTF-8" src="$webUri" defer onload="init()"></script>
+            
             <script type="text/javascript">
+            
                 const init = () => {
+                    const hybridChatConnector = connectorAdapter.initiateAdapter(
+                     ${MeetQSettings.getInstance().reinvent2024OnboardingCount < MAX_ONBOARDING_PAGE_COUNT},
+                     ${MeetQSettings.getInstance().disclaimerAcknowledged},
+                     $isFeatureDevAvailable,
+                     $isCodeTransformAvailable,
+                     $isDocAvailable,
+                     $isCodeScanAvailable,
+                     $isCodeTestAvailable,
+                     {
+                            postMessage: message => {
+                                $postMessageToJavaJsCode
+                            }
+                        },
+                    
+                     "${activeProfile?.profileName.orEmpty()}")
+                    const commands = [hybridChatConnector.initialQuickActions[0], hybridChatConnector.initialQuickActions[1]]
                     amazonQChat.createChat(
                         {
                             postMessage: message => {
@@ -113,9 +147,13 @@ class Browser(parent: Disposable, private val webUri: URI) : Disposable {
                             }
                         }, 
                         {
-                        quickActionCommands: [],
-                        disclaimerAcknowledged: ${MeetQSettings.getInstance().disclaimerAcknowledged}
-                        }
+                        agenticMode: true,
+                        quickActionCommands: commands,
+                        disclaimerAcknowledged: ${MeetQSettings.getInstance().disclaimerAcknowledged},
+                        pairProgrammingAcknowledged: ${MeetQSettings.getInstance().pairProgrammingAcknowledged}
+                        },
+                        hybridChatConnector,
+                        ${CodeWhispererFeatureConfigService.getInstance().getFeatureConfigJsonString()}                     
                     );
                 }
             </script>        
@@ -219,6 +257,10 @@ class Browser(parent: Disposable, private val webUri: URI) : Disposable {
         highlightCommand
         activeProfile
     }
+
+    private fun generateQuickActionConfig() = AwsServerCapabilitiesProvider.getInstance(project).getChatOptions().quickActions.quickActionsCommandGroups
+        .let { OBJECT_MAPPER.writeValueAsString(it) }
+        ?: "[]"
 
     companion object {
         private const val MAX_ONBOARDING_PAGE_COUNT = 3

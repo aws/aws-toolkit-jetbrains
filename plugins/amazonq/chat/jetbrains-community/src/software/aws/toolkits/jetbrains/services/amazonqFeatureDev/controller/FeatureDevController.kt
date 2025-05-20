@@ -75,8 +75,6 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.session.Sessio
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.storage.ChatSessionStorage
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.InsertAction
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.util.getFollowUpOptions
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.QFeatureEvent
-import software.aws.toolkits.jetbrains.services.codewhisperer.telemetry.broadcastQEvent
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.content
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.FeedbackComment
 import software.aws.toolkits.jetbrains.services.cwc.controller.chat.telemetry.getStartUrl
@@ -219,7 +217,6 @@ class FeatureDevController(
         logger.debug { "$FEATURE_NAME: Processing InsertCodeAtCursorPosition: $message" }
 
         withContext(EDT) {
-            broadcastQEvent(QFeatureEvent.STARTS_EDITING)
             val editor: Editor = FileEditorManager.getInstance(context.project).selectedTextEditor ?: return@withContext
 
             val caret: Caret = editor.caretModel.primaryCaret
@@ -231,7 +228,6 @@ class FeatureDevController(
                 }
                 editor.document.insertString(offset, message.code)
             }
-            broadcastQEvent(QFeatureEvent.FINISHES_EDITING)
         }
     }
 
@@ -544,7 +540,8 @@ class FeatureDevController(
     }
 
     private suspend fun handleDevCommandUserSetting(tabId: String, value: Boolean) {
-        CodeWhispererSettings.getInstance().toggleAutoBuildFeature(context.project.basePath, value)
+        val session = getSessionInfo(tabId)
+        CodeWhispererSettings.getInstance().toggleAutoBuildFeature(session.context.workspaceRoot.path, value)
         messenger.sendAnswer(
             tabId = tabId,
             message = message("amazonqFeatureDev.chat_message.setting_updated"),
@@ -750,7 +747,6 @@ class FeatureDevController(
             }
 
             session.preloader(messenger)
-            broadcastQEvent(QFeatureEvent.INVOCATION)
 
             when (session.sessionState.phase) {
                 SessionStatePhase.CODEGEN -> onCodeGeneration(session, message, tabId)

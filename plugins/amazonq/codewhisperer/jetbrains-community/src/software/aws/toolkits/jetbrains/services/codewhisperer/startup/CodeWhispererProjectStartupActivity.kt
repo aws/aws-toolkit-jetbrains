@@ -13,7 +13,6 @@ import software.aws.toolkits.jetbrains.core.coroutines.projectCoroutineScope
 import software.aws.toolkits.jetbrains.services.amazonq.CodeWhispererFeatureConfigService
 import software.aws.toolkits.jetbrains.services.amazonq.calculateIfIamIdentityCenterConnection
 import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
-import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.CodeWhispererExplorerActionManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isUserBuilderId
@@ -79,18 +78,16 @@ class CodeWhispererProjectStartupActivity : StartupActivity.DumbAware {
         projectCoroutineScope(project).launch {
             while (isActive) {
                 CodeWhispererFeatureConfigService.getInstance().fetchFeatureConfigs(project)
-                CodeWhispererFeatureConfigService.getInstance().getCustomizationFeature()?.let { customization ->
+                CodeWhispererFeatureConfigService.getInstance().getCustomizationFeature()?.let { overrideContext ->
                     val persistedCustomizationOverride = CodeWhispererModelConfigurator.getInstance().getPersistedCustomizationOverride()
-                    val latestCustomizationOverride = customization.value.stringValue()
+                    val latestCustomizationOverride = overrideContext.value.stringValue()
                     if (persistedCustomizationOverride == latestCustomizationOverride) return@let
 
                     // latest is different from the currently persisted, need update
-                    CodeWhispererFeatureConfigService.getInstance().validateCustomizationOverride(project, customization)
-                    CodeWhispererModelConfigurator.getInstance().switchCustomization(
-                        project,
-                        CodeWhispererCustomization(arn = customization.value.stringValue(), name = customization.variation),
-                        isOverride = true
-                    )
+                    val customization = CodeWhispererFeatureConfigService.getInstance().validateCustomizationOverride(project, overrideContext)
+                    if (customization != null) {
+                        CodeWhispererModelConfigurator.getInstance().switchCustomization(project, customization, isOverride = true)
+                    }
                 }
 
                 delay(FEATURE_CONFIG_POLL_INTERVAL_IN_MS)

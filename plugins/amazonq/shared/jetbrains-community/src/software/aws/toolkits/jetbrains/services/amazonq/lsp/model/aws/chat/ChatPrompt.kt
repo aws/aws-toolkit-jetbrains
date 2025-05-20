@@ -3,10 +3,13 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat
 
+import com.fasterxml.jackson.annotation.JsonProperty
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat.ContextCommand
+
 data class ChatPrompt(
     val prompt: String,
     val escapedPrompt: String,
-    val command: String,
+    val command: String?,
 )
 
 data class SendChatPromptRequest(
@@ -17,10 +20,17 @@ data class SendChatPromptRequest(
 data class MidChatPrompt(
     val prompt: InnerChatPrompt,
     val tabId: String,
+    val context: List<ContextCommand>?,
 )
 
 data class InnerChatPrompt(
     val prompt: String,
     val escapedPrompt: String,
-    val context: List<String>,
+    val context: List<ContextCommand>? = null,
+    val options: InnerChatOptions?,
+)
+
+data class InnerChatOptions(
+    @JsonProperty("pair-programmer-mode")
+    val pairProgrammingMode: String?,
 )

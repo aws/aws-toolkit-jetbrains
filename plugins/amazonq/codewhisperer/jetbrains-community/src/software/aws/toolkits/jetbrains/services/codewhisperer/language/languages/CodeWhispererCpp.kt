@@ -11,8 +11,6 @@ class CodeWhispererCpp private constructor() : CodeWhispererProgrammingLanguage(
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Cpp
 
-    override fun isCodeCompletionSupported(): Boolean = true
-
     override fun isAutoFileScanSupported(): Boolean = true
 
     companion object {

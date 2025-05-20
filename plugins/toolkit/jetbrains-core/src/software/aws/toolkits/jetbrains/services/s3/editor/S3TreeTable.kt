@@ -160,7 +160,7 @@ class S3TreeTable(
         TreeSpeedSearch.installOn(
             tree,
             false,
-            Function<TreePath, String> { obj ->
+            Function<TreePath, String?> { obj ->
                 val node = obj.lastPathComponent as DefaultMutableTreeNode
                 val userObject = node.userObject as? S3TreeNode ?: return@Function null
                 return@Function if (userObject !is S3TreeContinuationNode<*>) {

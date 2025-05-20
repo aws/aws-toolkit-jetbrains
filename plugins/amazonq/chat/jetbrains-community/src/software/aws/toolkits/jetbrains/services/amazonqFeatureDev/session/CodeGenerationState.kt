@@ -13,6 +13,7 @@ import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.EmptyPatchExce
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FEATURE_NAME
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FeatureDevOperation
+import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.FileCreationFailedException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.GuardrailsException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.NoChangeRequiredException
 import software.aws.toolkits.jetbrains.services.amazonqFeatureDev.PromptRefusalException
@@ -260,6 +261,10 @@ private suspend fun CodeGenerationState.generateCode(
                     -> throw PromptRefusalException(operation = FeatureDevOperation.GenerateCode.toString(), desc = "Prompt refusal")
                     codeGenerationResultState.codeGenerationStatusDetail()?.contains(
                         "EmptyPatch",
+                    ),
+                    -> throw FileCreationFailedException(operation = FeatureDevOperation.GenerateCode.toString(), desc = "File creation failed")
+                    codeGenerationResultState.codeGenerationStatusDetail()?.contains(
+                        "FileCreationFailed",
                     ),
                     -> {
                         if (codeGenerationResultState.codeGenerationStatusDetail().contains("NO_CHANGE_REQUIRED")) {

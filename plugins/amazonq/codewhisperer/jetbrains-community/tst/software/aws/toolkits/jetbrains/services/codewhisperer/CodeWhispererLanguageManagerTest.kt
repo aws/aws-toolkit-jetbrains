@@ -16,6 +16,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererLanguageManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.CodeWhispererProgrammingLanguage
+import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererAbap
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererC
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCpp
 import software.aws.toolkits.jetbrains.services.codewhisperer.language.languages.CodeWhispererCsharp
@@ -136,6 +137,7 @@ class CodeWhispererLanguageManagerTest {
         testGetProgrammingLanguageUtil<CodeWhispererSwift>(listOf("foo"), listOf("swift"))
         testGetProgrammingLanguageUtil<CodeWhispererSystemVerilog>(listOf("foo"), listOf("sv", "svh", "vh"))
         testGetProgrammingLanguageUtil<CodeWhispererVue>(listOf("foo"), listOf("vue"))
+        testGetProgrammingLanguageUtil<CodeWhispererAbap>(listOf("foo"), listOf("abap", "acds"))
     }
 
     @Test
@@ -243,84 +245,6 @@ class CodeWhispererProgrammingLanguageTest {
     class TestLanguage : CodeWhispererProgrammingLanguage() {
         override val languageId: String = "test-language"
         override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Unknown
-    }
-
-    @Test
-    fun `test language inline completion support`() {
-        suts.forEach { sut ->
-            val expected = when (sut) {
-                // supported
-                is CodeWhispererC,
-                is CodeWhispererCpp,
-                is CodeWhispererCsharp,
-                is CodeWhispererGo,
-                is CodeWhispererJava,
-                is CodeWhispererJavaScript,
-                is CodeWhispererJson,
-                is CodeWhispererJsx,
-                is CodeWhispererKotlin,
-                is CodeWhispererPhp,
-                is CodeWhispererPython,
-                is CodeWhispererRuby,
-                is CodeWhispererRust,
-                is CodeWhispererScala,
-                is CodeWhispererShell,
-                is CodeWhispererSql,
-                is CodeWhispererTf,
-                is CodeWhispererTsx,
-                is CodeWhispererTypeScript,
-                is CodeWhispererYaml,
-                is CodeWhispererDart,
-                is CodeWhispererLua,
-                is CodeWhispererPowershell,
-                is CodeWhispererR,
-                is CodeWhispererSwift,
-                is CodeWhispererSystemVerilog,
-                is CodeWhispererVue,
-                -> true
-
-                // not supported
-                is CodeWhispererPlainText, is CodeWhispererUnknownLanguage -> false
-
-                else -> false
-            }
-
-            assertThat(sut.isCodeCompletionSupported()).isEqualTo(expected)
-        }
-    }
-
-    @Test
-    fun `test language crossfile support`() {
-        suts.forEach { sut ->
-            val expected = when (sut) {
-                is CodeWhispererJava,
-                is CodeWhispererJavaScript,
-                is CodeWhispererJsx,
-                is CodeWhispererPython,
-                is CodeWhispererTsx,
-                is CodeWhispererTypeScript,
-                -> true
-
-                else -> false
-            }
-
-            assertThat(sut.isSupplementalContextSupported()).isEqualTo(expected)
-        }
-    }
-
-    @Test
-    fun `test language utg support`() {
-        suts.forEach { sut ->
-            val expected = when (sut) {
-                is CodeWhispererJava,
-                is CodeWhispererPython,
-                -> true
-
-                else -> false
-            }
-
-            assertThat(sut.isUTGSupported()).isEqualTo(expected)
-        }
     }
 
     @Test

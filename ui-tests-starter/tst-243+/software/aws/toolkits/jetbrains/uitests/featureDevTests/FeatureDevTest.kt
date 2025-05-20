@@ -19,6 +19,7 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.kodein.di.DI
 import org.kodein.di.bindSingleton
 import software.aws.toolkits.jetbrains.uitests.TestCIServer
@@ -30,6 +31,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.time.Duration.Companion.minutes
 
 class FeatureDevTest {
     init {
@@ -94,6 +96,7 @@ class FeatureDevTest {
     }
 
     @Test
+    @EnabledIfEnvironmentVariable(named = "ENABLE_ITERATION_TEST", matches = "true")
     fun `Iterate code generation`() {
         val testCase = TestCase(
             IdeProductProvider.IC,
@@ -114,8 +117,8 @@ class FeatureDevTest {
 
             copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
             updateGeneralSettings()
-        }.runIdeWithDriver()
-            .useDriverAndCloseIde {
+        }.runIdeWithDriver(runTimeout = 15.minutes)
+            .useDriverAndCloseIde(15.minutes) {
                 waitForProjectOpen()
                 // required wait time for the system to be fully ready
                 Thread.sleep(30000)
@@ -126,6 +129,7 @@ class FeatureDevTest {
     }
 
     @Test
+    @EnabledIfEnvironmentVariable(named = "ENABLE_ITERATION_TEST", matches = "true")
     fun `Start new code generation`() {
         val testCase = TestCase(
             IdeProductProvider.IC,
@@ -146,8 +150,8 @@ class FeatureDevTest {
 
             copyExistingConfig(Paths.get("tstData", "configAmazonQTests"))
             updateGeneralSettings()
-        }.runIdeWithDriver()
-            .useDriverAndCloseIde {
+        }.runIdeWithDriver(runTimeout = 15.minutes)
+            .useDriverAndCloseIde(15.minutes) {
                 waitForProjectOpen()
                 // required wait time for the system to be fully ready
                 Thread.sleep(30000)

@@ -16,7 +16,7 @@ val ideProfile = IdeVersions.ideProfile(project)
 val toolkitVersion: String by project
 
 // please check changelog generation logic if this format is changed
-version = "$toolkitVersion-${ideProfile.shortName}"
+version = "$toolkitVersion.${ideProfile.shortName}"
 
 // attach the current commit hash on local builds
 if (!project.isCi()) {
@@ -54,7 +54,7 @@ configurations {
 
     // Make sure we exclude stuff we either A) ships with IDE, B) we don't use to cut down on size
     runtimeClasspath {
-        exclude(group = "org.slf4j")
+        exclude(group = "com.google.code.gson")
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.jetbrains.kotlinx")
     }

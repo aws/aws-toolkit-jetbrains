@@ -13,10 +13,12 @@ enum class CssVariable(
     FontFamily("--mynah-font-family"),
 
     TextColorDefault("--mynah-color-text-default"),
+    TextColorAlt("--mynah-color-text-alternate"),
     TextColorStrong("--mynah-color-text-strong"),
     TextColorWeak("--mynah-color-text-weak"),
     TextColorLink("--mynah-color-text-link"),
     TextColorInput("--mynah-color-text-input"),
+    TextColorDisabled("--mynah-color-text-disabled"),
 
     Background("--mynah-color-bg"),
     BackgroundAlt("--mynah-color-bg-alt"),
@@ -25,7 +27,7 @@ enum class CssVariable(
     ColorDeep("--mynah-color-deep"),
     ColorDeepReverse("--mynah-color-deep-reverse"),
     BorderDefault("--mynah-color-border-default"),
-    InputBackground("--mynah-color-input-bg"),
+    InputBackground("--mynah-input-bg"),
 
     SyntaxBackground("--mynah-color-syntax-bg"),
     SyntaxVariable("--mynah-color-syntax-variable"),
@@ -36,6 +38,9 @@ enum class CssVariable(
     SyntaxProperty("--mynah-color-syntax-property"),
     SyntaxComment("--mynah-color-syntax-comment"),
     SyntaxCode("--mynah-color-syntax-code"),
+    SyntaxKeyword("--mynah-color-syntax-keyword"),
+    SyntaxString("--mynah-color-syntax-string"),
+    SyntaxClassName("--mynah-color-syntax-class-name"),
     SyntaxCodeFontFamily("--mynah-syntax-code-font-family"),
     SyntaxCodeFontSize("--mynah-syntax-code-font-size"),
 
@@ -50,10 +55,9 @@ enum class CssVariable(
     SecondaryButtonBackground("--mynah-color-alternate"),
     SecondaryButtonForeground("--mynah-color-alternate-reverse"),
 
-    CodeText("--mynah-color-code-text"),
-
     MainBackground("--mynah-color-main"),
     MainForeground("--mynah-color-main-reverse"),
 
     CardBackground("--mynah-card-bg"),
+    CardBackgroundAlt("--mynah-card-bg-alternate"),
 }

@@ -74,7 +74,6 @@ dependencies {
 
         // FIX_WHEN_MIN_IS_251: https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1774
         when (providers.gradleProperty("ideProfileName").get()) {
-            "2023.3", "2024.1" -> {}
             "2024.2", "2024.3", "2025.1" -> {
                 bundledModule("intellij.rider")
             }
@@ -389,7 +388,7 @@ tasks.withType<DetektCreateBaselineTask>().configureEach {
 }
 
 configurations.all {
-    if (name.contains("detekt")) {
+    if (name.contains("detekt") || name.contains("kotlinCompiler") || name.contains("rdGen")) {
         return@all
     }
 

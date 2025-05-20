@@ -11,8 +11,6 @@ class CodeWhispererYaml private constructor() : CodeWhispererProgrammingLanguage
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Yaml
 
-    override fun isCodeCompletionSupported(): Boolean = true
-
     override fun isAutoFileScanSupported(): Boolean = true
 
     override fun lineCommentPrefix(): String = "#"

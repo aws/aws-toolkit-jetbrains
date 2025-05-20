@@ -8,11 +8,13 @@ import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 import org.eclipse.lsp4j.services.LanguageServer
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.GetConfigurationFromServerParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LogInlineCompletionSessionResultsParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LspServerConfigurations
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.UpdateConfigurationParams
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.EncryptedChatParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentials.UpdateCredentialsPayload
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.dependencies.DidChangeDependencyPathsParams
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionListWithReferences
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.textDocument.InlineCompletionWithReferencesParams
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -20,6 +22,12 @@ import java.util.concurrent.CompletableFuture
  */
 @Suppress("unused")
 interface AmazonQLanguageServer : LanguageServer {
+    @JsonRequest("aws/textDocument/inlineCompletionWithReferences")
+    fun inlineCompletionWithReferences(params: InlineCompletionWithReferencesParams): CompletableFuture<InlineCompletionListWithReferences>
+
+    @JsonNotification("aws/logInlineCompletionSessionResults")
+    fun logInlineCompletionSessionResults(params: LogInlineCompletionSessionResultsParams): CompletableFuture<Unit>
+
     @JsonNotification("aws/didChangeDependencyPaths")
     fun didChangeDependencyPaths(params: DidChangeDependencyPathsParams): CompletableFuture<Unit>
 
@@ -34,7 +42,4 @@ interface AmazonQLanguageServer : LanguageServer {
 
     @JsonRequest("aws/updateConfiguration")
     fun updateConfiguration(params: UpdateConfigurationParams): CompletableFuture<LspServerConfigurations>
-
-    @JsonRequest("aws/chat/sendChatPrompt")
-    fun sendChatPrompt(params: EncryptedChatParams): CompletableFuture<String>
 }
