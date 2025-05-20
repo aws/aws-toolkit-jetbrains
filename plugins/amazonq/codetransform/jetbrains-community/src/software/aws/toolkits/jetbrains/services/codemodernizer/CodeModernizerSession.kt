@@ -479,7 +479,7 @@ class CodeModernizerSession(
                     }
                 }
 
-                if (!isTransformationPlanEditorOpened) {
+                if (!isTransformationPlanEditorOpened && transformType == CodeTransformType.LANGUAGE_UPGRADE) {
                     val isPlanComplete = isPlanComplete(state.transformationPlan)
                     if (isPlanComplete) {
                         tryOpenTransformationPlanEditor()
