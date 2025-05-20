@@ -7,6 +7,7 @@ import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.util.io.DigestUtil
 import com.intellij.util.system.CpuArch
+import org.apache.commons.io.FileUtils
 import software.aws.toolkits.core.utils.ZIP_PROPERTY_POSIX
 import software.aws.toolkits.core.utils.createParentDirectories
 import software.aws.toolkits.core.utils.exists
@@ -68,7 +69,8 @@ fun getSubFolders(basePath: Path): List<Path> = try {
 fun moveFilesFromSourceToDestination(sourceDir: Path, targetDir: Path) {
     try {
         Files.createDirectories(targetDir.parent)
-        Files.move(sourceDir, targetDir, StandardCopyOption.REPLACE_EXISTING)
+        // NIO move does not work when copying across mount points (i.e. /tmp is on tmpfs)
+        FileUtils.moveDirectory(sourceDir.toFile(), targetDir.toFile())
     } catch (e: Exception) {
         throw IllegalStateException("Failed to move files from $sourceDir to $targetDir", e)
     }
