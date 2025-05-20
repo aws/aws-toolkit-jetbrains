@@ -257,15 +257,19 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
     fun `isPlanComplete returns true when plan has progress update with name '1'`() {
         // Arrange
         val plan = TransformationPlan.builder()
-            .transformationSteps(listOf(
-                TransformationStep.builder()
-                    .progressUpdates(listOf(
-                        TransformationProgressUpdate.builder()
-                            .name("1")
-                            .build()
-                    ))
-                    .build()
-            ))
+            .transformationSteps(
+                listOf(
+                    TransformationStep.builder()
+                        .progressUpdates(
+                            listOf(
+                                TransformationProgressUpdate.builder()
+                                    .name("1")
+                                    .build()
+                            )
+                        )
+                        .build()
+                )
+            )
             .build()
         val result = isPlanComplete(plan)
         assertThat(result).isTrue()
@@ -274,15 +278,19 @@ class CodeWhispererCodeModernizerUtilsTest : CodeWhispererCodeModernizerTestBase
     @Test
     fun `isPlanComplete returns false when plan has no progress update with name '1'`() {
         val plan = TransformationPlan.builder()
-            .transformationSteps(listOf(
-                TransformationStep.builder()
-                    .progressUpdates(listOf(
-                        TransformationProgressUpdate.builder()
-                            .name("2")
-                            .build()
-                    ))
-                    .build()
-            ))
+            .transformationSteps(
+                listOf(
+                    TransformationStep.builder()
+                        .progressUpdates(
+                            listOf(
+                                TransformationProgressUpdate.builder()
+                                    .name("2")
+                                    .build()
+                            )
+                        )
+                        .build()
+                )
+            )
             .build()
         val result = isPlanComplete(plan)
         assertThat(result).isFalse()
