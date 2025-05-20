@@ -11,7 +11,7 @@ data class PlanTable(
     @JsonProperty("columnNames")
     val columns: List<String>,
     @JsonProperty("rows")
-    val rows: List<PlanTableRow>,
+    val rows: MutableList<PlanTableRow>,
     @JsonProperty("name")
     val name: String,
 )
