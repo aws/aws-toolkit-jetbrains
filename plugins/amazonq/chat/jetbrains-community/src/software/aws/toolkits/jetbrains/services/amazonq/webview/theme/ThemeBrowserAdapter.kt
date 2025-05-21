@@ -42,10 +42,10 @@ class ThemeBrowserAdapter {
         append(CssVariable.TextColorWeak, theme.inactiveText)
         append(CssVariable.TextColorDisabled, theme.inactiveText)
 
-        append(CssVariable.Background, theme.background)
+        append(CssVariable.Background, theme.editorBackground)
         append(CssVariable.BackgroundAlt, theme.background)
         append(CssVariable.CardBackground, theme.editorBackground)
-        append(CssVariable.CardBackgroundAlt, theme.editorBackground)
+        append(CssVariable.CardBackgroundAlt, theme.background)
         append(CssVariable.BorderDefault, theme.border)
         append(CssVariable.TabActive, theme.activeTab)
 
