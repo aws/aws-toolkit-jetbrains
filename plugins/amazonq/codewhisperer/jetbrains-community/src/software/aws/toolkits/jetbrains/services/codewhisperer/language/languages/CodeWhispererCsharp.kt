@@ -11,8 +11,6 @@ class CodeWhispererCsharp private constructor() : CodeWhispererProgrammingLangua
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Csharp
 
-    override fun isCodeCompletionSupported(): Boolean = true
-
     override fun isAutoFileScanSupported(): Boolean = true
 
     companion object {

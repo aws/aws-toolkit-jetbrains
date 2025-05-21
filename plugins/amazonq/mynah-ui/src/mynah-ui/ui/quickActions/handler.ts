@@ -8,9 +8,10 @@ import { TabDataGenerator } from '../tabs/generator'
 import { Connector } from '../connector'
 import { Tab, TabsStorage } from '../storages/tabsStorage'
 import { uiComponentsTexts } from '../texts/constants'
+import { MynahUIRef } from "../main";
 
 export interface QuickActionsHandlerProps {
-    mynahUI: MynahUI
+    mynahUIRef: MynahUIRef
     connector: Connector
     tabsStorage: TabsStorage
     isFeatureDevEnabled: boolean
@@ -18,10 +19,11 @@ export interface QuickActionsHandlerProps {
     isDocEnabled: boolean
     isCodeScanEnabled: boolean
     isCodeTestEnabled: boolean
+    hybridChat?: boolean
 }
 
 export class QuickActionHandler {
-    private mynahUI: MynahUI
+    private mynahUIRef: MynahUIRef
     private connector: Connector
     private tabsStorage: TabsStorage
     private tabDataGenerator: TabDataGenerator
@@ -30,9 +32,10 @@ export class QuickActionHandler {
     public isDocEnabled: boolean
     public isCodeScanEnabled: boolean
     public isCodeTestEnabled: boolean
+    private isHybridChatEnabled: boolean
 
     constructor(props: QuickActionsHandlerProps) {
-        this.mynahUI = props.mynahUI
+        this.mynahUIRef = props.mynahUIRef
         this.connector = props.connector
         this.tabsStorage = props.tabsStorage
         this.tabDataGenerator = new TabDataGenerator({
@@ -47,6 +50,7 @@ export class QuickActionHandler {
         this.isDocEnabled = props.isDocEnabled
         this.isCodeScanEnabled = props.isCodeScanEnabled
         this.isCodeTestEnabled = props.isCodeTestEnabled
+        this.isHybridChatEnabled = props.hybridChat ?? false
     }
 
     // Entry point for `/xxx` commands
@@ -85,10 +89,10 @@ export class QuickActionHandler {
         // Check for existing opened transform tab
         const existingTransformTab = this.tabsStorage.getTabs().find((tab) => tab.type === 'codetransform')
         if (existingTransformTab !== undefined) {
-            this.mynahUI.selectTab(existingTransformTab.id, eventId || "")
+            this.mynahUI?.selectTab(existingTransformTab.id, eventId || "")
             this.connector.onTabChange(existingTransformTab.id)
 
-            this.mynahUI.notify({
+            this.mynahUI?.notify({
                 title: "Q - Transform",
                 content: "Switched to the opened transformation tab",
             });
@@ -96,12 +100,9 @@ export class QuickActionHandler {
         }
 
         // Add new tab
-        let affectedTabId: string | undefined = tabID
-        if (this.tabsStorage.getTab(affectedTabId)?.type !== 'unknown') {
-            affectedTabId = this.mynahUI.updateStore('', {cancelButtonWhenLoading: false})
-        }
+        const affectedTabId: string | undefined = this.addTab(tabID)
         if (affectedTabId === undefined) {
-            this.mynahUI.notify({
+            this.mynahUI?.notify({
                 content: uiComponentsTexts.noMoreTabsTooltip,
                 type: NotificationType.WARNING,
             })
@@ -110,9 +111,9 @@ export class QuickActionHandler {
             this.tabsStorage.updateTabTypeFromUnknown(affectedTabId, 'codetransform')
             this.connector.onKnownTabOpen(affectedTabId)
             // Clear unknown tab type's welcome message
-            this.mynahUI.updateStore(affectedTabId, {chatItems: []})
-            this.mynahUI.updateStore(affectedTabId, this.tabDataGenerator.getTabData('codetransform', true))
-            this.mynahUI.updateStore(affectedTabId, {
+            this.mynahUI?.updateStore(affectedTabId, {chatItems: []})
+            this.mynahUI?.updateStore(affectedTabId, this.tabDataGenerator.getTabData('codetransform', true))
+            this.mynahUI?.updateStore(affectedTabId, {
                 promptInputDisabledState: true,
                 promptInputPlaceholder: 'Open a new tab to chat with Q.',
                 loadingChat: true,
@@ -126,7 +127,7 @@ export class QuickActionHandler {
     }
 
     private handleClearCommand(tabID: string) {
-        this.mynahUI.updateStore(tabID, {
+        this.mynahUI?.updateStore(tabID, {
             chatItems: [],
         })
         this.connector.clearChat(tabID)
@@ -146,13 +147,11 @@ export class QuickActionHandler {
             return
         }
 
-        let affectedTabId: string | undefined = tabID
+        const affectedTabId: string | undefined = this.addTab(tabID)
         const realPromptText = chatPrompt.escapedPrompt?.trim() ?? ''
-        if (this.tabsStorage.getTab(affectedTabId)?.type !== 'unknown') {
-            affectedTabId = this.mynahUI.updateStore('', {})
-        }
+
         if (affectedTabId === undefined) {
-            this.mynahUI.notify({
+            this.mynahUI?.notify({
                 content: uiComponentsTexts.noMoreTabsTooltip,
                 type: NotificationType.WARNING,
             })
@@ -162,14 +161,14 @@ export class QuickActionHandler {
             this.connector.onKnownTabOpen(affectedTabId)
             this.connector.onUpdateTabType(affectedTabId)
 
-            this.mynahUI.updateStore(affectedTabId, { chatItems: [] })
-            this.mynahUI.updateStore(
+            this.mynahUI?.updateStore(affectedTabId, { chatItems: [] })
+            this.mynahUI?.updateStore(
                 affectedTabId,
                 this.tabDataGenerator.getTabData('featuredev', false, taskName)
             )
 
             const addInformationCard = (tabId: string) => {
-                this.mynahUI.addChatItem(tabId, {
+                this.mynahUI?.addChatItem(tabId, {
                     type: ChatItemType.ANSWER,
                     informationCard: {
                         title: "Feature development",
@@ -191,19 +190,19 @@ export class QuickActionHandler {
             };
 
             if (realPromptText !== '') {
-                this.mynahUI.addChatItem(affectedTabId, {
+                this.mynahUI?.addChatItem(affectedTabId, {
                     type: ChatItemType.PROMPT,
                     body: realPromptText,
                 })
 
                 addInformationCard(affectedTabId)
 
-                this.mynahUI.addChatItem(affectedTabId, {
+                this.mynahUI?.addChatItem(affectedTabId, {
                     type: ChatItemType.ANSWER_STREAM,
                     body: '',
                 })
 
-                this.mynahUI.updateStore(affectedTabId, {
+                this.mynahUI?.updateStore(affectedTabId, {
                     loadingChat: true,
                     promptInputDisabledState: true,
                 })
@@ -222,15 +221,12 @@ private handleDocCommand(chatPrompt: ChatPrompt, tabID: string, taskName: string
             return
         }
 
-        let affectedTabId: string | undefined = tabID
+        const affectedTabId: string | undefined = this.addTab(tabID)
         const realPromptText = chatPrompt.escapedPrompt?.trim() ?? ''
 
-        if (this.tabsStorage.getTab(affectedTabId)?.type !== 'unknown') {
-            affectedTabId = this.mynahUI.updateStore('', {})
-        }
 
         if (affectedTabId === undefined) {
-            this.mynahUI.notify({
+            this.mynahUI?.notify({
                 content: uiComponentsTexts.noMoreTabsTooltip,
                 type: NotificationType.WARNING,
             })
@@ -240,9 +236,9 @@ private handleDocCommand(chatPrompt: ChatPrompt, tabID: string, taskName: string
             this.connector.onKnownTabOpen(affectedTabId)
             this.connector.onUpdateTabType(affectedTabId)
 
-            this.mynahUI.updateStore(affectedTabId, { chatItems: [] })
+            this.mynahUI?.updateStore(affectedTabId, { chatItems: [] })
 
-            this.mynahUI.updateStore(
+            this.mynahUI?.updateStore(
                 affectedTabId, {
                     ...this.tabDataGenerator.getTabData('doc', realPromptText === '', taskName),
                     promptInputDisabledState: true
@@ -250,12 +246,12 @@ private handleDocCommand(chatPrompt: ChatPrompt, tabID: string, taskName: string
             )
 
             if (realPromptText !== '') {
-                this.mynahUI.addChatItem(affectedTabId, {
+                this.mynahUI?.addChatItem(affectedTabId, {
                     type: ChatItemType.PROMPT,
                     body: realPromptText,
                 })
 
-                this.mynahUI.updateStore(affectedTabId, {
+                this.mynahUI?.updateStore(affectedTabId, {
                     loadingChat: true,
                     promptInputDisabledState: true,
                 })
@@ -268,11 +264,11 @@ private handleDocCommand(chatPrompt: ChatPrompt, tabID: string, taskName: string
     }
 
     private showScanInTab( tabId: string) {
-        this.mynahUI.addChatItem(tabId, {
+        this.mynahUI?.addChatItem(tabId, {
             type: ChatItemType.PROMPT,
             body: "Run a code review",
         })
-        this.mynahUI.addChatItem(tabId, {
+        this.mynahUI?.addChatItem(tabId, {
             type: ChatItemType.ANSWER,
             informationCard: {
                 title: "/review",
@@ -298,10 +294,10 @@ private handleDocCommand(chatPrompt: ChatPrompt, tabID: string, taskName: string
         // Check for existing opened code scan tab
         const existingCodeScanTab = this.tabsStorage.getTabs().find(tab => tab.type === 'codescan')
         if (existingCodeScanTab !== undefined ) {
-            this.mynahUI.selectTab(existingCodeScanTab.id, eventId || "")
+            this.mynahUI?.selectTab(existingCodeScanTab.id, eventId || "")
             this.connector.onTabChange(existingCodeScanTab.id)
 
-            this.mynahUI.notify({
+            this.mynahUI?.notify({
                 title: "Q - Review",
                 content: "Switched to the opened code review tab"
             });
@@ -310,12 +306,10 @@ private handleDocCommand(chatPrompt: ChatPrompt, tabID: string, taskName: string
         }
 
         // Add new tab
-        let affectedTabId: string | undefined = tabID
-        if (this.tabsStorage.getTab(affectedTabId)?.type !== 'unknown') {
-            affectedTabId = this.mynahUI.updateStore('', {})
-        }
+        const affectedTabId: string | undefined = this.addTab(tabID)
+
         if (affectedTabId === undefined) {
-            this.mynahUI.notify({
+            this.mynahUI?.notify({
                 content: uiComponentsTexts.noMoreTabsTooltip,
                 type: NotificationType.WARNING
             })
@@ -324,9 +318,9 @@ private handleDocCommand(chatPrompt: ChatPrompt, tabID: string, taskName: string
             this.tabsStorage.updateTabTypeFromUnknown(affectedTabId, 'codescan')
             this.connector.onKnownTabOpen(affectedTabId)
             // Clear unknown tab type's welcome message
-            this.mynahUI.updateStore(affectedTabId, {chatItems: []})
-            this.mynahUI.updateStore(affectedTabId, this.tabDataGenerator.getTabData('codescan', true))
-            this.mynahUI.updateStore(affectedTabId, {
+            this.mynahUI?.updateStore(affectedTabId, {chatItems: []})
+            this.mynahUI?.updateStore(affectedTabId, this.tabDataGenerator.getTabData('codescan', true))
+            this.mynahUI?.updateStore(affectedTabId, {
                 promptInputDisabledState: true,
                 promptInputPlaceholder: 'Waiting on your inputs...',
                 loadingChat: true,
@@ -337,28 +331,31 @@ private handleDocCommand(chatPrompt: ChatPrompt, tabID: string, taskName: string
         this.showScanInTab(affectedTabId)
     }
 
-    private handleCodeTestCommand(chatPrompt: ChatPrompt, tabID: string, eventId: string | undefined) {
+    private handleCodeTestCommand(chatPrompt: ChatPrompt, tabID: string | undefined, eventId: string | undefined) {
         if (!this.isCodeTestEnabled) {
             return
         }
         const testTabId = this.tabsStorage.getTabs().find((tab) => tab.type === 'codetest')?.id
         const realPromptText = chatPrompt.escapedPrompt?.trim() ?? ''
         if (testTabId !== undefined) {
-            this.mynahUI.selectTab(testTabId, eventId || '')
+            this.mynahUI?.selectTab(testTabId, eventId || '')
             this.connector.onTabChange(testTabId)
             this.connector.startTestGen(testTabId, realPromptText)
             return
         }
-        let affectedTabId: string | undefined = tabID
+        /**
+         * right click -> generate test has no tab id
+         * we have to manually create one if a testgen tab
+         * wasn't previously created
+         */
+        if (!tabID) {
+            tabID = this.mynahUI?.updateStore('', {})
+        }
+        const affectedTabId: string | undefined = this.addTab(tabID)
 
         // if there is no test tab, open a new one
-        if (this.tabsStorage.getTab(affectedTabId)?.type !== 'unknown') {
-            affectedTabId = this.mynahUI.updateStore('', {
-                loadingChat: true,
-            })
-        }
         if (affectedTabId === undefined) {
-            this.mynahUI.notify({
+            this.mynahUI?.notify({
                 content: uiComponentsTexts.noMoreTabsTooltip,
                 type: NotificationType.WARNING,
             })
@@ -368,17 +365,49 @@ private handleDocCommand(chatPrompt: ChatPrompt, tabID: string, taskName: string
             this.connector.onKnownTabOpen(affectedTabId)
             this.connector.onUpdateTabType(affectedTabId)
             // reset chat history
-            this.mynahUI.updateStore(affectedTabId, {
+            this.mynahUI?.updateStore(affectedTabId, {
                 chatItems: [],
             })
 
             // creating a new tab and printing some title
-            this.mynahUI.updateStore(
+            this.mynahUI?.updateStore(
                  affectedTabId,
                  this.tabDataGenerator.getTabData('codetest', realPromptText === '', 'Q - Test')
              )
 
             this.connector.startTestGen(affectedTabId, realPromptText)
         }
+    }
+
+    // Ref: https://github.com/aws/aws-toolkit-vscode/blob/e9ea8082ffe0b9968a873437407d0b6b31b9e1a5/packages/core/src/amazonq/webview/ui/quickActions/handler.ts#L345
+    private addTab(affectedTabId: string | undefined) {
+        if (!affectedTabId || !this.mynahUI) {
+            return
+        }
+
+        const currTab = this.mynahUI.getAllTabs()[affectedTabId]
+        const currTabWasUsed =
+            (currTab.store?.chatItems?.filter((item) => item.type === ChatItemType.PROMPT).length ?? 0) > 0
+        if (currTabWasUsed) {
+            affectedTabId = this.mynahUI.updateStore('', {
+                loadingChat: true,
+                cancelButtonWhenLoading: false,
+            })
+        }
+
+        if (affectedTabId && this.isHybridChatEnabled) {
+            this.tabsStorage.addTab({
+                id: affectedTabId,
+                type: 'unknown',
+                status: 'free',
+                isSelected: true,
+            })
+        }
+
+        return affectedTabId
+    }
+
+    private get mynahUI(): MynahUI | undefined {
+        return this.mynahUIRef.mynahUI
     }
 }

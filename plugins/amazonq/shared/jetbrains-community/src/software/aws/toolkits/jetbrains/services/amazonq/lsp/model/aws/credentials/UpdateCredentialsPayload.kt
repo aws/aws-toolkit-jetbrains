@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.credentia
 
 data class UpdateCredentialsPayload(
     val data: String,
+    val metadata: ConnectionMetadata,
     val encrypted: Boolean,
 )
 
