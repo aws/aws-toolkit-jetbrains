@@ -26,31 +26,35 @@ import org.eclipse.lsp4j.FileChangeType
 import org.eclipse.lsp4j.FileCreate
 import org.eclipse.lsp4j.FileDelete
 import org.eclipse.lsp4j.FileEvent
+import org.eclipse.lsp4j.FileOperationFilter
 import org.eclipse.lsp4j.FileRename
+import org.eclipse.lsp4j.InitializeResult
 import org.eclipse.lsp4j.RenameFilesParams
 import org.eclipse.lsp4j.TextDocumentIdentifier
 import org.eclipse.lsp4j.TextDocumentItem
 import org.eclipse.lsp4j.WorkspaceFolder
 import org.eclipse.lsp4j.WorkspaceFoldersChangeEvent
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.AmazonQLspService
-import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.FileUriUtil.toUriString
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.LspEditorUtil.toUriString
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.util.WorkspaceFolderUtil.createWorkspaceFolders
 import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 import java.nio.file.FileSystems
+import java.nio.file.PathMatcher
 import java.nio.file.Paths
 
 class WorkspaceServiceHandler(
     private val project: Project,
+    initializeResult: InitializeResult,
     serverInstance: Disposable,
 ) : BulkFileListener,
     ModuleRootListener {
 
     private var lastSnapshot: List<WorkspaceFolder> = emptyList()
-    private val supportedFilePatterns = FileSystems.getDefault().getPathMatcher(
-        "glob:**/*.{ts,js,py,java}"
-    )
+    private val operationMatchers: MutableMap<FileOperationType, List<Pair<PathMatcher, String>>> = mutableMapOf()
 
     init {
+        operationMatchers.putAll(initializePatterns(initializeResult))
+
         project.messageBus.connect(serverInstance).subscribe(
             VirtualFileManager.VFS_CHANGES,
             this
@@ -62,12 +66,46 @@ class WorkspaceServiceHandler(
         )
     }
 
+    enum class FileOperationType {
+        CREATE,
+        DELETE,
+        RENAME,
+    }
+
+    private fun initializePatterns(initializeResult: InitializeResult): Map<FileOperationType, List<Pair<PathMatcher, String>>> {
+        val patterns = mutableMapOf<FileOperationType, List<Pair<PathMatcher, String>>>()
+
+        initializeResult.capabilities?.workspace?.fileOperations?.let { fileOps ->
+            patterns[FileOperationType.CREATE] = createMatchers(fileOps.didCreate?.filters)
+            patterns[FileOperationType.DELETE] = createMatchers(fileOps.didDelete?.filters)
+            patterns[FileOperationType.RENAME] = createMatchers(fileOps.didRename?.filters)
+        }
+
+        return patterns
+    }
+
+    private fun createMatchers(filters: List<FileOperationFilter>?): List<Pair<PathMatcher, String>> =
+        filters?.map { filter ->
+            FileSystems.getDefault().getPathMatcher("glob:${filter.pattern.glob}") to filter.pattern.matches
+        }.orEmpty()
+
+    private fun shouldHandleFile(file: VirtualFile, operation: FileOperationType): Boolean {
+        val matchers = operationMatchers[operation] ?: return false
+        return matchers.any { (matcher, type) ->
+            when (type) {
+                "file" -> !file.isDirectory && matcher.matches(Paths.get(file.path))
+                "folder" -> file.isDirectory && matcher.matches(Paths.get(file.path))
+                else -> matcher.matches(Paths.get(file.path))
+            }
+        }
+    }
+
     private fun didCreateFiles(events: List<VFileEvent>) {
         AmazonQLspService.executeIfRunning(project) { languageServer ->
             val validFiles = events.mapNotNull { event ->
                 when (event) {
                     is VFileCopyEvent -> {
-                        val newFile = event.newParent.findChild(event.newChildName)?.takeIf { shouldHandleFile(it) }
+                        val newFile = event.newParent.findChild(event.newChildName)?.takeIf { shouldHandleFile(it, FileOperationType.CREATE) }
                             ?: return@mapNotNull null
                         toUriString(newFile)?.let { uri ->
                             FileCreate().apply {
@@ -76,7 +114,7 @@ class WorkspaceServiceHandler(
                         }
                     }
                     else -> {
-                        val file = event.file?.takeIf { shouldHandleFile(it) }
+                        val file = event.file?.takeIf { shouldHandleFile(it, FileOperationType.CREATE) }
                             ?: return@mapNotNull null
                         toUriString(file)?.let { uri ->
                             FileCreate().apply {
@@ -102,11 +140,11 @@ class WorkspaceServiceHandler(
             val validFiles = events.mapNotNull { event ->
                 when (event) {
                     is VFileDeleteEvent -> {
-                        val file = event.file.takeIf { shouldHandleFile(it) } ?: return@mapNotNull null
+                        val file = event.file.takeIf { shouldHandleFile(it, FileOperationType.DELETE) } ?: return@mapNotNull null
                         toUriString(file)
                     }
                     is VFileMoveEvent -> {
-                        val oldFile = event.oldParent?.takeIf { shouldHandleFile(it) } ?: return@mapNotNull null
+                        val oldFile = event.oldParent?.takeIf { shouldHandleFile(it, FileOperationType.DELETE) } ?: return@mapNotNull null
                         toUriString(oldFile)
                     }
                     else -> null
@@ -132,7 +170,7 @@ class WorkspaceServiceHandler(
             val validRenames = events
                 .filter { it.propertyName == VirtualFile.PROP_NAME }
                 .mapNotNull { event ->
-                    val renamedFile = event.file.takeIf { shouldHandleFile(it) } ?: return@mapNotNull null
+                    val renamedFile = event.file.takeIf { shouldHandleFile(it, FileOperationType.RENAME) } ?: return@mapNotNull null
                     val oldFileName = event.oldValue as? String ?: return@mapNotNull null
                     val parentFile = renamedFile.parent ?: return@mapNotNull null
 
@@ -274,14 +312,5 @@ class WorkspaceServiceHandler(
 
             lastSnapshot = currentSnapshot
         }
-    }
-
-    private fun shouldHandleFile(file: VirtualFile): Boolean {
-        if (file.isDirectory) {
-            return true // Matches "**/*" with matches: "folder"
-        }
-        val path = Paths.get(file.path)
-        val result = supportedFilePatterns.matches(path)
-        return result
     }
 }

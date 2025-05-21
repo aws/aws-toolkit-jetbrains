@@ -11,8 +11,6 @@ class CodeWhispererRust private constructor() : CodeWhispererProgrammingLanguage
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.Rust
 
-    override fun isCodeCompletionSupported(): Boolean = true
-
     companion object {
         const val ID = "rust"
 

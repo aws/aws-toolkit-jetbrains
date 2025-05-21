@@ -3,6 +3,10 @@
 
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.artifacts
 
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import org.jetbrains.annotations.VisibleForTesting
 import software.aws.toolkits.core.utils.deleteIfExists
 import software.aws.toolkits.core.utils.error
@@ -10,22 +14,22 @@ import software.aws.toolkits.core.utils.exists
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.readText
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.getETagFromUrl
 import software.aws.toolkits.jetbrains.core.getTextFromUrl
 import software.aws.toolkits.jetbrains.core.saveFileFromUrl
-import software.aws.toolkits.jetbrains.services.amazonq.project.manifest.ManifestManager
 import java.nio.file.Path
 
 class ManifestFetcher(
     private val lspManifestUrl: String = DEFAULT_MANIFEST_URL,
-    private val manifestManager: ManifestManager = ManifestManager(),
     private val manifestPath: Path = DEFAULT_MANIFEST_PATH,
 ) {
     companion object {
+        private val mapper = jacksonObjectMapper().apply { configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) }
         private val logger = getLogger<ManifestFetcher>()
 
         private const val DEFAULT_MANIFEST_URL =
-            "https://aws-toolkit-language-servers.amazonaws.com/remoteWorkspaceContext/0/manifest.json"
+            "https://aws-toolkit-language-servers.amazonaws.com/qAgenticChatServer/0/manifest.json"
 
         private val DEFAULT_MANIFEST_PATH: Path = getToolkitsCommonCacheRoot()
             .resolve("aws")
@@ -41,7 +45,7 @@ class ManifestFetcher(
     /**
      * Method which will be used to fetch latest manifest.
      * */
-    fun fetch(): ManifestManager.Manifest? {
+    fun fetch(): Manifest? {
         val localManifest = fetchManifestFromLocal()
         if (localManifest != null) {
             return localManifest
@@ -50,15 +54,16 @@ class ManifestFetcher(
     }
 
     @VisibleForTesting
-    internal fun fetchManifestFromRemote(): ManifestManager.Manifest? {
-        val manifest: ManifestManager.Manifest?
+    internal fun fetchManifestFromRemote(): Manifest? {
+        val manifest: Manifest?
         try {
             val manifestString = getTextFromUrl(lspManifestUrl)
-            manifest = manifestManager.readManifestFile(manifestString) ?: return null
+            manifest = readManifestFile(manifestString) ?: return null
         } catch (e: Exception) {
             logger.error(e) { "error fetching lsp manifest from remote URL ${e.message}" }
             return null
         }
+
         if (manifest.isManifestDeprecated == true) {
             logger.info { "Manifest is deprecated" }
             return null
@@ -77,7 +82,7 @@ class ManifestFetcher(
     }
 
     @VisibleForTesting
-    internal fun fetchManifestFromLocal(): ManifestManager.Manifest? {
+    internal fun fetchManifestFromLocal(): Manifest? {
         val localETag = getManifestETagFromLocal()
         val remoteETag = getManifestETagFromUrl()
         // If local and remote have same ETag, we can re-use the manifest file from local to fetch artifacts.
@@ -85,7 +90,7 @@ class ManifestFetcher(
         if ((localETag != null && remoteETag != null && localETag == remoteETag) or (localETag != null && remoteETag == null)) {
             try {
                 val manifestContent = lspManifestFilePath.readText()
-                val manifest = manifestManager.readManifestFile(manifestContent)
+                val manifest = readManifestFile(manifestContent)
                 if (manifest != null) return manifest
                 lspManifestFilePath.deleteIfExists() // delete manifest if it fails to de-serialize
             } catch (e: Exception) {
@@ -112,4 +117,57 @@ class ManifestFetcher(
         }
         return null
     }
+
+    fun readManifestFile(content: String): Manifest? {
+        try {
+            return mapper.readValue<Manifest>(content)
+        } catch (e: Exception) {
+            logger.warn { "error parsing manifest file for project context ${e.message}" }
+            return null
+        }
+    }
 }
+
+data class TargetContent(
+    @JsonProperty("filename")
+    val filename: String? = null,
+    @JsonProperty("url")
+    val url: String? = null,
+    @JsonProperty("hashes")
+    val hashes: List<String>? = emptyList(),
+    @JsonProperty("bytes")
+    val bytes: Number? = null,
+)
+
+data class VersionTarget(
+    @JsonProperty("platform")
+    val platform: String? = null,
+    @JsonProperty("arch")
+    val arch: String? = null,
+    @JsonProperty("contents")
+    val contents: List<TargetContent>? = emptyList(),
+)
+
+data class Version(
+    @JsonProperty("serverVersion")
+    val serverVersion: String? = null,
+    @JsonProperty("isDelisted")
+    val isDelisted: Boolean? = null,
+    @JsonProperty("targets")
+    val targets: List<VersionTarget>? = emptyList(),
+    @JsonProperty("thirdPartyLicenses")
+    val thirdPartyLicenses: String? = null,
+)
+
+data class Manifest(
+    @JsonProperty("manifestSchemaVersion")
+    val manifestSchemaVersion: String? = null,
+    @JsonProperty("artifactId")
+    val artifactId: String? = null,
+    @JsonProperty("artifactDescription")
+    val artifactDescription: String? = null,
+    @JsonProperty("isManifestDeprecated")
+    val isManifestDeprecated: Boolean? = null,
+    @JsonProperty("versions")
+    val versions: List<Version>? = emptyList(),
+)

@@ -44,7 +44,6 @@ import software.aws.toolkits.jetbrains.services.amazonq.apps.AmazonQAppInitConte
 import software.aws.toolkits.jetbrains.services.codewhisperer.credentials.CodeWhispererClientAdaptor
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererCustomization
 import software.aws.toolkits.jetbrains.services.codewhisperer.customization.CodeWhispererModelConfigurator
-import software.aws.toolkits.jetbrains.services.codewhisperer.util.DiagnosticDifferences
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.ChatSession
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.ChatRequestData
 import software.aws.toolkits.jetbrains.services.cwc.clients.chat.model.CodeNamesImpl
@@ -476,7 +475,6 @@ class TelemetryHelperTest {
         val inserTionTargetType = "insertionTargetType"
         val eventId = "eventId"
         val code = "println()"
-        val diagnosticDifferences = DiagnosticDifferences(emptyList(), emptyList())
 
         sut.recordInteractWithMessage(
             IncomingCwcMessage.InsertCodeAtCursorPosition(
@@ -489,8 +487,7 @@ class TelemetryHelperTest {
                 eventId,
                 codeBlockIndex,
                 totalCodeBlocks,
-                lang,
-                diagnosticDifferences
+                lang
             )
         )
 
@@ -506,8 +503,6 @@ class TelemetryHelperTest {
                     acceptedLineCount(code.lines().size)
                     customizationArn(customizationArn)
                     hasProjectLevelContext(false)
-                    addedIdeDiagnostics(emptyList())
-                    removedIdeDiagnostics(emptyList())
                 }.build()
             )
         )

@@ -11,8 +11,6 @@ class CodeWhispererR private constructor() : CodeWhispererProgrammingLanguage() 
 
     override fun toTelemetryType(): CodewhispererLanguage = CodewhispererLanguage.R
 
-    override fun isCodeCompletionSupported(): Boolean = true
-
     companion object {
         const val ID = "r"
 

@@ -4,14 +4,11 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer
 
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.testFramework.replaceService
 import com.intellij.ui.dsl.builder.components.DslLabel
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
-import org.mockito.Mockito
 import org.mockito.kotlin.doNothing
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
-import software.aws.toolkits.jetbrains.services.codewhisperer.codescan.CodeWhispererCodeScanManager
 import software.aws.toolkits.jetbrains.services.codewhisperer.settings.CodeWhispererConfigurable
 import software.aws.toolkits.resources.message
 import javax.swing.JCheckBox
@@ -22,11 +19,9 @@ class CodeWhispererConfigurableTest : CodeWhispererTestBase() {
 
     @Test
     fun `test CodeWhisperer configurable`() {
-        val codeScanManagerSpy = Mockito.spy(CodeWhispererCodeScanManager.getInstance(projectRule.project))
-        doNothing().`when`(codeScanManagerSpy).buildCodeScanUI()
-        doNothing().`when`(codeScanManagerSpy).showCodeScanUI()
-        doNothing().`when`(codeScanManagerSpy).removeCodeScanUI()
-        projectRule.project.replaceService(CodeWhispererCodeScanManager::class.java, codeScanManagerSpy, disposableRule.disposable)
+        doNothing().`when`(codeScanManager).buildCodeScanUI()
+        doNothing().`when`(codeScanManager).showCodeScanUI()
+        doNothing().`when`(codeScanManager).removeCodeScanUI()
         val configurable = CodeWhispererConfigurable(projectRule.project)
 
         // A workaround to initialize disposable in the DslConfigurableBase since somehow the disposable is

@@ -34,7 +34,6 @@ class CodeWhispererRecommendationAction : AnAction(message("codewhisperer.trigge
             return
         }
         val latencyContext = LatencyContext()
-        latencyContext.codewhispererPreprocessingStart = System.nanoTime()
         latencyContext.codewhispererEndToEndStart = System.nanoTime()
         val editor = e.getRequiredData(CommonDataKeys.EDITOR)
         if (!(
