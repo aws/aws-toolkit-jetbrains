@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat
 
 import com.google.gson.Gson
+import com.google.gson.JsonObject
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -11,6 +12,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.eclipse.lsp4j.ProgressParams
+import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
@@ -122,8 +124,13 @@ class ChatCommunicationManager(private val cs: CoroutineScope) {
         token?.let {
             removePartialChatMessage(it)
         }
+        var errorMessage: String? = null
+        if (exception is ResponseErrorException) {
+            errorMessage = (exception.responseError.data as? JsonObject)?.get("body")?.asString ?: exception.responseError.message
+        }
+
         val errorTitle = "An error occurred while processing your request."
-        val errorMessage = "Details: ${exception.message}"
+        errorMessage = errorMessage ?: "Details: ${exception.message}"
         val errorParams = Gson().toJson(ErrorParams(tabId, null, errorMessage, errorTitle)).toString()
         val isPartialResult = false
         val uiMessage = """
