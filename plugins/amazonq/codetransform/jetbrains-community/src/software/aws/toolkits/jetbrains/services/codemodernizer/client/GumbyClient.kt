@@ -7,6 +7,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.io.HttpRequests
+import software.amazon.awssdk.core.exception.SdkException
 import software.amazon.awssdk.services.codewhispererruntime.CodeWhispererRuntimeClient
 import software.amazon.awssdk.services.codewhispererruntime.model.CodeWhispererRuntimeResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.ContentChecksumType
@@ -32,8 +33,10 @@ import software.amazon.awssdk.services.codewhispererruntime.model.UploadContext
 import software.amazon.awssdk.services.codewhispererruntime.model.UploadIntent
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportContext
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportIntent
+import software.amazon.awssdk.services.codewhispererstreaming.model.ThrottlingException
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationDownloadArtifactType
 import software.amazon.awssdk.services.codewhispererstreaming.model.TransformationExportContext
+import software.amazon.awssdk.services.codewhispererstreaming.model.ValidationException
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.info
@@ -41,6 +44,7 @@ import software.aws.toolkits.jetbrains.core.AwsClientManager
 import software.aws.toolkits.jetbrains.services.amazonq.APPLICATION_ZIP
 import software.aws.toolkits.jetbrains.services.amazonq.AWS_KMS
 import software.aws.toolkits.jetbrains.services.amazonq.CONTENT_SHA256
+import software.aws.toolkits.jetbrains.services.amazonq.RetryableOperation
 import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION
 import software.aws.toolkits.jetbrains.services.amazonq.SERVER_SIDE_ENCRYPTION_AWS_KMS_KEY_ID
 import software.aws.toolkits.jetbrains.services.amazonq.clients.AmazonQStreamingClient
@@ -52,7 +56,9 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.utils.calculateTo
 import software.aws.toolkits.jetbrains.services.codewhisperer.util.CodeWhispererUtil.getTelemetryOptOutPreference
 import java.io.File
 import java.net.HttpURLConnection
+import java.net.SocketTimeoutException
 import java.time.Instant
+import java.util.concurrent.TimeoutException
 
 @Service(Service.Level.PROJECT)
 class GumbyClient(private val project: Project) {
@@ -152,15 +158,34 @@ class GumbyClient(private val project: Project) {
         apiCall: () -> T,
         apiName: String,
     ): T {
-        var result: CodeWhispererRuntimeResponse? = null
+        var result: T? = null
         try {
-            result = apiCall()
-            LOG.info { "$apiName request ID: ${result.responseMetadata()?.requestId()}" }
-            return result
+            RetryableOperation<Unit>().execute(
+                operation = {
+                    result = apiCall()
+                },
+                isRetryable = { e ->
+                    when (e) {
+                        is ValidationException,
+                        is ThrottlingException,
+                        is SdkException,
+                        is TimeoutException,
+                        is SocketTimeoutException,
+                        -> true
+                        else -> false
+                    }
+                },
+                errorHandler = { e, attempts ->
+                    LOG.error(e) { "After $attempts attempts, $apiName failed: ${e.message}" }
+                    throw e
+                }
+            )
         } catch (e: Exception) {
-            LOG.error(e) { "$apiName failed: ${e.message}" }
-            throw e // pass along error to callee
+            LOG.error(e) { "$apiName failed: ${e.message}; may have been retried up to 3 times" }
+            throw e
         }
+        LOG.info { "$apiName request ID: ${result?.responseMetadata()?.requestId()}" }
+        return result ?: error("$apiName failed")
     }
 
     suspend fun downloadExportResultArchive(
