@@ -9,8 +9,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.components.JBLoadingPanel
 import com.intellij.ui.components.JBTextArea
-import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.components.ProgressBarLoadingDecorator
+import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.AlignY
