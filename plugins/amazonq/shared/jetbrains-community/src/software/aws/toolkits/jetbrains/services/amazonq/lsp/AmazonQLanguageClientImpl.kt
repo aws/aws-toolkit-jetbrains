@@ -157,7 +157,7 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             ApplicationManager.getApplication().invokeLater {
                 try {
                     val virtualFile = VirtualFileManager.getInstance().findFileByUrl(fileToOpen)
-                        ?: throw IllegalArgumentException("Cannot find file: ${params.uri}")
+                        ?: throw IllegalArgumentException("Cannot find file: $fileToOpen")
 
                     FileEditorManager.getInstance(project).openFile(virtualFile, true)
                 } catch (e: Exception) {
