@@ -148,7 +148,7 @@ class CodeWhispererLanguageManager {
             listOf("vue") to CodeWhispererVue.INSTANCE,
             listOf("ps1", "psm1") to CodeWhispererPowershell.INSTANCE,
             listOf("r") to CodeWhispererR.INSTANCE,
-            listOf("abap", "acds") to CodeWhispererAbap.INSTANCE,
+            listOf("abap") to CodeWhispererAbap.INSTANCE,
         ).map {
             val exts = it.first
             val lang = it.second
