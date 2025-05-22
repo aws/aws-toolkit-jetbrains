@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.amazonq.lsp.flareChat
 
 import com.google.gson.Gson
+import com.google.gson.JsonObject
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -11,7 +12,9 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.eclipse.lsp4j.ProgressParams
+import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
@@ -22,6 +25,7 @@ import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.LSPAny
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthFollowUpClickedParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.AuthFollowupType
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.CHAT_ERROR_PARAMS
+import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ChatMessage
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.ErrorParams
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.GetSerializedChatResult
 import software.aws.toolkits.jetbrains.services.amazonq.lsp.model.aws.chat.SEND_CHAT_COMMAND_PROMPT
@@ -122,8 +126,15 @@ class ChatCommunicationManager(private val cs: CoroutineScope) {
         token?.let {
             removePartialChatMessage(it)
         }
+        var errorMessage: String? = null
+        if (exception is ResponseErrorException) {
+            errorMessage = tryOrNull {
+                Gson().fromJson(exception.responseError.data as JsonObject, ChatMessage::class.java).body
+            } ?: exception.responseError.message
+        }
+
         val errorTitle = "An error occurred while processing your request."
-        val errorMessage = "Details: ${exception.message}"
+        errorMessage = errorMessage ?: "Details: ${exception.message}"
         val errorParams = Gson().toJson(ErrorParams(tabId, null, errorMessage, errorTitle)).toString()
         val isPartialResult = false
         val uiMessage = """
