@@ -145,7 +145,6 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
     override fun showDocument(params: ShowDocumentParams): CompletableFuture<ShowDocumentResult> {
         try {
-
             if (params.uri.isNullOrEmpty()) {
                 return CompletableFuture.completedFuture(ShowDocumentResult(false))
             }
@@ -157,13 +156,12 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
 
             ApplicationManager.getApplication().invokeLater {
                 try {
-
                     val virtualFile = VirtualFileManager.getInstance().findFileByUrl(fileToOpen)
                         ?: throw IllegalArgumentException("Cannot find file: ${params.uri}")
 
                     FileEditorManager.getInstance(project).openFile(virtualFile, true)
                 } catch (e: Exception) {
-                    LOG.warn { "Failed to show document: ${params.uri}" }
+                    LOG.warn { "Failed to show document: $fileToOpen" }
                 }
             }
 
