@@ -14,8 +14,8 @@ import java.nio.file.Path
  * @see https://github.com/aws/aws-toolkit-vscode/commit/6081f890bdbb91fcd8b60c4cc0abb65b15d4a38d
  */
 object NodeExePatcher {
-    private const val GLIBC_LINKER_VAR = "VSCODE_SERVER_CUSTOM_GLIBC_LINKER"
-    private const val GLIBC_PATH_VAR = "VSCODE_SERVER_CUSTOM_GLIBC_PATH"
+    const val GLIBC_LINKER_VAR = "VSCODE_SERVER_CUSTOM_GLIBC_LINKER"
+    const val GLIBC_PATH_VAR = "VSCODE_SERVER_CUSTOM_GLIBC_PATH"
 
     fun patch(node: Path): GeneralCommandLine {
         val linker = System.getenv(GLIBC_LINKER_VAR)
