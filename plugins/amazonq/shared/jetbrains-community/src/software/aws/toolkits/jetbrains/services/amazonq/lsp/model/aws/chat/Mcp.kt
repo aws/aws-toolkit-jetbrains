@@ -33,12 +33,17 @@ data class ListMcpServersResult(
     )
 }
 
+
 // MCP Server Click Parameters
 data class McpServerClickParams(
     val id: String,
     val title: String? = null,
-    val optionsValues: Map<String, String>? = null
+    // here Any is sufficient to serialize/deserialze complex objects
+    val optionsValues: Map<String, Any>? = null
 )
+
+
+
 
 // MCP Server Click Result
 data class McpServerClickResult(

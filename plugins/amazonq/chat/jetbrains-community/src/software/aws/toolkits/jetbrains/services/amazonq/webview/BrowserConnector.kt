@@ -476,9 +476,6 @@ class BrowserConnector(
                         )
                     }
             }
-            else -> {
-                println(node.command)
-            }
         }
     }
 
@@ -539,14 +536,18 @@ class BrowserConnector(
 
                 is JsonRpcRequest<Request, Response> -> {
                     {
-                        rawEndpoint.request(lspMethod.name, node.params?.let { serializer.objectMapper.treeToValue<Any>(it) }).thenApply {
-                            serializer.objectMapper.readValue(
-                                Gson().toJson(it),
-                                lspMethod.response
-                            )
-                        }
+
+                            rawEndpoint.request(lspMethod.name, node.params?.let { serializer.objectMapper.treeToValue<Any>(it) }).thenApply {
+                                serializer.objectMapper.readValue(
+                                    Gson().toJson(it),
+                                    lspMethod.response
+                                )
+                            }
+
+
                     }
                 }
+
             } as () -> CompletableFuture<Response>
             serverAction(requestFromUi, invokeService)
         } ?: CompletableFuture.failedFuture<Response>(IllegalStateException("LSP Server not running"))
