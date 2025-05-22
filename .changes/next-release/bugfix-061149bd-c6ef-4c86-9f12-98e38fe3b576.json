@@ -1,0 +1,4 @@
+{
+  "type" : "bugfix",
+  "description" : "Support full Unicode range in inline chat panel on Windows"
+}
