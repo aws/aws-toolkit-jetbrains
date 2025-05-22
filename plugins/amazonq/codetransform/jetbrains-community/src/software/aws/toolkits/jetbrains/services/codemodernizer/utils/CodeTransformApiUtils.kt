@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.grazie.utils.orFalse
-import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diff.impl.patch.PatchReader
