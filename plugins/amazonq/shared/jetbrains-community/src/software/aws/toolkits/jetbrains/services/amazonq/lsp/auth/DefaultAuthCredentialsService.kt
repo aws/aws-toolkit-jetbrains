@@ -38,7 +38,6 @@ import java.util.concurrent.TimeUnit
 class DefaultAuthCredentialsService(
     private val project: Project,
     private val encryptionManager: JwtEncryptionManager,
-    serverInstance: Disposable,
 ) : AuthCredentialsService,
     BearerTokenProviderListener,
     ToolkitConnectionManagerListener,
@@ -50,7 +49,7 @@ class DefaultAuthCredentialsService(
     private val tokenSyncIntervalMinutes = 5L
 
     init {
-        project.messageBus.connect(serverInstance).apply {
+        project.messageBus.connect(this).apply {
             subscribe(BearerTokenProviderListener.TOPIC, this@DefaultAuthCredentialsService)
             subscribe(ToolkitConnectionManagerListener.TOPIC, this@DefaultAuthCredentialsService)
             subscribe(QRegionProfileSelectedListener.TOPIC, this@DefaultAuthCredentialsService)

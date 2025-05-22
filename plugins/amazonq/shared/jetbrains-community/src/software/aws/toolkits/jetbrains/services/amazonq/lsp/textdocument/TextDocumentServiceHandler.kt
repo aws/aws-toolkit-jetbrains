@@ -32,27 +32,27 @@ import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class TextDocumentServiceHandler(
     private val project: Project,
-    private val serverInstance: Disposable,
 ) : FileDocumentManagerListener,
     FileEditorManagerListener,
     BulkFileListener,
-    DocumentListener {
-
+    DocumentListener,
+    Disposable
+{
     init {
         // didOpen & didClose events
-        project.messageBus.connect(serverInstance).subscribe(
+        project.messageBus.connect(this).subscribe(
             FileEditorManagerListener.FILE_EDITOR_MANAGER,
             this
         )
 
         // didChange events
-        project.messageBus.connect(serverInstance).subscribe(
+        project.messageBus.connect(this).subscribe(
             VirtualFileManager.VFS_CHANGES,
             this
         )
 
         // didSave events
-        project.messageBus.connect(serverInstance).subscribe(
+        project.messageBus.connect(this).subscribe(
             FileDocumentManagerListener.TOPIC,
             this
         )
@@ -72,7 +72,7 @@ class TextDocumentServiceHandler(
                         realTimeEdit(event)
                     }
                 },
-                serverInstance
+                this
             )
         }
         AmazonQLspService.executeIfRunning(project) { languageServer ->
@@ -182,5 +182,8 @@ class TextDocumentServiceHandler(
             }
         }
         // Process document changes here
+    }
+
+    override fun dispose() {
     }
 }
