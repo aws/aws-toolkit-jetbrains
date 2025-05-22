@@ -148,6 +148,9 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
             if (params.uri.isNullOrEmpty()) {
                 return CompletableFuture.completedFuture(ShowDocumentResult(false))
             }
+
+            // The filepath sent by the server contains unicode characters which need to be
+            // decoded for JB file handling APIs to be handle to handle file operations
             val fileToOpen = URLDecoder.decode(params.uri, StandardCharsets.UTF_8.name())
             if (params.external == true) {
                 BrowserUtil.open(fileToOpen)
