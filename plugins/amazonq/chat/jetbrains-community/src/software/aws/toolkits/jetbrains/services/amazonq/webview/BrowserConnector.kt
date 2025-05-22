@@ -536,15 +536,12 @@ class BrowserConnector(
 
                 is JsonRpcRequest<Request, Response> -> {
                     {
-
-                            rawEndpoint.request(lspMethod.name, node.params?.let { serializer.objectMapper.treeToValue<Any>(it) }).thenApply {
-                                serializer.objectMapper.readValue(
-                                    Gson().toJson(it),
-                                    lspMethod.response
-                                )
-                            }
-
-
+                        rawEndpoint.request(lspMethod.name, node.params?.let { serializer.objectMapper.treeToValue<Any>(it) }).thenApply {
+                            serializer.objectMapper.readValue(
+                                Gson().toJson(it),
+                                lspMethod.response
+                            )
+                        }
                     }
                 }
 
