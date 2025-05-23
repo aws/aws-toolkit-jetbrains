@@ -476,10 +476,18 @@ private class AmazonQServerInstance(private val project: Project, private val cs
             }
 
             this@AmazonQServerInstance.apply {
-                DefaultAuthCredentialsService(project, encryptionManager, this)
-                TextDocumentServiceHandler(project, this)
-                WorkspaceServiceHandler(project, lspInitResult, this)
-                DefaultModuleDependenciesService(project, this)
+                DefaultAuthCredentialsService(project, encryptionManager).also {
+                    Disposer.register(this, it)
+                }
+                TextDocumentServiceHandler(project).also {
+                    Disposer.register(this, it)
+                }
+                WorkspaceServiceHandler(project, lspInitResult).also {
+                    Disposer.register(this, it)
+                }
+                DefaultModuleDependenciesService(project).also {
+                    Disposer.register(this, it)
+                }
             }
         }
     }
