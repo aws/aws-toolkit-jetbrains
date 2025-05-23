@@ -313,7 +313,7 @@ class ExplorerToolWindow(private val project: Project) :
 
                     val totalActions = mutableListOf<AnAction>()
 
-                    (actionGroupName?.let { actionManager.getAction(it) } as? ActionGroup)?.let { totalActions.addAll(it.getChildren(null)) }
+                    (actionGroupName?.let { actionManager.getAction(it) } as? DefaultActionGroup)?.let { totalActions.addAll(it.getChildren(actionManager)) }
 
                     if (explorerNode is AwsExplorerResourceNode<*>) {
                         totalActions.add(CopyArnAction())

@@ -87,10 +87,10 @@ abstract class AbstractExplorerTreeToolWindow(
                     if (node is ActionGroupOnRightClick) {
                         val actionGroupName = node.actionGroupName()
 
-                        (actionGroupName.let { groupName -> actionManager.getAction(groupName) } as? ActionGroup)?.let { group ->
+                        (actionGroupName.let { groupName -> actionManager.getAction(groupName) } as? DefaultActionGroup)?.let { group ->
                             val context = comp?.let { DataManager.getInstance().getDataContext(it, x, y) } ?: return@let
                             val event = AnActionEvent.createFromDataContext(actionPlace, null, context)
-                            totalActions.addAll(group.getChildren(event))
+                            totalActions.addAll(group.getChildren(actionManager))
                         }
                     }
 
