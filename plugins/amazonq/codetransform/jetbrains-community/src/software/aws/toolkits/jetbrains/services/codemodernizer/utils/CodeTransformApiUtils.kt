@@ -67,8 +67,6 @@ data class PollingResult(
     val transformationPlan: TransformationPlan?,
 )
 
-private const val IS_CLIENT_SIDE_BUILD_ENABLED = false
-
 /**
  * Wrapper around [waitUntil] that polls the API DescribeMigrationJob to check the migration job status.
  */
@@ -122,8 +120,7 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                     delay(sleepDurationMillis)
                     newPlan = clientAdaptor.getCodeModernizationPlan(this).transformationPlan()
                 }
-                // TODO: remove flag when releasing CSB
-                if (IS_CLIENT_SIDE_BUILD_ENABLED && newStatus == TransformationStatus.TRANSFORMING && newPlan != null) {
+                if (newStatus == TransformationStatus.TRANSFORMING && newPlan != null) {
                     attemptLocalBuild(newPlan, this, project)
                 }
                 if (newStatus != state) {
@@ -230,6 +227,7 @@ suspend fun processClientInstructions(clientInstructionsPath: Path, jobId: JobId
                     "Error applying intermediate diff.patch for job ${jobId.id} and artifact $artifactId located at " +
                         "$clientInstructionsPath: $e"
                 }
+                throw e
             } finally {
                 runWriteAction {
                     ModuleManager.getInstance(project).disposeModule(tempModule)
@@ -250,10 +248,14 @@ suspend fun processClientInstructions(clientInstructionsPath: Path, jobId: JobId
         CodeModernizerManager.getInstance(project).codeTransformationSession?.uploadPayload(uploadZip, uploadContext)
         getLogger<CodeModernizerManager>().info { "Upload succeeded; about to call ResumeTransformation for job ${jobId.id} and artifact $artifactId now" }
         CodeModernizerManager.getInstance(project).codeTransformationSession?.resumeTransformation()
+        getLogger<CodeModernizerManager>().info { "ResumeTransformation succeeded for job ${jobId.id}" }
+    } catch (e: Exception) {
+        getLogger<CodeModernizerManager>().error { "Upload / resume job failed for job ${jobId.id} and artifact $artifactId: $e" }
+        throw e
     } finally {
         uploadZip.deleteRecursively()
         copyOfProjectSources.toFile().deleteRecursively()
-        getLogger<CodeModernizerManager>().info { "Deleted copy of project sources and client-side build upload ZIP" }
+        getLogger<CodeModernizerManager>().info { "Deleted uploadZip and copyOfProjectSources" }
     }
     // switch back to Transformation Hub view
     runInEdt {
@@ -268,6 +270,7 @@ suspend fun downloadClientInstructions(jobId: JobId, artifactId: String, project
     val downloadBytes = client.downloadExportResultArchive(jobId, artifactId)
     val downloadZipPath = zipToPath(downloadBytes, exportZipPath.toPath()).first.toAbsolutePath()
     unzipFile(downloadZipPath, exportZipPath.toPath())
+    downloadZipPath.toFile().deleteRecursively()
     return exportZipPath.toPath().resolve("diff.patch")
 }
 
