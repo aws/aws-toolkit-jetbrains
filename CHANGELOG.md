@@ -1,3 +1,14 @@
+# _3.71_ (2025-05-15)
+- **(Feature)** Add inline completion support for abap language
+- **(Bug Fix)** Fix UI freezes that may occur when interacting with large files in the editor
+
+# _3.70_ (2025-05-08)
+- **(Feature)** Amazon Q: Support selecting customizations across all Q profiles with automatic profile switching for enterprise users
+- **(Bug Fix)** Do not always show 'Amazon Q Code Issues' tab when switching to the 'Problems' tool window
+- **(Bug Fix)** /dev: Fix missing Amazon Q feature dev auto build setting.
+- **(Bug Fix)** increase /review timeout
+- **(Bug Fix)** Fix JavascriptLanguage not found on 2025.1+
+
 # _3.69_ (2025-04-28)
 - **(Bug Fix)** Amazon Q: Fix issue where context menu items are not available after re-opening projects or restarting the IDE
 - **(Bug Fix)** Fix LinkageError while attempting to do Amazon Q inline suggestions in certain environments
