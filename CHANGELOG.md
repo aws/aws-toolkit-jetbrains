@@ -1,3 +1,6 @@
+# _3.72_ (2025-05-22)
+- **(Removal)** /transform: remove option to receive multiple diffs
+
 # _3.71_ (2025-05-15)
 - **(Feature)** Add inline completion support for abap language
 - **(Bug Fix)** Fix UI freezes that may occur when interacting with large files in the editor
