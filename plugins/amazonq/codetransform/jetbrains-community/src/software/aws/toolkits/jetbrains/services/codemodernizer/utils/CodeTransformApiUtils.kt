@@ -154,6 +154,7 @@ suspend fun JobId.pollTransformationStatusAndPlan(
             }
         }
     } catch (e: Exception) {
+        getLogger<CodeModernizerManager>().error(e) { "Error when polling for job status & plan" }
         // Still call onStateChange to update the UI
         onStateChange(state, TransformationStatus.FAILED, transformationPlan)
         when (e) {
