@@ -292,6 +292,7 @@ fun buildUnmanagedSsoOidcClient(region: String): SsoOidcClient =
             AnonymousCredentialsProvider.create(),
             Region.of(region),
             clientCustomizer = ToolkitClientCustomizer { _, _, _, _, configuration ->
+                configuration.apiCallTimeout(Duration.ofSeconds(12))
                 ssoOidcClientConfigurationBuilder(configuration)
             }
         )
