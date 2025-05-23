@@ -1,0 +1,8 @@
+{
+  "date" : "2025-05-22",
+  "version" : "3.72",
+  "entries" : [ {
+    "type" : "removal",
+    "description" : "/transform: remove option to receive multiple diffs"
+  } ]
+}
