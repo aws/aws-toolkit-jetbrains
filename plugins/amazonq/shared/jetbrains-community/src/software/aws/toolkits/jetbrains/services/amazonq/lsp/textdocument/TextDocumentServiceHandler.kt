@@ -173,7 +173,7 @@ class TextDocumentServiceHandler(
                             }
                             contentChanges = listOf(
                                 TextDocumentContentChangeEvent().apply {
-                                    text = event.document.text
+                                    text = event.newFragment.toString()
                                 }
                             )
                         }
