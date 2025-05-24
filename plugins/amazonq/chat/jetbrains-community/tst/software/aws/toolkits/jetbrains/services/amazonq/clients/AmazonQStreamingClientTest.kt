@@ -127,7 +127,7 @@ class AmazonQStreamingClientTest : AmazonQTestBase() {
             amazonQStreamingClient.exportResultArchive("test-id", ExportIntent.TRANSFORMATION, null, {}, {})
         }
 
-        assertThat(attemptCount).isEqualTo(3)
+        assertThat(attemptCount).isEqualTo(4)
         assertThat(thrown)
             .isInstanceOf(ValidationException::class.java)
             .hasMessage("Resource validation failed")

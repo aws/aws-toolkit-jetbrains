@@ -13,10 +13,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -32,6 +34,7 @@ import software.amazon.awssdk.services.codewhispererruntime.model.StartTransform
 import software.amazon.awssdk.services.codewhispererruntime.model.StartTransformationResponse
 import software.amazon.awssdk.services.codewhispererruntime.model.StopTransformationRequest
 import software.amazon.awssdk.services.codewhispererruntime.model.StopTransformationResponse
+import software.amazon.awssdk.services.codewhispererruntime.model.ThrottlingException
 import software.amazon.awssdk.services.codewhispererruntime.model.TransformationLanguage
 import software.amazon.awssdk.services.codewhispererstreaming.CodeWhispererStreamingAsyncClient
 import software.amazon.awssdk.services.codewhispererstreaming.model.ExportIntent
@@ -133,6 +136,80 @@ class CodeWhispererCodeModernizerGumbyClientTest : CodeWhispererCodeModernizerTe
             assertThat(actual).usingRecursiveComparison().comparingOnlyFields("jobId", "status", "transformationType", "source")
                 .isEqualTo(exampleGetCodeMigrationResponse)
         }
+    }
+
+    @Test
+    fun `getCodeModernizationJob should retry on retryable exceptions`() {
+        var callCount = 0
+        bearerClient = mockClientManagerRule.create<CodeWhispererRuntimeClient>().stub {
+            on { getTransformation(any<GetTransformationRequest>()) } doAnswer {
+                callCount++
+                when (callCount) {
+                    1 -> throw ThrottlingException.builder().message("Throttled 1").build()
+                    2 -> throw ThrottlingException.builder().message("Throttled 2").build()
+                    else -> exampleGetCodeMigrationResponse
+                }
+            }
+        }
+        val actual = gumbyClient.getCodeModernizationJob("jobId")
+        argumentCaptor<GetTransformationRequest>().apply {
+            // succeeds on 3rd attempt
+            verify(bearerClient, times(3)).getTransformation(capture())
+            verifyNoMoreInteractions(bearerClient)
+            verifyNoInteractions(streamingBearerClient)
+            assertThat(allValues).hasSize(3)
+            allValues.forEach { request ->
+                assertThat(request.transformationJobId()).isEqualTo("jobId")
+            }
+            assertThat(actual).isInstanceOf(GetTransformationResponse::class.java)
+            assertThat(actual).usingRecursiveComparison()
+                .comparingOnlyFields("jobId", "status", "transformationType", "source")
+                .isEqualTo(exampleGetCodeMigrationResponse)
+        }
+    }
+
+    @Test
+    fun `getCodeModernizationJob should fail immediately on non-retryable exception`() {
+        val exception = IllegalArgumentException("Non-retryable error")
+        bearerClient = mockClientManagerRule.create<CodeWhispererRuntimeClient>().stub {
+            on { getTransformation(any<GetTransformationRequest>()) } doAnswer {
+                throw exception
+            }
+        }
+        val thrown = runCatching {
+            gumbyClient.getCodeModernizationJob("jobId")
+        }.exceptionOrNull()
+        assertThat(thrown)
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessage("Non-retryable error")
+        // called just once since it fails immediately
+        verify(bearerClient, times(1)).getTransformation(any<GetTransformationRequest>())
+        verifyNoMoreInteractions(bearerClient)
+        verifyNoInteractions(streamingBearerClient)
+    }
+
+    @Test
+    fun `getCodeModernizationJob should fail after max attempts`() {
+        bearerClient = mockClientManagerRule.create<CodeWhispererRuntimeClient>().stub {
+            on { getTransformation(any<GetTransformationRequest>()) } doAnswer {
+                throw ThrottlingException.builder().message("Always throttled").build()
+            }
+        }
+        val thrown = runCatching {
+            gumbyClient.getCodeModernizationJob("jobId")
+        }.exceptionOrNull()
+        assertThat(thrown)
+            .isInstanceOf(ThrottlingException::class.java)
+            .hasMessage("Always throttled")
+        argumentCaptor<GetTransformationRequest>().apply {
+            // called 4 times since it always fails
+            verify(bearerClient, times(4)).getTransformation(capture())
+            allValues.forEach { request ->
+                assertThat(request.transformationJobId()).isEqualTo("jobId")
+            }
+        }
+        verifyNoMoreInteractions(bearerClient)
+        verifyNoInteractions(streamingBearerClient)
     }
 
     @Test

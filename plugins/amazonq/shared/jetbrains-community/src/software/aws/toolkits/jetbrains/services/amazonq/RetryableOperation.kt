@@ -30,12 +30,12 @@ class RetryableOperation<T> {
         isRetryable: (Exception) -> Boolean = { it is RetryableException },
         errorHandler: (suspend (Exception, Int) -> Nothing),
     ): T {
-        while (attempts < MAX_RETRY_ATTEMPTS) {
+        while (attempts < MAX_ATTEMPTS) {
             try {
                 return operation()
             } catch (e: Exception) {
                 attempts++
-                if (attempts >= MAX_RETRY_ATTEMPTS || !isRetryable(e)) {
+                if (attempts >= MAX_ATTEMPTS || !isRetryable(e)) {
                     errorHandler.invoke(e, attempts)
                 }
                 delay(getJitteredDelay())
@@ -48,6 +48,6 @@ class RetryableOperation<T> {
     companion object {
         private const val INITIAL_DELAY = 100L
         private const val MAX_BACKOFF = 10000L
-        private const val MAX_RETRY_ATTEMPTS = 3
+        private const val MAX_ATTEMPTS = 4
     }
 }

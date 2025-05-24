@@ -5,7 +5,6 @@ package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.grazie.utils.orFalse
-import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diff.impl.patch.PatchReader
@@ -144,16 +143,10 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                 refreshToken(project)
                 return@waitUntil state
             } catch (e: InvalidGrantException) {
-                CodeTransformMessageListener.instance.onCheckAuth()
+                CodeTransformMessageListener.instance.onReauthStarted()
                 notifyStickyWarn(
                     message("codemodernizer.notification.warn.expired_credentials.title"),
                     message("codemodernizer.notification.warn.expired_credentials.content"),
-                    project,
-                    listOf(
-                        NotificationAction.createSimpleExpiring(message("codemodernizer.notification.warn.action.reauthenticate")) {
-                            CodeTransformMessageListener.instance.onReauthStarted()
-                        }
-                    )
                 )
                 return@waitUntil state
             } finally {
@@ -161,6 +154,7 @@ suspend fun JobId.pollTransformationStatusAndPlan(
             }
         }
     } catch (e: Exception) {
+        getLogger<CodeModernizerManager>().error(e) { "Error when polling for job status & plan" }
         // Still call onStateChange to update the UI
         onStateChange(state, TransformationStatus.FAILED, transformationPlan)
         when (e) {
