@@ -77,6 +77,13 @@ class ArtifactManagerTest {
     }
 
     @Test
+    fun `getLSPVersionsFromManifestWithSpecifiedRange excludes end major version`() = runTest {
+        val newManifest = Manifest(versions = listOf(Version(serverVersion = "2.0.0")))
+        val result = artifactManager.getLSPVersionsFromManifestWithSpecifiedRange(newManifest)
+        assertThat(result.inRangeVersions).isEmpty()
+    }
+
+    @Test
     fun `fetch artifact if inRangeVersions are not available should fallback to local lsp`() = runTest {
         val expectedResult = listOf(Pair(tempDir, SemVer("1.0.0", 1, 0, 0)))
 

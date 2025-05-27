@@ -71,7 +71,7 @@ class ArtifactHelper(private val lspArtifactsPath: Path = DEFAULT_ARTIFACT_PATH,
         return localFolders
             .mapNotNull { localFolder ->
                 SemVer.parseFromText(localFolder.fileName.toString())?.let { semVer ->
-                    if (semVer in manifestVersionRanges.startVersion..manifestVersionRanges.endVersion) {
+                    if (semVer >= manifestVersionRanges.startVersion && semVer < manifestVersionRanges.endVersion) {
                         localFolder to semVer
                     } else {
                         null
