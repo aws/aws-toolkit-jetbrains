@@ -14,6 +14,8 @@ class NodeExePatcherTest {
     @get:Rule
     val envVarHelper = EnvironmentVariableHelper()
 
+    private val pathToNode = Path("/path/to/node").toAbsolutePath().toString()
+
     @Test
     fun `patches if path available`() {
         envVarHelper[NodeExePatcher.GLIBC_LINKER_VAR] = "/opt/vsc-sysroot/lib/ld-linux-x86-64.so.2"
@@ -21,13 +23,13 @@ class NodeExePatcherTest {
 
         assertThat(NodeExePatcher.patch(Path("/path/to/node")))
             .usingComparator(Comparator.comparing { it.commandLineString })
-            .isEqualTo(GeneralCommandLine("/opt/vsc-sysroot/lib/ld-linux-x86-64.so.2", "--library-path", "/opt/vsc-sysroot/lib/", "/path/to/node"))
+            .isEqualTo(GeneralCommandLine("/opt/vsc-sysroot/lib/ld-linux-x86-64.so.2", "--library-path", "/opt/vsc-sysroot/lib/", pathToNode))
     }
 
     @Test
     fun `noop if no patch available`() {
         assertThat(NodeExePatcher.patch(Path("/path/to/node")))
             .usingComparator(Comparator.comparing { it.commandLineString })
-            .isEqualTo(GeneralCommandLine("/path/to/node"))
+            .isEqualTo(GeneralCommandLine(pathToNode))
     }
 }
