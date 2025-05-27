@@ -10,7 +10,6 @@ import com.intellij.ide.util.treeView.NodeDescriptor
 import com.intellij.ide.util.treeView.NodeRenderer
 import com.intellij.ide.util.treeView.TreeState
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -313,7 +312,7 @@ class ExplorerToolWindow(private val project: Project) :
 
                     val totalActions = mutableListOf<AnAction>()
 
-                    (actionGroupName?.let { actionManager.getAction(it) } as? ActionGroup)?.let { totalActions.addAll(it.getChildren(null)) }
+                    (actionGroupName?.let { actionManager.getAction(it) } as? DefaultActionGroup)?.let { totalActions.addAll(it.getChildren(actionManager)) }
 
                     if (explorerNode is AwsExplorerResourceNode<*>) {
                         totalActions.add(CopyArnAction())
