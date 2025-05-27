@@ -17,8 +17,7 @@ class DefaultModuleDependenciesService(
     private val project: Project,
 ) : ModuleDependenciesService,
     ModuleRootListener,
-    Disposable
-{
+    Disposable {
     init {
         project.messageBus.connect(this).subscribe(
             ModuleRootListener.TOPIC,

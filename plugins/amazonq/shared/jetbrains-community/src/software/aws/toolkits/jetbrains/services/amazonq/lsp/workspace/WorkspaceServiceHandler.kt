@@ -46,7 +46,8 @@ class WorkspaceServiceHandler(
     private val project: Project,
     initializeResult: InitializeResult,
 ) : BulkFileListener,
-    ModuleRootListener, Disposable {
+    ModuleRootListener,
+    Disposable {
 
     private var lastSnapshot: List<WorkspaceFolder> = emptyList()
     private val operationMatchers: MutableMap<FileOperationType, List<Pair<PathMatcher, String>>> = mutableMapOf()

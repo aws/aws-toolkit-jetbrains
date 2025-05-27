@@ -94,7 +94,7 @@ class TextDocumentServiceHandlerTest {
         every { mockTextDocumentService.didOpen(any()) } returns Unit
         every { mockTextDocumentService.didClose(any()) } returns Unit
 
-        sut = TextDocumentServiceHandler(projectRule.project, mockk())
+        sut = TextDocumentServiceHandler(projectRule.project)
     }
 
     @Test
@@ -137,7 +137,7 @@ class TextDocumentServiceHandlerTest {
             projectRule.fixture.createFile("name", content).also { projectRule.fixture.openFileInEditor(it) }
         }
 
-        sut = TextDocumentServiceHandler(projectRule.project, mockk())
+        sut = TextDocumentServiceHandler(projectRule.project)
 
         val paramsSlot = mutableListOf<DidOpenTextDocumentParams>()
         verify { mockTextDocumentService.didOpen(capture(paramsSlot)) }

@@ -36,8 +36,7 @@ class TextDocumentServiceHandler(
     FileEditorManagerListener,
     BulkFileListener,
     DocumentListener,
-    Disposable
-{
+    Disposable {
     init {
         // didOpen & didClose events
         project.messageBus.connect(this).subscribe(
