@@ -28,6 +28,7 @@ import software.aws.toolkits.jetbrains.services.codemodernizer.panels.CodeModern
 import software.aws.toolkits.jetbrains.services.codemodernizer.panels.LoadingPanel
 import software.aws.toolkits.jetbrains.services.codemodernizer.state.CodeModernizerSessionState
 import software.aws.toolkits.jetbrains.services.codemodernizer.toolwindow.CodeModernizerBottomToolWindowFactory
+import software.aws.toolkits.jetbrains.services.codemodernizer.utils.isPlanComplete
 import software.aws.toolkits.resources.message
 import java.awt.BorderLayout
 import java.awt.Component
@@ -251,7 +252,7 @@ class CodeModernizerBottomWindowPanelManager(private val project: Project) : JPa
                 TransformationStatus.PAUSED,
                 TransformationStatus.COMPLETED,
                 TransformationStatus.PARTIALLY_COMPLETED
-            ) && transformType != CodeTransformType.SQL_CONVERSION // no plan for SQL conversions
+            ) && transformType == CodeTransformType.LANGUAGE_UPGRADE && isPlanComplete(plan)
         ) {
             addPlanToBanner()
         }

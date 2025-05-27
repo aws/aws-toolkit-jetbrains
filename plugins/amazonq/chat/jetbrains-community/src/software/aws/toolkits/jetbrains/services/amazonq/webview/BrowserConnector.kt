@@ -503,7 +503,7 @@ class BrowserConnector(
             } catch (_: CancellationException) {
                 LOG.warn { "Cancelled chat generation" }
             } catch (e: Exception) {
-                LOG.error(e) { "Failed to send chat message" }
+                LOG.warn(e) { "Failed to send chat message" }
                 browser.postChat(chatCommunicationManager.getErrorUiMessage(tabId, e, partialResultToken))
             }
         }

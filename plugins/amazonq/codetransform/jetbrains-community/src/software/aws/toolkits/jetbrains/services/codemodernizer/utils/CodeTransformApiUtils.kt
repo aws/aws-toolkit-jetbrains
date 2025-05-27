@@ -4,7 +4,7 @@
 package software.aws.toolkits.jetbrains.services.codemodernizer.utils
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.intellij.notification.NotificationAction
+import com.intellij.grazie.utils.orFalse
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diff.impl.patch.PatchReader
@@ -143,16 +143,10 @@ suspend fun JobId.pollTransformationStatusAndPlan(
                 refreshToken(project)
                 return@waitUntil state
             } catch (e: InvalidGrantException) {
-                CodeTransformMessageListener.instance.onCheckAuth()
+                CodeTransformMessageListener.instance.onReauthStarted()
                 notifyStickyWarn(
                     message("codemodernizer.notification.warn.expired_credentials.title"),
                     message("codemodernizer.notification.warn.expired_credentials.content"),
-                    project,
-                    listOf(
-                        NotificationAction.createSimpleExpiring(message("codemodernizer.notification.warn.action.reauthenticate")) {
-                            CodeTransformMessageListener.instance.onReauthStarted()
-                        }
-                    )
                 )
                 return@waitUntil state
             } finally {
@@ -160,6 +154,7 @@ suspend fun JobId.pollTransformationStatusAndPlan(
             }
         }
     } catch (e: Exception) {
+        getLogger<CodeModernizerManager>().error(e) { "Error when polling for job status & plan" }
         // Still call onStateChange to update the UI
         onStateChange(state, TransformationStatus.FAILED, transformationPlan)
         when (e) {
@@ -285,19 +280,35 @@ fun findDownloadArtifactProgressUpdate(transformationSteps: List<TransformationS
                 update.downloadArtifacts()?.firstOrNull()?.downloadArtifactId() != null
         }
 
+// once dependency changes table (key of "1") available, plan is complete
+fun isPlanComplete(plan: TransformationPlan?) = plan?.transformationSteps()?.get(0)?.progressUpdates()?.any { update -> update.name() == "1" }.orFalse()
+
 // "name" holds the ID of the corresponding plan step (where table will go) and "description" holds the plan data
-fun getTableMapping(stepZeroProgressUpdates: List<TransformationProgressUpdate>): Map<String, String> {
-    if (stepZeroProgressUpdates.isNotEmpty()) {
-        return stepZeroProgressUpdates.associate {
-            it.name() to it.description()
-        }
-    } else {
-        error("GetPlan response missing step 0 progress updates with table data")
-    }
+fun getTableMapping(stepZeroProgressUpdates: List<TransformationProgressUpdate>): Map<String, List<String>> =
+    stepZeroProgressUpdates.groupBy(
+        { it.name() },
+        { it.description() }
+    )
+
+// ID of '0' reserved for job statistics table; only 1 table there
+fun parseTableMapping(tableMapping: Map<String, List<String>>): PlanTable {
+    val statsTable = tableMapping[JOB_STATISTICS_TABLE_KEY]?.get(0) ?: error("No transformation statistics table found in GetPlan response")
+    return MAPPER.readValue<PlanTable>(statsTable)
 }
 
-fun parseTableMapping(tableMapping: Map<String, String>): PlanTable? =
-    tableMapping[JOB_STATISTICS_TABLE_KEY]?.let { MAPPER.readValue<PlanTable>(it) }
+// columns and name are shared between all PlanTables, so just combine the rows here
+fun combineTableRows(tables: List<PlanTable>?): PlanTable? {
+    if (tables == null) {
+        return null
+    }
+    val combinedTable = PlanTable(tables.first().columns, mutableListOf(), tables.first().name)
+    tables.forEach { table ->
+        table.rows.forEach { row ->
+            combinedTable.rows.add(row)
+        }
+    }
+    return combinedTable
+}
 
 fun getBillingText(linesOfCode: Int): String {
     val estimatedCost = String.format(Locale.US, "%.2f", linesOfCode.times(BILLING_RATE))

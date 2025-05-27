@@ -45,9 +45,9 @@ import java.nio.file.Paths
 class WorkspaceServiceHandler(
     private val project: Project,
     initializeResult: InitializeResult,
-    serverInstance: Disposable,
 ) : BulkFileListener,
-    ModuleRootListener {
+    ModuleRootListener,
+    Disposable {
 
     private var lastSnapshot: List<WorkspaceFolder> = emptyList()
     private val operationMatchers: MutableMap<FileOperationType, List<Pair<PathMatcher, String>>> = mutableMapOf()
@@ -55,12 +55,12 @@ class WorkspaceServiceHandler(
     init {
         operationMatchers.putAll(initializePatterns(initializeResult))
 
-        project.messageBus.connect(serverInstance).subscribe(
+        project.messageBus.connect(this).subscribe(
             VirtualFileManager.VFS_CHANGES,
             this
         )
 
-        project.messageBus.connect(serverInstance).subscribe(
+        project.messageBus.connect(this).subscribe(
             ModuleRootListener.TOPIC,
             this
         )
@@ -312,5 +312,8 @@ class WorkspaceServiceHandler(
 
             lastSnapshot = currentSnapshot
         }
+    }
+
+    override fun dispose() {
     }
 }

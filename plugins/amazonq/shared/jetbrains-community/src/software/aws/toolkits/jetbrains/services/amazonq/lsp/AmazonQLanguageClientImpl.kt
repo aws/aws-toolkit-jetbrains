@@ -59,6 +59,8 @@ import software.aws.toolkits.jetbrains.utils.getCleanedContent
 import software.aws.toolkits.jetbrains.utils.notify
 import software.aws.toolkits.resources.message
 import java.io.File
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.UUID
@@ -147,19 +149,22 @@ class AmazonQLanguageClientImpl(private val project: Project) : AmazonQLanguageC
                 return CompletableFuture.completedFuture(ShowDocumentResult(false))
             }
 
+            // The filepath sent by the server contains unicode characters which need to be
+            // decoded for JB file handling APIs to be handle to handle file operations
+            val fileToOpen = URLDecoder.decode(params.uri, StandardCharsets.UTF_8.name())
             if (params.external == true) {
-                BrowserUtil.open(params.uri)
+                BrowserUtil.open(fileToOpen)
                 return CompletableFuture.completedFuture(ShowDocumentResult(true))
             }
 
             ApplicationManager.getApplication().invokeLater {
                 try {
-                    val virtualFile = VirtualFileManager.getInstance().findFileByUrl(params.uri)
-                        ?: throw IllegalArgumentException("Cannot find file: ${params.uri}")
+                    val virtualFile = VirtualFileManager.getInstance().findFileByUrl(fileToOpen)
+                        ?: throw IllegalArgumentException("Cannot find file: $fileToOpen")
 
                     FileEditorManager.getInstance(project).openFile(virtualFile, true)
                 } catch (e: Exception) {
-                    LOG.warn { "Failed to show document: ${params.uri}" }
+                    LOG.warn { "Failed to show document: $fileToOpen" }
                 }
             }
 

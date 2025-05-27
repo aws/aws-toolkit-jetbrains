@@ -32,7 +32,8 @@ object CodeWhispererEditorUtil {
         val fileName = getFileName(psiFile)
         val programmingLanguage = psiFile.programmingLanguage()
         val fileRelativePath = getRelativePathToContentRoot(editor)
-        return FileContextInfo(caretContext, fileName, programmingLanguage, fileRelativePath)
+        val fileUri = getFileUri(psiFile)
+        return FileContextInfo(caretContext, fileName, programmingLanguage, fileRelativePath, fileUri)
     }
 
     fun extractCaretContext(editor: Editor): CaretContext {
@@ -72,6 +73,11 @@ object CodeWhispererEditorUtil {
 
     private fun getFileName(psiFile: PsiFile): String =
         psiFile.name.substring(0, psiFile.name.length.coerceAtMost(CodeWhispererConstants.FILENAME_CHARS_LIMIT))
+
+    private fun getFileUri(psiFile: PsiFile): String? =
+        psiFile.virtualFile?.takeIf { it.isValid }?.let { vFile ->
+            vFile.url.substring(0, vFile.url.length.coerceAtMost(CodeWhispererConstants.FILENAME_CHARS_LIMIT))
+        }
 
     fun getRelativePathToContentRoot(editor: Editor): String? =
         editor.project?.let { project ->
