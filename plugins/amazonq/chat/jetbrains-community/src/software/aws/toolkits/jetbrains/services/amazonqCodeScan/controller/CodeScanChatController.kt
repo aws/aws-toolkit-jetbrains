@@ -58,6 +58,7 @@ class CodeScanChatController(
     }
 
     override suspend fun processStartProjectScan(message: IncomingCodeScanMessage.StartProjectScan) {
+        logger.debug { "Started project scan" }
         if (message.tabId != codeScanChatHelper.getActiveCodeScanTabId()) return
         codeScanChatHelper.addNewMessage(buildUserSelectionProjectScanChatContent())
         if (!codeScanManager.isInsideWorkTree()) {

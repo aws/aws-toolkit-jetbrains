@@ -306,6 +306,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
      * Triggers a code scan and displays results in the new tab in problems view panel.
      */
     fun runCodeScan(scope: CodeWhispererConstants.CodeAnalysisScope, isPluginStarting: Boolean = false, initiatedByChat: Boolean = false) {
+        LOG.debug { "Started a code scan" }
         if (!isQConnected(project)) return
 
         // Return if a scan is already in progress.
@@ -320,11 +321,12 @@ class CodeWhispererCodeScanManager(val project: Project) {
             isOnDemandScanInProgress.set(false)
             return
         }
-
+        LOG.debug { "Valid connection established for Code review/scan" }
         //  If scope is project
         if (scope == CodeWhispererConstants.CodeAnalysisScope.PROJECT) {
             // launch code scan coroutine
             try {
+                LOG.debug("Initiating code scan routine for project")
                 codeScanJob = launchCodeScanCoroutine(CodeWhispererConstants.CodeAnalysisScope.PROJECT, initiatedByChat)
             } catch (e: CancellationException) {
                 notifyChat(codeScanResponse = null, scope = scope)
@@ -337,6 +339,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
                 }
                 //  Add File Scan
                 try {
+                    LOG.debug("Initiating code scan routine for file")
                     codeScanJob = launchCodeScanCoroutine(CodeWhispererConstants.CodeAnalysisScope.FILE, initiatedByChat)
                 } catch (e: CancellationException) {
                     notifyChat(codeScanResponse = null, scope = scope)
@@ -408,6 +411,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
                     FileEditorManager.getInstance(project).selectedEditor?.file
                 }
             val codeScanSessionConfig = CodeScanSessionConfig.create(file, project, scope, initiatedByChat)
+            LOG.debug { " Created code scan session config" }
             val selectedFile = codeScanSessionConfig.getSelectedFile()
             language = codeScanSessionConfig.getProgrammingLanguage()
             if (scope == CodeWhispererConstants.CodeAnalysisScope.FILE &&
@@ -420,6 +424,7 @@ class CodeWhispererCodeScanManager(val project: Project) {
             } else {
                 withTimeout(Duration.ofSeconds(codeScanSessionConfig.overallJobTimeoutInSeconds())) {
                     // 1. Generate truncation (zip files) based on the current editor.
+                    LOG.debug { "Getting session context for code scan" }
                     val sessionContext = CodeScanSessionContext(project, codeScanSessionConfig, scope)
                     val session = CodeWhispererCodeScanSession(sessionContext)
                     val codeScanResponse = session.run()
@@ -650,10 +655,14 @@ class CodeWhispererCodeScanManager(val project: Project) {
      * This method adds code content to the problems view if not already added.
      */
     fun buildCodeScanUI() = runInEdt {
-        val problemsWindow = getProblemsWindow()
-        if (!problemsWindow.contentManager.contents.contains(codeScanIssuesContent)) {
-            problemsWindow.contentManager.addContent(codeScanIssuesContent)
-            codeScanIssuesContent.displayName = message("codewhisperer.codescan.scan_display")
+        try {
+            val problemsWindow = getProblemsWindow()
+            if (!problemsWindow.contentManager.contents.contains(codeScanIssuesContent)) {
+                problemsWindow.contentManager.addContent(codeScanIssuesContent)
+                codeScanIssuesContent.displayName = message("codewhisperer.codescan.scan_display")
+            }
+        } catch (e: Exception) {
+            LOG.debug { "Unable to open problems window" }
         }
     }
 
