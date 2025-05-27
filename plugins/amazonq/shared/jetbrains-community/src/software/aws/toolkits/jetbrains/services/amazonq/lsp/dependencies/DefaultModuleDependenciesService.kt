@@ -15,12 +15,11 @@ import software.aws.toolkits.jetbrains.utils.pluginAwareExecuteOnPooledThread
 
 class DefaultModuleDependenciesService(
     private val project: Project,
-    serverInstance: Disposable,
 ) : ModuleDependenciesService,
-    ModuleRootListener {
-
+    ModuleRootListener,
+    Disposable {
     init {
-        project.messageBus.connect(serverInstance).subscribe(
+        project.messageBus.connect(this).subscribe(
             ModuleRootListener.TOPIC,
             this
         )
@@ -51,5 +50,8 @@ class DefaultModuleDependenciesService(
                 }
             }
         }
+    }
+
+    override fun dispose() {
     }
 }
