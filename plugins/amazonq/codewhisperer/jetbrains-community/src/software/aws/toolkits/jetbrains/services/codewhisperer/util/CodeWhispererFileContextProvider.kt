@@ -347,7 +347,7 @@ class DefaultCodeWhispererFileContextProvider(private val project: Project) : Fi
         }
 
         var curTotalLength = c.sumOf { it.content.length }
-        while (curTotalLength >= CodeWhispererConstants.CrossFile.MAX_TOTAL_LENGTH) {
+        while (curTotalLength >= CodeWhispererConstants.CrossFile.MAX_TOTAL_LENGTH && c.isNotEmpty()) {
             val last = c.last()
             c = c.dropLast(1)
             curTotalLength -= last.content.length
